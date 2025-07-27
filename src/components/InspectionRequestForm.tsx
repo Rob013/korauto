@@ -4,9 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { MessageCircle, CreditCard, Banknote } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface InspectionRequestFormProps {
@@ -20,19 +19,18 @@ interface InspectionRequestFormProps {
 const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: InspectionRequestFormProps) => {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
-    whatsappPhone: "",
-    paymentMethod: "cash"
+    whatsappPhone: ""
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    console.log('Form submitted with payment method:', formData.paymentMethod);
+    console.log('Form submitted');
     console.log('Form data:', formData);
     
     try {
@@ -46,9 +44,7 @@ const [formData, setFormData] = useState({
           car_id: carId,
           car_make: carMake,
           car_model: carModel,
-          car_year: carYear,
-          inspection_fee: 50.00,
-          payment_status: formData.paymentMethod === "card" ? "processing" : "pending"
+          car_year: carYear
         });
 
       if (error) {
@@ -65,9 +61,7 @@ const [formData, setFormData] = useState({
             customer_phone: formData.whatsappPhone,
             car_make: carMake,
             car_model: carModel,
-            car_year: carYear,
-            inspection_fee: 50.00,
-            payment_status: formData.paymentMethod === "card" ? "processing" : "pending"
+            car_year: carYear
           }
         });
       } catch (emailError) {
@@ -75,73 +69,32 @@ const [formData, setFormData] = useState({
         // Don't fail the whole process if email fails
       }
 
-      // Handle payment method after saving to database
-      if (formData.paymentMethod === "card") {
-        console.log('Processing card payment...');
-        
-        // Store form data before resetting it
-        const customerEmail = formData.email;
-        const customerName = `${formData.firstName}_${formData.lastName}`;
-        
-        // Show processing message for card payments
-        toast({
-          title: "Processing...",
-          description: "Ruajmë të dhënat tuaja dhe po ju drejtojmë tek pagesa...",
-          duration: 3000,
-        });
-        
-        // Reset form and close dialog first
-        setFormData({ firstName: "", lastName: "", email: "", whatsappPhone: "", paymentMethod: "cash" });
-        setIsOpen(false);
-        
-        // Small delay to ensure UI updates, then redirect
-        setTimeout(() => {
-          console.log('Redirecting to Stripe payment...');
-          const stripeUrl = "https://buy.stripe.com/8x2bJ26RB3yz72ocKaco001";
-          const params = new URLSearchParams({
-            'prefilled_email': customerEmail,
-            'client_reference_id': customerName
-          });
-          const finalUrl = `${stripeUrl}?${params.toString()}`;
-          console.log('Final Stripe URL:', finalUrl);
-          window.location.href = finalUrl;
-        }, 1000);
-      } else {
-        // Cash payment - send WhatsApp notification
-        const carInfo = carMake && carModel && carYear ? `🚗 Makina: ${carYear} ${carMake} ${carModel}\n` : '';
-        const ownerMessage = `🔔 Kërkesë e Re për Inspektim - KORAUTO\n\n👤 Emri: ${formData.firstName} ${formData.lastName}\n📧 Email: ${formData.email}\n📱 WhatsApp: ${formData.whatsappPhone}\n${carInfo}💰 Pagesa: Cash (€50)\n✅ Klient i ri kërkon shërbimin e inspektimit të makinës. Kontaktojeni sa më shpejt!`;
-        
-        const ownerWhatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(ownerMessage)}`;
-        window.open(ownerWhatsappUrl, '_blank');
-        
-        toast({
-          title: "Faleminderit për Kërkesën!",
-          description: "Kërkesa juaj për inspektim u dërgua me sukses! Do t'ju kontaktojmë brenda 24 orëve.",
-          duration: 5000,
-        });
+      // Send WhatsApp notification
+      const carInfo = carMake && carModel && carYear ? `🚗 Makina: ${carYear} ${carMake} ${carModel}\n` : '';
+      const ownerMessage = `🔔 Kërkesë e Re për Inspektim - KORAUTO\n\n👤 Emri: ${formData.firstName} ${formData.lastName}\n📧 Email: ${formData.email}\n📱 WhatsApp: ${formData.whatsappPhone}\n${carInfo}✅ Klient i ri kërkon shërbimin e inspektimit të makinës. Kontaktojeni sa më shpejt!`;
+      
+      const ownerWhatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(ownerMessage)}`;
+      window.open(ownerWhatsappUrl, '_blank');
+      
+      toast({
+        title: "Faleminderit për Kërkesën!",
+        description: "Kërkesa juaj për inspektim u dërgua me sukses! Do t'ju kontaktojmë brenda 24 orëve.",
+        duration: 5000,
+      });
 
-        // Reset form and close dialog
-        setFormData({ firstName: "", lastName: "", email: "", whatsappPhone: "", paymentMethod: "cash" });
-        setIsOpen(false);
-      }
+      // Reset form and close dialog
+      setFormData({ firstName: "", lastName: "", email: "", whatsappPhone: "" });
+      setIsOpen(false);
       
     } catch (error) {
       console.error('Failed to submit inspection request:', error);
       
       // Fallback - still send WhatsApp message
       const carInfo = carMake && carModel && carYear ? `🚗 Makina: ${carYear} ${carMake} ${carModel}\n` : '';
-      const paymentInfo = formData.paymentMethod === "card" ? "💳 Pagesa: Kartë Krediti" : "💰 Pagesa: Cash";
-      const ownerMessage = `🔔 Kërkesë e Re për Inspektim - KORAUTO\n\n👤 Emri: ${formData.firstName} ${formData.lastName}\n📧 Email: ${formData.email}\n📱 WhatsApp: ${formData.whatsappPhone}\n${carInfo}${paymentInfo} (€50)\n✅ Klient i ri kërkon shërbimin e inspektimit të makinës. Kontaktojeni sa më shpejt!`;
+      const ownerMessage = `🔔 Kërkesë e Re për Inspektim - KORAUTO\n\n👤 Emri: ${formData.firstName} ${formData.lastName}\n📧 Email: ${formData.email}\n📱 WhatsApp: ${formData.whatsappPhone}\n${carInfo}✅ Klient i ri kërkon shërbimin e inspektimit të makinës. Kontaktojeni sa më shpejt!`;
       
       const ownerWhatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(ownerMessage)}`;
       window.open(ownerWhatsappUrl, '_blank');
-      
-      if (formData.paymentMethod === "card") {
-        // Also redirect to payment on error
-        setTimeout(() => {
-          window.location.href = "https://buy.stripe.com/8x2bJ26RB3yz72ocKaco001";
-        }, 1000);
-      }
       
       toast({
         title: "Kërkesa u Dërgua",
@@ -150,7 +103,7 @@ const [formData, setFormData] = useState({
       });
 
       // Reset form and close dialog
-      setFormData({ firstName: "", lastName: "", email: "", whatsappPhone: "", paymentMethod: "cash" });
+      setFormData({ firstName: "", lastName: "", email: "", whatsappPhone: "" });
       setIsOpen(false);
     }
   };
@@ -224,48 +177,17 @@ const [formData, setFormData] = useState({
                 />
               </div>
 
-              <div>
-                <Label htmlFor="paymentMethod">Metoda e Pagesës</Label>
-                <Select value={formData.paymentMethod} onValueChange={(value) => handleInputChange("paymentMethod", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Zgjidhni metodën e pagesës" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cash">
-                      <div className="flex items-center gap-2">
-                        <Banknote className="h-4 w-4" />
-                        Cash/Para në dorë
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="card">
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="h-4 w-4" />
-                        Kartë Krediti
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div className="bg-muted p-3 rounded-lg text-sm">
-                <h4 className="font-semibold mb-2">Udhëzime për Pagesë:</h4>
-                {formData.paymentMethod === "cash" ? (
-                  <ul className="space-y-1 text-muted-foreground">
-                    <li>• Pagesa në cash do të bëhet gjatë inspektimit</li>
-                    <li>• Çmimi: €50 për inspektim të plotë</li>
-                    <li>• Mbajeni me vete dokumentet e makinës</li>
-                  </ul>
-                ) : (
-                  <ul className="space-y-1 text-muted-foreground">
-                    <li>• Pagesa me kartë do të bëhet online</li>
-                    <li>• Çmimi: €50 për inspektim të plotë</li>
-                    <li>• Do t'ju dërgohet linku i pagesës</li>
-                  </ul>
-                )}
+                <h4 className="font-semibold mb-2">Informacione:</h4>
+                <ul className="space-y-1 text-muted-foreground">
+                  <li>• Do të kontaktoheni brenda 24 orëve</li>
+                  <li>• Shërbimi i inspektimit është falas</li>
+                  <li>• Mbajeni me vete dokumentet e makinës</li>
+                </ul>
               </div>
               
               <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
-                {formData.paymentMethod === "card" ? "Vazhdo në Pagesë" : "Dërgo Kërkesën"}
+                Dërgo Kërkesën
               </Button>
             </form>
           </CardContent>
