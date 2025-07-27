@@ -74,6 +74,9 @@ const Header = () => {
             >
               Kontakti
             </button>
+            <Link to="/admin" className="text-foreground hover:text-primary font-medium transition-colors">
+              Admin
+            </Link>
           </nav>
 
           {/* CTA Buttons */}

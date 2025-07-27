@@ -30,6 +30,10 @@ const [formData, setFormData] = useState({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('Form submitted with payment method:', formData.paymentMethod);
+    console.log('Form data:', formData);
     
     try {
       // Store in Supabase database
@@ -73,6 +77,12 @@ const [formData, setFormData] = useState({
 
       // Handle payment method after saving to database
       if (formData.paymentMethod === "card") {
+        console.log('Processing card payment...');
+        
+        // Store form data before resetting it
+        const customerEmail = formData.email;
+        const customerName = `${formData.firstName}_${formData.lastName}`;
+        
         // Show processing message for card payments
         toast({
           title: "Processing...",
@@ -86,12 +96,15 @@ const [formData, setFormData] = useState({
         
         // Small delay to ensure UI updates, then redirect
         setTimeout(() => {
+          console.log('Redirecting to Stripe payment...');
           const stripeUrl = "https://buy.stripe.com/8x2bJ26RB3yz72ocKaco001";
           const params = new URLSearchParams({
-            'prefilled_email': formData.email,
-            'client_reference_id': `${formData.firstName}_${formData.lastName}`
+            'prefilled_email': customerEmail,
+            'client_reference_id': customerName
           });
-          window.location.href = `${stripeUrl}?${params.toString()}`;
+          const finalUrl = `${stripeUrl}?${params.toString()}`;
+          console.log('Final Stripe URL:', finalUrl);
+          window.location.href = finalUrl;
         }, 1000);
       } else {
         // Cash payment - send WhatsApp notification
