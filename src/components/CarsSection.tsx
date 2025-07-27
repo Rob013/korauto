@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { RefreshCw, AlertCircle, Filter, SortAsc } from "lucide-react";
+import { apiLimiter } from "@/utils/apiLimiter";
 
 interface Car {
   id: string;
@@ -47,7 +48,14 @@ const CarsSection = () => {
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   const tryApiEndpoint = async (endpoint: string, params: URLSearchParams, retryCount = 0): Promise<any> => {
+    // Check if we can make request
+    if (!apiLimiter.canMakeRequest()) {
+      const timeLeft = Math.ceil(apiLimiter.getTimeUntilReset() / 1000 / 60);
+      throw new Error(`Request limit reached. Try again in ${timeLeft} minutes.`);
+    }
+
     console.log(`API Request: ${API_BASE_URL}${endpoint}?${params}`);
+    apiLimiter.recordRequest();
     
     try {
       const response = await fetch(`${API_BASE_URL}${endpoint}?${params}`, {
@@ -85,37 +93,9 @@ const CarsSection = () => {
   };
 
   const testBrandFiltering = async () => {
-    // Test if API supports filtering by specific brands and years
-    const targetBrands = ['Audi', 'BMW', 'Volkswagen', 'Mercedes-Benz'];
-    const targetYear = 2015;
-
-    try {
-      console.log('Testing brand filtering...');
-      const testParams = new URLSearchParams({
-        api_key: API_KEY,
-        limit: '10',
-        make: 'Audi',
-        year: '2015'
-      });
-
-      const testResponse = await fetch(`${API_BASE_URL}/cars?${testParams}`, {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'KORAUTO-WebApp/1.0',
-          'X-API-Key': API_KEY
-        }
-      });
-
-      if (testResponse.ok) {
-        const testData = await testResponse.json();
-        console.log('Brand filtering test successful:', testData);
-        return true;
-      }
-      return false;
-    } catch (err) {
-      console.log('Brand filtering not supported by API');
-      return false;
-    }
+    // Skip filtering test to save API requests
+    console.log('Skipping brand filtering test to conserve API requests');
+    return false;
   };
 
   const fetchCars = async (minutes?: number, testFiltering = false) => {
@@ -128,7 +108,7 @@ const CarsSection = () => {
 
       const params = new URLSearchParams({
         api_key: API_KEY,
-        limit: '50' // Demo mode limit
+        limit: '20' // Reduced limit to save requests
       });
 
       if (minutes) {
@@ -258,17 +238,17 @@ const CarsSection = () => {
     fetchCars(undefined, true); // Test filtering on first load
   }, []);
 
-  // Set up periodic updates with staggered timing to avoid rate limits
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      console.log('Running periodic update...');
-      await fetchCars(60); // Fetch updates from last 60 minutes
-      await delay(2000); // Wait 2 seconds between calls
-      await fetchArchivedLots(); // Remove sold cars
-    }, 60 * 60 * 1000); // Every hour
+  // Disable automatic periodic updates to conserve API requests
+  // useEffect(() => {
+  //   const interval = setInterval(async () => {
+  //     console.log('Running periodic update...');
+  //     await fetchCars(60); // Fetch updates from last 60 minutes
+  //     await delay(2000); // Wait 2 seconds between calls
+  //     await fetchArchivedLots(); // Remove sold cars
+  //   }, 60 * 60 * 1000); // Every hour
 
-    return () => clearInterval(interval);
-  }, []);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   // Sorting and filtering logic
   useEffect(() => {
