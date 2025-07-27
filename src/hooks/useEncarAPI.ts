@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 
-const API_BASE_URL = 'https://auctionsapi.com/api';
+const API_BASE_URL = 'https://api.auctionsapi.com';
 const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
 const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
-const MIN_REQUEST_INTERVAL = 500; // 500ms between requests for faster loading
+const MIN_REQUEST_INTERVAL = 300; // 300ms for faster loading
 
 export interface Car {
   id: string;
@@ -419,7 +419,6 @@ export const useEncarAPI = () => {
         
         const result = await withRateLimit(async () => {
           const params = new URLSearchParams({
-            api_key: API_KEY,
             limit: limit.toString(),
             page: page.toString()
           });
@@ -490,14 +489,15 @@ export const useEncarAPI = () => {
             params.append('displacement_to', filters.displacement[1].toString());
           }
 
-          const requestUrl = `${API_BASE_URL}/cars?${params}`;
+          const requestUrl = `${API_BASE_URL}/api/cars?${params}`;
           console.log('API Request:', requestUrl);
 
           const response = await fetch(requestUrl, {
             headers: {
               'Accept': 'application/json',
-              'User-Agent': 'KORAUTO-WebApp/1.0',
-              'X-API-Key': API_KEY
+              'Authorization': `Bearer ${API_KEY}`,
+              'User-Agent': 'KORAUTO-WebApp/2.0',
+              'Content-Type': 'application/json'
             }
           });
           
@@ -583,15 +583,15 @@ export const useEncarAPI = () => {
 
       const result = await withRateLimit(async () => {
         const params = new URLSearchParams({
-          api_key: API_KEY,
-          limit: '1000' // Get ALL manufacturers
+          limit: '10000' // Get ALL manufacturers
         });
 
-        const response = await fetch(`${API_BASE_URL}/manufacturers?${params}`, {
+        const response = await fetch(`${API_BASE_URL}/api/manufacturers?${params}`, {
           headers: {
             'Accept': 'application/json',
-            'User-Agent': 'KORAUTO-WebApp/1.0',
-            'X-API-Key': API_KEY
+            'Authorization': `Bearer ${API_KEY}`,
+            'User-Agent': 'KORAUTO-WebApp/2.0',
+            'Content-Type': 'application/json'
           }
         });
         
@@ -628,7 +628,6 @@ export const useEncarAPI = () => {
 
       const result = await withRateLimit(async () => {
         const params = new URLSearchParams({
-          api_key: API_KEY,
           limit: '10000' // Get ALL models
         });
 
@@ -636,11 +635,12 @@ export const useEncarAPI = () => {
           params.append('manufacturer_id', manufacturerId.toString());
         }
 
-        const response = await fetch(`${API_BASE_URL}/models?${params}`, {
+        const response = await fetch(`${API_BASE_URL}/api/models?${params}`, {
           headers: {
             'Accept': 'application/json',
-            'User-Agent': 'KORAUTO-WebApp/1.0',
-            'X-API-Key': API_KEY
+            'Authorization': `Bearer ${API_KEY}`,
+            'User-Agent': 'KORAUTO-WebApp/2.0',
+            'Content-Type': 'application/json'
           }
         });
         
@@ -666,22 +666,63 @@ export const useEncarAPI = () => {
     }
   }, [cache, withRateLimit]);
 
-  // Fetch archived lots
+  // Fetch individual car details with ALL available data
+  const fetchCarDetails = useCallback(async (carId: string): Promise<Car | null> => {
+    try {
+      const cacheKey = `car-details-${carId}`;
+      const cached = cache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        return (cached.data as any).car || null;
+      }
+
+      const result = await withRateLimit(async () => {
+        const response = await fetch(`${API_BASE_URL}/api/cars/${carId}`, {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${API_KEY}`,
+            'User-Agent': 'KORAUTO-WebApp/2.0',
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API request failed: ${response.status}`);
+        }
+
+        return response.json();
+      });
+
+      const car = result.car || result.data || result;
+      const transformedCar = transformCarData(car);
+      
+      // Cache the car details
+      setCache(prev => new Map(prev).set(cacheKey, { 
+        data: { car: transformedCar }, 
+        timestamp: Date.now() 
+      }));
+
+      return transformedCar;
+    } catch (err) {
+      console.error('Failed to fetch car details:', err);
+      return null;
+    }
+  }, [cache, withRateLimit, transformCarData]);
+
+  // Fetch archived lots with Bearer auth
   const fetchArchivedLots = useCallback(async (minutes?: number) => {
     try {
-      const params = new URLSearchParams({
-        api_key: API_KEY
-      });
+      const params = new URLSearchParams();
 
       if (minutes) {
         params.append('minutes', minutes.toString());
       }
 
-      const response = await fetch(`${API_BASE_URL}/archived-lots?${params}`, {
+      const response = await fetch(`${API_BASE_URL}/api/archived-lots?${params}`, {
         headers: {
           'Accept': 'application/json',
-          'User-Agent': 'KORAUTO-WebApp/1.0',
-          'X-API-Key': API_KEY
+          'Authorization': `Bearer ${API_KEY}`,
+          'User-Agent': 'KORAUTO-WebApp/2.0',
+          'Content-Type': 'application/json'
         }
       });
       
@@ -690,12 +731,12 @@ export const useEncarAPI = () => {
       }
 
       const data = await response.json();
-      return data.archivedLots || [];
+      return data.archivedLots || data.data || [];
     } catch (err) {
       console.error('API Error:', err);
       return [];
     }
-  }, []);
+  }, [cache, withRateLimit]);
 
   // Load ALL cars without any limits - fetch everything available
   const loadAllCars = useCallback(async (filters?: Filters) => {
@@ -910,6 +951,7 @@ export const useEncarAPI = () => {
     hasMore,
     totalCarsAvailable,
     fetchCars,
+    fetchCarDetails,
     fetchManufacturers,
     fetchModels,
     fetchArchivedLots,
