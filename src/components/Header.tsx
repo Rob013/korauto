@@ -65,7 +65,6 @@ const Header = () => {
                 const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
                 window.open(whatsappUrl, '_blank');
               }}
-              aria-label="Kontaktoni nëpërmjet WhatsApp për informacion rreth shërbimeve"
             >
               Na Kontaktoni
             </Button>
@@ -73,7 +72,6 @@ const Header = () => {
               size="sm" 
               className="bg-primary hover:bg-primary/90"
               onClick={() => document.getElementById('cars')?.scrollIntoView({ behavior: 'smooth' })}
-              aria-label="Shikoni listën e makinave të disponueshme"
             >
               Shiko Makinat
             </Button>

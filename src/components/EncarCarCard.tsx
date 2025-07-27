@@ -171,7 +171,6 @@ const EncarCarCard = ({
                   size="sm"
                   className="flex-1 bg-primary hover:bg-primary/90 text-white text-xs h-6"
                   onClick={(e) => e.stopPropagation()}
-                  aria-label={`Kërkoni inspektim për ${year} ${make} ${model}`}
                 >
                   Inspektim (€50)
                 </Button>
@@ -182,7 +181,6 @@ const EncarCarCard = ({
               size="sm"
               className="flex-1 text-xs h-6 border-primary text-primary hover:bg-primary hover:text-white"
               onClick={handleContactWhatsApp}
-              aria-label={`Kontaktoni për më shumë informacion rreth ${year} ${make} ${model}`}
             >
               <MessageCircle className="h-3 w-3 mr-1" />
               Kontakt

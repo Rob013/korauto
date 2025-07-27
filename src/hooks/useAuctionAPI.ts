@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const API_BASE_URL = 'https://auctionsapi.com/api';
+const API_BASE_URL = 'https://api.auctionsapi.com';
 const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
 
 interface Car {
@@ -30,13 +30,14 @@ export const useAuctionAPI = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCars = async (page: number = 1, minutes?: number, filters?: {make?: string[], year?: number}): Promise<APIResponse> => {
+  const fetchCars = async (page: number = 1, minutes?: number): Promise<APIResponse> => {
     setLoading(true);
     setError(null);
 
     try {
       const params = new URLSearchParams({
         api_key: API_KEY,
+        page: page.toString(),
         limit: '50' // Demo mode limit
       });
 
@@ -44,24 +45,7 @@ export const useAuctionAPI = () => {
         params.append('minutes', minutes.toString());
       }
 
-      // Test filtering for specific brands
-      if (filters?.make && filters.make.length > 0) {
-        // Try to filter by manufacturer - this may or may not work with the API
-        params.append('manufacturer', filters.make.join(','));
-      }
-
-      if (filters?.year) {
-        params.append('year_from', filters.year.toString());
-      }
-
-      const response = await fetch(`${API_BASE_URL}/cars?${params}`, {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'KORAUTO-WebApp/1.0',
-          'Authorization': `Bearer ${API_KEY}`,
-          'X-API-Key': API_KEY
-        }
-      });
+      const response = await fetch(`${API_BASE_URL}/api/cars?${params}`);
       
       if (!response.ok) {
         throw new Error(`API request failed: ${response.status}`);

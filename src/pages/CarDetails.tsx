@@ -111,7 +111,7 @@ const CarDetails = () => {
               transmission: foundCar.transmission?.name || 'Automatic',
               fuel: foundCar.fuel?.name || 'Gasoline',
               color: foundCar.color?.name || 'Silver',
-              condition: lot?.condition?.name?.replace('run_and_drives', 'Good Condition') || 'Good',
+              condition: lot?.condition?.name || 'Good',
               lot: lot?.lot,
               title: foundCar.title,
               odometer: lot?.odometer,
@@ -136,50 +136,40 @@ const CarDetails = () => {
           }
         }
 
-        // If not found in list, create fallback data for Korean cars
-        const koreanMakes = ['Hyundai', 'Kia', 'Genesis', 'Samsung'];
-        const randomMake = koreanMakes[Math.floor(Math.random() * koreanMakes.length)];
-        const models = {
-          'Hyundai': ['Sonata', 'Tucson', 'Elantra', 'Santa Fe', 'Grandeur'],
-          'Kia': ['K5', 'Sorento', 'Sportage', 'Carnival', 'Stinger'],
-          'Genesis': ['G90', 'GV70', 'G80', 'GV80'],
-          'Samsung': ['SM7', 'SM5', 'QM6']
-        };
-        const randomModel = models[randomMake][Math.floor(Math.random() * models[randomMake].length)];
-        
+        // If not found in list, create fallback data based on ID
         const fallbackCar: CarDetails = {
           id: id,
-          make: randomMake,
-          model: randomModel,
+          make: 'BMW',
+          model: 'Series 3',
           year: 2021,
-          price: 35300, // Base price + KORAUTO markup
-          image: 'https://via.placeholder.com/800x600/f5f5f5/999999?text=' + randomMake + '+' + randomModel,
+          price: 32300, // Base price + KORAUTO markup
+          image: 'https://via.placeholder.com/800x600/f5f5f5/999999?text=BMW+Series+3',
           images: [
-            'https://via.placeholder.com/800x600/f5f5f5/999999?text=' + randomMake + '+' + randomModel,
+            'https://via.placeholder.com/800x600/f5f5f5/999999?text=BMW+Series+3',
             'https://via.placeholder.com/800x600/f5f5f5/999999?text=Interior',
             'https://via.placeholder.com/800x600/f5f5f5/999999?text=Engine'
           ],
-          vin: 'KMHE' + Math.random().toString(36).substr(2, 9).toUpperCase(),
-          mileage: '42,000 km',
+          vin: 'WBANA5314XCR' + id.slice(-5),
+          mileage: '45,000 km',
           transmission: 'Automatic',
           fuel: 'Gasoline',
-          color: 'White Pearl',
+          color: 'Silver',
           condition: 'Excellent',
           lot: id.slice(-6),
-          title: `2021 ${randomMake} ${randomModel}`,
-          engine: { name: '2.5L GDI' },
+          title: '2021 BMW 3 Series 320i',
+          engine: { name: '2.0L TwinPower Turbo' },
           cylinders: 4,
-          drive_wheel: { name: 'FWD' },
+          drive_wheel: { name: 'RWD' },
           body_type: { name: 'Sedan' },
           keys_available: true,
           seller: 'KORAUTO Certified Dealer',
           seller_type: 'Professional Dealer',
-          buy_now: 33000,
-          features: ['Smart Cruise Control', 'Android Auto', 'Apple CarPlay', 'Wireless Charging', 'LED Headlights'],
-          safety_features: ['Forward Collision-Avoidance', 'Blind Spot Monitoring', 'Lane Keeping Assist', 'Smart Parking Assist'],
-          comfort_features: ['Heated & Ventilated Seats', 'Dual Zone Climate', 'Premium Audio', 'Sunroof'],
-          performance_rating: 4.3,
-          popularity_score: 88
+          buy_now: 30000,
+          features: ['Cruise Control', 'Bluetooth', 'USB Port', 'Air Conditioning', 'Power Windows'],
+          safety_features: ['ABS', 'ESP', 'Airbags', 'Seatbelt Pretensioners'],
+          comfort_features: ['Leather Seats', 'Heated Seats', 'Automatic Climate Control'],
+          performance_rating: 4.5,
+          popularity_score: 85
         };
 
         setCar(fallbackCar);
@@ -492,7 +482,6 @@ const CarDetails = () => {
                       <Button 
                         className="w-full bg-primary hover:bg-primary/90 text-xs py-1.5 h-8"
                         size="sm"
-                        aria-label={`Kërkoni inspektim profesional për ${car?.year} ${car?.make} ${car?.model}`}
                       >
                         <Search className="h-3 w-3 mr-1" />
                         Kërkesë për Inspektim (€50)
@@ -505,7 +494,6 @@ const CarDetails = () => {
                     onClick={handleContactWhatsApp}
                     className="w-full border-primary text-primary hover:bg-primary hover:text-white text-xs py-1.5 h-8"
                     size="sm"
-                    aria-label={`Kontaktoni nëpërmjet WhatsApp për informacion shtesë rreth ${car?.year} ${car?.make} ${car?.model}`}
                   >
                     <MessageCircle className="h-3 w-3 mr-1" />
                     Kontakto për Më Shumë Info
@@ -573,80 +561,35 @@ const CarDetails = () => {
               </Card>
             )}
 
-            {/* Real Encar.com Insurance History */}
+            {/* Insurance History - Encar.com Style */}
             <Card>
               <CardContent className="p-6">
                 <h3 className="text-lg font-semibold mb-4 flex items-center">
                   <Shield className="h-4 w-4 mr-2" />
-                  Historia e Sigurimit - Encar.com Verified
+                  Historia e Sigurimit dhe Verifikimi
                 </h3>
-                
-                {/* Insurance Claims History */}
-                <div className="space-y-4">
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold text-green-800">Encar Insurance Co.</h4>
-                      <Badge className="bg-green-100 text-green-800">AKTIVE</Badge>
-                    </div>
-                    <div className="text-sm text-green-700 space-y-1">
-                      <p>Periudha: 2021.03 - 2024.12</p>
-                      <p>Lloji: Sigurimi i Plotë</p>
-                      <p>Dëme të Raportuara: Asnjë</p>
-                      <p>Kërkesa për Dëmshpërblim: 0</p>
-                    </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-center">
+                    <div className="text-green-600 font-semibold">✓ VERIFIKUAR</div>
+                    <div className="text-xs text-green-700 mt-1">Historia e Aksidenteve</div>
                   </div>
-
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold text-blue-800">Dongbu Insurance</h4>
-                      <Badge className="bg-blue-100 text-blue-800">E PËRFUNDUAR</Badge>
-                    </div>
-                    <div className="text-sm text-blue-700 space-y-1">
-                      <p>Periudha: 2020.01 - 2021.02</p>
-                      <p>Lloji: Sigurimi i Detyrueshëm</p>
-                      <p>Dëme të Raportuara: E Vogël (Parking)</p>
-                      <p>Kërkesa për Dëmshpërblim: 1 (₩850,000)</p>
-                    </div>
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
+                    <div className="text-blue-600 font-semibold">✓ I PASTËR</div>
+                    <div className="text-xs text-blue-700 mt-1">Verifikimi Ligjor</div>
                   </div>
-
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold text-gray-800">Samsung Fire & Marine</h4>
-                      <Badge className="bg-gray-100 text-gray-800">E PËRFUNDUAR</Badge>
-                    </div>
-                    <div className="text-sm text-gray-700 space-y-1">
-                      <p>Periudha: 2019.05 - 2019.12</p>
-                      <p>Lloji: Sigurimi i Plotë</p>
-                      <p>Dëme të Raportuara: Asnjë</p>
-                      <p>Kërkesa për Dëmshpërblim: 0</p>
-                    </div>
+                  <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg text-center">
+                    <div className="text-orange-600 font-semibold">✓ KONFIRMUAR</div>
+                    <div className="text-xs text-orange-700 mt-1">Kilometrat e Vërteta</div>
+                  </div>
+                  <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg text-center">
+                    <div className="text-purple-600 font-semibold">✓ GARANTUAR</div>
+                    <div className="text-xs text-purple-700 mt-1">Mirëmbajtja e Rregullt</div>
                   </div>
                 </div>
-
-                {/* Overall Assessment */}
-                <div className="mt-6 p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle className="h-5 w-5 text-primary" />
-                    <h4 className="font-semibold text-primary">Vlerësimi i Përgjithshëm</h4>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium">Histori e Aksidenteve:</span>
-                      <span className="text-green-600 ml-2">✓ E Pastër (1 rast i vogël)</span>
-                    </div>
-                    <div>
-                      <span className="font-medium">Përmbushja e Detyrimeve:</span>
-                      <span className="text-green-600 ml-2">✓ 100% e Saktë</span>
-                    </div>
-                    <div>
-                      <span className="font-medium">Krediti i Sigurisë:</span>
-                      <span className="text-green-600 ml-2">✓ A+ Rating</span>
-                    </div>
-                    <div>
-                      <span className="font-medium">Risku i Ardhshëm:</span>
-                      <span className="text-green-600 ml-2">✓ I Ulët</span>
-                    </div>
-                  </div>
+                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-700">
+                    <strong>Sigurimi i Verifikuar:</strong> Encar Insurance, Dongbu Insurance, Samsung Fire & Marine Insurance dhe të tjera kompani të njohura sigurimesh.
+                  </p>
                 </div>
               </CardContent>
             </Card>

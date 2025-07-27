@@ -128,9 +128,6 @@ const CarsSection = () => {
         const odometer = lot?.odometer;
         const mileage = odometer?.km ? `${odometer.km.toLocaleString()} km` : undefined;
         
-        // Filter for South Korean cars (domain should be encar_com)
-        const isKoreanCar = lot?.domain?.name === 'encar_com';
-        
         return {
           id: car.id?.toString() || `car-${index}`,
           make: car.manufacturer?.name || 'Unknown',
@@ -143,12 +140,11 @@ const CarsSection = () => {
           transmission: car.transmission?.name,
           fuel: car.fuel?.name,
           color: car.color?.name,
-          condition: lot?.condition?.name?.replace('run_and_drives', 'Good Condition'),
+          condition: lot?.condition?.name,
           lot: lot?.lot,
-          title: car.title,
-          isKorean: isKoreanCar
+          title: car.title
         };
-      }).filter(car => car.isKorean !== false); // Show Korean cars primarily
+      });
 
       console.log(`Transformed cars:`, transformedCars);
 
@@ -167,17 +163,17 @@ const CarsSection = () => {
       setError(errorMessage);
       console.error('API Error:', err);
       
-      // Use South Korean car fallback data
+      // Use fallback data on error with KORAUTO markup
       const fallbackCars: Car[] = [
-        { id: '1', make: 'Hyundai', model: 'Sonata', year: 2022, price: 35300, mileage: '25,000 km', transmission: 'automatic', fuel: 'gasoline' },
-        { id: '2', make: 'Kia', model: 'K5', year: 2021, price: 32300, mileage: '30,000 km', transmission: 'automatic', fuel: 'gasoline' },
-        { id: '3', make: 'Genesis', model: 'G90', year: 2023, price: 67300, mileage: '15,000 km', transmission: 'automatic', fuel: 'gasoline' },
-        { id: '4', make: 'Hyundai', model: 'Tucson', year: 2022, price: 38300, mileage: '20,000 km', transmission: 'automatic', fuel: 'gasoline' },
-        { id: '5', make: 'Kia', model: 'Sorento', year: 2021, price: 42300, mileage: '35,000 km', transmission: 'automatic', fuel: 'gasoline' },
-        { id: '6', make: 'Samsung', model: 'SM7', year: 2023, price: 45300, mileage: '10,000 km', transmission: 'automatic', fuel: 'gasoline' },
-        { id: '7', make: 'Hyundai', model: 'Grandeur', year: 2022, price: 48300, mileage: '18,000 km', transmission: 'automatic', fuel: 'gasoline' },
-        { id: '8', make: 'Kia', model: 'Carnival', year: 2021, price: 44300, mileage: '22,000 km', transmission: 'automatic', fuel: 'gasoline' },
-        { id: '9', make: 'Genesis', model: 'GV70', year: 2022, price: 58300, mileage: '12,000 km', transmission: 'automatic', fuel: 'gasoline' }
+        { id: '1', make: 'BMW', model: 'M3', year: 2022, price: 67300, mileage: '25,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '2', make: 'Mercedes-Benz', model: 'C-Class', year: 2021, price: 47300, mileage: '30,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '3', make: 'Audi', model: 'A4', year: 2023, price: 44300, mileage: '15,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '4', make: 'Volkswagen', model: 'Golf', year: 2022, price: 30300, mileage: '20,000 km', transmission: 'manual', fuel: 'benzinë' },
+        { id: '5', make: 'Porsche', model: 'Cayenne', year: 2021, price: 87300, mileage: '35,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '6', make: 'Tesla', model: 'Model S', year: 2023, price: 97300, mileage: '10,000 km', transmission: 'automatic', fuel: 'elektrike' },
+        { id: '7', make: 'Ford', model: 'Mustang', year: 2022, price: 57300, mileage: '18,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '8', make: 'Chevrolet', model: 'Camaro', year: 2021, price: 50300, mileage: '22,000 km', transmission: 'manual', fuel: 'benzinë' },
+        { id: '9', make: 'Jaguar', model: 'F-Type', year: 2022, price: 80300, mileage: '12,000 km', transmission: 'automatic', fuel: 'benzinë' }
       ];
       setCars(fallbackCars);
       setFilteredCars(fallbackCars);
