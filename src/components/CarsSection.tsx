@@ -18,8 +18,23 @@ const CarsSection = () => {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
-  const API_BASE_URL = 'https://api.auctionsapi.com';
+  // Try multiple possible API base URLs
+  const POSSIBLE_API_URLS = [
+    'https://api.auctionsapi.com',
+    'https://auctionsapi.com',
+    'https://auctionsapi.com/api',
+    'https://carapis.com/api/encar'
+  ];
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
+
+  const tryApiEndpoint = async (baseUrl: string, endpoint: string, params: URLSearchParams): Promise<any> => {
+    console.log(`Trying API endpoint: ${baseUrl}${endpoint}?${params}`);
+    const response = await fetch(`${baseUrl}${endpoint}?${params}`);
+    if (!response.ok) {
+      throw new Error(`${baseUrl} returned ${response.status}`);
+    }
+    return response.json();
+  };
 
   const fetchCars = async (minutes?: number) => {
     setLoading(true);
@@ -35,13 +50,26 @@ const CarsSection = () => {
         params.append('minutes', minutes.toString());
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/cars?${params}`);
-      
-      if (!response.ok) {
-        throw new Error(`API request failed: ${response.status}`);
+      let data = null;
+      let successfulUrl = '';
+
+      // Try each possible API URL
+      for (const baseUrl of POSSIBLE_API_URLS) {
+        try {
+          console.log(`Attempting to fetch from: ${baseUrl}`);
+          data = await tryApiEndpoint(baseUrl, '/api/cars', params);
+          successfulUrl = baseUrl;
+          console.log(`Success with URL: ${baseUrl}`);
+          break;
+        } catch (err) {
+          console.log(`Failed with ${baseUrl}:`, err);
+          continue;
+        }
       }
 
-      const data = await response.json();
+      if (!data) {
+        throw new Error('All API endpoints failed. Using fallback data.');
+      }
       
       // Transform API data to our Car interface
       const transformedCars: Car[] = data.cars?.map((car: any, index: number) => ({
@@ -55,23 +83,13 @@ const CarsSection = () => {
 
       // If no cars from API, use fallback data
       if (transformedCars.length === 0) {
-        const fallbackCars: Car[] = [
-          { id: '1', make: 'BMW', model: 'M3', year: 2022, price: 65000 },
-          { id: '2', make: 'Mercedes-Benz', model: 'C-Class', year: 2021, price: 45000 },
-          { id: '3', make: 'Audi', model: 'A4', year: 2023, price: 42000 },
-          { id: '4', make: 'Volkswagen', model: 'Golf', year: 2022, price: 28000 },
-          { id: '5', make: 'Porsche', model: 'Cayenne', year: 2021, price: 85000 },
-          { id: '6', make: 'Tesla', model: 'Model S', year: 2023, price: 95000 },
-          { id: '7', make: 'Ford', model: 'Mustang', year: 2022, price: 55000 },
-          { id: '8', make: 'Chevrolet', model: 'Camaro', year: 2021, price: 48000 },
-          { id: '9', make: 'Jaguar', model: 'F-Type', year: 2022, price: 78000 }
-        ];
-        setCars(fallbackCars);
-      } else {
-        setCars(transformedCars);
+        throw new Error('No cars returned from API');
       }
 
+      setCars(transformedCars);
       setLastUpdate(new Date());
+      console.log(`Successfully loaded ${transformedCars.length} cars from ${successfulUrl}`);
+      
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch cars';
       setError(errorMessage);
@@ -84,9 +102,14 @@ const CarsSection = () => {
         { id: '3', make: 'Audi', model: 'A4', year: 2023, price: 42000 },
         { id: '4', make: 'Volkswagen', model: 'Golf', year: 2022, price: 28000 },
         { id: '5', make: 'Porsche', model: 'Cayenne', year: 2021, price: 85000 },
-        { id: '6', make: 'Tesla', model: 'Model S', year: 2023, price: 95000 }
+        { id: '6', make: 'Tesla', model: 'Model S', year: 2023, price: 95000 },
+        { id: '7', make: 'Ford', model: 'Mustang', year: 2022, price: 55000 },
+        { id: '8', make: 'Chevrolet', model: 'Camaro', year: 2021, price: 48000 },
+        { id: '9', make: 'Jaguar', model: 'F-Type', year: 2022, price: 78000 }
       ];
       setCars(fallbackCars);
+      setLastUpdate(new Date());
+      console.log('Using fallback car data');
     } finally {
       setLoading(false);
     }
@@ -99,17 +122,23 @@ const CarsSection = () => {
         minutes: '60'
       });
 
-      const response = await fetch(`${API_BASE_URL}/api/archived-lots?${params}`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        const archivedIds = data.archivedLots?.map((lot: any) => lot.id) || [];
-        
-        // Remove archived cars from current list
-        setCars(prevCars => prevCars.filter(car => !archivedIds.includes(car.id)));
+      // Try each possible API URL for archived lots
+      for (const baseUrl of POSSIBLE_API_URLS) {
+        try {
+          const data = await tryApiEndpoint(baseUrl, '/api/archived-lots', params);
+          const archivedIds = data.archivedLots?.map((lot: any) => lot.id) || [];
+          
+          // Remove archived cars from current list
+          setCars(prevCars => prevCars.filter(car => !archivedIds.includes(car.id)));
+          console.log(`Successfully fetched archived lots from ${baseUrl}`);
+          break;
+        } catch (err) {
+          console.log(`Failed to fetch archived lots from ${baseUrl}:`, err);
+          continue;
+        }
       }
     } catch (err) {
-      console.error('Failed to fetch archived lots:', err);
+      console.error('Failed to fetch archived lots from all endpoints:', err);
     }
   };
 
@@ -161,10 +190,10 @@ const CarsSection = () => {
         </div>
 
         {error && (
-          <div className="flex items-center justify-center gap-2 mb-8 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <AlertCircle className="h-5 w-5 text-red-500" />
-            <span className="text-red-700">
-              API Error: {error}. Showing demo data instead.
+          <div className="flex items-center justify-center gap-2 mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <AlertCircle className="h-5 w-5 text-yellow-600" />
+            <span className="text-yellow-800">
+              API Connection Issue: {error}. Displaying demo cars with full inspection service available.
             </span>
           </div>
         )}
