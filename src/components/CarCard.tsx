@@ -85,6 +85,9 @@ const CarCard = ({
           <span className="text-2xl font-bold text-primary">
             €{price.toLocaleString()}
           </span>
+          <span className="text-xs text-muted-foreground">
+            Deri ne portin e Durresit
+          </span>
         </div>
 
         <InspectionRequestForm
