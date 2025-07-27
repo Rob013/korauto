@@ -354,6 +354,175 @@ const CarDetails = () => {
               </CardContent>
             </Card>
 
+            {/* Enhanced Information Tabs */}
+            <Card className="shadow-lg border-0">
+              <CardContent className="p-6 md:p-10">
+                <Tabs defaultValue="overview" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-20 lg:h-16 bg-muted/30 p-2 rounded-xl gap-2">
+                    <TabsTrigger 
+                      value="overview" 
+                      className="rounded-lg text-sm md:text-base font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-3 py-3 text-center leading-tight min-h-[3.5rem] flex items-center justify-center"
+                    >
+                      <span className="whitespace-nowrap">Përshkrimi</span>
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="maintenance" 
+                      className="rounded-lg text-sm md:text-base font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-3 py-3 text-center leading-tight min-h-[3.5rem] flex items-center justify-center"
+                    >
+                      <span className="whitespace-nowrap">Mirëmbajtja</span>
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="inspection" 
+                      className="rounded-lg text-sm md:text-base font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-3 py-3 text-center leading-tight min-h-[3.5rem] flex items-center justify-center"
+                    >
+                      <span className="whitespace-nowrap">Inspektimi</span>
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="similar" 
+                      className="rounded-lg text-sm md:text-base font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-3 py-3 text-center leading-tight min-h-[3.5rem] flex items-center justify-center"
+                    >
+                      <span className="whitespace-nowrap">Të Ngjashme</span>
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="overview" className="mt-8">
+                    <div className="space-y-6">
+                      <h4 className="font-semibold text-lg text-foreground">Karakteristikat Kryesore</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {['Kondicioneri automatik', 'Navigacioni GPS', 'Kamera e parkimit', 'Sensorët e parkimit', 'Bluetooth', 'USB/AUX', 'Kontrolli i kryqëzimit', 'Sistemi anti-bllokimi (ABS)', 'Airbag-ët', 'Sistemi i stabilitetit', 'Kontrolli elektronik i stabilitetit', 'Kontrolli i traksionit'].map((option, index) => (
+                          <div key={index} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                            <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                            <span className="text-sm text-foreground">{option}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="maintenance" className="mt-8">
+                    <div className="space-y-6">
+                      <h4 className="font-semibold text-lg text-foreground">Historia e Mirëmbajtjes</h4>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/20">
+                          <div className="flex items-center gap-3">
+                            <Clock className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                            <span className="text-sm text-foreground">Ndërrimi i vajit dhe filtrit</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">28.02.2024</span>
+                        </div>
+                        <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/20">
+                          <div className="flex items-center gap-3">
+                            <Clock className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                            <span className="text-sm text-foreground">Kontrolli i frënave</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">15.01.2024</span>
+                        </div>
+                        <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/20">
+                          <div className="flex items-center gap-3">
+                            <Clock className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                            <span className="text-sm text-foreground">Ndërrimi i gomave dimërore</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">10.11.2023</span>
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                          <span className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Mirëmbajtja e Rregullt</span>
+                        </div>
+                        <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-2">
+                          Të gjitha shërbimet e mirëmbajtjes janë kryer sipas programit të rekomanduar nga prodhuesi.
+                        </p>
+                      </div>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="inspection" className="mt-8">
+                    <div className="space-y-6">
+                      <h4 className="font-semibold text-lg text-foreground">Raporti i Inspektimit KORAUTO</h4>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="text-center p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+                          <Star className="h-8 w-8 text-emerald-600 dark:text-emerald-400 mx-auto mb-2" />
+                          <div className="font-semibold text-emerald-600 dark:text-emerald-400">9.2/10</div>
+                          <div className="text-xs text-emerald-700 dark:text-emerald-300">Vlerësimi i Përgjithshëm</div>
+                        </div>
+                        <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+                          <CheckCircle className="h-8 w-8 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
+                          <div className="font-semibold text-blue-600 dark:text-blue-400">Excellent</div>
+                          <div className="text-xs text-blue-700 dark:text-blue-300">Gjendja e Motorit</div>
+                        </div>
+                        <div className="text-center p-4 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-lg">
+                          <Shield className="h-8 w-8 text-purple-600 dark:text-purple-400 mx-auto mb-2" />
+                          <div className="font-semibold text-purple-600 dark:text-purple-400">Verified</div>
+                          <div className="text-xs text-purple-700 dark:text-purple-300">Dokumentacioni</div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <h5 className="font-medium text-foreground">Kontrollet e Kryera:</h5>
+                        {['Kontrolli i motorit dhe transmisionit', 'Sistemi i frënimit dhe pezullimit', 'Sistemet elektrike dhe elektronike', 'Karoseria dhe ngjyra', 'Interiori dhe pajisjet', 'Dokumentacioni dhe historia'].map((check, index) => (
+                          <div key={index} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                            <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                            <span className="text-sm text-foreground">{check}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="similar" className="mt-8">
+                    <div className="space-y-6">
+                      <h4 className="font-semibold text-lg text-foreground">Makina të Ngjashme</h4>
+                      <div className="text-sm text-muted-foreground">
+                        Zbuloni makina të tjera të ngjashme në inventarin tonë:
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {[{
+                          year: '2022',
+                          make: 'BMW',
+                          model: '320i',
+                          price: '€34,500'
+                        }, {
+                          year: '2020',
+                          make: 'BMW',
+                          model: '330i',
+                          price: '€29,800'
+                        }, {
+                          year: '2021',
+                          make: 'Audi',
+                          model: 'A4',
+                          price: '€31,200'
+                        }, {
+                          year: '2021',
+                          make: 'Mercedes',
+                          model: 'C200',
+                          price: '€33,900'
+                        }].map((similarCar, index) => (
+                          <div key={index} className="p-4 border border-border rounded-lg cursor-pointer hover:bg-muted/30 transition-colors bg-card">
+                            <div className="font-medium text-foreground">{similarCar.year} {similarCar.make} {similarCar.model}</div>
+                            <div className="text-primary font-semibold">{similarCar.price}</div>
+                            <div className="text-xs text-muted-foreground">Klic për më shumë detaje</div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <Button 
+                        variant="outline" 
+                        className="w-full mt-6 h-12 text-base font-medium border-2 hover:bg-primary hover:text-primary-foreground transition-colors" 
+                        onClick={() => navigate('/catalog')}
+                      >
+                        <ChevronRight className="h-5 w-5 mr-2" />
+                        Shiko të Gjitha Makinat e Ngjashme
+                      </Button>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+
             {/* Enhanced Damage Report */}
             {(car.damage?.main || car.damage?.second) && <Card className="shadow-lg border-0">
                 <CardContent className="p-8">
@@ -543,174 +712,6 @@ const CarDetails = () => {
             </Card>
 
 
-            {/* Enhanced Information Tabs */}
-            <Card className="shadow-lg border-0">
-              <CardContent className="p-6 md:p-8">
-                <Tabs defaultValue="overview" className="w-full">
-                  <TabsList className="grid w-full grid-cols-4 h-16 bg-muted/30 p-1 rounded-xl gap-1">
-                    <TabsTrigger 
-                      value="overview" 
-                      className="rounded-lg text-[10px] sm:text-xs md:text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-1 py-2 text-center leading-tight min-h-[3rem] flex items-center justify-center"
-                    >
-                      <span className="whitespace-nowrap">Përshkrimi</span>
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="maintenance" 
-                      className="rounded-lg text-[10px] sm:text-xs md:text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-1 py-2 text-center leading-tight min-h-[3rem] flex items-center justify-center"
-                    >
-                      <span className="whitespace-nowrap">Mirëmbajtja</span>
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="inspection" 
-                      className="rounded-lg text-[10px] sm:text-xs md:text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-1 py-2 text-center leading-tight min-h-[3rem] flex items-center justify-center"
-                    >
-                      <span className="whitespace-nowrap">Inspektimi</span>
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="similar" 
-                      className="rounded-lg text-[10px] sm:text-xs md:text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-1 py-2 text-center leading-tight min-h-[3rem] flex items-center justify-center"
-                    >
-                      <span className="whitespace-nowrap">Të Ngjashme</span>
-                    </TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="overview" className="mt-6">
-                    <div className="space-y-6">
-                      <h4 className="font-semibold text-lg text-foreground">Karakteristikat Kryesore</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {['Kondicioneri automatik', 'Navigacioni GPS', 'Kamera e parkimit', 'Sensorët e parkimit', 'Bluetooth', 'USB/AUX', 'Kontrolli i kryqëzimit', 'Sistemi anti-bllokimi (ABS)', 'Airbag-ët', 'Sistemi i stabilitetit', 'Kontrolli elektronik i stabilitetit', 'Kontrolli i traksionit'].map((option, index) => (
-                          <div key={index} className="flex items-center gap-3 p-2 bg-muted/30 rounded-lg">
-                            <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                            <span className="text-sm text-foreground">{option}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="maintenance" className="mt-6">
-                    <div className="space-y-6">
-                      <h4 className="font-semibold text-lg text-foreground">Historia e Mirëmbajtjes</h4>
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/20">
-                          <div className="flex items-center gap-3">
-                            <Clock className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                            <span className="text-sm text-foreground">Ndërrimi i vajit dhe filtrit</span>
-                          </div>
-                          <span className="text-xs text-muted-foreground">28.02.2024</span>
-                        </div>
-                        <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/20">
-                          <div className="flex items-center gap-3">
-                            <Clock className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                            <span className="text-sm text-foreground">Kontrolli i frënave</span>
-                          </div>
-                          <span className="text-xs text-muted-foreground">15.01.2024</span>
-                        </div>
-                        <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/20">
-                          <div className="flex items-center gap-3">
-                            <Clock className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                            <span className="text-sm text-foreground">Ndërrimi i gomave dimërore</span>
-                          </div>
-                          <span className="text-xs text-muted-foreground">10.11.2023</span>
-                        </div>
-                      </div>
-                      
-                      <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-                          <span className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Mirëmbajtja e Rregullt</span>
-                        </div>
-                        <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-2">
-                          Të gjitha shërbimet e mirëmbajtjes janë kryer sipas programit të rekomanduar nga prodhuesi.
-                        </p>
-                      </div>
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="inspection" className="mt-6">
-                    <div className="space-y-6">
-                      <h4 className="font-semibold text-lg text-foreground">Raporti i Inspektimit KORAUTO</h4>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="text-center p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg">
-                          <Star className="h-8 w-8 text-emerald-600 dark:text-emerald-400 mx-auto mb-2" />
-                          <div className="font-semibold text-emerald-600 dark:text-emerald-400">9.2/10</div>
-                          <div className="text-xs text-emerald-700 dark:text-emerald-300">Vlerësimi i Përgjithshëm</div>
-                        </div>
-                        <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
-                          <CheckCircle className="h-8 w-8 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
-                          <div className="font-semibold text-blue-600 dark:text-blue-400">Excellent</div>
-                          <div className="text-xs text-blue-700 dark:text-blue-300">Gjendja e Motorit</div>
-                        </div>
-                        <div className="text-center p-4 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-lg">
-                          <Shield className="h-8 w-8 text-purple-600 dark:text-purple-400 mx-auto mb-2" />
-                          <div className="font-semibold text-purple-600 dark:text-purple-400">Verified</div>
-                          <div className="text-xs text-purple-700 dark:text-purple-300">Dokumentacioni</div>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <h5 className="font-medium text-foreground">Kontrollet e Kryera:</h5>
-                        {['Kontrolli i motorit dhe transmisionit', 'Sistemi i frënimit dhe pezullimit', 'Sistemet elektrike dhe elektronike', 'Karoseria dhe ngjyra', 'Interiori dhe pajisjet', 'Dokumentacioni dhe historia'].map((check, index) => (
-                          <div key={index} className="flex items-center gap-3 p-2 bg-muted/30 rounded-lg">
-                            <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                            <span className="text-sm text-foreground">{check}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="similar" className="mt-6">
-                    <div className="space-y-6">
-                      <h4 className="font-semibold text-lg text-foreground">Makina të Ngjashme</h4>
-                      <div className="text-sm text-muted-foreground">
-                        Zbuloni makina të tjera të ngjashme në inventarin tonë:
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {[{
-                          year: '2022',
-                          make: 'BMW',
-                          model: '320i',
-                          price: '€34,500'
-                        }, {
-                          year: '2020',
-                          make: 'BMW',
-                          model: '330i',
-                          price: '€29,800'
-                        }, {
-                          year: '2021',
-                          make: 'Audi',
-                          model: 'A4',
-                          price: '€31,200'
-                        }, {
-                          year: '2021',
-                          make: 'Mercedes',
-                          model: 'C200',
-                          price: '€33,900'
-                        }].map((similarCar, index) => (
-                          <div key={index} className="p-4 border border-border rounded-lg cursor-pointer hover:bg-muted/30 transition-colors bg-card">
-                            <div className="font-medium text-foreground">{similarCar.year} {similarCar.make} {similarCar.model}</div>
-                            <div className="text-primary font-semibold">{similarCar.price}</div>
-                            <div className="text-xs text-muted-foreground">Klic për më shumë detaje</div>
-                          </div>
-                        ))}
-                      </div>
-                      
-                      <Button 
-                        variant="outline" 
-                        className="w-full mt-6 h-12 text-base font-medium border-2 hover:bg-primary hover:text-primary-foreground transition-colors" 
-                        onClick={() => navigate('/catalog')}
-                      >
-                        <ChevronRight className="h-5 w-5 mr-2" />
-                        Shiko të Gjitha Makinat e Ngjashme
-                      </Button>
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
