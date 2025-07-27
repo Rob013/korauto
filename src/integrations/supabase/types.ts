@@ -106,8 +106,6 @@ export type Database = {
           customer_name: string
           customer_phone: string
           id: string
-          inspection_fee: number | null
-          payment_status: string | null
           updated_at: string
         }
         Insert: {
@@ -120,8 +118,6 @@ export type Database = {
           customer_name: string
           customer_phone: string
           id?: string
-          inspection_fee?: number | null
-          payment_status?: string | null
           updated_at?: string
         }
         Update: {
@@ -134,8 +130,6 @@ export type Database = {
           customer_name?: string
           customer_phone?: string
           id?: string
-          inspection_fee?: number | null
-          payment_status?: string | null
           updated_at?: string
         }
         Relationships: [

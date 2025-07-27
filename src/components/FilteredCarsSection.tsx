@@ -296,27 +296,27 @@ const FilteredCarsSection = () => {
   const uniqueBodyTypes = ['Sedan', 'SUV', 'Hatchback', 'Coupe', 'Convertible', 'Wagon', 'Pickup'];
 
   return (
-    <section id="cars" className="py-16 bg-secondary/30">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4 text-foreground">Makinat e Disponueshme</h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Shfletoni përzgjedhjen tonë të mjeteve të cilësisë së lartë. Çdo makinë mund të inspektohet profesionalisht vetëm për €50.
+    <section id="cars" className="py-8 sm:py-12 lg:py-16 bg-secondary/30">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground">Makinat e Disponueshme</h2>
+          <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
+            Shfletoni përzgjedhjen tonë të mjeteve të cilësisë së lartë. Çdo makinë mund të inspektohet profesionalisht falas.
           </p>
           
-          <div className="flex justify-center items-center gap-4 mt-6">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 mt-4 sm:mt-6">
             <Button 
               variant="outline" 
               size="sm" 
               onClick={handleRefresh}
               disabled={loading}
-              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              className="w-full sm:w-auto border-primary text-primary hover:bg-primary hover:text-primary-foreground min-h-[44px]"
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               {loading ? 'Duke u ngarkuar...' : 'Rifresko'}
             </Button>
             {lastUpdate && (
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-muted-foreground text-center">
                 Përditësuar për herë të fundit: {lastUpdate.toLocaleTimeString()}
               </span>
             )}
@@ -324,30 +324,30 @@ const FilteredCarsSection = () => {
         </div>
 
         {error && (
-          <div className="flex items-center justify-center gap-2 mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <AlertCircle className="h-5 w-5 text-yellow-600" />
-            <span className="text-yellow-800">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-center gap-2 mb-6 sm:mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg mx-4 sm:mx-0">
+            <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5 sm:mt-0" />
+            <span className="text-yellow-800 text-sm sm:text-base text-left sm:text-center">
               Problem me lidhjen API: {error}. Duke shfaqur makina demo me shërbim të plotë inspektimi të disponueshëm.
             </span>
           </div>
         )}
 
         {/* Filters and Sorting */}
-        <div className="mb-8 p-6 bg-card rounded-lg border border-border">
-          <div className="flex items-center gap-2 mb-4">
-            <Filter className="h-5 w-5" />
-            <h3 className="text-lg font-semibold">Kërko & Filtro Makinat</h3>
+        <div className="mb-6 sm:mb-8 p-4 sm:p-6 bg-card rounded-lg border border-border mx-2 sm:mx-0">
+          <div className="flex items-center gap-2 mb-3 sm:mb-4">
+            <Filter className="h-4 w-4 sm:h-5 sm:w-5" />
+            <h3 className="text-base sm:text-lg font-semibold">Kërko & Filtro Makinat</h3>
           </div>
           
           {/* Main Filters - Always Visible */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-3 sm:mb-4">
             <div>
               <label className="text-sm font-medium mb-2 block">Marka</label>
               <Select value={filterMake} onValueChange={setFilterMake}>
-                <SelectTrigger>
+                <SelectTrigger className="h-11">
                   <SelectValue placeholder="Të gjitha Markat" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-50 max-h-60">
                   <SelectItem value="all">Të gjitha Markat</SelectItem>
                   {uniqueMakes.map(make => (
                     <SelectItem key={make} value={make}>{make}</SelectItem>
@@ -359,10 +359,10 @@ const FilteredCarsSection = () => {
             <div>
               <label className="text-sm font-medium mb-2 block">Modeli</label>
               <Select value={filterModel} onValueChange={setFilterModel}>
-                <SelectTrigger>
+                <SelectTrigger className="h-11">
                   <SelectValue placeholder="Të gjithë Modelet" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-50 max-h-60">
                   <SelectItem value="all">Të gjithë Modelet</SelectItem>
                   {uniqueModels.map(model => (
                     <SelectItem key={model} value={model}>{model}</SelectItem>
@@ -374,10 +374,10 @@ const FilteredCarsSection = () => {
             <div>
               <label className="text-sm font-medium mb-2 block">Viti</label>
               <Select value={filterYear} onValueChange={setFilterYear}>
-                <SelectTrigger>
+                <SelectTrigger className="h-11">
                   <SelectValue placeholder="Të gjithë Vitet" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-50 max-h-60">
                   <SelectItem value="all">Të gjithë Vitet</SelectItem>
                   {uniqueYears.map(year => (
                     <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
@@ -391,6 +391,7 @@ const FilteredCarsSection = () => {
               <Input 
                 type="number" 
                 placeholder="200000"
+                className="h-11"
                 value={priceRange[1] === 200000 ? '' : priceRange[1].toString()}
                 onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value) || 200000])}
               />
@@ -535,7 +536,7 @@ const FilteredCarsSection = () => {
 
         {/* Car Cards */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="bg-card rounded-lg p-4 animate-pulse">
                 <div className="h-48 bg-muted rounded mb-4"></div>
@@ -545,28 +546,28 @@ const FilteredCarsSection = () => {
             ))}
           </div>
         ) : displayedCars.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-lg text-muted-foreground mb-4">
+          <div className="text-center py-8 sm:py-12 px-4">
+            <p className="text-base sm:text-lg text-muted-foreground mb-4">
               Nuk u gjetën makina me këto filtra.
             </p>
-            <Button onClick={clearFilters} variant="outline">
+            <Button onClick={clearFilters} variant="outline" className="min-h-[44px]">
               Pastro Filtrat
             </Button>
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0">
               {displayedCars.map((car) => (
                 <CarCard key={car.id} {...car} />
               ))}
             </div>
             
             {filteredCars.length > 6 && !showMoreCars && (
-              <div className="text-center">
+              <div className="text-center px-4">
                 <Button 
                   onClick={() => setShowMoreCars(true)}
                   size="lg"
-                  className="bg-primary hover:bg-primary/90"
+                  className="w-full sm:w-auto bg-primary hover:bg-primary/90 min-h-[48px] text-base"
                 >
                   Shfaq Më Shumë Makina ({filteredCars.length - 6} të tjera)
                 </Button>

@@ -84,7 +84,18 @@ const AuthPage = () => {
         description: "Successfully logged in.",
       });
       
-      navigate('/');
+      // Check if user is admin and redirect accordingly
+      try {
+        const { data: adminCheck } = await supabase.rpc('is_admin');
+        if (adminCheck) {
+          navigate('/admin');
+        } else {
+          navigate('/');
+        }
+      } catch (error) {
+        // If role check fails, just go to homepage
+        navigate('/');
+      }
     } catch (error: any) {
       toast({
         title: "Login Failed",
