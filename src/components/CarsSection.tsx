@@ -39,8 +39,8 @@ const CarsSection = () => {
   const [mileageRange, setMileageRange] = useState<[number, number]>([0, 300000]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 200000]);
 
-  // Correct API endpoint 
-  const API_BASE_URL = 'https://api.auctionsapi.com/api';
+  // Correct API endpoint from network logs
+  const API_BASE_URL = 'https://auctionsapi.com/api';
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
 
   // Cache to prevent excessive API calls
@@ -64,7 +64,7 @@ const CarsSection = () => {
         headers: {
           'Accept': 'application/json',
           'User-Agent': 'KORAUTO-WebApp/1.0',
-          'Authorization': `Bearer ${API_KEY}`
+          'X-API-Key': API_KEY
         }
       });
 
@@ -109,6 +109,7 @@ const CarsSection = () => {
       await delay(1000);
 
       const params = new URLSearchParams({
+        api_key: API_KEY,
         limit: '50' // Demo mode limit
       });
 
