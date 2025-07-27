@@ -184,6 +184,22 @@ export const useDatabaseAPI = (): UseDatabaseAPIReturn => {
     }
   };
 
+  const getSyncStatus = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('sync_status')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      console.error('Error getting sync status:', err);
+      return [];
+    }
+  };
+
   return {
     cars,
     loading,

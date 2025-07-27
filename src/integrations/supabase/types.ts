@@ -319,44 +319,128 @@ export type Database = {
       cars: {
         Row: {
           api_data: Json | null
+          body_type: string | null
+          buy_now_price: number | null
+          color: string | null
+          condition: string | null
           converted_at: string | null
           created_at: string
+          current_bid: number | null
+          damage_main: string | null
+          damage_second: string | null
+          drive_wheel: string | null
+          end_time: string | null
+          exterior_images: string[] | null
+          final_bid: number | null
+          fuel: string | null
           id: string
           image: string | null
+          images: string[] | null
+          interior_images: string[] | null
+          is_live: boolean | null
+          keys_available: boolean | null
+          location: string | null
+          lot_number: string | null
           make: string
+          mileage: number | null
           model: string
           original_price_usd: number | null
           price: number
+          sale_date: string | null
+          seller: string | null
+          seller_type: string | null
           status: string
+          title: string | null
+          transmission: string | null
           updated_at: string
+          vehicle_type: string | null
+          video_urls: string[] | null
+          vin: string | null
+          watchers: number | null
           year: number
         }
         Insert: {
           api_data?: Json | null
+          body_type?: string | null
+          buy_now_price?: number | null
+          color?: string | null
+          condition?: string | null
           converted_at?: string | null
           created_at?: string
+          current_bid?: number | null
+          damage_main?: string | null
+          damage_second?: string | null
+          drive_wheel?: string | null
+          end_time?: string | null
+          exterior_images?: string[] | null
+          final_bid?: number | null
+          fuel?: string | null
           id: string
           image?: string | null
+          images?: string[] | null
+          interior_images?: string[] | null
+          is_live?: boolean | null
+          keys_available?: boolean | null
+          location?: string | null
+          lot_number?: string | null
           make: string
+          mileage?: number | null
           model: string
           original_price_usd?: number | null
           price: number
+          sale_date?: string | null
+          seller?: string | null
+          seller_type?: string | null
           status?: string
+          title?: string | null
+          transmission?: string | null
           updated_at?: string
+          vehicle_type?: string | null
+          video_urls?: string[] | null
+          vin?: string | null
+          watchers?: number | null
           year: number
         }
         Update: {
           api_data?: Json | null
+          body_type?: string | null
+          buy_now_price?: number | null
+          color?: string | null
+          condition?: string | null
           converted_at?: string | null
           created_at?: string
+          current_bid?: number | null
+          damage_main?: string | null
+          damage_second?: string | null
+          drive_wheel?: string | null
+          end_time?: string | null
+          exterior_images?: string[] | null
+          final_bid?: number | null
+          fuel?: string | null
           id?: string
           image?: string | null
+          images?: string[] | null
+          interior_images?: string[] | null
+          is_live?: boolean | null
+          keys_available?: boolean | null
+          location?: string | null
+          lot_number?: string | null
           make?: string
+          mileage?: number | null
           model?: string
           original_price_usd?: number | null
           price?: number
+          sale_date?: string | null
+          seller?: string | null
+          seller_type?: string | null
           status?: string
+          title?: string | null
+          transmission?: string | null
           updated_at?: string
+          vehicle_type?: string | null
+          video_urls?: string[] | null
+          vin?: string | null
+          watchers?: number | null
           year?: number
         }
         Relationships: []
@@ -498,6 +582,39 @@ export type Database = {
           email?: string | null
           id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      sync_status: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          records_synced: number | null
+          status: string
+          sync_type: string
+          total_records: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          records_synced?: number | null
+          status?: string
+          sync_type: string
+          total_records?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          records_synced?: number | null
+          status?: string
+          sync_type?: string
+          total_records?: number | null
         }
         Relationships: []
       }

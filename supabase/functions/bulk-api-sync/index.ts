@@ -88,7 +88,7 @@ async function syncManufacturers(supabase: any) {
 
   // Update sync status
   await supabase
-    .from('api_sync_status')
+    .from('sync_status')
     .insert({
       sync_type: 'manufacturers',
       status: 'completed',
@@ -141,6 +141,8 @@ async function syncAllCars(supabase: any) {
       model: car.model,
       year: car.year,
       price: car.price || car.current_bid || 0,
+      image: car.image_url || car.images?.[0],
+      status: 'active',
       mileage: car.mileage,
       vin: car.vin,
       title: car.title,
@@ -164,7 +166,6 @@ async function syncAllCars(supabase: any) {
       watchers: car.watchers || 0,
       sale_date: car.sale_date,
       end_time: car.end_time,
-      image_url: car.image_url || car.images?.[0],
       images: car.images || [],
       exterior_images: car.exterior_images || [],
       interior_images: car.interior_images || [],
@@ -174,7 +175,7 @@ async function syncAllCars(supabase: any) {
     }))
 
     const { error } = await supabase
-      .from('api_cars')
+      .from('cars')
       .upsert(carData, { onConflict: 'id' })
 
     if (error) {
@@ -194,7 +195,7 @@ async function syncAllCars(supabase: any) {
 
   // Update sync status
   await supabase
-    .from('api_sync_status')
+    .from('sync_status')
     .insert({
       sync_type: 'full_cars',
       status: 'completed',
@@ -244,6 +245,8 @@ async function syncRecentCars(supabase: any) {
     model: car.model,
     year: car.year,
     price: car.price || car.current_bid || 0,
+    image: car.image_url || car.images?.[0],
+    status: 'active',
     mileage: car.mileage,
     vin: car.vin,
     title: car.title,
@@ -267,18 +270,16 @@ async function syncRecentCars(supabase: any) {
     watchers: car.watchers || 0,
     sale_date: car.sale_date,
     end_time: car.end_time,
-    image_url: car.image_url || car.images?.[0],
     images: car.images || [],
     exterior_images: car.exterior_images || [],
     interior_images: car.interior_images || [],
     video_urls: car.video_urls || [],
     keys_available: car.keys_available,
-    api_data: car,
-    updated_at: new Date().toISOString()
+    api_data: car
   }))
 
   const { error } = await supabase
-    .from('api_cars')
+    .from('cars')
     .upsert(carData, { onConflict: 'id' })
 
   if (error) {
@@ -288,7 +289,7 @@ async function syncRecentCars(supabase: any) {
 
   // Update sync status
   await supabase
-    .from('api_sync_status')
+    .from('sync_status')
     .insert({
       sync_type: 'recent_cars',
       status: 'completed',
