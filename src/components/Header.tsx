@@ -12,7 +12,7 @@ const Header = () => {
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 flex-shrink-0">
             <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center overflow-hidden">
               <img 
                 src="/lovable-uploads/3094fd63-7a92-4497-8103-e166b6b09f70.png" 
@@ -20,9 +20,9 @@ const Header = () => {
                 className="w-full h-full object-contain"
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <h1 className="text-2xl font-bold text-primary">KORAUTO</h1>
-              <p className="text-sm text-muted-foreground">Ekspertë të Inspektimit të Makinave</p>
+              <p className="text-sm text-muted-foreground whitespace-nowrap">Ekspertë të Inspektimit të Makinave</p>
             </div>
           </div>
           
