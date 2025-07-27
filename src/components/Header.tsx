@@ -77,6 +77,9 @@ const Header = () => {
             <Link to="/admin" className="text-foreground hover:text-primary font-medium transition-colors">
               Admin
             </Link>
+            <Link to="/auth" className="text-foreground hover:text-primary font-medium transition-colors">
+              Account
+            </Link>
           </nav>
 
           {/* CTA Buttons */}

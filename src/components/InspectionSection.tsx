@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Shield, FileText, Camera, Clock } from "lucide-react";
+import InspectionRequestForm from "./InspectionRequestForm";
 
 const InspectionSection = () => {
   const inspectionSteps = [
@@ -92,13 +93,16 @@ const InspectionSection = () => {
                   </div>
                 </div>
                 
-                <Button 
-                  className="w-full bg-inspection hover:bg-inspection/90 text-inspection-foreground mt-6" 
-                  size="lg"
-                  onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-                >
-                  Na Kontaktoni për Inspektim
-                </Button>
+                <InspectionRequestForm
+                  trigger={
+                    <Button 
+                      className="w-full bg-inspection hover:bg-inspection/90 text-inspection-foreground mt-6" 
+                      size="lg"
+                    >
+                      Kërkesë për Inspektim (€50)
+                    </Button>
+                  }
+                />
               </CardContent>
             </Card>
 
