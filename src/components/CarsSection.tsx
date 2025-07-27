@@ -18,22 +18,49 @@ const CarsSection = () => {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
-  // Try multiple possible API base URLs
-  const POSSIBLE_API_URLS = [
-    'https://api.auctionsapi.com',
-    'https://auctionsapi.com',
-    'https://auctionsapi.com/api',
-    'https://carapis.com/api/encar'
-  ];
+  // Correct API endpoint based on 429 response analysis
+  const API_BASE_URL = 'https://auctionsapi.com/api';
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
 
-  const tryApiEndpoint = async (baseUrl: string, endpoint: string, params: URLSearchParams): Promise<any> => {
-    console.log(`Trying API endpoint: ${baseUrl}${endpoint}?${params}`);
-    const response = await fetch(`${baseUrl}${endpoint}?${params}`);
-    if (!response.ok) {
-      throw new Error(`${baseUrl} returned ${response.status}`);
+  // Add delay between requests to respect rate limits
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  const tryApiEndpoint = async (endpoint: string, params: URLSearchParams, retryCount = 0): Promise<any> => {
+    console.log(`API Request: ${API_BASE_URL}${endpoint}?${params}`);
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}?${params}`, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'KORAUTO-WebApp/1.0',
+          'X-API-Key': API_KEY
+        }
+      });
+
+      if (response.status === 429) {
+        // Rate limited - implement exponential backoff
+        const waitTime = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s, 8s...
+        console.log(`Rate limited. Waiting ${waitTime}ms before retry ${retryCount + 1}`);
+        
+        if (retryCount < 3) {
+          await delay(waitTime);
+          return tryApiEndpoint(endpoint, params, retryCount + 1);
+        } else {
+          throw new Error('Rate limit exceeded after retries');
+        }
+      }
+
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log(`API Success: ${data?.cars?.length || 0} cars received`);
+      return data;
+    } catch (err) {
+      console.error(`API Request failed:`, err);
+      throw err;
     }
-    return response.json();
   };
 
   const fetchCars = async (minutes?: number) => {
@@ -41,6 +68,9 @@ const CarsSection = () => {
     setError(null);
 
     try {
+      // Add delay to respect rate limits
+      await delay(500);
+
       const params = new URLSearchParams({
         api_key: API_KEY,
         limit: '50' // Demo mode limit
@@ -50,25 +80,11 @@ const CarsSection = () => {
         params.append('minutes', minutes.toString());
       }
 
-      let data = null;
-      let successfulUrl = '';
-
-      // Try each possible API URL
-      for (const baseUrl of POSSIBLE_API_URLS) {
-        try {
-          console.log(`Attempting to fetch from: ${baseUrl}`);
-          data = await tryApiEndpoint(baseUrl, '/api/cars', params);
-          successfulUrl = baseUrl;
-          console.log(`Success with URL: ${baseUrl}`);
-          break;
-        } catch (err) {
-          console.log(`Failed with ${baseUrl}:`, err);
-          continue;
-        }
-      }
+      console.log('Fetching cars from API...');
+      const data = await tryApiEndpoint('/cars', params);
 
       if (!data) {
-        throw new Error('All API endpoints failed. Using fallback data.');
+        throw new Error('No data received from API');
       }
       
       // Transform API data to our Car interface
@@ -88,7 +104,7 @@ const CarsSection = () => {
 
       setCars(transformedCars);
       setLastUpdate(new Date());
-      console.log(`Successfully loaded ${transformedCars.length} cars from ${successfulUrl}`);
+      console.log(`Successfully loaded ${transformedCars.length} cars from API`);
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch cars';
@@ -117,28 +133,24 @@ const CarsSection = () => {
 
   const fetchArchivedLots = async () => {
     try {
+      // Add delay to respect rate limits
+      await delay(300);
+
       const params = new URLSearchParams({
         api_key: API_KEY,
         minutes: '60'
       });
 
-      // Try each possible API URL for archived lots
-      for (const baseUrl of POSSIBLE_API_URLS) {
-        try {
-          const data = await tryApiEndpoint(baseUrl, '/api/archived-lots', params);
-          const archivedIds = data.archivedLots?.map((lot: any) => lot.id) || [];
-          
-          // Remove archived cars from current list
-          setCars(prevCars => prevCars.filter(car => !archivedIds.includes(car.id)));
-          console.log(`Successfully fetched archived lots from ${baseUrl}`);
-          break;
-        } catch (err) {
-          console.log(`Failed to fetch archived lots from ${baseUrl}:`, err);
-          continue;
-        }
-      }
+      console.log('Fetching archived lots...');
+      const data = await tryApiEndpoint('/archived-lots', params);
+      const archivedIds = data.archivedLots?.map((lot: any) => lot.id) || [];
+      
+      // Remove archived cars from current list
+      setCars(prevCars => prevCars.filter(car => !archivedIds.includes(car.id)));
+      console.log(`Successfully removed ${archivedIds.length} archived cars`);
     } catch (err) {
-      console.error('Failed to fetch archived lots from all endpoints:', err);
+      console.error('Failed to fetch archived lots:', err);
+      // Don't show error to user for archived lots - not critical
     }
   };
 
@@ -147,11 +159,13 @@ const CarsSection = () => {
     fetchCars();
   }, []);
 
-  // Set up hourly updates
+  // Set up periodic updates with staggered timing to avoid rate limits
   useEffect(() => {
-    const interval = setInterval(() => {
-      fetchCars(60); // Fetch updates from last 60 minutes
-      fetchArchivedLots(); // Remove sold cars
+    const interval = setInterval(async () => {
+      console.log('Running periodic update...');
+      await fetchCars(60); // Fetch updates from last 60 minutes
+      await delay(2000); // Wait 2 seconds between calls
+      await fetchArchivedLots(); // Remove sold cars
     }, 60 * 60 * 1000); // Every hour
 
     return () => clearInterval(interval);
