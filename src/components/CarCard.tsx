@@ -199,23 +199,6 @@ const CarCard = ({
           </span>
         </div>
 
-        <InspectionRequestForm
-          carId={id}
-          carMake={make}
-          carModel={model}
-          carYear={year}
-          trigger={
-            <Button
-              onClick={(e) => e.stopPropagation()}
-              className="w-full"
-              size="sm"
-              aria-label={`Request inspection for ${year} ${make} ${model}`}
-            >
-              <Search className="h-3 w-3 mr-2" />
-              Request Inspection
-            </Button>
-          }
-        />
         
         <div className="mt-2 text-center">
           <p className="text-xs text-muted-foreground">
