@@ -281,8 +281,8 @@ const CarDetails = () => {
                 }} /> : <div className="w-full h-full flex items-center justify-center">
                       <Car className="h-24 w-24 text-muted-foreground" />
                     </div>}
-                  {car.lot && <Badge className="absolute top-6 right-6 bg-primary/90 backdrop-blur-sm text-primary-foreground px-3 py-2 text-sm font-medium shadow-lg">
-                      Lot #{car.lot}
+                  {car.lot && <Badge className="absolute top-6 right-6 bg-gradient-to-r from-primary to-accent text-white px-3 py-2 text-sm font-bold shadow-lg rounded-full">
+                      Kodi #{car.lot}
                     </Badge>}
                 </div>
               </CardContent>
