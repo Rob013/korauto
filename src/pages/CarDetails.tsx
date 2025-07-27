@@ -547,18 +547,30 @@ const CarDetails = () => {
             <Card className="shadow-lg border-0">
               <CardContent className="p-6 md:p-8">
                 <Tabs defaultValue="overview" className="w-full">
-                  <TabsList className="grid w-full grid-cols-4 h-14 bg-muted/30 p-1 rounded-xl">
-                    <TabsTrigger value="overview" className="rounded-lg text-xs sm:text-sm font-semibold data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-2 py-2">
-                      Përshkrimi
+                  <TabsList className="grid w-full grid-cols-4 h-16 bg-muted/30 p-1 rounded-xl gap-1">
+                    <TabsTrigger 
+                      value="overview" 
+                      className="rounded-lg text-[10px] sm:text-xs md:text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-1 py-2 text-center leading-tight min-h-[3rem] flex items-center justify-center"
+                    >
+                      <span className="whitespace-nowrap">Përshkrimi</span>
                     </TabsTrigger>
-                    <TabsTrigger value="maintenance" className="rounded-lg text-xs sm:text-sm font-semibold data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-2 py-2">
-                      Mirëmbajtja
+                    <TabsTrigger 
+                      value="maintenance" 
+                      className="rounded-lg text-[10px] sm:text-xs md:text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-1 py-2 text-center leading-tight min-h-[3rem] flex items-center justify-center"
+                    >
+                      <span className="whitespace-nowrap">Mirëmbajtja</span>
                     </TabsTrigger>
-                    <TabsTrigger value="inspection" className="rounded-lg text-xs sm:text-sm font-semibold data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-2 py-2">
-                      Inspektimi
+                    <TabsTrigger 
+                      value="inspection" 
+                      className="rounded-lg text-[10px] sm:text-xs md:text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-1 py-2 text-center leading-tight min-h-[3rem] flex items-center justify-center"
+                    >
+                      <span className="whitespace-nowrap">Inspektimi</span>
                     </TabsTrigger>
-                    <TabsTrigger value="similar" className="rounded-lg text-xs sm:text-sm font-semibold data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-2 py-2">
-                      Të Ngjashme
+                    <TabsTrigger 
+                      value="similar" 
+                      className="rounded-lg text-[10px] sm:text-xs md:text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-1 py-2 text-center leading-tight min-h-[3rem] flex items-center justify-center"
+                    >
+                      <span className="whitespace-nowrap">Të Ngjashme</span>
                     </TabsTrigger>
                   </TabsList>
                   
