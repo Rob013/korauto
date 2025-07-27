@@ -18,33 +18,32 @@ const InspectionRequestForm = ({ trigger }: InspectionRequestFormProps) => {
     firstName: "",
     lastName: "",
     email: "",
-    phone: ""
+    whatsappPhone: ""
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Create WhatsApp message
-    const message = `Kërkesë për Inspektim - KORAUTO\n\nEmri: ${formData.firstName}\nMbiemri: ${formData.lastName}\nEmail: ${formData.email}\nTelefon: ${formData.phone}\n\nTë përshëndet! Unë dëshiroj të kërkojë shërbimin e inspektimit të makinës nga KORAUTO. Ju lutem më kontaktoni për detaje të mëtejshme.`;
+    // Log form data to console (dummy endpoint)
+    console.log('Inspection Request Submitted:', formData);
     
-    const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
+    // Create WhatsApp message for owner notification
+    const ownerMessage = `🔔 Kërkesë e Re për Inspektim - KORAUTO\n\n👤 Emri: ${formData.firstName} ${formData.lastName}\n📧 Email: ${formData.email}\n📱 WhatsApp: ${formData.whatsappPhone}\n\n✅ Klient i ri kërkon shërbimin e inspektimit të makinës. Kontaktojeni sa më shpejt!`;
     
-    // Open WhatsApp
-    window.open(whatsappUrl, '_blank');
+    const ownerWhatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(ownerMessage)}`;
     
-    // Also send email notification (this would typically be done through a backend service)
-    const emailSubject = "Kërkesë e Re për Inspektim - KORAUTO";
-    const emailBody = `Kërkesë e re për inspektim të makinës:\n\nEmri: ${formData.firstName}\nMbiemri: ${formData.lastName}\nEmail: ${formData.email}\nTelefon: ${formData.phone}`;
+    // Open WhatsApp notification for owner
+    window.open(ownerWhatsappUrl, '_blank');
     
-    // For demo purposes, we'll just show a toast
+    // Show thank you message
     toast({
-      title: "Kërkesa u Dërgua",
-      description: "Kërkesa juaj për inspektim u dërgua me sukses! Do t'ju kontaktojmë së shpejti.",
+      title: "Faleminderit për Kërkesën!",
+      description: "Kërkesa juaj për inspektim u dërgua me sukses! Do t'ju kontaktojmë brenda 24 orëve.",
       duration: 5000,
     });
 
     // Reset form and close dialog
-    setFormData({ firstName: "", lastName: "", email: "", phone: "" });
+    setFormData({ firstName: "", lastName: "", email: "", whatsappPhone: "" });
     setIsOpen(false);
   };
 
@@ -103,14 +102,14 @@ const InspectionRequestForm = ({ trigger }: InspectionRequestFormProps) => {
               </div>
               
               <div>
-                <Label htmlFor="phone">Numri i Telefonit</Label>
+                <Label htmlFor="whatsappPhone">Numri i WhatsApp (format ndërkombëtar)</Label>
                 <Input
-                  id="phone"
+                  id="whatsappPhone"
                   type="tel"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                  value={formData.whatsappPhone}
+                  onChange={(e) => handleInputChange("whatsappPhone", e.target.value)}
                   required
-                  placeholder="+383 XX XXX XXX"
+                  placeholder="+38348181116"
                 />
               </div>
               

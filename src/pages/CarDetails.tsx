@@ -111,7 +111,7 @@ const CarDetails = () => {
               transmission: foundCar.transmission?.name || 'Automatic',
               fuel: foundCar.fuel?.name || 'Gasoline',
               color: foundCar.color?.name || 'Silver',
-              condition: lot?.condition?.name || 'Good',
+              condition: lot?.condition?.name?.replace('run_and_drives', 'Good Condition') || 'Good',
               lot: lot?.lot,
               title: foundCar.title,
               odometer: lot?.odometer,
@@ -482,6 +482,7 @@ const CarDetails = () => {
                       <Button 
                         className="w-full bg-primary hover:bg-primary/90 text-xs py-1.5 h-8"
                         size="sm"
+                        aria-label={`Kërkoni inspektim profesional për ${car?.year} ${car?.make} ${car?.model}`}
                       >
                         <Search className="h-3 w-3 mr-1" />
                         Kërkesë për Inspektim (€50)
@@ -494,6 +495,7 @@ const CarDetails = () => {
                     onClick={handleContactWhatsApp}
                     className="w-full border-primary text-primary hover:bg-primary hover:text-white text-xs py-1.5 h-8"
                     size="sm"
+                    aria-label={`Kontaktoni nëpërmjet WhatsApp për informacion shtesë rreth ${car?.year} ${car?.make} ${car?.model}`}
                   >
                     <MessageCircle className="h-3 w-3 mr-1" />
                     Kontakto për Më Shumë Info
