@@ -474,8 +474,8 @@ const CarDetails = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-primary" />
-                    <a href="mailto:robert_gashi@live.com" className="text-primary hover:underline">
-                      robert_gashi@live.com
+                    <a href="mailto:INFO.RGSHPK@gmail.com" className="text-primary hover:underline">
+                      INFO.RGSHPK@gmail.com
                     </a>
                   </div>
                   <div className="flex items-center gap-2">

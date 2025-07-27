@@ -23,10 +23,10 @@ const ContactSection = () => {
             <CardContent>
               <p className="text-muted-foreground mb-2">Dërgoni një mesazh</p>
               <a 
-                href="mailto:robert_gashi@live.com" 
+                href="mailto:INFO.RGSHPK@gmail.com" 
                 className="text-primary hover:text-primary/80 transition-colors font-medium"
               >
-                robert_gashi@live.com
+                INFO.RGSHPK@gmail.com
               </a>
             </CardContent>
           </Card>

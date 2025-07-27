@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Car } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Header = () => {
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+    <header className="bg-background shadow-sm border-b border-border sticky top-0 z-50">
       {/* Top bar */}
-      <div className="bg-primary text-white py-1">
+      <div className="bg-primary text-primary-foreground py-1">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between text-xs">
             <div className="flex items-center gap-4">
@@ -14,7 +15,9 @@ const Header = () => {
               <span>Kontakt: +38348181116</span>
             </div>
             <div className="hidden md:block">
-              <span>robert_gashi@live.com</span>
+              <a href="mailto:INFO.RGSHPK@gmail.com" className="hover:opacity-80 transition-opacity">
+                INFO.RGSHPK@gmail.com
+              </a>
             </div>
           </div>
         </div>
@@ -25,7 +28,7 @@ const Header = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center overflow-hidden">
+            <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center overflow-hidden">
               <img 
                 src="/lovable-uploads/3094fd63-7a92-4497-8103-e166b6b09f70.png" 
                 alt="KORAUTO Logo" 
@@ -34,28 +37,29 @@ const Header = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-primary">KORAUTO</h1>
-              <p className="text-xs text-gray-600">Ekspertë të Inspektimit të Makinave</p>
+              <p className="text-xs text-muted-foreground">Ekspertë të Inspektimit të Makinave</p>
             </div>
           </div>
           
           {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <a href="/" className="text-gray-700 hover:text-primary font-medium transition-colors">
+            <a href="/" className="text-foreground hover:text-primary font-medium transition-colors">
               Kryefaqja
             </a>
-            <a href="/catalog" className="text-gray-700 hover:text-primary font-medium transition-colors">
+            <a href="/catalog" className="text-foreground hover:text-primary font-medium transition-colors">
               Katalogu
             </a>
-            <a href="/#inspection" className="text-gray-700 hover:text-primary font-medium transition-colors">
+            <a href="/#inspection" className="text-foreground hover:text-primary font-medium transition-colors">
               Shërbimi i Inspektimit
             </a>
-            <a href="/#contact" className="text-gray-700 hover:text-primary font-medium transition-colors">
+            <a href="/#contact" className="text-foreground hover:text-primary font-medium transition-colors">
               Kontakti
             </a>
           </nav>
 
           {/* CTA Buttons */}
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <Button 
               variant="outline" 
               size="sm" 

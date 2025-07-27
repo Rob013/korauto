@@ -46,7 +46,7 @@ const CarCard = ({
             <Car className="h-16 w-16 text-muted-foreground" />
           </div>}
         {lot && <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-semibold">
-            Lot #{lot}
+            Kodi #{lot}
           </div>}
       </div>
       
