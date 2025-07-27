@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Car } from "lucide-react";
+import { Car, Heart } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -56,7 +56,8 @@ const Header = () => {
             >
               Kontakti
             </button>
-            <Link to="/favorites" className="text-foreground hover:text-primary font-medium transition-colors">
+            <Link to="/favorites" className="flex items-center gap-2 text-foreground hover:text-primary font-medium transition-colors">
+              <Heart className="h-4 w-4" />
               Favorites
             </Link>
             <Link to="/auth" className="text-foreground hover:text-primary font-medium transition-colors">
