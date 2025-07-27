@@ -237,7 +237,7 @@ const CarDetails = () => {
   if (error || !car) {
     return <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
-          <Button variant="outline" onClick={() => navigate(-1)} className="mb-6">
+          <Button variant="outline" onClick={() => navigate('/')} className="mb-6">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Kthehu
           </Button>
@@ -254,7 +254,7 @@ const CarDetails = () => {
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         {/* Header with Actions */}
         <div className="flex justify-between items-center mb-8">
-          <Button variant="outline" onClick={() => navigate(-1)} className="shadow-sm border-2 hover:shadow-md transition-all">
+          <Button variant="outline" onClick={() => navigate('/')} className="shadow-sm border-2 hover:shadow-md transition-all">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Kthehu te Makinat
           </Button>
