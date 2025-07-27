@@ -9,8 +9,7 @@ const HomeSection = () => {
             Mirë se vini në KORAUTO
           </h1>
           <p className="text-xl md:text-2xl mb-8 text-muted-foreground max-w-3xl mx-auto">
-            Zbuloni makina të cilësisë së lartë me shërbime profesionale inspektimi. 
-            Partneri juaj i besueshëm për blerjen e mjeteve cilësore në të gjithë Evropën.
+            Find your perfect car from South Korea with best price and quality
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
