@@ -6,23 +6,23 @@ const InspectionSection = () => {
   const inspectionSteps = [
     {
       icon: <Shield className="h-8 w-8" />,
-      title: "Vlerësim Profesional",
-      description: "Mekanikët e certifikuar kryejnë inspektime gjithëpërfshirëse të mjeteve"
+      title: "Professional Assessment",
+      description: "Certified mechanics conduct comprehensive vehicle inspections"
     },
     {
       icon: <Camera className="h-8 w-8" />,
-      title: "Dokumentim me Foto",
-      description: "Dokumentim i detajuar vizual i gjendjes së mjetit"
+      title: "Photo Documentation",
+      description: "Detailed visual documentation of vehicle condition"
     },
     {
       icon: <FileText className="h-8 w-8" />,
-      title: "Raport i Detajuar",
-      description: "Raport i plotë i gjendjes me rekomandime"
+      title: "Detailed Report",
+      description: "Complete condition report with recommendations"
     },
     {
       icon: <Clock className="h-8 w-8" />,
-      title: "Përgjigje e Shpejtë",
-      description: "Inspektimi programohet brenda 24 orësh"
+      title: "Quick Turnaround",
+      description: "Inspection scheduled within 24 hours"
     }
   ];
 
@@ -30,17 +30,17 @@ const InspectionSection = () => {
     <section id="inspection" className="py-16 bg-muted/50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4 text-foreground">Shërbimi Profesional i Inspektimit</h2>
+          <h2 className="text-4xl font-bold mb-4 text-foreground">Professional Inspection Service</h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Kërkoni një inspektim profesional për çdo makinë vetëm për €50. 
-            Fitoni qetësinë mendore me shërbimin tonë gjithëpërfshirës të vlerësimit të mjeteve.
+            Request a professional inspection for any car for only €50. 
+            Get peace of mind with our comprehensive vehicle assessment service.
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Process Steps */}
           <div className="space-y-6">
-            <h3 className="text-2xl font-semibold mb-6 text-foreground">Si Funksionon</h3>
+            <h3 className="text-2xl font-semibold mb-6 text-foreground">How It Works</h3>
             {inspectionSteps.map((step, index) => (
               <div key={index} className="flex items-start space-x-4">
                 <div className="flex-shrink-0 w-16 h-16 bg-primary rounded-lg flex items-center justify-center text-primary-foreground">
@@ -59,36 +59,36 @@ const InspectionSection = () => {
             <Card className="border-2 border-primary/20 shadow-lg">
               <CardHeader className="text-center bg-primary text-primary-foreground">
                 <CardTitle className="text-3xl">€50</CardTitle>
-                <p className="text-primary-foreground/90">për inspektim mjeti</p>
+                <p className="text-primary-foreground/90">per vehicle inspection</p>
               </CardHeader>
               <CardContent className="p-6 space-y-4">
                 <h3 className="text-xl font-semibold text-center mb-4 text-foreground">
-                  Çfarë Përfshihet:
+                  What's Included:
                 </h3>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm text-foreground">Lista kontrolluese 150-pikëshe</span>
+                    <span className="text-sm text-foreground">150-point inspection checklist</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm text-foreground">Dokumentim me foto rezolucion të lartë</span>
+                    <span className="text-sm text-foreground">High-resolution photo documentation</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm text-foreground">Raport i detajuar i gjendjes</span>
+                    <span className="text-sm text-foreground">Detailed condition report</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm text-foreground">Vlerësim mekanik</span>
+                    <span className="text-sm text-foreground">Mechanical assessment</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm text-foreground">Dorëzimi i raportit të njëjtën ditë</span>
+                    <span className="text-sm text-foreground">Same-day report delivery</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm text-foreground">100% garanci kënaqësie</span>
+                    <span className="text-sm text-foreground">100% satisfaction guarantee</span>
                   </div>
                 </div>
                 
@@ -97,14 +97,14 @@ const InspectionSection = () => {
                   size="lg"
                   onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
                 >
-                  Na Kontaktoni për Inspektim
+                  Contact Us for Inspection
                 </Button>
               </CardContent>
             </Card>
 
             <div className="text-center">
               <p className="text-sm text-muted-foreground mb-2">
-                I besuar nga mijëra blerës makinash
+                Trusted by thousands of car buyers
               </p>
               <div className="flex justify-center items-center space-x-2">
                 {[...Array(5)].map((_, i) => (

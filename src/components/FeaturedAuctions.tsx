@@ -3,84 +3,89 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 
 const FeaturedAuctions = () => {
+  // Mock data - this will be replaced with API data
   const featuredCars = [
     {
       id: "1",
       make: "BMW",
       model: "M3 Competition",
       year: 2022,
-      price: 87500,
-      image: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop&auto=format",
-      mileage: "15,000 km",
-      transmission: "automatic",
-      fuel: "gasoline",
-      color: "white",
-      condition: "excellent"
+      price: 65000,
+      currentBid: 72000,
+      imageUrl: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800",
+      mileage: 15000,
+      location: "Munich, Germany",
+      endTime: "2 hours 15 min",
+      isLive: true,
+      watchers: 24
     },
     {
-      id: "2", 
+      id: "2",
       make: "Mercedes-Benz",
-      model: "AMG GT",
+      model: "AMG GT 63 S",
       year: 2021,
-      price: 165000,
-      image: "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=500&h=300&fit=crop&auto=format",
-      mileage: "8,500 km",
-      transmission: "automatic", 
-      fuel: "gasoline",
-      color: "black",
-      condition: "excellent"
+      price: 85000,
+      currentBid: 89500,
+      imageUrl: "https://images.unsplash.com/photo-1563720360172-67b8f3dce741?w=800",
+      mileage: 8500,
+      location: "Stuttgart, Germany",
+      endTime: "5 hours 42 min",
+      isLive: true,
+      watchers: 31
     },
     {
       id: "3",
-      make: "Porsche",
-      model: "911 Turbo S",
+      make: "Audi",
+      model: "RS6 Avant",
       year: 2023,
-      price: 245000,
-      image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=500&h=300&fit=crop&auto=format",
-      mileage: "3,200 km",
-      transmission: "automatic",
-      fuel: "gasoline", 
-      color: "silver",
-      condition: "like_new"
+      price: 95000,
+      imageUrl: "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=800",
+      mileage: 2100,
+      location: "Ingolstadt, Germany",
+      endTime: "1 day 3 hours",
+      isLive: false,
+      watchers: 18
     },
     {
       id: "4",
-      make: "Audi",
-      model: "RS6 Avant",
+      make: "Porsche",
+      model: "911 Turbo S",
       year: 2022,
-      price: 95000,
-      image: "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=500&h=300&fit=crop&auto=format",
-      mileage: "12,800 km",
-      transmission: "automatic",
-      fuel: "gasoline",
-      color: "blue", 
-      condition: "excellent"
+      price: 180000,
+      currentBid: 185000,
+      imageUrl: "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?w=800",
+      mileage: 12000,
+      location: "Stuttgart, Germany",
+      endTime: "6 hours 28 min",
+      isLive: true,
+      watchers: 45
     },
     {
       id: "5",
-      make: "Tesla", 
-      model: "Model S Plaid",
-      year: 2023,
-      price: 125000,
-      image: "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=500&h=300&fit=crop&auto=format",
-      mileage: "5,600 km",
-      transmission: "automatic",
-      fuel: "electric",
-      color: "red",
-      condition: "like_new"
+      make: "Ferrari",
+      model: "F8 Tributo",
+      year: 2021,
+      price: 250000,
+      currentBid: 258000,
+      imageUrl: "https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800",
+      mileage: 5800,
+      location: "Maranello, Italy",
+      endTime: "12 hours 55 min",
+      isLive: true,
+      watchers: 67
     },
     {
       id: "6",
-      make: "Ferrari",
-      model: "F8 Tributo", 
-      year: 2021,
-      price: 325000,
-      image: "https://images.unsplash.com/photo-1592198084033-aade902d1aae?w=500&h=300&fit=crop&auto=format",
-      mileage: "6,900 km",
-      transmission: "automatic",
-      fuel: "gasoline",
-      color: "red",
-      condition: "excellent"
+      make: "Lamborghini",
+      model: "Huracán EVO",
+      year: 2022,
+      price: 220000,
+      imageUrl: "https://images.unsplash.com/photo-1544829099-b9a0c5303bea?w=800",
+      mileage: 3200,
+      location: "Sant'Agata, Italy",
+      endTime: "2 days 14 hours",
+      isLive: false,
+      watchers: 52
     }
   ];
 
@@ -90,7 +95,7 @@ const FeaturedAuctions = () => {
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold mb-4">Featured Auctions</h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Discover premium vehicles from trusted sellers. Each car includes detailed inspection reports and comprehensive documentation.
+            Discover premium vehicles from trusted sellers across Europe. Each car includes detailed inspection reports and comprehensive documentation.
           </p>
         </div>
 

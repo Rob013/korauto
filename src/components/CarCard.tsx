@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
-import { Car, Search, Gauge, Settings, Fuel, Palette, Hash } from "lucide-react";
 
 interface CarCardProps {
   id: string;
@@ -10,146 +10,59 @@ interface CarCardProps {
   year: number;
   price: number;
   image?: string;
-  vin?: string;
-  mileage?: string;
-  transmission?: string;
-  fuel?: string;
-  color?: string;
-  condition?: string;
-  lot?: string;
-  title?: string;
 }
 
-const CarCard = ({ 
-  id, make, model, year, price, image, vin, mileage, transmission, fuel, color, condition, lot, title 
-}: CarCardProps) => {
+const CarCard = ({ id, make, model, year, price, image }: CarCardProps) => {
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const handleInspectionRequest = async () => {
-    try {
-      // Simulate API call for inspection request
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Show success message with contact details
+    setIsLoading(true);
+    
+    // Simulate API call delay
+    setTimeout(() => {
+      setIsLoading(false);
       toast({
-        title: "Inspection Request Submitted",
-        description: `Your inspection request for the ${year} ${make} ${model} has been received. ROBERT GASHI from KORAUTO will contact you at +38348181116 or send details to robert_gashi@live.com`,
-        duration: 6000,
+        title: "Inspection Requested",
+        description: `Professional inspection for ${year} ${make} ${model} has been scheduled. You will be contacted within 24 hours.`,
+        duration: 5000,
       });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to submit inspection request. Please call us directly at +38348181116",
-        variant: "destructive",
-      });
-    }
+    }, 2000);
   };
 
-  const handleCardClick = () => {
-    navigate(`/car/${id}`);
-  };
+  const fallbackImage = `https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400&h=300&fit=crop&auto=format`;
 
   return (
-    <div 
-      className="bg-card rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-border cursor-pointer group"
-      onClick={handleCardClick}
-    >
-      <div className="relative h-48 bg-muted overflow-hidden">
-        {image ? (
-          <img
-            src={image}
-            alt={`${year} ${make} ${model}`}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={(e) => {
-              e.currentTarget.src = "/placeholder.svg";
-            }}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-muted">
-            <Car className="h-16 w-16 text-muted-foreground" />
-          </div>
-        )}
-        {lot && (
-          <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-semibold">
-            Lot #{lot}
-          </div>
-        )}
+    <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden border-border">
+      <div className="relative">
+        <img
+          src={image || fallbackImage}
+          alt={`${year} ${make} ${model}`}
+          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = fallbackImage;
+          }}
+        />
       </div>
-      
-      <div className="p-4">
-        <div className="mb-3">
-          <h3 className="text-lg font-semibold text-foreground">
-            {year} {make} {model}
-          </h3>
-          {title && title !== `${make} ${model}` && (
-            <p className="text-sm text-muted-foreground mb-1">{title}</p>
-          )}
-        </div>
 
-        <div className="space-y-2 mb-4 text-sm">
-          {mileage && (
-            <div className="flex items-center gap-2">
-              <Gauge className="h-4 w-4 text-muted-foreground" />
-              <span>{mileage}</span>
-            </div>
-          )}
-          {transmission && (
-            <div className="flex items-center gap-2">
-              <Settings className="h-4 w-4 text-muted-foreground" />
-              <span className="capitalize">{transmission}</span>
-            </div>
-          )}
-          {fuel && (
-            <div className="flex items-center gap-2">
-              <Fuel className="h-4 w-4 text-muted-foreground" />
-              <span className="capitalize">{fuel}</span>
-            </div>
-          )}
-          {color && (
-            <div className="flex items-center gap-2">
-              <Palette className="h-4 w-4 text-muted-foreground" />
-              <span className="capitalize">{color}</span>
-            </div>
-          )}
-          {vin && (
-            <div className="flex items-center gap-2">
-              <Hash className="h-4 w-4 text-muted-foreground" />
-              <span className="text-xs font-mono">{vin}</span>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-2xl font-bold text-primary">
-            €{price.toLocaleString()}
-          </span>
-          {condition && (
-            <span className="text-xs px-2 py-1 bg-secondary text-secondary-foreground rounded-full capitalize">
-              {condition.replace('_', ' ')}
-            </span>
-          )}
+      <CardContent className="p-4">
+        <h3 className="font-semibold text-lg text-foreground mb-2">
+          {year} {make} {model}
+        </h3>
+        
+        <div className="text-2xl font-bold text-primary mb-4">
+          €{price?.toLocaleString() || 'Price on request'}
         </div>
 
         <Button 
-          onClick={(e) => {
-            e.stopPropagation();
-            handleInspectionRequest();
-          }}
-          className="w-full"
-          size="sm"
+          className="w-full bg-inspection hover:bg-inspection/90 text-inspection-foreground"
+          onClick={handleInspectionRequest}
+          disabled={isLoading}
         >
-          <Search className="h-3 w-3 mr-2" />
-          Request Inspection (€50)
+          {isLoading ? 'Processing...' : 'Request Inspection (€50)'}
         </Button>
-        
-        <div className="mt-2 text-center">
-          <p className="text-xs text-muted-foreground">
-            KORAUTO Professional Inspection Service
-          </p>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

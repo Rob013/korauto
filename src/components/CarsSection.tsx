@@ -1,9 +1,7 @@
 import CarCard from "./CarCard";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { RefreshCw, AlertCircle, Filter, SortAsc } from "lucide-react";
+import { RefreshCw, AlertCircle } from "lucide-react";
 
 interface Car {
   id: string;
@@ -12,28 +10,13 @@ interface Car {
   year: number;
   price: number;
   image?: string;
-  vin?: string;
-  mileage?: string;
-  transmission?: string;
-  fuel?: string;
-  color?: string;
-  condition?: string;
-  lot?: string;
-  title?: string;
 }
 
 const CarsSection = () => {
   const [cars, setCars] = useState<Car[]>([]);
-  const [filteredCars, setFilteredCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  const [sortBy, setSortBy] = useState<'price' | 'year' | 'make'>('price');
-  const [filterMake, setFilterMake] = useState<string>('all');
-  const [filterYear, setFilterYear] = useState<string>('all');
-  const [filterFuel, setFilterFuel] = useState<string>('all');
-  const [filterColor, setFilterColor] = useState<string>('all');
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 200000]);
 
   // Correct API endpoint based on 429 response analysis
   const API_BASE_URL = 'https://auctionsapi.com/api';
@@ -72,7 +55,7 @@ const CarsSection = () => {
       }
       
       const data = await response.json();
-      console.log(`API Success: ${data?.data?.length || 0} cars received`);
+      console.log(`API Success: ${data?.cars?.length || 0} cars received`);
       return data;
     } catch (err) {
       console.error(`API Request failed:`, err);
@@ -105,44 +88,14 @@ const CarsSection = () => {
       }
       
       // Transform API data to our Car interface
-      // API returns cars directly in 'data' array, not 'data.cars'
-      const carsArray = Array.isArray(data.data) ? data.data : [];
-      console.log(`Raw API data:`, carsArray);
-      
-      const transformedCars: Car[] = carsArray.map((car: any, index: number) => {
-        // Extract price from lots[0].buy_now or lots[0].final_bid
-        const lot = car.lots?.[0];
-        const basePrice = lot?.buy_now || lot?.final_bid || 25000 + (index * 1000);
-        // Add KORAUTO markup of 2300 euro
-        const price = Math.round(basePrice + 2300);
-        
-        // Extract image from lots[0].images.normal[0]
-        const images = lot?.images?.normal;
-        const image = Array.isArray(images) && images.length > 0 ? images[0] : undefined;
-        
-        // Extract mileage
-        const odometer = lot?.odometer;
-        const mileage = odometer?.km ? `${odometer.km.toLocaleString()} km` : undefined;
-        
-        return {
-          id: car.id?.toString() || `car-${index}`,
-          make: car.manufacturer?.name || 'Unknown',
-          model: car.model?.name || 'Unknown',
-          year: car.year || 2020,
-          price: price,
-          image: image,
-          vin: car.vin,
-          mileage: mileage,
-          transmission: car.transmission?.name,
-          fuel: car.fuel?.name,
-          color: car.color?.name,
-          condition: lot?.condition?.name,
-          lot: lot?.lot,
-          title: car.title
-        };
-      });
-
-      console.log(`Transformed cars:`, transformedCars);
+      const transformedCars: Car[] = data.cars?.map((car: any, index: number) => ({
+        id: car.id || `car-${index}`,
+        make: car.make || 'BMW',
+        model: car.model || 'Series 3',
+        year: car.year || 2020 + (index % 4),
+        price: car.price || 25000 + (index * 1000),
+        image: car.image || undefined
+      })) || [];
 
       // If no cars from API, use fallback data
       if (transformedCars.length === 0) {
@@ -150,7 +103,6 @@ const CarsSection = () => {
       }
 
       setCars(transformedCars);
-      setFilteredCars(transformedCars);
       setLastUpdate(new Date());
       console.log(`Successfully loaded ${transformedCars.length} cars from API`);
       
@@ -159,20 +111,19 @@ const CarsSection = () => {
       setError(errorMessage);
       console.error('API Error:', err);
       
-      // Use fallback data on error with KORAUTO markup
+      // Use fallback data on error
       const fallbackCars: Car[] = [
-        { id: '1', make: 'BMW', model: 'M3', year: 2022, price: 67300, mileage: '25,000 km', transmission: 'automatic', fuel: 'gasoline' },
-        { id: '2', make: 'Mercedes-Benz', model: 'C-Class', year: 2021, price: 47300, mileage: '30,000 km', transmission: 'automatic', fuel: 'gasoline' },
-        { id: '3', make: 'Audi', model: 'A4', year: 2023, price: 44300, mileage: '15,000 km', transmission: 'automatic', fuel: 'gasoline' },
-        { id: '4', make: 'Volkswagen', model: 'Golf', year: 2022, price: 30300, mileage: '20,000 km', transmission: 'manual', fuel: 'gasoline' },
-        { id: '5', make: 'Porsche', model: 'Cayenne', year: 2021, price: 87300, mileage: '35,000 km', transmission: 'automatic', fuel: 'gasoline' },
-        { id: '6', make: 'Tesla', model: 'Model S', year: 2023, price: 97300, mileage: '10,000 km', transmission: 'automatic', fuel: 'electric' },
-        { id: '7', make: 'Ford', model: 'Mustang', year: 2022, price: 57300, mileage: '18,000 km', transmission: 'automatic', fuel: 'gasoline' },
-        { id: '8', make: 'Chevrolet', model: 'Camaro', year: 2021, price: 50300, mileage: '22,000 km', transmission: 'manual', fuel: 'gasoline' },
-        { id: '9', make: 'Jaguar', model: 'F-Type', year: 2022, price: 80300, mileage: '12,000 km', transmission: 'automatic', fuel: 'gasoline' }
+        { id: '1', make: 'BMW', model: 'M3', year: 2022, price: 65000 },
+        { id: '2', make: 'Mercedes-Benz', model: 'C-Class', year: 2021, price: 45000 },
+        { id: '3', make: 'Audi', model: 'A4', year: 2023, price: 42000 },
+        { id: '4', make: 'Volkswagen', model: 'Golf', year: 2022, price: 28000 },
+        { id: '5', make: 'Porsche', model: 'Cayenne', year: 2021, price: 85000 },
+        { id: '6', make: 'Tesla', model: 'Model S', year: 2023, price: 95000 },
+        { id: '7', make: 'Ford', model: 'Mustang', year: 2022, price: 55000 },
+        { id: '8', make: 'Chevrolet', model: 'Camaro', year: 2021, price: 48000 },
+        { id: '9', make: 'Jaguar', model: 'F-Type', year: 2022, price: 78000 }
       ];
       setCars(fallbackCars);
-      setFilteredCars(fallbackCars);
       setLastUpdate(new Date());
       console.log('Using fallback car data');
     } finally {
@@ -220,73 +171,17 @@ const CarsSection = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Sorting and filtering logic
-  useEffect(() => {
-    let filtered = [...cars];
-
-    // Apply filters
-    if (filterMake && filterMake !== 'all') {
-      filtered = filtered.filter(car => 
-        car.make.toLowerCase().includes(filterMake.toLowerCase())
-      );
-    }
-
-    if (filterYear && filterYear !== 'all') {
-      filtered = filtered.filter(car => 
-        car.year.toString().includes(filterYear)
-      );
-    }
-
-    if (filterFuel && filterFuel !== 'all') {
-      filtered = filtered.filter(car => 
-        car.fuel?.toLowerCase().includes(filterFuel.toLowerCase())
-      );
-    }
-
-    if (filterColor && filterColor !== 'all') {
-      filtered = filtered.filter(car => 
-        car.color?.toLowerCase().includes(filterColor.toLowerCase())
-      );
-    }
-
-    filtered = filtered.filter(car => 
-      car.price >= priceRange[0] && car.price <= priceRange[1]
-    );
-
-    // Apply sorting
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'price':
-          return a.price - b.price;
-        case 'year':
-          return b.year - a.year; // Newest first
-        case 'make':
-          return a.make.localeCompare(b.make);
-        default:
-          return 0;
-      }
-    });
-
-    setFilteredCars(filtered);
-  }, [cars, sortBy, filterMake, filterYear, filterFuel, filterColor, priceRange]);
-
   const handleRefresh = () => {
     fetchCars();
   };
-
-  // Get unique values for filter dropdowns
-  const uniqueMakes = [...new Set(cars.map(car => car.make))].sort();
-  const uniqueYears = [...new Set(cars.map(car => car.year))].sort((a, b) => b - a);
-  const uniqueFuels = [...new Set(cars.map(car => car.fuel).filter(Boolean))].sort();
-  const uniqueColors = [...new Set(cars.map(car => car.color).filter(Boolean))].sort();
 
   return (
     <section id="cars" className="py-16 bg-secondary/30">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4 text-foreground">Makinat e Disponueshme</h2>
+          <h2 className="text-4xl font-bold mb-4 text-foreground">Available Cars</h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Shfletoni përzgjedhjen tonë të mjeteve të cilësisë së lartë. Çdo makinë mund të inspektohet profesionalisht vetëm për €50.
+            Browse our selection of premium vehicles. Each car can be professionally inspected for only €50.
           </p>
           
           <div className="flex justify-center items-center gap-4 mt-6">
@@ -298,11 +193,11 @@ const CarsSection = () => {
               className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              {loading ? 'Duke u ngarkuar...' : 'Rifresko'}
+              {loading ? 'Loading...' : 'Refresh'}
             </Button>
             {lastUpdate && (
               <span className="text-sm text-muted-foreground">
-                Përditësuar për herë të fundit: {lastUpdate.toLocaleTimeString()}
+                Last updated: {lastUpdate.toLocaleTimeString()}
               </span>
             )}
           </div>
@@ -312,134 +207,10 @@ const CarsSection = () => {
           <div className="flex items-center justify-center gap-2 mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <AlertCircle className="h-5 w-5 text-yellow-600" />
             <span className="text-yellow-800">
-              Problem me lidhjen API: {error}. Duke shfaqur makina demo me shërbim të plotë inspektimi të disponueshëm.
+              API Connection Issue: {error}. Displaying demo cars with full inspection service available.
             </span>
           </div>
         )}
-
-        {/* Filters and Sorting */}
-        <div className="mb-8 p-6 bg-card rounded-lg border border-border">
-          <div className="flex items-center gap-2 mb-4">
-            <Filter className="h-5 w-5" />
-            <h3 className="text-lg font-semibold">Kërko & Filtro Makinat</h3>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Rendit sipas</label>
-              <Select value={sortBy} onValueChange={(value: 'price' | 'year' | 'make') => setSortBy(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="price">Çmimi (Nga i ulëti te i larti)</SelectItem>
-                  <SelectItem value="year">Viti (Më i riu së pari)</SelectItem>
-                  <SelectItem value="make">Marka (A-Z)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Marka</label>
-              <Select value={filterMake} onValueChange={setFilterMake}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Të gjitha Markat" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Të gjitha Markat</SelectItem>
-                  {uniqueMakes.map(make => (
-                    <SelectItem key={make} value={make}>{make}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Viti</label>
-              <Select value={filterYear} onValueChange={setFilterYear}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Të gjithë Vitet" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Të gjithë Vitet</SelectItem>
-                  {uniqueYears.map(year => (
-                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Çmimi min (€)</label>
-              <Input 
-                type="number" 
-                placeholder="0"
-                value={priceRange[0] === 0 ? '' : priceRange[0].toString()}
-                onChange={(e) => setPriceRange([parseInt(e.target.value) || 0, priceRange[1]])}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Çmimi max (€)</label>
-              <Input 
-                type="number" 
-                placeholder="200000"
-                value={priceRange[1] === 200000 ? '' : priceRange[1].toString()}
-                onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value) || 200000])}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Karburanti</label>
-              <Select value={filterFuel} onValueChange={setFilterFuel}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Të gjithë" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Të gjithë</SelectItem>
-                  {uniqueFuels.map(fuel => (
-                    <SelectItem key={fuel} value={fuel}>{fuel}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Ngjyra</label>
-              <Select value={filterColor} onValueChange={setFilterColor}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Të gjitha" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Të gjitha</SelectItem>
-                  {uniqueColors.map(color => (
-                    <SelectItem key={color} value={color}>{color}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="mt-4 flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">
-              Duke shfaqur {filteredCars.length} nga {cars.length} makina
-            </span>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => {
-                setFilterMake('all');
-                setFilterYear('all');
-                setFilterFuel('all');
-                setFilterColor('all');
-                setPriceRange([0, 200000]);
-                setSortBy('price');
-              }}
-            >
-              Pastro Filtrat
-            </Button>
-          </div>
-        </div>
 
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -456,40 +227,21 @@ const CarsSection = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCars.map((car) => (
+            {cars.map((car) => (
               <CarCard key={car.id} {...car} />
             ))}
           </div>
         )}
 
-        {filteredCars.length === 0 && !loading && cars.length > 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg">Asnjë makinë nuk përputhet me filtrat tuaj.</p>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setFilterMake('all');
-                setFilterYear('all');
-                setFilterFuel('all');
-                setFilterColor('all');
-                setPriceRange([0, 200000]);
-              }}
-              className="mt-4 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-            >
-              Pastro Filtrat
-            </Button>
-          </div>
-        )}
-
         {cars.length === 0 && !loading && (
           <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg">Asnjë makinë nuk është e disponueshme në këtë moment.</p>
+            <p className="text-muted-foreground text-lg">No cars available at the moment.</p>
             <Button 
               variant="outline" 
               onClick={handleRefresh}
               className="mt-4 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
             >
-              Provo Përsëri
+              Try Again
             </Button>
           </div>
         )}

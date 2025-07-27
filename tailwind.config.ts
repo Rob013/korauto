@@ -17,10 +17,7 @@ export default {
 				'2xl': '1400px'
 			}
 		},
-    extend: {
-      fontFamily: {
-        'sans': ['Noto Sans', 'system-ui', 'sans-serif'],
-      },
+		extend: {
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
