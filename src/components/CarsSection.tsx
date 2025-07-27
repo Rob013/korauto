@@ -43,9 +43,9 @@ const CarsSection = () => {
   const API_BASE_URL = 'https://auctionsapi.com/api';
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
 
-  // Cache to prevent excessive API calls
+  // Extended cache for demo API to prevent rate limiting
   const [cache, setCache] = useState<{data: any, timestamp: number} | null>(null);
-  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes for demo API
 
   // Add delay between requests to respect rate limits
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -69,15 +69,16 @@ const CarsSection = () => {
       });
 
       if (response.status === 429) {
-        // Rate limited - implement exponential backoff
-        const waitTime = Math.pow(2, retryCount) * 5000; // 5s, 10s, 20s...
-        console.log(`Rate limited. Waiting ${waitTime}ms before retry ${retryCount + 1}`);
+        // Rate limited - use longer delays for demo API
+        const waitTime = 30000; // Wait 30 seconds for demo API
+        console.log(`Demo API rate limited. Waiting ${waitTime}ms before retry`);
         
-        if (retryCount < 2) {
+        if (retryCount < 1) { // Only retry once for demo API
           await delay(waitTime);
           return tryApiEndpoint(endpoint, params, retryCount + 1);
         } else {
-          throw new Error('Rate limit exceeded. Please wait before refreshing.');
+          console.log('Demo API rate limit exceeded. Using cached/fallback data.');
+          throw new Error('Demo API rate limit exceeded. Please wait 30 seconds before refreshing.');
         }
       }
 
@@ -105,12 +106,12 @@ const CarsSection = () => {
     setError(null);
 
     try {
-      // Add delay to respect rate limits
-      await delay(1000);
+      // Longer delay for demo API to prevent rate limiting
+      await delay(2000);
 
       const params = new URLSearchParams({
         api_key: API_KEY,
-        limit: '50' // Demo mode limit
+        limit: '20' // Reduced limit for demo API
       });
 
       if (minutes) {
@@ -202,24 +203,25 @@ const CarsSection = () => {
 
   const fetchArchivedLots = async () => {
     try {
-      // Add delay to respect rate limits
-      await delay(300);
-
+      // Skip archived lots fetch for demo API to prevent rate limiting
+      console.log('Archived lots fetch disabled for demo API');
+      return;
+      
+      // Commented out to prevent rate limiting
+      /*
+      await delay(5000);
       const params = new URLSearchParams({
         api_key: API_KEY,
         minutes: '60'
       });
-
       console.log('Fetching archived lots...');
       const data = await tryApiEndpoint('/archived-lots', params);
       const archivedIds = data.archivedLots?.map((lot: any) => lot.id) || [];
-      
-      // Remove archived cars from current list
       setCars(prevCars => prevCars.filter(car => !archivedIds.includes(car.id)));
       console.log(`Successfully removed ${archivedIds.length} archived cars`);
+      */
     } catch (err) {
       console.error('Failed to fetch archived lots:', err);
-      // Don't show error to user for archived lots - not critical
     }
   };
 
@@ -228,19 +230,21 @@ const CarsSection = () => {
     fetchCars();
   }, []);
 
-  // Set up periodic updates with staggered timing to avoid rate limits
+  // Disable periodic updates for demo API to prevent rate limiting
   useEffect(() => {
+    // Comment out automatic refresh for demo API
+    console.log('Automatic refresh disabled for demo API to prevent rate limiting');
+    /*
     const interval = setInterval(async () => {
-      // Only refresh if no cache or cache is old
       if (!cache || Date.now() - cache.timestamp > CACHE_DURATION) {
         console.log('Running periodic update...');
-        await fetchCars(60); // Fetch updates from last 60 minutes
-        await delay(5000); // Wait 5 seconds between calls
-        await fetchArchivedLots(); // Remove sold cars
+        await fetchCars(60);
+        await delay(10000);
+        await fetchArchivedLots();
       }
-    }, 10 * 60 * 1000); // Every 10 minutes instead of every hour
-
+    }, 30 * 60 * 1000); // Every 30 minutes
     return () => clearInterval(interval);
+    */
   }, [cache]);
 
   // Sorting and filtering logic
