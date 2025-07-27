@@ -350,29 +350,6 @@ const CarDetails = () => {
                       <span className="text-muted-foreground font-medium">{car.airbags}</span>
                     </div>}
                   
-                  {/* Additional Engine Info */}
-                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-primary rounded-full"></div>
-                      <span className="font-semibold text-foreground">Vëllimi i Motorit</span>
-                    </div>
-                    <span className="text-primary font-bold">
-                      {car.engine?.name?.includes('2.0') ? '2.0L' : 
-                       car.engine?.name?.includes('3.0') ? '3.0L' :
-                       car.engine?.name?.includes('1.8') ? '1.8L' :
-                       car.engine?.name?.includes('2.5') ? '2.5L' : '2.0L'}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-primary rounded-full"></div>
-                      <span className="font-semibold text-foreground">Fuqia</span>
-                    </div>
-                    <span className="text-primary font-bold">
-                      {car.engine?.name?.includes('Turbo') ? '250 HP' : '180 HP'}
-                    </span>
-                  </div>
                 </div>
               </CardContent>
             </Card>

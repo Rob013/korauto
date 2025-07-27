@@ -40,16 +40,16 @@ const Header = () => {
           
           {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <a href="#home" className="text-gray-700 hover:text-primary font-medium transition-colors">
+            <a href="/" className="text-gray-700 hover:text-primary font-medium transition-colors">
               Kryefaqja
             </a>
             <a href="/catalog" className="text-gray-700 hover:text-primary font-medium transition-colors">
               Katalogu
             </a>
-            <a href="#inspection" className="text-gray-700 hover:text-primary font-medium transition-colors">
+            <a href="/#inspection" className="text-gray-700 hover:text-primary font-medium transition-colors">
               Shërbimi i Inspektimit
             </a>
-            <a href="#contact" className="text-gray-700 hover:text-primary font-medium transition-colors">
+            <a href="/#contact" className="text-gray-700 hover:text-primary font-medium transition-colors">
               Kontakti
             </a>
           </nav>

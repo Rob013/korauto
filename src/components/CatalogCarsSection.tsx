@@ -22,7 +22,7 @@ interface Car {
   title?: string;
 }
 
-const FilteredCarsSection = () => {
+const CatalogCarsSection = () => {
   const [cars, setCars] = useState<Car[]>([]);
   const [filteredCars, setFilteredCars] = useState<Car[]>([]);
   const [displayedCars, setDisplayedCars] = useState<Car[]>([]);
@@ -157,7 +157,7 @@ const FilteredCarsSection = () => {
       setError(errorMessage);
       console.error('API Error:', err);
       
-      // Use fallback data on error with KORAUTO markup
+      // Extended fallback data for catalog - 30 cars
       const fallbackCars: Car[] = [
         { id: '1', make: 'BMW', model: 'M3', year: 2022, price: 67300, mileage: '25,000 km', transmission: 'automatic', fuel: 'benzinë' },
         { id: '2', make: 'Mercedes-Benz', model: 'C-Class', year: 2021, price: 47300, mileage: '30,000 km', transmission: 'automatic', fuel: 'benzinë' },
@@ -170,7 +170,25 @@ const FilteredCarsSection = () => {
         { id: '9', make: 'Jaguar', model: 'F-Type', year: 2022, price: 80300, mileage: '12,000 km', transmission: 'automatic', fuel: 'benzinë' },
         { id: '10', make: 'Land Rover', model: 'Range Rover', year: 2023, price: 95300, mileage: '8,000 km', transmission: 'automatic', fuel: 'benzinë' },
         { id: '11', make: 'Lexus', model: 'RX', year: 2022, price: 62300, mileage: '28,000 km', transmission: 'automatic', fuel: 'hybrid' },
-        { id: '12', make: 'Infiniti', model: 'Q50', year: 2021, price: 45300, mileage: '32,000 km', transmission: 'automatic', fuel: 'benzinë' }
+        { id: '12', make: 'Infiniti', model: 'Q50', year: 2021, price: 45300, mileage: '32,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '13', make: 'BMW', model: 'X5', year: 2022, price: 75300, mileage: '19,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '14', make: 'Mercedes-Benz', model: 'E-Class', year: 2023, price: 58300, mileage: '12,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '15', make: 'Audi', model: 'Q7', year: 2021, price: 68300, mileage: '26,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '16', make: 'Volkswagen', model: 'Passat', year: 2022, price: 35300, mileage: '18,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '17', make: 'Porsche', model: '911', year: 2023, price: 125300, mileage: '5,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '18', make: 'Tesla', model: 'Model 3', year: 2022, price: 52300, mileage: '14,000 km', transmission: 'automatic', fuel: 'elektrike' },
+        { id: '19', make: 'Ford', model: 'F-150', year: 2021, price: 48300, mileage: '29,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '20', make: 'Chevrolet', model: 'Tahoe', year: 2022, price: 65300, mileage: '21,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '21', make: 'Jaguar', model: 'XE', year: 2021, price: 42300, mileage: '31,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '22', make: 'Land Rover', model: 'Discovery', year: 2022, price: 72300, mileage: '17,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '23', make: 'Lexus', model: 'IS', year: 2023, price: 46300, mileage: '9,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '24', make: 'Infiniti', model: 'QX80', year: 2021, price: 69300, mileage: '24,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '25', make: 'BMW', model: '5 Series', year: 2022, price: 64300, mileage: '16,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '26', make: 'Mercedes-Benz', model: 'GLE', year: 2023, price: 78300, mileage: '11,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '27', make: 'Audi', model: 'A6', year: 2021, price: 55300, mileage: '27,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '28', make: 'Volkswagen', model: 'Tiguan', year: 2022, price: 38300, mileage: '20,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '29', make: 'Porsche', model: 'Macan', year: 2023, price: 85300, mileage: '7,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '30', make: 'Tesla', model: 'Model Y', year: 2022, price: 63300, mileage: '13,000 km', transmission: 'automatic', fuel: 'elektrike' }
       ];
       setCars(fallbackCars);
       setFilteredCars(fallbackCars);
@@ -186,9 +204,9 @@ const FilteredCarsSection = () => {
     fetchCars();
   }, []);
 
-  // Update displayed cars when filtered cars change
+  // Update displayed cars when filtered cars change - Show 30 initially for catalog
   useEffect(() => {
-    const carLimit = showMoreCars ? filteredCars.length : 6;
+    const carLimit = showMoreCars ? filteredCars.length : 30;
     setDisplayedCars(filteredCars.slice(0, carLimit));
   }, [filteredCars, showMoreCars]);
 
@@ -296,12 +314,12 @@ const FilteredCarsSection = () => {
   const uniqueBodyTypes = ['Sedan', 'SUV', 'Hatchback', 'Coupe', 'Convertible', 'Wagon', 'Pickup'];
 
   return (
-    <section id="cars" className="py-16 bg-secondary/30">
+    <section className="py-16 bg-secondary/30">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4 text-foreground">Makinat e Disponueshme</h2>
+          <h1 className="text-4xl font-bold mb-4 text-foreground">Katalogu i Makinave</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Shfletoni përzgjedhjen tonë të mjeteve të cilësisë së lartë. Çdo makinë mund të inspektohet profesionalisht vetëm për €50.
+            Shfletoni koleksionin tonë të plotë të mjeteve të importuara. Çdo makinë inspektohet profesionalisht.
           </p>
           
           <div className="flex justify-center items-center gap-4 mt-6">
@@ -536,7 +554,7 @@ const FilteredCarsSection = () => {
         {/* Car Cards */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {[...Array(6)].map((_, i) => (
+            {[...Array(30)].map((_, i) => (
               <div key={i} className="bg-card rounded-lg p-4 animate-pulse">
                 <div className="h-48 bg-muted rounded mb-4"></div>
                 <div className="h-4 bg-muted rounded mb-2"></div>
@@ -561,14 +579,14 @@ const FilteredCarsSection = () => {
               ))}
             </div>
             
-            {filteredCars.length > 6 && !showMoreCars && (
+            {filteredCars.length > 30 && !showMoreCars && (
               <div className="text-center">
                 <Button 
                   onClick={() => setShowMoreCars(true)}
                   size="lg"
                   className="bg-primary hover:bg-primary/90"
                 >
-                  Shfaq Më Shumë Makina ({filteredCars.length - 6} të tjera)
+                  Shfaq Të Gjitha Makinat ({filteredCars.length - 30} të tjera)
                 </Button>
               </div>
             )}
@@ -579,4 +597,4 @@ const FilteredCarsSection = () => {
   );
 };
 
-export default FilteredCarsSection;
+export default CatalogCarsSection;
