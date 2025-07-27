@@ -4,8 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, CreditCard, Banknote } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface InspectionRequestFormProps {
@@ -19,11 +20,12 @@ interface InspectionRequestFormProps {
 const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: InspectionRequestFormProps) => {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  const [formData, setFormData] = useState({
+const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
-    whatsappPhone: ""
+    whatsappPhone: "",
+    paymentMethod: "cash"
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,7 +69,7 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
       });
 
       // Reset form and close dialog
-      setFormData({ firstName: "", lastName: "", email: "", whatsappPhone: "" });
+      setFormData({ firstName: "", lastName: "", email: "", whatsappPhone: "", paymentMethod: "cash" });
       setIsOpen(false);
       
     } catch (error) {
@@ -87,7 +89,7 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
       });
 
       // Reset form and close dialog
-      setFormData({ firstName: "", lastName: "", email: "", whatsappPhone: "" });
+      setFormData({ firstName: "", lastName: "", email: "", whatsappPhone: "", paymentMethod: "cash" });
       setIsOpen(false);
     }
   };
@@ -157,9 +159,49 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
                   placeholder="+38348181116"
                 />
               </div>
+
+              <div>
+                <Label htmlFor="paymentMethod">Metoda e Pagesës</Label>
+                <Select value={formData.paymentMethod} onValueChange={(value) => handleInputChange("paymentMethod", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Zgjidhni metodën e pagesës" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">
+                      <div className="flex items-center gap-2">
+                        <Banknote className="h-4 w-4" />
+                        Cash/Para në dorë
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="card">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4" />
+                        Kartë Krediti
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="bg-muted p-3 rounded-lg text-sm">
+                <h4 className="font-semibold mb-2">Udhëzime për Pagesë:</h4>
+                {formData.paymentMethod === "cash" ? (
+                  <ul className="space-y-1 text-muted-foreground">
+                    <li>• Pagesa në cash do të bëhet gjatë inspektimit</li>
+                    <li>• Çmimi: €50 për inspektim të plotë</li>
+                    <li>• Mbajeni me vete dokumentet e makinës</li>
+                  </ul>
+                ) : (
+                  <ul className="space-y-1 text-muted-foreground">
+                    <li>• Pagesa me kartë do të bëhet online</li>
+                    <li>• Çmimi: €50 për inspektim të plotë</li>
+                    <li>• Do t'ju dërgohet linku i pagesës</li>
+                  </ul>
+                )}
+              </div>
               
               <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
-                Dërgo Kërkesën
+                {formData.paymentMethod === "card" ? "Vazhdo në Pagesë" : "Dërgo Kërkesën"}
               </Button>
             </form>
           </CardContent>
