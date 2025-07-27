@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 import { Car, Search, Gauge, Settings, Fuel, Palette, Hash } from "lucide-react";
 
 interface CarCardProps {
@@ -23,6 +24,7 @@ const CarCard = ({
   id, make, model, year, price, image, vin, mileage, transmission, fuel, color, condition, lot, title 
 }: CarCardProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleInspectionRequest = async () => {
     try {
@@ -44,14 +46,21 @@ const CarCard = ({
     }
   };
 
+  const handleCardClick = () => {
+    navigate(`/car/${id}`);
+  };
+
   return (
-    <div className="bg-card rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 border border-border">
-      <div className="relative h-48 bg-muted">
+    <div 
+      className="bg-card rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-border cursor-pointer group"
+      onClick={handleCardClick}
+    >
+      <div className="relative h-48 bg-muted overflow-hidden">
         {image ? (
           <img
             src={image}
             alt={`${year} ${make} ${model}`}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             onError={(e) => {
               e.currentTarget.src = "/placeholder.svg";
             }}
@@ -123,11 +132,14 @@ const CarCard = ({
         </div>
 
         <Button 
-          onClick={handleInspectionRequest}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleInspectionRequest();
+          }}
           className="w-full"
           size="sm"
         >
-          <Search className="h-4 w-4 mr-2" />
+          <Search className="h-3 w-3 mr-2" />
           Request Inspection (€50)
         </Button>
         
