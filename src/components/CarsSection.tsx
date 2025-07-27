@@ -33,10 +33,6 @@ const CarsSection = () => {
   const [filterYear, setFilterYear] = useState<string>('all');
   const [filterFuel, setFilterFuel] = useState<string>('all');
   const [filterColor, setFilterColor] = useState<string>('all');
-  const [filterTransmission, setFilterTransmission] = useState<string>('all');
-  const [filterBodyType, setFilterBodyType] = useState<string>('all');
-  const [filterCondition, setFilterCondition] = useState<string>('all');
-  const [mileageRange, setMileageRange] = useState<[number, number]>([0, 300000]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 200000]);
 
   // Correct API endpoint based on 429 response analysis
@@ -94,13 +90,12 @@ const CarsSection = () => {
 
       const params = new URLSearchParams({
         api_key: API_KEY,
-        limit: '50'
+        limit: '50' // Demo mode limit
       });
 
       if (minutes) {
         params.append('minutes', minutes.toString());
       }
-
 
       console.log('Fetching cars from API...');
       const data = await tryApiEndpoint('/cars', params);
@@ -141,7 +136,7 @@ const CarsSection = () => {
           transmission: car.transmission?.name,
           fuel: car.fuel?.name,
           color: car.color?.name,
-          condition: lot?.condition?.name?.replace('run_and_drives', 'Good Condition'),
+          condition: lot?.condition?.name,
           lot: lot?.lot,
           title: car.title
         };
@@ -166,15 +161,15 @@ const CarsSection = () => {
       
       // Use fallback data on error with KORAUTO markup
       const fallbackCars: Car[] = [
-        { id: '1', make: 'BMW', model: 'M3', year: 2022, price: 67300, mileage: '25,000 km', transmission: 'automatic', fuel: 'benzinë' },
-        { id: '2', make: 'Mercedes-Benz', model: 'C-Class', year: 2021, price: 47300, mileage: '30,000 km', transmission: 'automatic', fuel: 'benzinë' },
-        { id: '3', make: 'Audi', model: 'A4', year: 2023, price: 44300, mileage: '15,000 km', transmission: 'automatic', fuel: 'benzinë' },
-        { id: '4', make: 'Volkswagen', model: 'Golf', year: 2022, price: 30300, mileage: '20,000 km', transmission: 'manual', fuel: 'benzinë' },
-        { id: '5', make: 'Porsche', model: 'Cayenne', year: 2021, price: 87300, mileage: '35,000 km', transmission: 'automatic', fuel: 'benzinë' },
-        { id: '6', make: 'Tesla', model: 'Model S', year: 2023, price: 97300, mileage: '10,000 km', transmission: 'automatic', fuel: 'elektrike' },
-        { id: '7', make: 'Ford', model: 'Mustang', year: 2022, price: 57300, mileage: '18,000 km', transmission: 'automatic', fuel: 'benzinë' },
-        { id: '8', make: 'Chevrolet', model: 'Camaro', year: 2021, price: 50300, mileage: '22,000 km', transmission: 'manual', fuel: 'benzinë' },
-        { id: '9', make: 'Jaguar', model: 'F-Type', year: 2022, price: 80300, mileage: '12,000 km', transmission: 'automatic', fuel: 'benzinë' }
+        { id: '1', make: 'BMW', model: 'M3', year: 2022, price: 67300, mileage: '25,000 km', transmission: 'automatic', fuel: 'gasoline' },
+        { id: '2', make: 'Mercedes-Benz', model: 'C-Class', year: 2021, price: 47300, mileage: '30,000 km', transmission: 'automatic', fuel: 'gasoline' },
+        { id: '3', make: 'Audi', model: 'A4', year: 2023, price: 44300, mileage: '15,000 km', transmission: 'automatic', fuel: 'gasoline' },
+        { id: '4', make: 'Volkswagen', model: 'Golf', year: 2022, price: 30300, mileage: '20,000 km', transmission: 'manual', fuel: 'gasoline' },
+        { id: '5', make: 'Porsche', model: 'Cayenne', year: 2021, price: 87300, mileage: '35,000 km', transmission: 'automatic', fuel: 'gasoline' },
+        { id: '6', make: 'Tesla', model: 'Model S', year: 2023, price: 97300, mileage: '10,000 km', transmission: 'automatic', fuel: 'electric' },
+        { id: '7', make: 'Ford', model: 'Mustang', year: 2022, price: 57300, mileage: '18,000 km', transmission: 'automatic', fuel: 'gasoline' },
+        { id: '8', make: 'Chevrolet', model: 'Camaro', year: 2021, price: 50300, mileage: '22,000 km', transmission: 'manual', fuel: 'gasoline' },
+        { id: '9', make: 'Jaguar', model: 'F-Type', year: 2022, price: 80300, mileage: '12,000 km', transmission: 'automatic', fuel: 'gasoline' }
       ];
       setCars(fallbackCars);
       setFilteredCars(fallbackCars);
@@ -210,10 +205,10 @@ const CarsSection = () => {
 
   // Initial fetch
   useEffect(() => {
-    fetchCars(); // Remove test filtering parameter
+    fetchCars();
   }, []);
 
-  // Set up periodic updates
+  // Set up periodic updates with staggered timing to avoid rate limits
   useEffect(() => {
     const interval = setInterval(async () => {
       console.log('Running periodic update...');
@@ -254,35 +249,9 @@ const CarsSection = () => {
       );
     }
 
-    if (filterTransmission && filterTransmission !== 'all') {
-      filtered = filtered.filter(car => 
-        car.transmission?.toLowerCase().includes(filterTransmission.toLowerCase())
-      );
-    }
-
-    if (filterBodyType && filterBodyType !== 'all') {
-      filtered = filtered.filter(car => 
-        car.title?.toLowerCase().includes(filterBodyType.toLowerCase())
-      );
-    }
-
-    if (filterCondition && filterCondition !== 'all') {
-      filtered = filtered.filter(car => 
-        car.condition?.toLowerCase().includes(filterCondition.toLowerCase())
-      );
-    }
-
-    // Filter by price range
     filtered = filtered.filter(car => 
       car.price >= priceRange[0] && car.price <= priceRange[1]
     );
-
-    // Filter by mileage range (extract number from mileage string)
-    filtered = filtered.filter(car => {
-      if (!car.mileage) return true;
-      const mileageNum = parseInt(car.mileage.replace(/[^\d]/g, ''));
-      return mileageNum >= mileageRange[0] && mileageNum <= mileageRange[1];
-    });
 
     // Apply sorting
     filtered.sort((a, b) => {
@@ -299,7 +268,7 @@ const CarsSection = () => {
     });
 
     setFilteredCars(filtered);
-  }, [cars, sortBy, filterMake, filterYear, filterFuel, filterColor, filterTransmission, filterBodyType, filterCondition, priceRange, mileageRange]);
+  }, [cars, sortBy, filterMake, filterYear, filterFuel, filterColor, priceRange]);
 
   const handleRefresh = () => {
     fetchCars();
@@ -310,9 +279,6 @@ const CarsSection = () => {
   const uniqueYears = [...new Set(cars.map(car => car.year))].sort((a, b) => b - a);
   const uniqueFuels = [...new Set(cars.map(car => car.fuel).filter(Boolean))].sort();
   const uniqueColors = [...new Set(cars.map(car => car.color).filter(Boolean))].sort();
-  const uniqueTransmissions = [...new Set(cars.map(car => car.transmission).filter(Boolean))].sort();
-  const uniqueConditions = [...new Set(cars.map(car => car.condition).filter(Boolean))].sort();
-  const uniqueBodyTypes = ['Sedan', 'SUV', 'Hatchback', 'Coupe', 'Convertible', 'Wagon', 'Pickup'];
 
   return (
     <section id="cars" className="py-16 bg-secondary/30">
@@ -358,7 +324,7 @@ const CarsSection = () => {
             <h3 className="text-lg font-semibold">Kërko & Filtro Makinat</h3>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <div>
               <label className="text-sm font-medium mb-2 block">Rendit sipas</label>
               <Select value={sortBy} onValueChange={(value: 'price' | 'year' | 'make') => setSortBy(value)}>
@@ -452,71 +418,6 @@ const CarsSection = () => {
                 </SelectContent>
               </Select>
             </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Transmisioni</label>
-              <Select value={filterTransmission} onValueChange={setFilterTransmission}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Të gjithë" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Të gjithë</SelectItem>
-                  {uniqueTransmissions.map(transmission => (
-                    <SelectItem key={transmission} value={transmission}>{transmission}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Lloji i Trupit</label>
-              <Select value={filterBodyType} onValueChange={setFilterBodyType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Të gjithë" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Të gjithë</SelectItem>
-                  {uniqueBodyTypes.map(bodyType => (
-                    <SelectItem key={bodyType} value={bodyType}>{bodyType}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Gjendja</label>
-              <Select value={filterCondition} onValueChange={setFilterCondition}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Të gjitha" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Të gjitha</SelectItem>
-                  {uniqueConditions.map(condition => (
-                    <SelectItem key={condition} value={condition}>{condition}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Km min</label>
-              <Input 
-                type="number" 
-                placeholder="0"
-                value={mileageRange[0] === 0 ? '' : mileageRange[0].toString()}
-                onChange={(e) => setMileageRange([parseInt(e.target.value) || 0, mileageRange[1]])}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Km max</label>
-              <Input 
-                type="number" 
-                placeholder="300000"
-                value={mileageRange[1] === 300000 ? '' : mileageRange[1].toString()}
-                onChange={(e) => setMileageRange([mileageRange[0], parseInt(e.target.value) || 300000])}
-              />
-            </div>
           </div>
 
           <div className="mt-4 flex items-center justify-between">
@@ -531,11 +432,7 @@ const CarsSection = () => {
                 setFilterYear('all');
                 setFilterFuel('all');
                 setFilterColor('all');
-                setFilterTransmission('all');
-                setFilterBodyType('all');
-                setFilterCondition('all');
                 setPriceRange([0, 200000]);
-                setMileageRange([0, 300000]);
                 setSortBy('price');
               }}
             >

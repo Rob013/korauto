@@ -3,30 +3,30 @@ import { Mail, Phone, MapPin, Clock } from "lucide-react";
 
 const ContactSection = () => {
   return (
-    <section id="contact" className="py-8 sm:py-12 lg:py-16 bg-background">
-      <div className="container mx-auto px-4 sm:px-6">
-        <div className="text-center mb-8 sm:mb-12">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground">Na Kontaktoni</h2>
-          <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
+    <section id="contact" className="py-16 bg-background">
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold mb-4 text-foreground">Na Kontaktoni</h2>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Lidhuni me ekipin tonë për inspektime, pyetje, ose mbështetje.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-4xl mx-auto px-2 sm:px-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
           <Card className="text-center hover:shadow-lg transition-shadow duration-300">
-            <CardHeader className="pb-3">
-              <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-3">
+            <CardHeader>
+              <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
                 <Mail className="h-6 w-6 text-primary-foreground" />
               </div>
               <CardTitle className="text-lg">Email</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground mb-2 text-sm">Dërgoni një mesazh</p>
+              <p className="text-muted-foreground mb-2">Dërgoni një mesazh</p>
               <a 
-                href="mailto:INFO.RGSHPK@gmail.com" 
-                className="text-primary hover:text-primary/80 transition-colors font-medium text-sm break-all"
+                href="mailto:info@korauto.com" 
+                className="text-primary hover:text-primary/80 transition-colors font-medium"
               >
-                INFO.RGSHPK@gmail.com
+                info@korauto.com
               </a>
             </CardContent>
           </Card>
@@ -40,30 +40,12 @@ const ContactSection = () => {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground mb-2">Na telefononi direkt</p>
-              <div className="space-y-2">
-                <a 
-                  href="tel:+38348181116" 
-                  className="block text-primary hover:text-primary/80 transition-colors font-medium"
-                >
-                  +38348181116
-                </a>
-                <div className="flex gap-2">
-                  <a 
-                    href="https://wa.me/38348181116" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition-colors"
-                  >
-                    WhatsApp
-                  </a>
-                  <a 
-                    href="viber://chat?number=+38348181116" 
-                    className="text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600 transition-colors"
-                  >
-                    Viber
-                  </a>
-                </div>
-              </div>
+              <a 
+                href="tel:+49123456789" 
+                className="text-primary hover:text-primary/80 transition-colors font-medium"
+              >
+                +49 123 456 789
+              </a>
             </CardContent>
           </Card>
 
@@ -76,14 +58,7 @@ const ContactSection = () => {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground mb-2">Vizitoni zyrën tonë</p>
-              <a 
-                href="https://maps.google.com/?q=Rr.Ilaz+Kodra+70+Prishtine+Kosovo+KORAUTO" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-primary font-medium hover:text-primary/80 transition-colors"
-              >
-                Rr. Ilaz Kodra 70, Prishtinë
-              </a>
+              <p className="text-primary font-medium">Munich, Germany</p>
             </CardContent>
           </Card>
 
@@ -97,7 +72,8 @@ const ContactSection = () => {
             <CardContent>
               <p className="text-muted-foreground mb-2">Jemi të disponueshëm</p>
               <div className="text-primary font-medium">
-                <p>Çdo ditë: 9:00-18:00</p>
+                <p>Mon-Fri: 9:00-18:00</p>
+                <p>Sat: 10:00-16:00</p>
               </div>
             </CardContent>
           </Card>

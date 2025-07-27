@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Shield, FileText, Camera, Clock } from "lucide-react";
-import InspectionRequestForm from "./InspectionRequestForm";
 
 const InspectionSection = () => {
   const inspectionSteps = [
@@ -31,7 +30,7 @@ const InspectionSection = () => {
     <section id="inspection" className="py-16 bg-muted/50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4 text-foreground">Shërbim profesional i importit të makinave</h2>
+          <h2 className="text-4xl font-bold mb-4 text-foreground">Shërbimi Profesional i Inspektimit</h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             Kërkoni një inspektim profesional për çdo makinë vetëm për €50. 
             Fitoni qetësinë mendore me shërbimin tonë gjithëpërfshirës të vlerësimit të mjeteve.
@@ -89,20 +88,17 @@ const InspectionSection = () => {
                   </div>
                   <div className="flex items-center gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm text-foreground">Garanci 100% për MOTOR, TRANSMISION dhe KM me prakontratë</span>
+                    <span className="text-sm text-foreground">100% garanci kënaqësie</span>
                   </div>
                 </div>
                 
-                <InspectionRequestForm
-                  trigger={
-                    <Button 
-                      className="w-full bg-inspection hover:bg-inspection/90 text-inspection-foreground mt-6" 
-                      size="lg"
-                    >
-                      Kërkesë për Inspektim (€50)
-                    </Button>
-                  }
-                />
+                <Button 
+                  className="w-full bg-inspection hover:bg-inspection/90 text-inspection-foreground mt-6" 
+                  size="lg"
+                  onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+                >
+                  Na Kontaktoni për Inspektim
+                </Button>
               </CardContent>
             </Card>
 
