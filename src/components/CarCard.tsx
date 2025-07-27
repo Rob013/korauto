@@ -103,7 +103,7 @@ const CarCard = ({
               aria-label={`Request inspection for ${year} ${make} ${model}`}
             >
               <Search className="h-3 w-3 mr-2" />
-              Request Inspection
+              Request Inspection (€50)
             </Button>
           }
         />
