@@ -39,14 +39,24 @@ const CarsSection = () => {
   const [mileageRange, setMileageRange] = useState<[number, number]>([0, 300000]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 200000]);
 
-  // Correct API endpoint based on 429 response analysis
-  const API_BASE_URL = 'https://auctionsapi.com/api';
+  // Correct API endpoint 
+  const API_BASE_URL = 'https://api.auctionsapi.com/api';
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
+
+  // Cache to prevent excessive API calls
+  const [cache, setCache] = useState<{data: any, timestamp: number} | null>(null);
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
   // Add delay between requests to respect rate limits
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   const tryApiEndpoint = async (endpoint: string, params: URLSearchParams, retryCount = 0): Promise<any> => {
+    // Check cache first
+    if (cache && Date.now() - cache.timestamp < CACHE_DURATION) {
+      console.log('Using cached data');
+      return cache.data;
+    }
+
     console.log(`API Request: ${API_BASE_URL}${endpoint}?${params}`);
     
     try {
@@ -54,29 +64,35 @@ const CarsSection = () => {
         headers: {
           'Accept': 'application/json',
           'User-Agent': 'KORAUTO-WebApp/1.0',
-          'X-API-Key': API_KEY
+          'Authorization': `Bearer ${API_KEY}`
         }
       });
 
       if (response.status === 429) {
         // Rate limited - implement exponential backoff
-        const waitTime = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s, 8s...
+        const waitTime = Math.pow(2, retryCount) * 5000; // 5s, 10s, 20s...
         console.log(`Rate limited. Waiting ${waitTime}ms before retry ${retryCount + 1}`);
         
-        if (retryCount < 3) {
+        if (retryCount < 2) {
           await delay(waitTime);
           return tryApiEndpoint(endpoint, params, retryCount + 1);
         } else {
-          throw new Error('Rate limit exceeded after retries');
+          throw new Error('Rate limit exceeded. Please wait before refreshing.');
         }
       }
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`API Error Response:`, errorText);
         throw new Error(`API returned ${response.status}: ${response.statusText}`);
       }
       
       const data = await response.json();
       console.log(`API Success: ${data?.data?.length || 0} cars received`);
+      
+      // Update cache
+      setCache({ data, timestamp: Date.now() });
+      
       return data;
     } catch (err) {
       console.error(`API Request failed:`, err);
@@ -90,10 +106,9 @@ const CarsSection = () => {
 
     try {
       // Add delay to respect rate limits
-      await delay(500);
+      await delay(1000);
 
       const params = new URLSearchParams({
-        api_key: API_KEY,
         limit: '50' // Demo mode limit
       });
 
@@ -215,14 +230,17 @@ const CarsSection = () => {
   // Set up periodic updates with staggered timing to avoid rate limits
   useEffect(() => {
     const interval = setInterval(async () => {
-      console.log('Running periodic update...');
-      await fetchCars(60); // Fetch updates from last 60 minutes
-      await delay(2000); // Wait 2 seconds between calls
-      await fetchArchivedLots(); // Remove sold cars
-    }, 60 * 60 * 1000); // Every hour
+      // Only refresh if no cache or cache is old
+      if (!cache || Date.now() - cache.timestamp > CACHE_DURATION) {
+        console.log('Running periodic update...');
+        await fetchCars(60); // Fetch updates from last 60 minutes
+        await delay(5000); // Wait 5 seconds between calls
+        await fetchArchivedLots(); // Remove sold cars
+      }
+    }, 10 * 60 * 1000); // Every 10 minutes instead of every hour
 
     return () => clearInterval(interval);
-  }, []);
+  }, [cache]);
 
   // Sorting and filtering logic
   useEffect(() => {
