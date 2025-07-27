@@ -48,10 +48,6 @@ export default {
 					DEFAULT: 'hsl(var(--premium))',
 					foreground: 'hsl(var(--premium-foreground))'
 				},
-				inspection: {
-					DEFAULT: 'hsl(var(--inspection))',
-					foreground: 'hsl(var(--inspection-foreground))'
-				},
 				popover: {
 					DEFAULT: 'hsl(var(--popover))',
 					foreground: 'hsl(var(--popover-foreground))'
