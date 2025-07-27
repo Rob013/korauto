@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { RefreshCw, AlertCircle, Filter, Search, Grid, List, SlidersHorizontal, X, Eye, Heart, Car } from "lucide-react";
+import { RefreshCw, AlertCircle, Filter, Search, Grid, List, SlidersHorizontal, X, Eye, Heart, Car, BarChart3 } from "lucide-react";
 import { useEncarAPI, type Car as EncarCar, type Manufacturer } from "@/hooks/useEncarAPI";
 import { useInView } from "react-intersection-observer";
 import CarCard from "./CarCard";
+import ApiStatsDisplay from "./ApiStatsDisplay";
 
 const EnhancedCatalog = () => {
   const {
@@ -67,9 +68,9 @@ const EnhancedCatalog = () => {
         yearRange,
         priceRange,
         mileageRange,
-        fuel: selectedFuel,
-        transmission: selectedTransmission,
-        condition: selectedCondition
+        fuel: selectedFuel ? [selectedFuel] : [],
+        transmission: selectedTransmission ? [selectedTransmission] : [],
+        condition: selectedCondition ? [selectedCondition] : []
       };
       filterCars(filters);
     }
@@ -214,9 +215,18 @@ const EnhancedCatalog = () => {
             </Badge>
             <Badge variant="outline" className="px-4 py-2 text-sm">
               <Heart className="h-4 w-4 mr-2" />
-              Premium quality
+              No limits applied
+            </Badge>
+            <Badge variant="outline" className="px-4 py-2 text-sm">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              {manufacturers.length} brands
             </Badge>
           </div>
+        </div>
+
+        {/* API Stats Display */}
+        <div className="mb-8">
+          <ApiStatsDisplay />
         </div>
 
         {/* Search and Quick Actions */}

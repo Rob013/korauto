@@ -1,12 +1,12 @@
 import Header from "@/components/Header";
-import DatabaseCatalog from "@/components/DatabaseCatalog";
 import Footer from "@/components/Footer";
+import LiveCatalog from "@/components/LiveCatalog";
 
 const Catalog = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <DatabaseCatalog />
+      <LiveCatalog />
       <Footer />
     </div>
   );
