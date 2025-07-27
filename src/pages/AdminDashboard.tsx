@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Mail, Phone, Car, Euro } from "lucide-react";
+import { RefreshCw, Mail, Phone, Car, Euro, ArrowLeft, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import AuthLogin from "@/components/AuthLogin";
 
 interface InspectionRequest {
   id: string;
@@ -24,8 +27,72 @@ interface InspectionRequest {
 const AdminDashboard = () => {
   const [requests, setRequests] = useState<InspectionRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [authLoading, setAuthLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
+  // Check authentication and admin status
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      
+      if (user) {
+        try {
+          const { data: adminCheck, error } = await supabase
+            .rpc('is_admin');
+          
+          if (error) throw error;
+          setIsAdmin(adminCheck || false);
+        } catch (error) {
+          console.error('Admin check failed:', error);
+          setIsAdmin(false);
+        }
+      }
+      
+      setAuthLoading(false);
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+      if (!session?.user) {
+        setIsAdmin(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast({
+      title: "Logged out",
+      description: "Successfully logged out of admin dashboard",
+    });
+  };
+
+  const handleLoginSuccess = () => {
+    setAuthLoading(true);
+    // Re-check auth status after login
+    const recheckAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      
+      if (user) {
+        const { data: adminCheck } = await supabase.rpc('is_admin');
+        setIsAdmin(adminCheck || false);
+      }
+      
+      setAuthLoading(false);
+    };
+    
+    recheckAuth();
+  };
   const fetchRequests = async () => {
     setLoading(true);
     try {
@@ -49,8 +116,27 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
-    fetchRequests();
-  }, []);
+    if (user && isAdmin) {
+      fetchRequests();
+    }
+  }, [user, isAdmin]);
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Checking permissions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login form if not authenticated or not admin
+  if (!user || !isAdmin) {
+    return <AuthLogin onLoginSuccess={handleLoginSuccess} />;
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -75,11 +161,30 @@ const AdminDashboard = () => {
   return (
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Admin Dashboard - Inspection Requests</h1>
-        <Button onClick={fetchRequests} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div>
+          <h1 className="text-3xl font-bold">Admin Dashboard - Inspection Requests</h1>
+          <p className="text-muted-foreground">Logged in as: {user.email}</p>
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/')}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Return Home
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={handleLogout}
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Logout
+          </Button>
+          <Button onClick={fetchRequests} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
