@@ -86,7 +86,7 @@ const [formData, setFormData] = useState({
         
         // Small delay to ensure UI updates, then redirect
         setTimeout(() => {
-          const stripeUrl = "https://buy.stripe.com/7sY3cwcbVfhh5Yk4dEco000";
+          const stripeUrl = "https://buy.stripe.com/8x2bJ26RB3yz72ocKaco001";
           const params = new URLSearchParams({
             'prefilled_email': formData.email,
             'client_reference_id': `${formData.firstName}_${formData.lastName}`
@@ -126,7 +126,7 @@ const [formData, setFormData] = useState({
       if (formData.paymentMethod === "card") {
         // Also redirect to payment on error
         setTimeout(() => {
-          window.location.href = "https://buy.stripe.com/7sY3cwcbVfhh5Yk4dEco000";
+          window.location.href = "https://buy.stripe.com/8x2bJ26RB3yz72ocKaco001";
         }, 1000);
       }
       
@@ -151,12 +151,15 @@ const [formData, setFormData] = useState({
       <DialogTrigger asChild>
         {trigger}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" aria-describedby="inspection-form-description">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MessageCircle className="h-5 w-5 text-primary" />
             Kërkesë për Inspektim
           </DialogTitle>
+          <p id="inspection-form-description" className="text-sm text-muted-foreground">
+            Plotësoni formularin për të kërkuar shërbimin e inspektimit të makinës.
+          </p>
         </DialogHeader>
         <Card className="border-0 shadow-none">
           <CardContent className="p-0">

@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const resendApiKey = Deno.env.get("RESEND_API_KEY");
+const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -27,6 +28,22 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const requestData: InspectionRequest = await req.json();
+    
+    console.log("Received inspection request:", requestData);
+    
+    if (!resend) {
+      console.log("RESEND_API_KEY not configured, skipping email notifications");
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: "Request logged but email notifications not configured" 
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
     
     const carInfo = requestData.car_make && requestData.car_model && requestData.car_year 
       ? `${requestData.car_year} ${requestData.car_make} ${requestData.car_model}` 
