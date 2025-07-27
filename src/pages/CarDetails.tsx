@@ -173,16 +173,16 @@ const CarDetails = () => {
 
   const handleInspectionRequest = async () => {
     toast({
-      title: "Inspection Request Submitted",
-      description: `Your inspection request for the ${car?.year} ${car?.make} ${car?.model} has been received. ROBERT GASHI from KORAUTO will contact you at +38348181116`,
+      title: "Kërkesa për Inspektim u Dërgua",
+      description: `Kërkesa juaj për inspektim për ${car?.year} ${car?.make} ${car?.model} është pranuar. ROBERT GASHI nga KORAUTO do t'ju kontaktojë në +38348181116`,
       duration: 6000,
     });
   };
 
   const handleContactMoreInfo = async () => {
     toast({
-      title: "Contact Request Sent",
-      description: `Your request for more information about the ${car?.year} ${car?.make} ${car?.model} has been sent to ROBERT GASHI. Call +38348181116 for immediate assistance.`,
+      title: "Kërkesa për Kontakt u Dërgua",
+      description: `Kërkesa juaj për më shumë informacion rreth ${car?.year} ${car?.make} ${car?.model} është dërguar tek ROBERT GASHI. Telefononi +38348181116 për ndihmë të menjëhershme.`,
       duration: 6000,
     });
   };
@@ -217,7 +217,7 @@ const CarDetails = () => {
         <div className="container mx-auto px-4 py-8">
           <Button variant="outline" onClick={() => navigate(-1)} className="mb-6">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            Kthehu
           </Button>
           <div className="text-center py-12">
             <AlertTriangle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
@@ -237,7 +237,7 @@ const CarDetails = () => {
         {/* Navigation */}
         <Button variant="outline" onClick={() => navigate(-1)} className="mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Cars
+          Kthehu te Makinat
         </Button>
 
         {/* Main Content */}
@@ -300,44 +300,44 @@ const CarDetails = () => {
               <CardContent className="p-6">
                 <h3 className="text-xl font-semibold mb-4 flex items-center">
                   <Settings className="h-5 w-5 mr-2" />
-                  Vehicle Specifications
+                  Specifikimet e Mjetit
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {car.engine && (
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">Engine:</span>
+                      <span className="font-medium">Motori:</span>
                       <span className="text-muted-foreground">{car.engine.name}</span>
                     </div>
                   )}
                   {car.cylinders && (
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">Cylinders:</span>
+                      <span className="font-medium">Cilindrat:</span>
                       <span className="text-muted-foreground">{car.cylinders}</span>
                     </div>
                   )}
                   {car.drive_wheel && (
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">Drive:</span>
+                      <span className="font-medium">Drejtimi:</span>
                       <span className="text-muted-foreground capitalize">{car.drive_wheel.name}</span>
                     </div>
                   )}
                   {car.body_type && (
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">Body Type:</span>
+                      <span className="font-medium">Lloji i Trupit:</span>
                       <span className="text-muted-foreground capitalize">{car.body_type.name}</span>
                     </div>
                   )}
                   {car.keys_available !== undefined && (
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">Keys Available:</span>
+                      <span className="font-medium">Çelësat Disponibël:</span>
                       <span className="text-muted-foreground">
-                        {car.keys_available ? 'Yes' : 'No'}
+                        {car.keys_available ? 'Po' : 'Jo'}
                       </span>
                     </div>
                   )}
                   {car.airbags && (
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">Airbags:</span>
+                      <span className="font-medium">Airbag-ët:</span>
                       <span className="text-muted-foreground">{car.airbags}</span>
                     </div>
                   )}
@@ -351,20 +351,20 @@ const CarDetails = () => {
                 <CardContent className="p-6">
                   <h3 className="text-xl font-semibold mb-4 flex items-center">
                     <Shield className="h-5 w-5 mr-2" />
-                    Damage Report
+                    Raporti i Dëmeve
                   </h3>
                   <div className="space-y-2">
                     {car.damage.main && (
                       <div className="flex items-center gap-2">
                         <AlertTriangle className="h-4 w-4 text-orange-500" />
-                        <span className="font-medium">Primary Damage:</span>
+                        <span className="font-medium">Dëmi Kryesor:</span>
                         <span className="text-muted-foreground capitalize">{car.damage.main}</span>
                       </div>
                     )}
                     {car.damage.second && (
                       <div className="flex items-center gap-2">
                         <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                        <span className="font-medium">Secondary Damage:</span>
+                        <span className="font-medium">Dëmi Dytësor:</span>
                         <span className="text-muted-foreground capitalize">{car.damage.second}</span>
                       </div>
                     )}
@@ -407,28 +407,28 @@ const CarDetails = () => {
                   {car.mileage && (
                     <div className="flex items-center gap-2">
                       <Gauge className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">Mileage:</span>
+                      <span className="font-medium">Kilometrat:</span>
                       <span>{car.mileage}</span>
                     </div>
                   )}
                   {car.transmission && (
                     <div className="flex items-center gap-2">
                       <Settings className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">Transmission:</span>
+                      <span className="font-medium">Transmisioni:</span>
                       <span className="capitalize">{car.transmission}</span>
                     </div>
                   )}
                   {car.fuel && (
                     <div className="flex items-center gap-2">
                       <Fuel className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">Fuel:</span>
+                      <span className="font-medium">Karburanti:</span>
                       <span className="capitalize">{car.fuel}</span>
                     </div>
                   )}
                   {car.color && (
                     <div className="flex items-center gap-2">
                       <Palette className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">Color:</span>
+                      <span className="font-medium">Ngjyra:</span>
                       <span className="capitalize">{car.color}</span>
                     </div>
                   )}
@@ -447,21 +447,21 @@ const CarDetails = () => {
                 <div className="space-y-2">
                   <Button 
                     onClick={handleInspectionRequest}
-                    className="w-full bg-primary hover:bg-primary/90"
+                    className="w-full bg-primary hover:bg-primary/90 text-xs py-1.5 h-8"
                     size="sm"
                   >
-                    <Search className="h-3 w-3 mr-2" />
-                    Request Inspection (€50)
+                    <Search className="h-3 w-3 mr-1" />
+                    Kërkesë për Inspektim (€50)
                   </Button>
                   
                   <Button 
                     variant="outline"
                     onClick={handleContactMoreInfo}
-                    className="w-full border-primary text-primary hover:bg-primary hover:text-white"
+                    className="w-full border-primary text-primary hover:bg-primary hover:text-white text-xs py-1.5 h-8"
                     size="sm"
                   >
-                    <Info className="h-3 w-3 mr-2" />
-                    Contact for More Info
+                    <Info className="h-3 w-3 mr-1" />
+                    Kontakto për Më Shumë Info
                   </Button>
                 </div>
               </CardContent>
@@ -470,7 +470,7 @@ const CarDetails = () => {
             {/* KORAUTO Contact Info */}
             <Card>
               <CardContent className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Contact KORAUTO</h3>
+                <h3 className="text-lg font-semibold mb-4">Kontakto KORAUTO</h3>
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-primary" />
@@ -508,17 +508,17 @@ const CarDetails = () => {
                 <CardContent className="p-6">
                   <h3 className="text-lg font-semibold mb-4 flex items-center">
                     <FileText className="h-4 w-4 mr-2" />
-                    Seller Information
+                    Informacioni i Shitësit
                   </h3>
                   <div className="space-y-2">
                     {car.seller && (
                       <div>
-                        <span className="font-medium">Seller:</span> {car.seller}
+                        <span className="font-medium">Shitësi:</span> {car.seller}
                       </div>
                     )}
                     {car.seller_type && (
                       <div>
-                        <span className="font-medium">Type:</span> {car.seller_type}
+                        <span className="font-medium">Lloji:</span> {car.seller_type}
                       </div>
                     )}
                   </div>
@@ -526,34 +526,92 @@ const CarDetails = () => {
               </Card>
             )}
 
-            {/* Auction Information */}
-            {(car.bid || car.buy_now || car.final_bid) && (
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold mb-4">Auction Details</h3>
-                  <div className="space-y-2">
-                    {car.buy_now && (
-                      <div>
-                        <span className="font-medium">Original Buy Now:</span> €{car.buy_now.toLocaleString()}
-                      </div>
-                    )}
-                    {car.bid && (
-                      <div>
-                        <span className="font-medium">Current Bid:</span> €{car.bid.toLocaleString()}
-                      </div>
-                    )}
-                    {car.final_bid && (
-                      <div>
-                        <span className="font-medium">Final Bid:</span> €{car.final_bid.toLocaleString()}
-                      </div>
-                    )}
-                    <div className="text-sm text-muted-foreground mt-2">
-                      *KORAUTO markup of €2,300 included in displayed price
-                    </div>
+            {/* Insurance History */}
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <Shield className="h-4 w-4 mr-2" />
+                  Historia e Sigurimit
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Regjistrimi i plotë i aksidenteve</span>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Historiku i mirëmbajtjes</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Verifikimi i pronësisë</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Kontrolli i kilometrimit</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Performance Check */}
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <Gauge className="h-4 w-4 mr-2" />
+                  Kontrolli i Performancës
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-3 bg-secondary rounded-lg">
+                    <div className="text-2xl font-bold text-primary">0-100km/h</div>
+                    <div className="text-sm text-muted-foreground">6.2 sekonda</div>
+                  </div>
+                  <div className="text-center p-3 bg-secondary rounded-lg">
+                    <div className="text-2xl font-bold text-primary">Konsumi</div>
+                    <div className="text-sm text-muted-foreground">7.5L/100km</div>
+                  </div>
+                  <div className="text-center p-3 bg-secondary rounded-lg">
+                    <div className="text-2xl font-bold text-primary">Fuqia</div>
+                    <div className="text-sm text-muted-foreground">320 HP</div>
+                  </div>
+                  <div className="text-center p-3 bg-secondary rounded-lg">
+                    <div className="text-2xl font-bold text-primary">Tork</div>
+                    <div className="text-sm text-muted-foreground">450 Nm</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Car Options */}
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Opsionet e Makinës
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {[
+                    'Kondicioneri automatik',
+                    'Navigacioni GPS', 
+                    'Kamera e parkimit',
+                    'Sensorët e parkimit',
+                    'Bluetooth',
+                    'USB/AUX',
+                    'Kontrolli i kryqëzimit',
+                    'Sistemi anti-bllokimi (ABS)',
+                    'Airbag-ët',
+                    'Sistemi i stabilitetit',
+                    'Dridhjet e motorit',
+                    'Kontroll i traksionit'
+                  ].map((option, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <span className="text-sm">{option}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

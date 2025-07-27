@@ -31,6 +31,8 @@ const CarsSection = () => {
   const [sortBy, setSortBy] = useState<'price' | 'year' | 'make'>('price');
   const [filterMake, setFilterMake] = useState<string>('all');
   const [filterYear, setFilterYear] = useState<string>('all');
+  const [filterFuel, setFilterFuel] = useState<string>('all');
+  const [filterColor, setFilterColor] = useState<string>('all');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 200000]);
 
   // Correct API endpoint based on 429 response analysis
@@ -235,6 +237,18 @@ const CarsSection = () => {
       );
     }
 
+    if (filterFuel && filterFuel !== 'all') {
+      filtered = filtered.filter(car => 
+        car.fuel?.toLowerCase().includes(filterFuel.toLowerCase())
+      );
+    }
+
+    if (filterColor && filterColor !== 'all') {
+      filtered = filtered.filter(car => 
+        car.color?.toLowerCase().includes(filterColor.toLowerCase())
+      );
+    }
+
     filtered = filtered.filter(car => 
       car.price >= priceRange[0] && car.price <= priceRange[1]
     );
@@ -254,23 +268,25 @@ const CarsSection = () => {
     });
 
     setFilteredCars(filtered);
-  }, [cars, sortBy, filterMake, filterYear, priceRange]);
+  }, [cars, sortBy, filterMake, filterYear, filterFuel, filterColor, priceRange]);
 
   const handleRefresh = () => {
     fetchCars();
   };
 
-  // Get unique makes for filter dropdown
+  // Get unique values for filter dropdowns
   const uniqueMakes = [...new Set(cars.map(car => car.make))].sort();
   const uniqueYears = [...new Set(cars.map(car => car.year))].sort((a, b) => b - a);
+  const uniqueFuels = [...new Set(cars.map(car => car.fuel).filter(Boolean))].sort();
+  const uniqueColors = [...new Set(cars.map(car => car.color).filter(Boolean))].sort();
 
   return (
     <section id="cars" className="py-16 bg-secondary/30">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4 text-foreground">Available Cars</h2>
+          <h2 className="text-4xl font-bold mb-4 text-foreground">Makinat e Disponueshme</h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Browse our selection of premium vehicles. Each car can be professionally inspected for only €50.
+            Shfletoni përzgjedhjen tonë të mjeteve të cilësisë së lartë. Çdo makinë mund të inspektohet profesionalisht vetëm për €50.
           </p>
           
           <div className="flex justify-center items-center gap-4 mt-6">
@@ -282,11 +298,11 @@ const CarsSection = () => {
               className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              {loading ? 'Loading...' : 'Refresh'}
+              {loading ? 'Duke u ngarkuar...' : 'Rifresko'}
             </Button>
             {lastUpdate && (
               <span className="text-sm text-muted-foreground">
-                Last updated: {lastUpdate.toLocaleTimeString()}
+                Përditësuar për herë të fundit: {lastUpdate.toLocaleTimeString()}
               </span>
             )}
           </div>
@@ -296,7 +312,7 @@ const CarsSection = () => {
           <div className="flex items-center justify-center gap-2 mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <AlertCircle className="h-5 w-5 text-yellow-600" />
             <span className="text-yellow-800">
-              API Connection Issue: {error}. Displaying demo cars with full inspection service available.
+              Problem me lidhjen API: {error}. Duke shfaqur makina demo me shërbim të plotë inspektimi të disponueshëm.
             </span>
           </div>
         )}
@@ -305,32 +321,32 @@ const CarsSection = () => {
         <div className="mb-8 p-6 bg-card rounded-lg border border-border">
           <div className="flex items-center gap-2 mb-4">
             <Filter className="h-5 w-5" />
-            <h3 className="text-lg font-semibold">Search & Filter Cars</h3>
+            <h3 className="text-lg font-semibold">Kërko & Filtro Makinat</h3>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <div>
-              <label className="text-sm font-medium mb-2 block">Sort by</label>
+              <label className="text-sm font-medium mb-2 block">Rendit sipas</label>
               <Select value={sortBy} onValueChange={(value: 'price' | 'year' | 'make') => setSortBy(value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="price">Price (Low to High)</SelectItem>
-                  <SelectItem value="year">Year (Newest First)</SelectItem>
-                  <SelectItem value="make">Make (A-Z)</SelectItem>
+                  <SelectItem value="price">Çmimi (Nga i ulëti te i larti)</SelectItem>
+                  <SelectItem value="year">Viti (Më i riu së pari)</SelectItem>
+                  <SelectItem value="make">Marka (A-Z)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-2 block">Make</label>
+              <label className="text-sm font-medium mb-2 block">Marka</label>
               <Select value={filterMake} onValueChange={setFilterMake}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All Makes" />
+                  <SelectValue placeholder="Të gjitha Markat" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Makes</SelectItem>
+                  <SelectItem value="all">Të gjitha Markat</SelectItem>
                   {uniqueMakes.map(make => (
                     <SelectItem key={make} value={make}>{make}</SelectItem>
                   ))}
@@ -339,13 +355,13 @@ const CarsSection = () => {
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-2 block">Year</label>
+              <label className="text-sm font-medium mb-2 block">Viti</label>
               <Select value={filterYear} onValueChange={setFilterYear}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All Years" />
+                  <SelectValue placeholder="Të gjithë Vitet" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Years</SelectItem>
+                  <SelectItem value="all">Të gjithë Vitet</SelectItem>
                   {uniqueYears.map(year => (
                     <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
                   ))}
@@ -354,7 +370,7 @@ const CarsSection = () => {
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-2 block">Min Price (€)</label>
+              <label className="text-sm font-medium mb-2 block">Çmimi min (€)</label>
               <Input 
                 type="number" 
                 placeholder="0"
@@ -364,7 +380,7 @@ const CarsSection = () => {
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-2 block">Max Price (€)</label>
+              <label className="text-sm font-medium mb-2 block">Çmimi max (€)</label>
               <Input 
                 type="number" 
                 placeholder="200000"
@@ -372,11 +388,41 @@ const CarsSection = () => {
                 onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value) || 200000])}
               />
             </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Karburanti</label>
+              <Select value={filterFuel} onValueChange={setFilterFuel}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Të gjithë" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Të gjithë</SelectItem>
+                  {uniqueFuels.map(fuel => (
+                    <SelectItem key={fuel} value={fuel}>{fuel}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Ngjyra</label>
+              <Select value={filterColor} onValueChange={setFilterColor}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Të gjitha" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Të gjitha</SelectItem>
+                  {uniqueColors.map(color => (
+                    <SelectItem key={color} value={color}>{color}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="mt-4 flex items-center justify-between">
             <span className="text-sm text-muted-foreground">
-              Showing {filteredCars.length} of {cars.length} cars
+              Duke shfaqur {filteredCars.length} nga {cars.length} makina
             </span>
             <Button 
               variant="outline" 
@@ -384,11 +430,13 @@ const CarsSection = () => {
               onClick={() => {
                 setFilterMake('all');
                 setFilterYear('all');
+                setFilterFuel('all');
+                setFilterColor('all');
                 setPriceRange([0, 200000]);
                 setSortBy('price');
               }}
             >
-              Clear Filters
+              Pastro Filtrat
             </Button>
           </div>
         </div>
@@ -416,30 +464,32 @@ const CarsSection = () => {
 
         {filteredCars.length === 0 && !loading && cars.length > 0 && (
           <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg">No cars match your filters.</p>
+            <p className="text-muted-foreground text-lg">Asnjë makinë nuk përputhet me filtrat tuaj.</p>
             <Button 
               variant="outline" 
               onClick={() => {
                 setFilterMake('all');
                 setFilterYear('all');
+                setFilterFuel('all');
+                setFilterColor('all');
                 setPriceRange([0, 200000]);
               }}
               className="mt-4 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
             >
-              Clear Filters
+              Pastro Filtrat
             </Button>
           </div>
         )}
 
         {cars.length === 0 && !loading && (
           <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg">No cars available at the moment.</p>
+            <p className="text-muted-foreground text-lg">Asnjë makinë nuk është e disponueshme në këtë moment.</p>
             <Button 
               variant="outline" 
               onClick={handleRefresh}
               className="mt-4 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
             >
-              Try Again
+              Provo Përsëri
             </Button>
           </div>
         )}
