@@ -18,59 +18,14 @@ const CarsSection = () => {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
-  // Correct API endpoint based on 429 response analysis
-  const API_BASE_URL = 'https://auctionsapi.com/api';
+  const API_BASE_URL = 'https://api.auctionsapi.com';
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
-
-  // Add delay between requests to respect rate limits
-  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-  const tryApiEndpoint = async (endpoint: string, params: URLSearchParams, retryCount = 0): Promise<any> => {
-    console.log(`API Request: ${API_BASE_URL}${endpoint}?${params}`);
-    
-    try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}?${params}`, {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'KORAUTO-WebApp/1.0',
-          'X-API-Key': API_KEY
-        }
-      });
-
-      if (response.status === 429) {
-        // Rate limited - implement exponential backoff
-        const waitTime = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s, 8s...
-        console.log(`Rate limited. Waiting ${waitTime}ms before retry ${retryCount + 1}`);
-        
-        if (retryCount < 3) {
-          await delay(waitTime);
-          return tryApiEndpoint(endpoint, params, retryCount + 1);
-        } else {
-          throw new Error('Rate limit exceeded after retries');
-        }
-      }
-
-      if (!response.ok) {
-        throw new Error(`API returned ${response.status}: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      console.log(`API Success: ${data?.cars?.length || 0} cars received`);
-      return data;
-    } catch (err) {
-      console.error(`API Request failed:`, err);
-      throw err;
-    }
-  };
 
   const fetchCars = async (minutes?: number) => {
     setLoading(true);
     setError(null);
 
     try {
-      // Add delay to respect rate limits
-      await delay(500);
-
       const params = new URLSearchParams({
         api_key: API_KEY,
         limit: '50' // Demo mode limit
@@ -80,12 +35,13 @@ const CarsSection = () => {
         params.append('minutes', minutes.toString());
       }
 
-      console.log('Fetching cars from API...');
-      const data = await tryApiEndpoint('/cars', params);
-
-      if (!data) {
-        throw new Error('No data received from API');
+      const response = await fetch(`${API_BASE_URL}/api/cars?${params}`);
+      
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`);
       }
+
+      const data = await response.json();
       
       // Transform API data to our Car interface
       const transformedCars: Car[] = data.cars?.map((car: any, index: number) => ({
@@ -99,13 +55,23 @@ const CarsSection = () => {
 
       // If no cars from API, use fallback data
       if (transformedCars.length === 0) {
-        throw new Error('No cars returned from API');
+        const fallbackCars: Car[] = [
+          { id: '1', make: 'BMW', model: 'M3', year: 2022, price: 65000 },
+          { id: '2', make: 'Mercedes-Benz', model: 'C-Class', year: 2021, price: 45000 },
+          { id: '3', make: 'Audi', model: 'A4', year: 2023, price: 42000 },
+          { id: '4', make: 'Volkswagen', model: 'Golf', year: 2022, price: 28000 },
+          { id: '5', make: 'Porsche', model: 'Cayenne', year: 2021, price: 85000 },
+          { id: '6', make: 'Tesla', model: 'Model S', year: 2023, price: 95000 },
+          { id: '7', make: 'Ford', model: 'Mustang', year: 2022, price: 55000 },
+          { id: '8', make: 'Chevrolet', model: 'Camaro', year: 2021, price: 48000 },
+          { id: '9', make: 'Jaguar', model: 'F-Type', year: 2022, price: 78000 }
+        ];
+        setCars(fallbackCars);
+      } else {
+        setCars(transformedCars);
       }
 
-      setCars(transformedCars);
       setLastUpdate(new Date());
-      console.log(`Successfully loaded ${transformedCars.length} cars from API`);
-      
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch cars';
       setError(errorMessage);
@@ -118,14 +84,9 @@ const CarsSection = () => {
         { id: '3', make: 'Audi', model: 'A4', year: 2023, price: 42000 },
         { id: '4', make: 'Volkswagen', model: 'Golf', year: 2022, price: 28000 },
         { id: '5', make: 'Porsche', model: 'Cayenne', year: 2021, price: 85000 },
-        { id: '6', make: 'Tesla', model: 'Model S', year: 2023, price: 95000 },
-        { id: '7', make: 'Ford', model: 'Mustang', year: 2022, price: 55000 },
-        { id: '8', make: 'Chevrolet', model: 'Camaro', year: 2021, price: 48000 },
-        { id: '9', make: 'Jaguar', model: 'F-Type', year: 2022, price: 78000 }
+        { id: '6', make: 'Tesla', model: 'Model S', year: 2023, price: 95000 }
       ];
       setCars(fallbackCars);
-      setLastUpdate(new Date());
-      console.log('Using fallback car data');
     } finally {
       setLoading(false);
     }
@@ -133,24 +94,22 @@ const CarsSection = () => {
 
   const fetchArchivedLots = async () => {
     try {
-      // Add delay to respect rate limits
-      await delay(300);
-
       const params = new URLSearchParams({
         api_key: API_KEY,
         minutes: '60'
       });
 
-      console.log('Fetching archived lots...');
-      const data = await tryApiEndpoint('/archived-lots', params);
-      const archivedIds = data.archivedLots?.map((lot: any) => lot.id) || [];
+      const response = await fetch(`${API_BASE_URL}/api/archived-lots?${params}`);
       
-      // Remove archived cars from current list
-      setCars(prevCars => prevCars.filter(car => !archivedIds.includes(car.id)));
-      console.log(`Successfully removed ${archivedIds.length} archived cars`);
+      if (response.ok) {
+        const data = await response.json();
+        const archivedIds = data.archivedLots?.map((lot: any) => lot.id) || [];
+        
+        // Remove archived cars from current list
+        setCars(prevCars => prevCars.filter(car => !archivedIds.includes(car.id)));
+      }
     } catch (err) {
       console.error('Failed to fetch archived lots:', err);
-      // Don't show error to user for archived lots - not critical
     }
   };
 
@@ -159,13 +118,11 @@ const CarsSection = () => {
     fetchCars();
   }, []);
 
-  // Set up periodic updates with staggered timing to avoid rate limits
+  // Set up hourly updates
   useEffect(() => {
-    const interval = setInterval(async () => {
-      console.log('Running periodic update...');
-      await fetchCars(60); // Fetch updates from last 60 minutes
-      await delay(2000); // Wait 2 seconds between calls
-      await fetchArchivedLots(); // Remove sold cars
+    const interval = setInterval(() => {
+      fetchCars(60); // Fetch updates from last 60 minutes
+      fetchArchivedLots(); // Remove sold cars
     }, 60 * 60 * 1000); // Every hour
 
     return () => clearInterval(interval);
@@ -204,10 +161,10 @@ const CarsSection = () => {
         </div>
 
         {error && (
-          <div className="flex items-center justify-center gap-2 mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <AlertCircle className="h-5 w-5 text-yellow-600" />
-            <span className="text-yellow-800">
-              API Connection Issue: {error}. Displaying demo cars with full inspection service available.
+          <div className="flex items-center justify-center gap-2 mb-8 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <AlertCircle className="h-5 w-5 text-red-500" />
+            <span className="text-red-700">
+              API Error: {error}. Showing demo data instead.
             </span>
           </div>
         )}
