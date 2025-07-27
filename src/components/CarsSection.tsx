@@ -29,8 +29,8 @@ const CarsSection = () => {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [sortBy, setSortBy] = useState<'price' | 'year' | 'make'>('price');
-  const [filterMake, setFilterMake] = useState<string>('');
-  const [filterYear, setFilterYear] = useState<string>('');
+  const [filterMake, setFilterMake] = useState<string>('all');
+  const [filterYear, setFilterYear] = useState<string>('all');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 200000]);
 
   // Correct API endpoint based on 429 response analysis
@@ -223,13 +223,13 @@ const CarsSection = () => {
     let filtered = [...cars];
 
     // Apply filters
-    if (filterMake) {
+    if (filterMake && filterMake !== 'all') {
       filtered = filtered.filter(car => 
         car.make.toLowerCase().includes(filterMake.toLowerCase())
       );
     }
 
-    if (filterYear) {
+    if (filterYear && filterYear !== 'all') {
       filtered = filtered.filter(car => 
         car.year.toString().includes(filterYear)
       );
@@ -330,7 +330,7 @@ const CarsSection = () => {
                   <SelectValue placeholder="All Makes" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Makes</SelectItem>
+                  <SelectItem value="all">All Makes</SelectItem>
                   {uniqueMakes.map(make => (
                     <SelectItem key={make} value={make}>{make}</SelectItem>
                   ))}
@@ -345,7 +345,7 @@ const CarsSection = () => {
                   <SelectValue placeholder="All Years" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Years</SelectItem>
+                  <SelectItem value="all">All Years</SelectItem>
                   {uniqueYears.map(year => (
                     <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
                   ))}
@@ -382,8 +382,8 @@ const CarsSection = () => {
               variant="outline" 
               size="sm"
               onClick={() => {
-                setFilterMake('');
-                setFilterYear('');
+                setFilterMake('all');
+                setFilterYear('all');
                 setPriceRange([0, 200000]);
                 setSortBy('price');
               }}
@@ -420,8 +420,8 @@ const CarsSection = () => {
             <Button 
               variant="outline" 
               onClick={() => {
-                setFilterMake('');
-                setFilterYear('');
+                setFilterMake('all');
+                setFilterYear('all');
                 setPriceRange([0, 200000]);
               }}
               className="mt-4 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
