@@ -597,34 +597,180 @@ const CarDetails = () => {
             </Card>
 
 
-            {/* Car Options */}
+            {/* Detailed Information Tabs - Encar.com Style */}
             <Card>
               <CardContent className="p-6">
-                <h3 className="text-lg font-semibold mb-4 flex items-center">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Opsionet e Makinës
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {[
-                    'Kondicioneri automatik',
-                    'Navigacioni GPS', 
-                    'Kamera e parkimit',
-                    'Sensorët e parkimit',
-                    'Bluetooth',
-                    'USB/AUX',
-                    'Kontrolli i kryqëzimit',
-                    'Sistemi anti-bllokimi (ABS)',
-                    'Airbag-ët',
-                    'Sistemi i stabilitetit',
-                    'Dridhjet e motorit',
-                    'Kontroll i traksionit'
-                  ].map((option, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                      <span className="text-sm">{option}</span>
+                <Tabs defaultValue="overview" className="w-full">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="overview">Përshkrimi</TabsTrigger>
+                    <TabsTrigger value="maintenance">Mirëmbajtja</TabsTrigger>
+                    <TabsTrigger value="inspection">Inspektimi</TabsTrigger>
+                    <TabsTrigger value="similar">Të Ngjashme</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="overview" className="mt-4">
+                    <div className="space-y-4">
+                      <h4 className="font-semibold">Karakteristikat Kryesore</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {[
+                          'Kondicioneri automatik',
+                          'Navigacioni GPS', 
+                          'Kamera e parkimit',
+                          'Sensorët e parkimit',
+                          'Bluetooth',
+                          'USB/AUX',
+                          'Kontrolli i kryqëzimit',
+                          'Sistemi anti-bllokimi (ABS)',
+                          'Airbag-ët',
+                          'Sistemi i stabilitetit',
+                          'Kontrolli elektronik i stabilitetit',
+                          'Kontrolli i traksionit'
+                        ].map((option, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            <span className="text-sm">{option}</span>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="mt-6">
+                        <h4 className="font-semibold mb-2">Performance dhe Ekonomia e Karburantit</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div className="text-center p-3 bg-blue-50 rounded">
+                            <div className="font-semibold text-blue-600">186 HP</div>
+                            <div className="text-xs text-gray-600">Fuqia e Motorit</div>
+                          </div>
+                          <div className="text-center p-3 bg-green-50 rounded">
+                            <div className="font-semibold text-green-600">6.8L/100km</div>
+                            <div className="text-xs text-gray-600">Konsumi Kombinuar</div>
+                          </div>
+                          <div className="text-center p-3 bg-orange-50 rounded">
+                            <div className="font-semibold text-orange-600">9.2s</div>
+                            <div className="text-xs text-gray-600">0-100 km/h</div>
+                          </div>
+                          <div className="text-center p-3 bg-purple-50 rounded">
+                            <div className="font-semibold text-purple-600">210 km/h</div>
+                            <div className="text-xs text-gray-600">Shpejtësia Maksimale</div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="maintenance" className="mt-4">
+                    <div className="space-y-4">
+                      <h4 className="font-semibold">Historia e Mirëmbajtjes</h4>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 border rounded">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-green-500" />
+                            <span className="text-sm">Ndërrimi i vajit dhe filtrit</span>
+                          </div>
+                          <span className="text-xs text-gray-500">28.02.2024</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 border rounded">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-green-500" />
+                            <span className="text-sm">Kontrolli i frënave</span>
+                          </div>
+                          <span className="text-xs text-gray-500">15.01.2024</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 border rounded">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-green-500" />
+                            <span className="text-sm">Ndërrimi i gomave dimërore</span>
+                          </div>
+                          <span className="text-xs text-gray-500">10.11.2023</span>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <span className="text-sm font-medium text-green-800">Mirëmbajtja e Rregullt</span>
+                        </div>
+                        <p className="text-xs text-green-700 mt-1">
+                          Të gjitha shërbimet e mirëmbajtjes janë kryer sipas programit të rekomanduar nga prodhuesi.
+                        </p>
+                      </div>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="inspection" className="mt-4">
+                    <div className="space-y-4">
+                      <h4 className="font-semibold">Raporti i Inspektimit KORAUTO</h4>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="text-center p-4 bg-green-50 border border-green-200 rounded">
+                          <Star className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                          <div className="font-semibold text-green-600">9.2/10</div>
+                          <div className="text-xs text-green-700">Vlerësimi i Përgjithshëm</div>
+                        </div>
+                        <div className="text-center p-4 bg-blue-50 border border-blue-200 rounded">
+                          <CheckCircle className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                          <div className="font-semibold text-blue-600">Excellent</div>
+                          <div className="text-xs text-blue-700">Gjendja e Motorit</div>
+                        </div>
+                        <div className="text-center p-4 bg-purple-50 border border-purple-200 rounded">
+                          <Shield className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+                          <div className="font-semibold text-purple-600">Verified</div>
+                          <div className="text-xs text-purple-700">Dokumentacioni</div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <h5 className="font-medium">Kontrollet e Kryera:</h5>
+                        {[
+                          'Kontrolli i motorit dhe transmisionit',
+                          'Sistemi i frënimit dhe pezullimit',
+                          'Sistemet elektrike dhe elektronike',
+                          'Karoseria dhe ngjyra',
+                          'Interiori dhe pajisjet',
+                          'Dokumentacioni dhe historia'
+                        ].map((check, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            <span className="text-sm">{check}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="similar" className="mt-4">
+                    <div className="space-y-4">
+                      <h4 className="font-semibold">Makina të Ngjashme</h4>
+                      <div className="text-sm text-gray-600">
+                        Zbuloni makina të tjera të ngjashme në inventarin tonë:
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {[
+                          { year: '2022', make: 'BMW', model: '320i', price: '€34,500' },
+                          { year: '2020', make: 'BMW', model: '330i', price: '€29,800' },
+                          { year: '2021', make: 'Audi', model: 'A4', price: '€31,200' },
+                          { year: '2021', make: 'Mercedes', model: 'C200', price: '€33,900' }
+                        ].map((similarCar, index) => (
+                          <div key={index} className="p-3 border rounded cursor-pointer hover:bg-gray-50">
+                            <div className="font-medium">{similarCar.year} {similarCar.make} {similarCar.model}</div>
+                            <div className="text-primary font-semibold">{similarCar.price}</div>
+                            <div className="text-xs text-gray-500">Klic për më shumë detaje</div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <Button 
+                        variant="outline" 
+                        className="w-full mt-4"
+                        aria-label="View all similar cars"
+                        onClick={() => navigate('/')}
+                      >
+                        <ChevronRight className="h-4 w-4 mr-2" />
+                        Shiko të Gjitha Makinat e Ngjashme
+                      </Button>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </div>

@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Car, Search, Gauge, Settings, Fuel, Palette, Hash } from "lucide-react";
+import InspectionRequestForm from "@/components/InspectionRequestForm";
 interface CarCardProps {
   id: string;
   make: string;
@@ -34,29 +34,7 @@ const CarCard = ({
   lot,
   title
 }: CarCardProps) => {
-  const {
-    toast
-  } = useToast();
   const navigate = useNavigate();
-  const handleInspectionRequest = async () => {
-    try {
-      // Simulate API call for inspection request
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Show success message with contact details
-      toast({
-        title: "Inspection Request Submitted",
-        description: `Your inspection request for the ${year} ${make} ${model} has been received. ROBERT GASHI from KORAUTO will contact you at +38348181116 or send details to robert_gashi@live.com`,
-        duration: 6000
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to submit inspection request. Please call us directly at +38348181116",
-        variant: "destructive"
-      });
-    }
-  };
   const handleCardClick = () => {
     navigate(`/car/${id}`);
   };
@@ -110,13 +88,19 @@ const CarCard = ({
           {condition}
         </div>
 
-        <Button onClick={e => {
-        e.stopPropagation();
-        handleInspectionRequest();
-      }} className="w-full" size="sm">
-          <Search className="h-3 w-3 mr-2" />
-          Request Inspection (€50)
-        </Button>
+        <InspectionRequestForm
+          trigger={
+            <Button
+              onClick={(e) => e.stopPropagation()}
+              className="w-full"
+              size="sm"
+              aria-label={`Request inspection for ${year} ${make} ${model}`}
+            >
+              <Search className="h-3 w-3 mr-2" />
+              Request Inspection (€50)
+            </Button>
+          }
+        />
         
         <div className="mt-2 text-center">
           <p className="text-xs text-muted-foreground">
