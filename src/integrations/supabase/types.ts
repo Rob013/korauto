@@ -14,6 +14,308 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_cars: {
+        Row: {
+          acceleration: number | null
+          airbags: string | null
+          api_data: Json | null
+          body_type: string | null
+          buy_now_price: number | null
+          co2_emissions: number | null
+          color: string | null
+          condition: string | null
+          created_at: string | null
+          current_bid: number | null
+          cylinders: number | null
+          damage_main: string | null
+          damage_second: string | null
+          displacement: number | null
+          domain_name: string | null
+          drive_wheel: string | null
+          end_time: string | null
+          euro_standard: string | null
+          exterior_images: string[] | null
+          external_id: string | null
+          final_bid: number | null
+          fuel: string | null
+          fuel_consumption_city: number | null
+          fuel_consumption_combined: number | null
+          fuel_consumption_highway: number | null
+          grade_iaai: string | null
+          height_mm: number | null
+          horsepower: number | null
+          id: string
+          image_url: string | null
+          images: string[] | null
+          interior_images: string[] | null
+          is_live: boolean | null
+          keys_available: boolean | null
+          length_mm: number | null
+          location: string | null
+          lot_number: string | null
+          make: string
+          mileage: number | null
+          model: string
+          price: number
+          safety_rating_frontal: number | null
+          safety_rating_overall: number | null
+          safety_rating_rollover: number | null
+          safety_rating_side: number | null
+          sale_date: string | null
+          seller: string | null
+          seller_type: string | null
+          title: string | null
+          top_speed: number | null
+          torque: number | null
+          transmission: string | null
+          updated_at: string | null
+          vehicle_type: string | null
+          video_urls: string[] | null
+          vin: string | null
+          watchers: number | null
+          weight_kg: number | null
+          wheelbase_mm: number | null
+          width_mm: number | null
+          year: number
+        }
+        Insert: {
+          acceleration?: number | null
+          airbags?: string | null
+          api_data?: Json | null
+          body_type?: string | null
+          buy_now_price?: number | null
+          co2_emissions?: number | null
+          color?: string | null
+          condition?: string | null
+          created_at?: string | null
+          current_bid?: number | null
+          cylinders?: number | null
+          damage_main?: string | null
+          damage_second?: string | null
+          displacement?: number | null
+          domain_name?: string | null
+          drive_wheel?: string | null
+          end_time?: string | null
+          euro_standard?: string | null
+          exterior_images?: string[] | null
+          external_id?: string | null
+          final_bid?: number | null
+          fuel?: string | null
+          fuel_consumption_city?: number | null
+          fuel_consumption_combined?: number | null
+          fuel_consumption_highway?: number | null
+          grade_iaai?: string | null
+          height_mm?: number | null
+          horsepower?: number | null
+          id: string
+          image_url?: string | null
+          images?: string[] | null
+          interior_images?: string[] | null
+          is_live?: boolean | null
+          keys_available?: boolean | null
+          length_mm?: number | null
+          location?: string | null
+          lot_number?: string | null
+          make: string
+          mileage?: number | null
+          model: string
+          price: number
+          safety_rating_frontal?: number | null
+          safety_rating_overall?: number | null
+          safety_rating_rollover?: number | null
+          safety_rating_side?: number | null
+          sale_date?: string | null
+          seller?: string | null
+          seller_type?: string | null
+          title?: string | null
+          top_speed?: number | null
+          torque?: number | null
+          transmission?: string | null
+          updated_at?: string | null
+          vehicle_type?: string | null
+          video_urls?: string[] | null
+          vin?: string | null
+          watchers?: number | null
+          weight_kg?: number | null
+          wheelbase_mm?: number | null
+          width_mm?: number | null
+          year: number
+        }
+        Update: {
+          acceleration?: number | null
+          airbags?: string | null
+          api_data?: Json | null
+          body_type?: string | null
+          buy_now_price?: number | null
+          co2_emissions?: number | null
+          color?: string | null
+          condition?: string | null
+          created_at?: string | null
+          current_bid?: number | null
+          cylinders?: number | null
+          damage_main?: string | null
+          damage_second?: string | null
+          displacement?: number | null
+          domain_name?: string | null
+          drive_wheel?: string | null
+          end_time?: string | null
+          euro_standard?: string | null
+          exterior_images?: string[] | null
+          external_id?: string | null
+          final_bid?: number | null
+          fuel?: string | null
+          fuel_consumption_city?: number | null
+          fuel_consumption_combined?: number | null
+          fuel_consumption_highway?: number | null
+          grade_iaai?: string | null
+          height_mm?: number | null
+          horsepower?: number | null
+          id?: string
+          image_url?: string | null
+          images?: string[] | null
+          interior_images?: string[] | null
+          is_live?: boolean | null
+          keys_available?: boolean | null
+          length_mm?: number | null
+          location?: string | null
+          lot_number?: string | null
+          make?: string
+          mileage?: number | null
+          model?: string
+          price?: number
+          safety_rating_frontal?: number | null
+          safety_rating_overall?: number | null
+          safety_rating_rollover?: number | null
+          safety_rating_side?: number | null
+          sale_date?: string | null
+          seller?: string | null
+          seller_type?: string | null
+          title?: string | null
+          top_speed?: number | null
+          torque?: number | null
+          transmission?: string | null
+          updated_at?: string | null
+          vehicle_type?: string | null
+          video_urls?: string[] | null
+          vin?: string | null
+          watchers?: number | null
+          weight_kg?: number | null
+          wheelbase_mm?: number | null
+          width_mm?: number | null
+          year?: number
+        }
+        Relationships: []
+      }
+      api_sync_status: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          last_sync_at: string | null
+          records_synced: number | null
+          status: string | null
+          sync_type: string
+          total_records: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          last_sync_at?: string | null
+          records_synced?: number | null
+          status?: string | null
+          sync_type: string
+          total_records?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          last_sync_at?: string | null
+          records_synced?: number | null
+          status?: string | null
+          sync_type?: string
+          total_records?: number | null
+        }
+        Relationships: []
+      }
+      car_models: {
+        Row: {
+          body_types: string[] | null
+          created_at: string | null
+          engine_types: string[] | null
+          fuel_types: string[] | null
+          id: number
+          manufacturer_id: number | null
+          manufacturer_name: string | null
+          name: string
+          updated_at: string | null
+          year_from: number | null
+          year_to: number | null
+        }
+        Insert: {
+          body_types?: string[] | null
+          created_at?: string | null
+          engine_types?: string[] | null
+          fuel_types?: string[] | null
+          id: number
+          manufacturer_id?: number | null
+          manufacturer_name?: string | null
+          name: string
+          updated_at?: string | null
+          year_from?: number | null
+          year_to?: number | null
+        }
+        Update: {
+          body_types?: string[] | null
+          created_at?: string | null
+          engine_types?: string[] | null
+          fuel_types?: string[] | null
+          id?: number
+          manufacturer_id?: number | null
+          manufacturer_name?: string | null
+          name?: string
+          updated_at?: string | null
+          year_from?: number | null
+          year_to?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "car_models_manufacturer_id_fkey"
+            columns: ["manufacturer_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      car_views: {
+        Row: {
+          car_id: string
+          id: string
+          ip_address: unknown | null
+          user_agent: string | null
+          user_id: string | null
+          viewed_at: string | null
+        }
+        Insert: {
+          car_id: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          user_id?: string | null
+          viewed_at?: string | null
+        }
+        Update: {
+          car_id?: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          user_id?: string | null
+          viewed_at?: string | null
+        }
+        Relationships: []
+      }
       cars: {
         Row: {
           api_data: Json | null
@@ -142,6 +444,39 @@ export type Database = {
           },
         ]
       }
+      manufacturers: {
+        Row: {
+          country: string | null
+          created_at: string | null
+          id: number
+          logo_url: string | null
+          models_count: number | null
+          name: string
+          popular_models: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string | null
+          id: number
+          logo_url?: string | null
+          models_count?: number | null
+          name: string
+          popular_models?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          country?: string | null
+          created_at?: string | null
+          id?: number
+          logo_url?: string | null
+          models_count?: number | null
+          name?: string
+          popular_models?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -163,6 +498,42 @@ export type Database = {
           email?: string | null
           id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      user_dashboard_settings: {
+        Row: {
+          created_at: string | null
+          email_notifications: boolean | null
+          favorite_searches: Json | null
+          id: string
+          preferred_makes: string[] | null
+          preferred_price_range: unknown | null
+          preferred_year_range: unknown | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email_notifications?: boolean | null
+          favorite_searches?: Json | null
+          id?: string
+          preferred_makes?: string[] | null
+          preferred_price_range?: unknown | null
+          preferred_year_range?: unknown | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email_notifications?: boolean | null
+          favorite_searches?: Json | null
+          id?: string
+          preferred_makes?: string[] | null
+          preferred_price_range?: unknown | null
+          preferred_year_range?: unknown | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
