@@ -94,9 +94,7 @@ const CarsSection = () => {
 
       const params = new URLSearchParams({
         api_key: API_KEY,
-        limit: '50', // Demo mode limit
-        manufacturers: 'Audi,Mercedes-Benz,Volkswagen', // Filter for specific brands
-        year_from: '2015' // Filter for 2015+ years
+        limit: '50' // Demo mode limit
       });
 
       if (minutes) {
@@ -150,37 +148,32 @@ const CarsSection = () => {
 
       console.log(`Transformed cars:`, transformedCars);
 
-      // Filter transformedCars to only include Audi, Mercedes, Volkswagen 2015+
-      const filteredTransformedCars = transformedCars.filter(car => 
-        ['Audi', 'Mercedes-Benz', 'Mercedes', 'Volkswagen', 'VW'].includes(car.make) && car.year >= 2015
-      );
-
-      // If no cars from API or filtered results, use fallback data
-      if (filteredTransformedCars.length === 0) {
+      // If no cars from API, use fallback data
+      if (transformedCars.length === 0) {
         throw new Error('No cars returned from API');
       }
 
-      setCars(filteredTransformedCars);
-      setFilteredCars(filteredTransformedCars);
+      setCars(transformedCars);
+      setFilteredCars(transformedCars);
       setLastUpdate(new Date());
-      console.log(`Successfully loaded ${filteredTransformedCars.length} cars from API`);
+      console.log(`Successfully loaded ${transformedCars.length} cars from API`);
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch cars';
       setError(errorMessage);
       console.error('API Error:', err);
       
-      // Use fallback data on error with KORAUTO markup - only Audi, Mercedes, Volkswagen 2015+
+      // Use fallback data on error with KORAUTO markup
       const fallbackCars: Car[] = [
-        { id: '1', make: 'Mercedes-Benz', model: 'C-Class', year: 2021, price: 47300, mileage: '30,000 km', transmission: 'automatic', fuel: 'benzinë', color: 'e zezë' },
-        { id: '2', make: 'Audi', model: 'A4', year: 2023, price: 44300, mileage: '15,000 km', transmission: 'automatic', fuel: 'benzinë', color: 'e bardhë' },
-        { id: '3', make: 'Volkswagen', model: 'Golf', year: 2022, price: 30300, mileage: '20,000 km', transmission: 'manual', fuel: 'benzinë', color: 'gri' },
-        { id: '4', make: 'Mercedes-Benz', model: 'E-Class', year: 2020, price: 55300, mileage: '45,000 km', transmission: 'automatic', fuel: 'dizel', color: 'e zezë' },
-        { id: '5', make: 'Audi', model: 'Q5', year: 2021, price: 52300, mileage: '28,000 km', transmission: 'automatic', fuel: 'benzinë', color: 'blu' },
-        { id: '6', make: 'Volkswagen', model: 'Passat', year: 2019, price: 32300, mileage: '65,000 km', transmission: 'automatic', fuel: 'dizel', color: 'gri' },
-        { id: '7', make: 'Mercedes-Benz', model: 'GLC', year: 2022, price: 62300, mileage: '18,000 km', transmission: 'automatic', fuel: 'benzinë', color: 'e bardhë' },
-        { id: '8', make: 'Audi', model: 'A6', year: 2020, price: 48300, mileage: '40,000 km', transmission: 'automatic', fuel: 'dizel', color: 'e zezë' },
-        { id: '9', make: 'Volkswagen', model: 'Tiguan', year: 2021, price: 38300, mileage: '25,000 km', transmission: 'automatic', fuel: 'benzinë', color: 'e kuqe' }
+        { id: '1', make: 'BMW', model: 'M3', year: 2022, price: 67300, mileage: '25,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '2', make: 'Mercedes-Benz', model: 'C-Class', year: 2021, price: 47300, mileage: '30,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '3', make: 'Audi', model: 'A4', year: 2023, price: 44300, mileage: '15,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '4', make: 'Volkswagen', model: 'Golf', year: 2022, price: 30300, mileage: '20,000 km', transmission: 'manual', fuel: 'benzinë' },
+        { id: '5', make: 'Porsche', model: 'Cayenne', year: 2021, price: 87300, mileage: '35,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '6', make: 'Tesla', model: 'Model S', year: 2023, price: 97300, mileage: '10,000 km', transmission: 'automatic', fuel: 'elektrike' },
+        { id: '7', make: 'Ford', model: 'Mustang', year: 2022, price: 57300, mileage: '18,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '8', make: 'Chevrolet', model: 'Camaro', year: 2021, price: 50300, mileage: '22,000 km', transmission: 'manual', fuel: 'benzinë' },
+        { id: '9', make: 'Jaguar', model: 'F-Type', year: 2022, price: 80300, mileage: '12,000 km', transmission: 'automatic', fuel: 'benzinë' }
       ];
       setCars(fallbackCars);
       setFilteredCars(fallbackCars);
