@@ -67,9 +67,9 @@ const EnhancedCatalog = () => {
         yearRange,
         priceRange,
         mileageRange,
-        fuel: selectedFuel,
-        transmission: selectedTransmission,
-        condition: selectedCondition
+        fuel: selectedFuel ? [selectedFuel] : [],
+        transmission: selectedTransmission ? [selectedTransmission] : [],
+        condition: selectedCondition ? [selectedCondition] : []
       };
       filterCars(filters);
     }
