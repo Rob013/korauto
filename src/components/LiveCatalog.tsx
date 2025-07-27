@@ -202,19 +202,19 @@ const LiveCatalog = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header with Live Status */}
-      <div className="bg-[#003087] text-white py-6">
+      <div className="bg-[#003087] text-white py-8">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Live Car Auctions</h1>
+              <h1 className="text-3xl font-bold mb-2">Makinat e Disponueshme Live</h1>
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                  <span>Live Data</span>
+                  <span>Të dhëna në kohë reale</span>
                 </div>
-                <span>{totalCars.toLocaleString()} Cars Available</span>
+                <span>{totalCars.toLocaleString()} Makina të Disponueshme</span>
                 {lastSync && (
-                  <span>Updated {lastSync.toLocaleTimeString()}</span>
+                  <span>Përditësuar {lastSync.toLocaleTimeString()}</span>
                 )}
               </div>
             </div>
@@ -227,7 +227,7 @@ const LiveCatalog = () => {
                 size="sm"
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
+                Rifresko
               </Button>
               
               {syncStatus === 'idle' && cars.length === 0 && (
@@ -237,7 +237,7 @@ const LiveCatalog = () => {
                   size="sm"
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  Load All Cars
+                  Ngarko të Gjitha Makinat
                 </Button>
               )}
             </div>
@@ -248,14 +248,14 @@ const LiveCatalog = () => {
             <div className="mt-4 p-3 bg-blue-600 rounded-lg">
               <div className="flex items-center gap-2">
                 <RefreshCw className="h-4 w-4 animate-spin" />
-                <span>Syncing live data from auction API...</span>
+                <span>Duke sinkronizuar të dhënat live nga API...</span>
               </div>
             </div>
           )}
 
           {error && (
             <div className="mt-4 p-3 bg-red-600 rounded-lg">
-              <p>Error: {error}</p>
+              <p>Gabim: {error}</p>
             </div>
           )}
         </div>

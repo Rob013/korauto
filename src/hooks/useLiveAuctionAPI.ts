@@ -118,25 +118,30 @@ export const useLiveAuctionAPI = () => {
 
   // Fetch all manufacturers (397 brands)
   const fetchManufacturers = useCallback(async (): Promise<Manufacturer[]> => {
-    console.log('Fetching all manufacturers...');
+    console.log('Fetching all manufacturers from API...');
     
-    const response = await fetch(`${API_BASE_URL}/api/manufacturers`, {
-      headers: {
-        'Authorization': `Bearer ${API_KEY}`,
-        'Accept': 'application/json',
-        'User-Agent': 'KORAUTO-LiveApp/1.0'
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/manufacturers`, {
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+          'Accept': 'application/json',
+          'User-Agent': 'KORAUTO-LiveApp/1.0'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch manufacturers: ${response.statusText}`);
       }
-    });
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch manufacturers: ${response.statusText}`);
+      const data = await response.json();
+      const manufacturers = data.data || data.manufacturers || [];
+      
+      console.log(`✅ Fetched ${manufacturers.length} manufacturers from API`);
+      return manufacturers;
+    } catch (error) {
+      console.error('❌ Error fetching manufacturers:', error);
+      throw error;
     }
-
-    const data = await response.json();
-    const manufacturers = data.data || data.manufacturers || [];
-    
-    console.log(`Fetched ${manufacturers.length} manufacturers`);
-    return manufacturers;
   }, []);
 
   // Fetch all models
@@ -168,122 +173,133 @@ export const useLiveAuctionAPI = () => {
     limit: number = 1000,
     realTimeUpdate: boolean = false
   ): Promise<{ cars: LiveCarData[], hasMore: boolean, total: number }> => {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      limit: limit.toString()
-    });
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString()
+      });
 
-    // For real-time updates, only fetch cars updated in the last minute
-    if (realTimeUpdate) {
-      params.append('minutes', '1');
-    }
-
-    console.log(`Fetching cars - Page ${page}, Limit ${limit}, Real-time: ${realTimeUpdate}`);
-
-    const response = await fetch(`${API_BASE_URL}/api/cars?${params}`, {
-      headers: {
-        'Authorization': `Bearer ${API_KEY}`,
-        'Accept': 'application/json',
-        'User-Agent': 'KORAUTO-LiveApp/1.0'
+      // For real-time updates, only fetch cars updated in the last minute
+      if (realTimeUpdate) {
+        params.append('minutes', '1');
       }
-    });
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch cars: ${response.statusText}`);
+      console.log(`🚗 Fetching cars from API - Page ${page}, Limit ${limit}, Real-time: ${realTimeUpdate}`);
+      console.log(`🔗 API URL: ${API_BASE_URL}/api/cars?${params}`);
+
+      const response = await fetch(`${API_BASE_URL}/api/cars?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+          'Accept': 'application/json',
+          'User-Agent': 'KORAUTO-LiveApp/1.0'
+        }
+      });
+
+      if (!response.ok) {
+        console.error(`❌ API request failed: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to fetch cars: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log(`📦 Raw API response:`, data);
+      
+      const apiCars = data.data || [];
+      const total = data.total || apiCars.length;
+      const hasMore = apiCars.length === limit;
+
+      console.log(`📊 API returned ${apiCars.length} cars, total: ${total}, hasMore: ${hasMore}`);
+
+      // Transform API data to our format
+      const transformedCars: LiveCarData[] = apiCars.map((car: any) => {
+        const lot = car.lots?.[0];
+        const images = lot?.images;
+        
+        const manufacturerName = safeExtractValue(car.manufacturer, 'Unknown');
+        const modelName = safeExtractValue(car.model, 'Unknown');
+        
+        return {
+          id: car.id?.toString() || `car-${Date.now()}-${Math.random()}`,
+          make: manufacturerName,
+          model: modelName,
+          year: car.year || 2020,
+          price: car.price || lot?.buy_now || lot?.final_bid || 0,
+          vin: car.vin,
+          title: car.title || `${car.year} ${manufacturerName} ${modelName}`,
+          
+          // Basic car data
+          mileage: lot?.odometer?.km,
+          transmission: safeExtractValue(car.transmission),
+          fuel: safeExtractValue(car.fuel),
+          color: safeExtractValue(car.color),
+          condition: safeExtractValue(lot?.condition),
+          lot_number: lot?.lot,
+          
+          // Auction data
+          current_bid: lot?.bid,
+          buy_now_price: lot?.buy_now,
+          final_bid: lot?.final_bid,
+          is_live: lot?.status?.name === 'live' || lot?.status?.name === 'sale',
+          watchers: Math.floor(Math.random() * 150) + 10, // Simulate watchers
+          end_time: lot?.auction_info?.end_time || '2-3 days',
+          location: lot?.location ? `${lot.location.city}, ${lot.location.state}` : 'Germany',
+          
+          // Images
+          image_url: images?.normal?.[0] || images?.big?.[0],
+          images: [...(images?.normal || []), ...(images?.big || [])],
+          exterior_images: images?.exterior || [],
+          interior_images: images?.interior || [],
+          video_urls: images?.video || [],
+          
+          // Technical specs
+          cylinders: car.cylinders,
+          displacement: car.displacement,
+          horsepower: car.horsepower,
+          torque: car.torque,
+          top_speed: car.top_speed,
+          acceleration: car.acceleration,
+          
+          // Fuel consumption
+          fuel_consumption_city: car.fuel_consumption?.city,
+          fuel_consumption_highway: car.fuel_consumption?.highway,
+          fuel_consumption_combined: car.fuel_consumption?.combined,
+          
+          // Emissions
+          co2_emissions: car.emissions?.co2,
+          euro_standard: car.emissions?.euro_standard,
+          
+          // Dimensions
+          length_mm: car.dimensions?.length,
+          width_mm: car.dimensions?.width,
+          height_mm: car.dimensions?.height,
+          wheelbase_mm: car.dimensions?.wheelbase,
+          weight_kg: car.dimensions?.weight,
+          
+          // Additional details
+          body_type: safeExtractValue(car.body_type),
+          drive_wheel: safeExtractValue(car.drive_wheel),
+          vehicle_type: safeExtractValue(car.vehicle_type),
+          damage_main: lot?.damage?.main,
+          damage_second: lot?.damage?.second,
+          keys_available: lot?.keys_available,
+          airbags: lot?.airbags,
+          grade_iaai: lot?.grade_iaai,
+          seller: lot?.seller,
+          seller_type: lot?.seller_type,
+          sale_date: lot?.sale_date,
+          
+          // API metadata
+          domain_name: lot?.domain?.name,
+          external_id: lot?.external_id,
+          api_data: car // Store complete raw data
+        };
+      });
+
+      console.log(`✅ Transformed ${transformedCars.length} cars from API`);
+      return { cars: transformedCars, hasMore, total };
+    } catch (error) {
+      console.error('❌ Error fetching cars:', error);
+      throw error;
     }
-
-    const data = await response.json();
-    const apiCars = data.data || [];
-    const total = data.total || apiCars.length;
-    const hasMore = apiCars.length === limit;
-
-    // Transform API data to our format
-    const transformedCars: LiveCarData[] = apiCars.map((car: any) => {
-      const lot = car.lots?.[0];
-      const images = lot?.images;
-      
-      const manufacturerName = safeExtractValue(car.manufacturer, 'Unknown');
-      const modelName = safeExtractValue(car.model, 'Unknown');
-      
-      return {
-        id: car.id?.toString() || `car-${Date.now()}-${Math.random()}`,
-        make: manufacturerName,
-        model: modelName,
-        year: car.year || 2020,
-        price: car.price || lot?.buy_now || lot?.final_bid || 0,
-        vin: car.vin,
-        title: car.title || `${car.year} ${manufacturerName} ${modelName}`,
-        
-        // Basic car data
-        mileage: lot?.odometer?.km,
-        transmission: safeExtractValue(car.transmission),
-        fuel: safeExtractValue(car.fuel),
-        color: safeExtractValue(car.color),
-        condition: safeExtractValue(lot?.condition),
-        lot_number: lot?.lot,
-        
-        // Auction data
-        current_bid: lot?.bid,
-        buy_now_price: lot?.buy_now,
-        final_bid: lot?.final_bid,
-        is_live: lot?.status?.name === 'live' || lot?.status?.name === 'sale',
-        watchers: Math.floor(Math.random() * 150) + 10, // Simulate watchers
-        end_time: lot?.auction_info?.end_time || '2-3 days',
-        location: lot?.location ? `${lot.location.city}, ${lot.location.state}` : 'Germany',
-        
-        // Images
-        image_url: images?.normal?.[0] || images?.big?.[0],
-        images: [...(images?.normal || []), ...(images?.big || [])],
-        exterior_images: images?.exterior || [],
-        interior_images: images?.interior || [],
-        video_urls: images?.video || [],
-        
-        // Technical specs
-        cylinders: car.cylinders,
-        displacement: car.displacement,
-        horsepower: car.horsepower,
-        torque: car.torque,
-        top_speed: car.top_speed,
-        acceleration: car.acceleration,
-        
-        // Fuel consumption
-        fuel_consumption_city: car.fuel_consumption?.city,
-        fuel_consumption_highway: car.fuel_consumption?.highway,
-        fuel_consumption_combined: car.fuel_consumption?.combined,
-        
-        // Emissions
-        co2_emissions: car.emissions?.co2,
-        euro_standard: car.emissions?.euro_standard,
-        
-        // Dimensions
-        length_mm: car.dimensions?.length,
-        width_mm: car.dimensions?.width,
-        height_mm: car.dimensions?.height,
-        wheelbase_mm: car.dimensions?.wheelbase,
-        weight_kg: car.dimensions?.weight,
-        
-        // Additional details
-        body_type: safeExtractValue(car.body_type),
-        drive_wheel: safeExtractValue(car.drive_wheel),
-        vehicle_type: safeExtractValue(car.vehicle_type),
-        damage_main: lot?.damage?.main,
-        damage_second: lot?.damage?.second,
-        keys_available: lot?.keys_available,
-        airbags: lot?.airbags,
-        grade_iaai: lot?.grade_iaai,
-        seller: lot?.seller,
-        seller_type: lot?.seller_type,
-        sale_date: lot?.sale_date,
-        
-        // API metadata
-        domain_name: lot?.domain?.name,
-        external_id: lot?.external_id,
-        api_data: car // Store complete raw data
-      };
-    });
-
-    console.log(`Transformed ${transformedCars.length} cars from API`);
-    return { cars: transformedCars, hasMore, total };
   }, [safeExtractValue]);
 
   // Fetch archived/sold cars
@@ -549,10 +565,24 @@ export const useLiveAuctionAPI = () => {
     };
   }, [cars.length, syncStatus, performRealTimeUpdate]);
 
-  // Load cached data on mount
+  // Load cached data on mount and start full sync if no data
   useEffect(() => {
-    loadFromDatabase();
+    loadFromDatabase().then(() => {
+      // If no cars are loaded from database, start full sync
+      if (cars.length === 0) {
+        console.log('No cars in database, starting full sync...');
+        loadAllCars();
+      }
+    });
   }, [loadFromDatabase]);
+
+  // Auto-start sync if no data after initial load
+  useEffect(() => {
+    if (!loading && cars.length === 0 && syncStatus === 'idle') {
+      console.log('Auto-starting car data sync...');
+      loadAllCars();
+    }
+  }, [loading, cars.length, syncStatus, loadAllCars]);
 
   return {
     cars,
