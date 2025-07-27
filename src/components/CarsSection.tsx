@@ -55,7 +55,7 @@ const CarsSection = () => {
       }
       
       const data = await response.json();
-      console.log(`API Success: ${data?.cars?.length || 0} cars received`);
+      console.log(`API Success: ${data?.data?.length || 0} cars received`);
       return data;
     } catch (err) {
       console.error(`API Request failed:`, err);
@@ -88,14 +88,30 @@ const CarsSection = () => {
       }
       
       // Transform API data to our Car interface
-      const transformedCars: Car[] = data.cars?.map((car: any, index: number) => ({
-        id: car.id || `car-${index}`,
-        make: car.make || 'BMW',
-        model: car.model || 'Series 3',
-        year: car.year || 2020 + (index % 4),
-        price: car.price || 25000 + (index * 1000),
-        image: car.image || undefined
-      })) || [];
+      // API returns cars directly in 'data' array, not 'data.cars'
+      const carsArray = Array.isArray(data.data) ? data.data : [];
+      console.log(`Raw API data:`, carsArray);
+      
+      const transformedCars: Car[] = carsArray.map((car: any, index: number) => {
+        // Extract price from lots[0].buy_now or lots[0].final_bid
+        const lot = car.lots?.[0];
+        const price = lot?.buy_now || lot?.final_bid || 25000 + (index * 1000);
+        
+        // Extract image from lots[0].images.normal[0]
+        const images = lot?.images?.normal;
+        const image = Array.isArray(images) && images.length > 0 ? images[0] : undefined;
+        
+        return {
+          id: car.id?.toString() || `car-${index}`,
+          make: car.manufacturer?.name || 'Unknown',
+          model: car.model?.name || 'Unknown',
+          year: car.year || 2020,
+          price: Math.round(price),
+          image: image
+        };
+      });
+
+      console.log(`Transformed cars:`, transformedCars);
 
       // If no cars from API, use fallback data
       if (transformedCars.length === 0) {
