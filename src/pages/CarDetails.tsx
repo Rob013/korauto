@@ -509,34 +509,34 @@ const CarDetails = () => {
                 </CardContent>
               </Card>}
 
-            {/* Insurance History - Encar.com Style */}
-            <Card>
+            {/* Insurance History & Verification */}
+            <Card className="shadow-lg border-0">
               <CardContent className="p-6">
-                <h3 className="text-lg font-semibold mb-4 flex items-center">
-                  <Shield className="h-4 w-4 mr-2" />
+                <h3 className="text-lg font-semibold mb-6 flex items-center text-foreground">
+                  <Shield className="h-5 w-5 mr-3 text-primary" />
                   Historia e Sigurimit dhe Verifikimi
                 </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-center">
-                    <div className="text-green-600 font-semibold">✓ VERIFIKUAR</div>
-                    <div className="text-xs text-green-700 mt-1">Historia e Aksidenteve</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                  <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg text-center transition-colors">
+                    <div className="text-emerald-600 dark:text-emerald-400 font-semibold">✓ VERIFIKUAR</div>
+                    <div className="text-xs text-emerald-700 dark:text-emerald-300 mt-1">Historia e Aksidenteve</div>
                   </div>
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
-                    <div className="text-blue-600 font-semibold">✓ I PASTËR</div>
-                    <div className="text-xs text-blue-700 mt-1">Verifikimi Ligjor</div>
+                  <div className="p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg text-center transition-colors">
+                    <div className="text-blue-600 dark:text-blue-400 font-semibold">✓ I PASTËR</div>
+                    <div className="text-xs text-blue-700 dark:text-blue-300 mt-1">Verifikimi Ligjor</div>
                   </div>
-                  <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg text-center">
-                    <div className="text-orange-600 font-semibold">✓ KONFIRMUAR</div>
-                    <div className="text-xs text-orange-700 mt-1">Kilometrat e Vërteta</div>
+                  <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg text-center transition-colors">
+                    <div className="text-amber-600 dark:text-amber-400 font-semibold">✓ KONFIRMUAR</div>
+                    <div className="text-xs text-amber-700 dark:text-amber-300 mt-1">Kilometrat e Vërteta</div>
                   </div>
-                  <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg text-center">
-                    <div className="text-purple-600 font-semibold">✓ GARANTUAR</div>
-                    <div className="text-xs text-purple-700 mt-1">Mirëmbajtja e Rregullt</div>
+                  <div className="p-4 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-lg text-center transition-colors">
+                    <div className="text-purple-600 dark:text-purple-400 font-semibold">✓ GARANTUAR</div>
+                    <div className="text-xs text-purple-700 dark:text-purple-300 mt-1">Mirëmbajtja e Rregullt</div>
                   </div>
                 </div>
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-gray-700">
-                    <strong>Sigurimi i Verifikuar:</strong> Encar Insurance, Dongbu Insurance, Samsung Fire & Marine Insurance dhe të tjera kompani të njohura sigurimesh.
+                <div className="p-4 bg-muted/50 rounded-lg border">
+                  <p className="text-sm text-muted-foreground">
+                    <strong className="text-foreground">Sigurimi i Verifikuar:</strong> Kompani të njohura sigurimesh kanë verifikuar historinë e kësaj makine.
                   </p>
                 </div>
               </CardContent>
