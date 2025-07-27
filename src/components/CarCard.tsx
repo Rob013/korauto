@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Car, Search, Gauge, Settings, Fuel, Palette, Hash } from "lucide-react";
+import { Car, Search, Gauge, Settings, Fuel, Palette, Hash, Heart } from "lucide-react";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 interface CarCardProps {
   id: string;
   make: string;
@@ -35,6 +38,97 @@ const CarCard = ({
   title
 }: CarCardProps) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      
+      if (user) {
+        // Check if this car is already favorited
+        const { data } = await supabase
+          .from('favorite_cars')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('car_id', id)
+          .single();
+        
+        setIsFavorite(!!data);
+      }
+    };
+    
+    getUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+      if (!session?.user) {
+        setIsFavorite(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [id]);
+
+  const handleFavoriteToggle = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to save favorite cars",
+      });
+      navigate('/auth');
+      return;
+    }
+
+    try {
+      if (isFavorite) {
+        // Remove from favorites
+        await supabase
+          .from('favorite_cars')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('car_id', id);
+        
+        setIsFavorite(false);
+        toast({
+          title: "Removed from favorites",
+          description: "Car removed from your favorites",
+        });
+      } else {
+        // Add to favorites
+        await supabase
+          .from('favorite_cars')
+          .insert({
+            user_id: user.id,
+            car_id: id,
+            car_make: make,
+            car_model: model,
+            car_year: year,
+            car_price: price,
+            car_image: image
+          });
+        
+        setIsFavorite(true);
+        toast({
+          title: "Added to favorites",
+          description: "Car saved to your favorites",
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update favorites",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleCardClick = () => {
     navigate(`/car/${id}`);
   };
@@ -48,6 +142,21 @@ const CarCard = ({
         {lot && <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-semibold">
             Kodi #{lot}
           </div>}
+        
+        {/* Favorite Button */}
+        <button
+          onClick={handleFavoriteToggle}
+          className="absolute top-2 left-2 p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-all duration-200 hover:scale-110"
+          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+        >
+          <Heart 
+            className={`h-4 w-4 transition-colors ${
+              isFavorite 
+                ? "fill-red-500 text-red-500" 
+                : "text-gray-600 hover:text-red-500"
+            }`} 
+          />
+        </button>
       </div>
       
       <div className="p-4">
