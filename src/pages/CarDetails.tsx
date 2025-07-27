@@ -7,13 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
-import { 
-  ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, 
-  Fuel, Palette, Hash, Calendar, Shield, FileText, 
-  Search, Info, Eye, CheckCircle, AlertTriangle, Star,
-  Clock, Users, MessageCircle, Share2, Heart, ChevronRight
-} from "lucide-react";
-
+import { ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, Fuel, Palette, Hash, Calendar, Shield, FileText, Search, Info, Eye, CheckCircle, AlertTriangle, Star, Clock, Users, MessageCircle, Share2, Heart, ChevronRight } from "lucide-react";
 interface CarDetails {
   id: string;
   make: string;
@@ -33,12 +27,20 @@ interface CarDetails {
   odometer?: {
     km: number;
     mi: number;
-    status: { name: string };
+    status: {
+      name: string;
+    };
   };
-  engine?: { name: string };
+  engine?: {
+    name: string;
+  };
   cylinders?: number;
-  drive_wheel?: { name: string };
-  body_type?: { name: string };
+  drive_wheel?: {
+    name: string;
+  };
+  body_type?: {
+    name: string;
+  };
   damage?: {
     main: string | null;
     second: string | null;
@@ -58,26 +60,28 @@ interface CarDetails {
   performance_rating?: number;
   popularity_score?: number;
 }
-
 const CarDetails = () => {
-  const { id } = useParams<{ id: string }>();
+  const {
+    id
+  } = useParams<{
+    id: string;
+  }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const [car, setCar] = useState<CarDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-
   const API_BASE_URL = 'https://auctionsapi.com/api';
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
-
   useEffect(() => {
     const fetchCarDetails = async () => {
       if (!id) return;
-
       try {
         setLoading(true);
-        
+
         // First try to fetch from the cars list to get the car data
         const listResponse = await fetch(`${API_BASE_URL}/cars?api_key=${API_KEY}&limit=50`, {
           headers: {
@@ -86,12 +90,10 @@ const CarDetails = () => {
             'X-API-Key': API_KEY
           }
         });
-
         if (listResponse.ok) {
           const listData = await listResponse.json();
           const carsArray = Array.isArray(listData.data) ? listData.data : [];
           const foundCar = carsArray.find((car: any) => car.id?.toString() === id);
-          
           if (foundCar) {
             // Transform found car data
             const lot = foundCar.lots?.[0];
@@ -115,10 +117,16 @@ const CarDetails = () => {
               lot: lot?.lot,
               title: foundCar.title,
               odometer: lot?.odometer,
-              engine: foundCar.engine || { name: '2.0L Turbo' },
+              engine: foundCar.engine || {
+                name: '2.0L Turbo'
+              },
               cylinders: foundCar.cylinders || 4,
-              drive_wheel: foundCar.drive_wheel || { name: 'Front' },
-              body_type: foundCar.body_type || { name: 'Sedan' },
+              drive_wheel: foundCar.drive_wheel || {
+                name: 'Front'
+              },
+              body_type: foundCar.body_type || {
+                name: 'Sedan'
+              },
               damage: lot?.damage,
               keys_available: lot?.keys_available ?? true,
               airbags: lot?.airbags,
@@ -130,7 +138,6 @@ const CarDetails = () => {
               buy_now: lot?.buy_now,
               final_bid: lot?.final_bid
             };
-
             setCar(transformedCar);
             return;
           }
@@ -142,13 +149,10 @@ const CarDetails = () => {
           make: 'BMW',
           model: 'Series 3',
           year: 2021,
-          price: 32300, // Base price + KORAUTO markup
+          price: 32300,
+          // Base price + KORAUTO markup
           image: 'https://via.placeholder.com/800x600/f5f5f5/999999?text=BMW+Series+3',
-          images: [
-            'https://via.placeholder.com/800x600/f5f5f5/999999?text=BMW+Series+3',
-            'https://via.placeholder.com/800x600/f5f5f5/999999?text=Interior',
-            'https://via.placeholder.com/800x600/f5f5f5/999999?text=Engine'
-          ],
+          images: ['https://via.placeholder.com/800x600/f5f5f5/999999?text=BMW+Series+3', 'https://via.placeholder.com/800x600/f5f5f5/999999?text=Interior', 'https://via.placeholder.com/800x600/f5f5f5/999999?text=Engine'],
           vin: 'WBANA5314XCR' + id.slice(-5),
           mileage: '45,000 km',
           transmission: 'Automatic',
@@ -157,10 +161,16 @@ const CarDetails = () => {
           condition: 'Excellent',
           lot: id.slice(-6),
           title: '2021 BMW 3 Series 320i',
-          engine: { name: '2.0L TwinPower Turbo' },
+          engine: {
+            name: '2.0L TwinPower Turbo'
+          },
           cylinders: 4,
-          drive_wheel: { name: 'RWD' },
-          body_type: { name: 'Sedan' },
+          drive_wheel: {
+            name: 'RWD'
+          },
+          body_type: {
+            name: 'Sedan'
+          },
           keys_available: true,
           seller: 'KORAUTO Certified Dealer',
           seller_type: 'Professional Dealer',
@@ -171,7 +181,6 @@ const CarDetails = () => {
           performance_rating: 4.5,
           popularity_score: 85
         };
-
         setCar(fallbackCar);
       } catch (err) {
         console.error('Failed to fetch car details:', err);
@@ -180,38 +189,32 @@ const CarDetails = () => {
         setLoading(false);
       }
     };
-
     fetchCarDetails();
   }, [id]);
-
   const handleContactWhatsApp = () => {
     const message = `Përshëndetje! Jam i interesuar për ${car?.year} ${car?.make} ${car?.model} (€${car?.price.toLocaleString()}). A mund të më jepni më shumë informacion?`;
     const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
-
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
     toast({
       title: "Link-u u kopjua",
       description: "Link-u i makinës u kopjua në clipboard",
-      duration: 3000,
+      duration: 3000
     });
   };
-
   const [isLiked, setIsLiked] = useState(false);
   const handleLike = () => {
     setIsLiked(!isLiked);
     toast({
       title: isLiked ? "U hoq nga të preferuarat" : "U shtua në të preferuarat",
       description: isLiked ? "Makina u hoq nga lista juaj e të preferuarave" : "Makina u shtua në listën tuaj të të preferuarave",
-      duration: 3000,
+      duration: 3000
     });
   };
-
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
+    return <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
           <div className="animate-pulse space-y-6">
             <div className="h-8 bg-muted rounded w-32"></div>
@@ -229,13 +232,10 @@ const CarDetails = () => {
             </div>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   if (error || !car) {
-    return (
-      <div className="min-h-screen bg-background">
+    return <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
           <Button variant="outline" onClick={() => navigate(-1)} className="mb-6">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -247,14 +247,10 @@ const CarDetails = () => {
             <p className="text-muted-foreground">The car you're looking for could not be found.</p>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   const images = car.images || [car.image].filter(Boolean);
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header with Actions */}
         <div className="flex justify-between items-center mb-6">
@@ -280,52 +276,26 @@ const CarDetails = () => {
             <Card>
               <CardContent className="p-0">
                 <div className="relative h-96 bg-muted rounded-t-lg overflow-hidden">
-                  {images.length > 0 ? (
-                    <img
-                      src={images[selectedImageIndex]}
-                      alt={`${car.year} ${car.make} ${car.model}`}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = "/placeholder.svg";
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
+                  {images.length > 0 ? <img src={images[selectedImageIndex]} alt={`${car.year} ${car.make} ${car.model}`} className="w-full h-full object-cover" onError={e => {
+                  e.currentTarget.src = "/placeholder.svg";
+                }} /> : <div className="w-full h-full flex items-center justify-center">
                       <Car className="h-24 w-24 text-muted-foreground" />
-                    </div>
-                  )}
-                  {car.lot && (
-                    <Badge className="absolute top-4 right-4 bg-primary text-primary-foreground">
+                    </div>}
+                  {car.lot && <Badge className="absolute top-4 right-4 bg-primary text-primary-foreground">
                       Lot #{car.lot}
-                    </Badge>
-                  )}
+                    </Badge>}
                 </div>
               </CardContent>
             </Card>
 
             {/* Image Thumbnails */}
-            {images.length > 1 && (
-              <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
-                {images.slice(0, 20).map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedImageIndex(index)}
-                    className={`relative h-16 bg-muted rounded overflow-hidden border-2 ${
-                      selectedImageIndex === index ? 'border-primary' : 'border-transparent'
-                    }`}
-                  >
-                    <img
-                      src={image}
-                      alt={`View ${index + 1}`}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = "/placeholder.svg";
-                      }}
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
+            {images.length > 1 && <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                {images.slice(0, 20).map((image, index) => <button key={index} onClick={() => setSelectedImageIndex(index)} className={`relative h-16 bg-muted rounded overflow-hidden border-2 ${selectedImageIndex === index ? 'border-primary' : 'border-transparent'}`}>
+                    <img src={image} alt={`View ${index + 1}`} className="w-full h-full object-cover" onError={e => {
+                e.currentTarget.src = "/placeholder.svg";
+              }} />
+                  </button>)}
+              </div>}
 
             {/* Vehicle Specifications */}
             <Card>
@@ -335,75 +305,57 @@ const CarDetails = () => {
                   Specifikimet e Mjetit
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {car.engine && (
-                    <div className="flex items-center gap-2">
+                  {car.engine && <div className="flex items-center gap-2">
                       <span className="font-medium">Motori:</span>
                       <span className="text-muted-foreground">{car.engine.name}</span>
-                    </div>
-                  )}
-                  {car.cylinders && (
-                    <div className="flex items-center gap-2">
+                    </div>}
+                  {car.cylinders && <div className="flex items-center gap-2">
                       <span className="font-medium">Cilindrat:</span>
                       <span className="text-muted-foreground">{car.cylinders}</span>
-                    </div>
-                  )}
-                  {car.drive_wheel && (
-                    <div className="flex items-center gap-2">
+                    </div>}
+                  {car.drive_wheel && <div className="flex items-center gap-2">
                       <span className="font-medium">Drejtimi:</span>
                       <span className="text-muted-foreground capitalize">{car.drive_wheel.name}</span>
-                    </div>
-                  )}
-                  {car.body_type && (
-                    <div className="flex items-center gap-2">
+                    </div>}
+                  {car.body_type && <div className="flex items-center gap-2">
                       <span className="font-medium">Lloji i Trupit:</span>
                       <span className="text-muted-foreground capitalize">{car.body_type.name}</span>
-                    </div>
-                  )}
-                  {car.keys_available !== undefined && (
-                    <div className="flex items-center gap-2">
+                    </div>}
+                  {car.keys_available !== undefined && <div className="flex items-center gap-2">
                       <span className="font-medium">Çelësat Disponibël:</span>
                       <span className="text-muted-foreground">
                         {car.keys_available ? 'Po' : 'Jo'}
                       </span>
-                    </div>
-                  )}
-                  {car.airbags && (
-                    <div className="flex items-center gap-2">
+                    </div>}
+                  {car.airbags && <div className="flex items-center gap-2">
                       <span className="font-medium">Airbag-ët:</span>
                       <span className="text-muted-foreground">{car.airbags}</span>
-                    </div>
-                  )}
+                    </div>}
                 </div>
               </CardContent>
             </Card>
 
             {/* Damage Report */}
-            {(car.damage?.main || car.damage?.second) && (
-              <Card>
+            {(car.damage?.main || car.damage?.second) && <Card>
                 <CardContent className="p-6">
                   <h3 className="text-xl font-semibold mb-4 flex items-center">
                     <Shield className="h-5 w-5 mr-2" />
                     Raporti i Dëmeve
                   </h3>
                   <div className="space-y-2">
-                    {car.damage.main && (
-                      <div className="flex items-center gap-2">
+                    {car.damage.main && <div className="flex items-center gap-2">
                         <AlertTriangle className="h-4 w-4 text-orange-500" />
                         <span className="font-medium">Dëmi Kryesor:</span>
                         <span className="text-muted-foreground capitalize">{car.damage.main}</span>
-                      </div>
-                    )}
-                    {car.damage.second && (
-                      <div className="flex items-center gap-2">
+                      </div>}
+                    {car.damage.second && <div className="flex items-center gap-2">
                         <AlertTriangle className="h-4 w-4 text-yellow-500" />
                         <span className="font-medium">Dëmi Dytësor:</span>
                         <span className="text-muted-foreground capitalize">{car.damage.second}</span>
-                      </div>
-                    )}
+                      </div>}
                   </div>
                 </CardContent>
-              </Card>
-            )}
+              </Card>}
           </div>
 
           {/* Right Column - Car Info and Actions */}
@@ -416,87 +368,59 @@ const CarDetails = () => {
                     <h1 className="text-2xl font-bold text-foreground">
                       {car.year} {car.make} {car.model}
                     </h1>
-                    {car.title && car.title !== `${car.make} ${car.model}` && (
-                      <p className="text-muted-foreground mt-1">{car.title}</p>
-                    )}
+                    {car.title && car.title !== `${car.make} ${car.model}` && <p className="text-muted-foreground mt-1">{car.title}</p>}
                   </div>
 
                   <div className="text-3xl font-bold text-primary">
                     €{car.price.toLocaleString()}
                   </div>
 
-                  {car.condition && (
-                    <Badge variant="secondary" className="capitalize">
+                  {car.condition && <Badge variant="secondary" className="capitalize">
                       {car.condition.replace('_', ' ')}
-                    </Badge>
-                  )}
+                    </Badge>}
                 </div>
 
                 <Separator className="my-4" />
 
                 {/* Basic Info */}
                 <div className="space-y-3">
-                  {car.mileage && (
-                    <div className="flex items-center gap-2">
+                  {car.mileage && <div className="flex items-center gap-2">
                       <Gauge className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">Kilometrat:</span>
                       <span>{car.mileage}</span>
-                    </div>
-                  )}
-                  {car.transmission && (
-                    <div className="flex items-center gap-2">
+                    </div>}
+                  {car.transmission && <div className="flex items-center gap-2">
                       <Settings className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">Transmisioni:</span>
                       <span className="capitalize">{car.transmission}</span>
-                    </div>
-                  )}
-                  {car.fuel && (
-                    <div className="flex items-center gap-2">
+                    </div>}
+                  {car.fuel && <div className="flex items-center gap-2">
                       <Fuel className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">Karburanti:</span>
                       <span className="capitalize">{car.fuel}</span>
-                    </div>
-                  )}
-                  {car.color && (
-                    <div className="flex items-center gap-2">
+                    </div>}
+                  {car.color && <div className="flex items-center gap-2">
                       <Palette className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">Ngjyra:</span>
                       <span className="capitalize">{car.color}</span>
-                    </div>
-                  )}
-                  {car.vin && (
-                    <div className="flex items-center gap-2">
+                    </div>}
+                  {car.vin && <div className="flex items-center gap-2">
                       <Hash className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">VIN:</span>
                       <span className="font-mono text-sm">{car.vin}</span>
-                    </div>
-                  )}
+                    </div>}
                 </div>
 
                 <Separator className="my-4" />
 
                 {/* Action Buttons */}
                 <div className="space-y-2">
-                  <InspectionRequestForm
-                    trigger={
-                      <Button 
-                        className="w-full bg-primary hover:bg-primary/90 text-xs py-1.5 h-8"
-                        size="sm"
-                        aria-label={`Kërkoni inspektim profesional për ${car?.year} ${car?.make} ${car?.model}`}
-                      >
+                  <InspectionRequestForm trigger={<Button className="w-full bg-primary hover:bg-primary/90 text-xs py-1.5 h-8" size="sm" aria-label={`Kërkoni inspektim profesional për ${car?.year} ${car?.make} ${car?.model}`}>
                         <Search className="h-3 w-3 mr-1" />
                         Kërkesë për Inspektim (€50)
-                      </Button>
-                    }
-                  />
+                      </Button>} />
                   
-                  <Button 
-                    variant="outline"
-                    onClick={handleContactWhatsApp}
-                    className="w-full border-primary text-primary hover:bg-primary hover:text-white text-xs py-1.5 h-8"
-                    size="sm"
-                    aria-label={`Kontaktoni nëpërmjet WhatsApp për informacion shtesë rreth ${car?.year} ${car?.make} ${car?.model}`}
-                  >
+                  <Button variant="outline" onClick={handleContactWhatsApp} className="w-full border-primary text-primary hover:bg-primary hover:text-white text-xs py-1.5 h-8" size="sm" aria-label={`Kontaktoni nëpërmjet WhatsApp për informacion shtesë rreth ${car?.year} ${car?.make} ${car?.model}`}>
                     <MessageCircle className="h-3 w-3 mr-1" />
                     Kontakto për Më Shumë Info
                   </Button>
@@ -526,12 +450,7 @@ const CarDetails = () => {
                     <span>RR.ilaz kodra 70</span>
                   </div>
                   <div className="mt-4">
-                    <a 
-                      href="https://www.google.com/maps/search/korauto" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-sm text-primary hover:underline"
-                    >
+                    <a href="https://www.google.com/maps/search/korauto" target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
                       View on Google Maps
                     </a>
                   </div>
@@ -540,28 +459,22 @@ const CarDetails = () => {
             </Card>
 
             {/* Seller Information */}
-            {(car.seller || car.seller_type) && (
-              <Card>
+            {(car.seller || car.seller_type) && <Card>
                 <CardContent className="p-6">
                   <h3 className="text-lg font-semibold mb-4 flex items-center">
                     <FileText className="h-4 w-4 mr-2" />
                     Informacioni i Shitësit
                   </h3>
                   <div className="space-y-2">
-                    {car.seller && (
-                      <div>
+                    {car.seller && <div>
                         <span className="font-medium">Shitësi:</span> {car.seller}
-                      </div>
-                    )}
-                    {car.seller_type && (
-                      <div>
+                      </div>}
+                    {car.seller_type && <div>
                         <span className="font-medium">Lloji:</span> {car.seller_type}
-                      </div>
-                    )}
+                      </div>}
                   </div>
                 </CardContent>
-              </Card>
-            )}
+              </Card>}
 
             {/* Insurance History - Encar.com Style */}
             <Card>
@@ -612,47 +525,15 @@ const CarDetails = () => {
                     <div className="space-y-4">
                       <h4 className="font-semibold">Karakteristikat Kryesore</h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {[
-                          'Kondicioneri automatik',
-                          'Navigacioni GPS', 
-                          'Kamera e parkimit',
-                          'Sensorët e parkimit',
-                          'Bluetooth',
-                          'USB/AUX',
-                          'Kontrolli i kryqëzimit',
-                          'Sistemi anti-bllokimi (ABS)',
-                          'Airbag-ët',
-                          'Sistemi i stabilitetit',
-                          'Kontrolli elektronik i stabilitetit',
-                          'Kontrolli i traksionit'
-                        ].map((option, index) => (
-                          <div key={index} className="flex items-center gap-2">
+                        {['Kondicioneri automatik', 'Navigacioni GPS', 'Kamera e parkimit', 'Sensorët e parkimit', 'Bluetooth', 'USB/AUX', 'Kontrolli i kryqëzimit', 'Sistemi anti-bllokimi (ABS)', 'Airbag-ët', 'Sistemi i stabilitetit', 'Kontrolli elektronik i stabilitetit', 'Kontrolli i traksionit'].map((option, index) => <div key={index} className="flex items-center gap-2">
                             <CheckCircle className="h-4 w-4 text-green-500" />
                             <span className="text-sm">{option}</span>
-                          </div>
-                        ))}
+                          </div>)}
                       </div>
                       
                       <div className="mt-6">
-                        <h4 className="font-semibold mb-2">Performance dhe Ekonomia e Karburantit</h4>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <div className="text-center p-3 bg-blue-50 rounded">
-                            <div className="font-semibold text-blue-600">186 HP</div>
-                            <div className="text-xs text-gray-600">Fuqia e Motorit</div>
-                          </div>
-                          <div className="text-center p-3 bg-green-50 rounded">
-                            <div className="font-semibold text-green-600">6.8L/100km</div>
-                            <div className="text-xs text-gray-600">Konsumi Kombinuar</div>
-                          </div>
-                          <div className="text-center p-3 bg-orange-50 rounded">
-                            <div className="font-semibold text-orange-600">9.2s</div>
-                            <div className="text-xs text-gray-600">0-100 km/h</div>
-                          </div>
-                          <div className="text-center p-3 bg-purple-50 rounded">
-                            <div className="font-semibold text-purple-600">210 km/h</div>
-                            <div className="text-xs text-gray-600">Shpejtësia Maksimale</div>
-                          </div>
-                        </div>
+                        
+                        
                       </div>
                     </div>
                   </TabsContent>
@@ -720,19 +601,10 @@ const CarDetails = () => {
                       
                       <div className="space-y-2">
                         <h5 className="font-medium">Kontrollet e Kryera:</h5>
-                        {[
-                          'Kontrolli i motorit dhe transmisionit',
-                          'Sistemi i frënimit dhe pezullimit',
-                          'Sistemet elektrike dhe elektronike',
-                          'Karoseria dhe ngjyra',
-                          'Interiori dhe pajisjet',
-                          'Dokumentacioni dhe historia'
-                        ].map((check, index) => (
-                          <div key={index} className="flex items-center gap-2">
+                        {['Kontrolli i motorit dhe transmisionit', 'Sistemi i frënimit dhe pezullimit', 'Sistemet elektrike dhe elektronike', 'Karoseria dhe ngjyra', 'Interiori dhe pajisjet', 'Dokumentacioni dhe historia'].map((check, index) => <div key={index} className="flex items-center gap-2">
                             <CheckCircle className="h-4 w-4 text-green-500" />
                             <span className="text-sm">{check}</span>
-                          </div>
-                        ))}
+                          </div>)}
                       </div>
                     </div>
                   </TabsContent>
@@ -745,26 +617,34 @@ const CarDetails = () => {
                       </div>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {[
-                          { year: '2022', make: 'BMW', model: '320i', price: '€34,500' },
-                          { year: '2020', make: 'BMW', model: '330i', price: '€29,800' },
-                          { year: '2021', make: 'Audi', model: 'A4', price: '€31,200' },
-                          { year: '2021', make: 'Mercedes', model: 'C200', price: '€33,900' }
-                        ].map((similarCar, index) => (
-                          <div key={index} className="p-3 border rounded cursor-pointer hover:bg-gray-50">
+                        {[{
+                        year: '2022',
+                        make: 'BMW',
+                        model: '320i',
+                        price: '€34,500'
+                      }, {
+                        year: '2020',
+                        make: 'BMW',
+                        model: '330i',
+                        price: '€29,800'
+                      }, {
+                        year: '2021',
+                        make: 'Audi',
+                        model: 'A4',
+                        price: '€31,200'
+                      }, {
+                        year: '2021',
+                        make: 'Mercedes',
+                        model: 'C200',
+                        price: '€33,900'
+                      }].map((similarCar, index) => <div key={index} className="p-3 border rounded cursor-pointer hover:bg-gray-50">
                             <div className="font-medium">{similarCar.year} {similarCar.make} {similarCar.model}</div>
                             <div className="text-primary font-semibold">{similarCar.price}</div>
                             <div className="text-xs text-gray-500">Klic për më shumë detaje</div>
-                          </div>
-                        ))}
+                          </div>)}
                       </div>
                       
-                      <Button 
-                        variant="outline" 
-                        className="w-full mt-4"
-                        aria-label="View all similar cars"
-                        onClick={() => navigate('/')}
-                      >
+                      <Button variant="outline" className="w-full mt-4" aria-label="View all similar cars" onClick={() => navigate('/')}>
                         <ChevronRight className="h-4 w-4 mr-2" />
                         Shiko të Gjitha Makinat e Ngjashme
                       </Button>
@@ -776,8 +656,6 @@ const CarDetails = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default CarDetails;
