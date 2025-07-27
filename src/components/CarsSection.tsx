@@ -217,7 +217,7 @@ const CarsSection = () => {
   useEffect(() => {
     const interval = setInterval(async () => {
       console.log('Running periodic update...');
-      await fetchCars(60); // Fetch updates from last 60 minutes
+      await fetchCars(1000); // Fetch updates from last 60 minutes
       await delay(2000); // Wait 2 seconds between calls
       await fetchArchivedLots(); // Remove sold cars
     }, 60 * 60 * 1000); // Every hour
