@@ -472,7 +472,7 @@ const CarDetails = () => {
                   <div className="space-y-4">
                     <InspectionRequestForm trigger={<Button className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-4 h-14 text-base font-bold shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl hover:scale-[1.02] active:scale-[0.98]" aria-label={`Kërkoni inspektim profesional për ${car?.year} ${car?.make} ${car?.model}`}>
                           <Search className="h-5 w-5 mr-3" />
-                          <span className="tracking-wide">Kërkesë për Inspektim Profesional (€50)</span>
+                          <span className="tracking-wide">Kërkesë për Inspektim (€50)</span>
                         </Button>} />
                     
                     <Button variant="outline" onClick={handleContactWhatsApp} className="w-full border-2 border-primary/60 bg-gradient-to-r from-transparent to-primary/5 text-primary hover:from-primary hover:to-primary hover:text-white py-4 h-14 text-base font-bold shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl hover:scale-[1.02] active:scale-[0.98]" aria-label={`Kontaktoni nëpërmjet WhatsApp për informacion shtesë rreth ${car?.year} ${car?.make} ${car?.model}`}>
