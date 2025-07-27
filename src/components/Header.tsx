@@ -63,7 +63,7 @@ const Header = () => {
             <Button 
               variant="outline" 
               size="sm" 
-              className="hidden md:flex border-primary text-primary hover:bg-primary hover:text-white"
+              className="hidden md:flex border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
               onClick={() => {
                 const message = "Përshëndetje! Dëshiroj informacion për shërbimet tuaja të inspektimit të makinave.";
                 const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;

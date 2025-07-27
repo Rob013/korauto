@@ -91,6 +91,9 @@ All colors MUST be HSL.
     --input: 0 0% 15%;
     --ring: 0 0% 80%;
 
+    --inspection: 45 100% 50%;
+    --inspection-foreground: 0 0% 8%;
+
     --premium: 45 100% 60%;
     --premium-foreground: 0 0% 8%;
     
