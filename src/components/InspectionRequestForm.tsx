@@ -54,28 +54,38 @@ const [formData, setFormData] = useState({
 
       // Handle payment method
       if (formData.paymentMethod === "card") {
-        // Redirect to Stripe payment
-        window.open("https://buy.stripe.com/7sY3cwcbVfhh5Yk4dEco000", '_blank');
+        // For card payments, redirect to Stripe immediately
+        const stripeUrl = "https://buy.stripe.com/7sY3cwcbVfhh5Yk4dEco000";
+        
+        // Add customer info as URL parameters if Stripe supports it
+        const params = new URLSearchParams({
+          'prefilled_email': formData.email,
+          'client_reference_id': `${formData.firstName}_${formData.lastName}`
+        });
+        
+        window.location.href = `${stripeUrl}?${params.toString()}`;
         
         toast({
           title: "Redirecting to Payment",
-          description: "Do të ridrejtoheni tek pagesa me kartë. Pas pagesës do t'ju kontaktojmë për inspektimin.",
-          duration: 5000,
+          description: "Po ju drejtojmë tek pagesa me kartë...",
+          duration: 3000,
         });
-      } else {
-        // Cash payment - send WhatsApp notification
-        const carInfo = carMake && carModel && carYear ? `🚗 Makina: ${carYear} ${carMake} ${carModel}\n` : '';
-        const ownerMessage = `🔔 Kërkesë e Re për Inspektim - KORAUTO\n\n👤 Emri: ${formData.firstName} ${formData.lastName}\n📧 Email: ${formData.email}\n📱 WhatsApp: ${formData.whatsappPhone}\n${carInfo}💰 Pagesa: Cash (€50)\n✅ Klient i ri kërkon shërbimin e inspektimit të makinës. Kontaktojeni sa më shpejt!`;
         
-        const ownerWhatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(ownerMessage)}`;
-        window.open(ownerWhatsappUrl, '_blank');
-        
-        toast({
-          title: "Faleminderit për Kërkesën!",
-          description: "Kërkesa juaj për inspektim u dërgua me sukses! Do t'ju kontaktojmë brenda 24 orëve.",
-          duration: 5000,
-        });
+        return; // Exit early for card payments
       }
+      
+      // Cash payment - send WhatsApp notification
+      const carInfo = carMake && carModel && carYear ? `🚗 Makina: ${carYear} ${carMake} ${carModel}\n` : '';
+      const ownerMessage = `🔔 Kërkesë e Re për Inspektim - KORAUTO\n\n👤 Emri: ${formData.firstName} ${formData.lastName}\n📧 Email: ${formData.email}\n📱 WhatsApp: ${formData.whatsappPhone}\n${carInfo}💰 Pagesa: Cash (€50)\n✅ Klient i ri kërkon shërbimin e inspektimit të makinës. Kontaktojeni sa më shpejt!`;
+      
+      const ownerWhatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(ownerMessage)}`;
+      window.open(ownerWhatsappUrl, '_blank');
+      
+      toast({
+        title: "Faleminderit për Kërkesën!",
+        description: "Kërkesa juaj për inspektim u dërgua me sukses! Do t'ju kontaktojmë brenda 24 orëve.",
+        duration: 5000,
+      });
 
       // Reset form and close dialog
       setFormData({ firstName: "", lastName: "", email: "", whatsappPhone: "", paymentMethod: "cash" });
@@ -94,7 +104,7 @@ const [formData, setFormData] = useState({
       
       if (formData.paymentMethod === "card") {
         // Also redirect to payment on error
-        window.open("https://buy.stripe.com/7sY3cwcbVfhh5Yk4dEco000", '_blank');
+        window.location.href = "https://buy.stripe.com/7sY3cwcbVfhh5Yk4dEco000";
       }
       
       toast({
