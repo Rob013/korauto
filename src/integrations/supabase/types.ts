@@ -62,6 +62,9 @@ export type Database = {
       inspection_requests: {
         Row: {
           car_id: string | null
+          car_make: string | null
+          car_model: string | null
+          car_year: number | null
           created_at: string
           customer_email: string
           customer_name: string
@@ -73,6 +76,9 @@ export type Database = {
         }
         Insert: {
           car_id?: string | null
+          car_make?: string | null
+          car_model?: string | null
+          car_year?: number | null
           created_at?: string
           customer_email: string
           customer_name: string
@@ -84,6 +90,9 @@ export type Database = {
         }
         Update: {
           car_id?: string | null
+          car_make?: string | null
+          car_model?: string | null
+          car_year?: number | null
           created_at?: string
           customer_email?: string
           customer_name?: string

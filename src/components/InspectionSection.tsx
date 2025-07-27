@@ -30,7 +30,7 @@ const InspectionSection = () => {
     <section id="inspection" className="py-16 bg-muted/50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4 text-foreground">Shërbimi Profesional i Inspektimit</h2>
+          <h2 className="text-4xl font-bold mb-4 text-foreground">Shërbim profesional i importit të makinave</h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             Kërkoni një inspektim profesional për çdo makinë vetëm për €50. 
             Fitoni qetësinë mendore me shërbimin tonë gjithëpërfshirës të vlerësimit të mjeteve.

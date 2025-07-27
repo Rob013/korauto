@@ -85,10 +85,13 @@ const CarCard = ({
           <span className="text-2xl font-bold text-primary">
             €{price.toLocaleString()}
           </span>
-          {condition}
         </div>
 
         <InspectionRequestForm
+          carId={id}
+          carMake={make}
+          carModel={model}
+          carYear={year}
           trigger={
             <Button
               onClick={(e) => e.stopPropagation()}
@@ -104,7 +107,7 @@ const CarCard = ({
         
         <div className="mt-2 text-center">
           <p className="text-xs text-muted-foreground">
-            KORAUTO Professional Inspection Service
+            KORAUTO Shërbim profesional i importit
           </p>
         </div>
       </div>

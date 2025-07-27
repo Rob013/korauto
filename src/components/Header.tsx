@@ -9,7 +9,7 @@ const Header = () => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between text-xs">
             <div className="flex items-center gap-4">
-              <span>Shërbim Profesional Inspektimi Makinash</span>
+              <span>Shërbim profesional i importit të makinave</span>
               <span>•</span>
               <span>Kontakt: +38348181116</span>
             </div>
@@ -43,7 +43,7 @@ const Header = () => {
             <a href="#home" className="text-gray-700 hover:text-primary font-medium transition-colors">
               Kryefaqja
             </a>
-            <a href="#cars" className="text-gray-700 hover:text-primary font-medium transition-colors">
+            <a href="/catalog" className="text-gray-700 hover:text-primary font-medium transition-colors">
               Katalogu
             </a>
             <a href="#inspection" className="text-gray-700 hover:text-primary font-medium transition-colors">
