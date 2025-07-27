@@ -59,6 +59,42 @@ export type Database = {
         }
         Relationships: []
       }
+      favorite_cars: {
+        Row: {
+          car_id: string
+          car_image: string | null
+          car_make: string | null
+          car_model: string | null
+          car_price: number | null
+          car_year: number | null
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          car_id: string
+          car_image?: string | null
+          car_make?: string | null
+          car_model?: string | null
+          car_price?: number | null
+          car_year?: number | null
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          car_id?: string
+          car_image?: string | null
+          car_make?: string | null
+          car_model?: string | null
+          car_price?: number | null
+          car_year?: number | null
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       inspection_requests: {
         Row: {
           car_id: string | null
@@ -111,6 +147,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
