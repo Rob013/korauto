@@ -52,44 +52,65 @@ const [formData, setFormData] = useState({
         throw error;
       }
 
-      // Handle payment method
-      if (formData.paymentMethod === "card") {
-        // For card payments, redirect to Stripe immediately
-        const stripeUrl = "https://buy.stripe.com/7sY3cwcbVfhh5Yk4dEco000";
-        
-        // Add customer info as URL parameters if Stripe supports it
-        const params = new URLSearchParams({
-          'prefilled_email': formData.email,
-          'client_reference_id': `${formData.firstName}_${formData.lastName}`
+      // Send email notifications
+      try {
+        await supabase.functions.invoke('send-inspection-notification', {
+          body: {
+            customer_name: `${formData.firstName} ${formData.lastName}`,
+            customer_email: formData.email,
+            customer_phone: formData.whatsappPhone,
+            car_make: carMake,
+            car_model: carModel,
+            car_year: carYear,
+            inspection_fee: 50.00,
+            payment_status: formData.paymentMethod === "card" ? "processing" : "pending"
+          }
         });
-        
-        window.location.href = `${stripeUrl}?${params.toString()}`;
-        
+      } catch (emailError) {
+        console.error('Email notification failed:', emailError);
+        // Don't fail the whole process if email fails
+      }
+
+      // Handle payment method after saving to database
+      if (formData.paymentMethod === "card") {
+        // Show processing message for card payments
         toast({
-          title: "Redirecting to Payment",
-          description: "Po ju drejtojmë tek pagesa me kartë...",
+          title: "Processing...",
+          description: "Ruajmë të dhënat tuaja dhe po ju drejtojmë tek pagesa...",
           duration: 3000,
         });
         
-        return; // Exit early for card payments
-      }
-      
-      // Cash payment - send WhatsApp notification
-      const carInfo = carMake && carModel && carYear ? `🚗 Makina: ${carYear} ${carMake} ${carModel}\n` : '';
-      const ownerMessage = `🔔 Kërkesë e Re për Inspektim - KORAUTO\n\n👤 Emri: ${formData.firstName} ${formData.lastName}\n📧 Email: ${formData.email}\n📱 WhatsApp: ${formData.whatsappPhone}\n${carInfo}💰 Pagesa: Cash (€50)\n✅ Klient i ri kërkon shërbimin e inspektimit të makinës. Kontaktojeni sa më shpejt!`;
-      
-      const ownerWhatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(ownerMessage)}`;
-      window.open(ownerWhatsappUrl, '_blank');
-      
-      toast({
-        title: "Faleminderit për Kërkesën!",
-        description: "Kërkesa juaj për inspektim u dërgua me sukses! Do t'ju kontaktojmë brenda 24 orëve.",
-        duration: 5000,
-      });
+        // Reset form and close dialog first
+        setFormData({ firstName: "", lastName: "", email: "", whatsappPhone: "", paymentMethod: "cash" });
+        setIsOpen(false);
+        
+        // Small delay to ensure UI updates, then redirect
+        setTimeout(() => {
+          const stripeUrl = "https://buy.stripe.com/7sY3cwcbVfhh5Yk4dEco000";
+          const params = new URLSearchParams({
+            'prefilled_email': formData.email,
+            'client_reference_id': `${formData.firstName}_${formData.lastName}`
+          });
+          window.location.href = `${stripeUrl}?${params.toString()}`;
+        }, 1000);
+      } else {
+        // Cash payment - send WhatsApp notification
+        const carInfo = carMake && carModel && carYear ? `🚗 Makina: ${carYear} ${carMake} ${carModel}\n` : '';
+        const ownerMessage = `🔔 Kërkesë e Re për Inspektim - KORAUTO\n\n👤 Emri: ${formData.firstName} ${formData.lastName}\n📧 Email: ${formData.email}\n📱 WhatsApp: ${formData.whatsappPhone}\n${carInfo}💰 Pagesa: Cash (€50)\n✅ Klient i ri kërkon shërbimin e inspektimit të makinës. Kontaktojeni sa më shpejt!`;
+        
+        const ownerWhatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(ownerMessage)}`;
+        window.open(ownerWhatsappUrl, '_blank');
+        
+        toast({
+          title: "Faleminderit për Kërkesën!",
+          description: "Kërkesa juaj për inspektim u dërgua me sukses! Do t'ju kontaktojmë brenda 24 orëve.",
+          duration: 5000,
+        });
 
-      // Reset form and close dialog
-      setFormData({ firstName: "", lastName: "", email: "", whatsappPhone: "", paymentMethod: "cash" });
-      setIsOpen(false);
+        // Reset form and close dialog
+        setFormData({ firstName: "", lastName: "", email: "", whatsappPhone: "", paymentMethod: "cash" });
+        setIsOpen(false);
+      }
       
     } catch (error) {
       console.error('Failed to submit inspection request:', error);
@@ -104,7 +125,9 @@ const [formData, setFormData] = useState({
       
       if (formData.paymentMethod === "card") {
         // Also redirect to payment on error
-        window.location.href = "https://buy.stripe.com/7sY3cwcbVfhh5Yk4dEco000";
+        setTimeout(() => {
+          window.location.href = "https://buy.stripe.com/7sY3cwcbVfhh5Yk4dEco000";
+        }, 1000);
       }
       
       toast({
