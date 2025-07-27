@@ -1,6 +1,4 @@
 import CarCard from "./CarCard";
-import MobileCarCard from "./MobileCarCard";
-import { useLiveAuctionAPI } from "@/hooks/useLiveAuctionAPI";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";

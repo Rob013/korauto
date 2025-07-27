@@ -1,216 +1,182 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
-import { 
-  Car, 
-  Search, 
-  Heart, 
-  User as UserIcon, 
-  LogOut, 
-  LogIn,
-  Menu,
-  X,
-  LayoutDashboard
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
+import { Car, Heart, Menu, X } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 const Header = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
-
-  useEffect(() => {
-    // Check current user
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-    };
-    getUser();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    toast({
-      title: "Signed out",
-      description: "See you again soon!",
-    });
-  };
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-[#003087] text-white shadow-lg">
+    <header className="bg-background shadow-sm border-b border-border sticky top-0 z-50">
+      {/* Main header */}
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate('/')}>
-            <Car className="h-8 w-8" />
-            <div>
-              <h1 className="text-xl font-bold">KORAUTO</h1>
-              <p className="text-xs text-blue-200 hidden sm:block">Live Car Auctions</p>
+          <div className="flex items-center space-x-3 flex-shrink-0">
+            <div className="w-12 h-12 md:w-16 md:h-16 bg-primary rounded-lg flex items-center justify-center overflow-hidden">
+              <img 
+                src="/lovable-uploads/3094fd63-7a92-4497-8103-e166b6b09f70.png" 
+                alt="KORAUTO Logo" 
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-xl md:text-2xl font-bold text-primary">KORAUTO</h1>
+              <p className="text-xs md:text-sm text-muted-foreground whitespace-nowrap hidden sm:block">Ekspertë të Inspektimit të Makinave</p>
             </div>
           </div>
-
+          
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-6">
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate('/')}
-              className="text-white hover:text-primary hover:bg-white/10"
+          <nav className="hidden lg:flex items-center justify-center space-x-8">
+            <Link to="/" className="text-foreground hover:text-primary font-medium transition-colors">
+              Kryefaqja
+            </Link>
+            <Link to="/catalog" className="text-foreground hover:text-primary font-medium transition-colors">
+              Katalogu
+            </Link>
+            <button 
+              onClick={() => {
+                navigate('/');
+                setTimeout(() => {
+                  document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }}
+              className="text-foreground hover:text-primary font-medium transition-colors bg-transparent border-none cursor-pointer"
             >
-              Home
-            </Button>
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate('/catalog')}
-              className="text-white hover:text-primary hover:bg-white/10"
-            >
-              <Search className="h-4 w-4 mr-2" />
-              Browse Cars
-            </Button>
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate('/favorites')}
-              className="text-white hover:text-primary hover:bg-white/10"
-            >
-              <Heart className="h-4 w-4 mr-2" />
+              Kontakti
+            </button>
+            <Link to="/favorites" className="flex items-center gap-2 text-foreground hover:text-primary font-medium transition-colors">
+              <Heart className="h-4 w-4" />
               Favorites
-            </Button>
+            </Link>
+            <Link to="/auth" className="text-foreground hover:text-primary font-medium transition-colors">
+              My Account
+            </Link>
           </nav>
 
-          {/* Auth & Mobile */}
-          <div className="flex items-center space-x-3">
-            <div className="hidden md:flex items-center space-x-2">
-              {user ? (
-                <>
-                  <Button 
-                    variant="ghost" 
-                    onClick={() => navigate('/dashboard')}
-                    className="text-white hover:text-primary hover:bg-white/10"
-                  >
-                    <LayoutDashboard className="h-4 w-4 mr-2" />
-                    Dashboard
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    onClick={handleSignOut}
-                    className="text-white hover:text-primary hover:bg-white/10"
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Sign Out
-                  </Button>
-                </>
-              ) : (
-                <Button 
-                  variant="ghost" 
-                  onClick={() => navigate('/auth')}
-                  className="text-white hover:text-primary hover:bg-white/10"
-                >
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Sign In
-                </Button>
-              )}
-            </div>
-
+          {/* Desktop CTA Buttons */}
+          <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200 rounded-full px-4"
+              onClick={() => {
+                const message = "Përshëndetje! Dëshiroj informacion për shërbimet tuaja të inspektimit të makinave.";
+                const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
+                window.open(whatsappUrl, '_blank');
+              }}
+              aria-label="Kontaktoni nëpërmjet WhatsApp për informacion rreth shërbimeve"
+            >
+              Na Kontaktoni
+            </Button>
+            <Button 
+              size="sm" 
+              className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 rounded-full px-6 hover:scale-105"
+              onClick={() => document.getElementById('cars')?.scrollIntoView({ behavior: 'smooth' })}
+              aria-label="Shikoni listën e makinave të disponueshme"
+            >
+              Shiko Makinat
+            </Button>
+          </div>
 
-            {/* Mobile Menu Button */}
+          {/* Mobile menu button and theme toggle */}
+          <div className="flex items-center gap-2 md:hidden">
+            <ThemeToggle />
             <Button
               variant="ghost"
               size="sm"
-              className="md:hidden text-white"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2"
+              aria-label="Toggle mobile menu"
             >
-              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
           </div>
         </div>
+      </div>
 
-        {/* Mobile Menu */}
-        {isMenuOpen && (
-          <div className="md:hidden mt-4 pb-4 border-t border-blue-600">
-            <div className="flex flex-col space-y-2 pt-4">
-              <Button 
-                variant="ghost" 
+      {/* Mobile Navigation Menu */}
+      {isMobileMenuOpen && (
+        <div className="lg:hidden bg-background border-t border-border shadow-lg">
+          <div className="container mx-auto px-4 py-4">
+            <nav className="flex flex-col space-y-4">
+              <Link 
+                to="/" 
+                className="text-foreground hover:text-primary font-medium transition-colors py-2 px-3 rounded-md hover:bg-primary/10"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Kryefaqja
+              </Link>
+              <Link 
+                to="/catalog" 
+                className="text-foreground hover:text-primary font-medium transition-colors py-2 px-3 rounded-md hover:bg-primary/10"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Katalogu
+              </Link>
+              <button 
                 onClick={() => {
                   navigate('/');
-                  setIsMenuOpen(false);
+                  setIsMobileMenuOpen(false);
+                  setTimeout(() => {
+                    document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+                  }, 100);
                 }}
-                className="w-full justify-start text-white"
+                className="text-left text-foreground hover:text-primary font-medium transition-colors py-2 px-3 rounded-md hover:bg-primary/10 bg-transparent border-none cursor-pointer"
               >
-                Home
-              </Button>
-              <Button 
-                variant="ghost" 
-                onClick={() => {
-                  navigate('/catalog');
-                  setIsMenuOpen(false);
-                }}
-                className="w-full justify-start text-white"
+                Kontakti
+              </button>
+              <Link 
+                to="/favorites" 
+                className="flex items-center gap-2 text-foreground hover:text-primary font-medium transition-colors py-2 px-3 rounded-md hover:bg-primary/10"
+                onClick={() => setIsMobileMenuOpen(false)}
               >
-                <Search className="h-4 w-4 mr-2" />
-                Browse Cars
-              </Button>
-              <Button 
-                variant="ghost" 
-                onClick={() => {
-                  navigate('/favorites');
-                  setIsMenuOpen(false);
-                }}
-                className="w-full justify-start text-white"
-              >
-                <Heart className="h-4 w-4 mr-2" />
+                <Heart className="h-4 w-4" />
                 Favorites
-              </Button>
+              </Link>
+              <Link 
+                to="/auth" 
+                className="text-foreground hover:text-primary font-medium transition-colors py-2 px-3 rounded-md hover:bg-primary/10"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                My Account
+              </Link>
               
-              {user ? (
-                <>
-                  <Button 
-                    variant="ghost" 
-                    onClick={() => {
-                      navigate('/dashboard');
-                      setIsMenuOpen(false);
-                    }}
-                    className="w-full justify-start text-white"
-                  >
-                    <LayoutDashboard className="h-4 w-4 mr-2" />
-                    Dashboard
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    onClick={handleSignOut}
-                    className="w-full justify-start text-white"
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Sign Out
-                  </Button>
-                </>
-              ) : (
+              {/* Mobile CTA Buttons */}
+              <div className="flex flex-col gap-3 pt-4 border-t border-border">
                 <Button 
-                  variant="ghost" 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full text-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
                   onClick={() => {
-                    navigate('/auth');
-                    setIsMenuOpen(false);
+                    const message = "Përshëndetje! Dëshiroj informacion për shërbimet tuaja të inspektimit të makinave.";
+                    const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
+                    window.open(whatsappUrl, '_blank');
+                    setIsMobileMenuOpen(false);
                   }}
-                  className="w-full justify-start text-white"
+                  aria-label="Kontaktoni nëpërmjet WhatsApp për informacion rreth shërbimeve"
                 >
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Sign In
+                  Na Kontaktoni
                 </Button>
-              )}
-            </div>
+                <Button 
+                  size="sm" 
+                  className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                  onClick={() => {
+                    document.getElementById('cars')?.scrollIntoView({ behavior: 'smooth' });
+                    setIsMobileMenuOpen(false);
+                  }}
+                  aria-label="Shikoni listën e makinave të disponueshme"
+                >
+                  Shiko Makinat
+                </Button>
+              </div>
+            </nav>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </header>
   );
 };
