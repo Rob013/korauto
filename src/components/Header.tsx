@@ -27,7 +27,7 @@ const Header = () => {
           </div>
           
           {/* Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="hidden md:flex items-center justify-center space-x-8">
             <Link to="/" className="text-foreground hover:text-primary font-medium transition-colors">
               Kryefaqja
             </Link>
