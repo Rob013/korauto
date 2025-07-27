@@ -44,7 +44,7 @@ const [formData, setFormData] = useState({
           car_model: carModel,
           car_year: carYear,
           inspection_fee: 50.00,
-          payment_status: 'pending'
+          payment_status: formData.paymentMethod === "card" ? "processing" : "pending"
         });
 
       if (error) {
@@ -52,21 +52,30 @@ const [formData, setFormData] = useState({
         throw error;
       }
 
-      // Create WhatsApp message for owner notification
-      const carInfo = carMake && carModel && carYear ? `🚗 Makina: ${carYear} ${carMake} ${carModel}\n` : '';
-      const ownerMessage = `🔔 Kërkesë e Re për Inspektim - KORAUTO\n\n👤 Emri: ${formData.firstName} ${formData.lastName}\n📧 Email: ${formData.email}\n📱 WhatsApp: ${formData.whatsappPhone}\n${carInfo}\n✅ Klient i ri kërkon shërbimin e inspektimit të makinës. Kontaktojeni sa më shpejt!`;
-      
-      const ownerWhatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(ownerMessage)}`;
-      
-      // Open WhatsApp notification for owner
-      window.open(ownerWhatsappUrl, '_blank');
-      
-      // Show thank you message
-      toast({
-        title: "Faleminderit për Kërkesën!",
-        description: "Kërkesa juaj për inspektim u dërgua me sukses! Do t'ju kontaktojmë brenda 24 orëve.",
-        duration: 5000,
-      });
+      // Handle payment method
+      if (formData.paymentMethod === "card") {
+        // Redirect to Stripe payment
+        window.open("https://buy.stripe.com/7sY3cwcbVfhh5Yk4dEco000", '_blank');
+        
+        toast({
+          title: "Redirecting to Payment",
+          description: "Do të ridrejtoheni tek pagesa me kartë. Pas pagesës do t'ju kontaktojmë për inspektimin.",
+          duration: 5000,
+        });
+      } else {
+        // Cash payment - send WhatsApp notification
+        const carInfo = carMake && carModel && carYear ? `🚗 Makina: ${carYear} ${carMake} ${carModel}\n` : '';
+        const ownerMessage = `🔔 Kërkesë e Re për Inspektim - KORAUTO\n\n👤 Emri: ${formData.firstName} ${formData.lastName}\n📧 Email: ${formData.email}\n📱 WhatsApp: ${formData.whatsappPhone}\n${carInfo}💰 Pagesa: Cash (€50)\n✅ Klient i ri kërkon shërbimin e inspektimit të makinës. Kontaktojeni sa më shpejt!`;
+        
+        const ownerWhatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(ownerMessage)}`;
+        window.open(ownerWhatsappUrl, '_blank');
+        
+        toast({
+          title: "Faleminderit për Kërkesën!",
+          description: "Kërkesa juaj për inspektim u dërgua me sukses! Do t'ju kontaktojmë brenda 24 orëve.",
+          duration: 5000,
+        });
+      }
 
       // Reset form and close dialog
       setFormData({ firstName: "", lastName: "", email: "", whatsappPhone: "", paymentMethod: "cash" });
@@ -75,12 +84,18 @@ const [formData, setFormData] = useState({
     } catch (error) {
       console.error('Failed to submit inspection request:', error);
       
-      // Still send WhatsApp message as fallback
+      // Fallback - still send WhatsApp message
       const carInfo = carMake && carModel && carYear ? `🚗 Makina: ${carYear} ${carMake} ${carModel}\n` : '';
-      const ownerMessage = `🔔 Kërkesë e Re për Inspektim - KORAUTO\n\n👤 Emri: ${formData.firstName} ${formData.lastName}\n📧 Email: ${formData.email}\n📱 WhatsApp: ${formData.whatsappPhone}\n${carInfo}\n✅ Klient i ri kërkon shërbimin e inspektimit të makinës. Kontaktojeni sa më shpejt!`;
+      const paymentInfo = formData.paymentMethod === "card" ? "💳 Pagesa: Kartë Krediti" : "💰 Pagesa: Cash";
+      const ownerMessage = `🔔 Kërkesë e Re për Inspektim - KORAUTO\n\n👤 Emri: ${formData.firstName} ${formData.lastName}\n📧 Email: ${formData.email}\n📱 WhatsApp: ${formData.whatsappPhone}\n${carInfo}${paymentInfo} (€50)\n✅ Klient i ri kërkon shërbimin e inspektimit të makinës. Kontaktojeni sa më shpejt!`;
       
       const ownerWhatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(ownerMessage)}`;
       window.open(ownerWhatsappUrl, '_blank');
+      
+      if (formData.paymentMethod === "card") {
+        // Also redirect to payment on error
+        window.open("https://buy.stripe.com/7sY3cwcbVfhh5Yk4dEco000", '_blank');
+      }
       
       toast({
         title: "Kërkesa u Dërgua",
