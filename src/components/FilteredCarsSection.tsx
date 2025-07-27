@@ -377,7 +377,7 @@ const FilteredCarsSection = () => {
                 <SelectTrigger className="h-11">
                   <SelectValue placeholder="Të gjithë Vitet" />
                 </SelectTrigger>
-                <SelectContent className="z-50 max-h-60">
+                <SelectContent className="z-100 max-h-60">
                   <SelectItem value="all">Të gjithë Vitet</SelectItem>
                   {uniqueYears.map(year => (
                     <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
