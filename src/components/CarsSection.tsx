@@ -39,24 +39,14 @@ const CarsSection = () => {
   const [mileageRange, setMileageRange] = useState<[number, number]>([0, 300000]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 200000]);
 
-  // Correct API endpoint from network logs
+  // Correct API endpoint based on 429 response analysis
   const API_BASE_URL = 'https://auctionsapi.com/api';
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
-
-  // Extended cache for demo API to prevent rate limiting
-  const [cache, setCache] = useState<{data: any, timestamp: number} | null>(null);
-  const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes for demo API
 
   // Add delay between requests to respect rate limits
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   const tryApiEndpoint = async (endpoint: string, params: URLSearchParams, retryCount = 0): Promise<any> => {
-    // Check cache first
-    if (cache && Date.now() - cache.timestamp < CACHE_DURATION) {
-      console.log('Using cached data');
-      return cache.data;
-    }
-
     console.log(`API Request: ${API_BASE_URL}${endpoint}?${params}`);
     
     try {
@@ -69,31 +59,24 @@ const CarsSection = () => {
       });
 
       if (response.status === 429) {
-        // Rate limited - use longer delays for demo API
-        const waitTime = 30000; // Wait 30 seconds for demo API
-        console.log(`Demo API rate limited. Waiting ${waitTime}ms before retry`);
+        // Rate limited - implement exponential backoff
+        const waitTime = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s, 8s...
+        console.log(`Rate limited. Waiting ${waitTime}ms before retry ${retryCount + 1}`);
         
-        if (retryCount < 1) { // Only retry once for demo API
+        if (retryCount < 3) {
           await delay(waitTime);
           return tryApiEndpoint(endpoint, params, retryCount + 1);
         } else {
-          console.log('Demo API rate limit exceeded. Using cached/fallback data.');
-          throw new Error('Demo API rate limit exceeded. Please wait 30 seconds before refreshing.');
+          throw new Error('Rate limit exceeded after retries');
         }
       }
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`API Error Response:`, errorText);
         throw new Error(`API returned ${response.status}: ${response.statusText}`);
       }
       
       const data = await response.json();
       console.log(`API Success: ${data?.data?.length || 0} cars received`);
-      
-      // Update cache
-      setCache({ data, timestamp: Date.now() });
-      
       return data;
     } catch (err) {
       console.error(`API Request failed:`, err);
@@ -106,12 +89,12 @@ const CarsSection = () => {
     setError(null);
 
     try {
-      // Longer delay for demo API to prevent rate limiting
-      await delay(2000);
+      // Add delay to respect rate limits
+      await delay(500);
 
       const params = new URLSearchParams({
         api_key: API_KEY,
-        limit: '20' // Reduced limit for demo API
+        limit: '50' // Demo mode limit
       });
 
       if (minutes) {
@@ -203,25 +186,24 @@ const CarsSection = () => {
 
   const fetchArchivedLots = async () => {
     try {
-      // Skip archived lots fetch for demo API to prevent rate limiting
-      console.log('Archived lots fetch disabled for demo API');
-      return;
-      
-      // Commented out to prevent rate limiting
-      /*
-      await delay(5000);
+      // Add delay to respect rate limits
+      await delay(300);
+
       const params = new URLSearchParams({
         api_key: API_KEY,
         minutes: '60'
       });
+
       console.log('Fetching archived lots...');
       const data = await tryApiEndpoint('/archived-lots', params);
       const archivedIds = data.archivedLots?.map((lot: any) => lot.id) || [];
+      
+      // Remove archived cars from current list
       setCars(prevCars => prevCars.filter(car => !archivedIds.includes(car.id)));
       console.log(`Successfully removed ${archivedIds.length} archived cars`);
-      */
     } catch (err) {
       console.error('Failed to fetch archived lots:', err);
+      // Don't show error to user for archived lots - not critical
     }
   };
 
@@ -230,22 +212,17 @@ const CarsSection = () => {
     fetchCars();
   }, []);
 
-  // Disable periodic updates for demo API to prevent rate limiting
+  // Set up periodic updates with staggered timing to avoid rate limits
   useEffect(() => {
-    // Comment out automatic refresh for demo API
-    console.log('Automatic refresh disabled for demo API to prevent rate limiting');
-    /*
     const interval = setInterval(async () => {
-      if (!cache || Date.now() - cache.timestamp > CACHE_DURATION) {
-        console.log('Running periodic update...');
-        await fetchCars(60);
-        await delay(10000);
-        await fetchArchivedLots();
-      }
-    }, 30 * 60 * 1000); // Every 30 minutes
+      console.log('Running periodic update...');
+      await fetchCars(60); // Fetch updates from last 60 minutes
+      await delay(2000); // Wait 2 seconds between calls
+      await fetchArchivedLots(); // Remove sold cars
+    }, 60 * 60 * 1000); // Every hour
+
     return () => clearInterval(interval);
-    */
-  }, [cache]);
+  }, []);
 
   // Sorting and filtering logic
   useEffect(() => {
