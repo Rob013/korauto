@@ -96,7 +96,7 @@ const CatalogCarsSection = () => {
 
       const params = new URLSearchParams({
         api_key: API_KEY,
-        limit: '50'
+        limit: '1000'
       });
 
       if (minutes) {
