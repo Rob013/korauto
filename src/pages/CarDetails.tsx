@@ -333,15 +333,7 @@ const CarDetails = () => {
                       </div>
                       <span className="text-muted-foreground font-medium capitalize">{car.body_type.name}</span>
                     </div>}
-                  {car.keys_available !== undefined && <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-primary rounded-full"></div>
-                        <span className="font-semibold text-foreground">Çelësat Disponibël</span>
-                      </div>
-                      <span className="text-muted-foreground font-medium">
-                        {car.keys_available ? 'Po' : 'Jo'}
-                      </span>
-                    </div>}
+                  {car.keys_available !== undefined}
                   {car.airbags && <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-3">
                         <div className="w-2 h-2 bg-primary rounded-full"></div>
@@ -359,28 +351,16 @@ const CarDetails = () => {
               <CardContent className="p-6 md:p-10">
                 <Tabs defaultValue="overview" className="w-full">
                   <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-20 lg:h-16 bg-muted/30 p-2 rounded-xl gap-2">
-                    <TabsTrigger 
-                      value="overview" 
-                      className="rounded-lg text-sm md:text-base font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-3 py-3 text-center leading-tight min-h-[3.5rem] flex items-center justify-center"
-                    >
+                    <TabsTrigger value="overview" className="rounded-lg text-sm md:text-base font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-3 py-3 text-center leading-tight min-h-[3.5rem] flex items-center justify-center">
                       <span className="whitespace-nowrap">Përshkrimi</span>
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="maintenance" 
-                      className="rounded-lg text-sm md:text-base font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-3 py-3 text-center leading-tight min-h-[3.5rem] flex items-center justify-center"
-                    >
+                    <TabsTrigger value="maintenance" className="rounded-lg text-sm md:text-base font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-3 py-3 text-center leading-tight min-h-[3.5rem] flex items-center justify-center">
                       <span className="whitespace-nowrap">Mirëmbajtja</span>
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="inspection" 
-                      className="rounded-lg text-sm md:text-base font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-3 py-3 text-center leading-tight min-h-[3.5rem] flex items-center justify-center"
-                    >
+                    <TabsTrigger value="inspection" className="rounded-lg text-sm md:text-base font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-3 py-3 text-center leading-tight min-h-[3.5rem] flex items-center justify-center">
                       <span className="whitespace-nowrap">Inspektimi</span>
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="similar" 
-                      className="rounded-lg text-sm md:text-base font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-3 py-3 text-center leading-tight min-h-[3.5rem] flex items-center justify-center"
-                    >
+                    <TabsTrigger value="similar" className="rounded-lg text-sm md:text-base font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-3 py-3 text-center leading-tight min-h-[3.5rem] flex items-center justify-center">
                       <span className="whitespace-nowrap">Të Ngjashme</span>
                     </TabsTrigger>
                   </TabsList>
@@ -389,12 +369,10 @@ const CarDetails = () => {
                     <div className="space-y-6">
                       <h4 className="font-semibold text-lg text-foreground">Karakteristikat Kryesore</h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {['Kondicioneri automatik', 'Navigacioni GPS', 'Kamera e parkimit', 'Sensorët e parkimit', 'Bluetooth', 'USB/AUX', 'Kontrolli i kryqëzimit', 'Sistemi anti-bllokimi (ABS)', 'Airbag-ët', 'Sistemi i stabilitetit', 'Kontrolli elektronik i stabilitetit', 'Kontrolli i traksionit'].map((option, index) => (
-                          <div key={index} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                        {['Kondicioneri automatik', 'Navigacioni GPS', 'Kamera e parkimit', 'Sensorët e parkimit', 'Bluetooth', 'USB/AUX', 'Kontrolli i kryqëzimit', 'Sistemi anti-bllokimi (ABS)', 'Airbag-ët', 'Sistemi i stabilitetit', 'Kontrolli elektronik i stabilitetit', 'Kontrolli i traksionit'].map((option, index) => <div key={index} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
                             <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
                             <span className="text-sm text-foreground">{option}</span>
-                          </div>
-                        ))}
+                          </div>)}
                       </div>
                     </div>
                   </TabsContent>
@@ -462,12 +440,10 @@ const CarDetails = () => {
                       
                       <div className="space-y-3">
                         <h5 className="font-medium text-foreground">Kontrollet e Kryera:</h5>
-                        {['Kontrolli i motorit dhe transmisionit', 'Sistemi i frënimit dhe pezullimit', 'Sistemet elektrike dhe elektronike', 'Karoseria dhe ngjyra', 'Interiori dhe pajisjet', 'Dokumentacioni dhe historia'].map((check, index) => (
-                          <div key={index} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                        {['Kontrolli i motorit dhe transmisionit', 'Sistemi i frënimit dhe pezullimit', 'Sistemet elektrike dhe elektronike', 'Karoseria dhe ngjyra', 'Interiori dhe pajisjet', 'Dokumentacioni dhe historia'].map((check, index) => <div key={index} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
                             <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
                             <span className="text-sm text-foreground">{check}</span>
-                          </div>
-                        ))}
+                          </div>)}
                       </div>
                     </div>
                   </TabsContent>
@@ -481,39 +457,33 @@ const CarDetails = () => {
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {[{
-                          year: '2022',
-                          make: 'BMW',
-                          model: '320i',
-                          price: '€34,500'
-                        }, {
-                          year: '2020',
-                          make: 'BMW',
-                          model: '330i',
-                          price: '€29,800'
-                        }, {
-                          year: '2021',
-                          make: 'Audi',
-                          model: 'A4',
-                          price: '€31,200'
-                        }, {
-                          year: '2021',
-                          make: 'Mercedes',
-                          model: 'C200',
-                          price: '€33,900'
-                        }].map((similarCar, index) => (
-                          <div key={index} className="p-4 border border-border rounded-lg cursor-pointer hover:bg-muted/30 transition-colors bg-card">
+                        year: '2022',
+                        make: 'BMW',
+                        model: '320i',
+                        price: '€34,500'
+                      }, {
+                        year: '2020',
+                        make: 'BMW',
+                        model: '330i',
+                        price: '€29,800'
+                      }, {
+                        year: '2021',
+                        make: 'Audi',
+                        model: 'A4',
+                        price: '€31,200'
+                      }, {
+                        year: '2021',
+                        make: 'Mercedes',
+                        model: 'C200',
+                        price: '€33,900'
+                      }].map((similarCar, index) => <div key={index} className="p-4 border border-border rounded-lg cursor-pointer hover:bg-muted/30 transition-colors bg-card">
                             <div className="font-medium text-foreground">{similarCar.year} {similarCar.make} {similarCar.model}</div>
                             <div className="text-primary font-semibold">{similarCar.price}</div>
                             <div className="text-xs text-muted-foreground">Klic për më shumë detaje</div>
-                          </div>
-                        ))}
+                          </div>)}
                       </div>
                       
-                      <Button 
-                        variant="outline" 
-                        className="w-full mt-6 h-12 text-base font-medium border-2 hover:bg-primary hover:text-primary-foreground transition-colors" 
-                        onClick={() => navigate('/catalog')}
-                      >
+                      <Button variant="outline" className="w-full mt-6 h-12 text-base font-medium border-2 hover:bg-primary hover:text-primary-foreground transition-colors" onClick={() => navigate('/catalog')}>
                         <ChevronRight className="h-5 w-5 mr-2" />
                         Shiko të Gjitha Makinat e Ngjashme
                       </Button>
