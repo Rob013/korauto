@@ -117,9 +117,9 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
       <DialogTrigger asChild>
         {trigger}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md" aria-describedby="inspection-form-description">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto" aria-describedby="inspection-form-description">
+        <DialogHeader className="pb-4">
+          <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
             <MessageCircle className="h-5 w-5 text-primary" />
             Kërkesë për Inspektim
           </DialogTitle>
@@ -129,32 +129,34 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
         </DialogHeader>
         <Card className="border-0 shadow-none">
           <CardContent className="p-0">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <Label htmlFor="firstName">Emri</Label>
+                  <Label htmlFor="firstName" className="text-sm font-medium">Emri</Label>
                   <Input
                     id="firstName"
                     value={formData.firstName}
                     onChange={(e) => handleInputChange("firstName", e.target.value)}
                     required
                     placeholder="Emri juaj"
+                    className="mt-1 h-11"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="lastName">Mbiemri</Label>
+                  <Label htmlFor="lastName" className="text-sm font-medium">Mbiemri</Label>
                   <Input
                     id="lastName"
                     value={formData.lastName}
                     onChange={(e) => handleInputChange("lastName", e.target.value)}
                     required
                     placeholder="Mbiemri juaj"
+                    className="mt-1 h-11"
                   />
                 </div>
               </div>
               
               <div>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-sm font-medium">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -162,11 +164,12 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
                   onChange={(e) => handleInputChange("email", e.target.value)}
                   required
                   placeholder="email@shembull.com"
+                  className="mt-1 h-11"
                 />
               </div>
               
               <div>
-                <Label htmlFor="whatsappPhone">Numri i WhatsApp (format ndërkombëtar)</Label>
+                <Label htmlFor="whatsappPhone" className="text-sm font-medium">Numri i WhatsApp (format ndërkombëtar)</Label>
                 <Input
                   id="whatsappPhone"
                   type="tel"
@@ -174,10 +177,11 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
                   onChange={(e) => handleInputChange("whatsappPhone", e.target.value)}
                   required
                   placeholder="+38348181116"
+                  className="mt-1 h-11"
                 />
               </div>
 
-              <div className="bg-muted p-3 rounded-lg text-sm">
+              <div className="bg-muted p-3 sm:p-4 rounded-lg text-sm">
                 <h4 className="font-semibold mb-2">Informacione:</h4>
                 <ul className="space-y-1 text-muted-foreground">
                   <li>• Do të kontaktoheni brenda 24 orëve</li>
@@ -186,7 +190,7 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
                 </ul>
               </div>
               
-              <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 h-11 sm:h-12 text-base font-medium">
                 Dërgo Kërkesën
               </Button>
             </form>

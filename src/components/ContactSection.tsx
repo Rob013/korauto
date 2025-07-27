@@ -3,28 +3,28 @@ import { Mail, Phone, MapPin, Clock } from "lucide-react";
 
 const ContactSection = () => {
   return (
-    <section id="contact" className="py-16 bg-background">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4 text-foreground">Na Kontaktoni</h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+    <section id="contact" className="py-8 sm:py-12 lg:py-16 bg-background">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground">Na Kontaktoni</h2>
+          <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
             Lidhuni me ekipin tonë për inspektime, pyetje, ose mbështetje.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-4xl mx-auto px-2 sm:px-0">
           <Card className="text-center hover:shadow-lg transition-shadow duration-300">
-            <CardHeader>
-              <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
+            <CardHeader className="pb-3">
+              <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-3">
                 <Mail className="h-6 w-6 text-primary-foreground" />
               </div>
               <CardTitle className="text-lg">Email</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground mb-2">Dërgoni një mesazh</p>
+              <p className="text-muted-foreground mb-2 text-sm">Dërgoni një mesazh</p>
               <a 
                 href="mailto:INFO.RGSHPK@gmail.com" 
-                className="text-primary hover:text-primary/80 transition-colors font-medium"
+                className="text-primary hover:text-primary/80 transition-colors font-medium text-sm break-all"
               >
                 INFO.RGSHPK@gmail.com
               </a>
