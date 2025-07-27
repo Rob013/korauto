@@ -8,24 +8,6 @@ const Header = () => {
 
   return (
     <header className="bg-background shadow-sm border-b border-border sticky top-0 z-50">
-      {/* Top bar */}
-      <div className="bg-primary text-primary-foreground py-1">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-4">
-              <span>Shërbim profesional i importit të makinave</span>
-              <span>•</span>
-              <span>Kontakt: +38348181116</span>
-            </div>
-            <div className="hidden md:block">
-              <a href="mailto:INFO.RGSHPK@gmail.com" className="hover:opacity-80 transition-opacity">
-                INFO.RGSHPK@gmail.com
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Main header */}
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
@@ -74,24 +56,21 @@ const Header = () => {
             >
               Kontakti
             </button>
-            <Link to="/admin" className="text-foreground hover:text-primary font-medium transition-colors">
-              Admin
-            </Link>
             <Link to="/favorites" className="text-foreground hover:text-primary font-medium transition-colors">
               Favorites
             </Link>
             <Link to="/auth" className="text-foreground hover:text-primary font-medium transition-colors">
-              Account
+              My Account
             </Link>
           </nav>
 
-          {/* CTA Buttons */}
+          {/* Modern CTA Buttons */}
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <Button 
-              variant="outline" 
+              variant="ghost" 
               size="sm" 
-              className="hidden md:flex border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
+              className="hidden md:flex text-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200 rounded-full px-4"
               onClick={() => {
                 const message = "Përshëndetje! Dëshiroj informacion për shërbimet tuaja të inspektimit të makinave.";
                 const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
@@ -103,7 +82,7 @@ const Header = () => {
             </Button>
             <Button 
               size="sm" 
-              className="bg-primary hover:bg-primary/90"
+              className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 rounded-full px-6 hover:scale-105"
               onClick={() => document.getElementById('cars')?.scrollIntoView({ behavior: 'smooth' })}
               aria-label="Shikoni listën e makinave të disponueshme"
             >
