@@ -475,9 +475,9 @@ const CarDetails = () => {
                           Kërkesë për Inspektim Profesional (€50)
                         </Button>} />
                     
-                    <Button variant="outline" onClick={handleContactWhatsApp} className="w-full border-2 border-primary text-primary hover:bg-primary hover:text-white py-3 h-12 text-sm font-semibold shadow-md hover:shadow-lg transition-all duration-200" aria-label={`Kontaktoni nëpërmjet WhatsApp për informacion shtesë rreth ${car?.year} ${car?.make} ${car?.model}`}>
-                      <MessageCircle className="h-4 w-4 mr-2" />
-                      Kontakto për Më Shumë Informacion
+                    <Button variant="outline" onClick={handleContactWhatsApp} className="w-full border-2 border-primary/60 bg-gradient-to-r from-transparent to-primary/5 text-primary hover:from-primary hover:to-primary hover:text-white py-4 h-14 text-base font-bold shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl hover:scale-[1.02] active:scale-[0.98]" aria-label={`Kontaktoni nëpërmjet WhatsApp për informacion shtesë rreth ${car?.year} ${car?.make} ${car?.model}`}>
+                      <MessageCircle className="h-5 w-5 mr-3" />
+                      <span className="tracking-wide">Kontakto për Më Shumë Info</span>
                     </Button>
                   </div>
                 </div>
