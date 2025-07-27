@@ -168,7 +168,7 @@ const EncarCarCard = ({
           <Button 
             onClick={handleInspectionRequest}
             size="sm"
-            className="w-full bg-primary hover:bg-primary/90 text-white text-xs h-8"
+            className="w-full bg-primary hover:bg-primary/90 text-white text-xs h-7"
           >
             Inspect (€50)
           </Button>
@@ -176,21 +176,22 @@ const EncarCarCard = ({
             <Button 
               variant="outline"
               size="sm"
-              className="flex-1 text-xs h-7 border-gray-300 text-gray-700 hover:bg-gray-50"
+              className="flex-1 text-xs h-6 border-gray-300 text-gray-700 hover:bg-gray-50"
               onClick={(e) => {
                 e.stopPropagation();
                 toast({
-                  title: "Info Request Sent",
-                  description: "We'll send detailed information to robert_gashi@live.com",
+                  title: "Contact Request Sent",
+                  description: "ROBERT GASHI from KORAUTO will contact you at +38348181116 with detailed information",
+                  duration: 5000,
                 });
               }}
             >
-              Request Info
+              Contact Info
             </Button>
             <Button 
               variant="outline"
               size="sm"
-              className="flex-1 text-xs h-7 border-gray-300 text-gray-700 hover:bg-gray-50"
+              className="flex-1 text-xs h-6 border-gray-300 text-gray-700 hover:bg-gray-50"
               onClick={(e) => {
                 e.stopPropagation();
                 window.open('tel:+38348181116');

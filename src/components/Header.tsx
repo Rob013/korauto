@@ -25,8 +25,12 @@ const Header = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <Car className="h-6 w-6 text-white" />
+            <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center overflow-hidden">
+              <img 
+                src="/lovable-uploads/3094fd63-7a92-4497-8103-e166b6b09f70.png" 
+                alt="KORAUTO Logo" 
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <h1 className="text-xl font-bold text-primary">KORAUTO</h1>
