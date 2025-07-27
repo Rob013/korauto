@@ -1,8 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Car } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Link, useNavigate } from "react-router-dom";
 
 const Header = () => {
+  const navigate = useNavigate();
+
   return (
     <header className="bg-background shadow-sm border-b border-border sticky top-0 z-50">
       {/* Top bar */}
@@ -43,18 +46,34 @@ const Header = () => {
           
           {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <a href="/" className="text-foreground hover:text-primary font-medium transition-colors">
+            <Link to="/" className="text-foreground hover:text-primary font-medium transition-colors">
               Kryefaqja
-            </a>
-            <a href="/catalog" className="text-foreground hover:text-primary font-medium transition-colors">
+            </Link>
+            <Link to="/catalog" className="text-foreground hover:text-primary font-medium transition-colors">
               Katalogu
-            </a>
-            <a href="/#inspection" className="text-foreground hover:text-primary font-medium transition-colors">
+            </Link>
+            <button 
+              onClick={() => {
+                navigate('/');
+                setTimeout(() => {
+                  document.getElementById('inspection')?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }}
+              className="text-foreground hover:text-primary font-medium transition-colors bg-transparent border-none cursor-pointer"
+            >
               Shërbimi i Inspektimit
-            </a>
-            <a href="/#contact" className="text-foreground hover:text-primary font-medium transition-colors">
+            </button>
+            <button 
+              onClick={() => {
+                navigate('/');
+                setTimeout(() => {
+                  document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }}
+              className="text-foreground hover:text-primary font-medium transition-colors bg-transparent border-none cursor-pointer"
+            >
               Kontakti
-            </a>
+            </button>
           </nav>
 
           {/* CTA Buttons */}
