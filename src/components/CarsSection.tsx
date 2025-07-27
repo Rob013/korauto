@@ -84,7 +84,41 @@ const CarsSection = () => {
     }
   };
 
-  const fetchCars = async (minutes?: number) => {
+  const testBrandFiltering = async () => {
+    // Test if API supports filtering by specific brands and years
+    const targetBrands = ['Audi', 'BMW', 'Volkswagen', 'Mercedes-Benz'];
+    const targetYear = 2015;
+
+    try {
+      console.log('Testing brand filtering...');
+      const testParams = new URLSearchParams({
+        api_key: API_KEY,
+        limit: '10',
+        make: 'Audi',
+        year: '2015'
+      });
+
+      const testResponse = await fetch(`${API_BASE_URL}/cars?${testParams}`, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'KORAUTO-WebApp/1.0',
+          'X-API-Key': API_KEY
+        }
+      });
+
+      if (testResponse.ok) {
+        const testData = await testResponse.json();
+        console.log('Brand filtering test successful:', testData);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.log('Brand filtering not supported by API');
+      return false;
+    }
+  };
+
+  const fetchCars = async (minutes?: number, testFiltering = false) => {
     setLoading(true);
     setError(null);
 
@@ -99,6 +133,18 @@ const CarsSection = () => {
 
       if (minutes) {
         params.append('minutes', minutes.toString());
+      }
+
+      // Test filtering on first load
+      if (testFiltering) {
+        const filteringSupported = await testBrandFiltering();
+        if (filteringSupported) {
+          // API supports filtering - add brand and year filters
+          const targetBrands = ['Audi', 'BMW', 'Volkswagen', 'Mercedes-Benz'];
+          params.append('make', targetBrands.join(','));
+          params.append('year_from', '2015');
+          console.log('Applied API filters for target brands and 2015+ years');
+        }
       }
 
       console.log('Fetching cars from API...');
@@ -140,7 +186,7 @@ const CarsSection = () => {
           transmission: car.transmission?.name,
           fuel: car.fuel?.name,
           color: car.color?.name,
-          condition: lot?.condition?.name,
+          condition: lot?.condition?.name?.replace('run_and_drives', 'Good Condition'),
           lot: lot?.lot,
           title: car.title
         };
@@ -165,15 +211,15 @@ const CarsSection = () => {
       
       // Use fallback data on error with KORAUTO markup
       const fallbackCars: Car[] = [
-        { id: '1', make: 'BMW', model: 'M3', year: 2022, price: 67300, mileage: '25,000 km', transmission: 'automatic', fuel: 'gasoline' },
-        { id: '2', make: 'Mercedes-Benz', model: 'C-Class', year: 2021, price: 47300, mileage: '30,000 km', transmission: 'automatic', fuel: 'gasoline' },
-        { id: '3', make: 'Audi', model: 'A4', year: 2023, price: 44300, mileage: '15,000 km', transmission: 'automatic', fuel: 'gasoline' },
-        { id: '4', make: 'Volkswagen', model: 'Golf', year: 2022, price: 30300, mileage: '20,000 km', transmission: 'manual', fuel: 'gasoline' },
-        { id: '5', make: 'Porsche', model: 'Cayenne', year: 2021, price: 87300, mileage: '35,000 km', transmission: 'automatic', fuel: 'gasoline' },
-        { id: '6', make: 'Tesla', model: 'Model S', year: 2023, price: 97300, mileage: '10,000 km', transmission: 'automatic', fuel: 'electric' },
-        { id: '7', make: 'Ford', model: 'Mustang', year: 2022, price: 57300, mileage: '18,000 km', transmission: 'automatic', fuel: 'gasoline' },
-        { id: '8', make: 'Chevrolet', model: 'Camaro', year: 2021, price: 50300, mileage: '22,000 km', transmission: 'manual', fuel: 'gasoline' },
-        { id: '9', make: 'Jaguar', model: 'F-Type', year: 2022, price: 80300, mileage: '12,000 km', transmission: 'automatic', fuel: 'gasoline' }
+        { id: '1', make: 'BMW', model: 'M3', year: 2022, price: 67300, mileage: '25,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '2', make: 'Mercedes-Benz', model: 'C-Class', year: 2021, price: 47300, mileage: '30,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '3', make: 'Audi', model: 'A4', year: 2023, price: 44300, mileage: '15,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '4', make: 'Volkswagen', model: 'Golf', year: 2022, price: 30300, mileage: '20,000 km', transmission: 'manual', fuel: 'benzinë' },
+        { id: '5', make: 'Porsche', model: 'Cayenne', year: 2021, price: 87300, mileage: '35,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '6', make: 'Tesla', model: 'Model S', year: 2023, price: 97300, mileage: '10,000 km', transmission: 'automatic', fuel: 'elektrike' },
+        { id: '7', make: 'Ford', model: 'Mustang', year: 2022, price: 57300, mileage: '18,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '8', make: 'Chevrolet', model: 'Camaro', year: 2021, price: 50300, mileage: '22,000 km', transmission: 'manual', fuel: 'benzinë' },
+        { id: '9', make: 'Jaguar', model: 'F-Type', year: 2022, price: 80300, mileage: '12,000 km', transmission: 'automatic', fuel: 'benzinë' }
       ];
       setCars(fallbackCars);
       setFilteredCars(fallbackCars);
@@ -209,7 +255,7 @@ const CarsSection = () => {
 
   // Initial fetch
   useEffect(() => {
-    fetchCars();
+    fetchCars(undefined, true); // Test filtering on first load
   }, []);
 
   // Set up periodic updates with staggered timing to avoid rate limits

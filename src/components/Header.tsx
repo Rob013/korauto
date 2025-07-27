@@ -56,13 +56,24 @@ const Header = () => {
 
           {/* CTA Buttons */}
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" className="hidden md:flex border-primary text-primary hover:bg-primary hover:text-white">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="hidden md:flex border-primary text-primary hover:bg-primary hover:text-white"
+              onClick={() => {
+                const message = "Përshëndetje! Dëshiroj informacion për shërbimet tuaja të inspektimit të makinave.";
+                const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
+                window.open(whatsappUrl, '_blank');
+              }}
+              aria-label="Kontaktoni nëpërmjet WhatsApp për informacion rreth shërbimeve"
+            >
               Na Kontaktoni
             </Button>
             <Button 
               size="sm" 
               className="bg-primary hover:bg-primary/90"
               onClick={() => document.getElementById('cars')?.scrollIntoView({ behavior: 'smooth' })}
+              aria-label="Shikoni listën e makinave të disponueshme"
             >
               Shiko Makinat
             </Button>
