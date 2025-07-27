@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const API_BASE_URL = 'https://auctionsapi.com/api';
+const API_BASE_URL = 'https://api.auctionsapi.com';
 const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
 
 interface Car {
@@ -58,8 +58,7 @@ export const useAuctionAPI = () => {
         headers: {
           'Accept': 'application/json',
           'User-Agent': 'KORAUTO-WebApp/1.0',
-          'Authorization': `Bearer ${API_KEY}`,
-          'X-API-Key': API_KEY
+          'Authorization': `Bearer ${API_KEY}`
         }
       });
       
@@ -121,7 +120,13 @@ export const useAuctionAPI = () => {
         params.append('minutes', minutes.toString());
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/archived-lots?${params}`);
+      const response = await fetch(`${API_BASE_URL}/archived-lots?${params}`, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'KORAUTO-WebApp/1.0',
+          'Authorization': `Bearer ${API_KEY}`
+        }
+      });
       
       if (!response.ok) {
         throw new Error(`API request failed: ${response.status}`);
@@ -148,7 +153,13 @@ export const useAuctionAPI = () => {
         api_key: API_KEY
       });
 
-      const response = await fetch(`${API_BASE_URL}/api/manufacturers?${params}`);
+      const response = await fetch(`${API_BASE_URL}/manufacturers?${params}`, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'KORAUTO-WebApp/1.0',
+          'Authorization': `Bearer ${API_KEY}`
+        }
+      });
       
       if (!response.ok) {
         throw new Error(`API request failed: ${response.status}`);
