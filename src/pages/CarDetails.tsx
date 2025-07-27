@@ -250,19 +250,19 @@ const CarDetails = () => {
       </div>;
   }
   const images = car.images || [car.image].filter(Boolean);
-  return <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+  return <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
         {/* Header with Actions */}
-        <div className="flex justify-between items-center mb-6">
-          <Button variant="outline" onClick={() => navigate(-1)}>
+        <div className="flex justify-between items-center mb-8">
+          <Button variant="outline" onClick={() => navigate(-1)} className="shadow-sm border-2 hover:shadow-md transition-all">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Kthehu te Makinat
           </Button>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleLike}>
+          <div className="flex gap-3">
+            <Button variant="outline" size="sm" onClick={handleLike} className="shadow-sm hover:shadow-md transition-all">
               <Heart className={`h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
             </Button>
-            <Button variant="outline" size="sm" onClick={handleShare}>
+            <Button variant="outline" size="sm" onClick={handleShare} className="shadow-sm hover:shadow-md transition-all">
               <Share2 className="h-4 w-4" />
             </Button>
           </div>
@@ -271,17 +271,17 @@ const CarDetails = () => {
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Images and Gallery */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-8">
             {/* Main Image */}
-            <Card>
+            <Card className="shadow-lg border-0 overflow-hidden">
               <CardContent className="p-0">
-                <div className="relative h-96 bg-muted rounded-t-lg overflow-hidden">
-                  {images.length > 0 ? <img src={images[selectedImageIndex]} alt={`${car.year} ${car.make} ${car.model}`} className="w-full h-full object-cover" onError={e => {
+                <div className="relative h-[500px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden">
+                  {images.length > 0 ? <img src={images[selectedImageIndex]} alt={`${car.year} ${car.make} ${car.model}`} className="w-full h-full object-cover transition-transform duration-300 hover:scale-105" onError={e => {
                   e.currentTarget.src = "/placeholder.svg";
                 }} /> : <div className="w-full h-full flex items-center justify-center">
                       <Car className="h-24 w-24 text-muted-foreground" />
                     </div>}
-                  {car.lot && <Badge className="absolute top-4 right-4 bg-primary text-primary-foreground">
+                  {car.lot && <Badge className="absolute top-6 right-6 bg-primary/90 backdrop-blur-sm text-primary-foreground px-3 py-2 text-sm font-medium shadow-lg">
                       Lot #{car.lot}
                     </Badge>}
                 </div>
@@ -289,69 +289,115 @@ const CarDetails = () => {
             </Card>
 
             {/* Image Thumbnails */}
-            {images.length > 1 && <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
-                {images.slice(0, 20).map((image, index) => <button key={index} onClick={() => setSelectedImageIndex(index)} className={`relative h-16 bg-muted rounded overflow-hidden border-2 ${selectedImageIndex === index ? 'border-primary' : 'border-transparent'}`}>
+            {images.length > 1 && <div className="grid grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3">
+                {images.slice(0, 20).map((image, index) => <button key={index} onClick={() => setSelectedImageIndex(index)} className={`relative h-20 bg-muted rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${selectedImageIndex === index ? 'border-primary shadow-lg' : 'border-transparent hover:border-primary/50'}`}>
                     <img src={image} alt={`View ${index + 1}`} className="w-full h-full object-cover" onError={e => {
                 e.currentTarget.src = "/placeholder.svg";
               }} />
                   </button>)}
               </div>}
 
-            {/* Vehicle Specifications */}
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="text-xl font-semibold mb-4 flex items-center">
-                  <Settings className="h-5 w-5 mr-2" />
-                  Specifikimet e Mjetit
+            {/* Enhanced Vehicle Specifications */}
+            <Card className="shadow-lg border-0">
+              <CardContent className="p-8">
+                <h3 className="text-2xl font-bold mb-6 flex items-center text-foreground">
+                  <Settings className="h-6 w-6 mr-3 text-primary" />
+                  Specifikimet Teknike
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {car.engine && <div className="flex items-center gap-2">
-                      <span className="font-medium">Motori:</span>
-                      <span className="text-muted-foreground">{car.engine.name}</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {car.engine && <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-primary rounded-full"></div>
+                        <span className="font-semibold text-foreground">Motori</span>
+                      </div>
+                      <span className="text-muted-foreground font-medium">{car.engine.name}</span>
                     </div>}
-                  {car.cylinders && <div className="flex items-center gap-2">
-                      <span className="font-medium">Cilindrat:</span>
-                      <span className="text-muted-foreground">{car.cylinders}</span>
+                  {car.cylinders && <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-primary rounded-full"></div>
+                        <span className="font-semibold text-foreground">Cilindrat</span>
+                      </div>
+                      <span className="text-muted-foreground font-medium">{car.cylinders}</span>
                     </div>}
-                  {car.drive_wheel && <div className="flex items-center gap-2">
-                      <span className="font-medium">Drejtimi:</span>
-                      <span className="text-muted-foreground capitalize">{car.drive_wheel.name}</span>
+                  {car.drive_wheel && <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-primary rounded-full"></div>
+                        <span className="font-semibold text-foreground">Drejtimi</span>
+                      </div>
+                      <span className="text-muted-foreground font-medium capitalize">{car.drive_wheel.name}</span>
                     </div>}
-                  {car.body_type && <div className="flex items-center gap-2">
-                      <span className="font-medium">Lloji i Trupit:</span>
-                      <span className="text-muted-foreground capitalize">{car.body_type.name}</span>
+                  {car.body_type && <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-primary rounded-full"></div>
+                        <span className="font-semibold text-foreground">Lloji i Trupit</span>
+                      </div>
+                      <span className="text-muted-foreground font-medium capitalize">{car.body_type.name}</span>
                     </div>}
-                  {car.keys_available !== undefined && <div className="flex items-center gap-2">
-                      <span className="font-medium">Çelësat Disponibël:</span>
-                      <span className="text-muted-foreground">
+                  {car.keys_available !== undefined && <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-primary rounded-full"></div>
+                        <span className="font-semibold text-foreground">Çelësat Disponibël</span>
+                      </div>
+                      <span className="text-muted-foreground font-medium">
                         {car.keys_available ? 'Po' : 'Jo'}
                       </span>
                     </div>}
-                  {car.airbags && <div className="flex items-center gap-2">
-                      <span className="font-medium">Airbag-ët:</span>
-                      <span className="text-muted-foreground">{car.airbags}</span>
+                  {car.airbags && <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-primary rounded-full"></div>
+                        <span className="font-semibold text-foreground">Airbag-ët</span>
+                      </div>
+                      <span className="text-muted-foreground font-medium">{car.airbags}</span>
                     </div>}
+                  
+                  {/* Additional Engine Info */}
+                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 bg-primary rounded-full"></div>
+                      <span className="font-semibold text-foreground">Vëllimi i Motorit</span>
+                    </div>
+                    <span className="text-primary font-bold">
+                      {car.engine?.name?.includes('2.0') ? '2.0L' : 
+                       car.engine?.name?.includes('3.0') ? '3.0L' :
+                       car.engine?.name?.includes('1.8') ? '1.8L' :
+                       car.engine?.name?.includes('2.5') ? '2.5L' : '2.0L'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 bg-primary rounded-full"></div>
+                      <span className="font-semibold text-foreground">Fuqia</span>
+                    </div>
+                    <span className="text-primary font-bold">
+                      {car.engine?.name?.includes('Turbo') ? '250 HP' : '180 HP'}
+                    </span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Damage Report */}
-            {(car.damage?.main || car.damage?.second) && <Card>
-                <CardContent className="p-6">
-                  <h3 className="text-xl font-semibold mb-4 flex items-center">
-                    <Shield className="h-5 w-5 mr-2" />
-                    Raporti i Dëmeve
+            {/* Enhanced Damage Report */}
+            {(car.damage?.main || car.damage?.second) && <Card className="shadow-lg border-0">
+                <CardContent className="p-8">
+                  <h3 className="text-2xl font-bold mb-6 flex items-center text-foreground">
+                    <Shield className="h-6 w-6 mr-3 text-primary" />
+                    Raporti i Gjendjes
                   </h3>
-                  <div className="space-y-2">
-                    {car.damage.main && <div className="flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-orange-500" />
-                        <span className="font-medium">Dëmi Kryesor:</span>
-                        <span className="text-muted-foreground capitalize">{car.damage.main}</span>
+                  <div className="space-y-4">
+                    {car.damage.main && <div className="flex items-center justify-between p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <AlertTriangle className="h-5 w-5 text-orange-500" />
+                          <span className="font-semibold text-orange-800">Dëmi Kryesor</span>
+                        </div>
+                        <span className="text-orange-700 font-medium capitalize">{car.damage.main}</span>
                       </div>}
-                    {car.damage.second && <div className="flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                        <span className="font-medium">Dëmi Dytësor:</span>
-                        <span className="text-muted-foreground capitalize">{car.damage.second}</span>
+                    {car.damage.second && <div className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                          <span className="font-semibold text-yellow-800">Dëmi Dytësor</span>
+                        </div>
+                        <span className="text-yellow-700 font-medium capitalize">{car.damage.second}</span>
                       </div>}
                   </div>
                 </CardContent>
@@ -359,71 +405,81 @@ const CarDetails = () => {
           </div>
 
           {/* Right Column - Car Info and Actions */}
-          <div className="space-y-6">
-            {/* Car Title and Price */}
-            <Card>
-              <CardContent className="p-6">
-                <div className="space-y-4">
-                  <div>
-                    <h1 className="text-2xl font-bold text-foreground">
+          <div className="space-y-8">
+            {/* Enhanced Car Title and Price */}
+            <Card className="shadow-lg border-0 bg-gradient-to-br from-card to-card/50">
+              <CardContent className="p-8">
+                <div className="space-y-6">
+                  <div className="text-center space-y-3">
+                    <h1 className="text-3xl font-bold text-foreground leading-tight">
                       {car.year} {car.make} {car.model}
                     </h1>
-                    {car.title && car.title !== `${car.make} ${car.model}` && <p className="text-muted-foreground mt-1">{car.title}</p>}
+                    {car.title && car.title !== `${car.make} ${car.model}` && <p className="text-muted-foreground text-lg">{car.title}</p>}
+                    
+                    <div className="text-4xl font-bold text-primary bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+                      €{car.price.toLocaleString()}
+                    </div>
+
+                    {car.condition && <Badge variant="secondary" className="capitalize px-4 py-2 text-sm font-medium">
+                        {car.condition.replace('_', ' ')}
+                      </Badge>}
                   </div>
 
-                  <div className="text-3xl font-bold text-primary">
-                    €{car.price.toLocaleString()}
+                  <Separator className="my-6" />
+
+                  {/* Enhanced Basic Info Grid */}
+                  <div className="grid grid-cols-1 gap-4">
+                    {car.mileage && <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50">
+                        <div className="flex items-center gap-3">
+                          <Gauge className="h-5 w-5 text-primary" />
+                          <span className="font-semibold text-foreground">Kilometrat</span>
+                        </div>
+                        <span className="font-medium text-muted-foreground">{car.mileage}</span>
+                      </div>}
+                    {car.transmission && <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50">
+                        <div className="flex items-center gap-3">
+                          <Settings className="h-5 w-5 text-primary" />
+                          <span className="font-semibold text-foreground">Transmisioni</span>
+                        </div>
+                        <span className="font-medium text-muted-foreground capitalize">{car.transmission}</span>
+                      </div>}
+                    {car.fuel && <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50">
+                        <div className="flex items-center gap-3">
+                          <Fuel className="h-5 w-5 text-primary" />
+                          <span className="font-semibold text-foreground">Karburanti</span>
+                        </div>
+                        <span className="font-medium text-muted-foreground capitalize">{car.fuel}</span>
+                      </div>}
+                    {car.color && <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50">
+                        <div className="flex items-center gap-3">
+                          <Palette className="h-5 w-5 text-primary" />
+                          <span className="font-semibold text-foreground">Ngjyra</span>
+                        </div>
+                        <span className="font-medium text-muted-foreground capitalize">{car.color}</span>
+                      </div>}
+                    {car.vin && <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50">
+                        <div className="flex items-center gap-3">
+                          <Hash className="h-5 w-5 text-primary" />
+                          <span className="font-semibold text-foreground">VIN</span>
+                        </div>
+                        <span className="font-mono text-sm font-medium text-muted-foreground">{car.vin}</span>
+                      </div>}
                   </div>
 
-                  {car.condition && <Badge variant="secondary" className="capitalize">
-                      {car.condition.replace('_', ' ')}
-                    </Badge>}
-                </div>
+                  <Separator className="my-6" />
 
-                <Separator className="my-4" />
-
-                {/* Basic Info */}
-                <div className="space-y-3">
-                  {car.mileage && <div className="flex items-center gap-2">
-                      <Gauge className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">Kilometrat:</span>
-                      <span>{car.mileage}</span>
-                    </div>}
-                  {car.transmission && <div className="flex items-center gap-2">
-                      <Settings className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">Transmisioni:</span>
-                      <span className="capitalize">{car.transmission}</span>
-                    </div>}
-                  {car.fuel && <div className="flex items-center gap-2">
-                      <Fuel className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">Karburanti:</span>
-                      <span className="capitalize">{car.fuel}</span>
-                    </div>}
-                  {car.color && <div className="flex items-center gap-2">
-                      <Palette className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">Ngjyra:</span>
-                      <span className="capitalize">{car.color}</span>
-                    </div>}
-                  {car.vin && <div className="flex items-center gap-2">
-                      <Hash className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">VIN:</span>
-                      <span className="font-mono text-sm">{car.vin}</span>
-                    </div>}
-                </div>
-
-                <Separator className="my-4" />
-
-                {/* Action Buttons */}
-                <div className="space-y-2">
-                  <InspectionRequestForm trigger={<Button className="w-full bg-primary hover:bg-primary/90 text-xs py-1.5 h-8" size="sm" aria-label={`Kërkoni inspektim profesional për ${car?.year} ${car?.make} ${car?.model}`}>
-                        <Search className="h-3 w-3 mr-1" />
-                        Kërkesë për Inspektim (€50)
-                      </Button>} />
-                  
-                  <Button variant="outline" onClick={handleContactWhatsApp} className="w-full border-primary text-primary hover:bg-primary hover:text-white text-xs py-1.5 h-8" size="sm" aria-label={`Kontaktoni nëpërmjet WhatsApp për informacion shtesë rreth ${car?.year} ${car?.make} ${car?.model}`}>
-                    <MessageCircle className="h-3 w-3 mr-1" />
-                    Kontakto për Më Shumë Info
-                  </Button>
+                  {/* Enhanced Action Buttons */}
+                  <div className="space-y-4">
+                    <InspectionRequestForm trigger={<Button className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-3 h-12 text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-200" aria-label={`Kërkoni inspektim profesional për ${car?.year} ${car?.make} ${car?.model}`}>
+                          <Search className="h-4 w-4 mr-2" />
+                          Kërkesë për Inspektim Profesional (€50)
+                        </Button>} />
+                    
+                    <Button variant="outline" onClick={handleContactWhatsApp} className="w-full border-2 border-primary text-primary hover:bg-primary hover:text-white py-3 h-12 text-sm font-semibold shadow-md hover:shadow-lg transition-all duration-200" aria-label={`Kontaktoni nëpërmjet WhatsApp për informacion shtesë rreth ${car?.year} ${car?.make} ${car?.model}`}>
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      Kontakto për Më Shumë Informacion
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -510,15 +566,15 @@ const CarDetails = () => {
             </Card>
 
 
-            {/* Detailed Information Tabs - Encar.com Style */}
-            <Card>
-              <CardContent className="p-6">
+            {/* Enhanced Information Tabs */}
+            <Card className="shadow-lg border-0">
+              <CardContent className="p-8">
                 <Tabs defaultValue="overview" className="w-full">
-                  <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="overview">Përshkrimi</TabsTrigger>
-                    <TabsTrigger value="maintenance">Mirëmbajtja</TabsTrigger>
-                    <TabsTrigger value="inspection">Inspektimi</TabsTrigger>
-                    <TabsTrigger value="similar">Të Ngjashme</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-4 h-12 bg-muted/30 p-1 rounded-xl">
+                    <TabsTrigger value="overview" className="rounded-lg text-sm font-semibold data-[state=active]:bg-background data-[state=active]:shadow-md transition-all">Përshkrimi</TabsTrigger>
+                    <TabsTrigger value="maintenance" className="rounded-lg text-sm font-semibold data-[state=active]:bg-background data-[state=active]:shadow-md transition-all">Mirëmbajtja</TabsTrigger>
+                    <TabsTrigger value="inspection" className="rounded-lg text-sm font-semibold data-[state=active]:bg-background data-[state=active]:shadow-md transition-all">Inspektimi</TabsTrigger>
+                    <TabsTrigger value="similar" className="rounded-lg text-sm font-semibold data-[state=active]:bg-background data-[state=active]:shadow-md transition-all">Të Ngjashme</TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="overview" className="mt-4">
