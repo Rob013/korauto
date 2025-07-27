@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Clock, Eye, Heart, MapPin } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface CarCardProps {
   id: string;
@@ -9,104 +9,59 @@ interface CarCardProps {
   model: string;
   year: number;
   price: number;
-  currentBid?: number;
-  imageUrl: string;
-  mileage: number;
-  location: string;
-  endTime: string;
-  isLive: boolean;
-  watchers?: number;
+  image?: string;
 }
 
-const CarCard = ({ 
-  make, 
-  model, 
-  year, 
-  price, 
-  currentBid, 
-  imageUrl, 
-  mileage, 
-  location, 
-  endTime, 
-  isLive,
-  watchers = 0 
-}: CarCardProps) => {
+const CarCard = ({ id, make, model, year, price, image }: CarCardProps) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleInspectionRequest = async () => {
+    setIsLoading(true);
+    
+    // Simulate API call delay
+    setTimeout(() => {
+      setIsLoading(false);
+      toast({
+        title: "Inspection Requested",
+        description: `Professional inspection for ${year} ${make} ${model} has been scheduled. You will be contacted within 24 hours.`,
+        duration: 5000,
+      });
+    }, 2000);
+  };
+
+  const fallbackImage = `https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400&h=300&fit=crop&auto=format`;
+
   return (
-    <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
+    <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden border-border">
       <div className="relative">
         <img
-          src={imageUrl}
+          src={image || fallbackImage}
           alt={`${year} ${make} ${model}`}
           className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = fallbackImage;
+          }}
         />
-        <div className="absolute top-3 left-3 flex gap-2">
-          {isLive && (
-            <Badge className="bg-red-500 text-white animate-pulse">
-              LIVE
-            </Badge>
-          )}
-          <Badge variant="secondary" className="bg-black/80 text-white">
-            {watchers} <Eye className="h-3 w-3 ml-1" />
-          </Badge>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="absolute top-3 right-3 text-white hover:bg-white/20"
-        >
-          <Heart className="h-4 w-4" />
-        </Button>
       </div>
 
       <CardContent className="p-4">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="font-semibold text-lg text-foreground">
-            {year} {make} {model}
-          </h3>
-        </div>
+        <h3 className="font-semibold text-lg text-foreground mb-2">
+          {year} {make} {model}
+        </h3>
         
-        <div className="space-y-2 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <MapPin className="h-3 w-3" />
-            {location}
-          </div>
-          <div>Mileage: {mileage.toLocaleString()} km</div>
+        <div className="text-2xl font-bold text-primary mb-4">
+          €{price?.toLocaleString() || 'Price on request'}
         </div>
 
-        <div className="mt-4 space-y-1">
-          {currentBid ? (
-            <>
-              <div className="text-sm text-muted-foreground">Current Bid</div>
-              <div className="text-2xl font-bold text-accent">
-                €{currentBid.toLocaleString()}
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="text-sm text-muted-foreground">Starting Bid</div>
-              <div className="text-2xl font-bold text-accent">
-                €{price.toLocaleString()}
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className="mt-3 flex items-center gap-1 text-sm text-muted-foreground">
-          <Clock className="h-3 w-3" />
-          Ends: {endTime}
-        </div>
+        <Button 
+          className="w-full bg-inspection hover:bg-inspection/90 text-inspection-foreground"
+          onClick={handleInspectionRequest}
+          disabled={isLoading}
+        >
+          {isLoading ? 'Processing...' : 'Request Inspection (€50)'}
+        </Button>
       </CardContent>
-
-      <CardFooter className="p-4 pt-0 space-y-2">
-        <div className="w-full space-y-2">
-          <Button className="w-full bg-accent hover:bg-accent/90">
-            Place Bid
-          </Button>
-          <Button variant="outline" className="w-full" size="sm">
-            Request Inspection (€50)
-          </Button>
-        </div>
-      </CardFooter>
     </Card>
   );
 };

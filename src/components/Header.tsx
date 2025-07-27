@@ -7,61 +7,49 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-md">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <div className="flex items-center space-x-2">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              AutoElite
+            <h1 className="text-2xl font-bold text-white">
+              KORAUTO
             </h1>
           </div>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <a href="#" className="text-sm font-medium transition-colors hover:text-accent">
-              Live Auctions
+            <a href="#home" className="text-sm font-medium transition-colors hover:text-gray-300">
+              Home
             </a>
-            <a href="#" className="text-sm font-medium transition-colors hover:text-accent">
-              Browse Cars
+            <a href="#cars" className="text-sm font-medium transition-colors hover:text-gray-300">
+              Cars
             </a>
-            <a href="#" className="text-sm font-medium transition-colors hover:text-accent">
-              Sell Your Car
+            <a href="#inspection" className="text-sm font-medium transition-colors hover:text-gray-300">
+              Inspection
             </a>
-            <a href="#" className="text-sm font-medium transition-colors hover:text-accent">
-              Inspection Service
-            </a>
-            <a href="#" className="text-sm font-medium transition-colors hover:text-accent">
-              About
+            <a href="#contact" className="text-sm font-medium transition-colors hover:text-gray-300">
+              Contact
             </a>
           </nav>
 
           {/* Search Bar */}
           <div className="hidden lg:flex items-center space-x-2 flex-1 max-w-md mx-8">
             <div className="relative w-full">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search cars by make, model..."
-                className="pl-8"
+                className="pl-8 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
               />
             </div>
           </div>
 
-          {/* User Actions */}
-          <div className="flex items-center space-x-4">
-            <Button variant="outline" size="sm" className="hidden sm:flex">
-              <User className="h-4 w-4 mr-2" />
-              Sign In
-            </Button>
-            <Button size="sm" className="hidden sm:flex">
-              Register
-            </Button>
-            
-            {/* Mobile Menu Button */}
+          {/* Mobile Menu Button */}
+          <div className="flex items-center">
             <Button
               variant="ghost"
               size="sm"
-              className="md:hidden"
+              className="md:hidden text-white hover:bg-white/10"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               <Menu className="h-4 w-4" />
@@ -71,32 +59,20 @@ const Header = () => {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden border-t bg-background/95 backdrop-blur">
+          <div className="md:hidden border-t border-white/20 bg-primary">
             <nav className="flex flex-col space-y-4 p-4">
-              <a href="#" className="text-sm font-medium transition-colors hover:text-accent">
-                Live Auctions
+              <a href="#home" className="text-sm font-medium transition-colors hover:text-gray-300 text-white">
+                Home
               </a>
-              <a href="#" className="text-sm font-medium transition-colors hover:text-accent">
-                Browse Cars
+              <a href="#cars" className="text-sm font-medium transition-colors hover:text-gray-300 text-white">
+                Cars
               </a>
-              <a href="#" className="text-sm font-medium transition-colors hover:text-accent">
-                Sell Your Car
+              <a href="#inspection" className="text-sm font-medium transition-colors hover:text-gray-300 text-white">
+                Inspection
               </a>
-              <a href="#" className="text-sm font-medium transition-colors hover:text-accent">
-                Inspection Service
+              <a href="#contact" className="text-sm font-medium transition-colors hover:text-gray-300 text-white">
+                Contact
               </a>
-              <a href="#" className="text-sm font-medium transition-colors hover:text-accent">
-                About
-              </a>
-              <div className="pt-4 border-t">
-                <Button variant="outline" size="sm" className="w-full mb-2">
-                  <User className="h-4 w-4 mr-2" />
-                  Sign In
-                </Button>
-                <Button size="sm" className="w-full">
-                  Register
-                </Button>
-              </div>
             </nav>
           </div>
         )}
