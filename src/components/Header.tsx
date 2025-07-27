@@ -1,105 +1,116 @@
 import { Button } from "@/components/ui/button";
-import { Search, User, Menu } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { Car } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Link, useNavigate } from "react-router-dom";
 
 const Header = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center space-x-2">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              AutoElite
-            </h1>
-          </div>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
-            <a href="#" className="text-sm font-medium transition-colors hover:text-accent">
-              Live Auctions
-            </a>
-            <a href="#" className="text-sm font-medium transition-colors hover:text-accent">
-              Browse Cars
-            </a>
-            <a href="#" className="text-sm font-medium transition-colors hover:text-accent">
-              Sell Your Car
-            </a>
-            <a href="#" className="text-sm font-medium transition-colors hover:text-accent">
-              Inspection Service
-            </a>
-            <a href="#" className="text-sm font-medium transition-colors hover:text-accent">
-              About
-            </a>
-          </nav>
-
-          {/* Search Bar */}
-          <div className="hidden lg:flex items-center space-x-2 flex-1 max-w-md mx-8">
-            <div className="relative w-full">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search cars by make, model..."
-                className="pl-8"
-              />
+    <header className="bg-background shadow-sm border-b border-border sticky top-0 z-50">
+      {/* Top bar */}
+      <div className="bg-primary text-primary-foreground py-1">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-4">
+              <span>Shërbim profesional i importit të makinave</span>
+              <span>•</span>
+              <span>Kontakt: +38348181116</span>
+            </div>
+            <div className="hidden md:block">
+              <a href="mailto:INFO.RGSHPK@gmail.com" className="hover:opacity-80 transition-opacity">
+                INFO.RGSHPK@gmail.com
+              </a>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* User Actions */}
+      {/* Main header */}
+      <div className="container mx-auto px-4 py-3">
+        <div className="flex items-center justify-between">
+          {/* Logo */}
           <div className="flex items-center space-x-4">
-            <Button variant="outline" size="sm" className="hidden sm:flex">
-              <User className="h-4 w-4 mr-2" />
-              Sign In
-            </Button>
-            <Button size="sm" className="hidden sm:flex">
-              Register
-            </Button>
-            
-            {/* Mobile Menu Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="md:hidden"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center overflow-hidden">
+              <img 
+                src="/lovable-uploads/3094fd63-7a92-4497-8103-e166b6b09f70.png" 
+                alt="KORAUTO Logo" 
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-primary">KORAUTO</h1>
+              <p className="text-sm text-muted-foreground">Ekspertë të Inspektimit të Makinave</p>
+            </div>
+          </div>
+          
+          {/* Navigation */}
+          <nav className="hidden md:flex items-center space-x-8">
+            <Link to="/" className="text-foreground hover:text-primary font-medium transition-colors">
+              Kryefaqja
+            </Link>
+            <Link to="/catalog" className="text-foreground hover:text-primary font-medium transition-colors">
+              Katalogu
+            </Link>
+            <button 
+              onClick={() => {
+                navigate('/');
+                setTimeout(() => {
+                  document.getElementById('inspection')?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }}
+              className="text-foreground hover:text-primary font-medium transition-colors bg-transparent border-none cursor-pointer"
             >
-              <Menu className="h-4 w-4" />
+              Shërbimi i Inspektimit
+            </button>
+            <button 
+              onClick={() => {
+                navigate('/');
+                setTimeout(() => {
+                  document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }}
+              className="text-foreground hover:text-primary font-medium transition-colors bg-transparent border-none cursor-pointer"
+            >
+              Kontakti
+            </button>
+            <Link to="/admin" className="text-foreground hover:text-primary font-medium transition-colors">
+              Admin
+            </Link>
+            <Link to="/favorites" className="text-foreground hover:text-primary font-medium transition-colors">
+              Favorites
+            </Link>
+            <Link to="/auth" className="text-foreground hover:text-primary font-medium transition-colors">
+              Account
+            </Link>
+          </nav>
+
+          {/* CTA Buttons */}
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="hidden md:flex border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
+              onClick={() => {
+                const message = "Përshëndetje! Dëshiroj informacion për shërbimet tuaja të inspektimit të makinave.";
+                const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
+                window.open(whatsappUrl, '_blank');
+              }}
+              aria-label="Kontaktoni nëpërmjet WhatsApp për informacion rreth shërbimeve"
+            >
+              Na Kontaktoni
+            </Button>
+            <Button 
+              size="sm" 
+              className="bg-primary hover:bg-primary/90"
+              onClick={() => document.getElementById('cars')?.scrollIntoView({ behavior: 'smooth' })}
+              aria-label="Shikoni listën e makinave të disponueshme"
+            >
+              Shiko Makinat
             </Button>
           </div>
         </div>
-
-        {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <div className="md:hidden border-t bg-background/95 backdrop-blur">
-            <nav className="flex flex-col space-y-4 p-4">
-              <a href="#" className="text-sm font-medium transition-colors hover:text-accent">
-                Live Auctions
-              </a>
-              <a href="#" className="text-sm font-medium transition-colors hover:text-accent">
-                Browse Cars
-              </a>
-              <a href="#" className="text-sm font-medium transition-colors hover:text-accent">
-                Sell Your Car
-              </a>
-              <a href="#" className="text-sm font-medium transition-colors hover:text-accent">
-                Inspection Service
-              </a>
-              <a href="#" className="text-sm font-medium transition-colors hover:text-accent">
-                About
-              </a>
-              <div className="pt-4 border-t">
-                <Button variant="outline" size="sm" className="w-full mb-2">
-                  <User className="h-4 w-4 mr-2" />
-                  Sign In
-                </Button>
-                <Button size="sm" className="w-full">
-                  Register
-                </Button>
-              </div>
-            </nav>
-          </div>
-        )}
       </div>
     </header>
   );

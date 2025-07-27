@@ -17,7 +17,10 @@ export default {
 				'2xl': '1400px'
 			}
 		},
-		extend: {
+    extend: {
+      fontFamily: {
+        'sans': ['Noto Sans', 'system-ui', 'sans-serif'],
+      },
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -47,6 +50,10 @@ export default {
 				premium: {
 					DEFAULT: 'hsl(var(--premium))',
 					foreground: 'hsl(var(--premium-foreground))'
+				},
+				inspection: {
+					DEFAULT: 'hsl(var(--inspection))',
+					foreground: 'hsl(var(--inspection-foreground))'
 				},
 				popover: {
 					DEFAULT: 'hsl(var(--popover))',

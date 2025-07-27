@@ -1,0 +1,4 @@
+project_id = "qtyyiqimkysmjnaocswe"
+
+[functions.send-inspection-notification]
+verify_jwt = false

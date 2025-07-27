@@ -1,114 +1,228 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Clock, Eye, Heart, MapPin } from "lucide-react";
-
+import { useNavigate } from "react-router-dom";
+import { Car, Search, Gauge, Settings, Fuel, Palette, Hash, Heart } from "lucide-react";
+import InspectionRequestForm from "@/components/InspectionRequestForm";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 interface CarCardProps {
   id: string;
   make: string;
   model: string;
   year: number;
   price: number;
-  currentBid?: number;
-  imageUrl: string;
-  mileage: number;
-  location: string;
-  endTime: string;
-  isLive: boolean;
-  watchers?: number;
+  image?: string;
+  vin?: string;
+  mileage?: string;
+  transmission?: string;
+  fuel?: string;
+  color?: string;
+  condition?: string;
+  lot?: string;
+  title?: string;
 }
-
-const CarCard = ({ 
-  make, 
-  model, 
-  year, 
-  price, 
-  currentBid, 
-  imageUrl, 
-  mileage, 
-  location, 
-  endTime, 
-  isLive,
-  watchers = 0 
+const CarCard = ({
+  id,
+  make,
+  model,
+  year,
+  price,
+  image,
+  vin,
+  mileage,
+  transmission,
+  fuel,
+  color,
+  condition,
+  lot,
+  title
 }: CarCardProps) => {
-  return (
-    <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
-      <div className="relative">
-        <img
-          src={imageUrl}
-          alt={`${year} ${make} ${model}`}
-          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-        />
-        <div className="absolute top-3 left-3 flex gap-2">
-          {isLive && (
-            <Badge className="bg-red-500 text-white animate-pulse">
-              LIVE
-            </Badge>
-          )}
-          <Badge variant="secondary" className="bg-black/80 text-white">
-            {watchers} <Eye className="h-3 w-3 ml-1" />
-          </Badge>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="absolute top-3 right-3 text-white hover:bg-white/20"
-        >
-          <Heart className="h-4 w-4" />
-        </Button>
-      </div>
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
-      <CardContent className="p-4">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="font-semibold text-lg text-foreground">
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      
+      if (user) {
+        // Check if this car is already favorited
+        const { data } = await supabase
+          .from('favorite_cars')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('car_id', id)
+          .single();
+        
+        setIsFavorite(!!data);
+      }
+    };
+    
+    getUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+      if (!session?.user) {
+        setIsFavorite(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [id]);
+
+  const handleFavoriteToggle = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to save favorite cars",
+      });
+      navigate('/auth');
+      return;
+    }
+
+    try {
+      if (isFavorite) {
+        // Remove from favorites
+        await supabase
+          .from('favorite_cars')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('car_id', id);
+        
+        setIsFavorite(false);
+        toast({
+          title: "Removed from favorites",
+          description: "Car removed from your favorites",
+        });
+      } else {
+        // Add to favorites
+        await supabase
+          .from('favorite_cars')
+          .insert({
+            user_id: user.id,
+            car_id: id,
+            car_make: make,
+            car_model: model,
+            car_year: year,
+            car_price: price,
+            car_image: image
+          });
+        
+        setIsFavorite(true);
+        toast({
+          title: "Added to favorites",
+          description: "Car saved to your favorites",
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update favorites",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCardClick = () => {
+    navigate(`/car/${id}`);
+  };
+  return <div className="bg-card rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-border cursor-pointer group" onClick={handleCardClick}>
+      <div className="relative h-48 bg-muted overflow-hidden">
+        {image ? <img src={image} alt={`${year} ${make} ${model}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={e => {
+        e.currentTarget.src = "/placeholder.svg";
+      }} /> : <div className="w-full h-full flex items-center justify-center bg-muted">
+            <Car className="h-16 w-16 text-muted-foreground" />
+          </div>}
+        {lot && <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-semibold">
+            Kodi #{lot}
+          </div>}
+        
+        {/* Favorite Button */}
+        <button
+          onClick={handleFavoriteToggle}
+          className="absolute top-2 left-2 p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-all duration-200 hover:scale-110"
+          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+        >
+          <Heart 
+            className={`h-4 w-4 transition-colors ${
+              isFavorite 
+                ? "fill-red-500 text-red-500" 
+                : "text-gray-600 hover:text-red-500"
+            }`} 
+          />
+        </button>
+      </div>
+      
+      <div className="p-4">
+        <div className="mb-3">
+          <h3 className="text-lg font-semibold text-foreground">
             {year} {make} {model}
           </h3>
+          {title && title !== `${make} ${model}` && <p className="text-sm text-muted-foreground mb-1">{title}</p>}
         </div>
+
+        <div className="space-y-2 mb-4 text-sm">
+          {mileage && <div className="flex items-center gap-2">
+              <Gauge className="h-4 w-4 text-muted-foreground" />
+              <span>{mileage}</span>
+            </div>}
+          {transmission && <div className="flex items-center gap-2">
+              <Settings className="h-4 w-4 text-muted-foreground" />
+              <span className="capitalize">{transmission}</span>
+            </div>}
+          {fuel && <div className="flex items-center gap-2">
+              <Fuel className="h-4 w-4 text-muted-foreground" />
+              <span className="capitalize">{fuel}</span>
+            </div>}
+          {color && <div className="flex items-center gap-2">
+              <Palette className="h-4 w-4 text-muted-foreground" />
+              <span className="capitalize">{color}</span>
+            </div>}
+          {vin && <div className="flex items-center gap-2">
+              <Hash className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs font-mono">{vin}</span>
+            </div>}
+        </div>
+
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-2xl font-bold text-primary">
+            €{price.toLocaleString()}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            Deri ne portin e Durresit
+          </span>
+        </div>
+
+        <InspectionRequestForm
+          carId={id}
+          carMake={make}
+          carModel={model}
+          carYear={year}
+          trigger={
+            <Button
+              onClick={(e) => e.stopPropagation()}
+              className="w-full"
+              size="sm"
+              aria-label={`Request inspection for ${year} ${make} ${model}`}
+            >
+              <Search className="h-3 w-3 mr-2" />
+              Request Inspection
+            </Button>
+          }
+        />
         
-        <div className="space-y-2 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <MapPin className="h-3 w-3" />
-            {location}
-          </div>
-          <div>Mileage: {mileage.toLocaleString()} km</div>
+        <div className="mt-2 text-center">
+          <p className="text-xs text-muted-foreground">
+            KORAUTO Shërbim profesional i importit
+          </p>
         </div>
-
-        <div className="mt-4 space-y-1">
-          {currentBid ? (
-            <>
-              <div className="text-sm text-muted-foreground">Current Bid</div>
-              <div className="text-2xl font-bold text-accent">
-                €{currentBid.toLocaleString()}
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="text-sm text-muted-foreground">Starting Bid</div>
-              <div className="text-2xl font-bold text-accent">
-                €{price.toLocaleString()}
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className="mt-3 flex items-center gap-1 text-sm text-muted-foreground">
-          <Clock className="h-3 w-3" />
-          Ends: {endTime}
-        </div>
-      </CardContent>
-
-      <CardFooter className="p-4 pt-0 space-y-2">
-        <div className="w-full space-y-2">
-          <Button className="w-full bg-accent hover:bg-accent/90">
-            Place Bid
-          </Button>
-          <Button variant="outline" className="w-full" size="sm">
-            Request Inspection (€50)
-          </Button>
-        </div>
-      </CardFooter>
-    </Card>
-  );
+      </div>
+    </div>;
 };
-
 export default CarCard;
