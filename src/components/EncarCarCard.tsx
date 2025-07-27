@@ -6,9 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Car, MapPin, Gauge, Fuel, Calendar, Eye,
-  Heart, Share2, ArrowRight, MessageCircle
+  Heart, Share2, ArrowRight
 } from "lucide-react";
-import InspectionRequestForm from "./InspectionRequestForm";
 
 interface EncarCarCardProps {
   id: string;
@@ -48,11 +47,13 @@ const EncarCarCard = ({
     });
   };
 
-  const handleContactWhatsApp = (e: React.MouseEvent) => {
+  const handleInspectionRequest = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const message = `Përshëndetje! Jam i interesuar për ${year} ${make} ${model}. A mund të më jepni më shumë informacion?`;
-    const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    toast({
+      title: "Inspection Request Submitted",
+      description: "KORAUTO will contact you at +38348181116 for inspection scheduling",
+      duration: 6000,
+    });
   };
 
   return (
@@ -164,26 +165,28 @@ const EncarCarCard = ({
 
         {/* Action buttons */}
         <div className="space-y-2">
+          <Button 
+            onClick={handleInspectionRequest}
+            size="sm"
+            className="w-full bg-primary hover:bg-primary/90 text-white text-xs h-6"
+          >
+            Inspektim (€50)
+          </Button>
           <div className="flex gap-2">
-            <InspectionRequestForm
-              trigger={
-                <Button 
-                  size="sm"
-                  className="flex-1 bg-primary hover:bg-primary/90 text-white text-xs h-6"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Inspektim (€50)
-                </Button>
-              }
-            />
             <Button 
               variant="outline"
               size="sm"
-              className="flex-1 text-xs h-6 border-primary text-primary hover:bg-primary hover:text-white"
-              onClick={handleContactWhatsApp}
+              className="flex-1 text-xs h-5 border-gray-300 text-gray-700 hover:bg-gray-50"
+              onClick={(e) => {
+                e.stopPropagation();
+                toast({
+                  title: "Kërkesa për Kontakt u Dërgua",
+                  description: "ROBERT GASHI nga KORAUTO do t'ju kontaktojë në +38348181116 me informacion të detajuar",
+                  duration: 5000,
+                });
+              }}
             >
-              <MessageCircle className="h-3 w-3 mr-1" />
-              Kontakt
+              Na Kontaktoni për Më Shumë Info
             </Button>
           </div>
         </div>

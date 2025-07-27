@@ -165,15 +165,15 @@ const CarsSection = () => {
       
       // Use fallback data on error with KORAUTO markup
       const fallbackCars: Car[] = [
-        { id: '1', make: 'BMW', model: 'M3', year: 2022, price: 67300, mileage: '25,000 km', transmission: 'automatic', fuel: 'benzinë' },
-        { id: '2', make: 'Mercedes-Benz', model: 'C-Class', year: 2021, price: 47300, mileage: '30,000 km', transmission: 'automatic', fuel: 'benzinë' },
-        { id: '3', make: 'Audi', model: 'A4', year: 2023, price: 44300, mileage: '15,000 km', transmission: 'automatic', fuel: 'benzinë' },
-        { id: '4', make: 'Volkswagen', model: 'Golf', year: 2022, price: 30300, mileage: '20,000 km', transmission: 'manual', fuel: 'benzinë' },
-        { id: '5', make: 'Porsche', model: 'Cayenne', year: 2021, price: 87300, mileage: '35,000 km', transmission: 'automatic', fuel: 'benzinë' },
-        { id: '6', make: 'Tesla', model: 'Model S', year: 2023, price: 97300, mileage: '10,000 km', transmission: 'automatic', fuel: 'elektrike' },
-        { id: '7', make: 'Ford', model: 'Mustang', year: 2022, price: 57300, mileage: '18,000 km', transmission: 'automatic', fuel: 'benzinë' },
-        { id: '8', make: 'Chevrolet', model: 'Camaro', year: 2021, price: 50300, mileage: '22,000 km', transmission: 'manual', fuel: 'benzinë' },
-        { id: '9', make: 'Jaguar', model: 'F-Type', year: 2022, price: 80300, mileage: '12,000 km', transmission: 'automatic', fuel: 'benzinë' }
+        { id: '1', make: 'BMW', model: 'M3', year: 2022, price: 67300, mileage: '25,000 km', transmission: 'automatic', fuel: 'gasoline' },
+        { id: '2', make: 'Mercedes-Benz', model: 'C-Class', year: 2021, price: 47300, mileage: '30,000 km', transmission: 'automatic', fuel: 'gasoline' },
+        { id: '3', make: 'Audi', model: 'A4', year: 2023, price: 44300, mileage: '15,000 km', transmission: 'automatic', fuel: 'gasoline' },
+        { id: '4', make: 'Volkswagen', model: 'Golf', year: 2022, price: 30300, mileage: '20,000 km', transmission: 'manual', fuel: 'gasoline' },
+        { id: '5', make: 'Porsche', model: 'Cayenne', year: 2021, price: 87300, mileage: '35,000 km', transmission: 'automatic', fuel: 'gasoline' },
+        { id: '6', make: 'Tesla', model: 'Model S', year: 2023, price: 97300, mileage: '10,000 km', transmission: 'automatic', fuel: 'electric' },
+        { id: '7', make: 'Ford', model: 'Mustang', year: 2022, price: 57300, mileage: '18,000 km', transmission: 'automatic', fuel: 'gasoline' },
+        { id: '8', make: 'Chevrolet', model: 'Camaro', year: 2021, price: 50300, mileage: '22,000 km', transmission: 'manual', fuel: 'gasoline' },
+        { id: '9', make: 'Jaguar', model: 'F-Type', year: 2022, price: 80300, mileage: '12,000 km', transmission: 'automatic', fuel: 'gasoline' }
       ];
       setCars(fallbackCars);
       setFilteredCars(fallbackCars);

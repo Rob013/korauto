@@ -4,14 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import InspectionRequestForm from "@/components/InspectionRequestForm";
 import { 
   ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, 
   Fuel, Palette, Hash, Calendar, Shield, FileText, 
-  Search, Info, Eye, CheckCircle, AlertTriangle, Star,
-  Clock, Users, MessageCircle, Share2, Heart, ChevronRight
+  Search, Info, Eye, CheckCircle, AlertTriangle 
 } from "lucide-react";
 
 interface CarDetails {
@@ -52,11 +49,6 @@ interface CarDetails {
   bid?: number;
   buy_now?: number;
   final_bid?: number;
-  features?: string[];
-  safety_features?: string[];
-  comfort_features?: string[];
-  performance_rating?: number;
-  popularity_score?: number;
 }
 
 const CarDetails = () => {
@@ -164,12 +156,7 @@ const CarDetails = () => {
           keys_available: true,
           seller: 'KORAUTO Certified Dealer',
           seller_type: 'Professional Dealer',
-          buy_now: 30000,
-          features: ['Cruise Control', 'Bluetooth', 'USB Port', 'Air Conditioning', 'Power Windows'],
-          safety_features: ['ABS', 'ESP', 'Airbags', 'Seatbelt Pretensioners'],
-          comfort_features: ['Leather Seats', 'Heated Seats', 'Automatic Climate Control'],
-          performance_rating: 4.5,
-          popularity_score: 85
+          buy_now: 30000
         };
 
         setCar(fallbackCar);
@@ -184,28 +171,19 @@ const CarDetails = () => {
     fetchCarDetails();
   }, [id]);
 
-  const handleContactWhatsApp = () => {
-    const message = `Përshëndetje! Jam i interesuar për ${car?.year} ${car?.make} ${car?.model} (€${car?.price.toLocaleString()}). A mund të më jepni më shumë informacion?`;
-    const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-  };
-
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
+  const handleInspectionRequest = async () => {
     toast({
-      title: "Link-u u kopjua",
-      description: "Link-u i makinës u kopjua në clipboard",
-      duration: 3000,
+      title: "Kërkesa për Inspektim u Dërgua",
+      description: `Kërkesa juaj për inspektim për ${car?.year} ${car?.make} ${car?.model} është pranuar. ROBERT GASHI nga KORAUTO do t'ju kontaktojë në +38348181116`,
+      duration: 6000,
     });
   };
 
-  const [isLiked, setIsLiked] = useState(false);
-  const handleLike = () => {
-    setIsLiked(!isLiked);
+  const handleContactMoreInfo = async () => {
     toast({
-      title: isLiked ? "U hoq nga të preferuarat" : "U shtua në të preferuarat",
-      description: isLiked ? "Makina u hoq nga lista juaj e të preferuarave" : "Makina u shtua në listën tuaj të të preferuarave",
-      duration: 3000,
+      title: "Kërkesa për Kontakt u Dërgua",
+      description: `Kërkesa juaj për më shumë informacion rreth ${car?.year} ${car?.make} ${car?.model} është dërguar tek ROBERT GASHI. Telefononi +38348181116 për ndihmë të menjëhershme.`,
+      duration: 6000,
     });
   };
 
@@ -256,21 +234,11 @@ const CarDetails = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-        {/* Header with Actions */}
-        <div className="flex justify-between items-center mb-6">
-          <Button variant="outline" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Kthehu te Makinat
-          </Button>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleLike}>
-              <Heart className={`h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleShare}>
-              <Share2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        {/* Navigation */}
+        <Button variant="outline" onClick={() => navigate(-1)} className="mb-6">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Kthehu te Makinat
+        </Button>
 
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -477,25 +445,22 @@ const CarDetails = () => {
 
                 {/* Action Buttons */}
                 <div className="space-y-2">
-                  <InspectionRequestForm
-                    trigger={
-                      <Button 
-                        className="w-full bg-primary hover:bg-primary/90 text-xs py-1.5 h-8"
-                        size="sm"
-                      >
-                        <Search className="h-3 w-3 mr-1" />
-                        Kërkesë për Inspektim (€50)
-                      </Button>
-                    }
-                  />
+                  <Button 
+                    onClick={handleInspectionRequest}
+                    className="w-full bg-primary hover:bg-primary/90 text-xs py-1.5 h-8"
+                    size="sm"
+                  >
+                    <Search className="h-3 w-3 mr-1" />
+                    Kërkesë për Inspektim (€50)
+                  </Button>
                   
                   <Button 
                     variant="outline"
-                    onClick={handleContactWhatsApp}
+                    onClick={handleContactMoreInfo}
                     className="w-full border-primary text-primary hover:bg-primary hover:text-white text-xs py-1.5 h-8"
                     size="sm"
                   >
-                    <MessageCircle className="h-3 w-3 mr-1" />
+                    <Info className="h-3 w-3 mr-1" />
                     Kontakto për Më Shumë Info
                   </Button>
                 </div>
