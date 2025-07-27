@@ -4,7 +4,7 @@ import { User } from "@supabase/supabase-js";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Mail, Phone, Car, Euro, ArrowLeft, LogOut } from "lucide-react";
+import { RefreshCw, Mail, Phone, Car, ArrowLeft, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import AuthLogin from "@/components/AuthLogin";
@@ -18,8 +18,6 @@ interface InspectionRequest {
   car_make?: string;
   car_model?: string;
   car_year?: number;
-  inspection_fee: number;
-  payment_status: string;
   created_at: string;
   updated_at: string;
 }
@@ -138,15 +136,6 @@ const AdminDashboard = () => {
     return <AuthLogin onLoginSuccess={handleLoginSuccess} />;
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'processing': return 'bg-blue-100 text-blue-800';
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('sq-AL', {
@@ -187,7 +176,7 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
+      <div className="grid gap-4 md:grid-cols-2 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
@@ -200,25 +189,14 @@ const AdminDashboard = () => {
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
-            <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
+            <CardTitle className="text-sm font-medium">Recent Requests</CardTitle>
+            <Car className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {requests.filter(r => r.payment_status === 'pending').length}
+              {requests.filter(r => new Date(r.created_at) > new Date(Date.now() - 7*24*60*60*1000)).length}
             </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Processing</CardTitle>
-            <Badge className="bg-blue-100 text-blue-800">Processing</Badge>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {requests.filter(r => r.payment_status === 'processing').length}
-            </div>
+            <p className="text-xs text-muted-foreground">Last 7 days</p>
           </CardContent>
         </Card>
       </div>
@@ -234,9 +212,9 @@ const AdminDashboard = () => {
                     Request ID: {request.id.substring(0, 8)}...
                   </p>
                 </div>
-                <Badge className={getStatusColor(request.payment_status)}>
-                  {request.payment_status}
-                </Badge>
+                <div className="text-xs text-muted-foreground">
+                  {formatDate(request.created_at)}
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -249,10 +227,6 @@ const AdminDashboard = () => {
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm">{request.customer_phone}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Euro className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">€{request.inspection_fee}</span>
                   </div>
                 </div>
                 
@@ -270,10 +244,6 @@ const AdminDashboard = () => {
                       <span className="text-sm text-muted-foreground">Car details not provided</span>
                     </div>
                   )}
-                  
-                  <div className="text-xs text-muted-foreground">
-                    Created: {formatDate(request.created_at)}
-                  </div>
                 </div>
               </div>
               
