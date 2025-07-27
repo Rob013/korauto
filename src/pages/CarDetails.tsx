@@ -83,7 +83,7 @@ const CarDetails = () => {
         setLoading(true);
 
         // First try to fetch from the cars list to get the car data
-        const listResponse = await fetch(`${API_BASE_URL}/cars?api_key=${API_KEY}&limit=1000`, {
+        const listResponse = await fetch(`${API_BASE_URL}/cars?api_key=${API_KEY}&limit=10000`, {
           headers: {
             'Accept': 'application/json',
             'User-Agent': 'KORAUTO-WebApp/1.0',
