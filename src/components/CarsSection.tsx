@@ -1,7 +1,9 @@
 import CarCard from "./CarCard";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, AlertCircle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { RefreshCw, AlertCircle, Filter, SortAsc } from "lucide-react";
 
 interface Car {
   id: string;
@@ -10,13 +12,26 @@ interface Car {
   year: number;
   price: number;
   image?: string;
+  vin?: string;
+  mileage?: string;
+  transmission?: string;
+  fuel?: string;
+  color?: string;
+  condition?: string;
+  lot?: string;
+  title?: string;
 }
 
 const CarsSection = () => {
   const [cars, setCars] = useState<Car[]>([]);
+  const [filteredCars, setFilteredCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [sortBy, setSortBy] = useState<'price' | 'year' | 'make'>('price');
+  const [filterMake, setFilterMake] = useState<string>('');
+  const [filterYear, setFilterYear] = useState<string>('');
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 200000]);
 
   // Correct API endpoint based on 429 response analysis
   const API_BASE_URL = 'https://auctionsapi.com/api';
@@ -95,19 +110,33 @@ const CarsSection = () => {
       const transformedCars: Car[] = carsArray.map((car: any, index: number) => {
         // Extract price from lots[0].buy_now or lots[0].final_bid
         const lot = car.lots?.[0];
-        const price = lot?.buy_now || lot?.final_bid || 25000 + (index * 1000);
+        const basePrice = lot?.buy_now || lot?.final_bid || 25000 + (index * 1000);
+        // Add KORAUTO markup of 2300 euro
+        const price = Math.round(basePrice + 2300);
         
         // Extract image from lots[0].images.normal[0]
         const images = lot?.images?.normal;
         const image = Array.isArray(images) && images.length > 0 ? images[0] : undefined;
+        
+        // Extract mileage
+        const odometer = lot?.odometer;
+        const mileage = odometer?.km ? `${odometer.km.toLocaleString()} km` : undefined;
         
         return {
           id: car.id?.toString() || `car-${index}`,
           make: car.manufacturer?.name || 'Unknown',
           model: car.model?.name || 'Unknown',
           year: car.year || 2020,
-          price: Math.round(price),
-          image: image
+          price: price,
+          image: image,
+          vin: car.vin,
+          mileage: mileage,
+          transmission: car.transmission?.name,
+          fuel: car.fuel?.name,
+          color: car.color?.name,
+          condition: lot?.condition?.name,
+          lot: lot?.lot,
+          title: car.title
         };
       });
 
@@ -119,6 +148,7 @@ const CarsSection = () => {
       }
 
       setCars(transformedCars);
+      setFilteredCars(transformedCars);
       setLastUpdate(new Date());
       console.log(`Successfully loaded ${transformedCars.length} cars from API`);
       
@@ -127,19 +157,20 @@ const CarsSection = () => {
       setError(errorMessage);
       console.error('API Error:', err);
       
-      // Use fallback data on error
+      // Use fallback data on error with KORAUTO markup
       const fallbackCars: Car[] = [
-        { id: '1', make: 'BMW', model: 'M3', year: 2022, price: 65000 },
-        { id: '2', make: 'Mercedes-Benz', model: 'C-Class', year: 2021, price: 45000 },
-        { id: '3', make: 'Audi', model: 'A4', year: 2023, price: 42000 },
-        { id: '4', make: 'Volkswagen', model: 'Golf', year: 2022, price: 28000 },
-        { id: '5', make: 'Porsche', model: 'Cayenne', year: 2021, price: 85000 },
-        { id: '6', make: 'Tesla', model: 'Model S', year: 2023, price: 95000 },
-        { id: '7', make: 'Ford', model: 'Mustang', year: 2022, price: 55000 },
-        { id: '8', make: 'Chevrolet', model: 'Camaro', year: 2021, price: 48000 },
-        { id: '9', make: 'Jaguar', model: 'F-Type', year: 2022, price: 78000 }
+        { id: '1', make: 'BMW', model: 'M3', year: 2022, price: 67300, mileage: '25,000 km', transmission: 'automatic', fuel: 'gasoline' },
+        { id: '2', make: 'Mercedes-Benz', model: 'C-Class', year: 2021, price: 47300, mileage: '30,000 km', transmission: 'automatic', fuel: 'gasoline' },
+        { id: '3', make: 'Audi', model: 'A4', year: 2023, price: 44300, mileage: '15,000 km', transmission: 'automatic', fuel: 'gasoline' },
+        { id: '4', make: 'Volkswagen', model: 'Golf', year: 2022, price: 30300, mileage: '20,000 km', transmission: 'manual', fuel: 'gasoline' },
+        { id: '5', make: 'Porsche', model: 'Cayenne', year: 2021, price: 87300, mileage: '35,000 km', transmission: 'automatic', fuel: 'gasoline' },
+        { id: '6', make: 'Tesla', model: 'Model S', year: 2023, price: 97300, mileage: '10,000 km', transmission: 'automatic', fuel: 'electric' },
+        { id: '7', make: 'Ford', model: 'Mustang', year: 2022, price: 57300, mileage: '18,000 km', transmission: 'automatic', fuel: 'gasoline' },
+        { id: '8', make: 'Chevrolet', model: 'Camaro', year: 2021, price: 50300, mileage: '22,000 km', transmission: 'manual', fuel: 'gasoline' },
+        { id: '9', make: 'Jaguar', model: 'F-Type', year: 2022, price: 80300, mileage: '12,000 km', transmission: 'automatic', fuel: 'gasoline' }
       ];
       setCars(fallbackCars);
+      setFilteredCars(fallbackCars);
       setLastUpdate(new Date());
       console.log('Using fallback car data');
     } finally {
@@ -187,9 +218,51 @@ const CarsSection = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Sorting and filtering logic
+  useEffect(() => {
+    let filtered = [...cars];
+
+    // Apply filters
+    if (filterMake) {
+      filtered = filtered.filter(car => 
+        car.make.toLowerCase().includes(filterMake.toLowerCase())
+      );
+    }
+
+    if (filterYear) {
+      filtered = filtered.filter(car => 
+        car.year.toString().includes(filterYear)
+      );
+    }
+
+    filtered = filtered.filter(car => 
+      car.price >= priceRange[0] && car.price <= priceRange[1]
+    );
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'price':
+          return a.price - b.price;
+        case 'year':
+          return b.year - a.year; // Newest first
+        case 'make':
+          return a.make.localeCompare(b.make);
+        default:
+          return 0;
+      }
+    });
+
+    setFilteredCars(filtered);
+  }, [cars, sortBy, filterMake, filterYear, priceRange]);
+
   const handleRefresh = () => {
     fetchCars();
   };
+
+  // Get unique makes for filter dropdown
+  const uniqueMakes = [...new Set(cars.map(car => car.make))].sort();
+  const uniqueYears = [...new Set(cars.map(car => car.year))].sort((a, b) => b - a);
 
   return (
     <section id="cars" className="py-16 bg-secondary/30">
@@ -228,6 +301,98 @@ const CarsSection = () => {
           </div>
         )}
 
+        {/* Filters and Sorting */}
+        <div className="mb-8 p-6 bg-card rounded-lg border border-border">
+          <div className="flex items-center gap-2 mb-4">
+            <Filter className="h-5 w-5" />
+            <h3 className="text-lg font-semibold">Search & Filter Cars</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Sort by</label>
+              <Select value={sortBy} onValueChange={(value: 'price' | 'year' | 'make') => setSortBy(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="price">Price (Low to High)</SelectItem>
+                  <SelectItem value="year">Year (Newest First)</SelectItem>
+                  <SelectItem value="make">Make (A-Z)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Make</label>
+              <Select value={filterMake} onValueChange={setFilterMake}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Makes" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Makes</SelectItem>
+                  {uniqueMakes.map(make => (
+                    <SelectItem key={make} value={make}>{make}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Year</label>
+              <Select value={filterYear} onValueChange={setFilterYear}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Years" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Years</SelectItem>
+                  {uniqueYears.map(year => (
+                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Min Price (€)</label>
+              <Input 
+                type="number" 
+                placeholder="0"
+                value={priceRange[0] === 0 ? '' : priceRange[0].toString()}
+                onChange={(e) => setPriceRange([parseInt(e.target.value) || 0, priceRange[1]])}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Max Price (€)</label>
+              <Input 
+                type="number" 
+                placeholder="200000"
+                value={priceRange[1] === 200000 ? '' : priceRange[1].toString()}
+                onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value) || 200000])}
+              />
+            </div>
+          </div>
+
+          <div className="mt-4 flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">
+              Showing {filteredCars.length} of {cars.length} cars
+            </span>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => {
+                setFilterMake('');
+                setFilterYear('');
+                setPriceRange([0, 200000]);
+                setSortBy('price');
+              }}
+            >
+              Clear Filters
+            </Button>
+          </div>
+        </div>
+
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
@@ -243,9 +408,26 @@ const CarsSection = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {cars.map((car) => (
+            {filteredCars.map((car) => (
               <CarCard key={car.id} {...car} />
             ))}
+          </div>
+        )}
+
+        {filteredCars.length === 0 && !loading && cars.length > 0 && (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground text-lg">No cars match your filters.</p>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setFilterMake('');
+                setFilterYear('');
+                setPriceRange([0, 200000]);
+              }}
+              className="mt-4 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+            >
+              Clear Filters
+            </Button>
           </div>
         )}
 

@@ -1,55 +1,88 @@
 import { Button } from "@/components/ui/button";
-import { Search, User, Menu } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Car, MapPin, Phone, Mail, Menu } from "lucide-react";
 import { useState } from "react";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-md">
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center space-x-2">
-            <h1 className="text-2xl font-bold text-white">
-              KORAUTO
-            </h1>
+    <header className="bg-card shadow-sm border-b border-border sticky top-0 z-50">
+      {/* Top Contact Bar */}
+      <div className="bg-primary text-primary-foreground py-2">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-wrap items-center justify-between text-sm">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1">
+                <Phone className="h-3 w-3" />
+                <span>+38348181116</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Mail className="h-3 w-3" />
+                <span>robert_gashi@live.com</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                <span>RR.ilaz kodra 70</span>
+              </div>
+            </div>
+            <div className="hidden md:block">
+              <a 
+                href="https://www.google.com/maps/search/korauto" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary-foreground hover:underline text-sm"
+              >
+                Find us on Google Maps
+              </a>
+            </div>
           </div>
+        </div>
+      </div>
 
-          {/* Desktop Navigation */}
+      {/* Main Header */}
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Car className="h-8 w-8 text-primary" />
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">KORAUTO</h1>
+              <p className="text-xs text-muted-foreground">Professional Car Inspection Service</p>
+            </div>
+          </div>
+          
           <nav className="hidden md:flex items-center space-x-8">
-            <a href="#home" className="text-sm font-medium transition-colors hover:text-gray-300">
+            <a href="#home" className="text-foreground hover:text-primary transition-colors">
               Home
             </a>
-            <a href="#cars" className="text-sm font-medium transition-colors hover:text-gray-300">
+            <a href="#cars" className="text-foreground hover:text-primary transition-colors">
               Cars
             </a>
-            <a href="#inspection" className="text-sm font-medium transition-colors hover:text-gray-300">
+            <a href="#inspection" className="text-foreground hover:text-primary transition-colors">
               Inspection
             </a>
-            <a href="#contact" className="text-sm font-medium transition-colors hover:text-gray-300">
+            <a href="#contact" className="text-foreground hover:text-primary transition-colors">
               Contact
             </a>
           </nav>
 
-          {/* Search Bar */}
-          <div className="hidden lg:flex items-center space-x-2 flex-1 max-w-md mx-8">
-            <div className="relative w-full">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search cars by make, model..."
-                className="pl-8 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-              />
-            </div>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <a href="tel:+38348181116">
+                <Phone className="h-4 w-4 mr-1" />
+                Call ROBERT
+              </a>
+            </Button>
+            <Button size="sm" asChild>
+              <a href="#cars">
+                Browse Cars
+              </a>
+            </Button>
+            
+            {/* Mobile Menu Button */}
             <Button
               variant="ghost"
               size="sm"
-              className="md:hidden text-white hover:bg-white/10"
+              className="md:hidden"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               <Menu className="h-4 w-4" />
@@ -59,20 +92,26 @@ const Header = () => {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden border-t border-white/20 bg-primary">
-            <nav className="flex flex-col space-y-4 p-4">
-              <a href="#home" className="text-sm font-medium transition-colors hover:text-gray-300 text-white">
+          <div className="md:hidden mt-4 pb-4 border-t border-border">
+            <nav className="flex flex-col space-y-4 pt-4">
+              <a href="#home" className="text-foreground hover:text-primary transition-colors">
                 Home
               </a>
-              <a href="#cars" className="text-sm font-medium transition-colors hover:text-gray-300 text-white">
+              <a href="#cars" className="text-foreground hover:text-primary transition-colors">
                 Cars
               </a>
-              <a href="#inspection" className="text-sm font-medium transition-colors hover:text-gray-300 text-white">
+              <a href="#inspection" className="text-foreground hover:text-primary transition-colors">
                 Inspection
               </a>
-              <a href="#contact" className="text-sm font-medium transition-colors hover:text-gray-300 text-white">
+              <a href="#contact" className="text-foreground hover:text-primary transition-colors">
                 Contact
               </a>
+              <Button variant="outline" size="sm" asChild className="self-start">
+                <a href="tel:+38348181116">
+                  <Phone className="h-4 w-4 mr-1" />
+                  Call ROBERT
+                </a>
+              </Button>
             </nav>
           </div>
         )}
