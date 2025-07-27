@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { apiLimiter } from '@/utils/apiLimiter';
 
 const API_BASE_URL = 'https://auctionsapi.com/api';
 const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
@@ -32,19 +31,13 @@ export const useAuctionAPI = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchCars = async (page: number = 1, minutes?: number, filters?: {make?: string[], year?: number}): Promise<APIResponse> => {
-    if (!apiLimiter.canMakeRequest()) {
-      const timeLeft = Math.ceil(apiLimiter.getTimeUntilReset() / 1000 / 60);
-      throw new Error(`Request limit reached. Try again in ${timeLeft} minutes.`);
-    }
-
     setLoading(true);
     setError(null);
 
     try {
-      apiLimiter.recordRequest();
       const params = new URLSearchParams({
         api_key: API_KEY,
-        limit: '20' // Reduced for demo API
+        limit: '50'
       });
 
       if (minutes) {
@@ -173,12 +166,12 @@ export const useAuctionAPI = () => {
     }
   };
 
-  // Disable automatic initial load to conserve API requests
-  // useEffect(() => {
-  //   fetchCars().then(result => {
-  //     setCars(result.cars);
-  //   });
-  // }, []);
+  // Initial load effect
+  useEffect(() => {
+    fetchCars().then(result => {
+      setCars(result.cars);
+    });
+  }, []);
 
   return {
     cars,
