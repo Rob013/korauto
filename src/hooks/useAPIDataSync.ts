@@ -208,6 +208,14 @@ export const useAPIDataSync = () => {
     return totalSynced;
   }, [fetchAllModels]);
 
+  // Helper function to safely extract values that can be objects or strings
+  const safeExtractValue = (value: any, fallback: string = ''): string => {
+    if (!value || value === null) return fallback;
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object' && value.name) return value.name;
+    return fallback;
+  };
+
   // Transform and store cars in database with comprehensive data
   const syncCars = useCallback(async () => {
     console.log('Starting comprehensive car sync...');
@@ -229,21 +237,24 @@ export const useAPIDataSync = () => {
           const lot = car.lots?.[0];
           const images = lot?.images;
           
+          const manufacturerName = safeExtractValue(car.manufacturer, 'Unknown');
+          const modelName = safeExtractValue(car.model, 'Unknown');
+          
           return {
             id: car.id?.toString() || `car-${Date.now()}-${Math.random()}`,
-            make: car.manufacturer?.name || 'Unknown',
-            model: car.model?.name || 'Unknown',
+            make: manufacturerName,
+            model: modelName,
             year: car.year || 2020,
             price: car.price || lot?.buy_now || lot?.final_bid || 0,
             vin: car.vin,
-            title: car.title || `${car.year} ${car.manufacturer?.name} ${car.model?.name}`,
+            title: car.title || `${car.year} ${manufacturerName} ${modelName}`,
             
             // Basic car data
             mileage: lot?.odometer?.km,
-            transmission: typeof car.transmission === 'object' ? car.transmission?.name : car.transmission,
-            fuel: typeof car.fuel === 'object' ? car.fuel?.name : car.fuel,
-            color: typeof car.color === 'object' ? car.color?.name : car.color,
-            condition: typeof lot?.condition === 'object' ? lot?.condition?.name : lot?.condition,
+            transmission: safeExtractValue(car.transmission),
+            fuel: safeExtractValue(car.fuel),
+            color: safeExtractValue(car.color),
+            condition: safeExtractValue(lot?.condition),
             lot_number: lot?.lot,
             
             // Auction data
