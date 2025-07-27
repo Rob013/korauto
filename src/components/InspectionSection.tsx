@@ -88,7 +88,7 @@ const InspectionSection = () => {
                   </div>
                   <div className="flex items-center gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm text-foreground">100% garanci kënaqësie</span>
+                    <span className="text-sm text-foreground">Garanci 100% për MOTOR, TRANSMISION dhe KM me prakontratë</span>
                   </div>
                 </div>
                 

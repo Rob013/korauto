@@ -23,10 +23,10 @@ const ContactSection = () => {
             <CardContent>
               <p className="text-muted-foreground mb-2">Dërgoni një mesazh</p>
               <a 
-                href="mailto:info@korauto.com" 
+                href="mailto:robert_gashi@live.com" 
                 className="text-primary hover:text-primary/80 transition-colors font-medium"
               >
-                info@korauto.com
+                robert_gashi@live.com
               </a>
             </CardContent>
           </Card>
@@ -40,12 +40,30 @@ const ContactSection = () => {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground mb-2">Na telefononi direkt</p>
-              <a 
-                href="tel:+49123456789" 
-                className="text-primary hover:text-primary/80 transition-colors font-medium"
-              >
-                +49 123 456 789
-              </a>
+              <div className="space-y-2">
+                <a 
+                  href="tel:+38348181116" 
+                  className="block text-primary hover:text-primary/80 transition-colors font-medium"
+                >
+                  +38348181116
+                </a>
+                <div className="flex gap-2">
+                  <a 
+                    href="https://wa.me/38348181116" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition-colors"
+                  >
+                    WhatsApp
+                  </a>
+                  <a 
+                    href="viber://chat?number=+38348181116" 
+                    className="text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600 transition-colors"
+                  >
+                    Viber
+                  </a>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -58,7 +76,14 @@ const ContactSection = () => {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground mb-2">Vizitoni zyrën tonë</p>
-              <p className="text-primary font-medium">Munich, Germany</p>
+              <a 
+                href="https://maps.google.com/?q=Rr.Ilaz+Kodra+70+Prishtine+Kosovo+KORAUTO" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary font-medium hover:text-primary/80 transition-colors"
+              >
+                Rr. Ilaz Kodra 70, Prishtinë
+              </a>
             </CardContent>
           </Card>
 
@@ -72,8 +97,7 @@ const ContactSection = () => {
             <CardContent>
               <p className="text-muted-foreground mb-2">Jemi të disponueshëm</p>
               <div className="text-primary font-medium">
-                <p>Mon-Fri: 9:00-18:00</p>
-                <p>Sat: 10:00-16:00</p>
+                <p>Çdo ditë: 9:00-18:00</p>
               </div>
             </CardContent>
           </Card>

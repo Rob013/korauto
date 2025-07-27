@@ -526,61 +526,39 @@ const CarDetails = () => {
               </Card>
             )}
 
-            {/* Insurance History */}
+            {/* Insurance History - Encar.com Style */}
             <Card>
               <CardContent className="p-6">
                 <h3 className="text-lg font-semibold mb-4 flex items-center">
                   <Shield className="h-4 w-4 mr-2" />
-                  Historia e Sigurimit
+                  Historia e Sigurimit dhe Verifikimi
                 </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Regjistrimi i plotë i aksidenteve</span>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-center">
+                    <div className="text-green-600 font-semibold">✓ VERIFIKUAR</div>
+                    <div className="text-xs text-green-700 mt-1">Historia e Aksidenteve</div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Historiku i mirëmbajtjes</span>
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
+                    <div className="text-blue-600 font-semibold">✓ I PASTËR</div>
+                    <div className="text-xs text-blue-700 mt-1">Verifikimi Ligjor</div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Verifikimi i pronësisë</span>
+                  <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg text-center">
+                    <div className="text-orange-600 font-semibold">✓ KONFIRMUAR</div>
+                    <div className="text-xs text-orange-700 mt-1">Kilometrat e Vërteta</div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Kontrolli i kilometrimit</span>
+                  <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg text-center">
+                    <div className="text-purple-600 font-semibold">✓ GARANTUAR</div>
+                    <div className="text-xs text-purple-700 mt-1">Mirëmbajtja e Rregullt</div>
                   </div>
+                </div>
+                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-700">
+                    <strong>Sigurimi i Verifikuar:</strong> Encar Insurance, Dongbu Insurance, Samsung Fire & Marine Insurance dhe të tjera kompani të njohura sigurimesh.
+                  </p>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Performance Check */}
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="text-lg font-semibold mb-4 flex items-center">
-                  <Gauge className="h-4 w-4 mr-2" />
-                  Kontrolli i Performancës
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-secondary rounded-lg">
-                    <div className="text-2xl font-bold text-primary">0-100km/h</div>
-                    <div className="text-sm text-muted-foreground">6.2 sekonda</div>
-                  </div>
-                  <div className="text-center p-3 bg-secondary rounded-lg">
-                    <div className="text-2xl font-bold text-primary">Konsumi</div>
-                    <div className="text-sm text-muted-foreground">7.5L/100km</div>
-                  </div>
-                  <div className="text-center p-3 bg-secondary rounded-lg">
-                    <div className="text-2xl font-bold text-primary">Fuqia</div>
-                    <div className="text-sm text-muted-foreground">320 HP</div>
-                  </div>
-                  <div className="text-center p-3 bg-secondary rounded-lg">
-                    <div className="text-2xl font-bold text-primary">Tork</div>
-                    <div className="text-sm text-muted-foreground">450 Nm</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
             {/* Car Options */}
             <Card>

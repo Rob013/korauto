@@ -168,36 +168,25 @@ const EncarCarCard = ({
           <Button 
             onClick={handleInspectionRequest}
             size="sm"
-            className="w-full bg-primary hover:bg-primary/90 text-white text-xs h-7"
+            className="w-full bg-primary hover:bg-primary/90 text-white text-xs h-6"
           >
-            Inspect (€50)
+            Inspektim (€50)
           </Button>
           <div className="flex gap-2">
             <Button 
               variant="outline"
               size="sm"
-              className="flex-1 text-xs h-6 border-gray-300 text-gray-700 hover:bg-gray-50"
+              className="flex-1 text-xs h-5 border-gray-300 text-gray-700 hover:bg-gray-50"
               onClick={(e) => {
                 e.stopPropagation();
                 toast({
-                  title: "Contact Request Sent",
-                  description: "ROBERT GASHI from KORAUTO will contact you at +38348181116 with detailed information",
+                  title: "Kërkesa për Kontakt u Dërgua",
+                  description: "ROBERT GASHI nga KORAUTO do t'ju kontaktojë në +38348181116 me informacion të detajuar",
                   duration: 5000,
                 });
               }}
             >
-              Contact Info
-            </Button>
-            <Button 
-              variant="outline"
-              size="sm"
-              className="flex-1 text-xs h-6 border-gray-300 text-gray-700 hover:bg-gray-50"
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open('tel:+38348181116');
-              }}
-            >
-              Call Now
+              Na Kontaktoni për Më Shumë Info
             </Button>
           </div>
         </div>

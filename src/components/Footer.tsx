@@ -32,15 +32,60 @@ const Footer = () => {
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4" />
-                +49 123 456 789
+                <a href="tel:+38348181116" className="hover:text-gray-300 transition-colors">
+                  +38348181116
+                </a>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4" />
-                info@korauto.com
+                <a href="mailto:robert_gashi@live.com" className="hover:text-gray-300 transition-colors">
+                  robert_gashi@live.com
+                </a>
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
-                Munich, Germany
+                <a 
+                  href="https://maps.google.com/?q=Rr.Ilaz+Kodra+70+Prishtine+Kosovo+KORAUTO" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:text-gray-300 transition-colors"
+                >
+                  Rr. Ilaz Kodra 70, Prishtinë
+                </a>
+              </div>
+              
+              {/* Social Media Links */}
+              <div className="flex items-center gap-4 mt-4">
+                <a 
+                  href="https://www.facebook.com/korauto.ks" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:text-gray-300 transition-colors"
+                >
+                  <Facebook className="h-5 w-5" />
+                </a>
+                <a 
+                  href="https://www.instagram.com/korauto.ks" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:text-gray-300 transition-colors"
+                >
+                  <Instagram className="h-5 w-5" />
+                </a>
+                <a 
+                  href="https://wa.me/38348181116" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-green-400 hover:text-green-300 transition-colors"
+                >
+                  WhatsApp
+                </a>
+                <a 
+                  href="viber://chat?number=+38348181116" 
+                  className="text-purple-400 hover:text-purple-300 transition-colors"
+                >
+                  Viber
+                </a>
               </div>
             </div>
           </div>

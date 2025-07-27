@@ -9,9 +9,9 @@ const Header = () => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between text-xs">
             <div className="flex items-center gap-4">
-              <span>Professional Car Inspection Service</span>
+              <span>Shërbim Profesional Inspektimi Makinash</span>
               <span>•</span>
-              <span>Contact: +38348181116</span>
+              <span>Kontakt: +38348181116</span>
             </div>
             <div className="hidden md:block">
               <span>robert_gashi@live.com</span>
@@ -34,33 +34,37 @@ const Header = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-primary">KORAUTO</h1>
-              <p className="text-xs text-gray-600">Car Inspection Experts</p>
+              <p className="text-xs text-gray-600">Ekspertë të Inspektimit të Makinave</p>
             </div>
           </div>
           
           {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             <a href="#home" className="text-gray-700 hover:text-primary font-medium transition-colors">
-              Home
+              Kryefaqja
             </a>
             <a href="#cars" className="text-gray-700 hover:text-primary font-medium transition-colors">
-              Used Cars
+              Katalogu
             </a>
             <a href="#inspection" className="text-gray-700 hover:text-primary font-medium transition-colors">
-              Inspection Service
+              Shërbimi i Inspektimit
             </a>
             <a href="#contact" className="text-gray-700 hover:text-primary font-medium transition-colors">
-              Contact
+              Kontakti
             </a>
           </nav>
 
           {/* CTA Buttons */}
           <div className="flex items-center gap-3">
             <Button variant="outline" size="sm" className="hidden md:flex border-primary text-primary hover:bg-primary hover:text-white">
-              Get Quote
+              Na Kontaktoni
             </Button>
-            <Button size="sm" className="bg-primary hover:bg-primary/90">
-              View Cars
+            <Button 
+              size="sm" 
+              className="bg-primary hover:bg-primary/90"
+              onClick={() => document.getElementById('cars')?.scrollIntoView({ behavior: 'smooth' })}
+            >
+              Shiko Makinat
             </Button>
           </div>
         </div>
