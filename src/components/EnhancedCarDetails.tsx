@@ -21,7 +21,7 @@ const EnhancedCarDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { fetchCars } = useEncarAPI();
+  const { fetchCarDetails } = useEncarAPI();
   
   const [car, setCar] = useState<EncarCar | null>(null);
   const [loading, setLoading] = useState(true);
@@ -31,20 +31,19 @@ const EnhancedCarDetails = () => {
   const [showInspectionForm, setShowInspectionForm] = useState(false);
 
   useEffect(() => {
-    const fetchCarDetails = async () => {
+    const loadCarDetails = async () => {
       if (!id) return;
       
       try {
         setLoading(true);
         
-        // Try to fetch the specific car from the API
-        const result = await fetchCars(1, 1000);
-        const foundCar = result.cars.find(car => car.id === id);
+        // Fetch car details from the individual car endpoint with ALL data
+        const carDetails = await fetchCarDetails(id);
         
-        if (foundCar) {
-          setCar(foundCar);
+        if (carDetails) {
+          setCar(carDetails);
         } else {
-          // Generate enhanced fallback data
+          // Generate enhanced fallback data if API fails
           const fallbackCar: EncarCar = {
             id: id,
             make: 'BMW',
@@ -83,6 +82,34 @@ const EnhancedCarDetails = () => {
               km: 45000,
               mi: 27962,
               status: { name: 'Actual' }
+            },
+            // Additional comprehensive specs for demo
+            horsepower: 255,
+            torque: 295,
+            displacement: 2.0,
+            top_speed: 250,
+            acceleration: 5.8,
+            fuel_consumption: {
+              city: 9.1,
+              highway: 6.4,
+              combined: 7.4
+            },
+            emissions: {
+              co2: 169,
+              euro_standard: 'Euro 6d'
+            },
+            dimensions: {
+              length: 4709,
+              width: 1827,
+              height: 1442,
+              wheelbase: 2851,
+              weight: 1570
+            },
+            safety_rating: {
+              overall: 5,
+              frontal: 5,
+              side: 5,
+              rollover: 4
             }
           };
           setCar(fallbackCar);
@@ -95,8 +122,8 @@ const EnhancedCarDetails = () => {
       }
     };
 
-    fetchCarDetails();
-  }, [id, fetchCars]);
+    loadCarDetails();
+  }, [id, fetchCarDetails]);
 
   // Auto-play images
   useEffect(() => {
@@ -358,7 +385,8 @@ const EnhancedCarDetails = () => {
                   </TabsContent>
 
                   <TabsContent value="specs" className="mt-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {/* Engine & Performance */}
                       <Card>
                         <CardHeader>
                           <CardTitle className="text-base flex items-center">
@@ -375,6 +403,36 @@ const EnhancedCarDetails = () => {
                             <span className="text-muted-foreground">Cylinders</span>
                             <span className="font-medium">{car.cylinders || 4}</span>
                           </div>
+                          {car.horsepower && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Horsepower</span>
+                              <span className="font-medium">{car.horsepower} HP</span>
+                            </div>
+                          )}
+                          {car.torque && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Torque</span>
+                              <span className="font-medium">{car.torque} Nm</span>
+                            </div>
+                          )}
+                          {car.displacement && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Displacement</span>
+                              <span className="font-medium">{car.displacement}L</span>
+                            </div>
+                          )}
+                          {car.top_speed && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Top Speed</span>
+                              <span className="font-medium">{car.top_speed} km/h</span>
+                            </div>
+                          )}
+                          {car.acceleration && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">0-100 km/h</span>
+                              <span className="font-medium">{car.acceleration}s</span>
+                            </div>
+                          )}
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Fuel Type</span>
                             <span className="font-medium">{car.fuel}</span>
@@ -386,6 +444,7 @@ const EnhancedCarDetails = () => {
                         </CardContent>
                       </Card>
 
+                      {/* Design & Comfort */}
                       <Card>
                         <CardHeader>
                           <CardTitle className="text-base flex items-center">
@@ -410,6 +469,87 @@ const EnhancedCarDetails = () => {
                             <span className="text-muted-foreground">Condition</span>
                             <Badge variant="secondary">{car.condition}</Badge>
                           </div>
+                          {car.dimensions?.length && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Length</span>
+                              <span className="font-medium">{car.dimensions.length} mm</span>
+                            </div>
+                          )}
+                          {car.dimensions?.width && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Width</span>
+                              <span className="font-medium">{car.dimensions.width} mm</span>
+                            </div>
+                          )}
+                          {car.dimensions?.height && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Height</span>
+                              <span className="font-medium">{car.dimensions.height} mm</span>
+                            </div>
+                          )}
+                          {car.dimensions?.weight && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Weight</span>
+                              <span className="font-medium">{car.dimensions.weight} kg</span>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {/* Fuel & Emissions */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base flex items-center">
+                            <Fuel className="h-4 w-4 mr-2" />
+                            Fuel & Emissions
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          {car.fuel_consumption?.city && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">City</span>
+                              <span className="font-medium">{car.fuel_consumption.city} L/100km</span>
+                            </div>
+                          )}
+                          {car.fuel_consumption?.highway && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Highway</span>
+                              <span className="font-medium">{car.fuel_consumption.highway} L/100km</span>
+                            </div>
+                          )}
+                          {car.fuel_consumption?.combined && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Combined</span>
+                              <span className="font-medium">{car.fuel_consumption.combined} L/100km</span>
+                            </div>
+                          )}
+                          {car.emissions?.co2 && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">CO₂ Emissions</span>
+                              <span className="font-medium">{car.emissions.co2} g/km</span>
+                            </div>
+                          )}
+                          {car.emissions?.euro_standard && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Euro Standard</span>
+                              <Badge variant="outline">{car.emissions.euro_standard}</Badge>
+                            </div>
+                          )}
+                          {car.safety_rating?.overall && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Safety Rating</span>
+                              <div className="flex">
+                                {Array.from({ length: 5 }, (_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`h-4 w-4 ${
+                                      i < car.safety_rating!.overall! ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
                     </div>
