@@ -5,6 +5,17 @@ const HomeSection = () => {
     <section id="home" className="min-h-screen flex items-center justify-center bg-background py-20">
       <div className="container mx-auto px-4 text-center">
         <div className="max-w-4xl mx-auto">
+          {/* Logo on Homepage */}
+          <div className="mb-8">
+            <div className="w-24 h-24 mx-auto bg-primary rounded-2xl flex items-center justify-center overflow-hidden mb-4">
+              <img 
+                src="/lovable-uploads/3094fd63-7a92-4497-8103-e166b6b09f70.png" 
+                alt="KORAUTO Logo" 
+                className="w-full h-full object-contain"
+              />
+            </div>
+          </div>
+          
           <h1 className="text-5xl md:text-7xl font-bold mb-6 text-foreground">
             Mirë se vini në KORAUTO
           </h1>

@@ -30,8 +30,8 @@ const Header = () => {
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center overflow-hidden">
+          <div className="flex items-center space-x-4">
+            <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center overflow-hidden">
               <img 
                 src="/lovable-uploads/3094fd63-7a92-4497-8103-e166b6b09f70.png" 
                 alt="KORAUTO Logo" 
@@ -39,8 +39,8 @@ const Header = () => {
               />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-primary">KORAUTO</h1>
-              <p className="text-xs text-muted-foreground">Ekspertë të Inspektimit të Makinave</p>
+              <h1 className="text-2xl font-bold text-primary">KORAUTO</h1>
+              <p className="text-sm text-muted-foreground">Ekspertë të Inspektimit të Makinave</p>
             </div>
           </div>
           
