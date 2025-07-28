@@ -97,121 +97,48 @@ const HomeCarsSection = () => {
   };
 
   const fetchCars = async (apiFilters?: ApiFilters) => {
-    setLoading(true);
-    setError(null);
+    const params = new URLSearchParams({
+      per_page: '12',
+      page: '1',
+      simple_paginate: '0'
+    });
 
-    try {
-      await delay(500);
-
-      const params = new URLSearchParams({
-        per_page: '12',
-        page: '1',
-        simple_paginate: '0'
-      });
-
-      // Add API filters
-      if (apiFilters?.manufacturer_id) {
-        params.append('manufacturer_id', apiFilters.manufacturer_id);
-      }
-      if (apiFilters?.model_id) {
-        params.append('model_id', apiFilters.model_id);
-      }
-      if (apiFilters?.color) {
-        params.append('color', apiFilters.color);
-      }
-      if (apiFilters?.odometer_from_km) {
-        params.append('odometer_from_km', apiFilters.odometer_from_km);
-      }
-      if (apiFilters?.odometer_to_km) {
-        params.append('odometer_to_km', apiFilters.odometer_to_km);
-      }
-      if (apiFilters?.from_year) {
-        params.append('from_year', apiFilters.from_year);
-      }
-      if (apiFilters?.to_year) {
-        params.append('to_year', apiFilters.to_year);
-      }
-      if (apiFilters?.buy_now_price_from) {
-        params.append('buy_now_price_from', apiFilters.buy_now_price_from);
-      }
-      if (apiFilters?.buy_now_price_to) {
-        params.append('buy_now_price_to', apiFilters.buy_now_price_to);
-      }
-      if (apiFilters?.transmission) {
-        params.append('transmission', apiFilters.transmission);
-      }
-      if (apiFilters?.fuel_type) {
-        params.append('fuel_type', apiFilters.fuel_type);
-      }
-
-      console.log('Fetching cars from API...');
-      const data = await tryApiEndpoint('/cars', params);
-
-      if (!data) {
-        throw new Error('No data received from API');
-      }
-      
-      const carsArray = Array.isArray(data.data) ? data.data : [];
-      console.log(`Raw API data:`, carsArray);
-      
-      const transformedCars: Car[] = carsArray.map((car: any, index: number) => {
-        const lot = car.lots?.[0];
-        const basePrice = lot?.buy_now || lot?.final_bid || 25000 + (index * 1000);
-        const price = Math.round(basePrice + 2300);
-        
-        const images = lot?.images?.normal;
-        const image = Array.isArray(images) && images.length > 0 ? images[0] : undefined;
-        
-        const odometer = lot?.odometer;
-        const mileage = odometer?.km ? `${odometer.km.toLocaleString()} km` : undefined;
-        
-        return {
-          id: car.id?.toString() || `car-${index}`,
-          make: car.manufacturer?.name || 'Unknown',
-          model: car.model?.name || 'Unknown',
-          year: car.year || 2020,
-          price: price,
-          image: image,
-          vin: car.vin,
-          mileage: mileage,
-          transmission: car.transmission?.name,
-          fuel: car.fuel?.name,
-          color: car.color?.name,
-          lot: lot?.lot,
-          title: car.title
-        };
-      });
-
-      console.log(`Transformed cars:`, transformedCars);
-
-      if (transformedCars.length === 0) {
-        throw new Error('No cars returned from API');
-      }
-
-      setCars(transformedCars);
-      setLastUpdate(new Date());
-      console.log(`Successfully loaded ${transformedCars.length} cars from API`);
-      
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch cars';
-      setError(errorMessage);
-      console.error('API Error:', err);
-      
-      // Use fallback data on error
-      const fallbackCars: Car[] = [
-        { id: '1', make: 'BMW', model: 'M3', year: 2022, price: 67300, mileage: '25,000 km', transmission: 'automatic', fuel: 'benzinë' },
-        { id: '2', make: 'Mercedes-Benz', model: 'C-Class', year: 2021, price: 47300, mileage: '30,000 km', transmission: 'automatic', fuel: 'benzinë' },
-        { id: '3', make: 'Audi', model: 'A4', year: 2023, price: 44300, mileage: '15,000 km', transmission: 'automatic', fuel: 'benzinë' },
-        { id: '4', make: 'Volkswagen', model: 'Golf', year: 2022, price: 30300, mileage: '20,000 km', transmission: 'manual', fuel: 'benzinë' },
-        { id: '5', make: 'Porsche', model: 'Cayenne', year: 2021, price: 87300, mileage: '35,000 km', transmission: 'automatic', fuel: 'benzinë' },
-        { id: '6', make: 'Tesla', model: 'Model S', year: 2023, price: 97300, mileage: '10,000 km', transmission: 'automatic', fuel: 'elektrike' }
-      ];
-      setCars(fallbackCars);
-      setLastUpdate(new Date());
-      console.log('Using fallback car data');
-    } finally {
-      setLoading(false);
+    // Add API filters
+    if (apiFilters?.manufacturer_id) {
+      params.append('manufacturer_id', apiFilters.manufacturer_id);
     }
+    if (apiFilters?.model_id) {
+      params.append('model_id', apiFilters.model_id);
+    }
+    if (apiFilters?.color) {
+      params.append('color', apiFilters.color);
+    }
+    if (apiFilters?.odometer_from_km) {
+      params.append('odometer_from_km', apiFilters.odometer_from_km);
+    }
+    if (apiFilters?.odometer_to_km) {
+      params.append('odometer_to_km', apiFilters.odometer_to_km);
+    }
+    if (apiFilters?.from_year) {
+      params.append('from_year', apiFilters.from_year);
+    }
+    if (apiFilters?.to_year) {
+      params.append('to_year', apiFilters.to_year);
+    }
+    if (apiFilters?.buy_now_price_from) {
+      params.append('buy_now_price_from', apiFilters.buy_now_price_from);
+    }
+    if (apiFilters?.buy_now_price_to) {
+      params.append('buy_now_price_to', apiFilters.buy_now_price_to);
+    }
+    if (apiFilters?.transmission) {
+      params.append('transmission', apiFilters.transmission);
+    }
+    if (apiFilters?.fuel_type) {
+      params.append('fuel_type', apiFilters.fuel_type);
+    }
+
+    await fetchCarsWithParams(params);
   };
 
   const fetchManufacturers = async () => {
@@ -306,14 +233,105 @@ const HomeCarsSection = () => {
     }
   };
 
-  // Initial fetch
+  // Initial fetch with random offset for homepage
   useEffect(() => {
+    // Generate random page number to get different cars each time
+    const randomPage = Math.floor(Math.random() * 5) + 1;
+    const params = new URLSearchParams({
+      per_page: '12',
+      page: randomPage.toString(),
+      simple_paginate: '0'
+    });
+    
     Promise.all([
-      fetchCars(),
+      fetchCarsWithParams(params),
       fetchManufacturers(),
       fetchKoreaOptions()
     ]);
   }, []);
+
+  const fetchCarsWithParams = async (customParams?: URLSearchParams) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      await delay(500);
+
+      const params = customParams || new URLSearchParams({
+        per_page: '12',
+        page: '1',
+        simple_paginate: '0'
+      });
+
+      console.log('Fetching cars from API...');
+      const data = await tryApiEndpoint('/cars', params);
+
+      if (!data) {
+        throw new Error('No data received from API');
+      }
+      
+      const carsArray = Array.isArray(data.data) ? data.data : [];
+      console.log(`Raw API data:`, carsArray);
+      
+      const transformedCars: Car[] = carsArray.map((car: any, index: number) => {
+        const lot = car.lots?.[0];
+        const basePrice = lot?.buy_now || lot?.final_bid || 25000 + (index * 1000);
+        const price = Math.round(basePrice + 2300);
+        
+        const images = lot?.images?.normal;
+        const image = Array.isArray(images) && images.length > 0 ? images[0] : undefined;
+        
+        const odometer = lot?.odometer;
+        const mileage = odometer?.km ? `${odometer.km.toLocaleString()} km` : undefined;
+        
+        return {
+          id: car.id?.toString() || `car-${index}`,
+          make: car.manufacturer?.name || 'Unknown',
+          model: car.model?.name || 'Unknown',
+          year: car.year || 2020,
+          price: price,
+          image: image,
+          vin: car.vin,
+          mileage: mileage,
+          transmission: car.transmission?.name,
+          fuel: car.fuel?.name,
+          color: car.color?.name,
+          lot: lot?.lot,
+          title: car.title
+        };
+      });
+
+      console.log(`Transformed cars:`, transformedCars);
+
+      if (transformedCars.length === 0) {
+        throw new Error('No cars returned from API');
+      }
+
+      setCars(transformedCars);
+      setLastUpdate(new Date());
+      console.log(`Successfully loaded ${transformedCars.length} cars from API`);
+      
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch cars';
+      setError(errorMessage);
+      console.error('API Error:', err);
+      
+      // Use fallback data on error
+      const fallbackCars: Car[] = [
+        { id: '1', make: 'BMW', model: 'M3', year: 2022, price: 67300, mileage: '25,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '2', make: 'Mercedes-Benz', model: 'C-Class', year: 2021, price: 47300, mileage: '30,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '3', make: 'Audi', model: 'A4', year: 2023, price: 44300, mileage: '15,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '4', make: 'Volkswagen', model: 'Golf', year: 2022, price: 30300, mileage: '20,000 km', transmission: 'manual', fuel: 'benzinë' },
+        { id: '5', make: 'Porsche', model: 'Cayenne', year: 2021, price: 87300, mileage: '35,000 km', transmission: 'automatic', fuel: 'benzinë' },
+        { id: '6', make: 'Tesla', model: 'Model S', year: 2023, price: 97300, mileage: '10,000 km', transmission: 'automatic', fuel: 'elektrike' }
+      ];
+      setCars(fallbackCars);
+      setLastUpdate(new Date());
+      console.log('Using fallback car data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Fetch models and statistics when manufacturer changes
   useEffect(() => {
@@ -373,20 +391,6 @@ const HomeCarsSection = () => {
               {loading ? 'Duke u ngarkuar...' : 'Rifresko'}
             </Button>
             
-            <Button
-              variant={showDuplicates ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => {
-                setShowDuplicates(!showDuplicates);
-                if (!showDuplicates && duplicates.length === 0) {
-                  fetchDuplicates();
-                }
-              }}
-              className="w-full sm:w-auto min-h-[44px]"
-            >
-              <AlertCircle className="h-4 w-4 mr-2" />
-              Duplikatet
-            </Button>
             
             {lastUpdate && (
               <span className="text-sm text-muted-foreground text-center">
