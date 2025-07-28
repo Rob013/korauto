@@ -575,7 +575,7 @@ const FilteredCarsSection = () => {
                   size="lg"
                   className="w-full sm:w-auto bg-primary hover:bg-primary/90 min-h-[48px] text-base"
                 >
-                  Shfaq Më Shumë Makina ({filteredCars.length - 6} të tjera)
+                  Shfaq Më Shumë Makina të tjera)
                 </Button>
               </div>
             )}
