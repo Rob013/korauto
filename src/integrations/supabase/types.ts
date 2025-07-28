@@ -309,6 +309,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_sample_cars: {
+        Args: { car_count?: number }
+        Returns: number
+      }
       has_role: {
         Args: {
           _user_id: string

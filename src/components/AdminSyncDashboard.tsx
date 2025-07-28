@@ -14,13 +14,17 @@ import {
   Database,
   TrendingUp,
   RefreshCw,
-  Zap
+  Zap,
+  AlertTriangle,
+  StopCircle,
+  Shield
 } from 'lucide-react';
 
 export function AdminSyncDashboard() {
   const { syncStatus, totalCount, triggerSync, getSyncStatus } = useEncarAPI();
   const { toast } = useToast();
   const [testInProgress, setTestInProgress] = useState(false);
+  const [emergencyInProgress, setEmergencyInProgress] = useState(false);
 
   const handleFullSync = async () => {
     try {
@@ -82,6 +86,68 @@ export function AdminSyncDashboard() {
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to seed sample data",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEmergencyMassData = async () => {
+    setEmergencyInProgress(true);
+    try {
+      const response = await fetch(`https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/encar-sync?emergency=true&count=50000`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: "🚨 Emergency Data Generated",
+          description: `Successfully generated ${result.cars_added} sample cars`,
+        });
+        // Refresh data
+        getSyncStatus();
+      } else {
+        throw new Error(result.message || 'Failed to generate emergency data');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate emergency sample data",
+        variant: "destructive",
+      });
+    } finally {
+      setEmergencyInProgress(false);
+    }
+  };
+
+  const handleForceStopSync = async () => {
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { error } = await supabase
+        .from('sync_status')
+        .update({
+          status: 'failed',
+          completed_at: new Date().toISOString(),
+          error_message: 'Manually stopped by admin'
+        })
+        .eq('status', 'running');
+      
+      if (error) throw error;
+      
+      toast({
+        title: "🛑 Sync Stopped",
+        description: "All running syncs have been stopped",
+      });
+      
+      getSyncStatus();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to stop running syncs",
         variant: "destructive",
       });
     }
@@ -216,19 +282,43 @@ export function AdminSyncDashboard() {
           </div>
           
           <div className="pt-4 border-t">
-            <h4 className="text-sm font-medium mb-2">Emergency Options</h4>
+            <h4 className="text-sm font-medium mb-2 flex items-center">
+              <Shield className="h-4 w-4 mr-2 text-orange-500" />
+              🚨 Emergency Controls
+            </h4>
             <p className="text-xs text-muted-foreground mb-3">
-              If API sync fails, you can populate the database with sample car data to test the application.
+              Emergency tools for when APIs fail or syncs get stuck. Use these if normal sync isn't working.
             </p>
-            <Button 
-              variant="secondary"
-              onClick={handleSeedData}
-              disabled={syncStatus?.status === 'running'}
-              className="w-full sm:w-auto"
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Add Sample Data
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button 
+                variant="secondary"
+                onClick={handleSeedData}
+                disabled={syncStatus?.status === 'running' || emergencyInProgress}
+                className="flex-1"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Add 5 Sample Cars
+              </Button>
+              
+              <Button 
+                onClick={handleEmergencyMassData}
+                disabled={syncStatus?.status === 'running' || emergencyInProgress}
+                className="flex-1 bg-orange-600 hover:bg-orange-700"
+              >
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                {emergencyInProgress ? 'Generating...' : 'Generate 50K Cars'}
+              </Button>
+              
+              <Button 
+                onClick={handleForceStopSync}
+                disabled={emergencyInProgress}
+                className="flex-1 bg-red-600 hover:bg-red-700"
+                variant="destructive"
+              >
+                <StopCircle className="h-4 w-4 mr-2" />
+                Force Stop Syncs
+              </Button>
+            </div>
           </div>
 
           {syncStatus?.error_message && (
