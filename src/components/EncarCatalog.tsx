@@ -3,15 +3,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Grid, List, RefreshCw, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { Loader2, Search, Grid, List, RefreshCw, Clock, CheckCircle, AlertCircle, Filter } from 'lucide-react';
 
 interface Car {
   id: string;
-  make: { id: number; name: string };
+  manufacturer: { id: number; name: string };
   model: { id: number; name: string };
   year: number;
-  price: string;
+  price?: string;
   mileage?: string;
   title?: string;
   fuel?: { id: number; name: string };
@@ -19,17 +20,29 @@ interface Car {
   condition?: string;
   lot_number?: string;
   image_url?: string;
-  images?: string;
+  color?: { id: number; name: string };
   lots?: {
     buy_now?: number;
     odometer?: {
       km?: number;
+      mi?: number;
+    };
+    images?: {
+      normal?: string[];
+      big?: string[];
     };
   }[];
 }
 
 interface CarFilters {
   search?: string;
+  manufacturer?: string;
+  fuel?: string;
+  transmission?: string;
+  yearFrom?: string;
+  yearTo?: string;
+  priceFrom?: string;
+  priceTo?: string;
 }
 
   const API_BASE_URL = 'https://auctionsapi.com/api';
@@ -41,11 +54,13 @@ const EncarCatalog = () => {
   const [filters, setFilters] = useState<CarFilters>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [cars, setCars] = useState<Car[]>([]);
+  const [filteredCars, setFilteredCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [showFilters, setShowFilters] = useState(false);
 
   const fetchCars = async (page: number, perPage: number, filters?: CarFilters) => {
     setError(null);
@@ -108,7 +123,7 @@ const EncarCatalog = () => {
     setLoadingMore(false);
   };
 
-const formatPrice = (price: string) =>
+const formatPrice = (price: string | number) =>
   price
     ? new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -117,7 +132,7 @@ const formatPrice = (price: string) =>
       }).format(Number(price))
     : 'N/A';
 
-const formatMileage = (mileage?: string) =>
+const formatMileage = (mileage?: string | number) =>
   mileage && !isNaN(Number(mileage))
     ? `${new Intl.NumberFormat('en-US').format(Number(mileage))} km`
     : 'N/A';
@@ -127,6 +142,29 @@ const formatMileage = (mileage?: string) =>
     setLoading(true);
     fetchCars(1, 100, filters).finally(() => setLoading(false));
   }, []);
+
+  // Apply client-side filters
+  useEffect(() => {
+    let filtered = cars;
+
+    if (filters.manufacturer) {
+      filtered = filtered.filter(car => car.manufacturer?.name === filters.manufacturer);
+    }
+    if (filters.fuel) {
+      filtered = filtered.filter(car => car.fuel?.name === filters.fuel);
+    }
+    if (filters.transmission) {
+      filtered = filtered.filter(car => car.transmission?.name === filters.transmission);
+    }
+    if (filters.yearFrom) {
+      filtered = filtered.filter(car => car.year >= parseInt(filters.yearFrom!));
+    }
+    if (filters.yearTo) {
+      filtered = filtered.filter(car => car.year <= parseInt(filters.yearTo!));
+    }
+
+    setFilteredCars(filtered);
+  }, [cars, filters]);
 
   const getStatusIcon = () => {
     return <></>
@@ -198,6 +236,13 @@ const formatMileage = (mileage?: string) =>
         
         <div className="flex gap-2">
           <Button
+            variant={showFilters ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter className="h-4 w-4" />
+          </Button>
+          <Button
             variant={viewMode === 'grid' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setViewMode('grid')}
@@ -214,6 +259,85 @@ const formatMileage = (mileage?: string) =>
         </div>
       </div>
 
+      {/* Filters Panel */}
+      {showFilters && (
+        <div className="bg-background border rounded-lg p-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Manufacturer</label>
+              <Select value={filters.manufacturer || ''} onValueChange={(value) => setFilters({...filters, manufacturer: value || undefined})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All manufacturers" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All manufacturers</SelectItem>
+                  {Array.from(new Set(cars.map(car => car.manufacturer?.name).filter(Boolean))).map(manufacturer => (
+                    <SelectItem key={manufacturer} value={manufacturer!}>{manufacturer}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Fuel Type</label>
+              <Select value={filters.fuel || ''} onValueChange={(value) => setFilters({...filters, fuel: value || undefined})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All fuel types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All fuel types</SelectItem>
+                  {Array.from(new Set(cars.map(car => car.fuel?.name).filter(Boolean))).map(fuel => (
+                    <SelectItem key={fuel} value={fuel!}>{fuel}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Transmission</label>
+              <Select value={filters.transmission || ''} onValueChange={(value) => setFilters({...filters, transmission: value || undefined})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All transmissions" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All transmissions</SelectItem>
+                  {Array.from(new Set(cars.map(car => car.transmission?.name).filter(Boolean))).map(transmission => (
+                    <SelectItem key={transmission} value={transmission!}>{transmission}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Year Range</label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="From"
+                  type="number"
+                  value={filters.yearFrom || ''}
+                  onChange={(e) => setFilters({...filters, yearFrom: e.target.value || undefined})}
+                />
+                <Input
+                  placeholder="To"
+                  type="number"
+                  value={filters.yearTo || ''}
+                  onChange={(e) => setFilters({...filters, yearTo: e.target.value || undefined})}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setFilters({})}
+            >
+              Clear Filters
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Error State */}
       {error && (
         <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-8">
@@ -229,20 +353,34 @@ const formatMileage = (mileage?: string) =>
         </div>
       )}
 
+      {/* No Results State */}
+      {!loading && cars.length > 0 && filteredCars.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">No cars match your current filters.</p>
+          <Button
+            variant="outline"
+            onClick={() => setFilters({})}
+            className="mt-4"
+          >
+            Clear Filters
+          </Button>
+        </div>
+      )}
+
       {/* Cars Grid/List */}
-      {cars.length > 0 && (
+      {filteredCars.length > 0 && (
         <>
           <div className={viewMode === 'grid' 
             ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
             : "space-y-4"
           }>
-             {cars.map((car) => (
+             {filteredCars.map((car) => (
               <Card key={car.id} className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col justify-between">
                 <CardHeader className="p-0">
                   <div className="aspect-video relative overflow-hidden">
                     <img
                       src={car.lots?.[0]?.images?.normal?.[0] || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800'}
-                      alt={car.title || `${car.make} ${car.model}`}
+                      alt={car.title || `${car.manufacturer?.name} ${car.model?.name}`}
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
@@ -258,9 +396,9 @@ const formatMileage = (mileage?: string) =>
                 </CardHeader>
                 
                 <CardContent className="p-4">
-                  <h3 className="font-semibold text-lg mb-2 line-clamp-2">
-                   {car.title || `${car.make?.name} ${car.model?.name} ${car.year}`}
-                  </h3>
+                   <h3 className="font-semibold text-lg mb-2 line-clamp-2">
+                    {car.title || `${car.manufacturer?.name} ${car.model?.name} ${car.year}`}
+                   </h3>
                   
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <div className="flex justify-between">
