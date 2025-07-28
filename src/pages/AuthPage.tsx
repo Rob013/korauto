@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { UserPlus, LogIn, ArrowLeft } from "lucide-react";
+import { UserPlus, LogIn, ArrowLeft, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const AuthPage = () => {
@@ -116,17 +116,33 @@ const AuthPage = () => {
   };
 
   if (user) {
+    const isAdmin = user.email === '0013rob@gmail.com';
+    
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle>Welcome, {user.email}!</CardTitle>
             <p className="text-muted-foreground">You are logged in</p>
+            {isAdmin && (
+              <p className="text-primary font-semibold">Admin Access Granted</p>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
+            {isAdmin && (
+              <Button 
+                onClick={() => navigate('/admin')}
+                className="w-full"
+                variant="default"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Go to Admin Dashboard
+              </Button>
+            )}
             <Button 
               onClick={() => navigate('/')}
               className="w-full"
+              variant={isAdmin ? "outline" : "default"}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Return to Homepage
