@@ -3,7 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Filter, X } from "lucide-react";
+import { Filter, X, Loader2 } from "lucide-react";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS } from '@/hooks/useAuctionAPI';
 
 interface Manufacturer {
@@ -59,6 +59,7 @@ interface FilterFormProps {
   onModelChange?: (modelId: string) => void;
   showAdvanced?: boolean;
   onToggleAdvanced?: () => void;
+  loadingCounts?: boolean;
 }
 
 const FilterForm: React.FC<FilterFormProps> = ({
@@ -67,6 +68,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
   models = [],
   generations = [],
   filterCounts,
+  loadingCounts = false,
   onFiltersChange,
   onClearFilters,
   onManufacturerChange,
@@ -111,6 +113,12 @@ const FilterForm: React.FC<FilterFormProps> = ({
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4" />
           <h3 className="text-lg font-semibold">Filters</h3>
+          {loadingCounts && (
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span>Loading counts...</span>
+            </div>
+          )}
         </div>
         <Button variant="outline" size="sm" onClick={onClearFilters}>
           <X className="h-4 w-4 mr-1" />

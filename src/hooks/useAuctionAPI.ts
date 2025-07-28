@@ -261,113 +261,175 @@ export const useAuctionAPI = () => {
       // Helper function to get count for specific filter combination
       const getCountForFilter = async (additionalFilters: APIFilters) => {
         const combinedFilters = { ...currentFilters, ...additionalFilters };
-        const result = await fetchCarCounts(combinedFilters);
-        return result.total;
+        
+        // Remove undefined values
+        const cleanFilters = Object.fromEntries(
+          Object.entries(combinedFilters).filter(([_, value]) => value !== undefined && value !== '')
+        );
+        
+        const params = new URLSearchParams({
+          per_page: '1',
+          simple_paginate: '1'
+        });
+
+        Object.entries(cleanFilters).forEach(([key, value]) => {
+          if (value) {
+            params.append(key, value);
+          }
+        });
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/cars?${params}`, {
+            headers: {
+              'Accept': 'application/json',
+              'User-Agent': 'KORAUTO-WebApp/1.0',
+              'X-API-Key': API_KEY
+            }
+          });
+
+          if (!response.ok) {
+            console.error(`API error for filters ${JSON.stringify(cleanFilters)}: ${response.status}`);
+            return 0;
+          }
+
+          const data = await response.json();
+          const total = data.meta?.total || 0;
+          console.log(`Count for filters ${JSON.stringify(cleanFilters)}: ${total}`);
+          return total;
+        } catch (err) {
+          console.error('Error fetching count:', err);
+          return 0;
+        }
       };
 
-      // Get counts for manufacturers (excluding current manufacturer filter)
+      console.log('Fetching manufacturer counts...');
+      // Get counts for manufacturers (excluding current manufacturer/model/generation filters)
       const manufacturerFilters = { ...currentFilters };
       delete manufacturerFilters.manufacturer_id;
       delete manufacturerFilters.model_id;
       delete manufacturerFilters.generation_id;
 
-      const manufacturerPromises = manufacturersList.map(async (manufacturer) => {
-        const count = await getCountForFilter({ ...manufacturerFilters, manufacturer_id: manufacturer.id.toString() });
-        counts.manufacturers[manufacturer.id.toString()] = count;
-      });
+      // Process manufacturers in batches to avoid rate limiting
+      const batchSize = 5;
+      for (let i = 0; i < manufacturersList.length; i += batchSize) {
+        const batch = manufacturersList.slice(i, i + batchSize);
+        
+        const promises = batch.map(async (manufacturer) => {
+          const count = await getCountForFilter({ 
+            ...manufacturerFilters, 
+            manufacturer_id: manufacturer.id.toString() 
+          });
+          counts.manufacturers[manufacturer.id.toString()] = count;
+          return count;
+        });
 
-      // Get counts for colors (excluding current color filter)
-      const colorFilters = { ...currentFilters };
-      delete colorFilters.color;
+        await Promise.all(promises);
+        
+        // Rate limiting delay between batches
+        if (i + batchSize < manufacturersList.length) {
+          await delay(2000);
+        }
+      }
 
-      const colorPromises = Object.entries(COLOR_OPTIONS).map(async ([name, id]) => {
-        const count = await getCountForFilter({ ...colorFilters, color: id.toString() });
-        counts.colors[id.toString()] = count;
-      });
-
-      // Get counts for fuel types
-      const fuelFilters = { ...currentFilters };
-      delete fuelFilters.fuel_type;
-
-      const fuelPromises = Object.entries(FUEL_TYPE_OPTIONS).map(async ([name, id]) => {
-        const count = await getCountForFilter({ ...fuelFilters, fuel_type: id.toString() });
-        counts.fuelTypes[id.toString()] = count;
-      });
-
-      // Get counts for transmissions
-      const transmissionFilters = { ...currentFilters };
-      delete transmissionFilters.transmission;
-
-      const transmissionPromises = Object.entries(TRANSMISSION_OPTIONS).map(async ([name, id]) => {
-        const count = await getCountForFilter({ ...transmissionFilters, transmission: id.toString() });
-        counts.transmissions[id.toString()] = count;
-      });
+      console.log('Manufacturer counts:', counts.manufacturers);
 
       // Get counts for models (if manufacturer is selected)
       if (currentFilters.manufacturer_id) {
+        console.log('Fetching model counts for manufacturer:', currentFilters.manufacturer_id);
+        
         const modelFilters = { ...currentFilters };
         delete modelFilters.model_id;
         delete modelFilters.generation_id;
 
         // First fetch models for the manufacturer
-        const response = await fetch(`${API_BASE_URL}/models/${currentFilters.manufacturer_id}/cars`, {
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'KORAUTO-WebApp/1.0',
-            'X-API-Key': API_KEY
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          const models = data.data || [];
-          
-          const modelPromises = models.map(async (model: any) => {
-            const count = await getCountForFilter({ ...modelFilters, model_id: model.id.toString() });
-            counts.models[model.id.toString()] = count;
+        try {
+          const response = await fetch(`${API_BASE_URL}/models/${currentFilters.manufacturer_id}/cars`, {
+            headers: {
+              'Accept': 'application/json',
+              'User-Agent': 'KORAUTO-WebApp/1.0',
+              'X-API-Key': API_KEY
+            }
           });
           
-          await Promise.all(modelPromises);
-          await delay(500);
+          if (response.ok) {
+            const data = await response.json();
+            const models = data.data || [];
+            console.log(`Found ${models.length} models for manufacturer ${currentFilters.manufacturer_id}`);
+            
+            // Process models in batches
+            for (let i = 0; i < models.length; i += batchSize) {
+              const batch = models.slice(i, i + batchSize);
+              
+              const promises = batch.map(async (model: any) => {
+                const count = await getCountForFilter({ 
+                  ...modelFilters, 
+                  model_id: model.id.toString() 
+                });
+                counts.models[model.id.toString()] = count;
+                return count;
+              });
+              
+              await Promise.all(promises);
+              
+              if (i + batchSize < models.length) {
+                await delay(1000);
+              }
+            }
+            
+            console.log('Model counts:', counts.models);
+          }
+        } catch (err) {
+          console.error('Error fetching models:', err);
         }
       }
 
       // Get counts for generations (if model is selected)
       if (currentFilters.model_id) {
+        console.log('Fetching generation counts for model:', currentFilters.model_id);
+        
         const generationFilters = { ...currentFilters };
         delete generationFilters.generation_id;
 
-        // First fetch generations for the model
-        const response = await fetch(`${API_BASE_URL}/generations/${currentFilters.model_id}/cars`, {
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'KORAUTO-WebApp/1.0',
-            'X-API-Key': API_KEY
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          const generations = data.data || [];
-          
-          const generationPromises = generations.map(async (generation: any) => {
-            const count = await getCountForFilter({ ...generationFilters, generation_id: generation.id.toString() });
-            counts.generations[generation.id.toString()] = count;
+        try {
+          const response = await fetch(`${API_BASE_URL}/generations/${currentFilters.model_id}/cars`, {
+            headers: {
+              'Accept': 'application/json',
+              'User-Agent': 'KORAUTO-WebApp/1.0',
+              'X-API-Key': API_KEY
+            }
           });
           
-          await Promise.all(generationPromises);
-          await delay(500);
+          if (response.ok) {
+            const data = await response.json();
+            const generations = data.data || [];
+            console.log(`Found ${generations.length} generations for model ${currentFilters.model_id}`);
+            
+            // Process generations in batches
+            for (let i = 0; i < generations.length; i += batchSize) {
+              const batch = generations.slice(i, i + batchSize);
+              
+              const promises = batch.map(async (generation: any) => {
+                const count = await getCountForFilter({ 
+                  ...generationFilters, 
+                  generation_id: generation.id.toString() 
+                });
+                counts.generations[generation.id.toString()] = count;
+                return count;
+              });
+              
+              await Promise.all(promises);
+              
+              if (i + batchSize < generations.length) {
+                await delay(1000);
+              }
+            }
+            
+            console.log('Generation counts:', counts.generations);
+          }
+        } catch (err) {
+          console.error('Error fetching generations:', err);
         }
       }
-
-      // Wait for all promises with rate limiting
-      await Promise.all(manufacturerPromises);
-      await delay(1000); // Rate limiting
-      await Promise.all(colorPromises);
-      await delay(1000);
-      await Promise.all(fuelPromises);
-      await delay(1000);
-      await Promise.all(transmissionPromises);
 
       return counts;
     } catch (err) {

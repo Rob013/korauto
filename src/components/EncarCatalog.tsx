@@ -34,6 +34,7 @@ const EncarCatalog = () => {
   const [models, setModels] = useState<{id: number, name: string, car_count?: number}[]>([]);
   const [generations, setGenerations] = useState<{id: number, name: string, car_count?: number}[]>([]);
   const [filterCounts, setFilterCounts] = useState<any>(null);
+  const [loadingCounts, setLoadingCounts] = useState(false);
 
   const handleFiltersChange = (newFilters: APIFilters) => {
     setFilters(newFilters);
@@ -68,11 +69,6 @@ const EncarCatalog = () => {
       setModels([]);
     }
     setGenerations([]);
-    
-    // Fetch updated filter counts for the new manufacturer context
-    const newFilters = manufacturerId ? { ...filters, manufacturer_id: manufacturerId } : { ...filters };
-    const counts = await fetchFilterCounts(newFilters, manufacturers);
-    setFilterCounts(counts);
   };
 
   const handleModelChange = async (modelId: string) => {
@@ -82,11 +78,6 @@ const EncarCatalog = () => {
     } else {
       setGenerations([]);
     }
-    
-    // Fetch updated filter counts for the new model context
-    const newFilters = modelId ? { ...filters, model_id: modelId } : { ...filters };
-    const counts = await fetchFilterCounts(newFilters, manufacturers);
-    setFilterCounts(counts);
   };
 
   // Load manufacturers on mount
@@ -107,20 +98,34 @@ const EncarCatalog = () => {
         fetchCars(1, filters, true);
       }
       
-      // Fetch filter counts
-      const counts = await fetchFilterCounts(filters, manufacturers);
-      setFilterCounts(counts);
+      // Only fetch filter counts if manufacturers are loaded
+      if (manufacturers.length > 0) {
+        setLoadingCounts(true);
+        try {
+          const counts = await fetchFilterCounts(filters, manufacturers);
+          setFilterCounts(counts);
+        } finally {
+          setLoadingCounts(false);
+        }
+      }
     };
     
     loadData();
   }, [filters, manufacturers]);
 
-  // Load filter counts on mount
+  // Load filter counts on mount and when manufacturers change
   useEffect(() => {
     const loadInitialCounts = async () => {
       if (manufacturers.length > 0) {
-        const counts = await fetchFilterCounts({}, manufacturers);
-        setFilterCounts(counts);
+        setLoadingCounts(true);
+        try {
+          console.log('Loading initial filter counts for', manufacturers.length, 'manufacturers');
+          const counts = await fetchFilterCounts({}, manufacturers);
+          setFilterCounts(counts);
+          console.log('Initial filter counts loaded:', counts);
+        } finally {
+          setLoadingCounts(false);
+        }
       }
     };
     
@@ -192,6 +197,7 @@ const EncarCatalog = () => {
           models={models}
           generations={generations}
           filterCounts={filterCounts}
+          loadingCounts={loadingCounts}
           onFiltersChange={handleFiltersChange}
           onClearFilters={handleClearFilters}
           onManufacturerChange={handleManufacturerChange}
