@@ -289,7 +289,7 @@ const formatMileage = (mileage?: string) =>
                 <CardFooter className="p-4 pt-0">
                   <div className="w-full flex items-center justify-between">
                     <div className="text-2xl font-bold text-primary">
-                      <span>{car.lots?.[0]?.buy_now ?? "N/A"}</span>
+                      <span>{formatPrice(car.lots?.[0]?.buy_now) ?? "N/A"}</span>
                     </div>
                     <Badge variant="outline">
                       {car.lot_number || 'Encar'}
