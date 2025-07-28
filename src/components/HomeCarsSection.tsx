@@ -51,6 +51,7 @@ const HomeCarsSection = () => {
   const [statistics, setStatistics] = useState<any>(null);
   const [duplicates, setDuplicates] = useState<any[]>([]);
   const [showDuplicates, setShowDuplicates] = useState(false);
+  const [koreaOptions, setKoreaOptions] = useState<any>(null);
   
   // API configuration
   const API_BASE_URL = 'https://auctionsapi.com/api';
@@ -290,11 +291,27 @@ const HomeCarsSection = () => {
     }
   };
 
+  const fetchKoreaOptions = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/korea-options`, {
+        headers: {
+          'Accept': '*/*',
+          'X-API-Key': API_KEY
+        }
+      });
+      const data = await response.json();
+      setKoreaOptions(data);
+    } catch (err) {
+      console.error('Failed to fetch Korea options:', err);
+    }
+  };
+
   // Initial fetch
   useEffect(() => {
     Promise.all([
       fetchCars(),
-      fetchManufacturers()
+      fetchManufacturers(),
+      fetchKoreaOptions()
     ]);
   }, []);
 
@@ -468,8 +485,14 @@ const HomeCarsSection = () => {
                   <SelectValue placeholder="Të gjithë" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">Automatik</SelectItem>
-                  <SelectItem value="2">Manual</SelectItem>
+                  {koreaOptions?.transmissions ? koreaOptions.transmissions.map((transmission: any) => (
+                    <SelectItem key={transmission.id} value={transmission.id.toString()}>{transmission.name}</SelectItem>
+                  )) : (
+                    <>
+                      <SelectItem value="1">Automatik</SelectItem>
+                      <SelectItem value="2">Manual</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -485,10 +508,16 @@ const HomeCarsSection = () => {
                     <SelectValue placeholder="Të gjithë" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="4">Benzinë</SelectItem>
-                    <SelectItem value="5">Diesel</SelectItem>
-                    <SelectItem value="6">Hibrid</SelectItem>
-                    <SelectItem value="7">Elektrik</SelectItem>
+                    {koreaOptions?.fuel_types ? koreaOptions.fuel_types.map((fuel: any) => (
+                      <SelectItem key={fuel.id} value={fuel.id.toString()}>{fuel.name}</SelectItem>
+                    )) : (
+                      <>
+                        <SelectItem value="4">Benzinë</SelectItem>
+                        <SelectItem value="5">Diesel</SelectItem>
+                        <SelectItem value="6">Hibrid</SelectItem>
+                        <SelectItem value="7">Elektrik</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -518,11 +547,17 @@ const HomeCarsSection = () => {
                     <SelectValue placeholder="Të gjitha" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="13">E bardhë</SelectItem>
-                    <SelectItem value="1">E zezë</SelectItem>
-                    <SelectItem value="2">E hirtë</SelectItem>
-                    <SelectItem value="3">E kuqe</SelectItem>
-                    <SelectItem value="4">E kaltër</SelectItem>
+                    {koreaOptions?.colors ? koreaOptions.colors.map((color: any) => (
+                      <SelectItem key={color.id} value={color.id.toString()}>{color.name}</SelectItem>
+                    )) : (
+                      <>
+                        <SelectItem value="13">E bardhë</SelectItem>
+                        <SelectItem value="1">E zezë</SelectItem>
+                        <SelectItem value="2">E hirtë</SelectItem>
+                        <SelectItem value="3">E kuqe</SelectItem>
+                        <SelectItem value="4">E kaltër</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

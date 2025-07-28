@@ -70,6 +70,7 @@ const EncarCatalog = () => {
   const [statistics, setStatistics] = useState<any>(null);
   const [duplicates, setDuplicates] = useState<any[]>([]);
   const [showDuplicates, setShowDuplicates] = useState(false);
+  const [koreaOptions, setKoreaOptions] = useState<any>(null);
 
   const fetchCars = async (page: number, perPage: number, filters?: CarFilters) => {
     setError(null);
@@ -251,11 +252,27 @@ const formatMileage = (mileage?: string | number) =>
     }
   };
 
+  const fetchKoreaOptions = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/korea-options`, {
+        headers: {
+          'Accept': '*/*',
+          'X-API-Key': API_KEY
+        }
+      });
+      const data = await response.json();
+      setKoreaOptions(data);
+    } catch (err) {
+      console.error('Failed to fetch Korea options:', err);
+    }
+  };
+
   useEffect(() => {
     setLoading(true);
     Promise.all([
       fetchCars(1, 100, filters),
-      fetchManufacturers()
+      fetchManufacturers(),
+      fetchKoreaOptions()
     ]).finally(() => setLoading(false));
   }, []);
 
@@ -424,7 +441,9 @@ const formatMileage = (mileage?: string | number) =>
                   <SelectValue placeholder="All colors" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.from(new Set(cars.map(car => car.color).filter(c => c?.id && c?.name))).map(color => (
+                  {koreaOptions?.colors ? koreaOptions.colors.map((color: any) => (
+                    <SelectItem key={color.id} value={color.id.toString()}>{color.name}</SelectItem>
+                  )) : Array.from(new Set(cars.map(car => car.color).filter(c => c?.id && c?.name))).map(color => (
                     <SelectItem key={color!.id} value={color!.id.toString()}>{color!.name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -438,7 +457,9 @@ const formatMileage = (mileage?: string | number) =>
                   <SelectValue placeholder="All fuel types" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.from(new Set(cars.map(car => car.fuel).filter(f => f?.id && f?.name))).map(fuel => (
+                  {koreaOptions?.fuel_types ? koreaOptions.fuel_types.map((fuel: any) => (
+                    <SelectItem key={fuel.id} value={fuel.id.toString()}>{fuel.name}</SelectItem>
+                  )) : Array.from(new Set(cars.map(car => car.fuel).filter(f => f?.id && f?.name))).map(fuel => (
                     <SelectItem key={fuel!.id} value={fuel!.id.toString()}>{fuel!.name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -452,8 +473,14 @@ const formatMileage = (mileage?: string | number) =>
                   <SelectValue placeholder="All transmissions" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">Automatic</SelectItem>
-                  <SelectItem value="2">Manual</SelectItem>
+                  {koreaOptions?.transmissions ? koreaOptions.transmissions.map((transmission: any) => (
+                    <SelectItem key={transmission.id} value={transmission.id.toString()}>{transmission.name}</SelectItem>
+                  )) : (
+                    <>
+                      <SelectItem value="1">Automatic</SelectItem>
+                      <SelectItem value="2">Manual</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
