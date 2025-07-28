@@ -11,12 +11,16 @@ import { useNavigate } from "react-router-dom";
 interface FavoriteCar {
   id: string;
   car_id: string;
-  car_make: string;
-  car_model: string;
-  car_year: number;
-  car_price: number;
-  car_image?: string;
+  user_id: string;
   created_at: string;
+  // Car details from join
+  cars?: {
+    make: string;
+    model: string;
+    year: number;
+    price: number;
+    image_url?: string;
+  };
 }
 
 const FavoritesPage = () => {
@@ -57,7 +61,16 @@ const FavoritesPage = () => {
     try {
       const { data, error } = await supabase
         .from('favorite_cars')
-        .select('*')
+        .select(`
+          *,
+          cars (
+            make,
+            model,
+            year,
+            price,
+            image_url
+          )
+        `)
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
       
@@ -145,11 +158,11 @@ const FavoritesPage = () => {
               <CarCard
                 key={favorite.id}
                 id={favorite.car_id}
-                make={favorite.car_make}
-                model={favorite.car_model}
-                year={favorite.car_year}
-                price={favorite.car_price}
-                image={favorite.car_image}
+                make={favorite.cars?.make || 'Unknown'}
+                model={favorite.cars?.model || 'Unknown'}
+                year={favorite.cars?.year || 0}
+                price={favorite.cars?.price || 0}
+                image={favorite.cars?.image_url}
               />
             ))}
           </div>
