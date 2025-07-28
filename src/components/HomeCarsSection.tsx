@@ -150,7 +150,29 @@ const HomeCarsSection = () => {
         }
       });
       const data = await response.json();
-      setManufacturers(data.data || []);
+      
+      // Prioritize top 4 brands
+      const topBrands = ['Audi', 'Volkswagen', 'BMW', 'Mercedes-Benz'];
+      const allManufacturers = data.data || [];
+      
+      const prioritized = [];
+      const others = [];
+      
+      allManufacturers.forEach(manufacturer => {
+        if (topBrands.includes(manufacturer.name)) {
+          prioritized.push(manufacturer);
+        } else {
+          others.push(manufacturer);
+        }
+      });
+      
+      // Sort prioritized by the order defined in topBrands
+      prioritized.sort((a, b) => topBrands.indexOf(a.name) - topBrands.indexOf(b.name));
+      
+      // Sort others alphabetically
+      others.sort((a, b) => a.name.localeCompare(b.name));
+      
+      setManufacturers([...prioritized, ...others]);
     } catch (err) {
       console.error('Failed to fetch manufacturers:', err);
     }
