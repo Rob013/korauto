@@ -5,22 +5,50 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface EncarListing {
-  id: string;
-  make: string;
-  model: string;
+interface CarData {
+  id: number;
   year: number;
-  price: number;
-  mileage: number;
-  photo_urls: string[];
-  lot_number?: string;
-  location?: string;
-  fuel?: string;
-  transmission?: string;
-  color?: string;
-  condition?: string;
-  vin?: string;
-  title?: string;
+  title: string;
+  vin: string;
+  manufacturer: {
+    id: number;
+    name: string;
+  };
+  model: {
+    id: number;
+    name: string;
+    manufacturer_id: number;
+  };
+  color: {
+    name: string;
+    id: number;
+  };
+  transmission: {
+    name: string;
+    id: number;
+  };
+  fuel: {
+    name: string;
+    id: number;
+  };
+  lots: Array<{
+    id: number;
+    lot: string;
+    odometer: {
+      km: number;
+      mi: number;
+    };
+    buy_now: number;
+    images: {
+      normal: string[];
+      big: string[];
+    };
+  }>;
+}
+
+interface ApiResponse {
+  data: CarData[];
+  total_count?: number;
 }
 
 Deno.serve(async (req) => {
@@ -92,24 +120,31 @@ Deno.serve(async (req) => {
         const response = await fetch(apiUrl.toString(), {
           headers: {
             'Accept': 'application/json',
-            'User-Agent': 'KORAUTO-EncarSync/1.0'
+            'User-Agent': 'KORAUTO-WebApp/1.0',
+            'x-api-key': 'd00985c77981fe8d26be16735f932ed1'
           }
         });
 
         if (!response.ok) {
           if (response.status === 429) {
-            console.log(`Rate limited on page ${page}, waiting 5 seconds before retry...`);
-            await new Promise(resolve => setTimeout(resolve, 5000));
+            console.log(`Rate limited on page ${page}, waiting 10 seconds before retry...`);
+            await new Promise(resolve => setTimeout(resolve, 10000));
             continue; // Retry the same page
           }
           throw new Error(`API request failed: ${response.status} ${response.statusText}`);
         }
 
-        const apiData = await response.json();
-        console.log(`API Response structure:`, Object.keys(apiData));
+        let apiData: ApiResponse;
+        try {
+          apiData = await response.json();
+          console.log(`API Response structure:`, Object.keys(apiData));
+        } catch (parseError) {
+          console.error('Failed to parse API response:', parseError);
+          throw new Error(`Invalid JSON response from API: ${parseError.message}`);
+        }
         
-        // Handle different possible response structures
-        const carsArray = apiData.data || apiData.cars || apiData.results || [];
+        // Handle the correct API response structure
+        const carsArray = apiData.data || [];
         console.log(`Received ${carsArray.length} listings from API`);
 
         if (!carsArray || carsArray.length === 0) {
@@ -118,42 +153,48 @@ Deno.serve(async (req) => {
         }
 
         // Transform API data to match our schema
-        const transformedCars = carsArray.map((car: any) => {
+        const transformedCars = carsArray.map((car: CarData) => {
+          const primaryLot = car.lots?.[0];
+          const imageUrls = primaryLot?.images?.normal || [];
+          
           return {
-            id: car.id?.toString() || `encar_${Math.random().toString(36).substr(2, 9)}`,
-            external_id: car.id?.toString(),
-            make: car.make || 'Unknown',
-            model: car.model || 'Unknown',
-            year: parseInt(car.year) || 2020,
-            price: parseFloat(car.price) || 0,
-            mileage: parseInt(car.mileage) || 0,
-            photo_urls: car.images ? [car.images] : [],
-            image: car.images || null,
-            lot_number: car.lot_number || null,
-            location: car.location || 'South Korea',
-            fuel: car.fuel || null,
-            transmission: car.transmission || null,
-            color: car.color || null,
-            condition: car.condition || null,
+            id: car.id.toString(),
+            external_id: car.id.toString(),
+            make: car.manufacturer?.name || 'Unknown',
+            model: car.model?.name || 'Unknown',
+            year: car.year || 2020,
+            price: primaryLot?.buy_now || 0,
+            mileage: primaryLot?.odometer?.km || 0,
+            photo_urls: imageUrls,
+            image: imageUrls.length > 0 ? imageUrls[0] : null,
+            lot_number: primaryLot?.lot || null,
+            location: 'South Korea',
+            fuel: car.fuel?.name || null,
+            transmission: car.transmission?.name || null,
+            color: car.color?.name || null,
+            condition: 'good',
             vin: car.vin || null,
-            title: car.title || `${car.make || ''} ${car.model || ''} ${car.year || ''}`.trim(),
+            title: car.title || `${car.manufacturer?.name || ''} ${car.model?.name || ''} ${car.year || ''}`.trim(),
             domain_name: 'encar_com',
             source_api: 'auctionapis',
             status: 'active'
           };
-        });
+        }).filter(car => car.id && car.make && car.model); // Filter out invalid entries
 
-        // Upsert cars in batches
-        const { error: upsertError } = await supabaseClient
-          .from('cars')
-          .upsert(transformedCars, {
-            onConflict: 'external_id',
-            ignoreDuplicates: false
-          });
+        // Upsert cars in batches (use 'id' as the conflict column)
+        if (transformedCars.length > 0) {
+          const { error: upsertError } = await supabaseClient
+            .from('cars')
+            .upsert(transformedCars, {
+              onConflict: 'id',
+              ignoreDuplicates: false
+            });
 
-        if (upsertError) {
-          console.error('Failed to upsert cars:', upsertError);
-          throw upsertError;
+          if (upsertError) {
+            console.error('Failed to upsert cars:', upsertError);
+            console.error('Sample car data:', transformedCars[0]);
+            throw upsertError;
+          }
         }
 
         totalSynced += transformedCars.length;
@@ -174,9 +215,9 @@ Deno.serve(async (req) => {
         hasMore = transformedCars.length === batchSize && totalSynced < (apiData.total_count || 0);
         page++;
 
-        // Rate limiting - wait 2 seconds between requests to avoid 429 errors
+        // Rate limiting - wait 5 seconds between requests to avoid 429 errors
         if (hasMore) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 5000));
         }
 
         // Progress logging every 10,000 records
@@ -187,35 +228,19 @@ Deno.serve(async (req) => {
       } catch (error) {
         console.error(`Error on page ${page}:`, error);
         
-        // Implement exponential backoff retry logic
-        if (page <= 3) { // Retry first few pages
-          console.log(`Retrying page ${page} after error...`);
-          await new Promise(resolve => setTimeout(resolve, 2000 * Math.pow(2, page - 1)));
+        // Implement exponential backoff retry logic with max retries
+        const maxRetries = 3;
+        if (page <= maxRetries) {
+          const waitTime = 5000 * Math.pow(2, page - 1); // 5s, 10s, 20s
+          console.log(`Retrying page ${page} after error... (waiting ${waitTime}ms)`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
           continue; // Skip to next iteration to retry
         }
         
-        await supabaseClient
-          .from('sync_metadata')
-          .update({
-            status: 'failed',
-            error_message: `Error on page ${page}: ${error.message}`,
-            synced_records: totalSynced,
-            total_records: totalRecords
-          })
-          .eq('id', syncRecord.id);
-
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: `Failed on page ${page}: ${error.message}`,
-            synced_records: totalSynced,
-            pages_processed: page - 1
-          }),
-          { 
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
+        // If we've exceeded retries, mark as failed but continue to next page
+        console.log(`Max retries exceeded for page ${page}, continuing to next page...`);
+        page++;
+        continue;
       }
     }
 
@@ -247,10 +272,33 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Sync function error:', error);
+    console.error('Error stack:', error.stack);
+    
+    // Try to update sync metadata as failed if we have syncRecord
+    try {
+      if (typeof error === 'object' && error !== null) {
+        const supabaseClient = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        );
+        
+        await supabaseClient
+          .from('sync_metadata')
+          .update({
+            status: 'failed',
+            error_message: error.message || 'Unknown error occurred'
+          })
+          .eq('status', 'in_progress');
+      }
+    } catch (updateError) {
+      console.error('Failed to update sync metadata:', updateError);
+    }
+    
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message
+        error: error?.message || 'Unknown error occurred',
+        details: error?.stack || 'No stack trace available'
       }),
       { 
         status: 500,
