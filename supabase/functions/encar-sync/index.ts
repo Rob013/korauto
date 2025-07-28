@@ -67,8 +67,9 @@ Deno.serve(async (req) => {
       try {
         console.log(`Fetching page ${page} from AuctionAPIs...`);
         
-        // Construct API URL for Encar listings
+        // Construct API URL for Encar listings with API key
         const apiUrl = new URL('https://auctionsapi.com/api/cars');
+        apiUrl.searchParams.append('api_key', 'd00985c77981fe8d26be16735f932ed1');
         apiUrl.searchParams.append('limit', batchSize.toString());
         apiUrl.searchParams.append('offset', ((page - 1) * batchSize).toString());
         
@@ -96,19 +97,28 @@ Deno.serve(async (req) => {
         });
 
         if (!response.ok) {
+          if (response.status === 429) {
+            console.log(`Rate limited on page ${page}, waiting 5 seconds before retry...`);
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            continue; // Retry the same page
+          }
           throw new Error(`API request failed: ${response.status} ${response.statusText}`);
         }
 
         const apiData = await response.json();
-        console.log(`Received ${apiData.cars?.length || 0} listings from API`);
+        console.log(`API Response structure:`, Object.keys(apiData));
+        
+        // Handle different possible response structures
+        const carsArray = apiData.data || apiData.cars || apiData.results || [];
+        console.log(`Received ${carsArray.length} listings from API`);
 
-        if (!apiData.cars || apiData.cars.length === 0) {
+        if (!carsArray || carsArray.length === 0) {
           hasMore = false;
           break;
         }
 
         // Transform API data to match our schema
-        const transformedCars = apiData.cars.map((car: any) => {
+        const transformedCars = carsArray.map((car: any) => {
           return {
             id: car.id?.toString() || `encar_${Math.random().toString(36).substr(2, 9)}`,
             external_id: car.id?.toString(),
@@ -164,9 +174,9 @@ Deno.serve(async (req) => {
         hasMore = transformedCars.length === batchSize && totalSynced < (apiData.total_count || 0);
         page++;
 
-        // Rate limiting - wait 500ms between requests for faster processing
+        // Rate limiting - wait 2 seconds between requests to avoid 429 errors
         if (hasMore) {
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
 
         // Progress logging every 10,000 records
