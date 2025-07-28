@@ -76,7 +76,6 @@ const CarDetails = () => {
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [featuresExpanded, setFeaturesExpanded] = useState(false);
-  const [showInspectionForm, setShowInspectionForm] = useState(false);
   
   const API_BASE_URL = 'https://auctionsapi.com/api';
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
@@ -437,10 +436,31 @@ const CarDetails = () => {
             {/* Enhanced Vehicle Specifications */}
             <Card className="shadow-lg border-0">
               <CardContent className="p-8">
-                <h3 className="text-2xl font-bold mb-6 flex items-center text-foreground">
-                  <Settings className="h-6 w-6 mr-3 text-primary" />
-                  Specifikimet Teknike
-                </h3>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-2xl font-bold flex items-center text-foreground">
+                    <Settings className="h-6 w-6 mr-3 text-primary" />
+                    Specifikimet Teknike
+                  </h3>
+                  
+                  {/* Small buttons beside title */}
+                  <div className="flex items-center gap-2">
+                    <div className="text-lg font-bold text-primary">
+                      €{car.price.toLocaleString()}
+                    </div>
+                    <InspectionRequestForm 
+                      trigger={
+                        <Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+                          <FileText className="h-4 w-4 mr-1" />
+                          Kërko Inspektim
+                        </Button>
+                      }
+                      carId={car.id}
+                      carMake={car.make}
+                      carModel={car.model}
+                      carYear={car.year}
+                    />
+                  </div>
+                </div>
                 
                 {/* Main Specifications Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
@@ -855,20 +875,18 @@ const CarDetails = () => {
 
                 {/* Inspection Request Button */}
                 <div className="border-t border-border pt-6">
-                  <Button 
-                    onClick={() => setShowInspectionForm(!showInspectionForm)}
-                    className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground"
-                  >
-                    <FileText className="h-5 w-5 mr-2" />
-                    {showInspectionForm ? 'Mbyll Formularin' : 'Kërko Inspektim Professional'}
-                  </Button>
-                  
-                  {/* Inspection Form */}
-                  {showInspectionForm && (
-                    <div className="mt-6 p-4 bg-muted/30 rounded-lg">
-                      <InspectionRequestForm carId={car.id} carModel={`${car.year} ${car.make} ${car.model}`} trigger={undefined} />
-                    </div>
-                  )}
+                  <InspectionRequestForm 
+                    trigger={
+                      <Button className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground">
+                        <FileText className="h-5 w-5 mr-2" />
+                        Kërko Inspektim Professional
+                      </Button>
+                    }
+                    carId={car.id}
+                    carMake={car.make}
+                    carModel={car.model}
+                    carYear={car.year}
+                  />
                 </div>
 
                 {/* Location */}
