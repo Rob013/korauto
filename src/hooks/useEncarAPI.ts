@@ -142,30 +142,36 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     setError(null);
 
     try {
-      // Use larger batch size for better performance
-      const batchSize = type === 'full' ? 1000 : 500;
-      
       const { data, error: syncError } = await supabase.functions.invoke('encar-sync', {
-        body: { type, batch_size: batchSize }
+        body: { type }
       });
 
       if (syncError) {
-        throw syncError;
+        console.error('Sync function error:', syncError);
+        throw new Error(syncError.message || 'Sync function failed');
       }
 
-      console.log('Sync triggered successfully:', data);
+      // ✅ BETTER ERROR HANDLING: Check if response indicates failure
+      if (data && !data.success) {
+        console.error('Sync failed with response:', data);
+        throw new Error(data.error || 'Sync operation failed');
+      }
+
+      console.log('✅ Sync triggered successfully:', data);
       
       // Refresh sync status and cars after a short delay
       setTimeout(() => {
         getSyncStatus();
         if (type === 'incremental') {
-          fetchCars(1, 100); // Load more cars for better initial view
+          fetchCars(1, 100);
         }
       }, 1000);
       
     } catch (err) {
-      console.error('Error triggering sync:', err);
-      setError(err instanceof Error ? err.message : 'Failed to trigger sync');
+      console.error('❌ Error triggering sync:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to trigger sync';
+      setError(errorMessage);
+      throw err; // Re-throw so calling component can handle it
     } finally {
       setLoading(false);
     }
