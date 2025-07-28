@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Search, Grid, List, RefreshCw, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -57,17 +56,17 @@ const EncarCatalog = () => {
     setLoadingMore(false);
   };
 
-  const handleSync = async (type: 'full' | 'incremental' = 'incremental') => {
+  const handleSyncAction = async (type: 'full' | 'incremental' = 'incremental') => {
     try {
       await triggerSync(type);
       toast({
-        title: "Sync Started",
-        description: `${type === 'full' ? 'Full' : 'Incremental'} sync has been initiated.`,
+        title: "Data Refresh Started",
+        description: `${type === 'full' ? 'Full' : 'Incremental'} data refresh has been initiated.`,
       });
     } catch (error) {
       toast({
-        title: "Sync Failed",
-        description: "Failed to start synchronization. Please try again.",
+        title: "Refresh Failed",
+        description: "Failed to start data refresh. Please try again.",
         variant: "destructive",
       });
     }
@@ -86,7 +85,7 @@ const EncarCatalog = () => {
     return new Intl.NumberFormat('en-US').format(mileage) + ' km';
   };
 
-  const getSyncStatusIcon = () => {
+  const getStatusIcon = () => {
     if (!syncStatus) return <Clock className="h-4 w-4" />;
     
     switch (syncStatus.status) {
@@ -99,16 +98,16 @@ const EncarCatalog = () => {
     }
   };
 
-  const getSyncStatusText = () => {
-    if (!syncStatus) return 'No sync data';
+  const getStatusText = () => {
+    if (!syncStatus) return 'No data refresh info';
     
     switch (syncStatus.status) {
       case 'completed':
-        return `Last sync: ${new Date(syncStatus.last_updated).toLocaleString()}`;
+        return `Last updated: ${new Date(syncStatus.last_updated).toLocaleString()}`;
       case 'failed':
         return `Failed: ${syncStatus.error_message || 'Unknown error'}`;
       case 'in_progress':
-        return `Syncing: ${syncStatus.synced_records}/${syncStatus.total_records} records`;
+        return `Updating: ${syncStatus.synced_records}/${syncStatus.total_records} records`;
       default:
         return syncStatus.status;
     }
@@ -127,31 +126,31 @@ const EncarCatalog = () => {
           </p>
         </div>
         
-        {/* Sync Controls */}
+        {/* Refresh Controls */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            {getSyncStatusIcon()}
-            <span>{getSyncStatusText()}</span>
+            {getStatusIcon()}
+            <span>{getStatusText()}</span>
           </div>
           
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleSync('incremental')}
+              onClick={() => handleSyncAction('incremental')}
               disabled={loading || syncStatus?.status === 'in_progress'}
             >
               <RefreshCw className="h-4 w-4 mr-2" />
-              Quick Sync
+              Quick Refresh
             </Button>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleSync('full')}
+              onClick={() => handleSyncAction('full')}
               disabled={loading || syncStatus?.status === 'in_progress'}
             >
               <RefreshCw className="h-4 w-4 mr-2" />
-              Full Sync
+              Full Refresh
             </Button>
           </div>
         </div>
@@ -305,10 +304,10 @@ const EncarCatalog = () => {
       {!loading && cars.length === 0 && !error && (
         <div className="text-center py-12">
           <p className="text-muted-foreground text-lg">
-            No cars found. Try adjusting your search or trigger a sync to load data.
+            No cars found. Try adjusting your search or trigger a data refresh to load content.
           </p>
-          <Button onClick={() => handleSync('full')} className="mt-4">
-            Start Full Sync
+          <Button onClick={() => handleSyncAction('full')} className="mt-4">
+            Start Full Refresh
           </Button>
         </div>
       )}
