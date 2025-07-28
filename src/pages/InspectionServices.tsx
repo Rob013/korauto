@@ -111,8 +111,8 @@ const InspectionServices = () => {
               />
               <Button 
                 size="lg" 
-              variant="outline" 
-              className="px-8 py-4 text-lg border-white text-foreground bg-white/10 hover:bg-white hover:text-primary"
+              variant="secondary" 
+              className="px-8 py-4 text-lg"
                 onClick={() => window.open('tel:+38348181116', '_self')}
               >
                 <Shield className="h-5 w-5 mr-2" />
