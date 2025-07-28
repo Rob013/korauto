@@ -423,41 +423,56 @@ const HomeCarsSection = () => {
         </div>
 
         {error && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-center gap-2 mb-6 sm:mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg mx-4 sm:mx-0">
-            <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5 sm:mt-0" />
-            <span className="text-yellow-800 text-sm sm:text-base text-left sm:text-center">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-center gap-2 mb-6 sm:mb-8 p-4 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg mx-2 sm:mx-0">
+            <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5 sm:mt-0" />
+            <span className="text-yellow-800 dark:text-yellow-200 text-sm sm:text-base text-left sm:text-center">
               Problem me lidhjen API: {error}. Duke shfaqur makina demo me shërbim të plotë inspektimi të disponueshëm.
             </span>
           </div>
         )}
 
         {/* Filters */}
-        <div className="mb-6 sm:mb-8 p-4 sm:p-6 bg-card rounded-lg border border-border mx-2 sm:mx-0">
+        <div className="mb-6 sm:mb-8 p-4 sm:p-6 bg-card border border-border rounded-lg mx-2 sm:mx-0 shadow-sm">
           <div className="flex items-center gap-2 mb-3 sm:mb-4">
-            <Filter className="h-4 w-4 sm:h-5 sm:w-5" />
-            <h3 className="text-base sm:text-lg font-semibold">Kërko & Filtro Makinat</h3>
+            <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            <h3 className="text-base sm:text-lg font-semibold text-foreground">Kërko & Filtro Makinat</h3>
           </div>
           
           {/* Main Filters - Always Visible */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-3 sm:mb-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Marka</label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground block">Marka</label>
               <Select value={filters.manufacturer_id || ''} onValueChange={(value) => setFilters({...filters, manufacturer_id: value || undefined, model_id: undefined})}>
-                <SelectTrigger className="h-11">
+                <SelectTrigger className="h-11 bg-background border-border">
                   <SelectValue placeholder="Të gjitha Markat" />
                 </SelectTrigger>
-                <SelectContent className="z-50 max-h-60">
-                  {manufacturers.map(manufacturer => (
-                    <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>{manufacturer.name}</SelectItem>
-                  ))}
+                <SelectContent className="z-50 max-h-60 bg-background border border-border shadow-lg">
+                  {manufacturers.map((manufacturer, index) => {
+                    const isTopBrand = index < 4; // First 4 are top brands
+                    const isLastTopBrand = index === 3; // Last of top 4 brands
+                    
+                    return (
+                      <div key={manufacturer.id}>
+                        <SelectItem 
+                          value={manufacturer.id.toString()}
+                          className={isTopBrand ? "font-medium text-primary" : ""}
+                        >
+                          {manufacturer.name}
+                        </SelectItem>
+                        {isLastTopBrand && (
+                          <div className="mx-2 my-1 border-t border-border/60" />
+                        )}
+                      </div>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">Modeli</label>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground block">Modeli</label>
               <Select value={filters.model_id || ''} onValueChange={(value) => setFilters({...filters, model_id: value || undefined})} disabled={!filters.manufacturer_id}>
-                <SelectTrigger className="h-11">
+                <SelectTrigger className="h-11 bg-background border-border">
                   <SelectValue placeholder={filters.manufacturer_id ? "Të gjithë Modelet" : "Zgjidh markën së pari"} />
                 </SelectTrigger>
                 <SelectContent className="z-50 max-h-60">
@@ -468,38 +483,42 @@ const HomeCarsSection = () => {
               </Select>
             </div>
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">Viti</label>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground block">Viti</label>
               <div className="flex gap-2">
                 <Input
                   placeholder="Nga"
                   type="number"
                   value={filters.from_year || ''}
                   onChange={(e) => setFilters({...filters, from_year: e.target.value || undefined})}
+                  className="bg-background border-border"
                 />
                 <Input
                   placeholder="Deri"
                   type="number"
                   value={filters.to_year || ''}
                   onChange={(e) => setFilters({...filters, to_year: e.target.value || undefined})}
+                  className="bg-background border-border"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">Çmimi ($)</label>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground block">Çmimi (€)</label>
               <div className="flex gap-2">
                 <Input
                   placeholder="Nga"
                   type="number"
                   value={filters.buy_now_price_from || ''}
                   onChange={(e) => setFilters({...filters, buy_now_price_from: e.target.value || undefined})}
+                  className="bg-background border-border"
                 />
                 <Input
                   placeholder="Deri"
                   type="number"
                   value={filters.buy_now_price_to || ''}
                   onChange={(e) => setFilters({...filters, buy_now_price_to: e.target.value || undefined})}
+                  className="bg-background border-border"
                 />
               </div>
             </div>

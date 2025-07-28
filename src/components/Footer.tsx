@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
@@ -19,10 +20,19 @@ const Footer = () => {
           <div className="space-y-4">
             <h4 className="text-lg font-semibold">Lidhje të Shpejta</h4>
             <div className="space-y-2 text-sm">
-              <a href="#home" className="block hover:text-gray-300 transition-colors">Kryefaqja</a>
-              <a href="#cars" className="block hover:text-gray-300 transition-colors">Makinat</a>
-              <a href="#inspection" className="block hover:text-gray-300 transition-colors">Inspektimi</a>
-              <a href="#contact" className="block hover:text-gray-300 transition-colors">Kontakti</a>
+              <Link to="/" className="block hover:text-gray-300 transition-colors">Kryefaqja</Link>
+              <Link to="/catalog" className="block hover:text-gray-300 transition-colors">Katalogu</Link>
+              <button 
+                onClick={() => {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  setTimeout(() => {
+                    document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+                  }, 500);
+                }}
+                className="block hover:text-gray-300 transition-colors text-left bg-transparent border-none cursor-pointer p-0"
+              >
+                Kontakti
+              </button>
             </div>
           </div>
 

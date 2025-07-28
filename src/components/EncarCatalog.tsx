@@ -437,10 +437,25 @@ const formatMileage = (mileage?: string | number) =>
                 <SelectTrigger>
                   <SelectValue placeholder="All manufacturers" />
                 </SelectTrigger>
-                <SelectContent>
-                  {manufacturers.map(manufacturer => (
-                    <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>{manufacturer.name}</SelectItem>
-                  ))}
+                <SelectContent className="z-50 max-h-60 bg-background border border-border shadow-lg">
+                  {manufacturers.map((manufacturer, index) => {
+                    const isTopBrand = index < 4; // First 4 are top brands
+                    const isLastTopBrand = index === 3; // Last of top 4 brands
+                    
+                    return (
+                      <div key={manufacturer.id}>
+                        <SelectItem 
+                          value={manufacturer.id.toString()}
+                          className={isTopBrand ? "font-medium text-primary" : ""}
+                        >
+                          {manufacturer.name}
+                        </SelectItem>
+                        {isLastTopBrand && (
+                          <div className="mx-2 my-1 border-t border-border/60" />
+                        )}
+                      </div>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
