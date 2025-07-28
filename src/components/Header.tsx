@@ -38,6 +38,10 @@ const Header = () => {
               Katalogu
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
             </Link>
+            <Link to="/inspections" className="text-foreground hover:text-primary font-medium transition-all duration-200 hover:scale-105 focus-enhanced relative group">
+              Inspektimet
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
+            </Link>
             <button 
               onClick={() => {
                 navigate('/');
@@ -151,6 +155,13 @@ const Header = () => {
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Katalogu
+              </Link>
+              <Link 
+                to="/inspections" 
+                className="text-foreground hover:text-primary font-medium transition-colors py-2 px-3 rounded-md hover:bg-primary/10"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Inspektimet
               </Link>
               <button 
                 onClick={() => {

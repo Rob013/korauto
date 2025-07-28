@@ -9,6 +9,7 @@ import CarDetails from "./pages/CarDetails";
 import AdminDashboard from "./pages/AdminDashboard";
 import AuthPage from "./pages/AuthPage";
 import FavoritesPage from "./pages/FavoritesPage";
+import InspectionServices from "./pages/InspectionServices";
 import NotFound from "./pages/NotFound";
 import { AdminSyncDashboard } from "./components/AdminSyncDashboard";
 
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/admin/sync" element={<AdminSyncDashboard />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
+          <Route path="/inspections" element={<InspectionServices />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -26,9 +26,7 @@ const HomeSection = () => {
             <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3 text-lg transition-colors" onClick={() => window.location.href = '/catalog'}>
               Katalogu
             </Button>
-            <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3 text-lg transition-colors" onClick={() => document.getElementById('inspection')?.scrollIntoView({
-            behavior: 'smooth'
-          })}>
+            <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3 text-lg transition-colors" onClick={() => window.location.href = '/inspections'}>
               Mëso për Inspektimet
             </Button>
           </div>
