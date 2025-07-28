@@ -152,9 +152,14 @@ const FilteredCarsSection = () => {
         throw new Error('No cars returned from API');
       }
 
-      const newCars = page === 1 ? transformedCars : [...cars, ...transformedCars];
-      setCars(newCars);
-      setFilteredCars(newCars);
+      if (page === 1) {
+        setCars(transformedCars);
+        setFilteredCars(transformedCars);
+      } else {
+        setCars(prev => [...prev, ...transformedCars]);
+        setFilteredCars(prev => [...prev, ...transformedCars]);
+      }
+      
       if (page > 1 && carListRef.current) {
       carListRef.current.scrollIntoView({ behavior: 'smooth' });
       }
