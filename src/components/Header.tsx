@@ -9,13 +9,13 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <header className="bg-background shadow-sm border-b border-border sticky top-0 z-50">
+    <header className="bg-background/95 backdrop-blur-sm shadow-sm border-b border-border sticky top-0 z-50">
       {/* Main header */}
-      <div className="container mx-auto px-4 py-3">
+      <div className="container-responsive py-3">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center space-x-3 flex-shrink-0">
-            <div className="w-12 h-12 md:w-16 md:h-16 bg-primary rounded-lg flex items-center justify-center overflow-hidden">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 bg-primary rounded-lg flex items-center justify-center overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
               <img 
                 src="/lovable-uploads/3094fd63-7a92-4497-8103-e166b6b09f70.png" 
                 alt="KORAUTO Logo" 
@@ -23,18 +23,20 @@ const Header = () => {
               />
             </div>
             <div className="min-w-0">
-              <h1 className="text-xl md:text-2xl font-bold text-primary">KORAUTO</h1>
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-primary">KORAUTO</h1>
               <p className="text-xs md:text-sm text-muted-foreground whitespace-nowrap hidden sm:block">Ekspertë të Inspektimit të Makinave</p>
             </div>
           </div>
           
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center justify-center space-x-8">
-            <Link to="/" className="text-foreground hover:text-primary font-medium transition-colors">
+            <Link to="/" className="text-foreground hover:text-primary font-medium transition-all duration-200 hover:scale-105 focus-enhanced relative group">
               Kryefaqja
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
             </Link>
-            <Link to="/catalog" className="text-foreground hover:text-primary font-medium transition-colors">
+            <Link to="/catalog" className="text-foreground hover:text-primary font-medium transition-all duration-200 hover:scale-105 focus-enhanced relative group">
               Katalogu
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
             </Link>
             <button 
               onClick={() => {
@@ -43,18 +45,51 @@ const Header = () => {
                   document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
                 }, 100);
               }}
-              className="text-foreground hover:text-primary font-medium transition-colors bg-transparent border-none cursor-pointer"
+              className="text-foreground hover:text-primary font-medium transition-all duration-200 hover:scale-105 bg-transparent border-none cursor-pointer focus-enhanced relative group"
             >
               Kontakti
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
             </button>
-            <Link to="/favorites" className="flex items-center gap-2 text-foreground hover:text-primary font-medium transition-colors">
+            <Link to="/favorites" className="flex items-center gap-2 text-foreground hover:text-primary font-medium transition-all duration-200 hover:scale-105 focus-enhanced relative group">
               <Heart className="h-4 w-4" />
-              Favorites
-            </Link>
-            <Link to="/auth" className="text-foreground hover:text-primary font-medium transition-colors">
-              My Account
+              <span className="hidden xl:inline">Të Preferuarat</span>
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
             </Link>
           </nav>
+          
+          {/* Right side actions */}
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            <ThemeToggle />
+            
+            {/* Mobile menu button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="lg:hidden focus-enhanced"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+            
+            {/* Desktop Auth Buttons */}
+            <div className="hidden lg:flex items-center space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigate('/auth')}
+                className="btn-enhanced focus-enhanced"
+              >
+                Hyr
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={() => navigate('/admin')}
+                className="btn-enhanced focus-enhanced"
+              >
+                Admin
+              </Button>
+            </div>
+          </div>
 
           {/* Desktop CTA Buttons */}
           <div className="hidden md:flex items-center gap-3">

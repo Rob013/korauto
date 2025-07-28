@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Grid, List, RefreshCw, Clock, CheckCircle, AlertCircle, Filter } from 'lucide-react';
+import { Loader2, Search, Grid, List, RefreshCw, Clock, CheckCircle, AlertCircle, Filter, ArrowLeft } from 'lucide-react';
 import CarCard from '@/components/CarCard';
 
 interface Car {
@@ -330,16 +330,26 @@ const formatMileage = (mileage?: string | number) =>
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header */}
+    <div className="container-responsive py-6 sm:py-8 animate-fade-in-up">
+      {/* Header with Back Button */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Katalog Makinash
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            {totalCount.toLocaleString()} makina të disponueshme
-          </p>
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.href = '/'} 
+            className="flex items-center gap-2 hover:bg-primary hover:text-primary-foreground transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="hidden sm:inline">Kryefaqja</span>
+          </Button>
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              Katalog Makinash
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              {totalCount.toLocaleString()} makina të disponueshme
+            </p>
+          </div>
         </div>
         
         {/* Refresh Controls */}
@@ -730,7 +740,7 @@ const formatMileage = (mileage?: string | number) =>
       {filteredCars.length > 0 && (
         <>
           <div className={viewMode === 'grid' 
-            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            ? "grid-responsive-cards"
             : "space-y-4"
           }>
              {filteredCars.map((car) => {
