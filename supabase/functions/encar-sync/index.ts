@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
       // Step 1: Process active cars from /api/cars endpoint
       console.log(`📡 Processing active cars (${syncType === 'full' ? 'full sync' : `last ${minutes} minutes`})`)
       
-      let carsUrl = `${BASE_URL}/cars?api_key=${API_KEY}`
+      let carsUrl = `${BASE_URL}/cars?api_key=${API_KEY}&per-page=1000`
       if (syncType !== 'full') {
         carsUrl += `&minutes=${minutes}`
       }
@@ -89,11 +89,14 @@ Deno.serve(async (req) => {
       let hasMorePages = true
       
       while (hasMorePages) {
-        const pageUrl = `${carsUrl}&page=${currentPage}&limit=50`
+        const pageUrl = `${carsUrl}&page=${currentPage}`
         console.log(`📡 Fetching cars page ${currentPage}: ${pageUrl}`)
 
         const carsResponse = await fetch(pageUrl, {
-          headers: { 'User-Agent': 'Encar-Sync/1.0' }
+          headers: { 
+            'User-Agent': 'Encar-Sync/1.0',
+            'Accept': 'application/json'
+          }
         })
 
         if (!carsResponse.ok) {
@@ -106,43 +109,60 @@ Deno.serve(async (req) => {
         }
 
         const carsData = await carsResponse.json()
+        console.log(`📦 API Response structure:`, Object.keys(carsData))
         
-        if (!carsData.cars || !Array.isArray(carsData.cars)) {
+        // The API returns data in carsData.data array
+        const carsArray = Array.isArray(carsData.data) ? carsData.data : []
+        
+        if (carsArray.length === 0) {
           console.log(`⚠️ No cars data in response for page ${currentPage}`)
           break
         }
 
-        console.log(`📊 Processing ${carsData.cars.length} cars from page ${currentPage}`)
+        console.log(`📊 Processing ${carsArray.length} cars from page ${currentPage}`)
 
-        // Transform and upsert cars
-        for (const apiCar of carsData.cars) {
+        // Transform and upsert cars using actual API structure
+        for (const apiCar of carsArray) {
           try {
+            const primaryLot = apiCar.lots?.[0]
+            const images = primaryLot?.images?.normal || primaryLot?.images?.big || []
+            
+            const carId = apiCar.id?.toString()
+            const make = apiCar.manufacturer?.name?.trim()
+            const model = apiCar.model?.name?.trim()
+            
+            if (!carId || !make || !model) {
+              console.warn(`⚠️ Skipping car with missing data: ID=${carId}, Make=${make}, Model=${model}`)
+              continue
+            }
+
             const transformedCar = {
-              id: apiCar.id?.toString() || `car-${Date.now()}-${Math.random()}`,
-              external_id: apiCar.id?.toString(),
-              make: apiCar.make || 'Unknown',
-              model: apiCar.model || 'Unknown',
-              year: parseInt(apiCar.year) || new Date().getFullYear(),
-              price: parseFloat(apiCar.price) || 0,
-              mileage: parseInt(apiCar.mileage) || 0,
-              title: apiCar.title || `${apiCar.make} ${apiCar.model}`,
-              color: apiCar.color,
-              fuel: apiCar.fuel,
-              transmission: apiCar.transmission,
-              condition: apiCar.condition || 'good',
-              location: apiCar.location || 'South Korea',
-              image_url: apiCar.image_url || apiCar.images?.[0]?.url,
-              images: apiCar.images ? JSON.stringify(apiCar.images) : '[]',
-              lot_number: apiCar.lot_number,
-              vin: apiCar.vin,
-              current_bid: parseFloat(apiCar.current_bid) || 0,
-              buy_now_price: parseFloat(apiCar.buy_now_price) || 0,
-              is_live: Boolean(apiCar.is_live),
-              keys_available: apiCar.keys_available !== false,
+              id: carId,
+              external_id: carId,
+              make,
+              model,
+              year: apiCar.year && apiCar.year > 1900 ? apiCar.year : 2020,
+              price: Math.max(primaryLot?.buy_now || 0, 0),
+              mileage: Math.max(primaryLot?.odometer?.km || 0, 0),
+              title: apiCar.title?.trim() || `${make} ${model} ${apiCar.year || ''}`,
+              vin: apiCar.vin?.trim() || null,
+              color: apiCar.color?.name?.trim() || null,
+              fuel: apiCar.fuel?.name?.trim() || null,
+              transmission: apiCar.transmission?.name?.trim() || null,
+              lot_number: primaryLot?.lot?.toString() || null,
+              image_url: images[0] || null,
+              images: JSON.stringify(images),
+              current_bid: parseFloat(primaryLot?.bid) || 0,
+              buy_now_price: parseFloat(primaryLot?.buy_now) || 0,
+              is_live: primaryLot?.status?.name === 'sale',
+              keys_available: primaryLot?.keys_available !== false,
               status: 'active',
               is_archived: false,
-              last_synced_at: new Date().toISOString(),
-              source_api: 'auctionapis'
+              condition: primaryLot?.condition?.name || 'good',
+              location: 'South Korea',
+              domain_name: 'encar_com',
+              source_api: 'auctionapis',
+              last_synced_at: new Date().toISOString()
             }
 
             const { error: upsertError } = await supabase
@@ -157,6 +177,9 @@ Deno.serve(async (req) => {
               errors.push(`Car ${transformedCar.id}: ${upsertError.message}`)
             } else {
               totalCarsProcessed++
+              if (totalCarsProcessed % 100 === 0) {
+                console.log(`✅ Processed ${totalCarsProcessed} cars so far...`)
+              }
             }
           } catch (carError) {
             console.error(`❌ Error processing car:`, carError)
@@ -164,8 +187,8 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Check for more pages
-        hasMorePages = carsData.has_more === true && carsData.cars.length > 0
+        // Check for more pages - assume we have more if we got a full page
+        hasMorePages = carsArray.length >= 1000
         currentPage++
 
         // Update sync progress
@@ -180,7 +203,13 @@ Deno.serve(async (req) => {
           .eq('id', syncRecord.id)
 
         // Small delay to avoid overwhelming the API
-        await new Promise(resolve => setTimeout(resolve, 500))
+        await new Promise(resolve => setTimeout(resolve, 1000))
+
+        // Safety break to avoid infinite loops
+        if (currentPage > 50) {
+          console.log(`⚠️ Reached maximum page limit (50), stopping pagination`)
+          break
+        }
       }
 
       // Step 2: Process archived lots from /api/archived-lots endpoint
