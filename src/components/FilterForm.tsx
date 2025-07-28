@@ -9,11 +9,26 @@ import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS } from '@/hooks/
 interface Manufacturer {
   id: number;
   name: string;
+  car_count?: number;
+}
+
+interface Model {
+  id: number;
+  name: string;
+  car_count?: number;
+}
+
+interface Generation {
+  id: number;
+  name: string;
+  car_count?: number;
 }
 
 interface FilterFormProps {
   filters: {
     manufacturer_id?: string;
+    model_id?: string;
+    generation_id?: string;
     color?: string;
     fuel_type?: string;
     transmission?: string;
@@ -25,8 +40,12 @@ interface FilterFormProps {
     buy_now_price_to?: string;
   };
   manufacturers: Manufacturer[];
+  models?: Model[];
+  generations?: Generation[];
   onFiltersChange: (filters: any) => void;
   onClearFilters: () => void;
+  onManufacturerChange?: (manufacturerId: string) => void;
+  onModelChange?: (modelId: string) => void;
   showAdvanced?: boolean;
   onToggleAdvanced?: () => void;
 }
@@ -34,18 +53,41 @@ interface FilterFormProps {
 const FilterForm: React.FC<FilterFormProps> = ({
   filters,
   manufacturers,
+  models = [],
+  generations = [],
   onFiltersChange,
   onClearFilters,
+  onManufacturerChange,
+  onModelChange,
   showAdvanced = false,
   onToggleAdvanced
 }) => {
   const updateFilter = (key: string, value: string) => {
     // Handle special "all" values by converting them to undefined
     const actualValue = value === 'all' || value === 'any' ? undefined : value;
-    onFiltersChange({
-      ...filters,
-      [key]: actualValue
-    });
+    
+    // Handle cascading filters
+    if (key === 'manufacturer_id') {
+      onManufacturerChange?.(actualValue || '');
+      onFiltersChange({
+        ...filters,
+        [key]: actualValue,
+        model_id: undefined,
+        generation_id: undefined
+      });
+    } else if (key === 'model_id') {
+      onModelChange?.(actualValue || '');
+      onFiltersChange({
+        ...filters,
+        [key]: actualValue,
+        generation_id: undefined
+      });
+    } else {
+      onFiltersChange({
+        ...filters,
+        [key]: actualValue
+      });
+    }
   };
 
   const currentYear = new Date().getFullYear();
@@ -65,7 +107,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
       </div>
 
       {/* Basic Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="space-y-2">
           <Label htmlFor="manufacturer">Brand</Label>
           <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
@@ -74,11 +116,80 @@ const FilterForm: React.FC<FilterFormProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Brands</SelectItem>
-              {manufacturers.map((manufacturer) => (
-                <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
-                  {manufacturer.name}
-                </SelectItem>
-              ))}
+              {manufacturers.map((manufacturer) => {
+                const count = manufacturer.car_count;
+                const isDisabled = count === 0;
+                return (
+                  <SelectItem 
+                    key={manufacturer.id} 
+                    value={manufacturer.id.toString()}
+                    disabled={isDisabled}
+                    className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+                  >
+                    {manufacturer.name} {count !== undefined && `(${count})`}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="model">Model</Label>
+          <Select 
+            value={filters.model_id || 'all'} 
+            onValueChange={(value) => updateFilter('model_id', value)}
+            disabled={!filters.manufacturer_id}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={filters.manufacturer_id ? "All Models" : "Select Brand First"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Models</SelectItem>
+              {models.map((model) => {
+                const count = model.car_count;
+                const isDisabled = count === 0;
+                return (
+                  <SelectItem 
+                    key={model.id} 
+                    value={model.id.toString()}
+                    disabled={isDisabled}
+                    className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+                  >
+                    {model.name} {count !== undefined && `(${count})`}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="generation">Generation</Label>
+          <Select 
+            value={filters.generation_id || 'all'} 
+            onValueChange={(value) => updateFilter('generation_id', value)}
+            disabled={!filters.model_id}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={filters.model_id ? "All Generations" : "Select Model First"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Generations</SelectItem>
+              {generations.map((generation) => {
+                const count = generation.car_count;
+                const isDisabled = count === 0;
+                return (
+                  <SelectItem 
+                    key={generation.id} 
+                    value={generation.id.toString()}
+                    disabled={isDisabled}
+                    className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+                  >
+                    {generation.name} {count !== undefined && `(${count})`}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>

@@ -35,10 +35,25 @@ interface Car {
 interface Manufacturer {
   id: number;
   name: string;
+  car_count?: number;
+}
+
+interface Model {
+  id: number;
+  name: string;
+  car_count?: number;
+}
+
+interface Generation {
+  id: number;
+  name: string;
+  car_count?: number;
 }
 
 interface APIFilters {
   manufacturer_id?: string;
+  model_id?: string;
+  generation_id?: string;
   color?: string;
   fuel_type?: string;
   transmission?: string;
@@ -154,6 +169,83 @@ export const useAuctionAPI = () => {
     }
   };
 
+  const fetchModels = async (manufacturerId: string): Promise<Model[]> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/models/${manufacturerId}/cars`, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'KORAUTO-WebApp/1.0',
+          'X-API-Key': API_KEY
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch models: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.data || [];
+    } catch (err) {
+      console.error('Error fetching models:', err);
+      return [];
+    }
+  };
+
+  const fetchGenerations = async (modelId: string): Promise<Generation[]> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/generations/${modelId}/cars`, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'KORAUTO-WebApp/1.0',
+          'X-API-Key': API_KEY
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch generations: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.data || [];
+    } catch (err) {
+      console.error('Error fetching generations:', err);
+      return [];
+    }
+  };
+
+  const fetchCarCounts = async (filters: APIFilters = {}): Promise<{ [key: string]: number }> => {
+    try {
+      const params = new URLSearchParams({
+        per_page: '1',
+        simple_paginate: '1'
+      });
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) {
+          params.append(key, value);
+        }
+      });
+
+      const response = await fetch(`${API_BASE_URL}/cars?${params}`, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'KORAUTO-WebApp/1.0',
+          'X-API-Key': API_KEY
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch car counts: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return { total: data.meta?.total || 0 };
+    } catch (err) {
+      console.error('Error fetching car counts:', err);
+      return { total: 0 };
+    }
+  };
+
   const loadMore = async (filters: APIFilters = {}) => {
     if (!hasMorePages || loading) return;
     await fetchCars(currentPage + 1, filters, false);
@@ -168,6 +260,9 @@ export const useAuctionAPI = () => {
     hasMorePages,
     fetchCars,
     fetchManufacturers,
+    fetchModels,
+    fetchGenerations,
+    fetchCarCounts,
     loadMore
   };
 };
