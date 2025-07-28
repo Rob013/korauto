@@ -14,8 +14,8 @@ interface Car {
   price: number;
   mileage?: number;
   title?: string;
-  fuel?: string;
-  transmission?: string;
+  fuel?: { id: number; name: string };
+  transmission?: { id: number; name: string };
   condition?: string;
   lot_number?: string;
   image_url?: string;
@@ -259,10 +259,15 @@ const EncarCatalog = () => {
                     {car.fuel && (
                       <div className="flex justify-between">
                         <span>Fuel:</span>
-                        <span className="font-medium capitalize">{car.fuel}</span>
+                       <span className="font-medium capitalize">{car.fuel?.name}</span>
                       </div>
                     )}
-                 
+                    {car.transmission && (
+                      <div className="flex justify-between">
+                        <span>Transmission:</span>
+                     <span className="font-medium capitalize">{car.transmission?.name}</span>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
                 
