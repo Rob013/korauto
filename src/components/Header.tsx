@@ -17,8 +17,8 @@ const Header = () => {
           <div className="flex items-center space-x-3 flex-shrink-0">
             <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-20 md:h-20 flex items-center justify-center overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
               <img 
-                src="/lovable-uploads/3094fd63-7a92-4497-8103-e166b6b09f70.png" 
-                alt="KORAUTO Logo" 
+                src="/lovable-uploads/fb2b9889-d3da-4280-a77b-7567f307aed5.png" 
+                alt="KORAUTO Logo"
                 className="w-full h-full object-cover"
               />
             </div>
