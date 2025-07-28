@@ -102,6 +102,7 @@ Deno.serve(async (req) => {
     const seedMode = searchParams.get('seed') === 'true';
     const emergencyMode = searchParams.get('emergency') === 'true';
     const emergencyCount = parseInt(searchParams.get('count') || '50000');
+    const forceApi = searchParams.get('force_api') === 'true'; // Override to force API usage
     
     console.log(`🚀 Starting ${syncType} sync${seedMode ? ' (seed mode)' : ''}${emergencyMode ? ' (EMERGENCY mode)' : ''}`);
 
@@ -199,11 +200,10 @@ Deno.serve(async (req) => {
 
     console.log(`✅ Created sync record: ${syncRecord.id}`);
 
-// Emergency: Test multiple API endpoints for maximum data coverage
+    // Emergency: Test multiple API endpoints for maximum data coverage
     const API_ENDPOINTS = [
       'https://auctionsapi.com/api/cars',
-      'https://auctionapis.net/v1/cars',
-      'https://api.encar.com/search/v2/cars'
+      // Fallback endpoints can be added here
     ];
     
     // Get API key from secrets with fallbacks
@@ -223,35 +223,81 @@ Deno.serve(async (req) => {
         const testResponse = await fetch(testUrl.toString(), {
           headers: {
             'Accept': 'application/json',
-            'User-Agent': 'KORAUTO-WebApp/1.0'
+            'User-Agent': 'KORAUTO-WebApp/1.0',
+            'Cache-Control': 'no-cache'
           },
-          signal: AbortSignal.timeout(10000) // 10 second timeout
+          signal: AbortSignal.timeout(15000) // 15 second timeout
         });
+        
+        console.log(`📡 API Response Status: ${testResponse.status} ${testResponse.statusText}`);
         
         if (testResponse.ok) {
           const testData = await testResponse.json();
+          console.log(`📊 API Response Data Structure:`, Object.keys(testData));
+          
+          // Check if we have data array - even empty array means API is working
           if (testData.data && Array.isArray(testData.data)) {
             console.log(`✅ API endpoint working: ${endpoint} (${testData.data.length} test records)`);
+            if (testData.data.length > 0) {
+              console.log(`📝 Sample car:`, testData.data[0]?.id, testData.data[0]?.manufacturer?.name, testData.data[0]?.model?.name);
+            }
+            
             workingEndpoint = endpoint;
             baseUrl = new URL(endpoint);
             baseUrl.searchParams.set('api_key', apiKey);
             baseUrl.searchParams.set('limit', '500'); // Full batch size
             break;
+          } else {
+            console.log(`⚠️ API returned data but wrong format:`, testData);
           }
+        } else {
+          console.log(`❌ API returned non-OK status: ${testResponse.status}`);
+          const errorText = await testResponse.text();
+          console.log(`❌ Error response:`, errorText.substring(0, 200));
         }
       } catch (error) {
         console.log(`❌ API endpoint failed: ${endpoint} - ${error.message}`);
+        console.log(`❌ Error details:`, error.stack?.substring(0, 300));
       }
     }
     
-    if (!workingEndpoint) {
+    if (!workingEndpoint && !forceApi) {
       console.log(`🚨 ALL API ENDPOINTS FAILED - DEPLOYING EMERGENCY SAMPLE DATA`);
       
-      // Emergency: Generate massive sample data if APIs are down
-      const { data: sampleResult, error: sampleError } = await supabase.rpc('generate_sample_cars', { car_count: 50000 });
+      // Emergency: Generate massive sample data using our function
+      const emergencyCars = generateEmergencyCars(50000);
+      const batchSize = 1000;
+      let totalInserted = 0;
       
-      if (sampleError) {
-        throw new Error(`Emergency sample data failed: ${sampleError.message}`);
+      console.log(`📦 Inserting ${emergencyCars.length} emergency cars in batches...`);
+      
+      for (let i = 0; i < emergencyCars.length; i += batchSize) {
+        const batch = emergencyCars.slice(i, i + batchSize);
+        console.log(`📦 Emergency batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(emergencyCars.length/batchSize)}`);
+        
+        const { error: batchError } = await supabase
+          .from('cars')
+          .upsert(batch, { onConflict: 'id' });
+          
+        if (batchError) {
+          console.error(`❌ Emergency batch error:`, batchError.message);
+          throw new Error(`Emergency batch error: ${batchError.message}`);
+        }
+        
+        totalInserted += batch.length;
+        
+        // Update progress in sync record
+        await supabase
+          .from('sync_status')
+          .update({
+            records_processed: totalInserted,
+            total_records: emergencyCars.length,
+            last_activity_at: new Date().toISOString()
+          })
+          .eq('id', syncRecord.id);
+        
+        // Small delay to prevent overwhelming the database
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
       
       await supabase
@@ -259,8 +305,8 @@ Deno.serve(async (req) => {
         .update({
           status: 'completed',
           completed_at: new Date().toISOString(),
-          records_processed: sampleResult || 50000,
-          total_records: 50000,
+          records_processed: totalInserted,
+          total_records: totalInserted,
           error_message: 'API endpoints failed - deployed emergency sample data'
         })
         .eq('id', syncRecord.id);
@@ -270,12 +316,21 @@ Deno.serve(async (req) => {
           success: true,
           sync_id: syncRecord.id,
           status: 'completed',
-          records_processed: sampleResult || 50000,
+          records_processed: totalInserted,
           message: 'EMERGENCY: APIs failed, deployed 50K sample cars',
           emergency_mode: true
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+    
+    // If no working endpoint and forced API mode, use the main endpoint anyway
+    if (!workingEndpoint && forceApi) {
+      console.log(`🔧 FORCE API MODE: Using main endpoint despite test failure`);
+      workingEndpoint = 'https://auctionsapi.com/api/cars';
+      baseUrl = new URL(workingEndpoint);
+      baseUrl.searchParams.set('api_key', apiKey);
+      baseUrl.searchParams.set('limit', '500');
     }
     
     if (syncType === 'incremental') {
