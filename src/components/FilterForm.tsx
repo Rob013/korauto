@@ -185,17 +185,17 @@ const FilterForm: React.FC<FilterFormProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="generation">Gjenerimi</Label>
-          <Select 
+          <Label htmlFor="generation">Gjeneratat</Label>
+          <Select
             value={filters.generation_id || 'all'} 
             onValueChange={(value) => updateFilter('generation_id', value)}
             disabled={!filters.model_id}
           >
             <SelectTrigger>
-              <SelectValue placeholder={filters.model_id ? "Të gjithë Gjenerimet" : "Zgjidh modelin së pari"} />
+              <SelectValue placeholder={filters.model_id ? "Të gjitha Gjeneratat" : "Zgjidh modelin së pari"} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Të gjithë Gjenerimet</SelectItem>
+              <SelectItem value="all">Të gjitha Gjeneratat</SelectItem>
               {generations.map((generation) => {
                 const count = filterCounts?.generations[generation.id.toString()];
                 const isDisabled = count === 0;
