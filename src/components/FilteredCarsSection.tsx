@@ -160,9 +160,9 @@ const FilteredCarsSection = () => {
         setFilteredCars(prev => [...prev, ...transformedCars]);
       }
       
-      if (page > 1 && carListRef.current) {
-      carListRef.current.scrollIntoView({ behavior: 'smooth' });
-      }
+      // if (page > 1 && carListRef.current) {
+      // carListRef.current.scrollIntoView({ behavior: 'smooth' });
+      // }
       setCurrentPage(page);
       setHasMorePages(transformedCars.length === 50);
       setLastUpdate(new Date());
