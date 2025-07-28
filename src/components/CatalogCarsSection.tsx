@@ -37,6 +37,7 @@ const CatalogCarsSection = () => {
   const [filterMake, setFilterMake] = useState<string>('all');
   const [filterModel, setFilterModel] = useState<string>('all');
   const [filterYear, setFilterYear] = useState<string>('all');
+  const [filterProductionYears, setFilterProductionYears] = useState<string>('all');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 200000]);
   const [filterFuel, setFilterFuel] = useState<string>('all');
   const [filterColor, setFilterColor] = useState<string>('all');
@@ -233,6 +234,12 @@ const CatalogCarsSection = () => {
       );
     }
 
+    if (filterProductionYears && filterProductionYears !== 'all') {
+      filtered = filtered.filter(car => 
+        car.year.toString() === filterProductionYears
+      );
+    }
+
     if (filterFuel && filterFuel !== 'all') {
       filtered = filtered.filter(car => 
         car.fuel?.toLowerCase().includes(filterFuel.toLowerCase())
@@ -284,7 +291,7 @@ const CatalogCarsSection = () => {
     });
 
     setFilteredCars(filtered);
-  }, [cars, sortBy, filterMake, filterModel, filterYear, filterFuel, filterColor, filterTransmission, filterBodyType, priceRange, mileageRange]);
+  }, [cars, sortBy, filterMake, filterModel, filterYear, filterProductionYears, filterFuel, filterColor, filterTransmission, filterBodyType, priceRange, mileageRange]);
 
   const handleRefresh = () => {
     fetchCars();
@@ -295,6 +302,7 @@ const CatalogCarsSection = () => {
     setFilterMake('all');
     setFilterModel('all');
     setFilterYear('all');
+    setFilterProductionYears('all');
     setFilterFuel('all');
     setFilterColor('all');
     setFilterTransmission('all');
@@ -308,6 +316,14 @@ const CatalogCarsSection = () => {
   const uniqueMakes = [...new Set(cars.map(car => car.make))].sort();
   const uniqueModels = [...new Set(cars.map(car => car.model))].sort();
   const uniqueYears = [...new Set(cars.map(car => car.year))].sort((a, b) => b - a);
+  
+  // Get production years for selected model
+  const getProductionYearsForModel = (selectedModel: string) => {
+    if (selectedModel === 'all') return [];
+    const modelCars = cars.filter(car => car.model === selectedModel);
+    return [...new Set(modelCars.map(car => car.year))].sort((a, b) => b - a);
+  };
+  
   const uniqueFuels = [...new Set(cars.map(car => car.fuel).filter(Boolean))].sort();
   const uniqueColors = [...new Set(cars.map(car => car.color).filter(Boolean))].sort();
   const uniqueTransmissions = [...new Set(cars.map(car => car.transmission).filter(Boolean))].sort();
@@ -376,7 +392,10 @@ const CatalogCarsSection = () => {
 
             <div>
               <label className="text-sm font-medium mb-2 block">Modeli</label>
-              <Select value={filterModel} onValueChange={setFilterModel}>
+              <Select value={filterModel} onValueChange={(value) => {
+                setFilterModel(value);
+                setFilterProductionYears('all'); // Reset production years when model changes
+              }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Të gjithë Modelet" />
                 </SelectTrigger>
@@ -384,6 +403,25 @@ const CatalogCarsSection = () => {
                   <SelectItem value="all">Të gjithë Modelet</SelectItem>
                   {uniqueModels.map(model => (
                     <SelectItem key={model} value={model}>{model}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Vitet e Prodhimit</label>
+              <Select 
+                value={filterProductionYears} 
+                onValueChange={setFilterProductionYears}
+                disabled={filterModel === 'all'}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={filterModel === 'all' ? "Zgjidhni modelin së pari" : "Të gjithë Vitet"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Të gjithë Vitet e Prodhimit</SelectItem>
+                  {getProductionYearsForModel(filterModel).map(year => (
+                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
