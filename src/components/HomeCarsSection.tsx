@@ -414,8 +414,8 @@ const HomeCarsSection = () => {
           </div>
           
           {/* Primary Filters - Always Visible */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mb-4">
-            <div className="space-y-2">
+          <div className="flex flex-wrap gap-3 sm:gap-4 mb-4">
+            <div className="space-y-2 min-w-[200px] flex-1">
               <label className="text-sm font-medium text-foreground block">Marka</label>
               <Select value={filters.manufacturer_id || ''} onValueChange={(value) => setFilters({...filters, manufacturer_id: value || undefined, model_id: undefined, generation_id: undefined})}>
                 <SelectTrigger className="h-11 bg-background border-border">
@@ -444,7 +444,7 @@ const HomeCarsSection = () => {
               </Select>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-[200px] flex-1">
               <label className="text-sm font-medium text-foreground block">Modeli</label>
               <Select value={filters.model_id || ''} onValueChange={(value) => setFilters({...filters, model_id: value || undefined, generation_id: undefined})} disabled={!filters.manufacturer_id}>
                 <SelectTrigger className="h-11 bg-background border-border">
@@ -458,7 +458,7 @@ const HomeCarsSection = () => {
               </Select>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-[200px] flex-1">
               <label className="text-sm font-medium text-foreground block">Detali i Modelit</label>
               <Select value={filters.generation_id || ''} onValueChange={(value) => setFilters({...filters, generation_id: value || undefined})} disabled={!filters.model_id}>
                 <SelectTrigger className="h-11 bg-background border-border">
