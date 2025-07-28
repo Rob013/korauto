@@ -25,7 +25,7 @@ interface APIFilters {
 
 const EncarCatalog = () => {
   const { toast } = useToast();
-  const { cars, loading, error, totalCount, hasMorePages, fetchCars, fetchManufacturers, fetchModels, fetchGenerations, loadMore } = useAuctionAPI();
+  const { cars, loading, error, totalCount, hasMorePages, fetchCars, fetchManufacturers, fetchModels, fetchGenerations, fetchFilterCounts, loadMore } = useAuctionAPI();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filters, setFilters] = useState<APIFilters>({});
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,6 +33,7 @@ const EncarCatalog = () => {
   const [manufacturers, setManufacturers] = useState<{id: number, name: string, car_count?: number}[]>([]);
   const [models, setModels] = useState<{id: number, name: string, car_count?: number}[]>([]);
   const [generations, setGenerations] = useState<{id: number, name: string, car_count?: number}[]>([]);
+  const [filterCounts, setFilterCounts] = useState<any>(null);
 
   const handleFiltersChange = (newFilters: APIFilters) => {
     setFilters(newFilters);
@@ -89,12 +90,32 @@ const EncarCatalog = () => {
     fetchCars(1, {}, true);
   }, []);
 
-  // Handle filter changes
+  // Handle filter changes and fetch counts
   useEffect(() => {
-    if (Object.keys(filters).length > 0) {
-      fetchCars(1, filters, true);
-    }
-  }, [filters]);
+    const loadData = async () => {
+      if (Object.keys(filters).length > 0) {
+        fetchCars(1, filters, true);
+      }
+      
+      // Fetch filter counts
+      const counts = await fetchFilterCounts(filters, manufacturers);
+      setFilterCounts(counts);
+    };
+    
+    loadData();
+  }, [filters, manufacturers]);
+
+  // Load filter counts on mount
+  useEffect(() => {
+    const loadInitialCounts = async () => {
+      if (manufacturers.length > 0) {
+        const counts = await fetchFilterCounts({}, manufacturers);
+        setFilterCounts(counts);
+      }
+    };
+    
+    loadInitialCounts();
+  }, [manufacturers]);
 
   return (
     <div className="container mx-auto px-4 py-6 sm:py-8">
@@ -160,6 +181,7 @@ const EncarCatalog = () => {
           manufacturers={manufacturers}
           models={models}
           generations={generations}
+          filterCounts={filterCounts}
           onFiltersChange={handleFiltersChange}
           onClearFilters={handleClearFilters}
           onManufacturerChange={handleManufacturerChange}

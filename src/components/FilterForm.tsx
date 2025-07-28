@@ -24,6 +24,16 @@ interface Generation {
   car_count?: number;
 }
 
+interface FilterCounts {
+  manufacturers: { [key: string]: number };
+  models: { [key: string]: number };
+  generations: { [key: string]: number };
+  colors: { [key: string]: number };
+  fuelTypes: { [key: string]: number };
+  transmissions: { [key: string]: number };
+  years: { [key: string]: number };
+}
+
 interface FilterFormProps {
   filters: {
     manufacturer_id?: string;
@@ -42,6 +52,7 @@ interface FilterFormProps {
   manufacturers: Manufacturer[];
   models?: Model[];
   generations?: Generation[];
+  filterCounts?: FilterCounts;
   onFiltersChange: (filters: any) => void;
   onClearFilters: () => void;
   onManufacturerChange?: (manufacturerId: string) => void;
@@ -55,6 +66,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
   manufacturers,
   models = [],
   generations = [],
+  filterCounts,
   onFiltersChange,
   onClearFilters,
   onManufacturerChange,
@@ -117,7 +129,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
             <SelectContent>
               <SelectItem value="all">All Brands</SelectItem>
               {manufacturers.map((manufacturer) => {
-                const count = manufacturer.car_count;
+                const count = filterCounts?.manufacturers[manufacturer.id.toString()];
                 const isDisabled = count === 0;
                 return (
                   <SelectItem 
@@ -202,11 +214,20 @@ const FilterForm: React.FC<FilterFormProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Colors</SelectItem>
-              {Object.entries(COLOR_OPTIONS).map(([name, id]) => (
-                <SelectItem key={id} value={id.toString()}>
-                  {name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')}
-                </SelectItem>
-              ))}
+              {Object.entries(COLOR_OPTIONS).map(([name, id]) => {
+                const count = filterCounts?.colors[id.toString()];
+                const isDisabled = count === 0;
+                return (
+                  <SelectItem 
+                    key={id} 
+                    value={id.toString()}
+                    disabled={isDisabled}
+                    className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+                  >
+                    {name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')} {count !== undefined && `(${count})`}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>
@@ -219,11 +240,20 @@ const FilterForm: React.FC<FilterFormProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Fuel Types</SelectItem>
-              {Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => (
-                <SelectItem key={id} value={id.toString()}>
-                  {name.charAt(0).toUpperCase() + name.slice(1)}
-                </SelectItem>
-              ))}
+              {Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => {
+                const count = filterCounts?.fuelTypes[id.toString()];
+                const isDisabled = count === 0;
+                return (
+                  <SelectItem 
+                    key={id} 
+                    value={id.toString()}
+                    disabled={isDisabled}
+                    className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+                  >
+                    {name.charAt(0).toUpperCase() + name.slice(1)} {count !== undefined && `(${count})`}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>
@@ -248,11 +278,20 @@ const FilterForm: React.FC<FilterFormProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
-                  {Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => (
-                    <SelectItem key={id} value={id.toString()}>
-                      {name.charAt(0).toUpperCase() + name.slice(1)}
-                    </SelectItem>
-                  ))}
+                  {Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => {
+                    const count = filterCounts?.transmissions[id.toString()];
+                    const isDisabled = count === 0;
+                    return (
+                      <SelectItem 
+                        key={id} 
+                        value={id.toString()}
+                        disabled={isDisabled}
+                        className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+                      >
+                        {name.charAt(0).toUpperCase() + name.slice(1)} {count !== undefined && `(${count})`}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>

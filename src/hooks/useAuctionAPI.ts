@@ -246,6 +246,79 @@ export const useAuctionAPI = () => {
     }
   };
 
+  const fetchFilterCounts = async (currentFilters: APIFilters = {}, manufacturersList: Manufacturer[] = []) => {
+    const counts = {
+      manufacturers: {} as { [key: string]: number },
+      models: {} as { [key: string]: number },
+      generations: {} as { [key: string]: number },
+      colors: {} as { [key: string]: number },
+      fuelTypes: {} as { [key: string]: number },
+      transmissions: {} as { [key: string]: number },
+      years: {} as { [key: string]: number }
+    };
+
+    try {
+      // Helper function to get count for specific filter combination
+      const getCountForFilter = async (additionalFilters: APIFilters) => {
+        const combinedFilters = { ...currentFilters, ...additionalFilters };
+        const result = await fetchCarCounts(combinedFilters);
+        return result.total;
+      };
+
+      // Get counts for manufacturers (excluding current manufacturer filter)
+      const manufacturerFilters = { ...currentFilters };
+      delete manufacturerFilters.manufacturer_id;
+      delete manufacturerFilters.model_id;
+      delete manufacturerFilters.generation_id;
+
+      const manufacturerPromises = manufacturersList.map(async (manufacturer) => {
+        const count = await getCountForFilter({ ...manufacturerFilters, manufacturer_id: manufacturer.id.toString() });
+        counts.manufacturers[manufacturer.id.toString()] = count;
+      });
+
+      // Get counts for colors (excluding current color filter)
+      const colorFilters = { ...currentFilters };
+      delete colorFilters.color;
+
+      const colorPromises = Object.entries(COLOR_OPTIONS).map(async ([name, id]) => {
+        const count = await getCountForFilter({ ...colorFilters, color: id.toString() });
+        counts.colors[id.toString()] = count;
+      });
+
+      // Get counts for fuel types
+      const fuelFilters = { ...currentFilters };
+      delete fuelFilters.fuel_type;
+
+      const fuelPromises = Object.entries(FUEL_TYPE_OPTIONS).map(async ([name, id]) => {
+        const count = await getCountForFilter({ ...fuelFilters, fuel_type: id.toString() });
+        counts.fuelTypes[id.toString()] = count;
+      });
+
+      // Get counts for transmissions
+      const transmissionFilters = { ...currentFilters };
+      delete transmissionFilters.transmission;
+
+      const transmissionPromises = Object.entries(TRANSMISSION_OPTIONS).map(async ([name, id]) => {
+        const count = await getCountForFilter({ ...transmissionFilters, transmission: id.toString() });
+        counts.transmissions[id.toString()] = count;
+      });
+
+      // Wait for all promises with rate limiting
+      await Promise.all(manufacturerPromises);
+      await delay(1000); // Rate limiting
+      await Promise.all(colorPromises);
+      await delay(1000);
+      await Promise.all(fuelPromises);
+      await delay(1000);
+      await Promise.all(transmissionPromises);
+
+      return counts;
+    } catch (err) {
+      console.error('Error fetching filter counts:', err);
+      return counts;
+    }
+  };
+
   const loadMore = async (filters: APIFilters = {}) => {
     if (!hasMorePages || loading) return;
     await fetchCars(currentPage + 1, filters, false);
@@ -263,6 +336,7 @@ export const useAuctionAPI = () => {
     fetchModels,
     fetchGenerations,
     fetchCarCounts,
+    fetchFilterCounts,
     loadMore
   };
 };
