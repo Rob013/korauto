@@ -5,242 +5,211 @@ const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
 
 interface Car {
   id: string;
-  make: string;
-  model: string;
+  manufacturer: { id: number; name: string };
+  model: { id: number; name: string };
   year: number;
-  price: number;
-  currentBid?: number;
-  imageUrl?: string;
-  mileage?: number;
-  location?: string;
-  endTime?: string;
-  isLive: boolean;
-  watchers?: number;
+  price?: string;
+  mileage?: string;
+  title?: string;
+  vin?: string;
+  fuel?: { id: number; name: string };
+  transmission?: { id: number; name: string };
+  condition?: string;
+  lot_number?: string;
+  image_url?: string;
+  color?: { id: number; name: string };
+  lots?: {
+    buy_now?: number;
+    lot?: string;
+    odometer?: {
+      km?: number;
+      mi?: number;
+    };
+    images?: {
+      normal?: string[];
+      big?: string[];
+    };
+  }[];
+}
+
+interface Manufacturer {
+  id: number;
+  name: string;
+}
+
+interface APIFilters {
+  manufacturer_id?: string;
+  color?: string;
+  fuel_type?: string;
+  transmission?: string;
+  odometer_from_km?: string;
+  odometer_to_km?: string;
+  from_year?: string;
+  to_year?: string;
+  buy_now_price_from?: string;
+  buy_now_price_to?: string;
+  search?: string;
 }
 
 interface APIResponse {
-  cars: Car[];
-  total: number;
-  page: number;
-  hasMore: boolean;
+  data: Car[];
+  meta: {
+    total: number;
+    current_page: number;
+    last_page: number;
+  };
 }
 
 export const useAuctionAPI = () => {
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasMorePages, setHasMorePages] = useState(false);
 
-  // Cache for API responses
-  const [cache, setCache] = useState<Map<string, {data: APIResponse, timestamp: number}>>(new Map());
-  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-  // Rate limiting
-  const [lastRequestTime, setLastRequestTime] = useState<number>(0);
-  const MIN_REQUEST_INTERVAL = 2000; // 2 seconds between requests
-
-  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-  const fetchCars = async (page: number = 1, minutes?: number, filters?: {make?: string[], year?: number}): Promise<APIResponse> => {
-    setLoading(true);
-    setError(null);
-
-    // Create cache key
-    const cacheKey = JSON.stringify({ page, minutes, filters });
-    
-    // Check cache first
-    const cached = cache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      console.log('Using cached data for cars');
-      setLoading(false);
-      return cached.data;
+  const fetchCars = async (page: number = 1, filters: APIFilters = {}, resetList: boolean = true): Promise<void> => {
+    if (resetList) {
+      setLoading(true);
+      setCurrentPage(1);
     }
-
-    // Rate limiting
-    const now = Date.now();
-    const timeSinceLastRequest = now - lastRequestTime;
-    if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-      await sleep(MIN_REQUEST_INTERVAL - timeSinceLastRequest);
-    }
-    setLastRequestTime(Date.now());
-
-    const maxRetries = 3;
-    let retryCount = 0;
-
-    while (retryCount < maxRetries) {
-      try {
-        console.log('Fetching cars from API...');
-        const params = new URLSearchParams({
-          api_key: API_KEY,
-          limit: '1000'
-        });
-
-        if (minutes) {
-          params.append('minutes', minutes.toString());
-        }
-
-        if (filters?.make && filters.make.length > 0) {
-          params.append('manufacturer', filters.make.join(','));
-        }
-
-        if (filters?.year) {
-          params.append('year_from', filters.year.toString());
-        }
-
-        const requestUrl = `${API_BASE_URL}/cars?${params}`;
-        console.log('API Request:', requestUrl);
-
-        const response = await fetch(requestUrl, {
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'KORAUTO-WebApp/1.0',
-            'X-API-Key': API_KEY
-          }
-        });
-        
-        if (response.status === 429) {
-          const waitTime = Math.pow(2, retryCount) * 1000; // Exponential backoff
-          console.log(`Rate limited. Waiting ${waitTime}ms before retry ${retryCount + 1}`);
-          await sleep(waitTime);
-          retryCount++;
-          continue;
-        }
-
-        if (!response.ok) {
-          throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        
-        // Transform API data to our Car interface
-        const transformedCars: Car[] = data.cars?.map((car: any) => ({
-          id: car.id || Math.random().toString(36),
-          make: car.make || 'Unknown',
-          model: car.model || 'Unknown',
-          year: car.year || 2020,
-          price: car.price || 0,
-          currentBid: car.currentBid,
-          imageUrl: car.imageUrl || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800',
-          mileage: car.mileage || 0,
-          location: car.location || 'Germany',
-          endTime: car.endTime || '2 days',
-          isLive: car.isLive || Math.random() > 0.5,
-          watchers: car.watchers || Math.floor(Math.random() * 50) + 1
-        })) || [];
-
-        const result: APIResponse = {
-          cars: transformedCars,
-          total: data.total || transformedCars.length,
-          page: data.page || page,
-          hasMore: data.hasMore || false
-        };
-
-        // Cache the result
-        setCache(prev => new Map(prev).set(cacheKey, { data: result, timestamp: Date.now() }));
-
-        return result;
-      } catch (err) {
-        console.log(`API Request failed: ${err}`);
-        
-        if (retryCount === maxRetries - 1) {
-          const errorMessage = err instanceof Error ? err.message : 'Failed to fetch cars';
-          setError(errorMessage);
-          console.error('API Error:', err);
-          
-          // Use fallback data
-          console.log('Using fallback car data');
-          const fallbackResult: APIResponse = {
-            cars: [],
-            total: 0,
-            page: 1,
-            hasMore: false
-          };
-          
-          return fallbackResult;
-        }
-        
-        retryCount++;
-        await sleep(1000 * retryCount); // Progressive delay
-      }
-    }
-
-    // Fallback if all retries failed
-    throw new Error('Rate limit exceeded after retries');
-  };
-
-  const fetchArchivedLots = async (minutes?: number) => {
-    setLoading(true);
     setError(null);
 
     try {
       const params = new URLSearchParams({
-        api_key: API_KEY
+        page: page.toString(),
+        per_page: '12',
+        simple_paginate: '0'
       });
 
-      if (minutes) {
-        params.append('minutes', minutes.toString());
+      // Add all filter parameters
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) {
+          params.append(key, value);
+        }
+      });
+
+      console.log('API Request:', `${API_BASE_URL}/cars?${params}`);
+
+      const response = await fetch(`${API_BASE_URL}/cars?${params}`, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'KORAUTO-WebApp/1.0',
+          'X-API-Key': API_KEY
+        }
+      });
+
+      if (response.status === 429) {
+        console.log('Rate limited, waiting before retry...');
+        await delay(2000);
+        return fetchCars(page, filters, resetList);
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/archived-lots?${params}`);
-      
       if (!response.ok) {
-        throw new Error(`API request failed: ${response.status}`);
+        throw new Error(`API returned ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json();
-      return data.archivedLots || [];
+      const data: APIResponse = await response.json();
+      
+      setTotalCount(data.meta?.total || 0);
+      setHasMorePages(page < (data.meta?.last_page || 1));
+      
+      if (resetList || page === 1) {
+        setCars(data.data || []);
+        setCurrentPage(1);
+      } else {
+        setCars(prev => [...prev, ...(data.data || [])]);
+        setCurrentPage(page);
+      }
+
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch archived lots';
-      setError(errorMessage);
       console.error('API Error:', err);
-      return [];
+      setError(err instanceof Error ? err.message : 'Failed to fetch cars');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchManufacturers = async () => {
-    setLoading(true);
-    setError(null);
-
+  const fetchManufacturers = async (): Promise<Manufacturer[]> => {
     try {
-      const params = new URLSearchParams({
-        api_key: API_KEY
+      const response = await fetch(`${API_BASE_URL}/manufacturers/cars`, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'KORAUTO-WebApp/1.0',
+          'X-API-Key': API_KEY
+        }
       });
 
-      const response = await fetch(`${API_BASE_URL}/api/manufacturers?${params}`);
-      
       if (!response.ok) {
-        throw new Error(`API request failed: ${response.status}`);
+        throw new Error(`Failed to fetch manufacturers: ${response.status}`);
       }
 
       const data = await response.json();
-      return data.manufacturers || [];
+      return data.data || [];
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch manufacturers';
-      setError(errorMessage);
-      console.error('API Error:', err);
+      console.error('Error fetching manufacturers:', err);
       return [];
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Initial load effect
-  useEffect(() => {
-    fetchCars().then(result => {
-      setCars(result.cars);
-    });
-  }, []);
+  const loadMore = async (filters: APIFilters = {}) => {
+    if (!hasMorePages || loading) return;
+    await fetchCars(currentPage + 1, filters, false);
+  };
 
   return {
     cars,
-    setCars,
     loading,
     error,
+    currentPage,
+    totalCount,
+    hasMorePages,
     fetchCars,
-    fetchArchivedLots,
-    fetchManufacturers
+    fetchManufacturers,
+    loadMore
   };
+};
+
+// Color options mapping
+export const COLOR_OPTIONS = {
+  silver: 1,
+  purple: 2,
+  orange: 3,
+  green: 4,
+  red: 5,
+  gold: 6,
+  charcoal: 7,
+  brown: 8,
+  grey: 9,
+  turquoise: 10,
+  blue: 11,
+  bronze: 12,
+  white: 13,
+  cream: 14,
+  black: 15,
+  yellow: 16,
+  beige: 17,
+  pink: 18,
+  two_colors: 100
+};
+
+// Fuel type options mapping
+export const FUEL_TYPE_OPTIONS = {
+  diesel: 1,
+  electric: 2,
+  hybrid: 3,
+  gasoline: 4,
+  gas: 5,
+  flexible: 6,
+  hydrogen: 7
+};
+
+// Transmission options mapping
+export const TRANSMISSION_OPTIONS = {
+  automatic: 1,
+  manual: 2
 };
 
 export default useAuctionAPI;
