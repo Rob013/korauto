@@ -2,6 +2,7 @@ import CarCard from "./CarCard";
 import { useRef } from "react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { RefreshCw, AlertCircle, Filter, ChevronDown } from "lucide-react";
@@ -41,6 +42,7 @@ interface ApiFilters {
 }
 
 const HomeCarsSection = () => {
+  const navigate = useNavigate();
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -623,11 +625,24 @@ const HomeCarsSection = () => {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0">
-            {cars.map((car) => (
-              <CarCard key={car.id} {...car} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0">
+              {cars.map((car) => (
+                <CarCard key={car.id} {...car} />
+              ))}
+            </div>
+            
+            {/* Show More Button */}
+            <div className="text-center mt-8">
+              <Button 
+                onClick={() => navigate('/catalog')} 
+                size="lg"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3"
+              >
+                Shfleto të gjitha makinat
+              </Button>
+            </div>
+          </>
         )}
       </div>
     </section>

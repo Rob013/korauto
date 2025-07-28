@@ -905,8 +905,9 @@ const CarDetails = () => {
         {/* Image Zoom Modal */}
         {isImageZoomOpen && (
           <ImageZoom
-            images={images}
-            initialIndex={selectedImageIndex}
+            src={images[selectedImageIndex] || ''}
+            alt={`Car image ${selectedImageIndex + 1}`}
+            isOpen={isImageZoomOpen}
             onClose={() => setIsImageZoomOpen(false)}
           />
         )}
