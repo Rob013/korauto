@@ -159,7 +159,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
             <SelectContent>
               <SelectItem value="all">All Models</SelectItem>
               {models.map((model) => {
-                const count = model.car_count;
+                const count = filterCounts?.models[model.id.toString()];
                 const isDisabled = count === 0;
                 return (
                   <SelectItem 
@@ -189,7 +189,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
             <SelectContent>
               <SelectItem value="all">All Generations</SelectItem>
               {generations.map((generation) => {
-                const count = generation.car_count;
+                const count = filterCounts?.generations[generation.id.toString()];
                 const isDisabled = count === 0;
                 return (
                   <SelectItem 

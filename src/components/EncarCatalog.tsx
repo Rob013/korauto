@@ -68,6 +68,11 @@ const EncarCatalog = () => {
       setModels([]);
     }
     setGenerations([]);
+    
+    // Fetch updated filter counts for the new manufacturer context
+    const newFilters = manufacturerId ? { ...filters, manufacturer_id: manufacturerId } : { ...filters };
+    const counts = await fetchFilterCounts(newFilters, manufacturers);
+    setFilterCounts(counts);
   };
 
   const handleModelChange = async (modelId: string) => {
@@ -77,6 +82,11 @@ const EncarCatalog = () => {
     } else {
       setGenerations([]);
     }
+    
+    // Fetch updated filter counts for the new model context
+    const newFilters = modelId ? { ...filters, model_id: modelId } : { ...filters };
+    const counts = await fetchFilterCounts(newFilters, manufacturers);
+    setFilterCounts(counts);
   };
 
   // Load manufacturers on mount

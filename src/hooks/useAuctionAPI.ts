@@ -303,6 +303,63 @@ export const useAuctionAPI = () => {
         counts.transmissions[id.toString()] = count;
       });
 
+      // Get counts for models (if manufacturer is selected)
+      if (currentFilters.manufacturer_id) {
+        const modelFilters = { ...currentFilters };
+        delete modelFilters.model_id;
+        delete modelFilters.generation_id;
+
+        // First fetch models for the manufacturer
+        const response = await fetch(`${API_BASE_URL}/models/${currentFilters.manufacturer_id}/cars`, {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'KORAUTO-WebApp/1.0',
+            'X-API-Key': API_KEY
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const models = data.data || [];
+          
+          const modelPromises = models.map(async (model: any) => {
+            const count = await getCountForFilter({ ...modelFilters, model_id: model.id.toString() });
+            counts.models[model.id.toString()] = count;
+          });
+          
+          await Promise.all(modelPromises);
+          await delay(500);
+        }
+      }
+
+      // Get counts for generations (if model is selected)
+      if (currentFilters.model_id) {
+        const generationFilters = { ...currentFilters };
+        delete generationFilters.generation_id;
+
+        // First fetch generations for the model
+        const response = await fetch(`${API_BASE_URL}/generations/${currentFilters.model_id}/cars`, {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'KORAUTO-WebApp/1.0',
+            'X-API-Key': API_KEY
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const generations = data.data || [];
+          
+          const generationPromises = generations.map(async (generation: any) => {
+            const count = await getCountForFilter({ ...generationFilters, generation_id: generation.id.toString() });
+            counts.generations[generation.id.toString()] = count;
+          });
+          
+          await Promise.all(generationPromises);
+          await delay(500);
+        }
+      }
+
       // Wait for all promises with rate limiting
       await Promise.all(manufacturerPromises);
       await delay(1000); // Rate limiting
