@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Search, Grid, List } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { API_BASE_URL } from '@/lib/constants';
+
 
 interface Car {
   id: string;
@@ -27,6 +27,9 @@ interface CarFilters {
   search?: string;
 }
 
+  const API_BASE_URL = 'https://auctionsapi.com/api';
+  const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
+
 const EncarCatalog = () => {
   const { toast } = useToast();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -34,11 +37,13 @@ const EncarCatalog = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
   const fetchCars = async (page: number, perPage: number, filters?: CarFilters) => {
+    setError(null);
     try {
       const params = new URLSearchParams({
         page: String(page),
@@ -50,8 +55,14 @@ const EncarCatalog = () => {
         params.append('search', filters.search);
       }
 
-      const res = await fetch(`${API_BASE_URL}/cars?${params.toString()}`);
-      const json = await res.json();
+     const response = await fetch(`${API_BASE_URL}/cars?${params}`, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'KORAUTO-WebApp/1.0',
+          'X-API-Key': API_KEY
+        }
+      });
+      const json = await response.json();
 
       const newCars = json.data;
       setTotalCount(json.meta?.total || 0);
@@ -62,6 +73,7 @@ const EncarCatalog = () => {
         setCars((prev) => [...prev, ...newCars]);
       }
     } catch (err: any) {
+      setError(err.message || 'Failed to fetch cars.');
       toast({
         title: 'Fetch error',
         description: err.message || 'Failed to fetch cars.',
