@@ -40,9 +40,11 @@ const FilterForm: React.FC<FilterFormProps> = ({
   onToggleAdvanced
 }) => {
   const updateFilter = (key: string, value: string) => {
+    // Handle special "all" values by converting them to undefined
+    const actualValue = value === 'all' || value === 'any' ? undefined : value;
     onFiltersChange({
       ...filters,
-      [key]: value || undefined
+      [key]: actualValue
     });
   };
 
@@ -66,12 +68,12 @@ const FilterForm: React.FC<FilterFormProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label htmlFor="manufacturer">Brand</Label>
-          <Select value={filters.manufacturer_id || ''} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
+          <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
             <SelectTrigger>
               <SelectValue placeholder="All Brands" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Brands</SelectItem>
+              <SelectItem value="all">All Brands</SelectItem>
               {manufacturers.map((manufacturer) => (
                 <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
                   {manufacturer.name}
@@ -83,12 +85,12 @@ const FilterForm: React.FC<FilterFormProps> = ({
 
         <div className="space-y-2">
           <Label htmlFor="color">Color</Label>
-          <Select value={filters.color || ''} onValueChange={(value) => updateFilter('color', value)}>
+          <Select value={filters.color || 'all'} onValueChange={(value) => updateFilter('color', value)}>
             <SelectTrigger>
               <SelectValue placeholder="All Colors" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Colors</SelectItem>
+              <SelectItem value="all">All Colors</SelectItem>
               {Object.entries(COLOR_OPTIONS).map(([name, id]) => (
                 <SelectItem key={id} value={id.toString()}>
                   {name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')}
@@ -100,12 +102,12 @@ const FilterForm: React.FC<FilterFormProps> = ({
 
         <div className="space-y-2">
           <Label htmlFor="fuel_type">Fuel Type</Label>
-          <Select value={filters.fuel_type || ''} onValueChange={(value) => updateFilter('fuel_type', value)}>
+          <Select value={filters.fuel_type || 'all'} onValueChange={(value) => updateFilter('fuel_type', value)}>
             <SelectTrigger>
               <SelectValue placeholder="All Fuel Types" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Fuel Types</SelectItem>
+              <SelectItem value="all">All Fuel Types</SelectItem>
               {Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => (
                 <SelectItem key={id} value={id.toString()}>
                   {name.charAt(0).toUpperCase() + name.slice(1)}
@@ -129,12 +131,12 @@ const FilterForm: React.FC<FilterFormProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label htmlFor="transmission">Transmission</Label>
-              <Select value={filters.transmission || ''} onValueChange={(value) => updateFilter('transmission', value)}>
+              <Select value={filters.transmission || 'all'} onValueChange={(value) => updateFilter('transmission', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All</SelectItem>
+                  <SelectItem value="all">All</SelectItem>
                   {Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => (
                     <SelectItem key={id} value={id.toString()}>
                       {name.charAt(0).toUpperCase() + name.slice(1)}
@@ -146,12 +148,12 @@ const FilterForm: React.FC<FilterFormProps> = ({
 
             <div className="space-y-2">
               <Label htmlFor="from_year">From Year</Label>
-              <Select value={filters.from_year || ''} onValueChange={(value) => updateFilter('from_year', value)}>
+              <Select value={filters.from_year || 'any'} onValueChange={(value) => updateFilter('from_year', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Any" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Any</SelectItem>
+                  <SelectItem value="any">Any</SelectItem>
                   {years.map((year) => (
                     <SelectItem key={year} value={year.toString()}>
                       {year}
@@ -163,12 +165,12 @@ const FilterForm: React.FC<FilterFormProps> = ({
 
             <div className="space-y-2">
               <Label htmlFor="to_year">To Year</Label>
-              <Select value={filters.to_year || ''} onValueChange={(value) => updateFilter('to_year', value)}>
+              <Select value={filters.to_year || 'any'} onValueChange={(value) => updateFilter('to_year', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Any" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Any</SelectItem>
+                  <SelectItem value="any">Any</SelectItem>
                   {years.map((year) => (
                     <SelectItem key={year} value={year.toString()}>
                       {year}
