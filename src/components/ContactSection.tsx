@@ -77,7 +77,7 @@ const ContactSection = () => {
             <CardContent>
               <p className="text-muted-foreground mb-2">Vizitoni zyrën tonë</p>
               <a 
-                href="https://maps.google.com/?q=Rr.Ilaz+Kodra+70+Prishtine+Kosovo+KORAUTO" 
+                href="https://maps.google.com/?q=KORAUTO,Rr.+Ilaz+Kodra+70,Prishtinë,Kosovo" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-primary font-medium hover:text-primary/80 transition-colors"

@@ -893,7 +893,14 @@ const CarDetails = () => {
                 <div className="mt-6 pt-6 border-t border-border">
                   <div className="flex items-center gap-3 text-muted-foreground">
                     <MapPin className="h-4 w-4" />
-                    <span className="text-sm">Lokacioni: Rr. Ilaz Kodra 70, Prishtinë, Kosovë</span>
+                    <a 
+                      href="https://maps.google.com/?q=KORAUTO,Rr.+Ilaz+Kodra+70,Prishtinë,Kosovo" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-sm hover:text-primary transition-colors cursor-pointer"
+                    >
+                      Lokacioni: Rr. Ilaz Kodra 70, Prishtinë, Kosovë
+                    </a>
                   </div>
                 </div>
               </CardContent>

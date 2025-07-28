@@ -55,7 +55,7 @@ const Footer = () => {
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
                 <a 
-                  href="https://maps.google.com/?q=Rr.Ilaz+Kodra+70+Prishtine+Kosovo+KORAUTO" 
+                  href="https://maps.google.com/?q=KORAUTO,Rr.+Ilaz+Kodra+70,Prishtinë,Kosovo" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="hover:text-gray-300 transition-colors"
