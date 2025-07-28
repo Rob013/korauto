@@ -4,8 +4,8 @@ const HomeSection = () => {
       <div className="container mx-auto px-4 text-center">
         <div className="max-w-4xl mx-auto">
           {/* Logo on Homepage */}
-          <div className="mb-12">
-            <div className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 mx-auto flex items-center justify-center mb-6">
+          <div className="mb-16">
+            <div className="w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56 mx-auto flex items-center justify-center mb-8">
               <img 
                 src="/lovable-uploads/3657dff4-7afd-45bb-9f8a-8d3f4ba8d7b4.png" 
                 alt="KORAUTO Logo" 
