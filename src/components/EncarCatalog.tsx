@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Search, Grid, List } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Search, Grid, List, RefreshCw, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 
@@ -115,11 +114,11 @@ const EncarCatalog = () => {
   }, []);
 
   const getStatusIcon = () => {
-
+    return <></>
   };
 
   const getStatusText = () => {
-
+    return <></>
   };
 
   return (
