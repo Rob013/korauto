@@ -252,11 +252,13 @@ const EncarCatalog = () => {
                       <span>Year:</span>
                       <span className="font-medium">{car.year}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Mileage:</span>
-                      <span className="font-medium">{formatMileage(car.mileage)}</span>
-                    </div>
-                
+                  
+                    {car.fuel && (
+                      <div className="flex justify-between">
+                        <span>Fuel:</span>
+                        <span className="font-medium capitalize">{car.fuel}</span>
+                      </div>
+                    )}
                     {car.transmission && (
                       <div className="flex justify-between">
                         <span>Transmission:</span>
