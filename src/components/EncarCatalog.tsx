@@ -276,9 +276,9 @@ const EncarCatalog = () => {
                     <div className="text-2xl font-bold text-primary">
                       {formatPrice(car.price)}
                     </div>
-                    <Badge variant="outline">
+                    {/* <Badge variant="outline">
                       {car.lot_number || 'Encar'}
-                    </Badge>
+                    </Badge> */}
                   </div>
                 </CardFooter>
               </Card>
