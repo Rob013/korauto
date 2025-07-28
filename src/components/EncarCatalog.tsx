@@ -234,14 +234,16 @@ const EncarCatalog = () => {
                         target.src = 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800';
                       }}
                     />
-
+                    {car.condition && (
+                      <Badge className="absolute top-2 left-2" variant="secondary">
+                        {car.condition}
+                      </Badge>
+                    )}
                   </div>
                 </CardHeader>
                 
                 <CardContent className="p-4">
-                  <h3 className="font-semibold text-lg mb-2 line-clamp-2">
-                   {car.title || `${car.make?.name} ${car.model?.name} ${car.year}`}
-                  </h3>
+             
                   
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <div className="flex justify-between">
