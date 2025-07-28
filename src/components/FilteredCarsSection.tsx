@@ -495,7 +495,7 @@ const FilteredCarsSection = () => {
                 <label className="text-sm font-medium mb-2 block">Km min</label>
                 <Input 
                   type="number" 
-                  placeholder="0"
+                  placeholder="0" 
                   value={mileageRange[0] === 0 ? '' : mileageRange[0].toString()}
                   onChange={(e) => setMileageRange([parseInt(e.target.value) || 0, mileageRange[1]])}
                 />
@@ -575,7 +575,7 @@ const FilteredCarsSection = () => {
                   size="lg"
                   className="w-full sm:w-auto bg-primary hover:bg-primary/90 min-h-[48px] text-base"
                 >
-                  Shfaq Më Shumë Makina të tjera)
+                  Shfaq Më Shumë Makina të tjera
                 </Button>
               </div>
             )}
