@@ -165,7 +165,7 @@ const AdminDashboard = () => {
         .select('*', { count: 'exact', head: true })
         .gte('created_at', oneWeekAgo.toISOString());
 
-      // Fetch cars stats
+      // Fetch real cars stats from database
       const { count: totalCars } = await supabase
         .from('cars')
         .select('*', { count: 'exact', head: true });
@@ -173,7 +173,7 @@ const AdminDashboard = () => {
       const { count: recentlyAddedCars } = await supabase
         .from('cars')
         .select('*', { count: 'exact', head: true })
-        .gte('last_synced_at', oneWeekAgo.toISOString());
+        .gte('created_at', oneWeekAgo.toISOString());
 
       // Fetch sync status
       const { data: syncData } = await supabase

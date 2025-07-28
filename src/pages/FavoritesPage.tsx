@@ -59,26 +59,38 @@ const FavoritesPage = () => {
 
   const fetchFavorites = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      // First get favorite car IDs
+      const { data: favoriteData, error: favoriteError } = await supabase
         .from('favorite_cars')
-        .select(`
-          id,
-          car_id,
-          user_id,
-          created_at,
-          cars!favorite_cars_car_id_fkey (
-            make,
-            model,
-            year,
-            price,
-            image_url
-          )
-        `)
+        .select('id, car_id, user_id, created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
-      setFavorites(data || []);
+      if (favoriteError) throw favoriteError;
+
+      // Then get car details for each favorite
+      const favoritesWithCars: FavoriteCar[] = [];
+      
+      for (const favorite of favoriteData || []) {
+        const { data: carData } = await supabase
+          .from('cars')
+          .select('make, model, year, price, image_url')
+          .eq('id', favorite.car_id)
+          .single();
+        
+        favoritesWithCars.push({
+          ...favorite,
+          cars: carData || {
+            make: 'Unknown',
+            model: 'Unknown',
+            year: 0,
+            price: 0,
+            image_url: undefined
+          }
+        });
+      }
+      
+      setFavorites(favoritesWithCars);
     } catch (error) {
       console.error('Error fetching favorites:', error);
     } finally {

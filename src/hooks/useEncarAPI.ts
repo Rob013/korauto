@@ -89,8 +89,6 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
       let query = supabase
         .from('cars')
         .select('*', { count: 'exact' })
-        .eq('source_api', 'auctionapis')
-        .eq('status', 'active')
         .order('created_at', { ascending: false });
 
       // Apply filters
@@ -136,9 +134,9 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
       }
 
       if (page === 1) {
-        setCars((data || []) as Car[]);
+        setCars(data || []);
       } else {
-        setCars(prev => [...prev, ...((data || []) as Car[])]);
+        setCars(prev => [...prev, ...(data || [])]);
       }
       
       setTotalCount(count || 0);
