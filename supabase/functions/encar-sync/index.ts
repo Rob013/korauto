@@ -5,11 +5,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// API rate limiting and retry configuration
-const RATE_LIMIT_DELAY = 30000 // Start with 30 seconds
+// API rate limiting and retry configuration - Updated for correct endpoint
+const RATE_LIMIT_DELAY = 8000 // Reduced to 8 seconds between requests
 const MAX_RETRIES = 3
 const BACKOFF_MULTIPLIER = 2
-const PAGE_SIZE = 1000
+const PAGE_SIZE = 100 // Updated from 1000 to 100 as specified
 const REQUEST_TIMEOUT = 30000
 const MAX_PAGES = 100 // Safety limit
 
@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
       // Step 1: Process active cars from /api/cars endpoint
       console.log(`📡 Processing active cars (${syncType === 'full' ? 'full sync' : `last ${minutes} minutes`})`)
       
-      let baseUrl = `${BASE_URL}/cars?api_key=${API_KEY}&per-page=${PAGE_SIZE}`
+      let baseUrl = `${BASE_URL}/cars?api_key=${API_KEY}&per_page=${PAGE_SIZE}`
       if (syncType !== 'full') {
         baseUrl += `&minutes=${minutes}`
       }
@@ -275,8 +275,8 @@ Deno.serve(async (req) => {
 
           currentPage++
           
-          // Small delay between pages to be nice to the API
-          await new Promise(resolve => setTimeout(resolve, 2000))
+          // Proper delay between pages to prevent rate limiting
+          await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY))
 
         } catch (pageError) {
           console.error(`❌ Error processing page ${currentPage}:`, pageError)
