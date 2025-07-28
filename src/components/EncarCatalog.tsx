@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Search, Grid, List, RefreshCw, Clock, CheckCircle, AlertCircle, Filter } from 'lucide-react';
+import CarCard from '@/components/CarCard';
 
 interface Car {
   id: string;
@@ -15,6 +16,7 @@ interface Car {
   price?: string;
   mileage?: string;
   title?: string;
+  vin?: string;
   fuel?: { id: number; name: string };
   transmission?: { id: number; name: string };
   condition?: string;
@@ -23,6 +25,7 @@ interface Car {
   color?: { id: number; name: string };
   lots?: {
     buy_now?: number;
+    lot?: string;
     odometer?: {
       km?: number;
       mi?: number;
@@ -714,92 +717,54 @@ const formatMileage = (mileage?: string | number) =>
             ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
             : "space-y-4"
           }>
-             {filteredCars.map((car) => (
-              <Card key={car.id} className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col justify-between">
-                <CardHeader className="p-0">
-                  <div className="aspect-video relative overflow-hidden">
-                    <img
-                      src={car.lots?.[0]?.images?.normal?.[0] || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800'}
-                      alt={car.title || `${car.manufacturer?.name} ${car.model?.name}`}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800';
-                      }}
-                    />
-                    {car.condition && (
-                      <Badge className="absolute top-2 left-2" variant="secondary">
-                        {car.condition}
-                      </Badge>
-                    )}
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="p-4">
-                   <h3 className="font-semibold text-lg mb-2 line-clamp-2">
-                    {car.title || `${car.manufacturer?.name} ${car.model?.name} ${car.year}`}
-                   </h3>
-                  
-                  <div className="space-y-2 text-sm text-muted-foreground">
-                    <div className="flex justify-between">
-                      <span>Year:</span>
-                      <span className="font-medium">{car.year}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Mileage:</span>
-                    <span>{formatMileage(car.lots?.[0]?.odometer?.km) ?? "N/A"}</span>
-                    </div>
-                    {car.fuel && (
-                      <div className="flex justify-between">
-                        <span>Fuel:</span>
-                       <span className="font-medium capitalize">{car.fuel?.name}</span>
-                      </div>
-                    )}
-                    {car.transmission && (
-                      <div className="flex justify-between">
-                        <span>Transmission:</span>
-                     <span className="font-medium capitalize">{car.transmission?.name}</span>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-                
-                <CardFooter className="p-4 pt-0">
-                  <div className="w-full flex items-center justify-between">
-                    <div className="text-2xl font-bold text-primary">
-                      <span>{formatPrice(car.lots?.[0]?.buy_now) ?? "N/A"}</span>
-                    </div>
-                    <Badge variant="outline">
-                      {car.lot_number || 'Encar'}
-                    </Badge> 
-                  </div>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+             {filteredCars.map((car) => {
+               const lot = car.lots?.[0];
+               const price = lot?.buy_now ? Math.round(lot.buy_now + 2300) : 25000;
+               
+               return (
+                 <CarCard
+                   key={car.id}
+                   id={car.id}
+                   make={car.manufacturer?.name || 'Unknown'}
+                   model={car.model?.name || 'Unknown'}
+                   year={car.year}
+                   price={price}
+                   image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]}
+                   vin={car.vin}
+                   mileage={lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined}
+                   transmission={car.transmission?.name}
+                   fuel={car.fuel?.name}
+                   color={car.color?.name}
+                   condition={car.condition?.replace('run_and_drives', 'Good')}
+                   lot={car.lot_number || lot?.lot}
+                   title={car.title}
+                 />
+               );
+             })}
+           </div>
 
-          {/* Load More */}
-          {cars.length < totalCount && (
-            <div className="flex justify-center mt-8">
-              <Button
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-                variant="outline"
-                size="lg"
-              >
-                {loadingMore ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Loading...
-                  </>
-                ) : (
-                  `Shfaq më shumë (${cars.length} prej ${totalCount.toLocaleString()})`
-                )}
-              </Button>
-            </div>
-          )}
-        </>
-      )}
+           {/* Load More */}
+           {cars.length < totalCount && (
+             <div className="flex justify-center mt-8">
+               <Button
+                 onClick={handleLoadMore}
+                 disabled={loadingMore}
+                 variant="outline"
+                 size="lg"
+               >
+                 {loadingMore ? (
+                   <>
+                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                     Loading...
+                   </>
+                 ) : (
+                   `Show More (${cars.length} of ${totalCount.toLocaleString()})`
+                 )}
+               </Button>
+             </div>
+           )}
+         </>
+       )}
 
     </div>
   );

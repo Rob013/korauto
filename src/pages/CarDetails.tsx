@@ -82,106 +82,129 @@ const CarDetails = () => {
       try {
         setLoading(true);
 
-        // First try to fetch from the cars list to get the car data
-        const listResponse = await fetch(`${API_BASE_URL}/cars?api_key=${API_KEY}&limit=10000`, {
+        // Try to fetch specific car details from API
+        const response = await fetch(`${API_BASE_URL}/cars/${id}`, {
           headers: {
             'Accept': 'application/json',
             'User-Agent': 'KORAUTO-WebApp/1.0',
             'X-API-Key': API_KEY
           }
         });
-        if (listResponse.ok) {
-          const listData = await listResponse.json();
-          const carsArray = Array.isArray(listData.data) ? listData.data : [];
-          const foundCar = carsArray.find((car: any) => car.id?.toString() === id);
-          if (foundCar) {
-            // Transform found car data
-            const lot = foundCar.lots?.[0];
-            const basePrice = lot?.buy_now || lot?.final_bid || foundCar.price || 25000;
-            const price = Math.round(basePrice + 2300); // Add KORAUTO markup
+
+        if (response.ok) {
+          const data = await response.json();
+          const carData = data.data || data;
+          
+          if (carData) {
+            const lot = carData.lots?.[0];
+            const basePrice = lot?.buy_now || lot?.final_bid || carData.price || 25000;
+            const price = Math.round(basePrice + 2300);
 
             const transformedCar: CarDetails = {
-              id: foundCar.id?.toString() || id,
-              make: foundCar.manufacturer?.name || 'BMW',
-              model: foundCar.model?.name || 'Series 3',
-              year: foundCar.year || 2020,
+              id: carData.id?.toString() || id,
+              make: carData.manufacturer?.name || 'Unknown',
+              model: carData.model?.name || 'Unknown',
+              year: carData.year || 2020,
               price: price,
-              image: lot?.images?.normal?.[0],
-              images: lot?.images?.normal || [],
-              vin: foundCar.vin,
-              mileage: lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : '50,000 km',
-              transmission: foundCar.transmission?.name || 'Automatic',
-              fuel: foundCar.fuel?.name || 'Gasoline',
-              color: foundCar.color?.name || 'Silver',
-              condition: lot?.condition?.name?.replace('run_and_drives', 'Good Condition') || 'Good',
+              image: lot?.images?.normal?.[0] || lot?.images?.big?.[0],
+              images: lot?.images?.normal || lot?.images?.big || [],
+              vin: carData.vin,
+              mileage: lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined,
+              transmission: carData.transmission?.name,
+              fuel: carData.fuel?.name,
+              color: carData.color?.name,
+              condition: lot?.condition?.name?.replace('run_and_drives', 'Good Condition'),
               lot: lot?.lot,
-              title: foundCar.title,
+              title: carData.title,
               odometer: lot?.odometer,
-              engine: foundCar.engine || {
-                name: '2.0L Turbo'
-              },
-              cylinders: foundCar.cylinders || 4,
-              drive_wheel: foundCar.drive_wheel || {
-                name: 'Front'
-              },
-              body_type: foundCar.body_type || {
-                name: 'Sedan'
-              },
+              engine: carData.engine,
+              cylinders: carData.cylinders,
+              drive_wheel: carData.drive_wheel,
+              body_type: carData.body_type,
               damage: lot?.damage,
-              keys_available: lot?.keys_available ?? true,
+              keys_available: lot?.keys_available,
               airbags: lot?.airbags,
               grade_iaai: lot?.grade_iaai,
-              seller: lot?.seller || 'KORAUTO Certified Dealer',
-              seller_type: lot?.seller_type || 'Dealer',
+              seller: lot?.seller,
+              seller_type: lot?.seller_type,
               sale_date: lot?.sale_date,
               bid: lot?.bid,
               buy_now: lot?.buy_now,
-              final_bid: lot?.final_bid
+              final_bid: lot?.final_bid,
+              features: ['Air Conditioning', 'Bluetooth', 'USB Port', 'Power Windows'],
+              safety_features: ['ABS', 'ESP', 'Airbags'],
+              comfort_features: ['Power Steering', 'Central Locking'],
+              performance_rating: 4.5,
+              popularity_score: 85
             };
             setCar(transformedCar);
             return;
           }
         }
 
-        // If not found in list, create fallback data based on ID
-        const fallbackCar: CarDetails = {
-          id: id,
-          make: 'BMW',
-          model: 'Series 3',
-          year: 2021,
-          price: 32300,
-          // Base price + KORAUTO markup
-          image: 'https://via.placeholder.com/800x600/f5f5f5/999999?text=BMW+Series+3',
-          images: ['https://via.placeholder.com/800x600/f5f5f5/999999?text=BMW+Series+3', 'https://via.placeholder.com/800x600/f5f5f5/999999?text=Interior', 'https://via.placeholder.com/800x600/f5f5f5/999999?text=Engine'],
-          vin: 'WBANA5314XCR' + id.slice(-5),
-          mileage: '45,000 km',
-          transmission: 'Automatic',
-          fuel: 'Gasoline',
-          color: 'Silver',
-          condition: 'Excellent',
-          lot: id.slice(-6),
-          title: '2021 BMW 3 Series 320i',
-          engine: {
-            name: '2.0L TwinPower Turbo'
-          },
-          cylinders: 4,
-          drive_wheel: {
-            name: 'RWD'
-          },
-          body_type: {
-            name: 'Sedan'
-          },
-          keys_available: true,
-          seller: 'KORAUTO Certified Dealer',
-          seller_type: 'Professional Dealer',
-          buy_now: 30000,
-          features: ['Cruise Control', 'Bluetooth', 'USB Port', 'Air Conditioning', 'Power Windows'],
-          safety_features: ['ABS', 'ESP', 'Airbags', 'Seatbelt Pretensioners'],
-          comfort_features: ['Leather Seats', 'Heated Seats', 'Automatic Climate Control'],
-          performance_rating: 4.5,
-          popularity_score: 85
-        };
-        setCar(fallbackCar);
+        // If specific car endpoint fails, try to find it in the cars list
+        const listResponse = await fetch(`${API_BASE_URL}/cars?per_page=100&page=1`, {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'KORAUTO-WebApp/1.0',
+            'X-API-Key': API_KEY
+          }
+        });
+
+        if (listResponse.ok) {
+          const listData = await listResponse.json();
+          const carsArray = Array.isArray(listData.data) ? listData.data : [];
+          const foundCar = carsArray.find((car: any) => car.id?.toString() === id);
+          
+          if (foundCar) {
+            const lot = foundCar.lots?.[0];
+            const basePrice = lot?.buy_now || lot?.final_bid || foundCar.price || 25000;
+            const price = Math.round(basePrice + 2300);
+
+            const transformedCar: CarDetails = {
+              id: foundCar.id?.toString() || id,
+              make: foundCar.manufacturer?.name || 'Unknown',
+              model: foundCar.model?.name || 'Unknown',
+              year: foundCar.year || 2020,
+              price: price,
+              image: lot?.images?.normal?.[0] || lot?.images?.big?.[0],
+              images: lot?.images?.normal || lot?.images?.big || [],
+              vin: foundCar.vin,
+              mileage: lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined,
+              transmission: foundCar.transmission?.name,
+              fuel: foundCar.fuel?.name,
+              color: foundCar.color?.name,
+              condition: lot?.condition?.name?.replace('run_and_drives', 'Good Condition'),
+              lot: lot?.lot,
+              title: foundCar.title,
+              odometer: lot?.odometer,
+              engine: foundCar.engine,
+              cylinders: foundCar.cylinders,
+              drive_wheel: foundCar.drive_wheel,
+              body_type: foundCar.body_type,
+              damage: lot?.damage,
+              keys_available: lot?.keys_available,
+              airbags: lot?.airbags,
+              grade_iaai: lot?.grade_iaai,
+              seller: lot?.seller,
+              seller_type: lot?.seller_type,
+              sale_date: lot?.sale_date,
+              bid: lot?.bid,
+              buy_now: lot?.buy_now,
+              final_bid: lot?.final_bid,
+              features: ['Air Conditioning', 'Bluetooth', 'USB Port', 'Power Windows'],
+              safety_features: ['ABS', 'ESP', 'Airbags'],
+              comfort_features: ['Power Steering', 'Central Locking'],
+              performance_rating: 4.5,
+              popularity_score: 85
+            };
+            setCar(transformedCar);
+            return;
+          }
+        }
+
+        // If car not found, show error
+        setError('Car not found');
       } catch (err) {
         console.error('Failed to fetch car details:', err);
         setError('Failed to load car details');
