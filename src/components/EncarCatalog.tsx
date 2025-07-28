@@ -225,12 +225,16 @@ const EncarCatalog = () => {
               <Card key={car.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <CardHeader className="p-0">
                   <div className="aspect-video relative overflow-hidden">
-                
-                    {car.condition && (
-                      <Badge className="absolute top-2 left-2" variant="secondary">
-                        {car.condition}
-                      </Badge>
-                    )}
+                    <img
+                      src={car.image_url || (car.images ? JSON.parse(car.images)?.[0] : null) || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800'}
+                      alt={car.title || `${car.make} ${car.model}`}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800';
+                      }}
+                    />
+
                   </div>
                 </CardHeader>
                 
