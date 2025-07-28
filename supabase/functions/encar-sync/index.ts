@@ -49,7 +49,7 @@ interface SyncState {
   status: 'pending' | 'in_progress' | 'paused' | 'completed' | 'failed';
   current_page: number;
   next_url: string | null;
-  total_synced: number;
+  synced_records: number;
   total_records: number;
   created_at: string;
   last_updated: string;
@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
           status: 'in_progress',
           current_page: 1,
           next_url: null,
-          total_synced: 0,
+          synced_records: 0,
           total_records: 0
         })
         .select()
@@ -258,8 +258,8 @@ Deno.serve(async (req) => {
         }
 
         // Update sync state
-        syncState.total_synced += transformedCars.length;
-        syncState.total_records = apiData.meta?.total || syncState.total_synced;
+        syncState.synced_records += transformedCars.length;
+        syncState.total_records = apiData.meta?.total || syncState.synced_records;
         syncState.current_page++;
         syncState.next_url = apiData.links?.next || null;
         pagesProcessed++;
@@ -280,7 +280,7 @@ Deno.serve(async (req) => {
           .update({
             current_page: syncState.current_page,
             next_url: syncState.next_url,
-            total_synced: syncState.total_synced,
+            synced_records: syncState.synced_records,
             total_records: syncState.total_records,
             last_updated: new Date().toISOString()
           })
@@ -321,11 +321,11 @@ Deno.serve(async (req) => {
     if (!hasMore) {
       // Sync is complete
       finalStatus = 'completed';
-      console.log(`🎉 Sync completed! Total: ${syncState.total_synced} cars`);
+      console.log(`🎉 Sync completed! Total: ${syncState.synced_records} cars`);
     } else {
       // Need to continue in next execution
       finalStatus = 'paused';
-      console.log(`⏸️ Pausing after ${pagesProcessed} pages. Total so far: ${syncState.total_synced} cars`);
+      console.log(`⏸️ Pausing after ${pagesProcessed} pages. Total so far: ${syncState.synced_records} cars`);
       
       // Trigger continuation
       EdgeRuntime.waitUntil((async () => {
@@ -348,7 +348,7 @@ Deno.serve(async (req) => {
         status: finalStatus,
         current_page: syncState.current_page,
         next_url: syncState.next_url,
-        total_synced: syncState.total_synced,
+        synced_records: syncState.synced_records,
         total_records: syncState.total_records,
         last_updated: new Date().toISOString()
       })
@@ -359,7 +359,7 @@ Deno.serve(async (req) => {
         success: true,
         message: `${finalStatus === 'completed' ? 'Completed' : 'Paused'} sync`,
         sync_type: syncType,
-        total_synced: syncState.total_synced,
+        total_synced: syncState.synced_records,
         total_records: syncState.total_records,
         pages_processed: pagesProcessed,
         status: finalStatus,
