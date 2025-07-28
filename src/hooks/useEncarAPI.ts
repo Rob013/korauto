@@ -333,10 +333,61 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     };
   }, []);
 
-  // Initial load with larger batch for better performance
+  // Enhanced initial load with real-time updates
   useEffect(() => {
     fetchCars(1, 100);
     getSyncStatus();
+    
+    // Set up real-time sync status updates
+    const syncChannel = supabase
+      .channel('sync-status-realtime')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'sync_status'
+      }, (payload) => {
+        console.log('🔄 Real-time sync status update:', payload.new);
+        if (payload.new && typeof payload.new === 'object') {
+          setSyncStatus(payload.new as SyncStatus);
+        }
+      })
+      .subscribe();
+
+    // Set up real-time car count updates 
+    const carsChannel = supabase
+      .channel('cars-realtime')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'cars'
+      }, (payload) => {
+        console.log('🚗 New real car added live:', payload.new);
+        setTotalCount(prev => prev + 1);
+        
+        // If it's a new car and we're showing cars, refresh the list
+        if (cars.length > 0) {
+          fetchCars(1, 100);
+        }
+      })
+      .subscribe();
+
+    // Auto-refresh every 30 seconds to get latest counts
+    const refreshInterval = setInterval(() => {
+      getSyncStatus();
+      // Get fresh car count
+      supabase.from('cars').select('id', { count: 'exact', head: true })
+        .then(({ count }) => {
+          if (count !== null) {
+            setTotalCount(count);
+          }
+        });
+    }, 30000);
+
+    return () => {
+      supabase.removeChannel(syncChannel);
+      supabase.removeChannel(carsChannel);
+      clearInterval(refreshInterval);
+    };
   }, []);
 
   return {
