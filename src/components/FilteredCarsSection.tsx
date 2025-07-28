@@ -27,8 +27,6 @@ const FilteredCarsSection = () => {
   const [filteredCars, setFilteredCars] = useState<Car[]>([]);
   const [displayedCars, setDisplayedCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [hasMorePages, setHasMorePages] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [showMoreCars, setShowMoreCars] = useState(false);
@@ -89,7 +87,7 @@ const FilteredCarsSection = () => {
     }
   };
 
-  const fetchCars = async (page=1,minutes?: number) => {
+  const fetchCars = async (minutes?: number) => {
     setLoading(true);
     setError(null);
 
@@ -97,10 +95,9 @@ const FilteredCarsSection = () => {
       await delay(500);
 
       const params = new URLSearchParams({
-      per_page: '50',
-      page: page.toString(),
-      simple_paginate: '0'
-});
+        api_key: API_KEY,
+        limit: '1000'
+      });
 
       if (minutes) {
         params.append('minutes', minutes.toString());
@@ -150,11 +147,8 @@ const FilteredCarsSection = () => {
         throw new Error('No cars returned from API');
       }
 
-      const newCars = page === 1 ? transformedCars : [...cars, ...transformedCars];
-      setCars(newCars);
-      setFilteredCars(newCars);
-      setCurrentPage(page);
-      setHasMorePages(transformedCars.length === 50);
+      setCars(transformedCars);
+      setFilteredCars(transformedCars);
       setLastUpdate(new Date());
       console.log(`Successfully loaded ${transformedCars.length} cars from API`);
       
@@ -568,10 +562,10 @@ const FilteredCarsSection = () => {
               ))}
             </div>
             
-            {filteredCars.length > 6 && !showMoreCars && (
+            {hasMorePages && (
               <div className="text-center px-4">
                 <Button 
-                  onClick={() => setShowMoreCars(true)}
+                  onClick={() => fetchCars(currentPage + 1)}
                   size="lg"
                   className="w-full sm:w-auto bg-primary hover:bg-primary/90 min-h-[48px] text-base"
                 >
