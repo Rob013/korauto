@@ -5,6 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Search, Grid, List } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { API_BASE_URL } from '@/lib/constants';
 
 interface Car {
   id: string;
@@ -23,12 +24,6 @@ interface Car {
 }
 
 interface CarFilters {
-  make?: string[];
-  model?: string[];
-  yearFrom?: number;
-  yearTo?: number;
-  priceFrom?: number;
-  priceTo?: number;
   search?: string;
 }
 
@@ -43,11 +38,11 @@ const EncarCatalog = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
-  const fetchCars = async (page: number = 1, limit: number = 100, filters?: CarFilters) => {
+  const fetchCars = async (page: number, perPage: number, filters?: CarFilters) => {
     try {
       const params = new URLSearchParams({
-        per_page: String(limit),
         page: String(page),
+        per_page: String(perPage),
         simple_paginate: '0',
       });
 
@@ -55,25 +50,20 @@ const EncarCatalog = () => {
         params.append('search', filters.search);
       }
 
-      const res = await fetch(`https://auctionsapi.com/api/cars?${params.toString()}`);
+      const res = await fetch(`${API_BASE_URL}/cars?${params.toString()}`);
       const json = await res.json();
 
-      if (!json || !Array.isArray(json.data)) {
-        throw new Error('Invalid response from API');
-      }
-
-      const transformedCars = json.data;
+      const newCars = json.data;
       setTotalCount(json.meta?.total || 0);
 
       if (page === 1) {
-        setCars(transformedCars);
+        setCars(newCars);
       } else {
-        setCars(prev => [...prev, ...transformedCars]);
+        setCars((prev) => [...prev, ...newCars]);
       }
     } catch (err: any) {
-      console.error(err);
       toast({
-        title: 'Error',
+        title: 'Fetch error',
         description: err.message || 'Failed to fetch cars.',
         variant: 'destructive',
       });
@@ -112,8 +102,37 @@ const EncarCatalog = () => {
     fetchCars(1, 100, filters).finally(() => setLoading(false));
   }, []);
 
+  // const getStatusIcon = () => {
+  //   if (!syncStatus) return <Clock className="h-4 w-4" />;
+    
+  //   switch (syncStatus.status) {
+  //     case 'completed':
+  //       return <CheckCircle className="h-4 w-4 text-green-500" />;
+  //     case 'failed':
+  //       return <AlertCircle className="h-4 w-4 text-red-500" />;
+  //     default:
+  //       return <Loader2 className="h-4 w-4 animate-spin" />;
+  //   }
+  // };
+
+  // const getStatusText = () => {
+  //   if (!syncStatus) return 'No data refresh info';
+    
+  //   switch (syncStatus.status) {
+  //     case 'completed':
+  //       return `Last updated: ${new Date(syncStatus.last_activity_at).toLocaleString()}`;
+  //     case 'failed':
+  //       return `Failed: ${syncStatus.error_message || 'Unknown error'}`;
+  //     case 'running':
+  //       return `Updating: ${syncStatus.records_processed}/${syncStatus.total_records} records`;
+  //     default:
+  //       return syncStatus.status;
+  //   }
+  // };
+
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
         <div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
@@ -123,30 +142,80 @@ const EncarCatalog = () => {
             Browse {totalCount.toLocaleString()} authentic Korean cars from Encar.com
           </p>
         </div>
+        
+        {/* Refresh Controls */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            {getStatusIcon()}
+            <span>{getStatusText()}</span>
+          </div>
+          
+          {/* <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleSyncAction('incremental')}
+              disabled={loading || syncStatus?.status === 'running'}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Quick Refresh
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleSyncAction('full')}
+              disabled={loading || syncStatus?.status === 'running'}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Full Refresh
+            </Button>
+          </div> */}
+        </div>
+      </div>
 
+      {/* Search and Filters */}
+      <div className="flex flex-col lg:flex-row gap-4 mb-8">
+        <div className="flex-1">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Search cars by make, model, or title..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              className="flex-1"
+            />
+            <Button onClick={handleSearch} disabled={loading}>
+              <Search className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        
         <div className="flex gap-2">
-          <Button variant={viewMode === 'grid' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('grid')}>
+          <Button
+            variant={viewMode === 'grid' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('grid')}
+          >
             <Grid className="h-4 w-4" />
           </Button>
-          <Button variant={viewMode === 'list' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('list')}>
+          <Button
+            variant={viewMode === 'list' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('list')}
+          >
             <List className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      <div className="flex gap-2 mb-8">
-        <Input
-          placeholder="Search cars by make, model, or title..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-          className="flex-1"
-        />
-        <Button onClick={handleSearch} disabled={loading}>
-          <Search className="h-4 w-4" />
-        </Button>
-      </div>
+      {/* Error State */}
+      {error && (
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-8">
+          <p className="text-destructive font-medium">Error: {error}</p>
+        </div>
+      )}
 
+      {/* Loading State */}
       {loading && cars.length === 0 && (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin mr-2" />
@@ -154,11 +223,13 @@ const EncarCatalog = () => {
         </div>
       )}
 
+      {/* Cars Grid/List */}
       {cars.length > 0 && (
         <>
-          <div className={viewMode === 'grid'
+          <div className={viewMode === 'grid' 
             ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-            : "space-y-4"}>
+            : "space-y-4"
+          }>
             {cars.map((car) => (
               <Card key={car.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <CardHeader className="p-0">
@@ -179,12 +250,12 @@ const EncarCatalog = () => {
                     )}
                   </div>
                 </CardHeader>
-
+                
                 <CardContent className="p-4">
                   <h3 className="font-semibold text-lg mb-2 line-clamp-2">
                     {car.title || `${car.make} ${car.model} ${car.year}`}
                   </h3>
-
+                  
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <div className="flex justify-between">
                       <span>Year:</span>
@@ -208,7 +279,7 @@ const EncarCatalog = () => {
                     )}
                   </div>
                 </CardContent>
-
+                
                 <CardFooter className="p-4 pt-0">
                   <div className="w-full flex items-center justify-between">
                     <div className="text-2xl font-bold text-primary">
@@ -223,9 +294,15 @@ const EncarCatalog = () => {
             ))}
           </div>
 
+          {/* Load More */}
           {cars.length < totalCount && (
             <div className="flex justify-center mt-8">
-              <Button onClick={handleLoadMore} disabled={loadingMore} variant="outline" size="lg">
+              <Button
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                variant="outline"
+                size="lg"
+              >
                 {loadingMore ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -240,13 +317,6 @@ const EncarCatalog = () => {
         </>
       )}
 
-      {!loading && cars.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground text-lg">
-            No cars found. Try adjusting your search or reload the page.
-          </p>
-        </div>
-      )}
     </div>
   );
 };
