@@ -11,8 +11,8 @@ interface Car {
   make: { id: number; name: string };
   model: { id: number; name: string };
   year: number;
-  price: number;
-  mileage?: number;
+  price: string;
+  mileage?: string;
   title?: string;
   fuel?: { id: number; name: string };
   transmission?: { id: number; name: string };
