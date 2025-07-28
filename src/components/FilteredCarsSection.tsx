@@ -152,13 +152,11 @@ const FilteredCarsSection = () => {
         throw new Error('No cars returned from API');
       }
 
-      if (page === 1) {
-        setCars(transformedCars);
-        setFilteredCars(transformedCars);
-      } else {
-        setCars(prev => [...prev, ...transformedCars]);
-        setFilteredCars(prev => [...prev, ...transformedCars]);
-      }
+    if (page === 1) {
+      setCars(transformedCars);
+    } else {
+      setCars(prev => [...prev, ...transformedCars]);
+    }
       
       // if (page > 1 && carListRef.current) {
       // carListRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -210,6 +208,7 @@ const FilteredCarsSection = () => {
 
   // Sorting and filtering logic
   useEffect(() => {
+    if (currentPage > 1) return; 
     let filtered = [...cars];
 
     // Apply filters
