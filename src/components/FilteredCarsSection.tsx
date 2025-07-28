@@ -209,8 +209,6 @@ const FilteredCarsSection = () => {
 
   // Sorting and filtering logic
   useEffect(() => {
-    if (currentPage > 1) return; 
-    
     let filtered = [...cars];
 
     // Apply filters
