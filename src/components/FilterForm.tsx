@@ -137,7 +137,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
                     key={manufacturer.id} 
                     value={manufacturer.id.toString()}
                   >
-                    {manufacturer.name} {count !== undefined && `(${count})`}
+                    {manufacturer.name} {count !== undefined && count > 0 && `(${count})`}
                   </SelectItem>
                 );
                })}
@@ -164,7 +164,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
                     key={model.id} 
                     value={model.id.toString()}
                   >
-                    {model.name} {count !== undefined && `(${count})`}
+                    {model.name} {count !== undefined && count > 0 && `(${count})`}
                   </SelectItem>
                 );
                })}
@@ -191,7 +191,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
                     key={generation.id} 
                     value={generation.id.toString()}
                   >
-                    {generation.name} {count !== undefined && `(${count})`}
+                    {generation.name} {count !== undefined && count > 0 && `(${count})`}
                   </SelectItem>
                 );
                })}
