@@ -130,20 +130,17 @@ const FilterForm: React.FC<FilterFormProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Të gjitha Markat</SelectItem>
-              {manufacturers.map((manufacturer) => {
+               {manufacturers.map((manufacturer) => {
                 const count = filterCounts?.manufacturers[manufacturer.id.toString()];
-                const isDisabled = count === 0;
                 return (
                   <SelectItem 
                     key={manufacturer.id} 
                     value={manufacturer.id.toString()}
-                    disabled={isDisabled}
-                    className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
                   >
                     {manufacturer.name} {count !== undefined && `(${count})`}
                   </SelectItem>
                 );
-              })}
+               })}
             </SelectContent>
           </Select>
         </div>
@@ -160,20 +157,17 @@ const FilterForm: React.FC<FilterFormProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Të gjithë Modelet</SelectItem>
-              {models.map((model) => {
+               {models.map((model) => {
                 const count = filterCounts?.models[model.id.toString()];
-                const isDisabled = count === 0;
                 return (
                   <SelectItem 
                     key={model.id} 
                     value={model.id.toString()}
-                    disabled={isDisabled}
-                    className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
                   >
                     {model.name} {count !== undefined && `(${count})`}
                   </SelectItem>
                 );
-              })}
+               })}
             </SelectContent>
           </Select>
         </div>
@@ -190,20 +184,17 @@ const FilterForm: React.FC<FilterFormProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Të gjitha Gjeneratat</SelectItem>
-              {generations.map((generation) => {
+               {generations.map((generation) => {
                 const count = filterCounts?.generations[generation.id.toString()];
-                const isDisabled = count === 0;
                 return (
                   <SelectItem 
                     key={generation.id} 
                     value={generation.id.toString()}
-                    disabled={isDisabled}
-                    className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
                   >
                     {generation.name} {count !== undefined && `(${count})`}
                   </SelectItem>
                 );
-              })}
+               })}
             </SelectContent>
           </Select>
         </div>
