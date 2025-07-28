@@ -96,7 +96,8 @@ export const useAuctionAPI = () => {
       const params = new URLSearchParams({
         page: page.toString(),
         per_page: '12',
-        simple_paginate: '0'
+        simple_paginate: '0',
+        archived: 'false'  // Exclude archived cars
       });
 
       // Add all filter parameters
