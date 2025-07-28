@@ -10,7 +10,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AuthPage from "./pages/AuthPage";
 import FavoritesPage from "./pages/FavoritesPage";
 import NotFound from "./pages/NotFound";
-import AdminSyncDashboard from "./components/AdminSyncDashboard";
+import { AdminSyncDashboard } from "./components/AdminSyncDashboard";
 
 const queryClient = new QueryClient();
 

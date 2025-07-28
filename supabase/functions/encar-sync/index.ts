@@ -43,225 +43,129 @@ interface ApiResponse {
   };
 }
 
-interface SyncState {
-  id: string;
-  sync_type: string;
-  status: 'pending' | 'in_progress' | 'paused' | 'completed' | 'failed';
-  current_page: number;
-  next_url: string | null;
-  synced_records: number;
-  total_records: number;
-  created_at: string;
-  last_updated: string;
-  error_message?: string;
-}
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  let supabase: any = null;
-  let syncState: SyncState | null = null;
-
   try {
-    // Initialize Supabase with validation
+    // Initialize Supabase
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Missing required Supabase environment variables');
+      throw new Error('Missing Supabase environment variables');
     }
 
-    supabase = createClient(supabaseUrl, supabaseKey);
-
+    const supabase = createClient(supabaseUrl, supabaseKey);
     const { searchParams } = new URL(req.url);
     const syncType = searchParams.get('type') || 'full';
     
-    console.log(`🚀 Starting ${syncType} sync process`);
+    console.log(`🚀 Starting ${syncType} sync with simplified architecture`);
 
-    // PHASE 1: Check for existing sync state or create new one
-    // First, check if any sync is currently running to prevent multiple instances
-    const { data: runningSyncs, error: runningError } = await supabase
-      .from('sync_metadata')
+    // Check for existing running sync
+    const { data: existingSync } = await supabase
+      .from('sync_status')
       .select('*')
-      .in('status', ['in_progress', 'paused'])
-      .order('created_at', { ascending: false })
-      .limit(5);
+      .eq('sync_type', syncType)
+      .eq('status', 'running')
+      .maybeSingle();
 
-    if (runningError) {
-      console.error('❌ Error checking running syncs:', runningError);
-      throw new Error(`Database error: ${runningError.message}`);
-    }
-
-    // Prevent multiple syncs of the same type from running
-    const conflictingSync = runningSyncs?.find(sync => 
-      sync.sync_type === syncType && sync.status === 'in_progress'
-    );
-    
-    if (conflictingSync) {
-      console.log(`⚠️ Sync of type ${syncType} already in progress, terminating to prevent conflicts`);
+    if (existingSync) {
+      console.log(`⚠️ Sync already running, exiting to prevent conflicts`);
       return new Response(
         JSON.stringify({
           success: false,
-          message: `${syncType} sync already in progress`,
-          existing_sync_id: conflictingSync.id,
-          timestamp: new Date().toISOString()
+          message: `${syncType} sync already running`,
+          existing_sync_id: existingSync.id
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Look for existing paused sync to resume
-    const existingSync = runningSyncs?.find(sync => 
-      sync.sync_type === syncType && sync.status === 'paused'
-    );
+    // Create new sync record
+    const { data: syncRecord, error: syncError } = await supabase
+      .from('sync_status')
+      .insert({
+        sync_type: syncType,
+        status: 'running',
+        started_at: new Date().toISOString()
+      })
+      .select()
+      .single();
 
-    if (existingSync) {
-      syncState = existingSync;
-      console.log(`📍 Resuming existing sync from page ${syncState.current_page}`);
-    } else {
-      // Clean up old failed/stale syncs
-      await supabase
-        .from('sync_metadata')
-        .update({ status: 'failed', error_message: 'Cleaned up by new sync' })
-        .eq('sync_type', syncType)
-        .in('status', ['in_progress', 'paused']);
-
-      // Create new sync state
-      const { data: newSync, error: syncError } = await supabase
-        .from('sync_metadata')
-        .insert({
-          sync_type: syncType,
-          status: 'in_progress',
-          current_page: 1,
-          next_url: null,
-          synced_records: 0,
-          total_records: 0
-        })
-        .select()
-        .single();
-
-      if (syncError) {
-        console.error('❌ Error creating sync state:', syncError);
-        throw new Error(`Failed to create sync state: ${syncError.message}`);
-      }
-      
-      syncState = newSync;
-      console.log(`✨ Created new sync state: ${syncState.id}`);
+    if (syncError) {
+      throw new Error(`Failed to create sync record: ${syncError.message}`);
     }
 
-    // PHASE 2: Build initial API URL with validation
-    let apiUrl: string;
+    console.log(`✅ Created sync record: ${syncRecord.id}`);
+
+    // Build API URL
+    const baseUrl = new URL('https://auctionsapi.com/api/cars');
+    baseUrl.searchParams.set('api_key', 'd00985c77981fe8d26be16735f932ed1');
+    baseUrl.searchParams.set('limit', '100'); // Conservative limit
     
-    if (syncState.next_url) {
-      // Resume from stored URL (most reliable method)
-      apiUrl = syncState.next_url;
-      console.log(`🔗 Using stored next URL: ${apiUrl.substring(0, 100)}...`);
-    } else {
-      // Build fresh URL
-      const baseUrl = new URL('https://auctionsapi.com/api/cars');
-      baseUrl.searchParams.set('api_key', 'd00985c77981fe8d26be16735f932ed1');
-      baseUrl.searchParams.set('limit', '200');
+    if (syncType === 'incremental') {
+      // Look for recent changes (last 24 hours)
+      const { data: lastSync } = await supabase
+        .from('sync_status')
+        .select('completed_at')
+        .eq('sync_type', 'full')
+        .eq('status', 'completed')
+        .order('completed_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
       
-      if (syncState.current_page > 1) {
-        baseUrl.searchParams.set('page', syncState.current_page.toString());
+      if (lastSync?.completed_at) {
+        const minutesAgo = Math.floor((Date.now() - new Date(lastSync.completed_at).getTime()) / (1000 * 60));
+        baseUrl.searchParams.set('minutes', Math.min(minutesAgo, 1440).toString()); // Max 24h
+        console.log(`📅 Incremental sync: checking last ${minutesAgo} minutes`);
       }
-      
-      if (syncType === 'incremental') {
-        // Get last successful sync time with error handling
-        const { data: lastSync, error: lastSyncError } = await supabase
-          .from('sync_metadata')
-          .select('last_updated')
-          .eq('sync_type', 'full')
-          .eq('status', 'completed')
-          .order('last_updated', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        
-        if (lastSyncError) {
-          console.warn('⚠️ Could not get last sync time:', lastSyncError.message);
-        }
-        
-        if (lastSync?.last_updated) {
-          const minutes = Math.floor((Date.now() - new Date(lastSync.last_updated).getTime()) / (1000 * 60));
-          baseUrl.searchParams.set('minutes', minutes.toString());
-          console.log(`⏰ Incremental sync: looking for cars updated in last ${minutes} minutes`);
-        } else {
-          console.log(`⏰ No previous sync found - treating as full sync`);
-        }
-      }
-      
-      apiUrl = baseUrl.toString();
-      console.log(`🆕 Built fresh URL for page ${syncState.current_page}`);
     }
 
-    // PHASE 3: Process pages with optimized chunked architecture
-    const PAGES_PER_EXECUTION = 10; // Process only 10 pages (2,000 cars) per execution to respect rate limits
-    let pagesProcessed = 0;
-    let currentUrl = apiUrl;
-    let hasMore = true;
+    let currentUrl = baseUrl.toString();
+    let totalProcessed = 0;
+    let currentPage = 1;
+    const maxPages = 50; // Conservative limit per execution
 
-    while (hasMore && pagesProcessed < PAGES_PER_EXECUTION) {
-      console.log(`📡 Fetching page ${syncState.current_page} (${pagesProcessed + 1}/${PAGES_PER_EXECUTION})`);
+    while (currentUrl && currentPage <= maxPages) {
+      console.log(`📡 Fetching page ${currentPage}...`);
       
-      let retryCount = 0;
-      const maxRetries = 3;
-      
-      while (retryCount < maxRetries) {
-        try {
-          // Validate URL before request
-          if (!currentUrl || !currentUrl.startsWith('http')) {
-            throw new Error(`Invalid API URL: ${currentUrl}`);
+      try {
+        // Fetch from API with timeout
+        const response = await fetch(currentUrl, {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'KORAUTO-WebApp/1.0'
+          },
+          signal: AbortSignal.timeout(30000)
+        });
+
+        if (!response.ok) {
+          if (response.status === 429) {
+            console.log(`⏳ Rate limited, waiting 60 seconds...`);
+            await new Promise(resolve => setTimeout(resolve, 60000));
+            continue;
           }
-
-          // Fetch from API with improved timeout and retry logic
-          const response = await fetch(currentUrl, {
-            headers: {
-              'Accept': 'application/json',
-              'User-Agent': 'KORAUTO-WebApp/1.0'
-            },
-            signal: AbortSignal.timeout(30000) // 30 second timeout
-          });
-
-          if (!response.ok) {
-            if (response.status === 429 || response.status === 500) {
-              // More conservative backoff for rate limiting and server errors
-              const baseWait = response.status === 429 ? 30000 : 45000; // 30s for 429, 45s for 500
-              const waitTime = Math.min(baseWait + (retryCount * 15000), 120000); // Max 2 minutes
-              console.log(`⏳ ${response.status === 429 ? 'Rate limited' : 'Server error'}, waiting ${waitTime/1000} seconds...`);
-              await new Promise(resolve => setTimeout(resolve, waitTime));
-              retryCount++; // Count as a retry
-              continue;
-            }
-            throw new Error(`API error: ${response.status} ${response.statusText}`);
+          if (response.status >= 500) {
+            console.log(`🔄 Server error ${response.status}, waiting 90 seconds...`);
+            await new Promise(resolve => setTimeout(resolve, 90000));
+            continue;
           }
+          throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
 
-          const responseText = await response.text();
-          if (!responseText.trim()) {
-            throw new Error('Empty response from API');
-          }
+        const apiData: ApiResponse = await response.json();
+        const carsArray = Array.isArray(apiData.data) ? apiData.data : [];
+        
+        console.log(`📦 Received ${carsArray.length} cars`);
 
-          const apiData: ApiResponse = JSON.parse(responseText);
-          
-          // Validate API response structure
-          if (!apiData || typeof apiData !== 'object') {
-            throw new Error('Invalid API response format');
-          }
-          const carsArray = Array.isArray(apiData.data) ? apiData.data : [];
-          
-          console.log(`📦 Received ${carsArray.length} cars from API`);
-          console.log(`🔗 Next URL: ${apiData.links?.next ? 'Available' : 'None'}`);
-          console.log(`📊 Total records: ${apiData.meta?.total || 'Unknown'}`);
+        if (carsArray.length === 0) {
+          console.log(`🏁 No more cars - sync complete`);
+          break;
+        }
 
-          // Check if we have data
-          if (carsArray.length === 0) {
-            console.log(`🏁 No more cars found - sync complete`);
-            hasMore = false;
-            break;
-          }
-
-        // Transform cars
+        // Transform and save cars
         const transformedCars = carsArray
           .map((car: CarData) => {
             try {
@@ -273,7 +177,6 @@ Deno.serve(async (req) => {
               const model = car.model?.name?.trim();
               
               if (!carId || !make || !model) {
-                console.warn(`⚠️ Skipping invalid car: ${carId} ${make} ${model}`);
                 return null;
               }
 
@@ -285,19 +188,14 @@ Deno.serve(async (req) => {
                 year: car.year && car.year > 1900 ? car.year : 2020,
                 price: Math.max(primaryLot?.buy_now || 0, 0),
                 mileage: Math.max(primaryLot?.odometer?.km || 0, 0),
-                photo_urls: images.filter(url => url && typeof url === 'string'),
-                image: images.find(url => url && typeof url === 'string') || null,
-                lot_number: primaryLot?.lot?.toString() || null,
-                location: 'South Korea',
+                title: car.title?.trim() || `${make} ${model} ${car.year || ''}`,
+                vin: car.vin?.trim() || null,
+                color: car.color?.name?.trim() || null,
                 fuel: car.fuel?.name?.trim() || null,
                 transmission: car.transmission?.name?.trim() || null,
-                color: car.color?.name?.trim() || null,
-                condition: 'good',
-                vin: car.vin?.trim() || null,
-                title: car.title?.trim() || `${make} ${model} ${car.year || ''}`.trim(),
-                domain_name: 'encar_com',
-                source_api: 'auctionapis',
-                status: 'active',
+                lot_number: primaryLot?.lot?.toString() || null,
+                image_url: images[0] || null,
+                images: JSON.stringify(images),
                 last_synced_at: new Date().toISOString()
               };
             } catch (error) {
@@ -307,264 +205,133 @@ Deno.serve(async (req) => {
           })
           .filter(car => car !== null);
 
-          // Save to database with transaction safety
-          if (transformedCars.length > 0) {
-            const { error: upsertError } = await supabase
-              .from('cars')
-              .upsert(transformedCars, { 
-                onConflict: 'id',
-                ignoreDuplicates: false 
-              });
+        // Save to database
+        if (transformedCars.length > 0) {
+          const { error: upsertError } = await supabase
+            .from('cars')
+            .upsert(transformedCars, { 
+              onConflict: 'id',
+              ignoreDuplicates: false 
+            });
 
-            if (upsertError) {
-              console.error(`❌ Database error:`, upsertError.message);
-              throw new Error(`Database upsert failed: ${upsertError.message}`);
-            }
-
-            console.log(`✅ Saved ${transformedCars.length} cars to database`);
-          } else {
-            console.log(`⚠️ No valid cars to save from this batch`);
+          if (upsertError) {
+            throw new Error(`Database error: ${upsertError.message}`);
           }
 
-          // Update sync state
-          syncState.synced_records += transformedCars.length;
-          syncState.total_records = apiData.meta?.total || syncState.synced_records;
-          syncState.current_page++;
-          syncState.next_url = apiData.links?.next || null;
-          pagesProcessed++;
+          totalProcessed += transformedCars.length;
+          console.log(`✅ Saved ${transformedCars.length} cars (total: ${totalProcessed})`);
+        }
 
-          // PHASE 4: Check pagination - use direct API links for reliability
-          if (apiData.links?.next && typeof apiData.links.next === 'string') {
-            currentUrl = apiData.links.next;
-            hasMore = true;
-            console.log(`📄 Will continue with API's next URL`);
-          } else {
-            hasMore = false;
-            console.log(`🏁 No next URL provided by API - reached end`);
-          }
+        // Update sync progress
+        await supabase
+          .from('sync_status')
+          .update({
+            current_page: currentPage,
+            records_processed: totalProcessed,
+            total_records: apiData.meta?.total || totalProcessed,
+            last_activity_at: new Date().toISOString(),
+            next_url: apiData.links?.next || null
+          })
+          .eq('id', syncRecord.id);
 
-          // Update database state with error handling
-          const { error: updateError } = await supabase
-            .from('sync_metadata')
-            .update({
-              current_page: syncState.current_page,
-              next_url: syncState.next_url,
-              synced_records: syncState.synced_records,
-              total_records: syncState.total_records,
-              last_updated: new Date().toISOString()
-            })
-            .eq('id', syncState.id);
-
-          if (updateError) {
-            console.error(`⚠️ Could not update sync metadata:`, updateError.message);
-          }
-
-          // Rate limiting with adaptive delay
-          if (hasMore) {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-          }
-
-          // Success - break retry loop
+        // Check for next page
+        if (apiData.links?.next) {
+          currentUrl = apiData.links.next;
+          currentPage++;
+          
+          // Small delay to be API-friendly
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } else {
+          console.log(`🏁 No next URL - reached end`);
           break;
+        }
 
-        } catch (error) {
-          retryCount++;
-          console.error(`❌ Error on attempt ${retryCount}/${maxRetries}:`, error.message);
-          
-          if (retryCount >= maxRetries) {
-            // Final attempt failed - skip this page
-            console.log(`⚠️ Max retries reached, skipping page ${syncState.current_page}`);
-            syncState.current_page++;
-            
-            // Try to build next URL manually if possible
-            const baseUrl = new URL('https://auctionsapi.com/api/cars');
-            baseUrl.searchParams.set('api_key', 'd00985c77981fe8d26be16735f932ed1');
-            baseUrl.searchParams.set('limit', '200');
-            baseUrl.searchParams.set('page', syncState.current_page.toString());
-            currentUrl = baseUrl.toString();
-            
-            // Update state but continue
-            await supabase
-              .from('sync_metadata')
-              .update({
-                current_page: syncState.current_page,
-                last_updated: new Date().toISOString(),
-                error_message: `Skipped page due to: ${error.message}`
-              })
-              .eq('id', syncState.id);
-            
-            break;
-          }
-          
-          // Wait before retry with exponential backoff
-          const waitTime = 5000 * Math.pow(2, retryCount - 1);
-          console.log(`⏰ Waiting ${waitTime/1000}s before retry...`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
+      } catch (error) {
+        console.error(`❌ Error on page ${currentPage}:`, error.message);
+        
+        // Update error in sync record
+        await supabase
+          .from('sync_status')
+          .update({
+            error_message: error.message,
+            last_activity_at: new Date().toISOString()
+          })
+          .eq('id', syncRecord.id);
+
+        // Continue to next page on non-critical errors
+        if (error.message.includes('timeout') || error.message.includes('fetch')) {
+          currentPage++;
+          continue;
+        } else {
+          throw error; // Re-throw critical errors
         }
       }
-
     }
 
-    // PHASE 5: Determine final status and handle continuation
-    let finalStatus: string;
-    
-    if (!hasMore) {
-      // Sync is complete
-      finalStatus = 'completed';
-      console.log(`🎉 Sync completed! Total: ${syncState.synced_records} cars`);
-    } else {
-      // Need to continue in next execution
-      finalStatus = 'paused';
-      console.log(`⏸️ Pausing after ${pagesProcessed} pages. Total so far: ${syncState.synced_records} cars`);
-      
-      // Trigger continuation with more conservative timing to prevent rate limits
+    // Mark sync as completed or paused
+    const finalStatus = currentPage > maxPages ? 'paused' : 'completed';
+    const completedAt = finalStatus === 'completed' ? new Date().toISOString() : null;
+
+    await supabase
+      .from('sync_status')
+      .update({
+        status: finalStatus,
+        completed_at: completedAt,
+        records_processed: totalProcessed,
+        last_activity_at: new Date().toISOString()
+      })
+      .eq('id', syncRecord.id);
+
+    console.log(`🎉 Sync ${finalStatus}! Processed ${totalProcessed} cars across ${currentPage-1} pages`);
+
+    // If paused, schedule continuation
+    if (finalStatus === 'paused') {
       EdgeRuntime.waitUntil((async () => {
         try {
-          // Wait much longer before continuation to respect API rate limits
-          const baseWait = 60000; // 1 minute base wait
-          const jitter = Math.random() * 30000; // 0-30 seconds jitter
-          const waitTime = baseWait + jitter;
-          
-          console.log(`⏰ Waiting ${Math.round(waitTime/1000)}s before triggering continuation to respect rate limits`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-          
-          // Use direct HTTP call for more reliable continuation
-          const supabaseUrl = Deno.env.get('SUPABASE_URL');
-          const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-          
-          console.log(`🔄 Now triggering continuation for ${syncType} sync`);
+          await new Promise(resolve => setTimeout(resolve, 120000)); // 2 minute wait
           
           const continueResponse = await fetch(`${supabaseUrl}/functions/v1/encar-sync?type=${syncType}`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${supabaseKey}`,
               'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ type: syncType }),
-            signal: AbortSignal.timeout(15000) // 15 second timeout for continuation
+            }
           });
           
-          if (!continueResponse.ok) {
-            // Don't fail the sync for continuation issues - let user manually trigger
-            console.warn(`⚠️ Continuation request failed: HTTP ${continueResponse.status}`);
-            
-            // Just mark as paused and let admin manually continue
-            await supabase
-              .from('sync_metadata')
-              .update({
-                status: 'paused',
-                error_message: `Auto-continuation failed: HTTP ${continueResponse.status}. Manual restart needed.`,
-                last_updated: new Date().toISOString()
-              })
-              .eq('id', syncState!.id);
-            return;
+          if (continueResponse.ok) {
+            console.log(`🔄 Continuation triggered successfully`);
           }
-          
-          const continueData = await continueResponse.json();
-          console.log(`🚀 Triggered continuation successfully:`, continueData);
-          
         } catch (error) {
-          console.error(`⚠️ Error in continuation - marking as paused for manual restart:`, error.message);
-          // Don't fail the sync - just mark as paused for manual continuation
-          try {
-            await supabase
-              .from('sync_metadata')
-              .update({
-                status: 'paused',
-                error_message: `Auto-continuation failed: ${error.message}. Manual restart needed.`,
-                last_updated: new Date().toISOString()
-              })
-              .eq('id', syncState!.id);
-          } catch (updateError) {
-            console.error(`❌ Could not update sync status:`, updateError.message);
-          }
+          console.warn(`⚠️ Continuation failed:`, error.message);
         }
       })());
-    }
-
-    // Update final status with error handling
-    const { error: finalUpdateError } = await supabase
-      .from('sync_metadata')
-      .update({
-        status: finalStatus,
-        current_page: syncState.current_page,
-        next_url: syncState.next_url,
-        synced_records: syncState.synced_records,
-        total_records: syncState.total_records,
-        last_updated: new Date().toISOString()
-      })
-      .eq('id', syncState.id);
-
-    if (finalUpdateError) {
-      console.error(`⚠️ Could not update final status:`, finalUpdateError.message);
     }
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `${finalStatus === 'completed' ? 'Completed' : 'Paused'} sync`,
-        sync_type: syncType,
-        synced_records: syncState.synced_records,
-        total_records: syncState.total_records,
-        pages_processed: pagesProcessed,
+        sync_id: syncRecord.id,
         status: finalStatus,
-        current_page: syncState.current_page,
-        next_url: syncState.next_url,
-        will_continue: finalStatus === 'paused',
-        timestamp: new Date().toISOString()
+        records_processed: totalProcessed,
+        pages_processed: currentPage - 1,
+        sync_type: syncType,
+        message: `Sync ${finalStatus} successfully`
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('💥 Critical error:', error);
-    
-    // Update sync state to failed with robust error handling
-    try {
-      if (supabase && syncState?.id) {
-        const { error: updateError } = await supabase
-          .from('sync_metadata')
-          .update({
-            status: 'failed',
-            error_message: error.message.substring(0, 500),
-            last_updated: new Date().toISOString()
-          })
-          .eq('id', syncState.id);
-          
-        if (updateError) {
-          console.error('❌ Could not update sync status:', updateError.message);
-        }
-      } else {
-        // Try to mark any in-progress syncs as failed
-        const fallbackSupabase = createClient(
-          Deno.env.get('SUPABASE_URL') ?? '',
-          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-        );
-        
-        await fallbackSupabase
-          .from('sync_metadata')
-          .update({
-            status: 'failed',
-            error_message: error.message.substring(0, 500),
-            last_updated: new Date().toISOString()
-          })
-          .eq('status', 'in_progress');
-      }
-    } catch (updateError) {
-      console.error('💥 Could not update sync status:', updateError);
-    }
+    console.error('💥 Critical sync error:', error);
     
     return new Response(
       JSON.stringify({
         success: false,
         error: error.message,
-        sync_id: syncState?.id || null,
-        timestamp: new Date().toISOString(),
-        details: "Check edge function logs for more information"
+        timestamp: new Date().toISOString()
       }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
   }

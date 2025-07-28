@@ -9,19 +9,25 @@ interface Car {
   year: number;
   price: number;
   mileage?: number;
-  photo_urls?: string[];
-  image?: string;
-  lot_number?: string;
-  location?: string;
+  title?: string;
+  vin?: string;
+  color?: string;
   fuel?: string;
   transmission?: string;
-  color?: string;
   condition?: string;
-  vin?: string;
-  title?: string;
-  domain_name?: string;
+  location?: string;
+  lot_number?: string;
+  current_bid?: number;
+  buy_now_price?: number;
+  final_bid?: number;
+  sale_date?: string;
+  image_url?: string;
+  images?: string; // JSON string
   source_api?: string;
+  domain_name?: string;
   status?: string;
+  is_live?: boolean;
+  keys_available?: boolean;
   created_at?: string;
   updated_at?: string;
   last_synced_at?: string;
@@ -30,14 +36,19 @@ interface Car {
 interface SyncStatus {
   id: string;
   sync_type: string;
-  status: string;
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'paused';
   current_page?: number;
+  total_pages?: number;
+  records_processed?: number;
+  total_records?: number;
   next_url?: string;
-  total_records: number;
-  synced_records: number;
-  last_updated: string;
+  last_successful_url?: string;
   error_message?: string;
-  created_at: string;
+  retry_count?: number;
+  started_at?: string;
+  completed_at?: string;
+  last_activity_at?: string;
+  created_at?: string;
 }
 
 interface UseEncarAPIReturn {
@@ -125,9 +136,9 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
       }
 
       if (page === 1) {
-        setCars(data || []);
+        setCars((data || []) as Car[]);
       } else {
-        setCars(prev => [...prev, ...(data || [])]);
+        setCars(prev => [...prev, ...((data || []) as Car[])]);
       }
       
       setTotalCount(count || 0);
@@ -193,13 +204,13 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
       await getSyncStatus();
       
       // Schedule periodic refreshes for ongoing syncs
-      if (data.status === 'paused' || data.status === 'in_progress') {
+      if (data.status === 'paused' || data.status === 'running') {
         const refreshInterval = setInterval(async () => {
           await getSyncStatus();
           
           // Stop refreshing if sync is done
           const currentStatus = await supabase
-            .from('sync_metadata')
+            .from('sync_status')
             .select('status')
             .order('created_at', { ascending: false })
             .limit(1)
@@ -249,7 +260,7 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
   const getSyncStatus = async () => {
     try {
       const { data, error: statusError } = await supabase
-        .from('sync_metadata')
+        .from('sync_status')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(1)
@@ -260,7 +271,7 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
         throw statusError;
       }
 
-      setSyncStatus(data);
+      setSyncStatus(data as SyncStatus);
     } catch (err) {
       console.error('❌ Error fetching sync status:', err);
       // Don't set error state for status fetch failures
@@ -277,7 +288,7 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
         {
           event: '*',
           schema: 'public',
-          table: 'sync_metadata'
+          table: 'sync_status'
         },
         (payload) => {
           console.log('📡 Sync status updated:', payload);

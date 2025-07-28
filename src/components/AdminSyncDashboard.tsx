@@ -1,21 +1,24 @@
-import { useState } from 'react';
-import { useEncarAPI } from '@/hooks/useEncarAPI';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { RefreshCw, Database, Clock, CheckCircle, AlertCircle, Play } from 'lucide-react';
+import { useEncarAPI } from '@/hooks/useEncarAPI';
 import { useToast } from '@/hooks/use-toast';
+import { 
+  Activity, 
+  CheckCircle, 
+  AlertCircle, 
+  Clock, 
+  Pause,
+  Database,
+  TrendingUp,
+  RefreshCw,
+  Zap
+} from 'lucide-react';
 
-const AdminSyncDashboard = () => {
-  const { 
-    totalCount, 
-    syncStatus, 
-    triggerSync, 
-    getSyncStatus,
-    loading
-  } = useEncarAPI();
-  
+export function AdminSyncDashboard() {
+  const { syncStatus, totalCount, triggerSync, getSyncStatus } = useEncarAPI();
   const { toast } = useToast();
   const [testInProgress, setTestInProgress] = useState(false);
 
@@ -23,12 +26,12 @@ const AdminSyncDashboard = () => {
     try {
       await triggerSync('full');
       toast({
-        title: "🚀 Full Sync Started",
-        description: "Complete database refresh initiated. This will fetch all 130,000+ cars.",
+        title: "Full Sync Started",
+        description: "Started full synchronization with Encar API.",
       });
     } catch (error) {
       toast({
-        title: "❌ Sync Failed",
+        title: "Sync Failed",
         description: error instanceof Error ? error.message : "Failed to start sync",
         variant: "destructive",
       });
@@ -40,58 +43,55 @@ const AdminSyncDashboard = () => {
     try {
       await triggerSync('incremental');
       toast({
-        title: "🧪 Test Sync Started",
-        description: "Testing the sync system with incremental update.",
+        title: "Test Sync Started",
+        description: "Started incremental synchronization.",
       });
     } catch (error) {
       toast({
-        title: "❌ Test Failed",
-        description: error instanceof Error ? error.message : "Test sync failed",
+        title: "Sync Failed",
+        description: error instanceof Error ? error.message : "Failed to start sync",
         variant: "destructive",
       });
     } finally {
-      setTimeout(() => setTestInProgress(false), 5000);
+      setTestInProgress(false);
     }
   };
 
-  const getStatusIcon = () => {
-    if (!syncStatus) return <Clock className="h-5 w-5 text-muted-foreground" />;
-    
-    switch (syncStatus.status) {
+  const getStatusIcon = (status?: string) => {
+    switch (status) {
       case 'completed':
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'running':
+        return <Activity className="h-4 w-4 text-blue-500 animate-spin" />;
       case 'failed':
-        return <AlertCircle className="h-5 w-5 text-red-500" />;
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
       case 'paused':
-        return <Clock className="h-5 w-5 text-yellow-500" />;
+        return <Pause className="h-4 w-4 text-yellow-500" />;
       default:
-        return <RefreshCw className="h-5 w-5 animate-spin text-blue-500" />;
+        return <Clock className="h-4 w-4 text-gray-500" />;
     }
   };
 
   const getSyncProgress = () => {
-    if (!syncStatus || !syncStatus.total_records) return 0;
-    return Math.round((syncStatus.synced_records / syncStatus.total_records) * 100);
+    if (!syncStatus || !syncStatus.total_records || syncStatus.total_records === 0) {
+      return 0;
+    }
+    const processed = syncStatus.records_processed || 0;
+    return Math.min((processed / syncStatus.total_records) * 100, 100);
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">🔧 Sync System Dashboard</h1>
-        <Button
-          onClick={getSyncStatus}
-          variant="outline"
-          size="sm"
-          disabled={loading}
-        >
+        <h2 className="text-3xl font-bold tracking-tight">Sync Dashboard</h2>
+        <Button variant="outline" onClick={getSyncStatus}>
           <RefreshCw className="h-4 w-4 mr-2" />
           Refresh Status
         </Button>
       </div>
 
       {/* System Status Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Database Status */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Database Status</CardTitle>
@@ -99,66 +99,57 @@ const AdminSyncDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalCount.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Cars in database</p>
-            <div className="mt-2">
-              <Badge variant="secondary">
-                Target: 130,000+ cars
-              </Badge>
-            </div>
+            <p className="text-xs text-muted-foreground">Total cars in database</p>
           </CardContent>
         </Card>
 
-        {/* Sync Status */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Current Sync</CardTitle>
-            {getStatusIcon()}
+            {getStatusIcon(syncStatus?.status)}
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold capitalize">
-              {syncStatus?.status || 'Ready'}
+            <div className="text-2xl font-bold">
+              {syncStatus?.status ? (
+                <Badge variant={syncStatus.status === 'running' ? 'default' : 
+                              syncStatus.status === 'completed' ? 'default' : 
+                              syncStatus.status === 'failed' ? 'destructive' : 'secondary'}>
+                  {syncStatus.status}
+                </Badge>
+              ) : (
+                <Badge variant="secondary">No active sync</Badge>
+              )}
             </div>
-            <p className="text-xs text-muted-foreground">
-              {syncStatus?.sync_type || 'No active sync'}
-            </p>
-            {(syncStatus?.status === 'in_progress' || syncStatus?.status === 'paused') && (
-              <div className="mt-2 space-y-1">
-                <div className="text-xs text-muted-foreground">
-                  Page {syncStatus.current_page || 1} • {syncStatus.synced_records?.toLocaleString() || 0} cars synced
-                </div>
-                {syncStatus.total_records > 0 && (
-                  <>
-                    <Progress value={getSyncProgress()} className="h-2" />
-                    <p className="text-xs text-muted-foreground">
-                      {syncStatus.synced_records?.toLocaleString()} / {syncStatus.total_records?.toLocaleString()} ({getSyncProgress()}%)
-                    </p>
-                  </>
-                )}
-                {syncStatus.status === 'paused' && (
-                  <Badge variant="secondary" className="text-xs">
-                    Auto-resuming...
-                  </Badge>
-                )}
+            {syncStatus?.status === 'running' && (
+              <div className="mt-2">
+                <Progress value={getSyncProgress()} className="w-full" />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {syncStatus.records_processed || 0} / {syncStatus.total_records || 0} cars processed
+                </p>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Last Update */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Last Update</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-sm font-medium">
-              {syncStatus?.last_updated 
-                ? new Date(syncStatus.last_updated).toLocaleString()
-                : 'Never'
-              }
+            <div className="text-2xl font-bold">
+              {syncStatus?.last_activity_at ? (
+                new Date(syncStatus.last_activity_at).toLocaleTimeString()
+              ) : (
+                'Never'
+              )}
             </div>
             <p className="text-xs text-muted-foreground">
-              {syncStatus?.error_message || 'System operational'}
+              {syncStatus?.last_activity_at ? (
+                `${Math.round((Date.now() - new Date(syncStatus.last_activity_at).getTime()) / 60000)} min ago`
+              ) : (
+                'No recent activity'
+              )}
             </p>
           </CardContent>
         </Card>
@@ -167,71 +158,95 @@ const AdminSyncDashboard = () => {
       {/* Control Panel */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Play className="h-5 w-5" />
-            Sync Controls
-          </CardTitle>
+          <CardTitle>Sync Control Panel</CardTitle>
+          <CardDescription>
+            Manage data synchronization with the Encar API. Use test sync for incremental updates or full sync for complete refresh.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <h3 className="font-medium">🧪 Test Sync System</h3>
-              <p className="text-sm text-muted-foreground">
-                Test the new sync system with a small incremental update
-              </p>
-              <Button
-                onClick={handleTestSync}
-                disabled={loading || testInProgress || syncStatus?.status === 'in_progress'}
-                className="w-full"
-                variant="outline"
-              >
-                {testInProgress ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Testing...
-                  </>
-                ) : (
-                  <>
-                    <Play className="h-4 w-4 mr-2" />
-                    Run Test Sync
-                  </>
-                )}
-              </Button>
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="font-medium">🚀 Full Database Sync</h3>
-              <p className="text-sm text-muted-foreground">
-                Import all 130,000+ cars from Encar API (chunked execution)
-              </p>
-              <Button
-                onClick={handleFullSync}
-                disabled={loading || syncStatus?.status === 'in_progress'}
-                className="w-full"
-              >
-                <Database className="h-4 w-4 mr-2" />
-                Start Full Sync
-              </Button>
-            </div>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Button 
+              onClick={handleTestSync}
+              disabled={testInProgress || syncStatus?.status === 'running'}
+              className="flex-1"
+            >
+              <Zap className="h-4 w-4 mr-2" />
+              {testInProgress ? 'Starting...' : 'Test Sync (Incremental)'}
+            </Button>
+            
+            <Button 
+              variant="outline"
+              onClick={handleFullSync}
+              disabled={syncStatus?.status === 'running'}
+              className="flex-1"
+            >
+              <Database className="h-4 w-4 mr-2" />
+              Full Sync
+            </Button>
           </div>
 
-          {/* System Information */}
-          <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-            <h4 className="font-medium text-sm mb-2">✅ System Improvements Implemented:</h4>
-            <ul className="text-xs text-muted-foreground space-y-1">
-              <li>• Fixed 500 errors with robust error handling</li>
-              <li>• Implemented chunked sync to prevent timeouts</li>
-              <li>• Fixed pagination to handle 130,000+ cars</li>
-              <li>• Added auto-resume for large syncs</li>
-              <li>• Optimized database performance with indexes</li>
-              <li>• Enhanced monitoring and logging</li>
-              <li>• Fixed frontend error handling</li>
-            </ul>
+          {syncStatus?.error_message && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">
+                <strong>Error:</strong> {syncStatus.error_message}
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* System Improvements */}
+      <Card>
+        <CardHeader>
+          <CardTitle>System Improvements</CardTitle>
+          <CardDescription>
+            Recent enhancements to the sync system for better reliability and performance.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <div className="flex items-start space-x-3">
+              <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium">Simplified Database Architecture</p>
+                <p className="text-xs text-muted-foreground">
+                  Rebuilt database from scratch with cleaner, more efficient structure
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-3">
+              <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium">Improved Rate Limiting</p>
+                <p className="text-xs text-muted-foreground">
+                  Conservative API request timing to prevent 429/500 errors
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-3">
+              <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium">Better Error Handling</p>
+                <p className="text-xs text-muted-foreground">
+                  Enhanced error recovery and graceful degradation
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-3">
+              <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium">Optimized Performance</p>
+                <p className="text-xs text-muted-foreground">
+                  Better indexing and chunked processing for faster syncs
+                </p>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
     </div>
   );
-};
-
-export default AdminSyncDashboard;
+}
