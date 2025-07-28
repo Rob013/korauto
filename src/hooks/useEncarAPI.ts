@@ -31,6 +31,8 @@ interface SyncStatus {
   id: string;
   sync_type: string;
   status: string;
+  current_page?: number;
+  next_url?: string;
   total_records: number;
   synced_records: number;
   last_updated: string;

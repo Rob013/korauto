@@ -603,9 +603,11 @@ export type Database = {
       sync_metadata: {
         Row: {
           created_at: string | null
+          current_page: number | null
           error_message: string | null
           id: string
           last_updated: string | null
+          next_url: string | null
           status: string | null
           sync_type: string
           synced_records: number | null
@@ -613,9 +615,11 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          current_page?: number | null
           error_message?: string | null
           id?: string
           last_updated?: string | null
+          next_url?: string | null
           status?: string | null
           sync_type: string
           synced_records?: number | null
@@ -623,9 +627,11 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          current_page?: number | null
           error_message?: string | null
           id?: string
           last_updated?: string | null
+          next_url?: string | null
           status?: string | null
           sync_type?: string
           synced_records?: number | null

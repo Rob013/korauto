@@ -121,12 +121,24 @@ const AdminSyncDashboard = () => {
             <p className="text-xs text-muted-foreground">
               {syncStatus?.sync_type || 'No active sync'}
             </p>
-            {syncStatus?.status === 'in_progress' && (
+            {(syncStatus?.status === 'in_progress' || syncStatus?.status === 'paused') && (
               <div className="mt-2 space-y-1">
-                <Progress value={getSyncProgress()} className="h-2" />
-                <p className="text-xs text-muted-foreground">
-                  {syncStatus.synced_records?.toLocaleString()} / {syncStatus.total_records?.toLocaleString()} records
-                </p>
+                <div className="text-xs text-muted-foreground">
+                  Page {syncStatus.current_page || 1} • {syncStatus.synced_records?.toLocaleString() || 0} cars synced
+                </div>
+                {syncStatus.total_records > 0 && (
+                  <>
+                    <Progress value={getSyncProgress()} className="h-2" />
+                    <p className="text-xs text-muted-foreground">
+                      {syncStatus.synced_records?.toLocaleString()} / {syncStatus.total_records?.toLocaleString()} ({getSyncProgress()}%)
+                    </p>
+                  </>
+                )}
+                {syncStatus.status === 'paused' && (
+                  <Badge variant="secondary" className="text-xs">
+                    Auto-resuming...
+                  </Badge>
+                )}
               </div>
             )}
           </CardContent>
