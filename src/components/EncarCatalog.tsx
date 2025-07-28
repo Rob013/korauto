@@ -335,10 +335,10 @@ const formatMileage = (mileage?: string | number) =>
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
         <div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Encar Car Catalog
+            Katalog Makinash
           </h1>
           <p className="text-muted-foreground mt-2">
-            Browse {totalCount.toLocaleString()} authentic Korean cars from Encar.com
+            Shfletoni {totalCount.toLocaleString()} makina autentike koreane nga Encar.com
           </p>
         </div>
         
@@ -348,245 +348,224 @@ const formatMileage = (mileage?: string | number) =>
             {getStatusIcon()}
             <span>{getStatusText()}</span>
           </div>
-          
-          {/* <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleSyncAction('incremental')}
-              disabled={loading || syncStatus?.status === 'running'}
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Quick Refresh
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleSyncAction('full')}
-              disabled={loading || syncStatus?.status === 'running'}
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Full Refresh
-            </Button>
-          </div> */}
         </div>
       </div>
 
-      {/* Search and Filters */}
-      <div className="flex flex-col lg:flex-row gap-4 mb-8">
-        <div className="flex-1">
+      {/* Search and Quick Filters */}
+      <div className="mb-6 p-4 bg-card border border-border rounded-lg shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <Filter className="h-4 w-4 text-primary" />
+          <h3 className="text-lg font-semibold text-foreground">Kërko & Filtro Makinat</h3>
+        </div>
+        
+        {/* Search Bar */}
+        <div className="flex gap-2 mb-4">
+          <Input
+            placeholder="Kërko sipas markës, modelit, ose titullit..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            className="flex-1 h-11 bg-background border-border"
+          />
+          <Button onClick={handleSearch} disabled={loading} className="h-11 px-6">
+            <Search className="h-4 w-4 mr-2" />
+            Kërko
+          </Button>
+        </div>
+
+        {/* Primary Filters - Compact */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground block">Marka</label>
+            <Select value={filters.manufacturer_id || ''} onValueChange={(value) => setFilters({...filters, manufacturer_id: value || undefined, model_id: undefined})}>
+              <SelectTrigger className="h-10 bg-background border-border">
+                <SelectValue placeholder="Të gjitha Markat" />
+              </SelectTrigger>
+              <SelectContent className="z-50 max-h-60 bg-background border border-border shadow-lg">
+                {manufacturers.map((manufacturer, index) => {
+                  const isTopBrand = index < 4;
+                  const isLastTopBrand = index === 3;
+                  
+                  return (
+                    <div key={manufacturer.id}>
+                      <SelectItem 
+                        value={manufacturer.id.toString()}
+                        className={isTopBrand ? "font-medium text-primary" : ""}
+                      >
+                        {manufacturer.name}
+                      </SelectItem>
+                      {isLastTopBrand && (
+                        <div className="mx-2 my-1 border-t border-border/60" />
+                      )}
+                    </div>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground block">Modeli</label>
+            <Select value={filters.model_id || ''} onValueChange={(value) => setFilters({...filters, model_id: value || undefined})} disabled={!filters.manufacturer_id}>
+              <SelectTrigger className="h-10 bg-background border-border">
+                <SelectValue placeholder={filters.manufacturer_id ? "Të gjithë Modelet" : "Zgjidh markën së pari"} />
+              </SelectTrigger>
+              <SelectContent className="z-50 max-h-60 bg-background border border-border shadow-lg">
+                {models.map(model => (
+                  <SelectItem key={model.id} value={model.id.toString()}>{model.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground block">Ngjyra</label>
+            <Select value={filters.color || ''} onValueChange={(value) => setFilters({...filters, color: value || undefined})}>
+              <SelectTrigger className="h-10 bg-background border-border">
+                <SelectValue placeholder="Të gjitha" />
+              </SelectTrigger>
+              <SelectContent className="z-50 max-h-60 bg-background border border-border shadow-lg">
+                <SelectItem value="13">E bardhë</SelectItem>
+                <SelectItem value="1">E zezë</SelectItem>
+                <SelectItem value="2">E hirtë</SelectItem>
+                <SelectItem value="3">E kuqe</SelectItem>
+                <SelectItem value="4">E kaltër</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Toggle More Filters */}
+        <div className="flex justify-between items-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+            className="text-primary hover:text-primary-foreground hover:bg-primary"
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            {showFilters ? 'Fsheh filtrat shtesë' : 'Shfaq filtrat shtesë'}
+          </Button>
+          
           <div className="flex gap-2">
-            <Input
-              placeholder="Search cars by make, model, or title..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              className="flex-1"
-            />
-            <Button onClick={handleSearch} disabled={loading}>
-              <Search className="h-4 w-4" />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setFilters({})}
+              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+            >
+              Pastro Filtrat
+            </Button>
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('grid')}
+            >
+              <Grid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+            >
+              <List className="h-4 w-4" />
             </Button>
           </div>
         </div>
-        
-        <div className="flex gap-2">
-          <Button
-            variant={showDuplicates ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => {
-              setShowDuplicates(!showDuplicates);
-              if (!showDuplicates && duplicates.length === 0) {
-                fetchDuplicates();
-              }
-            }}
-          >
-            <AlertCircle className="h-4 w-4 mr-1" />
-            Duplicates
-          </Button>
-          <Button
-            variant={showFilters ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={viewMode === 'grid' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('grid')}
-          >
-            <Grid className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={viewMode === 'list' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('list')}
-          >
-            <List className="h-4 w-4" />
-          </Button>
-        </div>
       </div>
 
-      {/* Filters Panel */}
+      {/* Advanced Filters Panel */}
       {showFilters && (
-        <div className="bg-background border rounded-lg p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Manufacturer</label>
-              <Select value={filters.manufacturer_id || ''} onValueChange={(value) => setFilters({...filters, manufacturer_id: value || undefined, model_id: undefined})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All manufacturers" />
+        <div className="bg-card border border-border rounded-lg p-4 mb-6 shadow-sm">
+          <h4 className="text-base font-semibold mb-3 text-foreground">Filtrat e Avancuar</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground block">Lloji i Karburantit</label>
+              <Select value={filters.fuel_type || ''} onValueChange={(value) => setFilters({...filters, fuel_type: value || undefined})}>
+                <SelectTrigger className="h-10 bg-background border-border">
+                  <SelectValue placeholder="Të gjitha" />
                 </SelectTrigger>
                 <SelectContent className="z-50 max-h-60 bg-background border border-border shadow-lg">
-                  {manufacturers.map((manufacturer, index) => {
-                    const isTopBrand = index < 4; // First 4 are top brands
-                    const isLastTopBrand = index === 3; // Last of top 4 brands
-                    
-                    return (
-                      <div key={manufacturer.id}>
-                        <SelectItem 
-                          value={manufacturer.id.toString()}
-                          className={isTopBrand ? "font-medium text-primary" : ""}
-                        >
-                          {manufacturer.name}
-                        </SelectItem>
-                        {isLastTopBrand && (
-                          <div className="mx-2 my-1 border-t border-border/60" />
-                        )}
-                      </div>
-                    );
-                  })}
+                  <SelectItem value="1">Benzinë</SelectItem>
+                  <SelectItem value="2">Dizel</SelectItem>
+                  <SelectItem value="3">Elektrike</SelectItem>
+                  <SelectItem value="4">Hibride</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">Model</label>
-              <Select value={filters.model_id || ''} onValueChange={(value) => setFilters({...filters, model_id: value || undefined})} disabled={!filters.manufacturer_id}>
-                <SelectTrigger>
-                  <SelectValue placeholder={filters.manufacturer_id ? "All models" : "Select manufacturer first"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {models.map(model => (
-                    <SelectItem key={model.id} value={model.id.toString()}>{model.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Color</label>
-              <Select value={filters.color || ''} onValueChange={(value) => setFilters({...filters, color: value || undefined})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All colors" />
-                </SelectTrigger>
-                <SelectContent>
-                  {koreaOptions?.colors ? koreaOptions.colors.map((color: any) => (
-                    <SelectItem key={color.id} value={color.id.toString()}>{color.name}</SelectItem>
-                  )) : Array.from(new Set(cars.map(car => car.color).filter(c => c?.id && c?.name))).map(color => (
-                    <SelectItem key={color!.id} value={color!.id.toString()}>{color!.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Fuel Type</label>
-              <Select value={filters.fuel_type || ''} onValueChange={(value) => setFilters({...filters, fuel_type: value || undefined})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All fuel types" />
-                </SelectTrigger>
-                <SelectContent>
-                  {koreaOptions?.fuel_types ? koreaOptions.fuel_types.map((fuel: any) => (
-                    <SelectItem key={fuel.id} value={fuel.id.toString()}>{fuel.name}</SelectItem>
-                  )) : Array.from(new Set(cars.map(car => car.fuel).filter(f => f?.id && f?.name))).map(fuel => (
-                    <SelectItem key={fuel!.id} value={fuel!.id.toString()}>{fuel!.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Transmission</label>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground block">Transmisioni</label>
               <Select value={filters.transmission || ''} onValueChange={(value) => setFilters({...filters, transmission: value || undefined})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All transmissions" />
+                <SelectTrigger className="h-10 bg-background border-border">
+                  <SelectValue placeholder="Të gjitha" />
                 </SelectTrigger>
-                <SelectContent>
-                  {koreaOptions?.transmissions ? koreaOptions.transmissions.map((transmission: any) => (
-                    <SelectItem key={transmission.id} value={transmission.id.toString()}>{transmission.name}</SelectItem>
-                  )) : (
-                    <>
-                      <SelectItem value="1">Automatic</SelectItem>
-                      <SelectItem value="2">Manual</SelectItem>
-                    </>
-                  )}
+                <SelectContent className="z-50 max-h-60 bg-background border border-border shadow-lg">
+                  <SelectItem value="1">Automatik</SelectItem>
+                  <SelectItem value="2">Manual</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">Year Range</label>
-              <div className="flex gap-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground block">Vitet</label>
+              <div className="flex gap-1">
                 <Input
-                  placeholder="From"
+                  placeholder="Nga"
                   type="number"
                   value={filters.from_year || ''}
                   onChange={(e) => setFilters({...filters, from_year: e.target.value || undefined})}
+                  className="h-10 bg-background border-border"
                 />
                 <Input
-                  placeholder="To"
+                  placeholder="Deri"
                   type="number"
                   value={filters.to_year || ''}
                   onChange={(e) => setFilters({...filters, to_year: e.target.value || undefined})}
+                  className="h-10 bg-background border-border"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">Mileage Range (km)</label>
-              <div className="flex gap-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground block">Çmimi ($)</label>
+              <div className="flex gap-1">
                 <Input
-                  placeholder="From"
-                  type="number"
-                  value={filters.odometer_from_km || ''}
-                  onChange={(e) => setFilters({...filters, odometer_from_km: e.target.value || undefined})}
-                />
-                <Input
-                  placeholder="To"
-                  type="number"
-                  value={filters.odometer_to_km || ''}
-                  onChange={(e) => setFilters({...filters, odometer_to_km: e.target.value || undefined})}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Price Range ($)</label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="From"
+                  placeholder="Nga"
                   type="number"
                   value={filters.buy_now_price_from || ''}
                   onChange={(e) => setFilters({...filters, buy_now_price_from: e.target.value || undefined})}
+                  className="h-10 bg-background border-border"
                 />
                 <Input
-                  placeholder="To"
+                  placeholder="Deri"
                   type="number"
                   value={filters.buy_now_price_to || ''}
                   onChange={(e) => setFilters({...filters, buy_now_price_to: e.target.value || undefined})}
+                  className="h-10 bg-background border-border"
                 />
               </div>
             </div>
-          </div>
 
-          <div className="flex gap-2 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setFilters({})}
-            >
-              Clear Filters
-            </Button>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium text-foreground block">Kilometrazhi (km)</label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Nga"
+                  type="number"
+                  value={filters.odometer_from_km || ''}
+                  onChange={(e) => setFilters({...filters, odometer_from_km: e.target.value || undefined})}
+                  className="h-10 bg-background border-border"
+                />
+                <Input
+                  placeholder="Deri"
+                  type="number"
+                  value={filters.odometer_to_km || ''}
+                  onChange={(e) => setFilters({...filters, odometer_to_km: e.target.value || undefined})}
+                  className="h-10 bg-background border-border"
+                />
+              </div>
+            </div>
           </div>
         </div>
       )}
