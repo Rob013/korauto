@@ -16,22 +16,109 @@ export type Database = {
     Tables: {
       cars: {
         Row: {
-          "Column Name": string | null
-          Constraints: string | null
-          Description: string | null
-          Type: string | null
+          archive_reason: string | null
+          archived_at: string | null
+          buy_now_price: number | null
+          color: string | null
+          condition: string | null
+          created_at: string
+          current_bid: number | null
+          domain_name: string | null
+          external_id: string | null
+          final_bid: number | null
+          fuel: string | null
+          id: string
+          image_url: string | null
+          images: Json | null
+          is_archived: boolean | null
+          is_live: boolean | null
+          keys_available: boolean | null
+          last_synced_at: string | null
+          location: string | null
+          lot_number: string | null
+          make: string
+          mileage: number | null
+          model: string
+          price: number
+          sale_date: string | null
+          sold_price: number | null
+          source_api: string | null
+          status: string | null
+          title: string | null
+          transmission: string | null
+          updated_at: string
+          vin: string | null
+          year: number
         }
         Insert: {
-          "Column Name"?: string | null
-          Constraints?: string | null
-          Description?: string | null
-          Type?: string | null
+          archive_reason?: string | null
+          archived_at?: string | null
+          buy_now_price?: number | null
+          color?: string | null
+          condition?: string | null
+          created_at?: string
+          current_bid?: number | null
+          domain_name?: string | null
+          external_id?: string | null
+          final_bid?: number | null
+          fuel?: string | null
+          id: string
+          image_url?: string | null
+          images?: Json | null
+          is_archived?: boolean | null
+          is_live?: boolean | null
+          keys_available?: boolean | null
+          last_synced_at?: string | null
+          location?: string | null
+          lot_number?: string | null
+          make: string
+          mileage?: number | null
+          model: string
+          price?: number
+          sale_date?: string | null
+          sold_price?: number | null
+          source_api?: string | null
+          status?: string | null
+          title?: string | null
+          transmission?: string | null
+          updated_at?: string
+          vin?: string | null
+          year: number
         }
         Update: {
-          "Column Name"?: string | null
-          Constraints?: string | null
-          Description?: string | null
-          Type?: string | null
+          archive_reason?: string | null
+          archived_at?: string | null
+          buy_now_price?: number | null
+          color?: string | null
+          condition?: string | null
+          created_at?: string
+          current_bid?: number | null
+          domain_name?: string | null
+          external_id?: string | null
+          final_bid?: number | null
+          fuel?: string | null
+          id?: string
+          image_url?: string | null
+          images?: Json | null
+          is_archived?: boolean | null
+          is_live?: boolean | null
+          keys_available?: boolean | null
+          last_synced_at?: string | null
+          location?: string | null
+          lot_number?: string | null
+          make?: string
+          mileage?: number | null
+          model?: string
+          price?: number
+          sale_date?: string | null
+          sold_price?: number | null
+          source_api?: string | null
+          status?: string | null
+          title?: string | null
+          transmission?: string | null
+          updated_at?: string
+          vin?: string | null
+          year?: number
         }
         Relationships: []
       }
@@ -56,10 +143,24 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "favorite_cars_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "favorite_cars_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_favorite_cars_car_id"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars"
             referencedColumns: ["id"]
           },
         ]
@@ -98,7 +199,15 @@ export type Database = {
           status?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "inspection_requests_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
