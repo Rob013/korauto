@@ -48,7 +48,21 @@ interface CarData {
 
 interface ApiResponse {
   data: CarData[];
-  total_count?: number;
+  links?: {
+    first?: string;
+    last?: string;
+    prev?: string;
+    next?: string;
+  };
+  meta?: {
+    current_page?: number;
+    from?: number;
+    last_page?: number;
+    path?: string;
+    per_page?: number;
+    to?: number;
+    total?: number;
+  };
 }
 
 Deno.serve(async (req) => {
@@ -93,30 +107,37 @@ Deno.serve(async (req) => {
     let page = 1;
     let hasMore = true;
 
+    let nextUrl: string | null = null;
+    
     while (hasMore) {
       try {
-        console.log(`Fetching page ${page} from AuctionAPIs...`);
+        console.log(`Fetching ${nextUrl ? 'next page' : 'page 1'} from AuctionAPIs...`);
         
-        // Construct API URL for Encar listings with API key
-        const apiUrl = new URL('https://auctionsapi.com/api/cars');
-        apiUrl.searchParams.append('api_key', 'd00985c77981fe8d26be16735f932ed1');
-        apiUrl.searchParams.append('limit', batchSize.toString());
-        apiUrl.searchParams.append('offset', ((page - 1) * batchSize).toString());
-        
-        if (syncType === 'incremental') {
-          // Get last sync time for incremental updates
-          const { data: lastSync } = await supabaseClient
-            .from('sync_metadata')
-            .select('last_updated')
-            .eq('status', 'completed')
-            .order('last_updated', { ascending: false })
-            .limit(1)
-            .single();
+        // Use either the next URL from pagination or construct initial URL
+        let apiUrl: string;
+        if (nextUrl) {
+          apiUrl = nextUrl;
+        } else {
+          const baseUrl = new URL('https://auctionsapi.com/api/cars');
+          baseUrl.searchParams.append('api_key', 'd00985c77981fe8d26be16735f932ed1');
+          baseUrl.searchParams.append('limit', '50'); // API maximum is 50 per request
           
-          if (lastSync?.last_updated) {
-            const minutes = Math.floor((Date.now() - new Date(lastSync.last_updated).getTime()) / (1000 * 60));
-            apiUrl.searchParams.append('minutes', minutes.toString());
+          if (syncType === 'incremental') {
+            // Get last sync time for incremental updates
+            const { data: lastSync } = await supabaseClient
+              .from('sync_metadata')
+              .select('last_updated')
+              .eq('status', 'completed')
+              .order('last_updated', { ascending: false })
+              .limit(1)
+              .single();
+            
+            if (lastSync?.last_updated) {
+              const minutes = Math.floor((Date.now() - new Date(lastSync.last_updated).getTime()) / (1000 * 60));
+              baseUrl.searchParams.append('minutes', minutes.toString());
+            }
           }
+          apiUrl = baseUrl.toString();
         }
 
         const response = await fetch(apiUrl.toString(), {
@@ -145,11 +166,20 @@ Deno.serve(async (req) => {
           throw new Error(`Invalid JSON response from API: ${parseError.message}`);
         }
         
+        // Log pagination information for debugging
+        console.log(`📊 API Pagination Info:`, {
+          current_page: apiData.meta?.current_page,
+          per_page: apiData.meta?.per_page,
+          total: apiData.meta?.total,
+          has_next: !!apiData.links?.next
+        });
+        
         // Handle the correct API response structure
         const carsArray = apiData.data || [];
         console.log(`Received ${carsArray.length} listings from API`);
 
         if (!carsArray || carsArray.length === 0) {
+          console.log('No more cars found, ending pagination');
           hasMore = false;
           break;
         }
@@ -200,7 +230,7 @@ Deno.serve(async (req) => {
         }
 
         totalSynced += transformedCars.length;
-        totalRecords = apiData.total_count || totalSynced;
+        totalRecords = apiData.meta?.total || totalSynced; // Use API's total count
         
         console.log(`Synced ${transformedCars.length} cars (Total: ${totalSynced}/${totalRecords})`);
 
@@ -213,10 +243,15 @@ Deno.serve(async (req) => {
           })
           .eq('id', syncRecord.id);
 
-        // Fix pagination logic - continue while we get full batches
-        // The API doesn't return total_count reliably, so we continue until we get fewer records than requested
-        hasMore = transformedCars.length === batchSize;
-        page++;
+        // ✅ CRITICAL FIX: Use API's pagination links instead of manual pagination
+        if (apiData.links?.next) {
+          nextUrl = apiData.links.next;
+          hasMore = true;
+          console.log(`📄 Next page URL found: ${nextUrl.substring(0, 100)}...`);
+        } else {
+          hasMore = false;
+          console.log(`🏁 No next page URL - reached end of API results`);
+        }
 
         // Optimized rate limiting - 2-3 seconds between requests for faster sync
         if (hasMore) {
