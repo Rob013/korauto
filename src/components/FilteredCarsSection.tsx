@@ -96,7 +96,9 @@ const FilteredCarsSection = () => {
 
       const params = new URLSearchParams({
         api_key: API_KEY,
-        limit: '1000'
+        per_page: '50',
+        page: page.toString(),
+        simple_paginate: '0',
       });
 
       if (minutes) {
