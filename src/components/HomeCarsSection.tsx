@@ -371,9 +371,9 @@ const HomeCarsSection = () => {
   };
 
   return (
-    <section id="cars" className="py-8 sm:py-12 lg:py-16 bg-secondary/30">
+    <section id="cars" className="py-4 sm:py-6 lg:py-8 bg-secondary/30">
       <div className="container mx-auto px-4 sm:px-6">
-        <div className="text-center mb-8 sm:mb-12">
+        <div className="text-center mb-4 sm:mb-6">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground">Makinat e Disponueshme</h2>
           <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
             Shfletoni përzgjedhjen tonë të mjeteve të cilësisë së lartë. Çdo makinë mund të inspektohet profesionalisht falas.

@@ -3,9 +3,9 @@ import { Mail, Phone, MapPin, Clock } from "lucide-react";
 
 const ContactSection = () => {
   return (
-    <section id="contact" className="py-8 sm:py-12 lg:py-16 bg-background">
+    <section id="contact" className="py-4 sm:py-6 lg:py-8 bg-background">
       <div className="container mx-auto px-4 sm:px-6">
-        <div className="text-center mb-8 sm:mb-12">
+        <div className="text-center mb-4 sm:mb-6">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground">Na Kontaktoni</h2>
           <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
             Lidhuni me ekipin tonë për inspektime, pyetje, ose mbështetje.
@@ -103,7 +103,7 @@ const ContactSection = () => {
           </Card>
         </div>
 
-        <div className="text-center mt-12">
+        <div className="text-center mt-6">
           <Card className="max-w-2xl mx-auto bg-muted/50">
             <CardContent className="p-6">
               <h3 className="text-xl font-semibold mb-4 text-foreground">Përgjigje e Shpejtë</h3>
