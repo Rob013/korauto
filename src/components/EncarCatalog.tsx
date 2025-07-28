@@ -256,13 +256,13 @@ const EncarCatalog = () => {
                       <span>Mileage:</span>
                       <span className="font-medium">{formatMileage(car.mileage)}</span>
                     </div>
-                    {car.fuel && (
+                
+                    {car.transmission && (
                       <div className="flex justify-between">
-                        <span>Fuel:</span>
-                        <span className="font-medium capitalize">{car.fuel}</span>
+                        <span>Transmission:</span>
+                        <span className="font-medium capitalize">{car.transmission}</span>
                       </div>
                     )}
-                
                   </div>
                 </CardContent>
                 
