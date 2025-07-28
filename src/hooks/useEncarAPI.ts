@@ -142,8 +142,11 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     setError(null);
 
     try {
+      // Use larger batch size for better performance
+      const batchSize = type === 'full' ? 1000 : 500;
+      
       const { data, error: syncError } = await supabase.functions.invoke('encar-sync', {
-        body: { type, batch_size: 500 }
+        body: { type, batch_size: batchSize }
       });
 
       if (syncError) {
@@ -152,9 +155,13 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
 
       console.log('Sync triggered successfully:', data);
       
-      // Refresh sync status and cars
-      await getSyncStatus();
-      await fetchCars(1, 20);
+      // Refresh sync status and cars after a short delay
+      setTimeout(() => {
+        getSyncStatus();
+        if (type === 'incremental') {
+          fetchCars(1, 50); // Load more cars for better initial view
+        }
+      }, 1000);
       
     } catch (err) {
       console.error('Error triggering sync:', err);
@@ -233,9 +240,9 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     };
   }, []);
 
-  // Initial load
+  // Initial load with larger batch for better performance
   useEffect(() => {
-    fetchCars(1, 20);
+    fetchCars(1, 50);
     getSyncStatus();
   }, []);
 

@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
 
     const { searchParams } = new URL(req.url);
     const syncType = searchParams.get('type') || 'full';
-    const batchSize = parseInt(searchParams.get('batch_size') || '500');
+    const batchSize = parseInt(searchParams.get('batch_size') || '1000');
 
     console.log(`Starting ${syncType} sync with batch size ${batchSize}`);
 
@@ -180,19 +180,31 @@ Deno.serve(async (req) => {
         hasMore = apiData.has_more === true && transformedCars.length === batchSize;
         page++;
 
-        // Rate limiting - wait 1 second between requests
+        // Rate limiting - wait 500ms between requests for faster processing
         if (hasMore) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        // Progress logging every 10,000 records
+        if (totalSynced > 0 && totalSynced % 10000 === 0) {
+          console.log(`Progress Update: ${totalSynced} cars processed successfully`);
         }
 
       } catch (error) {
         console.error(`Error on page ${page}:`, error);
         
+        // Implement exponential backoff retry logic
+        if (page <= 3) { // Retry first few pages
+          console.log(`Retrying page ${page} after error...`);
+          await new Promise(resolve => setTimeout(resolve, 2000 * Math.pow(2, page - 1)));
+          continue; // Skip to next iteration to retry
+        }
+        
         await supabaseClient
           .from('sync_metadata')
           .update({
             status: 'failed',
-            error_message: error.message,
+            error_message: `Error on page ${page}: ${error.message}`,
             synced_records: totalSynced,
             total_records: totalRecords
           })
@@ -201,8 +213,9 @@ Deno.serve(async (req) => {
         return new Response(
           JSON.stringify({
             success: false,
-            error: error.message,
-            synced_records: totalSynced
+            error: `Failed on page ${page}: ${error.message}`,
+            synced_records: totalSynced,
+            pages_processed: page - 1
           }),
           { 
             status: 500,
