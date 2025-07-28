@@ -229,14 +229,10 @@ const FilterForm: React.FC<FilterFormProps> = ({
                 <SelectContent>
                   <SelectItem value="all">Të gjitha Ngjyrat</SelectItem>
                   {Object.entries(COLOR_OPTIONS).map(([name, id]) => {
-                    const count = filterCounts?.colors[id.toString()];
-                    const isDisabled = count === 0;
                     return (
                       <SelectItem 
                         key={id} 
                         value={id.toString()}
-                        disabled={isDisabled}
-                        className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
                       >
                         {name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')}
                       </SelectItem>
@@ -255,14 +251,10 @@ const FilterForm: React.FC<FilterFormProps> = ({
                 <SelectContent>
                   <SelectItem value="all">Të gjithë Llojet</SelectItem>
                   {Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => {
-                    const count = filterCounts?.fuelTypes[id.toString()];
-                    const isDisabled = count === 0;
                     return (
                       <SelectItem 
                         key={id} 
                         value={id.toString()}
-                        disabled={isDisabled}
-                        className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
                       >
                         {name.charAt(0).toUpperCase() + name.slice(1)}
                       </SelectItem>
@@ -281,14 +273,10 @@ const FilterForm: React.FC<FilterFormProps> = ({
                 <SelectContent>
                   <SelectItem value="all">Të gjithë</SelectItem>
                   {Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => {
-                    const count = filterCounts?.transmissions[id.toString()];
-                    const isDisabled = count === 0;
                     return (
                       <SelectItem 
                         key={id} 
                         value={id.toString()}
-                        disabled={isDisabled}
-                        className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
                       >
                         {name.charAt(0).toUpperCase() + name.slice(1)}
                       </SelectItem>
