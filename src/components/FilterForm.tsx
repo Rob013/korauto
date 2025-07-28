@@ -130,17 +130,48 @@ const FilterForm: React.FC<FilterFormProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Të gjitha Markat</SelectItem>
-               {manufacturers.map((manufacturer) => {
-                const count = filterCounts?.manufacturers[manufacturer.id.toString()];
-                return (
-                  <SelectItem 
-                    key={manufacturer.id} 
-                    value={manufacturer.id.toString()}
-                  >
-                    {manufacturer.name} {count !== undefined && count > 0 && `(${count})`}
-                  </SelectItem>
-                );
-               })}
+               {manufacturers
+                .sort((a, b) => {
+                  // German cars priority
+                  const germanBrands = ['BMW', 'Mercedes-Benz', 'Audi', 'Volkswagen', 'Porsche', 'Opel'];
+                  // Korean cars priority  
+                  const koreanBrands = ['Hyundai', 'Kia', 'Genesis'];
+                  // Other popular cars
+                  const popularBrands = ['Toyota', 'Honda', 'Nissan', 'Ford', 'Chevrolet', 'Mazda', 'Subaru', 'Lexus'];
+                  
+                  const aIsGerman = germanBrands.includes(a.name);
+                  const bIsGerman = germanBrands.includes(b.name);
+                  const aIsKorean = koreanBrands.includes(a.name);
+                  const bIsKorean = koreanBrands.includes(b.name);
+                  const aIsPopular = popularBrands.includes(a.name);
+                  const bIsPopular = popularBrands.includes(b.name);
+                  
+                  // German brands first
+                  if (aIsGerman && !bIsGerman) return -1;
+                  if (!aIsGerman && bIsGerman) return 1;
+                  
+                  // Korean brands second
+                  if (aIsKorean && !bIsKorean && !bIsGerman) return -1;
+                  if (!aIsKorean && bIsKorean && !aIsGerman) return 1;
+                  
+                  // Popular brands third
+                  if (aIsPopular && !bIsPopular && !bIsGerman && !bIsKorean) return -1;
+                  if (!aIsPopular && bIsPopular && !aIsGerman && !aIsKorean) return 1;
+                  
+                  // Alphabetical within same category
+                  return a.name.localeCompare(b.name);
+                })
+                .map((manufacturer) => {
+                 const count = filterCounts?.manufacturers[manufacturer.id.toString()];
+                 return (
+                   <SelectItem 
+                     key={manufacturer.id} 
+                     value={manufacturer.id.toString()}
+                   >
+                     {manufacturer.name} {count !== undefined && count > 0 && `(${count})`}
+                   </SelectItem>
+                 );
+                })}
             </SelectContent>
           </Select>
         </div>
