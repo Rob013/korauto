@@ -113,12 +113,6 @@ const FilterForm: React.FC<FilterFormProps> = ({
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4" />
           <h3 className="text-lg font-semibold">Filtrat</h3>
-          {loadingCounts && (
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              <span>Duke ngarkuar numrat...</span>
-            </div>
-          )}
         </div>
         <Button variant="outline" size="sm" onClick={onClearFilters}>
           <X className="h-4 w-4 mr-1" />
