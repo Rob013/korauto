@@ -114,33 +114,33 @@ const EncarCatalog = () => {
     fetchCars(1, 100, filters).finally(() => setLoading(false));
   }, []);
 
-  // const getStatusIcon = () => {
-  //   if (!syncStatus) return <Clock className="h-4 w-4" />;
+  const getStatusIcon = () => {
+    if (!syncStatus) return <Clock className="h-4 w-4" />;
     
-  //   switch (syncStatus.status) {
-  //     case 'completed':
-  //       return <CheckCircle className="h-4 w-4 text-green-500" />;
-  //     case 'failed':
-  //       return <AlertCircle className="h-4 w-4 text-red-500" />;
-  //     default:
-  //       return <Loader2 className="h-4 w-4 animate-spin" />;
-  //   }
-  // };
+    switch (syncStatus.status) {
+      case 'completed':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'failed':
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      default:
+        return <Loader2 className="h-4 w-4 animate-spin" />;
+    }
+  };
 
-  // const getStatusText = () => {
-  //   if (!syncStatus) return 'No data refresh info';
+  const getStatusText = () => {
+    if (!syncStatus) return 'No data refresh info';
     
-  //   switch (syncStatus.status) {
-  //     case 'completed':
-  //       return `Last updated: ${new Date(syncStatus.last_activity_at).toLocaleString()}`;
-  //     case 'failed':
-  //       return `Failed: ${syncStatus.error_message || 'Unknown error'}`;
-  //     case 'running':
-  //       return `Updating: ${syncStatus.records_processed}/${syncStatus.total_records} records`;
-  //     default:
-  //       return syncStatus.status;
-  //   }
-  // };
+    switch (syncStatus.status) {
+      case 'completed':
+        return `Last updated: ${new Date(syncStatus.last_activity_at).toLocaleString()}`;
+      case 'failed':
+        return `Failed: ${syncStatus.error_message || 'Unknown error'}`;
+      case 'running':
+        return `Updating: ${syncStatus.records_processed}/${syncStatus.total_records} records`;
+      default:
+        return syncStatus.status;
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
