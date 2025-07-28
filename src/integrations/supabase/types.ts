@@ -728,6 +728,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      clean_old_sync_metadata: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _user_id: string
