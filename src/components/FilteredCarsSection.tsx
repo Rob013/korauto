@@ -1,4 +1,5 @@
 import CarCard from "./CarCard";
+import { useRef } from "react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -153,6 +154,9 @@ const FilteredCarsSection = () => {
       const newCars = page === 1 ? transformedCars : [...cars, ...transformedCars];
       setCars(newCars);
       setFilteredCars(newCars);
+      if (page > 1 && carListRef.current) {
+      carListRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
       setCurrentPage(page);
       setHasMorePages(transformedCars.length === 50);
       setLastUpdate(new Date());
@@ -562,7 +566,7 @@ const FilteredCarsSection = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0">
+            <div ref={carListRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0">
               {filteredCars.map((car) => (
                 <CarCard key={car.id} {...car} />
               ))}
