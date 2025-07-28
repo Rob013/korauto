@@ -68,7 +68,7 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [totalCount, setTotalCount] = useState(0);
 
-  const fetchCars = async (page: number = 1, limit: number = 20, filters?: CarFilters) => {
+  const fetchCars = async (page: number = 1, limit: number = 100, filters?: CarFilters) => {
     setLoading(true);
     setError(null);
 
@@ -159,7 +159,7 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
       setTimeout(() => {
         getSyncStatus();
         if (type === 'incremental') {
-          fetchCars(1, 50); // Load more cars for better initial view
+          fetchCars(1, 100); // Load more cars for better initial view
         }
       }, 1000);
       
@@ -242,7 +242,7 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
 
   // Initial load with larger batch for better performance
   useEffect(() => {
-    fetchCars(1, 50);
+    fetchCars(1, 100);
     getSyncStatus();
   }, []);
 

@@ -43,7 +43,7 @@ const EncarCatalog = () => {
     };
     setFilters(newFilters);
     setCurrentPage(1);
-    await fetchCars(1, 20, newFilters);
+    await fetchCars(1, 100, newFilters);
   };
 
   const handleLoadMore = async () => {
@@ -51,7 +51,7 @@ const EncarCatalog = () => {
     
     setLoadingMore(true);
     const nextPage = currentPage + 1;
-    await fetchCars(nextPage, 20, filters);
+    await fetchCars(nextPage, 100, filters);
     setCurrentPage(nextPage);
     setLoadingMore(false);
   };

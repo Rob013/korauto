@@ -68,11 +68,9 @@ Deno.serve(async (req) => {
         console.log(`Fetching page ${page} from AuctionAPIs...`);
         
         // Construct API URL for Encar listings
-        const apiUrl = new URL('https://api.auctionapis.com/v1/listings');
-        apiUrl.searchParams.append('api_key', 'd00985c77981fe8d26be16735f932ed1');
-        apiUrl.searchParams.append('source', 'encar');
+        const apiUrl = new URL('https://auctionsapi.com/api/cars');
         apiUrl.searchParams.append('limit', batchSize.toString());
-        apiUrl.searchParams.append('page', page.toString());
+        apiUrl.searchParams.append('offset', ((page - 1) * batchSize).toString());
         
         if (syncType === 'incremental') {
           // Get last sync time for incremental updates
@@ -93,8 +91,7 @@ Deno.serve(async (req) => {
         const response = await fetch(apiUrl.toString(), {
           headers: {
             'Accept': 'application/json',
-            'User-Agent': 'KORAUTO-EncarSync/1.0',
-            'X-API-Key': 'd00985c77981fe8d26be16735f932ed1'
+            'User-Agent': 'KORAUTO-EncarSync/1.0'
           }
         });
 
@@ -103,46 +100,33 @@ Deno.serve(async (req) => {
         }
 
         const apiData = await response.json();
-        console.log(`Received ${apiData.data?.length || 0} listings from API`);
+        console.log(`Received ${apiData.cars?.length || 0} listings from API`);
 
-        if (!apiData.data || apiData.data.length === 0) {
+        if (!apiData.cars || apiData.cars.length === 0) {
           hasMore = false;
           break;
         }
 
         // Transform API data to match our schema
-        const transformedCars = apiData.data.map((car: any) => {
-          // Extract first photo URL from lots array
-          let photoUrls: string[] = [];
-          let lotNumber = '';
-          
-          if (car.lots && car.lots.length > 0) {
-            const lot = car.lots[0];
-            lotNumber = lot.lot || '';
-            
-            if (lot.images?.normal && Array.isArray(lot.images.normal)) {
-              photoUrls = lot.images.normal.slice(0, 10); // Limit to 10 images
-            }
-          }
-
+        const transformedCars = apiData.cars.map((car: any) => {
           return {
             id: car.id?.toString() || `encar_${Math.random().toString(36).substr(2, 9)}`,
             external_id: car.id?.toString(),
-            make: car.manufacturer?.name || 'Unknown',
-            model: car.model?.name || 'Unknown',
-            year: car.year || 2020,
-            price: parseFloat(car.lots?.[0]?.buy_now || car.lots?.[0]?.final_bid || '0') || 0,
-            mileage: car.lots?.[0]?.odometer?.km || 0,
-            photo_urls: photoUrls,
-            image: photoUrls[0] || null,
-            lot_number: lotNumber,
-            location: 'South Korea',
-            fuel: car.fuel?.name || null,
-            transmission: car.transmission?.name || null,
-            color: car.color?.name || null,
-            condition: car.lots?.[0]?.condition?.name || null,
+            make: car.make || 'Unknown',
+            model: car.model || 'Unknown',
+            year: parseInt(car.year) || 2020,
+            price: parseFloat(car.price) || 0,
+            mileage: parseInt(car.mileage) || 0,
+            photo_urls: car.images ? [car.images] : [],
+            image: car.images || null,
+            lot_number: car.lot_number || null,
+            location: car.location || 'South Korea',
+            fuel: car.fuel || null,
+            transmission: car.transmission || null,
+            color: car.color || null,
+            condition: car.condition || null,
             vin: car.vin || null,
-            title: car.title || `${car.manufacturer?.name || ''} ${car.model?.name || ''} ${car.year || ''}`.trim(),
+            title: car.title || `${car.make || ''} ${car.model || ''} ${car.year || ''}`.trim(),
             domain_name: 'encar_com',
             source_api: 'auctionapis',
             status: 'active'
@@ -163,7 +147,7 @@ Deno.serve(async (req) => {
         }
 
         totalSynced += transformedCars.length;
-        totalRecords = apiData.total || totalSynced;
+        totalRecords = apiData.total_count || totalSynced;
         
         console.log(`Synced ${transformedCars.length} cars (Total: ${totalSynced}/${totalRecords})`);
 
@@ -177,7 +161,7 @@ Deno.serve(async (req) => {
           .eq('id', syncRecord.id);
 
         // Check if we have more pages
-        hasMore = apiData.has_more === true && transformedCars.length === batchSize;
+        hasMore = transformedCars.length === batchSize && totalSynced < (apiData.total_count || 0);
         page++;
 
         // Rate limiting - wait 500ms between requests for faster processing
