@@ -150,17 +150,22 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
         body: { type }
       });
 
-      // Handle various error scenarios
+      // Handle various error scenarios with robust null checking
       if (syncError) {
         console.error('❌ Sync function error:', syncError);
         
+        // Safely extract error message with null checks
+        const errorMessage = syncError?.message || syncError?.details || String(syncError) || 'Unknown error';
+        
         // Check for specific error types
-        if (syncError.message?.includes('JWT')) {
+        if (errorMessage.includes('JWT') || errorMessage.includes('auth')) {
           throw new Error('Authentication error - please refresh the page');
-        } else if (syncError.message?.includes('timeout')) {
+        } else if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
           throw new Error('Request timeout - sync may still be running');
+        } else if (errorMessage.includes('500') || errorMessage.includes('Internal')) {
+          throw new Error('Server error - please try again');
         } else {
-          throw new Error(syncError.message || 'Sync function failed');
+          throw new Error(errorMessage);
         }
       }
 
@@ -169,10 +174,17 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
         throw new Error('Invalid response from sync function');
       }
 
-      // Check if sync operation failed
-      if (!data.success) {
+      // Check if sync operation failed with safe property access
+      if (data && typeof data === 'object' && data.success === false) {
         console.error('❌ Sync failed with response:', data);
-        throw new Error(data.error || 'Sync operation failed');
+        const errorMsg = data.error || data.message || 'Sync operation failed';
+        throw new Error(String(errorMsg));
+      }
+      
+      // Handle case where data doesn't have success property
+      if (data && typeof data === 'object' && !('success' in data)) {
+        console.warn('⚠️ Response missing success field:', data);
+        // Assume success if no explicit failure indicators
       }
 
       console.log('✅ Sync triggered successfully:', data);
@@ -210,9 +222,25 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
       
     } catch (err) {
       console.error('❌ Error triggering sync:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to trigger sync';
+      
+      // Robust error message extraction
+      let errorMessage = 'Failed to trigger sync';
+      if (err && typeof err === 'object') {
+        if ('message' in err && typeof err.message === 'string') {
+          errorMessage = err.message;
+        } else if ('error' in err && typeof err.error === 'string') {
+          errorMessage = err.error;
+        } else if ('details' in err && typeof err.details === 'string') {
+          errorMessage = err.details;
+        } else {
+          errorMessage = String(err);
+        }
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      }
+      
       setError(errorMessage);
-      throw err; // Re-throw so calling component can handle it
+      throw new Error(errorMessage);
     } finally {
       setLoading(false);
     }

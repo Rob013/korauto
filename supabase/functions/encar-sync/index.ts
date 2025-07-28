@@ -174,8 +174,8 @@ Deno.serve(async (req) => {
       console.log(`🆕 Built fresh URL for page ${syncState.current_page}`);
     }
 
-    // PHASE 3: Process pages with chunked architecture
-    const PAGES_PER_EXECUTION = 50; // Process 50 pages (2,500 cars) per execution
+    // PHASE 3: Process pages with optimized chunked architecture
+    const PAGES_PER_EXECUTION = 30; // Process 30 pages (1,500 cars) per execution for better reliability
     let pagesProcessed = 0;
     let currentUrl = apiUrl;
     let hasMore = true;
@@ -193,19 +193,22 @@ Deno.serve(async (req) => {
             throw new Error(`Invalid API URL: ${currentUrl}`);
           }
 
-          // Fetch from API with timeout
+          // Fetch from API with improved timeout and retry logic
           const response = await fetch(currentUrl, {
             headers: {
               'Accept': 'application/json',
               'User-Agent': 'KORAUTO-WebApp/1.0'
             },
-            signal: AbortSignal.timeout(45000) // Increased timeout
+            signal: AbortSignal.timeout(30000) // 30 second timeout
           });
 
           if (!response.ok) {
             if (response.status === 429) {
-              console.log(`⏳ Rate limited, waiting 15 seconds...`);
-              await new Promise(resolve => setTimeout(resolve, 15000));
+              // Exponential backoff for rate limiting
+              const waitTime = Math.min(15000 * Math.pow(2, retryCount), 60000); // Max 60s
+              console.log(`⏳ Rate limited, waiting ${waitTime/1000} seconds...`);
+              await new Promise(resolve => setTimeout(resolve, waitTime));
+              retryCount++; // Count rate limit as a retry
               continue;
             }
             throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -391,41 +394,49 @@ Deno.serve(async (req) => {
       finalStatus = 'paused';
       console.log(`⏸️ Pausing after ${pagesProcessed} pages. Total so far: ${syncState.synced_records} cars`);
       
-      // Trigger continuation with improved error handling
+      // Trigger continuation with circuit breaker pattern
       EdgeRuntime.waitUntil((async () => {
         try {
-          // Wait before continuation to prevent overwhelming the system
-          await new Promise(resolve => setTimeout(resolve, 3000));
+          // Wait before continuation with jitter to prevent thundering herd
+          const waitTime = 2000 + Math.random() * 3000; // 2-5 seconds
+          await new Promise(resolve => setTimeout(resolve, waitTime));
           
-          const { data: continueData, error: continueError } = await supabase.functions.invoke('encar-sync', {
-            body: { type: syncType }
+          // Use direct HTTP call for more reliable continuation
+          const supabaseUrl = Deno.env.get('SUPABASE_URL');
+          const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+          
+          const continueResponse = await fetch(`${supabaseUrl}/functions/v1/encar-sync?type=${syncType}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${supabaseKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ type: syncType }),
+            signal: AbortSignal.timeout(10000) // 10 second timeout for continuation
           });
           
-          if (continueError) {
-            console.error(`❌ Continuation failed:`, continueError);
-            // Mark sync as failed if continuation fails
+          if (!continueResponse.ok) {
+            throw new Error(`HTTP ${continueResponse.status}: ${continueResponse.statusText}`);
+          }
+          
+          const continueData = await continueResponse.json();
+          console.log(`🚀 Triggered continuation successfully:`, continueData);
+          
+        } catch (error) {
+          console.error(`⚠️ Critical error in continuation:`, error.message);
+          // Mark sync as failed with robust error handling
+          try {
             await supabase
               .from('sync_metadata')
               .update({
                 status: 'failed',
-                error_message: `Continuation failed: ${continueError.message}`,
+                error_message: `Continuation failed: ${error.message}`.substring(0, 500),
                 last_updated: new Date().toISOString()
               })
               .eq('id', syncState!.id);
-          } else {
-            console.log(`🚀 Triggered continuation successfully:`, continueData);
+          } catch (updateError) {
+            console.error(`❌ Could not mark sync as failed:`, updateError.message);
           }
-        } catch (error) {
-          console.error(`⚠️ Critical error in continuation:`, error.message);
-          // Mark sync as failed
-          await supabase
-            .from('sync_metadata')
-            .update({
-              status: 'failed',
-              error_message: `Continuation failed: ${error.message}`,
-              last_updated: new Date().toISOString()
-            })
-            .eq('id', syncState!.id);
         }
       })());
     }
