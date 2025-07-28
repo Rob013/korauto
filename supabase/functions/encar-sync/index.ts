@@ -64,20 +64,53 @@ Deno.serve(async (req) => {
 
     console.log(`✅ Created sync record: ${syncRecord.id}`);
 
-    // Build API URL
+    // Build API URL with smaller batch to avoid rate limiting
     const apiKey = 'd00985c77981fe8d26be16735f932ed1';
-    const apiUrl = `https://auctionsapi.com/api/cars?api_key=${apiKey}&limit=100`;
+    const apiUrl = `https://auctionsapi.com/api/cars?api_key=${apiKey}&limit=50`;
     
     console.log(`📡 Fetching from API: ${apiUrl}`);
 
-    // Fetch from API with timeout
-    const response = await fetch(apiUrl, {
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'KORAUTO-WebApp/1.0'
-      },
-      signal: AbortSignal.timeout(30000) // 30 second timeout
-    });
+    // Fetch from API with longer timeout and retry logic
+    let response;
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    while (attempts < maxAttempts) {
+      try {
+        response = await fetch(apiUrl, {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'KORAUTO-WebApp/1.0'
+          },
+          signal: AbortSignal.timeout(45000) // 45 second timeout
+        });
+
+        if (response.status === 429) {
+          attempts++;
+          console.log(`⏳ Rate limited (${response.status}), attempt ${attempts}/${maxAttempts}`);
+          
+          if (attempts < maxAttempts) {
+            // Wait progressively longer: 2min, 4min, 6min
+            const waitTime = attempts * 120000;
+            console.log(`⏳ Waiting ${waitTime/60000} minutes before retry...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            continue;
+          } else {
+            throw new Error(`Rate limited after ${maxAttempts} attempts`);
+          }
+        }
+        
+        break; // Success, exit retry loop
+        
+      } catch (error) {
+        attempts++;
+        if (attempts >= maxAttempts) {
+          throw error;
+        }
+        console.log(`🔄 Fetch attempt ${attempts} failed: ${error.message}`);
+        await new Promise(resolve => setTimeout(resolve, 30000)); // 30 second wait
+      }
+    }
 
     console.log(`📊 API Response status: ${response.status}`);
 
