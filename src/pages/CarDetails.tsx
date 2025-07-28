@@ -7,9 +7,10 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
-import { ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, Fuel, Palette, Hash, Calendar, Shield, FileText, Search, Info, Eye, CheckCircle, AlertTriangle, Star, Clock, Users, MessageCircle, Share2, Heart, ChevronRight, Expand, Copy } from "lucide-react";
+import { ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, Fuel, Palette, Hash, Calendar, Shield, FileText, Search, Info, Eye, CheckCircle, AlertTriangle, Star, Clock, Users, MessageCircle, Share2, Heart, ChevronRight, Expand, Copy, ChevronDown, ChevronUp } from "lucide-react";
 import { ImageZoom } from "@/components/ImageZoom";
 import { supabase } from "@/integrations/supabase/client";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 interface CarDetails {
   id: string;
   make: string;
@@ -78,6 +79,7 @@ const CarDetails = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [featuresExpanded, setFeaturesExpanded] = useState(false);
   const API_BASE_URL = 'https://auctionsapi.com/api';
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
 
@@ -434,43 +436,81 @@ const CarDetails = () => {
                   
                   <TabsContent value="overview" className="mt-8">
                     <div className="space-y-6">
-                      <h4 className="font-semibold text-lg text-foreground">Karakteristikat Kryesore</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {car.features?.map((feature, index) => (
-                          <div key={index} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                            <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                            <span className="text-sm text-foreground">{feature}</span>
-                          </div>
-                        ))}
-                      </div>
-                      
-                      {car.safety_features && car.safety_features.length > 0 && (
-                        <>
-                          <h5 className="font-semibold text-md text-foreground mt-6">Karakteristikat e Sigurisë</h5>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {car.safety_features.map((feature, index) => (
-                              <div key={index} className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
-                                <Shield className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                                <span className="text-sm text-foreground">{feature}</span>
+                      {/* Collapsible Features Section */}
+                      <Collapsible open={featuresExpanded} onOpenChange={setFeaturesExpanded}>
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-semibold text-lg text-foreground">Karakteristikat</h4>
+                          <CollapsibleTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-primary hover:text-primary-foreground hover:bg-primary"
+                            >
+                              <span className="mr-2">
+                                {featuresExpanded 
+                                  ? `Fshih të gjitha (${(car.features?.length || 0) + (car.safety_features?.length || 0) + (car.comfort_features?.length || 0)})` 
+                                  : `Shiko të gjitha (${(car.features?.length || 0) + (car.safety_features?.length || 0) + (car.comfort_features?.length || 0)})`
+                                }
+                              </span>
+                              {featuresExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            </Button>
+                          </CollapsibleTrigger>
+                        </div>
+                        
+                        {/* Always show first few features */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {car.features?.slice(0, 4).map((feature, index) => (
+                            <div key={index} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                              <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                              <span className="text-sm text-foreground">{feature}</span>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        <CollapsibleContent className="space-y-6">
+                          {/* Remaining main features */}
+                          {car.features && car.features.length > 4 && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {car.features.slice(4).map((feature, index) => (
+                                <div key={index + 4} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                                  <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                                  <span className="text-sm text-foreground">{feature}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {/* Safety Features */}
+                          {car.safety_features && car.safety_features.length > 0 && (
+                            <>
+                              <h5 className="font-semibold text-md text-foreground mt-6">Karakteristikat e Sigurisë</h5>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {car.safety_features.map((feature, index) => (
+                                  <div key={index} className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+                                    <Shield className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                                    <span className="text-sm text-foreground">{feature}</span>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
-                          </div>
-                        </>
-                      )}
-                      
-                      {car.comfort_features && car.comfort_features.length > 0 && (
-                        <>
-                          <h5 className="font-semibold text-md text-foreground mt-6">Karakteristikat e Komforit</h5>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {car.comfort_features.map((feature, index) => (
-                              <div key={index} className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-950/30 rounded-lg">
-                                <Star className="h-4 w-4 text-green-500 flex-shrink-0" />
-                                <span className="text-sm text-foreground">{feature}</span>
+                            </>
+                          )}
+                          
+                          {/* Comfort Features */}
+                          {car.comfort_features && car.comfort_features.length > 0 && (
+                            <>
+                              <h5 className="font-semibold text-md text-foreground mt-6">Karakteristikat e Komforit</h5>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {car.comfort_features.map((feature, index) => (
+                                  <div key={index} className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-950/30 rounded-lg">
+                                    <Star className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                    <span className="text-sm text-foreground">{feature}</span>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
-                          </div>
-                        </>
-                      )}
+                            </>
+                          )}
+                        </CollapsibleContent>
+                      </Collapsible>
                     </div>
                   </TabsContent>
                   
