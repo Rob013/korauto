@@ -37,6 +37,7 @@ interface Car {
 interface CarFilters {
   search?: string;
   manufacturer_id?: string;
+  model_id?: string;
   color?: string;
   odometer_from_km?: string;
   odometer_to_km?: string;
@@ -65,6 +66,7 @@ const EncarCatalog = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
   const [manufacturers, setManufacturers] = useState<{id: number, name: string}[]>([]);
+  const [models, setModels] = useState<{id: number, name: string}[]>([]);
 
   const fetchCars = async (page: number, perPage: number, filters?: CarFilters) => {
     setError(null);
@@ -80,6 +82,9 @@ const EncarCatalog = () => {
       }
       if (filters?.manufacturer_id) {
         params.append('manufacturer_id', filters.manufacturer_id);
+      }
+      if (filters?.model_id) {
+        params.append('model_id', filters.model_id);
       }
       if (filters?.color) {
         params.append('color', filters.color);
@@ -190,6 +195,22 @@ const formatMileage = (mileage?: string | number) =>
     }
   };
 
+  const fetchModels = async (manufacturerId: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/models/${manufacturerId}/cars`, {
+        headers: {
+          'Accept': '*/*',
+          'X-API-Key': API_KEY
+        }
+      });
+      const data = await response.json();
+      setModels(data.data || []);
+    } catch (err) {
+      console.error('Failed to fetch models:', err);
+      setModels([]);
+    }
+  };
+
   useEffect(() => {
     setLoading(true);
     Promise.all([
@@ -197,6 +218,15 @@ const formatMileage = (mileage?: string | number) =>
       fetchManufacturers()
     ]).finally(() => setLoading(false));
   }, []);
+
+  // Fetch models when manufacturer changes
+  useEffect(() => {
+    if (filters.manufacturer_id) {
+      fetchModels(filters.manufacturer_id);
+    } else {
+      setModels([]);
+    }
+  }, [filters.manufacturer_id]);
 
   // Re-fetch cars when filters change
   useEffect(() => {
@@ -306,13 +336,27 @@ const formatMileage = (mileage?: string | number) =>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label className="text-sm font-medium mb-2 block">Manufacturer</label>
-              <Select value={filters.manufacturer_id || ''} onValueChange={(value) => setFilters({...filters, manufacturer_id: value || undefined})}>
+              <Select value={filters.manufacturer_id || ''} onValueChange={(value) => setFilters({...filters, manufacturer_id: value || undefined, model_id: undefined})}>
                 <SelectTrigger>
                   <SelectValue placeholder="All manufacturers" />
                 </SelectTrigger>
                 <SelectContent>
                   {manufacturers.map(manufacturer => (
                     <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>{manufacturer.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Model</label>
+              <Select value={filters.model_id || ''} onValueChange={(value) => setFilters({...filters, model_id: value || undefined})} disabled={!filters.manufacturer_id}>
+                <SelectTrigger>
+                  <SelectValue placeholder={filters.manufacturer_id ? "All models" : "Select manufacturer first"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {models.map(model => (
+                    <SelectItem key={model.id} value={model.id.toString()}>{model.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

@@ -25,6 +25,7 @@ interface Car {
 
 interface ApiFilters {
   manufacturer_id?: string;
+  model_id?: string;
   color?: string;
   odometer_from_km?: string;
   odometer_to_km?: string;
@@ -44,6 +45,7 @@ const HomeCarsSection = () => {
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [filters, setFilters] = useState<ApiFilters>({});
   const [manufacturers, setManufacturers] = useState<{id: number, name: string}[]>([]);
+  const [models, setModels] = useState<{id: number, name: string}[]>([]);
   
   // API configuration
   const API_BASE_URL = 'https://auctionsapi.com/api';
@@ -104,6 +106,9 @@ const HomeCarsSection = () => {
       // Add API filters
       if (apiFilters?.manufacturer_id) {
         params.append('manufacturer_id', apiFilters.manufacturer_id);
+      }
+      if (apiFilters?.model_id) {
+        params.append('model_id', apiFilters.model_id);
       }
       if (apiFilters?.color) {
         params.append('color', apiFilters.color);
@@ -218,6 +223,22 @@ const HomeCarsSection = () => {
     }
   };
 
+  const fetchModels = async (manufacturerId: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/models/${manufacturerId}/cars`, {
+        headers: {
+          'Accept': '*/*',
+          'X-API-Key': API_KEY
+        }
+      });
+      const data = await response.json();
+      setModels(data.data || []);
+    } catch (err) {
+      console.error('Failed to fetch models:', err);
+      setModels([]);
+    }
+  };
+
   // Initial fetch
   useEffect(() => {
     Promise.all([
@@ -225,6 +246,15 @@ const HomeCarsSection = () => {
       fetchManufacturers()
     ]);
   }, []);
+
+  // Fetch models when manufacturer changes
+  useEffect(() => {
+    if (filters.manufacturer_id) {
+      fetchModels(filters.manufacturer_id);
+    } else {
+      setModels([]);
+    }
+  }, [filters.manufacturer_id]);
 
   // Re-fetch when filters change
   useEffect(() => {
@@ -239,6 +269,7 @@ const HomeCarsSection = () => {
 
   const clearFilters = () => {
     setFilters({});
+    setModels([]);
     setShowMoreFilters(false);
     fetchCars();
   };
@@ -296,13 +327,27 @@ const HomeCarsSection = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-3 sm:mb-4">
             <div>
               <label className="text-sm font-medium mb-2 block">Marka</label>
-              <Select value={filters.manufacturer_id || ''} onValueChange={(value) => setFilters({...filters, manufacturer_id: value || undefined})}>
+              <Select value={filters.manufacturer_id || ''} onValueChange={(value) => setFilters({...filters, manufacturer_id: value || undefined, model_id: undefined})}>
                 <SelectTrigger className="h-11">
                   <SelectValue placeholder="Të gjitha Markat" />
                 </SelectTrigger>
                 <SelectContent className="z-50 max-h-60">
                   {manufacturers.map(manufacturer => (
                     <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>{manufacturer.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Modeli</label>
+              <Select value={filters.model_id || ''} onValueChange={(value) => setFilters({...filters, model_id: value || undefined})} disabled={!filters.manufacturer_id}>
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder={filters.manufacturer_id ? "Të gjithë Modelet" : "Zgjidh markën së pari"} />
+                </SelectTrigger>
+                <SelectContent className="z-50 max-h-60">
+                  {models.map(model => (
+                    <SelectItem key={model.id} value={model.id.toString()}>{model.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
