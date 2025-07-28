@@ -213,7 +213,7 @@ const InspectionServices = () => {
                 <CardTitle className="text-xl text-emerald-700 dark:text-emerald-300">Garanci e Motorit</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-emerald-600 dark:text-emerald-400 font-medium mb-4">Garanci 6 muaj</p>
+                <p className="text-emerald-600 dark:text-emerald-400 font-medium mb-4">Garantuar</p>
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
@@ -239,7 +239,7 @@ const InspectionServices = () => {
                 <CardTitle className="text-xl text-blue-700 dark:text-blue-300">Garanci e Transmisionit</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-blue-600 dark:text-blue-400 font-medium mb-4">Garanci 6 muaj</p>
+                <p className="text-blue-600 dark:text-blue-400 font-medium mb-4">Garantuar</p>
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-blue-500 flex-shrink-0" />
