@@ -20,8 +20,6 @@ interface CarCardProps {
   condition?: string;
   lot?: string;
   title?: string;
-  status?: number; // 1: active, 2: pending, 3: sold, 4: archived
-  sale_status?: string;
 }
 const CarCard = ({
   id,
@@ -37,9 +35,7 @@ const CarCard = ({
   color,
   condition,
   lot,
-  title,
-  status,
-  sale_status
+  title
 }: CarCardProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -143,19 +139,9 @@ const CarCard = ({
       }} /> : <div className="w-full h-full flex items-center justify-center bg-muted">
             <Car className="h-16 w-16 text-muted-foreground" />
           </div>}
-        {/* Status and Lot badges */}
-        <div className="absolute top-2 right-2 flex flex-col gap-1">
-          {(status === 3 || sale_status === 'sold') && (
-            <div className="bg-red-600 text-white px-2 py-1 rounded text-xs font-semibold">
-              SOLD OUT
-            </div>
-          )}
-          {lot && (
-            <div className="bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-semibold">
-              Kodi #{lot}
-            </div>
-          )}
-        </div>
+        {lot && <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-semibold">
+            Kodi #{lot}
+          </div>}
         
         {/* Favorite Button - Mobile Optimized */}
         <button
