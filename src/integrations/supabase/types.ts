@@ -16,6 +16,8 @@ export type Database = {
     Tables: {
       cars: {
         Row: {
+          archive_reason: string | null
+          archived_at: string | null
           buy_now_price: number | null
           color: string | null
           condition: string | null
@@ -28,6 +30,7 @@ export type Database = {
           id: string
           image_url: string | null
           images: Json | null
+          is_archived: boolean | null
           is_live: boolean | null
           keys_available: boolean | null
           last_synced_at: string | null
@@ -38,6 +41,7 @@ export type Database = {
           model: string
           price: number
           sale_date: string | null
+          sold_price: number | null
           source_api: string | null
           status: string | null
           title: string | null
@@ -47,6 +51,8 @@ export type Database = {
           year: number
         }
         Insert: {
+          archive_reason?: string | null
+          archived_at?: string | null
           buy_now_price?: number | null
           color?: string | null
           condition?: string | null
@@ -59,6 +65,7 @@ export type Database = {
           id: string
           image_url?: string | null
           images?: Json | null
+          is_archived?: boolean | null
           is_live?: boolean | null
           keys_available?: boolean | null
           last_synced_at?: string | null
@@ -69,6 +76,7 @@ export type Database = {
           model: string
           price?: number
           sale_date?: string | null
+          sold_price?: number | null
           source_api?: string | null
           status?: string | null
           title?: string | null
@@ -78,6 +86,8 @@ export type Database = {
           year: number
         }
         Update: {
+          archive_reason?: string | null
+          archived_at?: string | null
           buy_now_price?: number | null
           color?: string | null
           condition?: string | null
@@ -90,6 +100,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           images?: Json | null
+          is_archived?: boolean | null
           is_live?: boolean | null
           keys_available?: boolean | null
           last_synced_at?: string | null
@@ -100,6 +111,7 @@ export type Database = {
           model?: string
           price?: number
           sale_date?: string | null
+          sold_price?: number | null
           source_api?: string | null
           status?: string | null
           title?: string | null
@@ -223,12 +235,16 @@ export type Database = {
       }
       sync_status: {
         Row: {
+          archived_lots_processed: number | null
+          cars_processed: number | null
           completed_at: string | null
           created_at: string
           current_page: number | null
           error_message: string | null
           id: string
           last_activity_at: string | null
+          last_archived_sync_at: string | null
+          last_cars_sync_at: string | null
           last_successful_url: string | null
           next_url: string | null
           records_processed: number | null
@@ -240,12 +256,16 @@ export type Database = {
           total_records: number | null
         }
         Insert: {
+          archived_lots_processed?: number | null
+          cars_processed?: number | null
           completed_at?: string | null
           created_at?: string
           current_page?: number | null
           error_message?: string | null
           id?: string
           last_activity_at?: string | null
+          last_archived_sync_at?: string | null
+          last_cars_sync_at?: string | null
           last_successful_url?: string | null
           next_url?: string | null
           records_processed?: number | null
@@ -257,12 +277,16 @@ export type Database = {
           total_records?: number | null
         }
         Update: {
+          archived_lots_processed?: number | null
+          cars_processed?: number | null
           completed_at?: string | null
           created_at?: string
           current_page?: number | null
           error_message?: string | null
           id?: string
           last_activity_at?: string | null
+          last_archived_sync_at?: string | null
+          last_cars_sync_at?: string | null
           last_successful_url?: string | null
           next_url?: string | null
           records_processed?: number | null
