@@ -167,20 +167,27 @@ export const useAuctionAPI = () => {
     throw new Error('Rate limit exceeded after retries');
   };
 
-  const fetchArchivedLots = async (minutes?: number) => {
+  const fetchArchivedLots = async (minutes?: number, perPage: number = 100) => {
     setLoading(true);
     setError(null);
 
     try {
       const params = new URLSearchParams({
-        api_key: API_KEY
+        api_key: API_KEY,
+        per_page: perPage.toString()
       });
 
       if (minutes) {
         params.append('minutes', minutes.toString());
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/archived-lots?${params}`);
+      const response = await fetch(`${API_BASE_URL}/archived-lots?${params}`, {
+        headers: {
+          'Accept': '*/*',
+          'User-Agent': 'KORAUTO-WebApp/1.0',
+          'X-API-Key': API_KEY
+        }
+      });
       
       if (!response.ok) {
         throw new Error(`API request failed: ${response.status}`);
