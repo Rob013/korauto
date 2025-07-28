@@ -5,6 +5,69 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// API rate limiting and retry configuration
+const RATE_LIMIT_DELAY = 30000 // Start with 30 seconds
+const MAX_RETRIES = 3
+const BACKOFF_MULTIPLIER = 2
+const PAGE_SIZE = 1000
+const REQUEST_TIMEOUT = 30000
+const MAX_PAGES = 100 // Safety limit
+
+// Helper function for API requests with retry logic
+async function makeApiRequest(url: string, retryCount = 0): Promise<any> {
+  const headers = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    'User-Agent': 'Encar-Sync/2.0'
+  }
+
+  try {
+    console.log(`📡 API Request: ${url} (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`)
+    
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
+    
+    const response = await fetch(url, {
+      headers,
+      signal: controller.signal
+    })
+    
+    clearTimeout(timeoutId)
+
+    if (response.status === 429) {
+      const delay = RATE_LIMIT_DELAY * Math.pow(BACKOFF_MULTIPLIER, retryCount)
+      console.log(`⏰ Rate limited. Waiting ${delay}ms before retry...`)
+      
+      if (retryCount < MAX_RETRIES) {
+        await new Promise(resolve => setTimeout(resolve, delay))
+        return makeApiRequest(url, retryCount + 1)
+      } else {
+        throw new Error(`Rate limit exceeded after ${MAX_RETRIES} retries`)
+      }
+    }
+
+    if (!response.ok) {
+      throw new Error(`API returned ${response.status}: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    console.log(`✅ API Success: ${url} - Got ${Array.isArray(data?.data) ? data.data.length : 'unknown'} items`)
+    return data
+
+  } catch (error) {
+    console.error(`❌ API Error for ${url}:`, error.message)
+    
+    if (retryCount < MAX_RETRIES && !error.message.includes('Rate limit exceeded')) {
+      const delay = 1000 * Math.pow(BACKOFF_MULTIPLIER, retryCount)
+      console.log(`⏰ Retrying in ${delay}ms...`)
+      await new Promise(resolve => setTimeout(resolve, delay))
+      return makeApiRequest(url, retryCount + 1)
+    }
+    
+    throw error
+  }
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -12,6 +75,8 @@ Deno.serve(async (req) => {
   }
 
   try {
+    console.log('🚀 Starting sync with improved API integration and pagination')
+    
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -22,9 +87,25 @@ Deno.serve(async (req) => {
     const syncType = url.searchParams.get('type') || 'incremental'
     const minutes = parseInt(url.searchParams.get('minutes') || '60')
 
-    console.log(`🚀 Starting ${syncType} sync with API integration guide implementation`)
+    console.log(`📋 Sync Details: ${syncType} sync for last ${minutes} minutes`)
 
-    // Check for running sync
+    // Clean up stuck syncs older than 1 hour
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+    const { error: cleanupError } = await supabase
+      .from('sync_status')
+      .update({ 
+        status: 'failed', 
+        error_message: 'Sync timeout - cleaned up automatically',
+        completed_at: new Date().toISOString()
+      })
+      .eq('status', 'running')
+      .lt('started_at', oneHourAgo)
+
+    if (cleanupError) {
+      console.warn('⚠️ Error cleaning up stuck syncs:', cleanupError)
+    }
+
+    // Check for existing running sync
     const { data: existingSync } = await supabase
       .from('sync_status')
       .select('id')
@@ -57,7 +138,8 @@ Deno.serve(async (req) => {
         total_pages: 1,
         records_processed: 0,
         cars_processed: 0,
-        archived_lots_processed: 0
+        archived_lots_processed: 0,
+        last_activity_at: new Date().toISOString()
       })
       .select()
       .single()
@@ -79,137 +161,139 @@ Deno.serve(async (req) => {
       // Step 1: Process active cars from /api/cars endpoint
       console.log(`📡 Processing active cars (${syncType === 'full' ? 'full sync' : `last ${minutes} minutes`})`)
       
-      let carsUrl = `${BASE_URL}/cars?api_key=${API_KEY}&per-page=1000`
+      let baseUrl = `${BASE_URL}/cars?api_key=${API_KEY}&per-page=${PAGE_SIZE}`
       if (syncType !== 'full') {
-        carsUrl += `&minutes=${minutes}`
+        baseUrl += `&minutes=${minutes}`
       }
 
       // Handle pagination for cars
       let currentPage = 1
       let hasMorePages = true
       
-      while (hasMorePages) {
-        const pageUrl = `${carsUrl}&page=${currentPage}`
-        console.log(`📡 Fetching cars page ${currentPage}: ${pageUrl}`)
-
-        const carsResponse = await fetch(pageUrl, {
-          headers: { 
-            'User-Agent': 'Encar-Sync/1.0',
-            'Accept': 'application/json'
-          }
-        })
-
-        if (!carsResponse.ok) {
-          if (carsResponse.status === 429) {
-            console.log(`⏳ Rate limited (429), waiting 2 minutes...`)
-            await new Promise(resolve => setTimeout(resolve, 120000))
-            continue
-          }
-          throw new Error(`Cars API returned ${carsResponse.status}: ${carsResponse.statusText}`)
-        }
-
-        const carsData = await carsResponse.json()
-        console.log(`📦 API Response structure:`, Object.keys(carsData))
+      while (hasMorePages && currentPage <= MAX_PAGES) {
+        const pageUrl = `${baseUrl}&page=${currentPage}`
         
-        // The API returns data in carsData.data array
-        const carsArray = Array.isArray(carsData.data) ? carsData.data : []
-        
-        if (carsArray.length === 0) {
-          console.log(`⚠️ No cars data in response for page ${currentPage}`)
-          break
-        }
+        try {
+          const carsData = await makeApiRequest(pageUrl)
+          
+          // Validate response structure
+          if (!carsData || typeof carsData !== 'object') {
+            console.error(`❌ Invalid API response structure for page ${currentPage}`)
+            break
+          }
+          
+          // The API returns data in carsData.data array
+          const carsArray = Array.isArray(carsData.data) ? carsData.data : []
+          
+          if (carsArray.length === 0) {
+            console.log(`⚠️ No cars data in response for page ${currentPage}`)
+            break
+          }
 
-        console.log(`📊 Processing ${carsArray.length} cars from page ${currentPage}`)
+          console.log(`📊 Processing ${carsArray.length} cars from page ${currentPage}`)
 
-        // Transform and upsert cars using actual API structure
-        for (const apiCar of carsArray) {
-          try {
-            const primaryLot = apiCar.lots?.[0]
-            const images = primaryLot?.images?.normal || primaryLot?.images?.big || []
-            
-            const carId = apiCar.id?.toString()
-            const make = apiCar.manufacturer?.name?.trim()
-            const model = apiCar.model?.name?.trim()
-            
-            if (!carId || !make || !model) {
-              console.warn(`⚠️ Skipping car with missing data: ID=${carId}, Make=${make}, Model=${model}`)
-              continue
-            }
-
-            const transformedCar = {
-              id: carId,
-              external_id: carId,
-              make,
-              model,
-              year: apiCar.year && apiCar.year > 1900 ? apiCar.year : 2020,
-              price: Math.max(primaryLot?.buy_now || 0, 0),
-              mileage: Math.max(primaryLot?.odometer?.km || 0, 0),
-              title: apiCar.title?.trim() || `${make} ${model} ${apiCar.year || ''}`,
-              vin: apiCar.vin?.trim() || null,
-              color: apiCar.color?.name?.trim() || null,
-              fuel: apiCar.fuel?.name?.trim() || null,
-              transmission: apiCar.transmission?.name?.trim() || null,
-              lot_number: primaryLot?.lot?.toString() || null,
-              image_url: images[0] || null,
-              images: JSON.stringify(images),
-              current_bid: parseFloat(primaryLot?.bid) || 0,
-              buy_now_price: parseFloat(primaryLot?.buy_now) || 0,
-              is_live: primaryLot?.status?.name === 'sale',
-              keys_available: primaryLot?.keys_available !== false,
-              status: 'active',
-              is_archived: false,
-              condition: primaryLot?.condition?.name || 'good',
-              location: 'South Korea',
-              domain_name: 'encar_com',
-              source_api: 'auctionapis',
-              last_synced_at: new Date().toISOString()
-            }
-
-            const { error: upsertError } = await supabase
-              .from('cars')
-              .upsert(transformedCar, { 
-                onConflict: 'id',
-                ignoreDuplicates: false 
-              })
-
-            if (upsertError) {
-              console.error(`❌ Error upserting car ${transformedCar.id}:`, upsertError)
-              errors.push(`Car ${transformedCar.id}: ${upsertError.message}`)
-            } else {
-              totalCarsProcessed++
-              if (totalCarsProcessed % 100 === 0) {
-                console.log(`✅ Processed ${totalCarsProcessed} cars so far...`)
+          // Process each car
+          for (const apiCar of carsArray) {
+            try {
+              const primaryLot = apiCar.lots?.[0]
+              const images = primaryLot?.images?.normal || primaryLot?.images?.big || []
+              
+              const carId = apiCar.id?.toString()
+              const make = apiCar.manufacturer?.name?.trim()
+              const model = apiCar.model?.name?.trim()
+              
+              if (!carId || !make || !model) {
+                console.warn(`⚠️ Skipping car with missing data: ID=${carId}, Make=${make}, Model=${model}`)
+                continue
               }
+
+              const transformedCar = {
+                id: carId,
+                external_id: carId,
+                make,
+                model,
+                year: apiCar.year && apiCar.year > 1900 ? apiCar.year : 2020,
+                price: Math.max(primaryLot?.buy_now || 0, 0),
+                mileage: Math.max(primaryLot?.odometer?.km || 0, 0),
+                title: apiCar.title?.trim() || `${make} ${model} ${apiCar.year || ''}`,
+                vin: apiCar.vin?.trim() || null,
+                color: apiCar.color?.name?.trim() || null,
+                fuel: apiCar.fuel?.name?.trim() || null,
+                transmission: apiCar.transmission?.name?.trim() || null,
+                lot_number: primaryLot?.lot?.toString() || null,
+                image_url: images[0] || null,
+                images: JSON.stringify(images),
+                current_bid: parseFloat(primaryLot?.bid) || 0,
+                buy_now_price: parseFloat(primaryLot?.buy_now) || 0,
+                is_live: primaryLot?.status?.name === 'sale',
+                keys_available: primaryLot?.keys_available !== false,
+                status: 'active',
+                is_archived: false,
+                condition: primaryLot?.condition?.name || 'good',
+                location: 'South Korea',
+                domain_name: 'encar_com',
+                source_api: 'auctionapis',
+                last_synced_at: new Date().toISOString()
+              }
+
+              const { error: upsertError } = await supabase
+                .from('cars')
+                .upsert(transformedCar, { 
+                  onConflict: 'id',
+                  ignoreDuplicates: false 
+                })
+
+              if (upsertError) {
+                console.error(`❌ Error upserting car ${transformedCar.id}:`, upsertError)
+                errors.push(`Car ${transformedCar.id}: ${upsertError.message}`)
+              } else {
+                totalCarsProcessed++
+                if (totalCarsProcessed % 100 === 0) {
+                  console.log(`✅ Processed ${totalCarsProcessed} cars so far...`)
+                }
+              }
+            } catch (carError) {
+              console.error(`❌ Error processing car:`, carError)
+              errors.push(`Car processing error: ${carError.message}`)
             }
-          } catch (carError) {
-            console.error(`❌ Error processing car:`, carError)
-            errors.push(`Car processing error: ${carError.message}`)
           }
+
+          // Update pagination logic
+          hasMorePages = carsArray.length >= PAGE_SIZE
+          
+          // Update progress in database
+          await supabase
+            .from('sync_status')
+            .update({
+              current_page: currentPage,
+              total_pages: hasMorePages ? currentPage + 1 : currentPage,
+              cars_processed: totalCarsProcessed,
+              last_activity_at: new Date().toISOString(),
+              last_cars_sync_at: new Date().toISOString()
+            })
+            .eq('id', syncRecord.id)
+
+          currentPage++
+          
+          // Small delay between pages to be nice to the API
+          await new Promise(resolve => setTimeout(resolve, 2000))
+
+        } catch (pageError) {
+          console.error(`❌ Error processing page ${currentPage}:`, pageError)
+          errors.push(`Page ${currentPage}: ${pageError.message}`)
+          
+          // If we get consistent errors, break out
+          if (errors.length > 10) {
+            console.error(`❌ Too many errors, stopping sync`)
+            break
+          }
+          
+          currentPage++
         }
+      }
 
-        // Check for more pages - assume we have more if we got a full page
-        hasMorePages = carsArray.length >= 1000
-        currentPage++
-
-        // Update sync progress
-        await supabase
-          .from('sync_status')
-          .update({
-            current_page: currentPage,
-            cars_processed: totalCarsProcessed,
-            last_activity_at: new Date().toISOString(),
-            last_cars_sync_at: new Date().toISOString()
-          })
-          .eq('id', syncRecord.id)
-
-        // Small delay to avoid overwhelming the API
-        await new Promise(resolve => setTimeout(resolve, 1000))
-
-        // Safety break to avoid infinite loops
-        if (currentPage > 50) {
-          console.log(`⚠️ Reached maximum page limit (50), stopping pagination`)
-          break
-        }
+      if (currentPage > MAX_PAGES) {
+        console.log(`⚠️ Reached maximum page limit (${MAX_PAGES}), stopping pagination`)
       }
 
       // Step 2: Process archived lots from /api/archived-lots endpoint
@@ -220,14 +304,10 @@ Deno.serve(async (req) => {
         archivedUrl += `&minutes=${minutes}`
       }
 
-      const archivedResponse = await fetch(archivedUrl, {
-        headers: { 'User-Agent': 'Encar-Sync/1.0' }
-      })
-
-      if (archivedResponse.ok) {
-        const archivedData = await archivedResponse.json()
+      try {
+        const archivedData = await makeApiRequest(archivedUrl)
         
-        if (archivedData.archived_lots && Array.isArray(archivedData.archived_lots)) {
+        if (archivedData?.archived_lots && Array.isArray(archivedData.archived_lots)) {
           console.log(`📊 Processing ${archivedData.archived_lots.length} archived lots`)
 
           for (const archivedLot of archivedData.archived_lots) {
@@ -255,7 +335,9 @@ Deno.serve(async (req) => {
                 errors.push(`Archive ${carId}: ${archiveError.message}`)
               } else {
                 totalArchivedProcessed++
-                console.log(`✅ Archived car ${carId} with final price: $${archivedLot.final_price}`)
+                if (totalArchivedProcessed % 50 === 0) {
+                  console.log(`✅ Archived ${totalArchivedProcessed} cars so far...`)
+                }
               }
             } catch (archiveError) {
               console.error(`❌ Error processing archived lot:`, archiveError)
@@ -273,8 +355,9 @@ Deno.serve(async (req) => {
             })
             .eq('id', syncRecord.id)
         }
-      } else {
-        console.log(`⚠️ Archived lots API returned ${archivedResponse.status}, skipping archive processing`)
+      } catch (archivedError) {
+        console.error(`❌ Error processing archived lots:`, archivedError)
+        errors.push(`Archived lots error: ${archivedError.message}`)
       }
 
       // Complete sync
