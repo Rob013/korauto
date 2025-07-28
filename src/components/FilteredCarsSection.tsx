@@ -91,7 +91,18 @@ const FilteredCarsSection = () => {
     }
   };
 
-  const fetchCars = async (page=1, minutes?: number) => {
+  const fetchCars = async (page=1, filters?: {
+    manufacturer_id?: string;
+    color?: string;
+    odometer_from_km?: string;
+    odometer_to_km?: string;
+    from_year?: string;
+    to_year?: string;
+    buy_now_price_from?: string;
+    buy_now_price_to?: string;
+    transmission?: string;
+    fuel_type?: string;
+  }) => {
      if (page === 1) setLoading(true);
     setError(null);
 
@@ -104,8 +115,36 @@ const FilteredCarsSection = () => {
       simple_paginate: '0'
       });
 
-      if (minutes) {
-        params.append('minutes', minutes.toString());
+      // Add API filters
+      if (filters?.manufacturer_id) {
+        params.append('manufacturer_id', filters.manufacturer_id);
+      }
+      if (filters?.color) {
+        params.append('color', filters.color);
+      }
+      if (filters?.odometer_from_km) {
+        params.append('odometer_from_km', filters.odometer_from_km);
+      }
+      if (filters?.odometer_to_km) {
+        params.append('odometer_to_km', filters.odometer_to_km);
+      }
+      if (filters?.from_year) {
+        params.append('from_year', filters.from_year);
+      }
+      if (filters?.to_year) {
+        params.append('to_year', filters.to_year);
+      }
+      if (filters?.buy_now_price_from) {
+        params.append('buy_now_price_from', filters.buy_now_price_from);
+      }
+      if (filters?.buy_now_price_to) {
+        params.append('buy_now_price_to', filters.buy_now_price_to);
+      }
+      if (filters?.transmission) {
+        params.append('transmission', filters.transmission);
+      }
+      if (filters?.fuel_type) {
+        params.append('fuel_type', filters.fuel_type);
       }
 
       console.log('Fetching cars from API...');

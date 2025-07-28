@@ -36,13 +36,16 @@ interface Car {
 
 interface CarFilters {
   search?: string;
-  manufacturer?: string;
-  fuel?: string;
+  manufacturer_id?: string;
+  color?: string;
+  odometer_from_km?: string;
+  odometer_to_km?: string;
+  from_year?: string;
+  to_year?: string;
+  buy_now_price_from?: string;
+  buy_now_price_to?: string;
   transmission?: string;
-  yearFrom?: string;
-  yearTo?: string;
-  priceFrom?: string;
-  priceTo?: string;
+  fuel_type?: string;
 }
 
   const API_BASE_URL = 'https://auctionsapi.com/api';
@@ -74,6 +77,36 @@ const EncarCatalog = () => {
       if (filters?.search) {
         params.append('search', filters.search);
       }
+      if (filters?.manufacturer_id) {
+        params.append('manufacturer_id', filters.manufacturer_id);
+      }
+      if (filters?.color) {
+        params.append('color', filters.color);
+      }
+      if (filters?.odometer_from_km) {
+        params.append('odometer_from_km', filters.odometer_from_km);
+      }
+      if (filters?.odometer_to_km) {
+        params.append('odometer_to_km', filters.odometer_to_km);
+      }
+      if (filters?.from_year) {
+        params.append('from_year', filters.from_year);
+      }
+      if (filters?.to_year) {
+        params.append('to_year', filters.to_year);
+      }
+      if (filters?.buy_now_price_from) {
+        params.append('buy_now_price_from', filters.buy_now_price_from);
+      }
+      if (filters?.buy_now_price_to) {
+        params.append('buy_now_price_to', filters.buy_now_price_to);
+      }
+      if (filters?.transmission) {
+        params.append('transmission', filters.transmission);
+      }
+      if (filters?.fuel_type) {
+        params.append('fuel_type', filters.fuel_type);
+      }
 
      const response = await fetch(`${API_BASE_URL}/cars?${params}`, {
         headers: {
@@ -89,8 +122,10 @@ const EncarCatalog = () => {
 
       if (page === 1) {
         setCars(newCars);
+        setFilteredCars(newCars);
       } else {
         setCars((prev) => [...prev, ...newCars]);
+        setFilteredCars((prev) => [...prev, ...newCars]);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to fetch cars.');
@@ -143,28 +178,14 @@ const formatMileage = (mileage?: string | number) =>
     fetchCars(1, 100, filters).finally(() => setLoading(false));
   }, []);
 
-  // Apply client-side filters
+  // Re-fetch cars when filters change
   useEffect(() => {
-    let filtered = cars;
-
-    if (filters.manufacturer) {
-      filtered = filtered.filter(car => car.manufacturer?.name === filters.manufacturer);
+    if (Object.keys(filters).length > 0) {
+      setLoading(true);
+      setCurrentPage(1);
+      fetchCars(1, 100, filters).finally(() => setLoading(false));
     }
-    if (filters.fuel) {
-      filtered = filtered.filter(car => car.fuel?.name === filters.fuel);
-    }
-    if (filters.transmission) {
-      filtered = filtered.filter(car => car.transmission?.name === filters.transmission);
-    }
-    if (filters.yearFrom) {
-      filtered = filtered.filter(car => car.year >= parseInt(filters.yearFrom!));
-    }
-    if (filters.yearTo) {
-      filtered = filtered.filter(car => car.year <= parseInt(filters.yearTo!));
-    }
-
-    setFilteredCars(filtered);
-  }, [cars, filters]);
+  }, [filters]);
 
   const getStatusIcon = () => {
     return <></>
@@ -262,16 +283,30 @@ const formatMileage = (mileage?: string | number) =>
       {/* Filters Panel */}
       {showFilters && (
         <div className="bg-background border rounded-lg p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label className="text-sm font-medium mb-2 block">Manufacturer</label>
-              <Select value={filters.manufacturer || ''} onValueChange={(value) => setFilters({...filters, manufacturer: value || undefined})}>
+              <Select value={filters.manufacturer_id || ''} onValueChange={(value) => setFilters({...filters, manufacturer_id: value || undefined})}>
                 <SelectTrigger>
                   <SelectValue placeholder="All manufacturers" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.from(new Set(cars.map(car => car.manufacturer?.name).filter(name => name && name.trim().length > 0))).map(manufacturer => (
-                    <SelectItem key={manufacturer} value={manufacturer!}>{manufacturer}</SelectItem>
+                  {Array.from(new Set(cars.map(car => car.manufacturer).filter(m => m?.id && m?.name))).map(manufacturer => (
+                    <SelectItem key={manufacturer!.id} value={manufacturer!.id.toString()}>{manufacturer!.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Color</label>
+              <Select value={filters.color || ''} onValueChange={(value) => setFilters({...filters, color: value || undefined})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All colors" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from(new Set(cars.map(car => car.color).filter(c => c?.id && c?.name))).map(color => (
+                    <SelectItem key={color!.id} value={color!.id.toString()}>{color!.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -279,13 +314,13 @@ const formatMileage = (mileage?: string | number) =>
 
             <div>
               <label className="text-sm font-medium mb-2 block">Fuel Type</label>
-              <Select value={filters.fuel || ''} onValueChange={(value) => setFilters({...filters, fuel: value || undefined})}>
+              <Select value={filters.fuel_type || ''} onValueChange={(value) => setFilters({...filters, fuel_type: value || undefined})}>
                 <SelectTrigger>
                   <SelectValue placeholder="All fuel types" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.from(new Set(cars.map(car => car.fuel?.name).filter(name => name && name.trim().length > 0))).map(fuel => (
-                    <SelectItem key={fuel} value={fuel!}>{fuel}</SelectItem>
+                  {Array.from(new Set(cars.map(car => car.fuel).filter(f => f?.id && f?.name))).map(fuel => (
+                    <SelectItem key={fuel!.id} value={fuel!.id.toString()}>{fuel!.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -298,9 +333,8 @@ const formatMileage = (mileage?: string | number) =>
                   <SelectValue placeholder="All transmissions" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.from(new Set(cars.map(car => car.transmission?.name).filter(name => name && name.trim().length > 0))).map(transmission => (
-                    <SelectItem key={transmission} value={transmission!}>{transmission}</SelectItem>
-                  ))}
+                  <SelectItem value="1">Automatic</SelectItem>
+                  <SelectItem value="2">Manual</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -311,14 +345,50 @@ const formatMileage = (mileage?: string | number) =>
                 <Input
                   placeholder="From"
                   type="number"
-                  value={filters.yearFrom || ''}
-                  onChange={(e) => setFilters({...filters, yearFrom: e.target.value || undefined})}
+                  value={filters.from_year || ''}
+                  onChange={(e) => setFilters({...filters, from_year: e.target.value || undefined})}
                 />
                 <Input
                   placeholder="To"
                   type="number"
-                  value={filters.yearTo || ''}
-                  onChange={(e) => setFilters({...filters, yearTo: e.target.value || undefined})}
+                  value={filters.to_year || ''}
+                  onChange={(e) => setFilters({...filters, to_year: e.target.value || undefined})}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Mileage Range (km)</label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="From"
+                  type="number"
+                  value={filters.odometer_from_km || ''}
+                  onChange={(e) => setFilters({...filters, odometer_from_km: e.target.value || undefined})}
+                />
+                <Input
+                  placeholder="To"
+                  type="number"
+                  value={filters.odometer_to_km || ''}
+                  onChange={(e) => setFilters({...filters, odometer_to_km: e.target.value || undefined})}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Price Range ($)</label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="From"
+                  type="number"
+                  value={filters.buy_now_price_from || ''}
+                  onChange={(e) => setFilters({...filters, buy_now_price_from: e.target.value || undefined})}
+                />
+                <Input
+                  placeholder="To"
+                  type="number"
+                  value={filters.buy_now_price_to || ''}
+                  onChange={(e) => setFilters({...filters, buy_now_price_to: e.target.value || undefined})}
                 />
               </div>
             </div>
