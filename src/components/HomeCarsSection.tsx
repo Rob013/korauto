@@ -236,6 +236,9 @@ const HomeCarsSection = () => {
                     condition={car.condition?.replace('run_and_drives', 'Good')}
                     lot={car.lot_number || lot?.lot}
                     title={car.title}
+                    status={car.status || lot?.status}
+                    sale_status={car.sale_status || lot?.sale_status}
+                    final_price={car.final_price || lot?.final_price}
                   />
                 );
               })}

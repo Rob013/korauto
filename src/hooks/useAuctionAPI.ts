@@ -18,9 +18,15 @@ interface Car {
   lot_number?: string;
   image_url?: string;
   color?: { id: number; name: string };
+  status?: number; // 1 = active, 2 = pending, 3 = sold
+  sale_status?: string; // 'active', 'pending', 'sold'
+  final_price?: number; // Sale price if sold
   lots?: {
     buy_now?: number;
     lot?: string;
+    status?: number;
+    sale_status?: string;
+    final_price?: number;
     odometer?: {
       km?: number;
       mi?: number;

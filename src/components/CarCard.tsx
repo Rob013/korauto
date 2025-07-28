@@ -20,6 +20,9 @@ interface CarCardProps {
   condition?: string;
   lot?: string;
   title?: string;
+  status?: number; // 1 = active, 2 = pending, 3 = sold
+  sale_status?: string; // 'active', 'pending', 'sold'
+  final_price?: number; // Sale price if sold
 }
 const CarCard = ({
   id,
@@ -35,7 +38,10 @@ const CarCard = ({
   color,
   condition,
   lot,
-  title
+  title,
+  status,
+  sale_status,
+  final_price
 }: CarCardProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -139,9 +145,16 @@ const CarCard = ({
       }} /> : <div className="w-full h-full flex items-center justify-center bg-muted">
             <Car className="h-16 w-16 text-muted-foreground" />
           </div>}
-        {lot && <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-semibold">
+        {/* Sold Out Badge - Takes priority over lot number */}
+        {(status === 3 || sale_status === 'sold') ? (
+          <div className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded text-xs font-bold shadow-lg z-10">
+            SOLD OUT
+          </div>
+        ) : (
+          lot && <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-semibold">
             Kodi #{lot}
-          </div>}
+          </div>
+        )}
         
         {/* Favorite Button - Mobile Optimized */}
         <button
