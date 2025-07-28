@@ -25,7 +25,7 @@ interface Car {
 const FilteredCarsSection = () => {
   const [cars, setCars] = useState<Car[]>([]);
   const [filteredCars, setFilteredCars] = useState<Car[]>([]);
-  const [displayedCars, setDisplayedCars] = useState<Car[]>([]);
+  // const [displayedCars, setDisplayedCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMorePages, setHasMorePages] = useState(true);
@@ -192,11 +192,11 @@ const FilteredCarsSection = () => {
     fetchCars();
   }, []);
 
-  // Update displayed cars when filtered cars change
-  useEffect(() => {
-    const carLimit = showMoreCars ? filteredCars.length : 6;
-    setDisplayedCars(filteredCars.slice(0, carLimit));
-  }, [filteredCars, showMoreCars]);
+  // // Update displayed cars when filtered cars change
+  // useEffect(() => {
+  //   const carLimit = showMoreCars ? filteredCars.length : 6;
+  //   setDisplayedCars(filteredCars.slice(0, carLimit));
+  // }, [filteredCars, showMoreCars]);
 
   // Sorting and filtering logic
   useEffect(() => {
@@ -551,7 +551,7 @@ const FilteredCarsSection = () => {
               </div>
             ))}
           </div>
-        ) : displayedCars.length === 0 ? (
+        ) : filteredCars.length === 0 ? (
           <div className="text-center py-8 sm:py-12 px-4">
             <p className="text-base sm:text-lg text-muted-foreground mb-4">
               Nuk u gjetën makina me këto filtra.
@@ -563,7 +563,7 @@ const FilteredCarsSection = () => {
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0">
-              {displayedCars.map((car) => (
+              {filteredCars.map((car) => (
                 <CarCard key={car.id} {...car} />
               ))}
             </div>
