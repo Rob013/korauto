@@ -112,30 +112,30 @@ const FilterForm: React.FC<FilterFormProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4" />
-          <h3 className="text-lg font-semibold">Filters</h3>
+          <h3 className="text-lg font-semibold">Filtrat</h3>
           {loadingCounts && (
             <div className="flex items-center gap-1 text-sm text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" />
-              <span>Loading counts...</span>
+              <span>Duke ngarkuar numrat...</span>
             </div>
           )}
         </div>
         <Button variant="outline" size="sm" onClick={onClearFilters}>
           <X className="h-4 w-4 mr-1" />
-          Clear
+          Pastro
         </Button>
       </div>
 
-      {/* Basic Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* Basic Filters - Only Brand, Model, Generation */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="manufacturer">Brand</Label>
+          <Label htmlFor="manufacturer">Marka</Label>
           <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
             <SelectTrigger>
-              <SelectValue placeholder="All Brands" />
+              <SelectValue placeholder="Të gjitha Markat" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Brands</SelectItem>
+              <SelectItem value="all">Të gjitha Markat</SelectItem>
               {manufacturers.map((manufacturer) => {
                 const count = filterCounts?.manufacturers[manufacturer.id.toString()];
                 const isDisabled = count === 0;
@@ -155,17 +155,17 @@ const FilterForm: React.FC<FilterFormProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="model">Model</Label>
+          <Label htmlFor="model">Modeli</Label>
           <Select 
             value={filters.model_id || 'all'} 
             onValueChange={(value) => updateFilter('model_id', value)}
             disabled={!filters.manufacturer_id}
           >
             <SelectTrigger>
-              <SelectValue placeholder={filters.manufacturer_id ? "All Models" : "Select Brand First"} />
+              <SelectValue placeholder={filters.manufacturer_id ? "Të gjithë Modelet" : "Zgjidh markën së pari"} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Models</SelectItem>
+              <SelectItem value="all">Të gjithë Modelet</SelectItem>
               {models.map((model) => {
                 const count = filterCounts?.models[model.id.toString()];
                 const isDisabled = count === 0;
@@ -185,17 +185,17 @@ const FilterForm: React.FC<FilterFormProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="generation">Generation</Label>
+          <Label htmlFor="generation">Gjenerimi</Label>
           <Select 
             value={filters.generation_id || 'all'} 
             onValueChange={(value) => updateFilter('generation_id', value)}
             disabled={!filters.model_id}
           >
             <SelectTrigger>
-              <SelectValue placeholder={filters.model_id ? "All Generations" : "Select Model First"} />
+              <SelectValue placeholder={filters.model_id ? "Të gjithë Gjenerimet" : "Zgjidh modelin së pari"} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Generations</SelectItem>
+              <SelectItem value="all">Të gjithë Gjenerimet</SelectItem>
               {generations.map((generation) => {
                 const count = filterCounts?.generations[generation.id.toString()];
                 const isDisabled = count === 0;
@@ -213,81 +213,55 @@ const FilterForm: React.FC<FilterFormProps> = ({
             </SelectContent>
           </Select>
         </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="color">Color</Label>
-          <Select value={filters.color || 'all'} onValueChange={(value) => updateFilter('color', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Colors" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Colors</SelectItem>
-              {Object.entries(COLOR_OPTIONS).map(([name, id]) => {
-                const count = filterCounts?.colors[id.toString()];
-                const isDisabled = count === 0;
-                return (
-                  <SelectItem 
-                    key={id} 
-                    value={id.toString()}
-                    disabled={isDisabled}
-                    className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
-                  >
-                    {name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')} {count !== undefined && `(${count})`}
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="fuel_type">Fuel Type</Label>
-          <Select value={filters.fuel_type || 'all'} onValueChange={(value) => updateFilter('fuel_type', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Fuel Types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Fuel Types</SelectItem>
-              {Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => {
-                const count = filterCounts?.fuelTypes[id.toString()];
-                const isDisabled = count === 0;
-                return (
-                  <SelectItem 
-                    key={id} 
-                    value={id.toString()}
-                    disabled={isDisabled}
-                    className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
-                  >
-                    {name.charAt(0).toUpperCase() + name.slice(1)} {count !== undefined && `(${count})`}
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-        </div>
       </div>
 
       {/* Toggle Advanced Filters */}
       {onToggleAdvanced && (
         <Button variant="ghost" size="sm" onClick={onToggleAdvanced}>
-          {showAdvanced ? 'Hide' : 'Show'} Advanced Filters
+          {showAdvanced ? 'Fshih' : 'Shfaq'} Filtrat e Avancuara
         </Button>
       )}
 
       {/* Advanced Filters */}
       {showAdvanced && (
         <div className="border-t pt-4 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="transmission">Transmission</Label>
-              <Select value={filters.transmission || 'all'} onValueChange={(value) => updateFilter('transmission', value)}>
+              <Label htmlFor="color">Ngjyra</Label>
+              <Select value={filters.color || 'all'} onValueChange={(value) => updateFilter('color', value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All" />
+                  <SelectValue placeholder="Të gjitha Ngjyrat" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  {Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => {
-                    const count = filterCounts?.transmissions[id.toString()];
+                  <SelectItem value="all">Të gjitha Ngjyrat</SelectItem>
+                  {Object.entries(COLOR_OPTIONS).map(([name, id]) => {
+                    const count = filterCounts?.colors[id.toString()];
+                    const isDisabled = count === 0;
+                    return (
+                      <SelectItem 
+                        key={id} 
+                        value={id.toString()}
+                        disabled={isDisabled}
+                        className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+                      >
+                        {name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')} {count !== undefined && `(${count})`}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="fuel_type">Lloji i Karburantit</Label>
+              <Select value={filters.fuel_type || 'all'} onValueChange={(value) => updateFilter('fuel_type', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Të gjithë Llojet" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Të gjithë Llojet</SelectItem>
+                  {Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => {
+                    const count = filterCounts?.fuelTypes[id.toString()];
                     const isDisabled = count === 0;
                     return (
                       <SelectItem 
@@ -305,13 +279,41 @@ const FilterForm: React.FC<FilterFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="from_year">From Year</Label>
-              <Select value={filters.from_year || 'any'} onValueChange={(value) => updateFilter('from_year', value)}>
+              <Label htmlFor="transmission">Transmisioni</Label>
+              <Select value={filters.transmission || 'all'} onValueChange={(value) => updateFilter('transmission', value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Any" />
+                  <SelectValue placeholder="Të gjithë" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="any">Any</SelectItem>
+                  <SelectItem value="all">Të gjithë</SelectItem>
+                  {Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => {
+                    const count = filterCounts?.transmissions[id.toString()];
+                    const isDisabled = count === 0;
+                    return (
+                      <SelectItem 
+                        key={id} 
+                        value={id.toString()}
+                        disabled={isDisabled}
+                        className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+                      >
+                        {name.charAt(0).toUpperCase() + name.slice(1)} {count !== undefined && `(${count})`}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="from_year">Nga Viti</Label>
+              <Select value={filters.from_year || 'any'} onValueChange={(value) => updateFilter('from_year', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Çdo vit" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Çdo vit</SelectItem>
                   {years.map((year) => (
                     <SelectItem key={year} value={year.toString()}>
                       {year}
@@ -322,13 +324,13 @@ const FilterForm: React.FC<FilterFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="to_year">To Year</Label>
+              <Label htmlFor="to_year">Deri në Vitin</Label>
               <Select value={filters.to_year || 'any'} onValueChange={(value) => updateFilter('to_year', value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Any" />
+                  <SelectValue placeholder="Çdo vit" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="any">Any</SelectItem>
+                  <SelectItem value="any">Çdo vit</SelectItem>
                   {years.map((year) => (
                     <SelectItem key={year} value={year.toString()}>
                       {year}
@@ -341,16 +343,16 @@ const FilterForm: React.FC<FilterFormProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Price Range (Buy Now)</Label>
+              <Label>Intervali i Çmimit (Blerje direkte)</Label>
               <div className="flex gap-2">
                 <Input
-                  placeholder="Min"
+                  placeholder="Minimum"
                   type="number"
                   value={filters.buy_now_price_from || ''}
                   onChange={(e) => updateFilter('buy_now_price_from', e.target.value)}
                 />
                 <Input
-                  placeholder="Max"
+                  placeholder="Maksimum"
                   type="number"
                   value={filters.buy_now_price_to || ''}
                   onChange={(e) => updateFilter('buy_now_price_to', e.target.value)}
@@ -359,16 +361,16 @@ const FilterForm: React.FC<FilterFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label>Mileage Range (km)</Label>
+              <Label>Intervali i Kilometrazhit (km)</Label>
               <div className="flex gap-2">
                 <Input
-                  placeholder="Min"
+                  placeholder="Minimum"
                   type="number"
                   value={filters.odometer_from_km || ''}
                   onChange={(e) => updateFilter('odometer_from_km', e.target.value)}
                 />
                 <Input
-                  placeholder="Max"
+                  placeholder="Maksimum"
                   type="number"
                   value={filters.odometer_to_km || ''}
                   onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
