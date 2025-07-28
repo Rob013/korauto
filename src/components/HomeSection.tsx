@@ -5,11 +5,11 @@ const HomeSection = () => {
         <div className="max-w-4xl mx-auto">
           {/* Logo on Homepage */}
           <div className="mb-12">
-            <div className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 mx-auto flex items-center justify-center overflow-hidden mb-6 rounded-2xl bg-background/80 backdrop-blur-lg shadow-2xl border border-border/30 hover:shadow-3xl transition-all duration-500">
+            <div className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 mx-auto flex items-center justify-center mb-6">
               <img 
                 src="/lovable-uploads/3657dff4-7afd-45bb-9f8a-8d3f4ba8d7b4.png" 
                 alt="KORAUTO Logo" 
-                className="w-full h-full object-contain p-4 dark:invert transition-all duration-300" 
+                className="w-full h-full object-contain dark:invert transition-all duration-300" 
               />
             </div>
           </div>

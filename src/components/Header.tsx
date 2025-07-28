@@ -15,11 +15,11 @@ const Header = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center space-x-3 flex-shrink-0">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 flex items-center justify-center overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 bg-background/50 backdrop-blur-sm border border-border/50">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 flex items-center justify-center">
               <img 
                 src="/lovable-uploads/3657dff4-7afd-45bb-9f8a-8d3f4ba8d7b4.png" 
                 alt="KORAUTO Logo"
-                className="w-full h-full object-contain p-1 dark:invert transition-all duration-300"
+                className="w-full h-full object-contain dark:invert transition-all duration-300"
               />
             </div>
             <div className="min-w-0">
