@@ -20,6 +20,12 @@ interface Car {
   lot_number?: string;
   image_url?: string;
   images?: string;
+  lots?: {
+    buy_now?: number;
+    odometer?: {
+      km?: number;
+    };
+  }[];
 }
 
 interface CarFilters {
@@ -263,9 +269,7 @@ const formatMileage = (mileage?: string) =>
                     </div>
                     <div className="flex justify-between">
                       <span>Mileage:</span>
-                     <span className="font-medium">
-                      {car.mileage || 'no mileage'} ({formatMileage(car.mileage)})
-                    </span>
+                    <span>{car.lots?.[0]?.odometer?.km ?? "N/A"}</span>
                     </div>
                     {car.fuel && (
                       <div className="flex justify-between">
@@ -285,7 +289,7 @@ const formatMileage = (mileage?: string) =>
                 <CardFooter className="p-4 pt-0">
                   <div className="w-full flex items-center justify-between">
                     <div className="text-2xl font-bold text-primary">
-                      {formatPrice(car.price)}
+                      <span>{car.lots?.[0]?.buy_now ?? "N/A"}</span>
                     </div>
                     <Badge variant="outline">
                       {car.lot_number || 'Encar'}
