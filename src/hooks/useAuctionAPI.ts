@@ -98,6 +98,10 @@ export const useAuctionAPI = () => {
         per_page: '12',
         simple_paginate: '0'
       });
+      
+      // Exclude cars with "sale" status (archived/sold cars)
+      params.append('status[]', '1'); // Active status
+      params.append('status[]', '2'); // Pending status if available
 
       // Add all filter parameters
       Object.entries(filters).forEach(([key, value]) => {
@@ -220,6 +224,10 @@ export const useAuctionAPI = () => {
         simple_paginate: '1'
       });
 
+      // Exclude cars with "sale" status (archived/sold cars)
+      params.append('status[]', '1'); // Active status
+      params.append('status[]', '2'); // Pending status if available
+
       Object.entries(filters).forEach(([key, value]) => {
         if (value) {
           params.append(key, value);
@@ -271,6 +279,10 @@ export const useAuctionAPI = () => {
           per_page: '1',
           simple_paginate: '1'
         });
+
+        // Exclude cars with "sale" status (archived/sold cars)
+        params.append('status[]', '1'); // Active status
+        params.append('status[]', '2'); // Pending status if available
 
         Object.entries(cleanFilters).forEach(([key, value]) => {
           if (value) {
