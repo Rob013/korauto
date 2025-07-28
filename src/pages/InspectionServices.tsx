@@ -50,13 +50,13 @@ const InspectionServices = () => {
   const benefits = [
     {
       icon: Shield,
-      title: "Sigurie e Garantuar",
-      description: "Mekanikët tanë të certifikuar sigurojnë inspektim të plotë dhe profesional"
+      title: "Inspektim FALAS",
+      description: "Ofrojmë inspektim të plotë pa asnjë kosto për të gjithë klientët tanë"
     },
     {
       icon: Award,
-      title: "Ekspertizë e Provuar",
-      description: "Mbi 10 vjet përvojë në inspektimin e automjeteve evropiane dhe aziatike"
+      title: "Kontratë Garancioni",
+      description: "Nënshkruajmë kontratë zyrtare për garanci të motorit, transmisionit dhe kilometrazhit"
     },
     {
       icon: Clock,
@@ -65,49 +65,11 @@ const InspectionServices = () => {
     },
     {
       icon: Users,
-      title: "Ekip Profesional",
+      title: "Ekspertizë 10+ Vjetëshe",
       description: "Mekanikë të certifikuar dhe të trajnuar për të gjitha markat e makinave"
     }
   ];
 
-  const packages = [
-    {
-      name: "Inspektim Bazik",
-      price: "€150",
-      features: [
-        "Inspektimi i jashtëm",
-        "Kontrolli bazik i motorit",
-        "Raport me foto",
-        "Vlerësim i përgjithshëm"
-      ],
-      recommended: false
-    },
-    {
-      name: "Inspektim Standard",
-      price: "€250",
-      features: [
-        "Të gjitha nga paketa bazike",
-        "Inspektim elektronik i plotë",
-        "Testim në rrugë",
-        "Raport i detajuar 20+ faqe",
-        "Gaanci 30 ditore"
-      ],
-      recommended: true
-    },
-    {
-      name: "Inspektim Premium",
-      price: "€350",
-      features: [
-        "Të gjitha nga paketa standard",
-        "Inspektim me kamera termale",
-        "Analiza e vajit dhe lëngjeve",
-        "Raport me video",
-        "Gaanci 60 ditore",
-        "Konsultim i personalizuar"
-      ],
-      recommended: false
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
@@ -127,11 +89,11 @@ const InspectionServices = () => {
           
           <div className="max-w-4xl">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Inspektimi Profesional i Automjeteve
+              Inspektimi FALAS i Automjeteve
             </h1>
             <p className="text-xl md:text-2xl opacity-90 mb-8">
-              Shërbime të specializuara inspektimi për makina nga Koreja e Jugut dhe Evropa. 
-              Sigurohuni për cilësinë përpara se të blini!
+              Shërbime të specializuara inspektimi pa pagesë për makina nga Koreja e Jugut dhe Evropa. 
+              Nënshkruajmë kontratë garancioni për motorin, transmisionin dhe kilometrazhin pas blerjes!
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
@@ -231,62 +193,124 @@ const InspectionServices = () => {
           </div>
         </section>
 
-        {/* Pricing Packages */}
+        {/* Guarantee Contract Section */}
         <section className="mb-20">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
-              Paketat e Inspektimit
+              Kontrata e Garancisë
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Zgjidhni paketën që përshtatet më së miri me nevojat tuaja
+              Pas blerjes së automjetit, nënshkruajmë kontratë zyrtare për garantimin e komponentëve kryesorë
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {packages.map((pkg, index) => (
-              <Card key={index} className={`relative card-enhanced ${pkg.recommended ? 'border-primary shadow-xl scale-105' : ''}`}>
-                {pkg.recommended && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-primary text-primary-foreground px-4 py-2">
-                      <Star className="h-4 w-4 mr-1" />
-                      Rekomanduar
-                    </Badge>
-                  </div>
-                )}
-                
-                <CardHeader className="text-center">
-                  <CardTitle className="text-2xl">{pkg.name}</CardTitle>
-                  <div className="text-4xl font-bold text-primary mb-2">{pkg.price}</div>
-                  <p className="text-muted-foreground">për automjet</p>
-                </CardHeader>
-                
-                <CardContent className="space-y-6">
-                  <ul className="space-y-3">
-                    {pkg.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-center gap-2">
-                        <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
-                        <span className="text-sm">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <Card className="text-center card-enhanced bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950 dark:to-emerald-900 border-emerald-200 dark:border-emerald-800">
+              <CardHeader>
+                <div className="mx-auto w-16 h-16 bg-emerald-600 rounded-full flex items-center justify-center mb-4">
+                  <Wrench className="h-8 w-8 text-white" />
+                </div>
+                <CardTitle className="text-xl text-emerald-700 dark:text-emerald-300">Garanci e Motorit</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-emerald-600 dark:text-emerald-400 font-medium mb-4">Garanci 6 muaj</p>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                    <span>Performanca e motorit</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                    <span>Sistemi i ftohjes</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                    <span>Sistemi i vajit</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center card-enhanced bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800">
+              <CardHeader>
+                <div className="mx-auto w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
+                  <Settings className="h-8 w-8 text-white" />
+                </div>
+                <CardTitle className="text-xl text-blue-700 dark:text-blue-300">Garanci e Transmisionit</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-blue-600 dark:text-blue-400 font-medium mb-4">Garanci 6 muaj</p>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                    <span>Funksionimi i transmisionit</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                    <span>Ndryshimi i marsheve</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                    <span>Sistemi i bashkimit</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center card-enhanced bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-800">
+              <CardHeader>
+                <div className="mx-auto w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mb-4">
+                  <Gauge className="h-8 w-8 text-white" />
+                </div>
+                <CardTitle className="text-xl text-purple-700 dark:text-purple-300">Garanci e Kilometrazhit</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-purple-600 dark:text-purple-400 font-medium mb-4">100% e garantuar</p>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-purple-500 flex-shrink-0" />
+                    <span>Vërtetësia e kilometrazhit</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-purple-500 flex-shrink-0" />
+                    <span>Kontrolli me kompjuter</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-purple-500 flex-shrink-0" />
+                    <span>Certifikim zyrtar</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="mt-12 text-center">
+            <Card className="max-w-4xl mx-auto bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+              <CardContent className="p-8">
+                <div className="flex items-center justify-center gap-3 mb-4">
+                  <FileText className="h-8 w-8 text-primary" />
+                  <h3 className="text-2xl font-bold text-foreground">Kontrata Zyrtare e Garancisë</h3>
+                </div>
+                <p className="text-lg text-muted-foreground mb-6">
+                  Pas konfirmimit të blerjes, nënshkruajmë kontratë legale që garanton cilësinë e automjetit dhe komponentëve të sipërpërmendur. 
+                  Kjo kontratë ju jep siguri dhe mbështetje ligjore për investimin tuaj.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <InspectionRequestForm 
                     trigger={
-                      <Button 
-                        className={`w-full py-3 ${pkg.recommended ? 'bg-primary hover:bg-primary/90' : ''}`}
-                        variant={pkg.recommended ? "default" : "outline"}
-                      >
-                        Zgjidh {pkg.name}
+                      <Button size="lg" className="px-8 py-3">
+                        <FileText className="h-5 w-5 mr-2" />
+                        Kërko Detaje për Kontratën
                       </Button>
                     }
-                    carId="package"
-                    carMake={pkg.name}
-                    carModel="N/A"
+                    carId="contract"
+                    carMake="Garanci"
+                    carModel="Kontratë"
                     carYear={new Date().getFullYear()}
                   />
-                </CardContent>
-              </Card>
-            ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </section>
 
@@ -353,10 +377,10 @@ const InspectionServices = () => {
         {/* CTA Section */}
         <section className="text-center bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-2xl p-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Gati për Inspektim Profesional?
+            Gati për Inspektim FALAS?
           </h2>
           <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
-            Mos e rrezikoni blerjen pa një inspektim të plotë. Kontaktoni ekspertët tanë sot!
+            Inspektimi është krejtësisht falas! Kontaktoni ekspertët tanë për një vlerësim të plotë të automjetit.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -364,7 +388,7 @@ const InspectionServices = () => {
               trigger={
                 <Button size="lg" variant="secondary" className="px-8 py-4 text-lg">
                   <FileText className="h-5 w-5 mr-2" />
-                  Rezervo Inspektimin
+                  Kërko Inspektim FALAS
                 </Button>
               }
               carId="cta"
