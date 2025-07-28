@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
+import { ChevronDown } from "lucide-react";
 const HomeSection = () => {
-  return <section id="home" className="min-h-screen flex items-center justify-center bg-background pt-4 pb-8">
+  return <section id="home" className="min-h-screen flex items-center justify-center bg-background pt-4 pb-8 relative">
       <div className="container mx-auto px-4 text-center">
         <div className="max-w-4xl mx-auto">
           {/* Logo on Homepage */}
@@ -51,6 +52,20 @@ const HomeSection = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Sleek arrows on the sides */}
+      <div className="absolute left-4 top-1/2 transform -translate-y-1/2 hidden lg:block">
+        <ChevronDown 
+          className="w-8 h-8 text-primary/60 animate-bounce cursor-pointer hover:text-primary transition-colors duration-300 rotate-45"
+          onClick={() => document.getElementById('cars')?.scrollIntoView({ behavior: 'smooth' })}
+        />
+      </div>
+      <div className="absolute right-4 top-1/2 transform -translate-y-1/2 hidden lg:block">
+        <ChevronDown 
+          className="w-8 h-8 text-primary/60 animate-bounce cursor-pointer hover:text-primary transition-colors duration-300 -rotate-45"
+          onClick={() => document.getElementById('cars')?.scrollIntoView({ behavior: 'smooth' })}
+        />
       </div>
     </section>;
 };
