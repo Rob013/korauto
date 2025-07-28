@@ -18,6 +18,8 @@ interface Car {
   lot_number?: string;
   image_url?: string;
   color?: { id: number; name: string };
+  status?: number; // 1: active, 2: pending, 3: sold, 4: archived
+  sale_status?: string; // "active", "pending", "sold", "archived"
   lots?: {
     buy_now?: number;
     lot?: string;
@@ -64,6 +66,7 @@ interface APIFilters {
   buy_now_price_from?: string;
   buy_now_price_to?: string;
   search?: string;
+  include_sold?: string; // 'true' to include sold cars
 }
 
 interface APIResponse {
@@ -99,12 +102,24 @@ export const useAuctionAPI = () => {
         simple_paginate: '0'
       });
 
+      // Only fetch active (1) and pending (2) cars by default
+      params.append('status[]', '1');
+      params.append('status[]', '2');
+
       // Add all filter parameters
       Object.entries(filters).forEach(([key, value]) => {
-        if (value) {
+        if (value && key !== 'include_sold') {
           params.append(key, value);
         }
       });
+
+      // If explicitly requesting sold cars, include status 3
+      if (filters.include_sold === 'true') {
+        params.delete('status[]');
+        params.append('status[]', '1');
+        params.append('status[]', '2'); 
+        params.append('status[]', '3');
+      }
 
       console.log('API Request:', `${API_BASE_URL}/cars?${params}`);
 

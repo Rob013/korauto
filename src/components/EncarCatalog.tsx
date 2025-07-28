@@ -264,6 +264,8 @@ const EncarCatalog = () => {
                   condition={car.condition?.replace('run_and_drives', 'Good')}
                   lot={car.lot_number || lot?.lot}
                   title={car.title}
+                  status={car.status}
+                  sale_status={car.sale_status}
                 />
               );
             })}
