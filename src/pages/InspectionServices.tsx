@@ -217,8 +217,8 @@ const InspectionServices = () => {
             />
             <Button 
               size="lg" 
-              variant="outline" 
-              className="px-8 py-4 text-lg border-white text-white hover:bg-white hover:text-primary"
+              variant="secondary" 
+              className="px-8 py-4 text-lg"
               onClick={() => window.open('https://wa.me/38348181116', '_blank')}
             >
               <Shield className="h-5 w-5 mr-2" />
