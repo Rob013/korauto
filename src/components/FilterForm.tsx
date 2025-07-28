@@ -9,6 +9,7 @@ import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS } from '@/hooks/
 interface Manufacturer {
   id: number;
   name: string;
+  carCount?: number;
 }
 
 interface APIFilters {
@@ -24,10 +25,16 @@ interface APIFilters {
   buy_now_price_from?: string;
   buy_now_price_to?: string;
 }
+interface Model {
+  id: number;
+  name: string;
+  carCount?: number;
+}
+
 interface FilterFormProps {
   filters: APIFilters;
   manufacturers: Manufacturer[];
-  models: Manufacturer[];
+  models: Model[];
   onFiltersChange: (filters: APIFilters) => void;
   onClearFilters: () => void;
   onManufacturerChange?: (manufacturerId: string) => void;
@@ -77,7 +84,27 @@ const FilterForm: React.FC<FilterFormProps> = ({
       </div>
 
       {/* Basic Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="manufacturer">Manufacturer</Label>
+          <Select 
+            value={filters.manufacturer_id || 'all'} 
+            onValueChange={(value) => updateFilter('manufacturer_id', value === 'all' ? '' : value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="All Manufacturers" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Manufacturers</SelectItem>
+              {manufacturers.map((manufacturer) => (
+                <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
+                  {manufacturer.name} {manufacturer.carCount !== undefined && `(${manufacturer.carCount} cars)`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="model">Model</Label>
           <Select 
@@ -92,7 +119,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
               <SelectItem value="all">All Models</SelectItem>
               {models.map((model) => (
                 <SelectItem key={model.id} value={model.id.toString()}>
-                  {model.name}
+                  {model.name} {model.carCount !== undefined && `(${model.carCount} cars)`}
                 </SelectItem>
               ))}
             </SelectContent>
