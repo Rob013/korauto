@@ -27,6 +27,8 @@ const FilteredCarsSection = () => {
   const [filteredCars, setFilteredCars] = useState<Car[]>([]);
   const [displayedCars, setDisplayedCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMorePages, setHasMorePages] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [showMoreCars, setShowMoreCars] = useState(false);
@@ -87,7 +89,7 @@ const FilteredCarsSection = () => {
     }
   };
 
-  const fetchCars = async (minutes?: number) => {
+  const fetchCars = async (page=1,minutes?: number) => {
     setLoading(true);
     setError(null);
 
@@ -95,9 +97,10 @@ const FilteredCarsSection = () => {
       await delay(500);
 
       const params = new URLSearchParams({
-        api_key: API_KEY,
-        limit: '1000'
-      });
+      per_page: '50',
+      page: page.toString(),
+      simple_paginate: '0'
+});
 
       if (minutes) {
         params.append('minutes', minutes.toString());
@@ -147,8 +150,11 @@ const FilteredCarsSection = () => {
         throw new Error('No cars returned from API');
       }
 
-      setCars(transformedCars);
-      setFilteredCars(transformedCars);
+      const newCars = page === 1 ? transformedCars : [...cars, ...transformedCars];
+      setCars(newCars);
+      setFilteredCars(newCars);
+      setCurrentPage(page);
+      setHasMorePages(transformedCars.length === 50);
       setLastUpdate(new Date());
       console.log(`Successfully loaded ${transformedCars.length} cars from API`);
       
