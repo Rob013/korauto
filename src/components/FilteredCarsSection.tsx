@@ -27,6 +27,8 @@ const FilteredCarsSection = () => {
   const [filteredCars, setFilteredCars] = useState<Car[]>([]);
   const [displayedCars, setDisplayedCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMorePages, setHasMorePages] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [showMoreCars, setShowMoreCars] = useState(false);
@@ -565,7 +567,7 @@ const FilteredCarsSection = () => {
             {hasMorePages && (
               <div className="text-center px-4">
                 <Button 
-                  onClick={() => fetchCars(currentPage + 1)}
+                   onClick={() => fetchCars(currentPage + 1)}
                   size="lg"
                   className="w-full sm:w-auto bg-primary hover:bg-primary/90 min-h-[48px] text-base"
                 >
