@@ -65,7 +65,9 @@ Deno.serve(async (req) => {
 
     const { searchParams } = new URL(req.url);
     const syncType = searchParams.get('type') || 'full';
-    const batchSize = parseInt(searchParams.get('batch_size') || '1000');
+    // Optimize batch size for better performance - larger batches for full sync, smaller for incremental
+    const defaultBatchSize = syncType === 'full' ? 2000 : 500;
+    const batchSize = parseInt(searchParams.get('batch_size') || defaultBatchSize.toString());
 
     console.log(`Starting ${syncType} sync with batch size ${batchSize}`);
 
@@ -211,18 +213,20 @@ Deno.serve(async (req) => {
           })
           .eq('id', syncRecord.id);
 
-        // Check if we have more pages
-        hasMore = transformedCars.length === batchSize && totalSynced < (apiData.total_count || 0);
+        // Fix pagination logic - continue while we get full batches
+        // The API doesn't return total_count reliably, so we continue until we get fewer records than requested
+        hasMore = transformedCars.length === batchSize;
         page++;
 
-        // Rate limiting - wait 5 seconds between requests to avoid 429 errors
+        // Optimized rate limiting - 2-3 seconds between requests for faster sync
         if (hasMore) {
-          await new Promise(resolve => setTimeout(resolve, 5000));
+          const waitTime = Math.random() * 1000 + 2000; // 2-3 seconds random wait
+          await new Promise(resolve => setTimeout(resolve, waitTime));
         }
 
-        // Progress logging every 10,000 records
-        if (totalSynced > 0 && totalSynced % 10000 === 0) {
-          console.log(`Progress Update: ${totalSynced} cars processed successfully`);
+        // Enhanced progress logging every 1,000 records for better monitoring
+        if (totalSynced > 0 && totalSynced % 1000 === 0) {
+          console.log(`🚗 Progress Update: ${totalSynced} cars processed successfully | Page: ${page} | Batch Size: ${batchSize}`);
         }
 
       } catch (error) {
