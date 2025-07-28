@@ -314,66 +314,6 @@ const InspectionServices = () => {
           </div>
         </section>
 
-        {/* What We Check */}
-        <section className="mb-20">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
-              Çfarë Kontrollojmë
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Inspektim i detajuar i mbi 200 pikave kontrolli
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                category: "Motori & Transmisioni",
-                checks: ["Performanca e motorit", "Sistemi i ftohjes", "Sistemi i vajit", "Transimisioni", "Amortizatorët"]
-              },
-              {
-                category: "Sistemi Elektrik",
-                checks: ["Bateria dhe alternatori", "Sistemi i ndezjes", "Dritaret dhe sinjalet", "Sistemi i klimatizimit", "Diagnostiku elektronik"]
-              },
-              {
-                category: "Siguria & Struktura",
-                checks: ["Sistemi i frënimit", "Airbag dhe rripi sigurimi", "Struktura e karocerisë", "Pezullimi", "Drejtimi"]
-              },
-              {
-                category: "Interiori & Komforti",
-                checks: ["Ulëset dhe çapitjes", "Sistemi audio/video", "Kondicioneri", "Kontrollet elektronike", "Hapësirat ruajtëse"]
-              },
-              {
-                category: "Eksteriori",
-                checks: ["Karoceria dhe ngjyra", "Dritaret dhe xhamat", "Dritaret LED/Xenon", "Gomrat dhe rrotat", "Sistemet e sigurisë"]
-              },
-              {
-                category: "Dokumentacioni",
-                checks: ["VIN dhe numri serik", "Historia e aksidenteve", "Dokumentet ligjore", "Shërbimet e mëparshme", "Garancias dhe certifikime"]
-              }
-            ].map((section, index) => (
-              <Card key={index} className="card-enhanced">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Gauge className="h-5 w-5 text-primary" />
-                    {section.category}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {section.checks.map((check, idx) => (
-                      <li key={idx} className="flex items-center gap-2 text-sm">
-                        <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                        <span>{check}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
-
         {/* CTA Section */}
         <section className="text-center bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-2xl p-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
