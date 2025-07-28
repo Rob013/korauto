@@ -7,8 +7,10 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
-import { ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, Fuel, Palette, Hash, Calendar, Shield, FileText, Search, Info, Eye, CheckCircle, AlertTriangle, Star, Clock, Users, MessageCircle, Share2, Heart, ChevronRight, Expand, Copy, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, Fuel, Palette, Hash, Calendar, Shield, FileText, Search, Info, Eye, CheckCircle, AlertTriangle, Star, Clock, Users, MessageCircle, Share2, Heart, ChevronRight, Expand, Copy, ChevronDown, ChevronUp, Filter, RefreshCw } from "lucide-react";
 import { ImageZoom } from "@/components/ImageZoom";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 interface CarDetails {
@@ -80,6 +82,29 @@ const CarDetails = () => {
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [featuresExpanded, setFeaturesExpanded] = useState(false);
+  
+  // Search and filter states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
+  const [filters, setFilters] = useState<{
+    manufacturer_id?: string;
+    model_id?: string;
+    generation_id?: string;
+    color?: string;
+    odometer_from_km?: string;
+    odometer_to_km?: string;
+    from_year?: string;
+    to_year?: string;
+    buy_now_price_from?: string;
+    buy_now_price_to?: string;
+    transmission?: string;
+    fuel_type?: string;
+  }>({});
+  const [manufacturers, setManufacturers] = useState<{id: number, name: string}[]>([]);
+  const [models, setModels] = useState<{id: number, name: string}[]>([]);
+  const [generations, setGenerations] = useState<{id: number, name: string}[]>([]);
+  const [filteredCars, setFilteredCars] = useState<any[]>([]);
+  
   const API_BASE_URL = 'https://auctionsapi.com/api';
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
 
@@ -98,6 +123,140 @@ const CarDetails = () => {
     };
     checkAdminStatus();
   }, []);
+
+  // API functions for search and filters
+  const fetchManufacturers = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/manufacturers/cars`, {
+        headers: {
+          'Accept': 'application/json',
+          'X-API-Key': API_KEY
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const sortedManufacturers = [...data.data].sort((a, b) => {
+          const priorityBrands = ['Audi', 'Volkswagen', 'BMW', 'Mercedes-Benz'];
+          const aIndex = priorityBrands.indexOf(a.name);
+          const bIndex = priorityBrands.indexOf(b.name);
+          
+          if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+          if (aIndex !== -1) return -1;
+          if (bIndex !== -1) return 1;
+          return a.name.localeCompare(b.name);
+        });
+        setManufacturers(sortedManufacturers);
+      }
+    } catch (error) {
+      console.error('Failed to fetch manufacturers:', error);
+    }
+  };
+
+  const fetchModels = async (manufacturerId: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/models/cars?manufacturer_id=${manufacturerId}`, {
+        headers: {
+          'Accept': 'application/json',
+          'X-API-Key': API_KEY
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setModels(data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch models:', error);
+    }
+  };
+
+  const fetchGenerations = async (modelId: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/generations/cars?model_id=${modelId}`, {
+        headers: {
+          'Accept': 'application/json',
+          'X-API-Key': API_KEY
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setGenerations(data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch generations:', error);
+    }
+  };
+
+  const searchCars = async () => {
+    try {
+      let endpoint = `${API_BASE_URL}/cars?page=1&per_page=20`;
+      
+      if (searchQuery) {
+        endpoint += `&search=${encodeURIComponent(searchQuery)}`;
+      }
+      
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) {
+          endpoint += `&${key}=${encodeURIComponent(value)}`;
+        }
+      });
+
+      const response = await fetch(endpoint, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'KORAUTO-WebApp/1.0',
+          'X-API-Key': API_KEY
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setFilteredCars(data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to search cars:', error);
+    }
+  };
+
+  const clearFilters = () => {
+    setFilters({});
+    setSearchQuery('');
+    setModels([]);
+    setGenerations([]);
+    setFilteredCars([]);
+  };
+
+  // Load manufacturers on component mount
+  useEffect(() => {
+    fetchManufacturers();
+  }, []);
+
+  // Fetch models when manufacturer changes
+  useEffect(() => {
+    if (filters.manufacturer_id) {
+      fetchModels(filters.manufacturer_id);
+    } else {
+      setModels([]);
+    }
+  }, [filters.manufacturer_id]);
+
+  // Fetch generations when model changes
+  useEffect(() => {
+    if (filters.model_id) {
+      fetchGenerations(filters.model_id);
+    } else {
+      setGenerations([]);
+    }
+  }, [filters.model_id]);
+
+  // Search cars when filters change
+  useEffect(() => {
+    if (searchQuery || Object.keys(filters).some(key => filters[key as keyof typeof filters])) {
+      const timeoutId = setTimeout(searchCars, 500);
+      return () => clearTimeout(timeoutId);
+    } else {
+      setFilteredCars([]);
+    }
+  }, [searchQuery, filters]);
   useEffect(() => {
     const fetchCarDetails = async () => {
       if (!id) return;
@@ -373,45 +532,271 @@ const CarDetails = () => {
                   <Settings className="h-6 w-6 mr-3 text-primary" />
                   Specifikimet Teknike
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {car.engine && <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                
+                {/* Main Specifications Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                  {/* Basic Info */}
+                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20">
+                    <div className="flex items-center gap-3">
+                      <Car className="h-5 w-5 text-primary" />
+                      <span className="font-semibold text-foreground">Marka & Modeli</span>
+                    </div>
+                    <span className="text-muted-foreground font-medium text-right">{car.make} {car.model}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-25 dark:from-blue-950/30 dark:to-blue-950/10 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="flex items-center gap-3">
+                      <Calendar className="h-5 w-5 text-blue-500" />
+                      <span className="font-semibold text-foreground">Viti</span>
+                    </div>
+                    <span className="text-muted-foreground font-medium">{car.year}</span>
+                  </div>
+                  
+                  {car.mileage && (
+                    <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-green-25 dark:from-green-950/30 dark:to-green-950/10 rounded-lg border border-green-200 dark:border-green-800">
+                      <div className="flex items-center gap-3">
+                        <Gauge className="h-5 w-5 text-green-500" />
+                        <span className="font-semibold text-foreground">Kilometrat</span>
+                      </div>
+                      <span className="text-muted-foreground font-medium">{car.mileage}</span>
+                    </div>
+                  )}
+                  
+                  {car.transmission && (
+                    <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-purple-25 dark:from-purple-950/30 dark:to-purple-950/10 rounded-lg border border-purple-200 dark:border-purple-800">
+                      <div className="flex items-center gap-3">
+                        <Settings className="h-5 w-5 text-purple-500" />
+                        <span className="font-semibold text-foreground">Transmisioni</span>
+                      </div>
+                      <span className="text-muted-foreground font-medium capitalize">{car.transmission}</span>
+                    </div>
+                  )}
+                  
+                  {car.fuel && (
+                    <div className="flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 to-orange-25 dark:from-orange-950/30 dark:to-orange-950/10 rounded-lg border border-orange-200 dark:border-orange-800">
+                      <div className="flex items-center gap-3">
+                        <Fuel className="h-5 w-5 text-orange-500" />
+                        <span className="font-semibold text-foreground">Karburanti</span>
+                      </div>
+                      <span className="text-muted-foreground font-medium capitalize">{car.fuel}</span>
+                    </div>
+                  )}
+                  
+                  {car.color && (
+                    <div className="flex items-center justify-between p-4 bg-gradient-to-r from-pink-50 to-pink-25 dark:from-pink-950/30 dark:to-pink-950/10 rounded-lg border border-pink-200 dark:border-pink-800">
+                      <div className="flex items-center gap-3">
+                        <Palette className="h-5 w-5 text-pink-500" />
+                        <span className="font-semibold text-foreground">Ngjyra</span>
+                      </div>
+                      <span className="text-muted-foreground font-medium capitalize">{car.color}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Technical Details */}
+                <Separator className="my-6" />
+                <h4 className="text-lg font-semibold mb-4 text-foreground">Detaje Teknike</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {car.engine && (
+                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-3">
                         <div className="w-2 h-2 bg-primary rounded-full"></div>
                         <span className="font-semibold text-foreground">Motori</span>
                       </div>
                       <span className="text-muted-foreground font-medium">{car.engine.name}</span>
-                    </div>}
-                  {car.cylinders && <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    </div>
+                  )}
+                  {car.cylinders && (
+                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-3">
                         <div className="w-2 h-2 bg-primary rounded-full"></div>
                         <span className="font-semibold text-foreground">Cilindrat</span>
                       </div>
                       <span className="text-muted-foreground font-medium">{car.cylinders}</span>
-                    </div>}
-                  {car.drive_wheel && <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    </div>
+                  )}
+                  {car.drive_wheel && (
+                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-3">
                         <div className="w-2 h-2 bg-primary rounded-full"></div>
                         <span className="font-semibold text-foreground">Drejtimi</span>
                       </div>
                       <span className="text-muted-foreground font-medium capitalize">{car.drive_wheel.name}</span>
-                    </div>}
-                  {car.body_type && <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    </div>
+                  )}
+                  {car.body_type && (
+                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-3">
                         <div className="w-2 h-2 bg-primary rounded-full"></div>
                         <span className="font-semibold text-foreground">Lloji i Trupit</span>
                       </div>
                       <span className="text-muted-foreground font-medium capitalize">{car.body_type.name}</span>
-                    </div>}
-                  {car.keys_available !== undefined}
-                  {car.airbags && <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    </div>
+                  )}
+                  {car.airbags && (
+                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-3">
                         <div className="w-2 h-2 bg-primary rounded-full"></div>
                         <span className="font-semibold text-foreground">Airbag-ët</span>
                       </div>
                       <span className="text-muted-foreground font-medium">{car.airbags}</span>
-                    </div>}
-                  
+                    </div>
+                  )}
+                  {car.vin && (
+                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg md:col-span-2">
+                      <div className="flex items-center gap-3">
+                        <Hash className="h-4 w-4 text-primary" />
+                        <span className="font-semibold text-foreground">VIN</span>
+                      </div>
+                      <span className="text-muted-foreground font-mono text-sm">{car.vin}</span>
+                    </div>
+                  )}
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Search and Filter Section */}
+            <Card className="shadow-lg border-0">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Search className="h-5 w-5 text-primary" />
+                  <h3 className="text-lg font-semibold text-foreground">Kërko Makina të Ngjashme</h3>
+                </div>
+                
+                {/* Search Bar */}
+                <div className="relative mb-4">
+                  <Input
+                    type="text"
+                    placeholder="Kërko sipas markës, modelit ose karakteristikave..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 h-12 bg-background border-border"
+                  />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                </div>
+
+                {/* Primary Filters */}
+                <div className="flex flex-wrap gap-3 mb-4">
+                  <div className="space-y-2 min-w-[200px] flex-1">
+                    <label className="text-sm font-medium text-foreground block">Marka</label>
+                    <Select value={filters.manufacturer_id || ''} onValueChange={(value) => setFilters({...filters, manufacturer_id: value || undefined, model_id: undefined, generation_id: undefined})}>
+                      <SelectTrigger className="h-11 bg-background border-border">
+                        <SelectValue placeholder="Të gjitha Markat" />
+                      </SelectTrigger>
+                      <SelectContent className="z-50 max-h-60 bg-background border border-border shadow-lg">
+                        {manufacturers.map((manufacturer, index) => {
+                          const isTopBrand = index < 4;
+                          const isLastTopBrand = index === 3;
+                          
+                          return (
+                            <div key={manufacturer.id}>
+                              <SelectItem 
+                                value={manufacturer.id.toString()}
+                                className={isTopBrand ? "font-medium text-primary" : ""}
+                              >
+                                {manufacturer.name}
+                              </SelectItem>
+                              {isLastTopBrand && (
+                                <div className="mx-2 my-1 border-t border-border/60" />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2 min-w-[200px] flex-1">
+                    <label className="text-sm font-medium text-foreground block">Modeli</label>
+                    <Select value={filters.model_id || ''} onValueChange={(value) => setFilters({...filters, model_id: value || undefined, generation_id: undefined})} disabled={!filters.manufacturer_id}>
+                      <SelectTrigger className="h-11 bg-background border-border">
+                        <SelectValue placeholder={filters.manufacturer_id ? "Të gjithë Modelet" : "Zgjidh markën së pari"} />
+                      </SelectTrigger>
+                      <SelectContent className="z-50 max-h-60 bg-background border border-border shadow-lg">
+                        {models.map(model => (
+                          <SelectItem key={model.id} value={model.id.toString()}>{model.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2 min-w-[200px] flex-1">
+                    <label className="text-sm font-medium text-foreground block">Detali i Modelit</label>
+                    <Select value={filters.generation_id || ''} onValueChange={(value) => setFilters({...filters, generation_id: value || undefined})} disabled={!filters.model_id}>
+                      <SelectTrigger className="h-11 bg-background border-border">
+                        <SelectValue placeholder={filters.model_id ? "Të gjitha Gjeneratat" : "Zgjidh modelin së pari"} />
+                      </SelectTrigger>
+                      <SelectContent className="z-50 max-h-60 bg-background border border-border shadow-lg">
+                        {generations.map(generation => (
+                          <SelectItem key={generation.id} value={generation.id.toString()}>{generation.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Clear Filters Button */}
+                {(searchQuery || Object.keys(filters).length > 0) && (
+                  <div className="flex justify-end mb-4">
+                    <Button variant="outline" size="sm" onClick={clearFilters} className="text-muted-foreground hover:text-foreground">
+                      Pastro Filtrat
+                    </Button>
+                  </div>
+                )}
+
+                {/* Search Results */}
+                {filteredCars.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="font-semibold text-foreground mb-4">Rezultatet e Kërkimit ({filteredCars.length})</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
+                      {filteredCars.slice(0, 6).map((foundCar) => {
+                        const lot = foundCar.lots?.[0];
+                        const basePrice = lot?.buy_now || lot?.final_bid || foundCar.price || 25000;
+                        const price = Math.round(basePrice + 2300);
+                        
+                        return (
+                          <div 
+                            key={foundCar.id} 
+                            className="p-4 border border-border rounded-lg cursor-pointer hover:bg-muted/30 transition-colors bg-card"
+                            onClick={() => navigate(`/car/${foundCar.id}`)}
+                          >
+                            <div className="aspect-video bg-muted rounded-lg mb-3 overflow-hidden">
+                              {lot?.images?.normal?.[0] ? (
+                                <img 
+                                  src={lot.images.normal[0]} 
+                                  alt={`${foundCar.year} ${foundCar.manufacturer?.name} ${foundCar.model?.name}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <Car className="h-8 w-8 text-muted-foreground" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="space-y-1">
+                              <div className="font-medium text-foreground text-sm">
+                                {foundCar.year} {foundCar.manufacturer?.name} {foundCar.model?.name}
+                              </div>
+                              <div className="text-primary font-semibold">€{price.toLocaleString()}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : 'N/A'}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {filteredCars.length > 6 && (
+                      <Button 
+                        variant="outline" 
+                        className="w-full mt-4" 
+                        onClick={() => navigate(`/catalog?search=${encodeURIComponent(searchQuery)}`)}
+                      >
+                        Shiko të gjitha rezultatet ({filteredCars.length})
+                      </Button>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
