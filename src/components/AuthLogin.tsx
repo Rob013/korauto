@@ -69,9 +69,9 @@ const AuthLogin = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
               <Lock className="h-6 w-6 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl">Admin Access</CardTitle>
+          <CardTitle className="text-2xl">Login</CardTitle>
           <p className="text-muted-foreground">
-            Enter your credentials to access the admin dashboard
+            Enter your credentials to continue
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
