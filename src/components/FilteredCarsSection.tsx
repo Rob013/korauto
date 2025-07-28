@@ -26,6 +26,7 @@ interface Car {
 const FilteredCarsSection = () => {
   const [cars, setCars] = useState<Car[]>([]);
   const [filteredCars, setFilteredCars] = useState<Car[]>([]);
+  const carListRef = useRef<HTMLDivElement | null>(null);
   // const [displayedCars, setDisplayedCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
