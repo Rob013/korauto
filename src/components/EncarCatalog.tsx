@@ -103,11 +103,11 @@ const EncarCatalog = () => {
     
     switch (syncStatus.status) {
       case 'completed':
-        return `Last updated: ${new Date(syncStatus.last_updated).toLocaleString()}`;
+        return `Last updated: ${new Date(syncStatus.last_activity_at).toLocaleString()}`;
       case 'failed':
         return `Failed: ${syncStatus.error_message || 'Unknown error'}`;
-      case 'in_progress':
-        return `Updating: ${syncStatus.synced_records}/${syncStatus.total_records} records`;
+      case 'running':
+        return `Updating: ${syncStatus.records_processed}/${syncStatus.total_records} records`;
       default:
         return syncStatus.status;
     }
@@ -138,7 +138,7 @@ const EncarCatalog = () => {
               variant="outline"
               size="sm"
               onClick={() => handleSyncAction('incremental')}
-              disabled={loading || syncStatus?.status === 'in_progress'}
+              disabled={loading || syncStatus?.status === 'running'}
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Quick Refresh
@@ -147,7 +147,7 @@ const EncarCatalog = () => {
               variant="outline"
               size="sm"
               onClick={() => handleSyncAction('full')}
-              disabled={loading || syncStatus?.status === 'in_progress'}
+              disabled={loading || syncStatus?.status === 'running'}
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Full Refresh
@@ -218,7 +218,7 @@ const EncarCatalog = () => {
                 <CardHeader className="p-0">
                   <div className="aspect-video relative overflow-hidden">
                     <img
-                      src={car.image || car.photo_urls?.[0] || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800'}
+                      src={car.image_url || (car.images ? JSON.parse(car.images)?.[0] : null) || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800'}
                       alt={car.title || `${car.make} ${car.model}`}
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                       onError={(e) => {
