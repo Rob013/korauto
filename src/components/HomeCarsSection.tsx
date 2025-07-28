@@ -43,6 +43,7 @@ const HomeCarsSection = () => {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [filters, setFilters] = useState<ApiFilters>({});
+  const [manufacturers, setManufacturers] = useState<{id: number, name: string}[]>([]);
   
   // API configuration
   const API_BASE_URL = 'https://auctionsapi.com/api';
@@ -202,9 +203,27 @@ const HomeCarsSection = () => {
     }
   };
 
+  const fetchManufacturers = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/manufacturers/cars`, {
+        headers: {
+          'Accept': '*/*',
+          'X-API-Key': API_KEY
+        }
+      });
+      const data = await response.json();
+      setManufacturers(data.data || []);
+    } catch (err) {
+      console.error('Failed to fetch manufacturers:', err);
+    }
+  };
+
   // Initial fetch
   useEffect(() => {
-    fetchCars();
+    Promise.all([
+      fetchCars(),
+      fetchManufacturers()
+    ]);
   }, []);
 
   // Re-fetch when filters change
@@ -282,8 +301,8 @@ const HomeCarsSection = () => {
                   <SelectValue placeholder="Të gjitha Markat" />
                 </SelectTrigger>
                 <SelectContent className="z-50 max-h-60">
-                  {Array.from(new Set(cars.map(car => ({ id: car.make, name: car.make })).filter(m => m.id && m.name))).map(manufacturer => (
-                    <SelectItem key={manufacturer.id} value={manufacturer.id}>{manufacturer.name}</SelectItem>
+                  {manufacturers.map(manufacturer => (
+                    <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>{manufacturer.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

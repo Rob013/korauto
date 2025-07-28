@@ -64,6 +64,7 @@ const EncarCatalog = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
+  const [manufacturers, setManufacturers] = useState<{id: number, name: string}[]>([]);
 
   const fetchCars = async (page: number, perPage: number, filters?: CarFilters) => {
     setError(null);
@@ -173,9 +174,28 @@ const formatMileage = (mileage?: string | number) =>
     : 'N/A';
 
 
+  const fetchManufacturers = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/manufacturers/cars`, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'KORAUTO-WebApp/1.0',
+          'X-API-Key': API_KEY
+        }
+      });
+      const data = await response.json();
+      setManufacturers(data.data || []);
+    } catch (err) {
+      console.error('Failed to fetch manufacturers:', err);
+    }
+  };
+
   useEffect(() => {
     setLoading(true);
-    fetchCars(1, 100, filters).finally(() => setLoading(false));
+    Promise.all([
+      fetchCars(1, 100, filters),
+      fetchManufacturers()
+    ]).finally(() => setLoading(false));
   }, []);
 
   // Re-fetch cars when filters change
@@ -291,8 +311,8 @@ const formatMileage = (mileage?: string | number) =>
                   <SelectValue placeholder="All manufacturers" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.from(new Set(cars.map(car => car.manufacturer).filter(m => m?.id && m?.name))).map(manufacturer => (
-                    <SelectItem key={manufacturer!.id} value={manufacturer!.id.toString()}>{manufacturer!.name}</SelectItem>
+                  {manufacturers.map(manufacturer => (
+                    <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>{manufacturer.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
