@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 const HomeSection = () => {
-  return <section id="home" className="min-h-screen flex items-center justify-center bg-background py-8">
+  return <section id="home" className="min-h-screen flex items-center justify-center bg-background pt-4 pb-8">
       <div className="container mx-auto px-4 text-center">
         <div className="max-w-4xl mx-auto">
           {/* Logo on Homepage */}
