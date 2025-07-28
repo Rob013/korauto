@@ -76,6 +76,7 @@ const CarDetails = () => {
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [featuresExpanded, setFeaturesExpanded] = useState(false);
+  const [showInspectionForm, setShowInspectionForm] = useState(false);
   
   const API_BASE_URL = 'https://auctionsapi.com/api';
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
@@ -827,76 +828,15 @@ const CarDetails = () => {
 
           {/* Right Column - Car Info and Contact */}
           <div className="space-y-6">
-            {/* Car Information Card */}
+            {/* Contact & Inspection Card */}
             <Card className="shadow-lg border-0">
               <CardContent className="p-8">
-                <div className="text-center mb-8">
-                  <h1 className="text-3xl font-bold text-foreground mb-2">
-                    {car.year} {car.make} {car.model}
-                  </h1>
-                  <div className="text-4xl font-bold text-primary mb-2">
-                    €{car.price.toLocaleString()}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Çmimi përfshirë transport + dogana në Kosovë
-                  </div>
-                </div>
-
-                {/* Key Information */}
-                <div className="space-y-4 mb-8">
-                  {car.mileage && (
-                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Gauge className="h-4 w-4 text-primary" />
-                        <span className="font-medium text-foreground">Kilometrat</span>
-                      </div>
-                      <span className="text-muted-foreground">{car.mileage}</span>
-                    </div>
-                  )}
-                  
-                  {car.transmission && (
-                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Settings className="h-4 w-4 text-primary" />
-                        <span className="font-medium text-foreground">Transmisioni</span>
-                      </div>
-                      <span className="text-muted-foreground capitalize">{car.transmission}</span>
-                    </div>
-                  )}
-                  
-                  {car.fuel && (
-                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Fuel className="h-4 w-4 text-primary" />
-                        <span className="font-medium text-foreground">Karburanti</span>
-                      </div>
-                      <span className="text-muted-foreground capitalize">{car.fuel}</span>
-                    </div>
-                  )}
-                  
-                  {car.color && (
-                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Palette className="h-4 w-4 text-primary" />
-                        <span className="font-medium text-foreground">Ngjyra</span>
-                      </div>
-                      <span className="text-muted-foreground capitalize">{car.color}</span>
-                    </div>
-                  )}
-
-                  {car.condition && (
-                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Shield className="h-4 w-4 text-primary" />
-                        <span className="font-medium text-foreground">Gjendja</span>
-                      </div>
-                      <span className="text-muted-foreground">{car.condition}</span>
-                    </div>
-                  )}
-                </div>
+                <h3 className="text-2xl font-bold mb-6 text-center text-foreground">
+                  Kontaktoni dhe Kërkoni Inspektim
+                </h3>
 
                 {/* Contact Buttons */}
-                <div className="space-y-4">
+                <div className="space-y-4 mb-6">
                   <Button onClick={handleContactWhatsApp} className="w-full h-12 text-base font-medium shadow-lg hover:shadow-xl transition-shadow bg-green-600 hover:bg-green-700 text-white">
                     <MessageCircle className="h-5 w-5 mr-2" />
                     Kontakto në WhatsApp
@@ -913,6 +853,24 @@ const CarDetails = () => {
                   </Button>
                 </div>
 
+                {/* Inspection Request Button */}
+                <div className="border-t border-border pt-6">
+                  <Button 
+                    onClick={() => setShowInspectionForm(!showInspectionForm)}
+                    className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground"
+                  >
+                    <FileText className="h-5 w-5 mr-2" />
+                    {showInspectionForm ? 'Mbyll Formularin' : 'Kërko Inspektim Professional'}
+                  </Button>
+                  
+                  {/* Inspection Form */}
+                  {showInspectionForm && (
+                    <div className="mt-6 p-4 bg-muted/30 rounded-lg">
+                      <InspectionRequestForm carId={car.id} carModel={`${car.year} ${car.make} ${car.model}`} trigger={undefined} />
+                    </div>
+                  )}
+                </div>
+
                 {/* Location */}
                 <div className="mt-6 pt-6 border-t border-border">
                   <div className="flex items-center gap-3 text-muted-foreground">
@@ -920,17 +878,6 @@ const CarDetails = () => {
                     <span className="text-sm">Lokacioni: Mitrovicë, Kosovë</span>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Inspection Request Card */}
-            <Card className="shadow-lg border-0">
-              <CardContent className="p-6">
-                <h3 className="text-xl font-bold mb-4 flex items-center text-foreground">
-                  <FileText className="h-5 w-5 mr-2 text-primary" />
-                  Kërko Inspektim
-                </h3>
-                <InspectionRequestForm carId={car.id} carModel={`${car.year} ${car.make} ${car.model}`} trigger={undefined} />
               </CardContent>
             </Card>
           </div>
