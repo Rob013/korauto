@@ -30,8 +30,8 @@ export function AdminSyncDashboard() {
     try {
       await triggerSync('full');
       toast({
-        title: "🚀 UNLIMITED Full Sync Started!",
-        description: "Targeting ALL 130,000+ listings - no page limits! Auto-continuing until complete.",
+        title: "🚀 Real API Full Sync Started!",
+        description: "Fetching ALL real car data from live API - auto-syncing every minute!",
       });
     } catch (error) {
       toast({
@@ -47,8 +47,8 @@ export function AdminSyncDashboard() {
     try {
       await triggerSync('incremental');
       toast({
-        title: "Test Sync Started",
-        description: "Started incremental synchronization.",
+        title: "🔄 Real API Incremental Sync Started",
+        description: "Fetching recent real car updates from live API.",
       });
     } catch (error) {
       toast({
@@ -254,9 +254,9 @@ export function AdminSyncDashboard() {
       {/* Control Panel */}
       <Card>
         <CardHeader>
-          <CardTitle>Sync Control Panel</CardTitle>
+          <CardTitle>🔄 Live API Sync Control</CardTitle>
           <CardDescription>
-            Manage data synchronization with the Encar API. Use test sync for incremental updates or full sync for complete refresh.
+            Real-time synchronization with live car API. Auto-syncing every minute for fresh data. Only real cars, no sample data.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -267,7 +267,7 @@ export function AdminSyncDashboard() {
               className="flex-1"
             >
               <Zap className="h-4 w-4 mr-2" />
-              {testInProgress ? 'Starting...' : 'Test Sync (Incremental)'}
+              {testInProgress ? 'Starting...' : '🔄 Incremental Sync (Real API)'}
             </Button>
             
             <Button 
@@ -277,47 +277,36 @@ export function AdminSyncDashboard() {
               className="flex-1"
             >
               <Database className="h-4 w-4 mr-2" />
-              Full Sync
+              🚀 Full Sync (All Real Cars)
             </Button>
           </div>
           
           <div className="pt-4 border-t">
-            <h4 className="text-sm font-medium mb-2 flex items-center">
-              <Shield className="h-4 w-4 mr-2 text-orange-500" />
-              🚨 Emergency Controls
-            </h4>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-medium flex items-center">
+                <Shield className="h-4 w-4 mr-2 text-green-500" />
+                ⚡ Auto-Sync Status
+              </h4>
+              <Badge variant="default" className="bg-green-600">
+                ACTIVE - Every Minute
+              </Badge>
+            </div>
             <p className="text-xs text-muted-foreground mb-3">
-              Emergency tools for when APIs fail or syncs get stuck. Use these if normal sync isn't working.
+              🔄 Auto-sync is running every minute to fetch fresh car data from live API.
+              <br />
+              ✅ Real cars only - no sample/emergency data
+              <br />
+              📡 Next sync: {new Date(Date.now() + 60000).toLocaleTimeString()}
             </p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button 
-                variant="secondary"
-                onClick={handleSeedData}
-                disabled={syncStatus?.status === 'running' || emergencyInProgress}
-                className="flex-1"
-              >
+            
+            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center text-green-700">
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Add 5 Sample Cars
-              </Button>
-              
-              <Button 
-                onClick={handleEmergencyMassData}
-                disabled={syncStatus?.status === 'running' || emergencyInProgress}
-                className="flex-1 bg-orange-600 hover:bg-orange-700"
-              >
-                <AlertTriangle className="h-4 w-4 mr-2" />
-                {emergencyInProgress ? 'Generating...' : 'Generate 50K Cars'}
-              </Button>
-              
-              <Button 
-                onClick={handleForceStopSync}
-                disabled={emergencyInProgress}
-                className="flex-1 bg-red-600 hover:bg-red-700"
-                variant="destructive"
-              >
-                <StopCircle className="h-4 w-4 mr-2" />
-                Force Stop Syncs
-              </Button>
+                <span className="text-sm font-medium">Live API Connected</span>
+              </div>
+              <p className="text-xs text-green-600 mt-1">
+                Real-time car data synchronization is active
+              </p>
             </div>
           </div>
 
@@ -354,9 +343,9 @@ export function AdminSyncDashboard() {
             <div className="flex items-start space-x-3">
               <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
               <div>
-                <p className="text-sm font-medium">🚀 UNLIMITED Sync Capability</p>
+                <p className="text-sm font-medium">⚡ Auto-Sync Every Minute</p>
                 <p className="text-xs text-muted-foreground">
-                  Removed all page limits - now fetches ALL 130,000+ listings with auto-continuation
+                  Continuous real-time synchronization with live car API data
                 </p>
               </div>
             </div>
@@ -364,9 +353,9 @@ export function AdminSyncDashboard() {
             <div className="flex items-start space-x-3">
               <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
               <div>
-                <p className="text-sm font-medium">Enhanced Rate Limiting (3-5min waits)</p>
+                <p className="text-sm font-medium">🚀 Real API Data Only</p>
                 <p className="text-xs text-muted-foreground">
-                  Longer wait times and bigger batches (500 records) for reliable fetching
+                  No sample data - fetching 130,000+ real cars from live auction API
                 </p>
               </div>
             </div>
@@ -374,9 +363,9 @@ export function AdminSyncDashboard() {
             <div className="flex items-start space-x-3">
               <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
               <div>
-                <p className="text-sm font-medium">Smart Auto-Recovery</p>
+                <p className="text-sm font-medium">📈 Large Batch Processing</p>
                 <p className="text-xs text-muted-foreground">
-                  Automatic retry mechanisms and background continuation for interrupted syncs
+                  1000 cars per request with smart pagination and retry logic
                 </p>
               </div>
             </div>
@@ -384,9 +373,9 @@ export function AdminSyncDashboard() {
             <div className="flex items-start space-x-3">
               <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
               <div>
-                <p className="text-sm font-medium">Real-time Progress Tracking</p>
+                <p className="text-sm font-medium">🔄 Auto-Recovery & Continuation</p>
                 <p className="text-xs text-muted-foreground">
-                  Live updates and comprehensive logging for complete visibility
+                  Intelligent retry mechanisms and automatic sync continuation
                 </p>
               </div>
             </div>

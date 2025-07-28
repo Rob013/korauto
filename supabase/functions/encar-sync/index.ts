@@ -5,45 +5,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Emergency: Massive sample car data generator
-function generateEmergencyCars(count: number) {
-  const makes = ['Toyota', 'Honda', 'BMW', 'Mercedes-Benz', 'Audi', 'Hyundai', 'Kia', 'Nissan', 'Mazda', 'Subaru', 'Lexus', 'Infiniti', 'Acura', 'Genesis', 'Volvo', 'Jaguar', 'Land Rover', 'Porsche', 'Ferrari', 'Lamborghini'];
-  const models = ['Sedan', 'SUV', 'Hatchback', 'Coupe', 'Wagon', 'Convertible', 'Truck', 'Van', 'Sport', 'Luxury'];
-  const colors = ['Black', 'White', 'Silver', 'Gray', 'Blue', 'Red', 'Green', 'Brown', 'Yellow', 'Orange'];
-  const fuels = ['Gasoline', 'Diesel', 'Hybrid', 'Electric', 'LPG'];
-  const transmissions = ['Automatic', 'Manual', 'CVT', 'Semi-Automatic'];
-  const conditions = ['excellent', 'very_good', 'good', 'fair', 'poor'];
-  
-  const cars = [];
-  for (let i = 1; i <= count; i++) {
-    const make = makes[i % makes.length];
-    const model = models[i % models.length];
-    const year = 2015 + (i % 9);
-    
-    cars.push({
-      id: `emergency-${i}`,
-      external_id: `emergency-${i}`,
-      make,
-      model,
-      year,
-      price: 15000 + Math.floor(Math.random() * 85000),
-      mileage: Math.floor(Math.random() * 200000),
-      title: `${make} ${model} ${year}`,
-      color: colors[i % colors.length],
-      fuel: fuels[i % fuels.length],
-      transmission: transmissions[i % transmissions.length],
-      condition: conditions[i % conditions.length],
-      location: 'South Korea',
-      image_url: `https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400&seed=${i}`,
-      last_synced_at: new Date().toISOString()
-    });
-  }
-  return cars;
-}
-
-// Small sample for regular seeding
-const SAMPLE_CARS = generateEmergencyCars(5);
-
 interface CarData {
   id: number;
   year: number;
@@ -98,71 +59,9 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
     const { searchParams } = new URL(req.url);
-    const syncType = searchParams.get('type') || 'full';
-    const seedMode = searchParams.get('seed') === 'true';
-    const emergencyMode = searchParams.get('emergency') === 'true';
-    const emergencyCount = parseInt(searchParams.get('count') || '50000');
-    const forceApi = searchParams.get('force_api') === 'true'; // Override to force API usage
+    const syncType = searchParams.get('type') || 'incremental';
     
-    console.log(`🚀 Starting ${syncType} sync${seedMode ? ' (seed mode)' : ''}${emergencyMode ? ' (EMERGENCY mode)' : ''}`);
-
-    // Emergency mode: Generate massive sample data
-    if (emergencyMode) {
-      console.log(`🚨 EMERGENCY MODE: Generating ${emergencyCount} sample cars...`);
-      
-      const emergencyCars = generateEmergencyCars(emergencyCount);
-      const batchSize = 1000;
-      let totalInserted = 0;
-      
-      for (let i = 0; i < emergencyCars.length; i += batchSize) {
-        const batch = emergencyCars.slice(i, i + batchSize);
-        console.log(`📦 Inserting batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(emergencyCars.length/batchSize)} (${batch.length} cars)`);
-        
-        const { error: batchError } = await supabase
-          .from('cars')
-          .upsert(batch, { onConflict: 'id' });
-          
-        if (batchError) {
-          console.error(`❌ Batch error:`, batchError.message);
-          throw new Error(`Emergency batch error: ${batchError.message}`);
-        }
-        
-        totalInserted += batch.length;
-        
-        // Small delay to prevent overwhelming the database
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-      
-      return new Response(JSON.stringify({
-        success: true,
-        message: `Emergency data generated successfully`,
-        cars_added: totalInserted,
-        emergency_mode: true
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // If seed mode, populate with sample data
-    if (seedMode) {
-      console.log('🌱 Seeding database with sample cars...');
-      
-      const { error: seedError } = await supabase
-        .from('cars')
-        .upsert(SAMPLE_CARS, { onConflict: 'id' });
-        
-      if (seedError) {
-        throw new Error(`Seed error: ${seedError.message}`);
-      }
-      
-      return new Response(JSON.stringify({
-        success: true,
-        message: 'Sample data seeded successfully',
-        cars_added: SAMPLE_CARS.length
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
+    console.log(`🚀 Starting ${syncType} sync - REAL API DATA ONLY`);
 
     // Check for existing running sync
     const { data: existingSync } = await supabase
@@ -200,173 +99,32 @@ Deno.serve(async (req) => {
 
     console.log(`✅ Created sync record: ${syncRecord.id}`);
 
-    // Emergency: Test multiple API endpoints for maximum data coverage
-    const API_ENDPOINTS = [
-      'https://auctionsapi.com/api/cars',
-      // Fallback endpoints can be added here
-    ];
-    
-    // Get API key from secrets with fallbacks
-    const apiKey = Deno.env.get('ENCAR_API_KEY') || 'd00985c77981fe8d26be16735f932ed1';
-    
-    let workingEndpoint = null;
-    let baseUrl = null;
-    
-    // Test each API endpoint to find one that works
-    for (const endpoint of API_ENDPOINTS) {
-      try {
-        const testUrl = new URL(endpoint);
-        testUrl.searchParams.set('api_key', apiKey);
-        testUrl.searchParams.set('limit', '10'); // Small test request
-        
-        console.log(`🔍 Testing API endpoint: ${endpoint}`);
-        const testResponse = await fetch(testUrl.toString(), {
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'KORAUTO-WebApp/1.0',
-            'Cache-Control': 'no-cache'
-          },
-          signal: AbortSignal.timeout(15000) // 15 second timeout
-        });
-        
-        console.log(`📡 API Response Status: ${testResponse.status} ${testResponse.statusText}`);
-        
-        if (testResponse.ok) {
-          const testData = await testResponse.json();
-          console.log(`📊 API Response Data Structure:`, Object.keys(testData));
-          
-          // Check if we have data array - even empty array means API is working
-          if (testData.data && Array.isArray(testData.data)) {
-            console.log(`✅ API endpoint working: ${endpoint} (${testData.data.length} test records)`);
-            if (testData.data.length > 0) {
-              console.log(`📝 Sample car:`, testData.data[0]?.id, testData.data[0]?.manufacturer?.name, testData.data[0]?.model?.name);
-            }
-            
-            workingEndpoint = endpoint;
-            baseUrl = new URL(endpoint);
-            baseUrl.searchParams.set('api_key', apiKey);
-            baseUrl.searchParams.set('limit', '500'); // Full batch size
-            break;
-          } else {
-            console.log(`⚠️ API returned data but wrong format:`, testData);
-          }
-        } else {
-          console.log(`❌ API returned non-OK status: ${testResponse.status}`);
-          const errorText = await testResponse.text();
-          console.log(`❌ Error response:`, errorText.substring(0, 200));
-        }
-      } catch (error) {
-        console.log(`❌ API endpoint failed: ${endpoint} - ${error.message}`);
-        console.log(`❌ Error details:`, error.stack?.substring(0, 300));
-      }
-    }
-    
-    if (!workingEndpoint && !forceApi) {
-      console.log(`🚨 ALL API ENDPOINTS FAILED - DEPLOYING EMERGENCY SAMPLE DATA`);
-      
-      // Emergency: Generate massive sample data using our function
-      const emergencyCars = generateEmergencyCars(50000);
-      const batchSize = 1000;
-      let totalInserted = 0;
-      
-      console.log(`📦 Inserting ${emergencyCars.length} emergency cars in batches...`);
-      
-      for (let i = 0; i < emergencyCars.length; i += batchSize) {
-        const batch = emergencyCars.slice(i, i + batchSize);
-        console.log(`📦 Emergency batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(emergencyCars.length/batchSize)}`);
-        
-        const { error: batchError } = await supabase
-          .from('cars')
-          .upsert(batch, { onConflict: 'id' });
-          
-        if (batchError) {
-          console.error(`❌ Emergency batch error:`, batchError.message);
-          throw new Error(`Emergency batch error: ${batchError.message}`);
-        }
-        
-        totalInserted += batch.length;
-        
-        // Update progress in sync record
-        await supabase
-          .from('sync_status')
-          .update({
-            records_processed: totalInserted,
-            total_records: emergencyCars.length,
-            last_activity_at: new Date().toISOString()
-          })
-          .eq('id', syncRecord.id);
-        
-        // Small delay to prevent overwhelming the database
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-      
-      await supabase
-        .from('sync_status')
-        .update({
-          status: 'completed',
-          completed_at: new Date().toISOString(),
-          records_processed: totalInserted,
-          total_records: totalInserted,
-          error_message: 'API endpoints failed - deployed emergency sample data'
-        })
-        .eq('id', syncRecord.id);
-      
-      return new Response(
-        JSON.stringify({
-          success: true,
-          sync_id: syncRecord.id,
-          status: 'completed',
-          records_processed: totalInserted,
-          message: 'EMERGENCY: APIs failed, deployed 50K sample cars',
-          emergency_mode: true
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    // If no working endpoint and forced API mode, use the main endpoint anyway
-    if (!workingEndpoint && forceApi) {
-      console.log(`🔧 FORCE API MODE: Using main endpoint despite test failure`);
-      workingEndpoint = 'https://auctionsapi.com/api/cars';
-      baseUrl = new URL(workingEndpoint);
-      baseUrl.searchParams.set('api_key', apiKey);
-      baseUrl.searchParams.set('limit', '500');
-    }
+    // Build API URL - FORCE REAL API USAGE
+    const apiKey = 'd00985c77981fe8d26be16735f932ed1';
+    const baseUrl = new URL('https://auctionsapi.com/api/cars');
+    baseUrl.searchParams.set('api_key', apiKey);
+    baseUrl.searchParams.set('limit', '1000'); // Large batch for efficiency
     
     if (syncType === 'incremental') {
-      // Look for recent changes (last 24 hours)
-      const { data: lastSync } = await supabase
-        .from('sync_status')
-        .select('completed_at')
-        .eq('sync_type', 'full')
-        .eq('status', 'completed')
-        .order('completed_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      
-      if (lastSync?.completed_at) {
-        const minutesAgo = Math.floor((Date.now() - new Date(lastSync.completed_at).getTime()) / (1000 * 60));
-        baseUrl.searchParams.set('minutes', Math.min(minutesAgo, 1440).toString()); // Max 24h
-        console.log(`📅 Incremental sync: checking last ${minutesAgo} minutes`);
-      }
+      // For incremental, fetch recent changes (last 10 minutes)
+      baseUrl.searchParams.set('minutes', '10');
+      console.log(`📅 Incremental sync: checking last 10 minutes`);
     }
 
     let currentUrl = baseUrl.toString();
     let totalProcessed = 0;
     let currentPage = 1;
-    const maxPagesPerExecution = 200; // Large batch per execution
-    let totalExpectedRecords = 0;
+    const maxPagesPerExecution = 100; // Process 100 pages at a time for efficiency
     let consecutiveErrors = 0;
     const maxConsecutiveErrors = 3;
 
-    console.log(`🎯 UNLIMITED SYNC: Targeting ALL 130,000+ records with NO artificial limits!`);
-    console.log(`📊 Batch size: 500 records per page | Max pages per execution: ${maxPagesPerExecution}`);
+    console.log(`🎯 REAL API SYNC: Fetching live data from ${currentUrl}`);
 
     while (currentUrl && currentPage <= maxPagesPerExecution && consecutiveErrors < maxConsecutiveErrors) {
-      console.log(`📡 Fetching page ${currentPage}...`);
+      console.log(`📡 Fetching page ${currentPage} from real API...`);
       
       try {
-        // Enhanced fetch with retries and better error handling
+        // Fetch from API with retries
         let response;
         let retryCount = 0;
         const maxRetries = 3;
@@ -380,7 +138,7 @@ Deno.serve(async (req) => {
                 'Cache-Control': 'no-cache',
                 'Connection': 'keep-alive'
               },
-              signal: AbortSignal.timeout(45000) // Increased timeout
+              signal: AbortSignal.timeout(60000) // 60 second timeout
             });
             break; // Success, exit retry loop
           } catch (fetchError) {
@@ -400,29 +158,25 @@ Deno.serve(async (req) => {
           console.log(`⚠️ HTTP ${response.status}: ${response.statusText}`);
           
           if (response.status === 429) {
-            // Rate limited - progressive wait times
-            const waitTime = currentPage < 10 ? 180000 : // 3 minutes for first 10 pages
-                           currentPage < 50 ? 240000 : // 4 minutes for pages 11-50
-                           300000; // 5 minutes for pages 51+
-            console.log(`⏳ Rate limited, waiting ${waitTime/60000} minutes...`);
-            await new Promise(resolve => setTimeout(resolve, waitTime));
+            // Rate limited - wait 2 minutes
+            console.log(`⏳ Rate limited, waiting 2 minutes...`);
+            await new Promise(resolve => setTimeout(resolve, 120000));
             continue;
           }
           
           if (response.status >= 500) {
-            console.log(`🔄 Server error ${response.status}, waiting 5 minutes...`);
-            await new Promise(resolve => setTimeout(resolve, 300000));
+            console.log(`🔄 Server error ${response.status}, waiting 1 minute...`);
+            await new Promise(resolve => setTimeout(resolve, 60000));
             continue;
           }
           
           if (response.status === 401) {
-            console.log(`🔑 Authentication error - API key may be invalid`);
             throw new Error(`Authentication failed: ${response.status} ${response.statusText}`);
           }
           
           if (response.status === 404) {
-            console.log(`🔍 Resource not found - may have reached end of data`);
-            break; // Exit loop, treat as end of data
+            console.log(`🔍 Resource not found - reached end of data`);
+            break;
           }
           
           throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -431,14 +185,14 @@ Deno.serve(async (req) => {
         const apiData: ApiResponse = await response.json();
         const carsArray = Array.isArray(apiData.data) ? apiData.data : [];
         
-        console.log(`📦 Received ${carsArray.length} cars`);
+        console.log(`📦 Received ${carsArray.length} real cars from API`);
 
         if (carsArray.length === 0) {
           console.log(`🏁 No more cars - sync complete`);
           break;
         }
 
-        // Transform and save cars
+        // Transform real API data to our database format
         const transformedCars = carsArray
           .map((car: CarData) => {
             try {
@@ -450,6 +204,7 @@ Deno.serve(async (req) => {
               const model = car.model?.name?.trim();
               
               if (!carId || !make || !model) {
+                console.warn(`⚠️ Skipping car with missing data: ID=${carId}, Make=${make}, Model=${model}`);
                 return null;
               }
 
@@ -469,6 +224,11 @@ Deno.serve(async (req) => {
                 lot_number: primaryLot?.lot?.toString() || null,
                 image_url: images[0] || null,
                 images: JSON.stringify(images),
+                source_api: 'auctionapis',
+                domain_name: 'encar_com',
+                location: 'South Korea',
+                condition: 'good',
+                status: 'active',
                 last_synced_at: new Date().toISOString()
               };
             } catch (error) {
@@ -478,7 +238,7 @@ Deno.serve(async (req) => {
           })
           .filter(car => car !== null);
 
-        // Save to database
+        // Save real cars to database
         if (transformedCars.length > 0) {
           const { error: upsertError } = await supabase
             .from('cars')
@@ -492,7 +252,7 @@ Deno.serve(async (req) => {
           }
 
           totalProcessed += transformedCars.length;
-          console.log(`✅ Saved ${transformedCars.length} cars (total: ${totalProcessed})`);
+          console.log(`✅ Saved ${transformedCars.length} real cars (total: ${totalProcessed})`);
         }
 
         // Update sync progress
@@ -513,14 +273,18 @@ Deno.serve(async (req) => {
           currentPage++;
           
           // Small delay to be API-friendly
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
         } else {
           console.log(`🏁 No next URL - reached end`);
           break;
         }
 
+        // Reset consecutive errors on success
+        consecutiveErrors = 0;
+
       } catch (error) {
-        console.error(`❌ Error on page ${currentPage}:`, error.message);
+        consecutiveErrors++;
+        console.error(`❌ Error on page ${currentPage} (${consecutiveErrors}/${maxConsecutiveErrors}):`, error.message);
         
         // Update error in sync record
         await supabase
@@ -531,12 +295,17 @@ Deno.serve(async (req) => {
           })
           .eq('id', syncRecord.id);
 
-        // Continue to next page on non-critical errors
+        // Skip to next page on non-critical errors
         if (error.message.includes('timeout') || error.message.includes('fetch')) {
           currentPage++;
+          await new Promise(resolve => setTimeout(resolve, 5000)); // 5 second wait
           continue;
+        } else if (consecutiveErrors >= maxConsecutiveErrors) {
+          throw error; // Too many consecutive errors
         } else {
-          throw error; // Re-throw critical errors
+          currentPage++;
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          continue;
         }
       }
     }
@@ -555,15 +324,15 @@ Deno.serve(async (req) => {
       })
       .eq('id', syncRecord.id);
 
-    console.log(`🎉 Sync ${finalStatus}! Processed ${totalProcessed} cars across ${currentPage-1} pages`);
+    console.log(`🎉 Sync ${finalStatus}! Processed ${totalProcessed} REAL cars across ${currentPage-1} pages`);
 
-    // If paused, schedule continuation
-    if (finalStatus === 'paused') {
+    // If paused, schedule continuation for incremental syncs
+    if (finalStatus === 'paused' && syncType === 'full') {
       EdgeRuntime.waitUntil((async () => {
         try {
-          await new Promise(resolve => setTimeout(resolve, 120000)); // 2 minute wait
+          await new Promise(resolve => setTimeout(resolve, 60000)); // 1 minute wait
           
-          const continueResponse = await fetch(`${supabaseUrl}/functions/v1/encar-sync?type=${syncType}`, {
+          const continueResponse = await fetch(`${supabaseUrl}/functions/v1/encar-sync?type=full`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${supabaseKey}`,
@@ -588,7 +357,8 @@ Deno.serve(async (req) => {
         records_processed: totalProcessed,
         pages_processed: currentPage - 1,
         sync_type: syncType,
-        message: `Sync ${finalStatus} successfully`
+        message: `${syncType} sync ${finalStatus} - ${totalProcessed} real cars processed`,
+        real_data_only: true
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
