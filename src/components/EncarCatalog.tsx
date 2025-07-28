@@ -221,7 +221,60 @@ const EncarCatalog = () => {
             ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
             : "space-y-4"
           }>
-            /*  */
+             {cars.map((car) => (
+              <Card key={car.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                <CardHeader className="p-0">
+                  <div className="aspect-video relative overflow-hidden">
+                
+                    {car.condition && (
+                      <Badge className="absolute top-2 left-2" variant="secondary">
+                        {car.condition}
+                      </Badge>
+                    )}
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="p-4">
+                  <h3 className="font-semibold text-lg mb-2 line-clamp-2">
+                   {car.title || `${car.make?.name} ${car.model?.name} ${car.year}`}
+                  </h3>
+                  
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <div className="flex justify-between">
+                      <span>Year:</span>
+                      <span className="font-medium">{car.year}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Mileage:</span>
+                      <span className="font-medium">{formatMileage(car.mileage)}</span>
+                    </div>
+                    {car.fuel && (
+                      <div className="flex justify-between">
+                        <span>Fuel:</span>
+                        <span className="font-medium capitalize">{car.fuel}</span>
+                      </div>
+                    )}
+                    {car.transmission && (
+                      <div className="flex justify-between">
+                        <span>Transmission:</span>
+                        <span className="font-medium capitalize">{car.transmission}</span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+                
+                <CardFooter className="p-4 pt-0">
+                  <div className="w-full flex items-center justify-between">
+                    <div className="text-2xl font-bold text-primary">
+                      {formatPrice(car.price)}
+                    </div>
+                    {/* <Badge variant="outline">
+                      {car.lot_number || 'Encar'}
+                    </Badge> */}
+                  </div>
+                </CardFooter>
+              </Card>
+            ))}
           </div>
 
           {/* Load More */}
