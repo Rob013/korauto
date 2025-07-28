@@ -5,6 +5,95 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Sample car data for emergency population
+const SAMPLE_CARS = [
+  {
+    id: 'sample-1',
+    external_id: 'sample-1',
+    make: 'Toyota',
+    model: 'Camry',
+    year: 2022,
+    price: 28000,
+    mileage: 15000,
+    title: 'Toyota Camry 2022',
+    color: 'Silver',
+    fuel: 'Gasoline',
+    transmission: 'Automatic',
+    location: 'South Korea',
+    condition: 'excellent',
+    image_url: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=400',
+    last_synced_at: new Date().toISOString()
+  },
+  {
+    id: 'sample-2',
+    external_id: 'sample-2',
+    make: 'Honda',
+    model: 'Civic',
+    year: 2021,
+    price: 24000,
+    mileage: 22000,
+    title: 'Honda Civic 2021',
+    color: 'Blue',
+    fuel: 'Gasoline',
+    transmission: 'Manual',
+    location: 'South Korea',
+    condition: 'good',
+    image_url: 'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=400',
+    last_synced_at: new Date().toISOString()
+  },
+  {
+    id: 'sample-3',
+    external_id: 'sample-3',
+    make: 'BMW',
+    model: '3 Series',
+    year: 2023,
+    price: 45000,
+    mileage: 8000,
+    title: 'BMW 3 Series 2023',
+    color: 'Black',
+    fuel: 'Gasoline',
+    transmission: 'Automatic',
+    location: 'South Korea',
+    condition: 'excellent',
+    image_url: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400',
+    last_synced_at: new Date().toISOString()
+  },
+  {
+    id: 'sample-4',
+    external_id: 'sample-4',
+    make: 'Mercedes-Benz',
+    model: 'C-Class',
+    year: 2022,
+    price: 52000,
+    mileage: 12000,
+    title: 'Mercedes-Benz C-Class 2022',
+    color: 'White',
+    fuel: 'Gasoline',
+    transmission: 'Automatic',
+    location: 'South Korea',
+    condition: 'excellent',
+    image_url: 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=400',
+    last_synced_at: new Date().toISOString()
+  },
+  {
+    id: 'sample-5',
+    external_id: 'sample-5',
+    make: 'Audi',
+    model: 'A4',
+    year: 2021,
+    price: 48000,
+    mileage: 18000,
+    title: 'Audi A4 2021',
+    color: 'Gray',
+    fuel: 'Gasoline',
+    transmission: 'Automatic',
+    location: 'South Korea',
+    condition: 'good',
+    image_url: 'https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?w=400',
+    last_synced_at: new Date().toISOString()
+  }
+];
+
 interface CarData {
   id: number;
   year: number;
@@ -60,14 +149,35 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
     const { searchParams } = new URL(req.url);
     const syncType = searchParams.get('type') || 'full';
+    const seedMode = searchParams.get('seed') === 'true';
     
-    console.log(`🚀 Starting ${syncType} sync with simplified architecture`);
+    console.log(`🚀 Starting ${syncType} sync${seedMode ? ' (seed mode)' : ''}`);
+
+    // If seed mode, populate with sample data
+    if (seedMode) {
+      console.log('🌱 Seeding database with sample cars...');
+      
+      const { error: seedError } = await supabase
+        .from('cars')
+        .upsert(SAMPLE_CARS, { onConflict: 'id' });
+        
+      if (seedError) {
+        throw new Error(`Seed error: ${seedError.message}`);
+      }
+      
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Sample data seeded successfully',
+        cars_added: SAMPLE_CARS.length
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
     // Check for existing running sync
     const { data: existingSync } = await supabase
       .from('sync_status')
       .select('*')
-      .eq('sync_type', syncType)
       .eq('status', 'running')
       .maybeSingle();
 
@@ -76,7 +186,7 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          message: `${syncType} sync already running`,
+          message: `${existingSync.sync_type} sync already running`,
           existing_sync_id: existingSync.id
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -62,8 +62,11 @@ const FavoritesPage = () => {
       const { data, error } = await supabase
         .from('favorite_cars')
         .select(`
-          *,
-          cars (
+          id,
+          car_id,
+          user_id,
+          created_at,
+          cars!favorite_cars_car_id_fkey (
             make,
             model,
             year,

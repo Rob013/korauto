@@ -57,6 +57,36 @@ export function AdminSyncDashboard() {
     }
   };
 
+  const handleSeedData = async () => {
+    try {
+      const response = await fetch(`https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/encar-sync?seed=true`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: "Sample data added",
+          description: `Successfully added ${result.cars_added} sample cars to the database.`,
+        });
+        // Refresh data
+        getSyncStatus();
+      } else {
+        throw new Error(result.message || 'Failed to seed data');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to seed sample data",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusIcon = (status?: string) => {
     switch (status) {
       case 'completed':
@@ -182,6 +212,22 @@ export function AdminSyncDashboard() {
             >
               <Database className="h-4 w-4 mr-2" />
               Full Sync
+            </Button>
+          </div>
+          
+          <div className="pt-4 border-t">
+            <h4 className="text-sm font-medium mb-2">Emergency Options</h4>
+            <p className="text-xs text-muted-foreground mb-3">
+              If API sync fails, you can populate the database with sample car data to test the application.
+            </p>
+            <Button 
+              variant="secondary"
+              onClick={handleSeedData}
+              disabled={syncStatus?.status === 'running'}
+              className="w-full sm:w-auto"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Add Sample Data
             </Button>
           </div>
 
