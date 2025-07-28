@@ -19,11 +19,10 @@ interface APIFilters {
 }
 
 const FilteredCarsSection = () => {
-  const { cars, loading, error, totalCount, hasMorePages, fetchCars, fetchManufacturers, fetchModels, loadMore } = useAuctionAPI();
+  const { cars, loading, error, totalCount, hasMorePages, fetchCars, fetchManufacturers, loadMore } = useAuctionAPI();
   const [filters, setFilters] = useState<APIFilters>({});
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [manufacturers, setManufacturers] = useState<{id: number, name: string}[]>([]);
-  const [models, setModels] = useState<{id: number, name: string}[]>([]);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
   const handleFiltersChange = (newFilters: APIFilters) => {
@@ -33,17 +32,7 @@ const FilteredCarsSection = () => {
 
   const handleClearFilters = () => {
     setFilters({});
-    setModels([]);
     fetchCars(1, {}, true);
-  };
-
-  const handleManufacturerChange = async (manufacturerId: string) => {
-    if (manufacturerId) {
-      const modelData = await fetchModels(manufacturerId);
-      setModels(modelData);
-    } else {
-      setModels([]);
-    }
   };
 
   const handleRefresh = () => {
@@ -109,16 +98,14 @@ const FilteredCarsSection = () => {
 
         {/* Filter Form */}
         <div className="mb-6 sm:mb-8">
-        <FilterForm
-          filters={filters}
-          manufacturers={manufacturers}
-          models={models}
-          onFiltersChange={handleFiltersChange}
-          onClearFilters={handleClearFilters}
-          onManufacturerChange={handleManufacturerChange}
-          showAdvanced={showAdvancedFilters}
-          onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
-        />
+          <FilterForm
+            filters={filters}
+            manufacturers={manufacturers}
+            onFiltersChange={handleFiltersChange}
+            onClearFilters={handleClearFilters}
+            showAdvanced={showAdvancedFilters}
+            onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
+          />
         </div>
 
         {/* Loading State */}
