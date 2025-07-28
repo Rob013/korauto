@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Search, Grid, List } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
+import { Loader2, Search, Grid, List, RefreshCw, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface Car {
   id: string;
@@ -114,33 +114,33 @@ const EncarCatalog = () => {
     fetchCars(1, 100, filters).finally(() => setLoading(false));
   }, []);
 
-  // const getStatusIcon = () => {
-  //   if (!syncStatus) return <Clock className="h-4 w-4" />;
+  const getStatusIcon = () => {
+    if (!syncStatus) return <Clock className="h-4 w-4" />;
     
-  //   switch (syncStatus.status) {
-  //     case 'completed':
-  //       return <CheckCircle className="h-4 w-4 text-green-500" />;
-  //     case 'failed':
-  //       return <AlertCircle className="h-4 w-4 text-red-500" />;
-  //     default:
-  //       return <Loader2 className="h-4 w-4 animate-spin" />;
-  //   }
-  // };
+    switch (syncStatus.status) {
+      case 'completed':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'failed':
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      default:
+        return <Loader2 className="h-4 w-4 animate-spin" />;
+    }
+  };
 
-  // const getStatusText = () => {
-  //   if (!syncStatus) return 'No data refresh info';
+  const getStatusText = () => {
+    if (!syncStatus) return 'No data refresh info';
     
-  //   switch (syncStatus.status) {
-  //     case 'completed':
-  //       return `Last updated: ${new Date(syncStatus.last_activity_at).toLocaleString()}`;
-  //     case 'failed':
-  //       return `Failed: ${syncStatus.error_message || 'Unknown error'}`;
-  //     case 'running':
-  //       return `Updating: ${syncStatus.records_processed}/${syncStatus.total_records} records`;
-  //     default:
-  //       return syncStatus.status;
-  //   }
-  // };
+    switch (syncStatus.status) {
+      case 'completed':
+        return `Last updated: ${new Date(syncStatus.last_activity_at).toLocaleString()}`;
+      case 'failed':
+        return `Failed: ${syncStatus.error_message || 'Unknown error'}`;
+      case 'running':
+        return `Updating: ${syncStatus.records_processed}/${syncStatus.total_records} records`;
+      default:
+        return syncStatus.status;
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -155,7 +155,35 @@ const EncarCatalog = () => {
           </p>
         </div>
         
-
+        {/* Refresh Controls */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            {getStatusIcon()}
+            <span>{getStatusText()}</span>
+          </div>
+          
+          {/* <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleSyncAction('incremental')}
+              disabled={loading || syncStatus?.status === 'running'}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Quick Refresh
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleSyncAction('full')}
+              disabled={loading || syncStatus?.status === 'running'}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Full Refresh
+            </Button>
+          </div> */}
+        </div>
+      </div>
 
       {/* Search and Filters */}
       <div className="flex flex-col lg:flex-row gap-4 mb-8">
