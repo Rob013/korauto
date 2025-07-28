@@ -11,22 +11,26 @@ interface Manufacturer {
   name: string;
 }
 
+interface APIFilters {
+  manufacturer_id?: string;
+  model_id?: string;
+  color?: string;
+  fuel_type?: string;
+  transmission?: string;
+  odometer_from_km?: string;
+  odometer_to_km?: string;
+  from_year?: string;
+  to_year?: string;
+  buy_now_price_from?: string;
+  buy_now_price_to?: string;
+}
 interface FilterFormProps {
-  filters: {
-    manufacturer_id?: string;
-    color?: string;
-    fuel_type?: string;
-    transmission?: string;
-    odometer_from_km?: string;
-    odometer_to_km?: string;
-    from_year?: string;
-    to_year?: string;
-    buy_now_price_from?: string;
-    buy_now_price_to?: string;
-  };
+  filters: APIFilters;
   manufacturers: Manufacturer[];
-  onFiltersChange: (filters: any) => void;
+  models: Manufacturer[];
+  onFiltersChange: (filters: APIFilters) => void;
   onClearFilters: () => void;
+  onManufacturerChange?: (manufacturerId: string) => void;
   showAdvanced?: boolean;
   onToggleAdvanced?: () => void;
 }
@@ -34,16 +38,26 @@ interface FilterFormProps {
 const FilterForm: React.FC<FilterFormProps> = ({
   filters,
   manufacturers,
+  models,
   onFiltersChange,
   onClearFilters,
+  onManufacturerChange,
   showAdvanced = false,
   onToggleAdvanced
 }) => {
   const updateFilter = (key: string, value: string) => {
-    onFiltersChange({
+    const newFilters = {
       ...filters,
       [key]: value || undefined
-    });
+    };
+    
+    // Reset model when manufacturer changes
+    if (key === 'manufacturer_id') {
+      newFilters.model_id = undefined;
+      onManufacturerChange?.(value);
+    }
+    
+    onFiltersChange(newFilters);
   };
 
   const currentYear = new Date().getFullYear();
@@ -65,16 +79,20 @@ const FilterForm: React.FC<FilterFormProps> = ({
       {/* Basic Filters */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="manufacturer">Brand</Label>
-          <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value === 'all' ? '' : value)}>
+          <Label htmlFor="model">Model</Label>
+          <Select 
+            value={filters.model_id || 'all'} 
+            onValueChange={(value) => updateFilter('model_id', value === 'all' ? '' : value)}
+            disabled={!filters.manufacturer_id}
+          >
             <SelectTrigger>
-              <SelectValue placeholder="All Brands" />
+              <SelectValue placeholder={filters.manufacturer_id ? "All Models" : "Select manufacturer first"} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Brands</SelectItem>
-              {manufacturers.map((manufacturer) => (
-                <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
-                  {manufacturer.name}
+              <SelectItem value="all">All Models</SelectItem>
+              {models.map((model) => (
+                <SelectItem key={model.id} value={model.id.toString()}>
+                  {model.name}
                 </SelectItem>
               ))}
             </SelectContent>

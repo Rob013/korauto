@@ -9,6 +9,7 @@ import FilterForm from '@/components/FilterForm';
 
 interface APIFilters {
   manufacturer_id?: string;
+  model_id?: string;
   color?: string;
   fuel_type?: string;
   transmission?: string;
@@ -23,12 +24,13 @@ interface APIFilters {
 
 const EncarCatalog = () => {
   const { toast } = useToast();
-  const { cars, loading, error, totalCount, hasMorePages, fetchCars, fetchManufacturers, loadMore } = useAuctionAPI();
+  const { cars, loading, error, totalCount, hasMorePages, fetchCars, fetchManufacturers, fetchModels, loadMore } = useAuctionAPI();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filters, setFilters] = useState<APIFilters>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [manufacturers, setManufacturers] = useState<{id: number, name: string}[]>([]);
+  const [models, setModels] = useState<{id: number, name: string}[]>([]);
 
   const handleFiltersChange = (newFilters: APIFilters) => {
     setFilters(newFilters);
@@ -38,7 +40,17 @@ const EncarCatalog = () => {
   const handleClearFilters = () => {
     setFilters({});
     setSearchTerm('');
+    setModels([]);
     fetchCars(1, {}, true);
+  };
+
+  const handleManufacturerChange = async (manufacturerId: string) => {
+    if (manufacturerId) {
+      const modelData = await fetchModels(manufacturerId);
+      setModels(modelData);
+    } else {
+      setModels([]);
+    }
   };
 
   const handleSearch = () => {
@@ -133,8 +145,10 @@ const EncarCatalog = () => {
         <FilterForm
           filters={filters}
           manufacturers={manufacturers}
+          models={models}
           onFiltersChange={handleFiltersChange}
           onClearFilters={handleClearFilters}
+          onManufacturerChange={handleManufacturerChange}
           showAdvanced={showAdvancedFilters}
           onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
         />

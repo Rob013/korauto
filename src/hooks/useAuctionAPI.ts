@@ -154,6 +154,28 @@ export const useAuctionAPI = () => {
     }
   };
 
+  const fetchModels = async (manufacturerId: string): Promise<Manufacturer[]> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/models/${manufacturerId}/cars`, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'KORAUTO-WebApp/1.0',
+          'X-API-Key': API_KEY
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch models: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.data || [];
+    } catch (err) {
+      console.error('Error fetching models:', err);
+      return [];
+    }
+  };
+
   const loadMore = async (filters: APIFilters = {}) => {
     if (!hasMorePages || loading) return;
     await fetchCars(currentPage + 1, filters, false);
@@ -168,6 +190,7 @@ export const useAuctionAPI = () => {
     hasMorePages,
     fetchCars,
     fetchManufacturers,
+    fetchModels,
     loadMore
   };
 };
