@@ -315,7 +315,7 @@ const formatMileage = (mileage?: string) =>
                     Loading...
                   </>
                 ) : (
-                  `Load More (${cars.length} of ${totalCount.toLocaleString()})`
+                  `Shfaq më shumë (${cars.length} of ${totalCount.toLocaleString()})`
                 )}
               </Button>
             </div>
