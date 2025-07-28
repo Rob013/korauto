@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { RefreshCw, AlertCircle, Filter, ChevronDown } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface Car {
   id: string;
@@ -47,6 +49,8 @@ const HomeCarsSection = () => {
   const [manufacturers, setManufacturers] = useState<{id: number, name: string}[]>([]);
   const [models, setModels] = useState<{id: number, name: string}[]>([]);
   const [statistics, setStatistics] = useState<any>(null);
+  const [duplicates, setDuplicates] = useState<any[]>([]);
+  const [showDuplicates, setShowDuplicates] = useState(false);
   
   // API configuration
   const API_BASE_URL = 'https://auctionsapi.com/api';
@@ -270,6 +274,22 @@ const HomeCarsSection = () => {
         }).format(Number(price))
       : 'N/A';
 
+  const fetchDuplicates = async (minutes: number = 10) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/korea-duplicates?minutes=${minutes}&per_page=1000`, {
+        headers: {
+          'Accept': '*/*',
+          'X-API-Key': API_KEY
+        }
+      });
+      const data = await response.json();
+      setDuplicates(data.data || []);
+    } catch (err) {
+      console.error('Failed to fetch duplicates:', err);
+      setDuplicates([]);
+    }
+  };
+
   // Initial fetch
   useEffect(() => {
     Promise.all([
@@ -304,7 +324,9 @@ const HomeCarsSection = () => {
     setFilters({});
     setModels([]);
     setStatistics(null);
+    setDuplicates([]);
     setShowMoreFilters(false);
+    setShowDuplicates(false);
     fetchCars();
   };
 
@@ -333,6 +355,22 @@ const HomeCarsSection = () => {
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               {loading ? 'Duke u ngarkuar...' : 'Rifresko'}
             </Button>
+            
+            <Button
+              variant={showDuplicates ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => {
+                setShowDuplicates(!showDuplicates);
+                if (!showDuplicates && duplicates.length === 0) {
+                  fetchDuplicates();
+                }
+              }}
+              className="w-full sm:w-auto min-h-[44px]"
+            >
+              <AlertCircle className="h-4 w-4 mr-2" />
+              Duplikatet
+            </Button>
+            
             {lastUpdate && (
               <span className="text-sm text-muted-foreground text-center">
                 Përditësuar për herë të fundit: {lastUpdate.toLocaleTimeString()}
@@ -553,6 +591,95 @@ const HomeCarsSection = () => {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Duplicates Display */}
+        {showDuplicates && (
+          <div className="bg-card border rounded-lg p-6 mb-8 mx-2 sm:mx-0">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <AlertCircle className="h-5 w-5" />
+                Analiza e Duplikateve nga Korea
+              </h3>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fetchDuplicates(5)}
+                >
+                  5 min
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fetchDuplicates(10)}
+                >
+                  10 min
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fetchDuplicates(60)}
+                >
+                  1 orë
+                </Button>
+              </div>
+            </div>
+            
+            {duplicates.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Nuk u gjetën duplikate në periudhën e zgjedhur.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div className="text-center p-4 bg-background rounded-lg">
+                    <div className="text-2xl font-bold text-destructive">{duplicates.length}</div>
+                    <div className="text-sm text-muted-foreground">Duplikate Totale</div>
+                  </div>
+                  <div className="text-center p-4 bg-background rounded-lg">
+                    <div className="text-2xl font-bold text-primary">
+                      {Array.from(new Set(duplicates.map(d => d.manufacturer?.name))).length}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Marka të Prekura</div>
+                  </div>
+                  <div className="text-center p-4 bg-background rounded-lg">
+                    <div className="text-2xl font-bold text-warning">
+                      {duplicates.filter(d => d.lots?.length > 1).length}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Lot të Shumëfishta</div>
+                  </div>
+                </div>
+                
+                <div className="max-h-96 overflow-y-auto">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {duplicates.slice(0, 9).map((duplicate, index) => (
+                      <Card key={index} className="border-destructive/20">
+                        <CardContent className="p-4">
+                          <h4 className="font-semibold text-sm mb-2 line-clamp-1">
+                            {duplicate.title || `${duplicate.manufacturer?.name} ${duplicate.model?.name}`}
+                          </h4>
+                          <div className="space-y-1 text-xs text-muted-foreground">
+                            <div>Viti: {duplicate.year}</div>
+                            <div>Lots: {duplicate.lots?.length || 0}</div>
+                            <div>VIN: {duplicate.vin?.slice(-8) || 'N/A'}</div>
+                          </div>
+                          <Badge variant="destructive" className="mt-2 text-xs">
+                            Duplikat
+                          </Badge>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                  {duplicates.length > 9 && (
+                    <div className="text-center mt-4 text-sm text-muted-foreground">
+                      ... dhe {duplicates.length - 9} duplikate të tjera
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

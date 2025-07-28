@@ -68,6 +68,8 @@ const EncarCatalog = () => {
   const [manufacturers, setManufacturers] = useState<{id: number, name: string}[]>([]);
   const [models, setModels] = useState<{id: number, name: string}[]>([]);
   const [statistics, setStatistics] = useState<any>(null);
+  const [duplicates, setDuplicates] = useState<any[]>([]);
+  const [showDuplicates, setShowDuplicates] = useState(false);
 
   const fetchCars = async (page: number, perPage: number, filters?: CarFilters) => {
     setError(null);
@@ -233,6 +235,22 @@ const formatMileage = (mileage?: string | number) =>
     }
   };
 
+  const fetchDuplicates = async (minutes: number = 10) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/korea-duplicates?minutes=${minutes}&per_page=1000`, {
+        headers: {
+          'Accept': '*/*',
+          'X-API-Key': API_KEY
+        }
+      });
+      const data = await response.json();
+      setDuplicates(data.data || []);
+    } catch (err) {
+      console.error('Failed to fetch duplicates:', err);
+      setDuplicates([]);
+    }
+  };
+
   useEffect(() => {
     setLoading(true);
     Promise.all([
@@ -330,6 +348,19 @@ const formatMileage = (mileage?: string | number) =>
         </div>
         
         <div className="flex gap-2">
+          <Button
+            variant={showDuplicates ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => {
+              setShowDuplicates(!showDuplicates);
+              if (!showDuplicates && duplicates.length === 0) {
+                fetchDuplicates();
+              }
+            }}
+          >
+            <AlertCircle className="h-4 w-4 mr-1" />
+            Duplicates
+          </Button>
           <Button
             variant={showFilters ? 'default' : 'outline'}
             size="sm"
@@ -528,6 +559,95 @@ const formatMileage = (mileage?: string | number) =>
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Duplicates Display */}
+      {showDuplicates && (
+        <div className="bg-card border rounded-lg p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Korea Duplicates Analysis
+            </h3>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchDuplicates(5)}
+              >
+                Last 5 min
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchDuplicates(10)}
+              >
+                Last 10 min
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchDuplicates(60)}
+              >
+                Last hour
+              </Button>
+            </div>
+          </div>
+          
+          {duplicates.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No duplicates found in the selected time period.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="text-center p-4 bg-background rounded-lg">
+                  <div className="text-2xl font-bold text-destructive">{duplicates.length}</div>
+                  <div className="text-sm text-muted-foreground">Total Duplicates</div>
+                </div>
+                <div className="text-center p-4 bg-background rounded-lg">
+                  <div className="text-2xl font-bold text-primary">
+                    {Array.from(new Set(duplicates.map(d => d.manufacturer?.name))).length}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Affected Brands</div>
+                </div>
+                <div className="text-center p-4 bg-background rounded-lg">
+                  <div className="text-2xl font-bold text-warning">
+                    {duplicates.filter(d => d.lots?.length > 1).length}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Multiple Lots</div>
+                </div>
+              </div>
+              
+              <div className="max-h-96 overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {duplicates.slice(0, 12).map((duplicate, index) => (
+                    <Card key={index} className="border-destructive/20">
+                      <CardContent className="p-4">
+                        <h4 className="font-semibold text-sm mb-2 line-clamp-1">
+                          {duplicate.title || `${duplicate.manufacturer?.name} ${duplicate.model?.name}`}
+                        </h4>
+                        <div className="space-y-1 text-xs text-muted-foreground">
+                          <div>Year: {duplicate.year}</div>
+                          <div>Lots: {duplicate.lots?.length || 0}</div>
+                          <div>VIN: {duplicate.vin?.slice(-8) || 'N/A'}</div>
+                        </div>
+                        <Badge variant="destructive" className="mt-2 text-xs">
+                          Duplicate
+                        </Badge>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+                {duplicates.length > 12 && (
+                  <div className="text-center mt-4 text-sm text-muted-foreground">
+                    ... and {duplicates.length - 12} more duplicates
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
