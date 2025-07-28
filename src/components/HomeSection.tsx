@@ -9,7 +9,7 @@ const HomeSection = () => {
               <img 
                 src="/lovable-uploads/3657dff4-7afd-45bb-9f8a-8d3f4ba8d7b4.png" 
                 alt="KORAUTO Logo" 
-                className="w-full h-full object-contain p-4 filter brightness-0 dark:brightness-100 dark:invert-0 invert transition-all duration-300" 
+                className="w-full h-full object-contain p-4 dark:invert transition-all duration-300" 
               />
             </div>
           </div>
