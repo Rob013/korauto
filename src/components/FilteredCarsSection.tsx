@@ -92,7 +92,7 @@ const FilteredCarsSection = () => {
   };
 
   const fetchCars = async (page=1, minutes?: number) => {
-    setLoading(true);
+     if (page === 1) setLoading(true);
     setError(null);
 
     try {
