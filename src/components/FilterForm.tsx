@@ -163,10 +163,12 @@ const FilterForm: React.FC<FilterFormProps> = ({
                 })
                 .map((manufacturer) => {
                  const count = filterCounts?.manufacturers[manufacturer.id.toString()];
+                 const hasNoCars = count === 0 || count === undefined;
                  return (
                    <SelectItem 
                      key={manufacturer.id} 
                      value={manufacturer.id.toString()}
+                     className={hasNoCars ? "opacity-50 text-muted-foreground" : ""}
                    >
                      {manufacturer.name} {count !== undefined && count > 0 && `(${count})`}
                    </SelectItem>
