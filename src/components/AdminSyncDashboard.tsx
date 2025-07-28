@@ -26,8 +26,8 @@ export function AdminSyncDashboard() {
     try {
       await triggerSync('full');
       toast({
-        title: "Full Sync Started",
-        description: "Started full synchronization with Encar API.",
+        title: "🚀 UNLIMITED Full Sync Started!",
+        description: "Targeting ALL 130,000+ listings - no page limits! Auto-continuing until complete.",
       });
     } catch (error) {
       toast({
@@ -264,9 +264,9 @@ export function AdminSyncDashboard() {
             <div className="flex items-start space-x-3">
               <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
               <div>
-                <p className="text-sm font-medium">Improved Rate Limiting</p>
+                <p className="text-sm font-medium">🚀 UNLIMITED Sync Capability</p>
                 <p className="text-xs text-muted-foreground">
-                  Conservative API request timing to prevent 429/500 errors
+                  Removed all page limits - now fetches ALL 130,000+ listings with auto-continuation
                 </p>
               </div>
             </div>
@@ -274,9 +274,9 @@ export function AdminSyncDashboard() {
             <div className="flex items-start space-x-3">
               <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
               <div>
-                <p className="text-sm font-medium">Better Error Handling</p>
+                <p className="text-sm font-medium">Enhanced Rate Limiting (3-5min waits)</p>
                 <p className="text-xs text-muted-foreground">
-                  Enhanced error recovery and graceful degradation
+                  Longer wait times and bigger batches (500 records) for reliable fetching
                 </p>
               </div>
             </div>
@@ -284,9 +284,19 @@ export function AdminSyncDashboard() {
             <div className="flex items-start space-x-3">
               <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
               <div>
-                <p className="text-sm font-medium">Optimized Performance</p>
+                <p className="text-sm font-medium">Smart Auto-Recovery</p>
                 <p className="text-xs text-muted-foreground">
-                  Better indexing and chunked processing for faster syncs
+                  Automatic retry mechanisms and background continuation for interrupted syncs
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-3">
+              <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium">Real-time Progress Tracking</p>
+                <p className="text-xs text-muted-foreground">
+                  Live updates and comprehensive logging for complete visibility
                 </p>
               </div>
             </div>

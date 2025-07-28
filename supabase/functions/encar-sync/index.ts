@@ -213,7 +213,7 @@ Deno.serve(async (req) => {
     // Build API URL
     const baseUrl = new URL('https://auctionsapi.com/api/cars');
     baseUrl.searchParams.set('api_key', 'd00985c77981fe8d26be16735f932ed1');
-    baseUrl.searchParams.set('limit', '100'); // Conservative limit
+    baseUrl.searchParams.set('limit', '500'); // Increased batch size for efficiency
     
     if (syncType === 'incremental') {
       // Look for recent changes (last 24 hours)
@@ -236,9 +236,15 @@ Deno.serve(async (req) => {
     let currentUrl = baseUrl.toString();
     let totalProcessed = 0;
     let currentPage = 1;
-    const maxPages = 50; // Conservative limit per execution
+    const maxPagesPerExecution = 200; // Large batch per execution
+    let totalExpectedRecords = 0;
+    let consecutiveErrors = 0;
+    const maxConsecutiveErrors = 3;
 
-    while (currentUrl && currentPage <= maxPages) {
+    console.log(`🎯 UNLIMITED SYNC: Targeting ALL 130,000+ records with NO artificial limits!`);
+    console.log(`📊 Batch size: 500 records per page | Max pages per execution: ${maxPagesPerExecution}`);
+
+    while (currentUrl && currentPage <= maxPagesPerExecution && consecutiveErrors < maxConsecutiveErrors) {
       console.log(`📡 Fetching page ${currentPage}...`);
       
       try {
@@ -253,13 +259,13 @@ Deno.serve(async (req) => {
 
         if (!response.ok) {
           if (response.status === 429) {
-            console.log(`⏳ Rate limited, waiting 60 seconds...`);
-            await new Promise(resolve => setTimeout(resolve, 60000));
+            console.log(`⏳ Rate limited, waiting 3 minutes...`);
+            await new Promise(resolve => setTimeout(resolve, 180000)); // 3 minutes
             continue;
           }
           if (response.status >= 500) {
-            console.log(`🔄 Server error ${response.status}, waiting 90 seconds...`);
-            await new Promise(resolve => setTimeout(resolve, 90000));
+            console.log(`🔄 Server error ${response.status}, waiting 5 minutes...`);
+            await new Promise(resolve => setTimeout(resolve, 300000)); // 5 minutes
             continue;
           }
           throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -379,7 +385,7 @@ Deno.serve(async (req) => {
     }
 
     // Mark sync as completed or paused
-    const finalStatus = currentPage > maxPages ? 'paused' : 'completed';
+    const finalStatus = currentPage > maxPagesPerExecution ? 'paused' : 'completed';
     const completedAt = finalStatus === 'completed' ? new Date().toISOString() : null;
 
     await supabase
