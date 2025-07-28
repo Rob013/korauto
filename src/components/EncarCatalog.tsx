@@ -237,7 +237,7 @@ const formatMileage = (mileage?: string) =>
             : "space-y-4"
           }>
              {cars.map((car) => (
-              <Card key={car.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <Card key={car.id} className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col justify-between">
                 <CardHeader className="p-0">
                   <div className="aspect-video relative overflow-hidden">
                     <img
