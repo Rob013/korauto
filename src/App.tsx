@@ -10,6 +10,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AuthPage from "./pages/AuthPage";
 import FavoritesPage from "./pages/FavoritesPage";
 import NotFound from "./pages/NotFound";
+import AdminSyncDashboard from "./components/AdminSyncDashboard";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/catalog" element={<Catalog />} />
           <Route path="/car/:id" element={<CarDetails />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/sync" element={<AdminSyncDashboard />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
