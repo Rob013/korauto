@@ -80,6 +80,45 @@ const CarDetails = () => {
   const API_BASE_URL = 'https://auctionsapi.com/api';
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
 
+  // Extract features from car data
+  const getCarFeatures = (carData: any, lot: any): string[] => {
+    const features = [];
+    if (carData.transmission?.name) features.push(`Transmisioni ${carData.transmission.name}`);
+    if (carData.fuel?.name) features.push(`Karburanti: ${carData.fuel.name}`);
+    if (carData.color?.name) features.push(`Ngjyra: ${carData.color.name}`);
+    if (carData.engine?.name) features.push(`Motori: ${carData.engine.name}`);
+    if (carData.cylinders) features.push(`${carData.cylinders} Cilindra`);
+    if (carData.drive_wheel?.name) features.push(`Tërheqje: ${carData.drive_wheel.name}`);
+    if (lot?.keys_available) features.push('Çelësat të Disponueshëm');
+    
+    // Add basic features if list is empty
+    if (features.length === 0) {
+      return ['Klimatizimi', 'Dritaret Elektrike', 'Mbyllja Qendrore', 'Frena ABS'];
+    }
+    return features;
+  };
+
+  const getSafetyFeatures = (carData: any, lot: any): string[] => {
+    const safety = [];
+    if (lot?.airbags) safety.push(`Sistemi i Airbag-ëve: ${lot.airbags}`);
+    if (carData.transmission?.name === 'automatic') safety.push('ABS Sistemi i Frënimit');
+    safety.push('Sistemi i Stabilitetit Elektronik');
+    if (lot?.keys_available) safety.push('Sistemi i Sigurisë');
+    
+    // Add default safety features
+    return safety.length > 0 ? safety : ['ABS Sistemi i Frënimit', 'Airbag Sistemi', 'Mbyllja Qendrore'];
+  };
+
+  const getComfortFeatures = (carData: any, lot: any): string[] => {
+    const comfort = [];
+    if (carData.transmission?.name === 'automatic') comfort.push('Transmisioni Automatik');
+    comfort.push('Klimatizimi');
+    comfort.push('Dritaret Elektrike');
+    comfort.push('Pasqyrat Elektrike');
+    
+    return comfort;
+  };
+
   // Check admin status
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -152,18 +191,9 @@ const CarDetails = () => {
               buy_now: lot?.buy_now,
               final_bid: lot?.final_bid,
               // Get real features from API data
-              features: carData.features || lot?.features || [
-                'Air Conditioning', 'Power Windows', 'Central Locking', 'ABS Brakes',
-                'Driver Airbag', 'Passenger Airbag', 'Electric Mirrors', 'Power Steering'
-              ],
-              safety_features: carData.safety_features || lot?.safety_features || [
-                'ABS Braking System', 'Electronic Stability Program', 'Airbag System',
-                'Immobilizer', 'Central Locking', 'Child Safety Locks'
-              ],
-              comfort_features: carData.comfort_features || lot?.comfort_features || [
-                'Air Conditioning', 'Power Windows', 'Electric Mirrors', 'Radio/CD Player',
-                'Remote Central Locking', 'Adjustable Steering Wheel'
-              ],
+              features: getCarFeatures(carData, lot),
+              safety_features: getSafetyFeatures(carData, lot),
+              comfort_features: getComfortFeatures(carData, lot),
               performance_rating: 4.5,
               popularity_score: 85
             };
@@ -414,7 +444,7 @@ const CarDetails = () => {
                 {/* Main Specifications Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                   {/* Basic Info */}
-                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20">
+                  <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-3">
                       <Car className="h-5 w-5 text-primary" />
                       <span className="font-semibold text-foreground">Marka & Modeli</span>
@@ -422,18 +452,18 @@ const CarDetails = () => {
                     <span className="text-muted-foreground font-medium text-right">{car.make} {car.model}</span>
                   </div>
                   
-                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-25 dark:from-blue-950/30 dark:to-blue-950/10 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-3">
-                      <Calendar className="h-5 w-5 text-blue-500" />
+                      <Calendar className="h-5 w-5 text-primary" />
                       <span className="font-semibold text-foreground">Viti</span>
                     </div>
                     <span className="text-muted-foreground font-medium">{car.year}</span>
                   </div>
                   
                   {car.mileage && (
-                    <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-green-25 dark:from-green-950/30 dark:to-green-950/10 rounded-lg border border-green-200 dark:border-green-800">
+                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">
-                        <Gauge className="h-5 w-5 text-green-500" />
+                        <Gauge className="h-5 w-5 text-primary" />
                         <span className="font-semibold text-foreground">Kilometrat</span>
                       </div>
                       <span className="text-muted-foreground font-medium">{car.mileage}</span>
@@ -441,9 +471,9 @@ const CarDetails = () => {
                   )}
                   
                   {car.transmission && (
-                    <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-purple-25 dark:from-purple-950/30 dark:to-purple-950/10 rounded-lg border border-purple-200 dark:border-purple-800">
+                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">
-                        <Settings className="h-5 w-5 text-purple-500" />
+                        <Settings className="h-5 w-5 text-primary" />
                         <span className="font-semibold text-foreground">Transmisioni</span>
                       </div>
                       <span className="text-muted-foreground font-medium capitalize">{car.transmission}</span>
@@ -451,9 +481,9 @@ const CarDetails = () => {
                   )}
                   
                   {car.fuel && (
-                    <div className="flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 to-orange-25 dark:from-orange-950/30 dark:to-orange-950/10 rounded-lg border border-orange-200 dark:border-orange-800">
+                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">
-                        <Fuel className="h-5 w-5 text-orange-500" />
+                        <Fuel className="h-5 w-5 text-primary" />
                         <span className="font-semibold text-foreground">Karburanti</span>
                       </div>
                       <span className="text-muted-foreground font-medium capitalize">{car.fuel}</span>
@@ -461,9 +491,9 @@ const CarDetails = () => {
                   )}
                   
                   {car.color && (
-                    <div className="flex items-center justify-between p-4 bg-gradient-to-r from-pink-50 to-pink-25 dark:from-pink-950/30 dark:to-pink-950/10 rounded-lg border border-pink-200 dark:border-pink-800">
+                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">
-                        <Palette className="h-5 w-5 text-pink-500" />
+                        <Palette className="h-5 w-5 text-primary" />
                         <span className="font-semibold text-foreground">Ngjyra</span>
                       </div>
                       <span className="text-muted-foreground font-medium capitalize">{car.color}</span>
@@ -476,7 +506,7 @@ const CarDetails = () => {
                 <h4 className="text-lg font-semibold mb-4 text-foreground">Detaje Teknike</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {car.engine && (
-                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="w-2 h-2 bg-primary rounded-full"></div>
                         <span className="font-semibold text-foreground">Motori</span>
@@ -485,7 +515,7 @@ const CarDetails = () => {
                     </div>
                   )}
                   {car.cylinders && (
-                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="w-2 h-2 bg-primary rounded-full"></div>
                         <span className="font-semibold text-foreground">Cilindrat</span>
@@ -494,7 +524,7 @@ const CarDetails = () => {
                     </div>
                   )}
                   {car.drive_wheel && (
-                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="w-2 h-2 bg-primary rounded-full"></div>
                         <span className="font-semibold text-foreground">Drejtimi</span>
@@ -503,7 +533,7 @@ const CarDetails = () => {
                     </div>
                   )}
                   {car.body_type && (
-                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="w-2 h-2 bg-primary rounded-full"></div>
                         <span className="font-semibold text-foreground">Lloji i Trupit</span>
@@ -511,17 +541,21 @@ const CarDetails = () => {
                       <span className="text-muted-foreground font-medium capitalize">{car.body_type.name}</span>
                     </div>
                   )}
-                  {car.airbags && (
-                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                  {car.damage && (car.damage.main || car.damage.second) && (
+                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-primary rounded-full"></div>
-                        <span className="font-semibold text-foreground">Airbag-ët</span>
+                        <div className="w-2 h-2 bg-destructive rounded-full"></div>
+                        <span className="font-semibold text-foreground">Dëmtimet</span>
                       </div>
-                      <span className="text-muted-foreground font-medium">{car.airbags}</span>
+                      <span className="text-muted-foreground font-medium text-right">
+                        {car.damage.main && <span>{car.damage.main}</span>}
+                        {car.damage.main && car.damage.second && <span>, </span>}
+                        {car.damage.second && <span>{car.damage.second}</span>}
+                      </span>
                     </div>
                   )}
                   {car.vin && (
-                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg md:col-span-2">
+                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors md:col-span-2">
                       <div className="flex items-center gap-3">
                         <Hash className="h-4 w-4 text-primary" />
                         <span className="font-semibold text-foreground">VIN</span>
