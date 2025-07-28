@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import korautoLogo from "@/assets/korauto-logo-black.png";
 const HomeSection = () => {
   return <section id="home" className="min-h-screen flex items-center justify-center bg-background py-20">
       <div className="container mx-auto px-4 text-center">
@@ -7,7 +8,7 @@ const HomeSection = () => {
           <div className="mb-12">
             <div className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 mx-auto flex items-center justify-center mb-6">
               <img 
-                src="/lovable-uploads/3657dff4-7afd-45bb-9f8a-8d3f4ba8d7b4.png" 
+                src={korautoLogo} 
                 alt="KORAUTO Logo" 
                 className="w-full h-full object-contain dark:invert transition-all duration-300" 
               />

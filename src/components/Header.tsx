@@ -3,6 +3,7 @@ import { Car, Heart, Menu, X } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import korautoLogo from "@/assets/korauto-logo-black.png";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ const Header = () => {
           <div className="flex items-center space-x-3 flex-shrink-0">
             <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 flex items-center justify-center">
               <img 
-                src="/lovable-uploads/3657dff4-7afd-45bb-9f8a-8d3f4ba8d7b4.png" 
+                src={korautoLogo} 
                 alt="KORAUTO Logo"
                 className="w-full h-full object-contain dark:invert transition-all duration-300"
               />
