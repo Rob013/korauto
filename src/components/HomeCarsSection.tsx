@@ -46,6 +46,7 @@ const HomeCarsSection = () => {
   const [filters, setFilters] = useState<ApiFilters>({});
   const [manufacturers, setManufacturers] = useState<{id: number, name: string}[]>([]);
   const [models, setModels] = useState<{id: number, name: string}[]>([]);
+  const [statistics, setStatistics] = useState<any>(null);
   
   // API configuration
   const API_BASE_URL = 'https://auctionsapi.com/api';
@@ -239,6 +240,36 @@ const HomeCarsSection = () => {
     }
   };
 
+  const fetchStatistics = async (manufacturerId?: string) => {
+    if (!manufacturerId) {
+      setStatistics(null);
+      return;
+    }
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/statistics?manufacturer_id=${manufacturerId}`, {
+        headers: {
+          'Accept': '*/*',
+          'X-API-Key': API_KEY
+        }
+      });
+      const data = await response.json();
+      setStatistics(data);
+    } catch (err) {
+      console.error('Failed to fetch statistics:', err);
+      setStatistics(null);
+    }
+  };
+
+  const formatPrice = (price: string | number) =>
+    price
+      ? new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          maximumFractionDigits: 0,
+        }).format(Number(price))
+      : 'N/A';
+
   // Initial fetch
   useEffect(() => {
     Promise.all([
@@ -247,12 +278,14 @@ const HomeCarsSection = () => {
     ]);
   }, []);
 
-  // Fetch models when manufacturer changes
+  // Fetch models and statistics when manufacturer changes
   useEffect(() => {
     if (filters.manufacturer_id) {
       fetchModels(filters.manufacturer_id);
+      fetchStatistics(filters.manufacturer_id);
     } else {
       setModels([]);
+      setStatistics(null);
     }
   }, [filters.manufacturer_id]);
 
@@ -270,6 +303,7 @@ const HomeCarsSection = () => {
   const clearFilters = () => {
     setFilters({});
     setModels([]);
+    setStatistics(null);
     setShowMoreFilters(false);
     fetchCars();
   };
@@ -483,6 +517,44 @@ const HomeCarsSection = () => {
             </span>
           </div>
         </div>
+
+        {/* Statistics Display */}
+        {statistics && (
+          <div className="bg-card border rounded-lg p-6 mb-8 mx-2 sm:mx-0">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              {manufacturers.find(m => m.id.toString() === filters.manufacturer_id)?.name} Statistikat
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {statistics.total_cars && (
+                <div className="text-center p-4 bg-background rounded-lg">
+                  <div className="text-2xl font-bold text-primary">{statistics.total_cars.toLocaleString()}</div>
+                  <div className="text-sm text-muted-foreground">Makina Totale</div>
+                </div>
+              )}
+              {statistics.average_price && (
+                <div className="text-center p-4 bg-background rounded-lg">
+                  <div className="text-2xl font-bold text-primary">{formatPrice(statistics.average_price)}</div>
+                  <div className="text-sm text-muted-foreground">Çmimi Mesatar</div>
+                </div>
+              )}
+              {statistics.price_range && (
+                <div className="text-center p-4 bg-background rounded-lg">
+                  <div className="text-sm font-bold text-primary">
+                    {formatPrice(statistics.price_range.min)} - {formatPrice(statistics.price_range.max)}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Diapazoni i Çmimit</div>
+                </div>
+              )}
+              {statistics.average_year && (
+                <div className="text-center p-4 bg-background rounded-lg">
+                  <div className="text-2xl font-bold text-primary">{Math.round(statistics.average_year)}</div>
+                  <div className="text-sm text-muted-foreground">Viti Mesatar</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Car Cards */}
         {loading ? (
