@@ -8,8 +8,8 @@ import { Loader2, Search, Grid, List, RefreshCw, Clock, CheckCircle, AlertCircle
 
 interface Car {
   id: string;
-  make: string;
-  model: string;
+  make: { id: number; name: string };
+  model: { id: number; name: string };
   year: number;
   price: number;
   mileage?: number;
@@ -244,7 +244,7 @@ const EncarCatalog = () => {
                 
                 <CardContent className="p-4">
                   <h3 className="font-semibold text-lg mb-2 line-clamp-2">
-                    {car.title || `${car.make} ${car.model} ${car.year}`}
+                   {car.title || `${car.make?.name} ${car.model?.name} ${car.year}`}
                   </h3>
                   
                   <div className="space-y-2 text-sm text-muted-foreground">
@@ -276,7 +276,9 @@ const EncarCatalog = () => {
                     <div className="text-2xl font-bold text-primary">
                       {formatPrice(car.price)}
                     </div>
-                  
+                    <Badge variant="outline">
+                      {car.lot_number || 'Encar'}
+                    </Badge>
                   </div>
                 </CardFooter>
               </Card>
