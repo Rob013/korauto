@@ -144,30 +144,69 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     setError(null);
 
     try {
+      console.log(`🚀 Triggering ${type} sync...`);
+      
       const { data, error: syncError } = await supabase.functions.invoke('encar-sync', {
         body: { type }
       });
 
+      // Handle various error scenarios
       if (syncError) {
-        console.error('Sync function error:', syncError);
-        throw new Error(syncError.message || 'Sync function failed');
+        console.error('❌ Sync function error:', syncError);
+        
+        // Check for specific error types
+        if (syncError.message?.includes('JWT')) {
+          throw new Error('Authentication error - please refresh the page');
+        } else if (syncError.message?.includes('timeout')) {
+          throw new Error('Request timeout - sync may still be running');
+        } else {
+          throw new Error(syncError.message || 'Sync function failed');
+        }
       }
 
-      // ✅ BETTER ERROR HANDLING: Check if response indicates failure
-      if (data && !data.success) {
-        console.error('Sync failed with response:', data);
+      // Validate response structure
+      if (!data || typeof data !== 'object') {
+        throw new Error('Invalid response from sync function');
+      }
+
+      // Check if sync operation failed
+      if (!data.success) {
+        console.error('❌ Sync failed with response:', data);
         throw new Error(data.error || 'Sync operation failed');
       }
 
       console.log('✅ Sync triggered successfully:', data);
       
-      // Refresh sync status and cars after a short delay
-      setTimeout(() => {
-        getSyncStatus();
-        if (type === 'incremental') {
-          fetchCars(1, 100);
-        }
-      }, 1000);
+      // Immediate status refresh
+      await getSyncStatus();
+      
+      // Schedule periodic refreshes for ongoing syncs
+      if (data.status === 'paused' || data.status === 'in_progress') {
+        const refreshInterval = setInterval(async () => {
+          await getSyncStatus();
+          
+          // Stop refreshing if sync is done
+          const currentStatus = await supabase
+            .from('sync_metadata')
+            .select('status')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+            
+          if (currentStatus.data?.status === 'completed' || currentStatus.data?.status === 'failed') {
+            clearInterval(refreshInterval);
+            if (type === 'incremental') {
+              fetchCars(1, 100);
+            }
+          }
+        }, 5000);
+        
+        // Stop refreshing after 10 minutes max
+        setTimeout(() => clearInterval(refreshInterval), 600000);
+      } else if (type === 'incremental') {
+        // For completed syncs, refresh cars immediately
+        setTimeout(() => fetchCars(1, 100), 1000);
+      }
       
     } catch (err) {
       console.error('❌ Error triggering sync:', err);
@@ -186,15 +225,18 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (statusError && statusError.code !== 'PGRST116') {
+      if (statusError) {
+        console.error('❌ Error fetching sync status:', statusError);
         throw statusError;
       }
 
       setSyncStatus(data);
     } catch (err) {
-      console.error('Error fetching sync status:', err);
+      console.error('❌ Error fetching sync status:', err);
+      // Don't set error state for status fetch failures
+      // Just log them and keep the UI working
     }
   };
 
@@ -210,8 +252,10 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
           table: 'sync_metadata'
         },
         (payload) => {
-          console.log('Sync status updated:', payload);
-          setSyncStatus(payload.new as SyncStatus);
+          console.log('📡 Sync status updated:', payload);
+          if (payload.new && typeof payload.new === 'object') {
+            setSyncStatus(payload.new as SyncStatus);
+          }
         }
       )
       .subscribe();
@@ -233,11 +277,13 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
           table: 'cars'
         },
         (payload) => {
-          console.log('New car added:', payload);
-          const newCar = payload.new as Car;
-          if (newCar.source_api === 'auctionapis') {
-            setCars(prev => [newCar, ...prev]);
-            setTotalCount(prev => prev + 1);
+          console.log('🚗 New car added:', payload);
+          if (payload.new && typeof payload.new === 'object') {
+            const newCar = payload.new as Car;
+            if (newCar.source_api === 'auctionapis') {
+              setCars(prev => [newCar, ...prev]);
+              setTotalCount(prev => prev + 1);
+            }
           }
         }
       )
