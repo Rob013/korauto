@@ -209,6 +209,7 @@ const FilteredCarsSection = () => {
   // Sorting and filtering logic
   useEffect(() => {
     if (currentPage > 1) return; 
+    
     let filtered = [...cars];
 
     // Apply filters
@@ -281,7 +282,7 @@ const FilteredCarsSection = () => {
     });
 
     setFilteredCars(filtered);
-  }, [cars, sortBy, filterMake, filterModel, filterYear, filterFuel, filterColor, filterTransmission, filterBodyType, priceRange, mileageRange]);
+  }, [cars, sortBy, filterMake, filterModel, filterYear, filterFuel, filterColor, filterTransmission, filterBodyType, priceRange, mileageRange,currentPage]);
 
   const handleRefresh = () => {
     fetchCars();
