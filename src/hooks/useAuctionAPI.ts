@@ -21,6 +21,10 @@ interface Car {
   lots?: {
     buy_now?: number;
     lot?: string;
+    status?: {
+      name: string;
+      id: number;
+    };
     odometer?: {
       km?: number;
       mi?: number;
@@ -98,10 +102,6 @@ export const useAuctionAPI = () => {
         per_page: '12',
         simple_paginate: '0'
       });
-      
-      // Exclude cars with "sale" status (archived/sold cars)
-      params.append('status[]', '1'); // Active status
-      params.append('status[]', '2'); // Pending status if available
 
       // Add all filter parameters
       Object.entries(filters).forEach(([key, value]) => {
@@ -132,14 +132,21 @@ export const useAuctionAPI = () => {
 
       const data: APIResponse = await response.json();
       
+      // Filter out cars with "sale" status (archived/sold cars)
+      const filteredCars = (data.data || []).filter(car => {
+        if (!car.lots || car.lots.length === 0) return true;
+        // Exclude cars where any lot has "sale" status
+        return !car.lots.some(lot => lot.status?.name === 'sale');
+      });
+      
       setTotalCount(data.meta?.total || 0);
       setHasMorePages(page < (data.meta?.last_page || 1));
       
       if (resetList || page === 1) {
-        setCars(data.data || []);
+        setCars(filteredCars);
         setCurrentPage(1);
       } else {
-        setCars(prev => [...prev, ...(data.data || [])]);
+        setCars(prev => [...prev, ...filteredCars]);
         setCurrentPage(page);
       }
 
@@ -224,10 +231,6 @@ export const useAuctionAPI = () => {
         simple_paginate: '1'
       });
 
-      // Exclude cars with "sale" status (archived/sold cars)
-      params.append('status[]', '1'); // Active status
-      params.append('status[]', '2'); // Pending status if available
-
       Object.entries(filters).forEach(([key, value]) => {
         if (value) {
           params.append(key, value);
@@ -279,10 +282,6 @@ export const useAuctionAPI = () => {
           per_page: '1',
           simple_paginate: '1'
         });
-
-        // Exclude cars with "sale" status (archived/sold cars)
-        params.append('status[]', '1'); // Active status
-        params.append('status[]', '2'); // Pending status if available
 
         Object.entries(cleanFilters).forEach(([key, value]) => {
           if (value) {
