@@ -81,30 +81,52 @@ Deno.serve(async (req) => {
     console.log(`🚀 Starting ${syncType} sync process`);
 
     // PHASE 1: Check for existing sync state or create new one
-    // Look for existing paused sync to resume
-    const { data: existingSync, error: fetchError } = await supabase
+    // First, check if any sync is currently running to prevent multiple instances
+    const { data: runningSyncs, error: runningError } = await supabase
       .from('sync_metadata')
       .select('*')
-      .eq('sync_type', syncType)
-      .eq('status', 'paused')
+      .in('status', ['in_progress', 'paused'])
       .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(5);
 
-    if (fetchError) {
-      console.error('❌ Error fetching existing sync:', fetchError);
-      throw new Error(`Database error: ${fetchError.message}`);
+    if (runningError) {
+      console.error('❌ Error checking running syncs:', runningError);
+      throw new Error(`Database error: ${runningError.message}`);
     }
+
+    // Prevent multiple syncs of the same type from running
+    const conflictingSync = runningSyncs?.find(sync => 
+      sync.sync_type === syncType && sync.status === 'in_progress'
+    );
+    
+    if (conflictingSync) {
+      console.log(`⚠️ Sync of type ${syncType} already in progress, terminating to prevent conflicts`);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: `${syncType} sync already in progress`,
+          existing_sync_id: conflictingSync.id,
+          timestamp: new Date().toISOString()
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Look for existing paused sync to resume
+    const existingSync = runningSyncs?.find(sync => 
+      sync.sync_type === syncType && sync.status === 'paused'
+    );
 
     if (existingSync) {
       syncState = existingSync;
       console.log(`📍 Resuming existing sync from page ${syncState.current_page}`);
     } else {
-      // Mark any in_progress syncs as failed
+      // Clean up old failed/stale syncs
       await supabase
         .from('sync_metadata')
-        .update({ status: 'failed', error_message: 'Superseded by new sync' })
-        .eq('status', 'in_progress');
+        .update({ status: 'failed', error_message: 'Cleaned up by new sync' })
+        .eq('sync_type', syncType)
+        .in('status', ['in_progress', 'paused']);
 
       // Create new sync state
       const { data: newSync, error: syncError } = await supabase
@@ -175,7 +197,7 @@ Deno.serve(async (req) => {
     }
 
     // PHASE 3: Process pages with optimized chunked architecture
-    const PAGES_PER_EXECUTION = 30; // Process 30 pages (1,500 cars) per execution for better reliability
+    const PAGES_PER_EXECUTION = 10; // Process only 10 pages (2,000 cars) per execution to respect rate limits
     let pagesProcessed = 0;
     let currentUrl = apiUrl;
     let hasMore = true;
@@ -203,12 +225,13 @@ Deno.serve(async (req) => {
           });
 
           if (!response.ok) {
-            if (response.status === 429) {
-              // Exponential backoff for rate limiting
-              const waitTime = Math.min(15000 * Math.pow(2, retryCount), 60000); // Max 60s
-              console.log(`⏳ Rate limited, waiting ${waitTime/1000} seconds...`);
+            if (response.status === 429 || response.status === 500) {
+              // More conservative backoff for rate limiting and server errors
+              const baseWait = response.status === 429 ? 30000 : 45000; // 30s for 429, 45s for 500
+              const waitTime = Math.min(baseWait + (retryCount * 15000), 120000); // Max 2 minutes
+              console.log(`⏳ ${response.status === 429 ? 'Rate limited' : 'Server error'}, waiting ${waitTime/1000} seconds...`);
               await new Promise(resolve => setTimeout(resolve, waitTime));
-              retryCount++; // Count rate limit as a retry
+              retryCount++; // Count as a retry
               continue;
             }
             throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -394,16 +417,22 @@ Deno.serve(async (req) => {
       finalStatus = 'paused';
       console.log(`⏸️ Pausing after ${pagesProcessed} pages. Total so far: ${syncState.synced_records} cars`);
       
-      // Trigger continuation with circuit breaker pattern
+      // Trigger continuation with more conservative timing to prevent rate limits
       EdgeRuntime.waitUntil((async () => {
         try {
-          // Wait before continuation with jitter to prevent thundering herd
-          const waitTime = 2000 + Math.random() * 3000; // 2-5 seconds
+          // Wait much longer before continuation to respect API rate limits
+          const baseWait = 60000; // 1 minute base wait
+          const jitter = Math.random() * 30000; // 0-30 seconds jitter
+          const waitTime = baseWait + jitter;
+          
+          console.log(`⏰ Waiting ${Math.round(waitTime/1000)}s before triggering continuation to respect rate limits`);
           await new Promise(resolve => setTimeout(resolve, waitTime));
           
           // Use direct HTTP call for more reliable continuation
           const supabaseUrl = Deno.env.get('SUPABASE_URL');
           const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+          
+          console.log(`🔄 Now triggering continuation for ${syncType} sync`);
           
           const continueResponse = await fetch(`${supabaseUrl}/functions/v1/encar-sync?type=${syncType}`, {
             method: 'POST',
@@ -412,30 +441,42 @@ Deno.serve(async (req) => {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({ type: syncType }),
-            signal: AbortSignal.timeout(10000) // 10 second timeout for continuation
+            signal: AbortSignal.timeout(15000) // 15 second timeout for continuation
           });
           
           if (!continueResponse.ok) {
-            throw new Error(`HTTP ${continueResponse.status}: ${continueResponse.statusText}`);
+            // Don't fail the sync for continuation issues - let user manually trigger
+            console.warn(`⚠️ Continuation request failed: HTTP ${continueResponse.status}`);
+            
+            // Just mark as paused and let admin manually continue
+            await supabase
+              .from('sync_metadata')
+              .update({
+                status: 'paused',
+                error_message: `Auto-continuation failed: HTTP ${continueResponse.status}. Manual restart needed.`,
+                last_updated: new Date().toISOString()
+              })
+              .eq('id', syncState!.id);
+            return;
           }
           
           const continueData = await continueResponse.json();
           console.log(`🚀 Triggered continuation successfully:`, continueData);
           
         } catch (error) {
-          console.error(`⚠️ Critical error in continuation:`, error.message);
-          // Mark sync as failed with robust error handling
+          console.error(`⚠️ Error in continuation - marking as paused for manual restart:`, error.message);
+          // Don't fail the sync - just mark as paused for manual continuation
           try {
             await supabase
               .from('sync_metadata')
               .update({
-                status: 'failed',
-                error_message: `Continuation failed: ${error.message}`.substring(0, 500),
+                status: 'paused',
+                error_message: `Auto-continuation failed: ${error.message}. Manual restart needed.`,
                 last_updated: new Date().toISOString()
               })
               .eq('id', syncState!.id);
           } catch (updateError) {
-            console.error(`❌ Could not mark sync as failed:`, updateError.message);
+            console.error(`❌ Could not update sync status:`, updateError.message);
           }
         }
       })());
