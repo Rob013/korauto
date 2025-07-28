@@ -238,7 +238,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
                         disabled={isDisabled}
                         className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
                       >
-                        {name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')} {count !== undefined && `(${count})`}
+                        {name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')}
                       </SelectItem>
                     );
                   })}
@@ -264,7 +264,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
                         disabled={isDisabled}
                         className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
                       >
-                        {name.charAt(0).toUpperCase() + name.slice(1)} {count !== undefined && `(${count})`}
+                        {name.charAt(0).toUpperCase() + name.slice(1)}
                       </SelectItem>
                     );
                   })}
@@ -290,7 +290,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
                         disabled={isDisabled}
                         className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
                       >
-                        {name.charAt(0).toUpperCase() + name.slice(1)} {count !== undefined && `(${count})`}
+                        {name.charAt(0).toUpperCase() + name.slice(1)}
                       </SelectItem>
                     );
                   })}
