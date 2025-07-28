@@ -893,7 +893,7 @@ const CarDetails = () => {
                 <div className="mt-6 pt-6 border-t border-border">
                   <div className="flex items-center gap-3 text-muted-foreground">
                     <MapPin className="h-4 w-4" />
-                    <span className="text-sm">Lokacioni: Mitrovicë, Kosovë</span>
+                    <span className="text-sm">Lokacioni: Rruga Mbretëresha Teuta 10, Prishtinë, Kosovë</span>
                   </div>
                 </div>
               </CardContent>
