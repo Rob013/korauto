@@ -102,11 +102,20 @@ const EncarCatalog = () => {
     setLoadingMore(false);
   };
 
-  const formatPrice = (price: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(price);
+const formatPrice = (price: string) =>
+  price
+    ? new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        maximumFractionDigits: 0,
+      }).format(Number(price))
+    : 'N/A';
 
-  const formatMileage = (mileage?: number) =>
-    mileage ? new Intl.NumberFormat('en-US').format(mileage) + ' km' : 'N/A';
+const formatMileage = (mileage?: string) =>
+  mileage && !isNaN(Number(mileage))
+    ? `${new Intl.NumberFormat('en-US').format(Number(mileage))} km`
+    : 'N/A';
+
 
   useEffect(() => {
     setLoading(true);
