@@ -185,6 +185,13 @@ const AuthPage = () => {
                   {loading ? "Signing in..." : "Sign In"}
                 </Button>
               </form>
+              
+              {/* Admin hint */}
+              <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg text-center">
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  <strong>Admin Access:</strong> Use admin@korauto.com with password KorAuto2024!
+                </p>
+              </div>
             </TabsContent>
             
             <TabsContent value="signup" className="space-y-4">
