@@ -1,12 +1,12 @@
 import Header from "@/components/Header";
-import CatalogCarsSection from "@/components/CatalogCarsSection";
+import EncarCatalog from "@/components/EncarCatalog";
 import Footer from "@/components/Footer";
 
 const Catalog = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <CatalogCarsSection />
+      <EncarCatalog />
       <Footer />
     </div>
   );

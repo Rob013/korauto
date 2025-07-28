@@ -2,3 +2,6 @@ project_id = "qtyyiqimkysmjnaocswe"
 
 [functions.send-inspection-notification]
 verify_jwt = false
+
+[functions.encar-sync]
+verify_jwt = false
