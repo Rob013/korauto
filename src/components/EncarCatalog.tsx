@@ -241,7 +241,7 @@ const formatMileage = (mileage?: string) =>
                 <CardHeader className="p-0">
                   <div className="aspect-video relative overflow-hidden">
                     <img
-                      src={car.image_url || (car.images ? JSON.parse(car.images)?.[0] : null) || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800'}
+                      src={car.lots?.[0]?.images?.normal?.[0] ?? || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800'}
                       alt={car.title || `${car.make} ${car.model}`}
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                       onError={(e) => {
