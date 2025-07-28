@@ -21,6 +21,10 @@ interface Car {
   lots?: {
     buy_now?: number;
     lot?: string;
+    status?: {
+      name: string;
+      id: number;
+    };
     odometer?: {
       km?: number;
       mi?: number;
@@ -96,8 +100,7 @@ export const useAuctionAPI = () => {
       const params = new URLSearchParams({
         page: page.toString(),
         per_page: '12',
-        simple_paginate: '0',
-        archived: 'false'  // Exclude archived cars
+        simple_paginate: '0'
       });
 
       // Add all filter parameters
@@ -129,14 +132,21 @@ export const useAuctionAPI = () => {
 
       const data: APIResponse = await response.json();
       
+      // Filter out cars with "sale" status (archived/sold cars)
+      const filteredCars = (data.data || []).filter(car => {
+        if (!car.lots || car.lots.length === 0) return true;
+        // Exclude cars where any lot has "sale" status
+        return !car.lots.some(lot => lot.status?.name === 'sale');
+      });
+      
       setTotalCount(data.meta?.total || 0);
       setHasMorePages(page < (data.meta?.last_page || 1));
       
       if (resetList || page === 1) {
-        setCars(data.data || []);
+        setCars(filteredCars);
         setCurrentPage(1);
       } else {
-        setCars(prev => [...prev, ...(data.data || [])]);
+        setCars(prev => [...prev, ...filteredCars]);
         setCurrentPage(page);
       }
 
