@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
       // Build fresh URL
       const baseUrl = new URL('https://auctionsapi.com/api/cars');
       baseUrl.searchParams.set('api_key', 'd00985c77981fe8d26be16735f932ed1');
-      baseUrl.searchParams.set('limit', '50');
+      baseUrl.searchParams.set('limit', '200');
       
       if (syncState.current_page > 1) {
         baseUrl.searchParams.set('page', syncState.current_page.toString());
@@ -356,7 +356,7 @@ Deno.serve(async (req) => {
             // Try to build next URL manually if possible
             const baseUrl = new URL('https://auctionsapi.com/api/cars');
             baseUrl.searchParams.set('api_key', 'd00985c77981fe8d26be16735f932ed1');
-            baseUrl.searchParams.set('limit', '50');
+            baseUrl.searchParams.set('limit', '200');
             baseUrl.searchParams.set('page', syncState.current_page.toString());
             currentUrl = baseUrl.toString();
             
