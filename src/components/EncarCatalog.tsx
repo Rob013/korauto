@@ -338,7 +338,7 @@ const formatMileage = (mileage?: string | number) =>
             Katalog Makinash
           </h1>
           <p className="text-muted-foreground mt-2">
-            Shfletoni {totalCount.toLocaleString()} makina autentike koreane nga Encar.com
+            {totalCount.toLocaleString()} makina të disponueshme
           </p>
         </div>
         
