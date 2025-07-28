@@ -263,7 +263,9 @@ const formatMileage = (mileage?: string) =>
                     </div>
                     <div className="flex justify-between">
                       <span>Mileage:</span>
-                      <span className="font-medium">{formatMileage(car.mileage)}</span>
+                     <span className="font-medium">
+                      {car.mileage || 'no mileage'} ({formatMileage(car.mileage)})
+                    </span>
                     </div>
                     {car.fuel && (
                       <div className="flex justify-between">
