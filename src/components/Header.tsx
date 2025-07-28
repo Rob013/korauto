@@ -17,7 +17,7 @@ const Header = () => {
           <div className="flex items-center space-x-4 flex-shrink-0">
             <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 flex items-center justify-center">
               <img 
-                src="/lovable-uploads/3657dff4-7afd-45bb-9f8a-8d3f4ba8d7b4.png" 
+                src="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png" 
                 alt="KORAUTO Logo"
                 className="w-full h-full object-contain dark:invert transition-all duration-300"
               />

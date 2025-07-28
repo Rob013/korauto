@@ -8,7 +8,7 @@ const HomeSection = () => {
           <div className="mb-8">
             <div className="w-56 h-56 sm:w-64 sm:h-64 md:w-72 md:h-72 mx-auto flex items-center justify-center mb-4">
               <img 
-                src="/lovable-uploads/3657dff4-7afd-45bb-9f8a-8d3f4ba8d7b4.png" 
+                src="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png" 
                 alt="KORAUTO Logo" 
                 className="w-full h-full object-contain dark:invert transition-all duration-300" 
               />
