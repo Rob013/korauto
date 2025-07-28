@@ -270,7 +270,7 @@ const formatMileage = (mileage?: string | number) =>
                   <SelectValue placeholder="All manufacturers" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.from(new Set(cars.map(car => car.manufacturer?.name).filter(Boolean))).map(manufacturer => (
+                  {Array.from(new Set(cars.map(car => car.manufacturer?.name).filter(name => name && name.trim().length > 0))).map(manufacturer => (
                     <SelectItem key={manufacturer} value={manufacturer!}>{manufacturer}</SelectItem>
                   ))}
                 </SelectContent>
@@ -284,7 +284,7 @@ const formatMileage = (mileage?: string | number) =>
                   <SelectValue placeholder="All fuel types" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.from(new Set(cars.map(car => car.fuel?.name).filter(Boolean))).map(fuel => (
+                  {Array.from(new Set(cars.map(car => car.fuel?.name).filter(name => name && name.trim().length > 0))).map(fuel => (
                     <SelectItem key={fuel} value={fuel!}>{fuel}</SelectItem>
                   ))}
                 </SelectContent>
@@ -298,7 +298,7 @@ const formatMileage = (mileage?: string | number) =>
                   <SelectValue placeholder="All transmissions" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.from(new Set(cars.map(car => car.transmission?.name).filter(Boolean))).map(transmission => (
+                  {Array.from(new Set(cars.map(car => car.transmission?.name).filter(name => name && name.trim().length > 0))).map(transmission => (
                     <SelectItem key={transmission} value={transmission!}>{transmission}</SelectItem>
                   ))}
                 </SelectContent>
