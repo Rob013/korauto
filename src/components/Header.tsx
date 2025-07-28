@@ -95,49 +95,10 @@ const Header = () => {
             </div>
           </div>
 
-          {/* Desktop CTA Buttons */}
-          <div className="hidden md:flex items-center gap-3">
-            <ThemeToggle />
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200 rounded-full px-4"
-              onClick={() => {
-                const message = "Përshëndetje! Dëshiroj informacion për shërbimet tuaja të inspektimit të makinave.";
-                const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
-                window.open(whatsappUrl, '_blank');
-              }}
-              aria-label="Kontaktoni nëpërmjet WhatsApp për informacion rreth shërbimeve"
-            >
-              Na Kontaktoni
-            </Button>
-            <Button 
-              size="sm" 
-              className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 rounded-full px-6 hover:scale-105"
-              onClick={() => document.getElementById('cars')?.scrollIntoView({ behavior: 'smooth' })}
-              aria-label="Shikoni listën e makinave të disponueshme"
-            >
-              Shiko Makinat
-            </Button>
-          </div>
-
-          {/* Mobile menu button and theme toggle */}
-          <div className="flex items-center gap-2 md:hidden">
-            <ThemeToggle />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2"
-              aria-label="Toggle mobile menu"
-            >
-              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </Button>
-          </div>
         </div>
       </div>
 
-      {/* Mobile Navigation Menu */}
+      {/* Mobile Navigation */}
       {isMobileMenuOpen && (
         <div className="lg:hidden bg-background border-t border-border shadow-lg">
           <div className="container mx-auto px-4 py-4">
