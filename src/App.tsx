@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Catalog from "./pages/Catalog";
 import CarDetails from "./pages/CarDetails";
-import CarDetailsOptimized from "./pages/CarDetailsOptimized";
+import CarDetailsOptimized from "./components/CarDetailsOptimized";
 import AdminDashboard from "./pages/AdminDashboard";
 import AuthPage from "./pages/AuthPage";
 import FavoritesPage from "./pages/FavoritesPage";
