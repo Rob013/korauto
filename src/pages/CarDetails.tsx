@@ -153,10 +153,15 @@ const CarDetails = () => {
     if (!lot) return;
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      setLoading(true);
+      setError(null);
+      console.log('🔍 Fetching car details for lot:', lot);
 
-      const response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // Increased timeout
+
+      // First try the lot search endpoint
+      let response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
         headers: {
           accept: '*/*',
           'x-api-key': API_KEY,
@@ -167,15 +172,75 @@ const CarDetails = () => {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
+        console.log('❌ Lot search failed, trying cars cache...');
+        // Fallback: try to get from our cached cars
+        const { data: cachedCar } = await supabase
+          .from('cars_cache')
+          .select('*')
+          .eq('lot_number', lot)
+          .single();
+
+        if (cachedCar) {
+          console.log('✅ Found car in cache:', cachedCar);
+          const images = cachedCar.images ? 
+            (typeof cachedCar.images === 'string' ? JSON.parse(cachedCar.images) : cachedCar.images) : [];
+          
+          const carData = cachedCar.car_data ? 
+            (typeof cachedCar.car_data === 'string' ? JSON.parse(cachedCar.car_data) : cachedCar.car_data) : {};
+          
+          const lotData = cachedCar.lot_data ? 
+            (typeof cachedCar.lot_data === 'string' ? JSON.parse(cachedCar.lot_data) : cachedCar.lot_data) : {};
+
+          const transformedCar: CarDetails = {
+            id: cachedCar.id,
+            make: cachedCar.make,
+            model: cachedCar.model,
+            year: cachedCar.year,
+            price: cachedCar.price || 25000,
+            image: Array.isArray(images) ? images[0] : undefined,
+            images: Array.isArray(images) ? images : [],
+            vin: cachedCar.vin,
+            mileage: cachedCar.mileage,
+            transmission: cachedCar.transmission,
+            fuel: cachedCar.fuel,
+            color: cachedCar.color,
+            condition: cachedCar.condition,
+            lot: cachedCar.lot_number,
+            title: `${cachedCar.make} ${cachedCar.model}`,
+            features: [`Transmisioni: ${cachedCar.transmission}`, `Karburanti: ${cachedCar.fuel}`].filter(Boolean),
+            safety_features: [],
+            comfort_features: [],
+            performance_rating: 4.5,
+            popularity_score: 85,
+            // Parse JSON data if available
+            insurance: carData.insurance,
+            insurance_v2: carData.insurance_v2,
+            location: carData.location,
+            inspect: carData.inspect,
+            details: lotData,
+          };
+
+          setCar(transformedCar);
+          setLoading(false);
+          return;
+        }
+
         throw new Error(`API returned ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
+      console.log('📦 API Response:', data);
+      
       const carData = data.data;
       const lotData = carData.lots?.[0];
-      console.log("lotsdata",lotData)
 
-      if (!lotData) throw new Error("Missing lot data");
+      if (!lotData) {
+        console.error('❌ No lot data found in response');
+        throw new Error("Missing lot data");
+      }
+
+      console.log('🚗 Car data:', carData);
+      console.log('📋 Lot data:', lotData);
 
       const basePrice = lotData.buy_now ?? lotData.final_bid ?? lotData.price ?? 25000;
       const price = convertUSDtoEUR(Math.round(basePrice + 2200));
@@ -224,11 +289,12 @@ const CarDetails = () => {
         details: lotData.details,
       };
 
+      console.log('✅ Transformed car:', transformedCar);
       setCar(transformedCar);
       setLoading(false);
     } catch (apiError) {
-      console.error('❌ Failed to fetch from lot endpoint:', apiError);
-      setError('Failed to load car data');
+      console.error('❌ Failed to fetch car details:', apiError);
+      setError('Failed to load car data. Please try again.');
       setLoading(false);
     }
   };
