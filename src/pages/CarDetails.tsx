@@ -493,22 +493,6 @@ const CarDetails = () => {
             margin-top: 20px;
           }
           
-          .show-more-btn {
-            background: hsl(var(--secondary));
-            color: hsl(var(--secondary-foreground));
-            border: 1px solid hsl(var(--border));
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: 500;
-            margin-top: 10px;
-            transition: all 0.2s ease;
-          }
-          .show-more-btn:hover {
-            background: hsl(var(--accent));
-          }
-          
           @media (max-width: 768px) {
             .container { padding: 15px; }
             .title { font-size: 2rem; }
@@ -542,162 +526,141 @@ const CarDetails = () => {
             <div class="title">${car.year} ${car.make} ${car.model}</div>
             <div class="subtitle">€${car.price.toLocaleString()} • Lot #${car.lot || 'N/A'}</div>
           </div>
+          
+          <script>
+            function toggleTheme() {
+              const html = document.documentElement;
+              const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
+              const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+              
+              html.classList.remove('light', 'dark');
+              html.classList.add(newTheme);
+              
+              // Update toggle icon
+              const toggle = document.getElementById('themeToggle');
+              if (newTheme === 'dark') {
+                toggle.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>';
+              } else {
+                toggle.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>';
+              }
+            }
+          </script>
 
-          ${true ? `
+          ${car.insurance_v2 || car.insurance || car.inspect ? `
           <div class="section">
             <div class="section-header">
               🛡️ Insurance & Safety Report
             </div>
             <div class="section-content">
               <div class="info-grid">
+                ${car.insurance_v2?.accidentCnt !== undefined ? `
                 <div class="info-item">
                   <div class="info-label">Accident History</div>
                   <div class="info-value">
-                    <span class="badge ${car.insurance_v2?.accidentCnt === 0 ? 'badge-success' : car.insurance_v2?.accidentCnt > 0 ? 'badge-danger' : 'badge-outline'}">
-                      ${car.insurance_v2?.accidentCnt !== undefined 
-                        ? (car.insurance_v2.accidentCnt === 0 ? '✅ Clean Record' : `⚠️ ${car.insurance_v2.accidentCnt} accidents`)
-                        : 'None'
-                      }
+                    <span class="badge ${car.insurance_v2.accidentCnt === 0 ? 'badge-success' : 'badge-danger'}">
+                      ${car.insurance_v2.accidentCnt === 0 ? '✅ Clean Record' : `⚠️ ${car.insurance_v2.accidentCnt} accidents`}
                     </span>
                   </div>
-                </div>
+                </div>` : ''}
+                ${car.insurance_v2?.ownerChangeCnt !== undefined ? `
                 <div class="info-item">
                   <div class="info-label">Previous Owners</div>
-                  <div class="info-value">${car.insurance_v2?.ownerChangeCnt !== undefined ? car.insurance_v2.ownerChangeCnt + ' owners' : 'None'}</div>
-                </div>
+                  <div class="info-value">${car.insurance_v2.ownerChangeCnt} owners</div>
+                </div>` : ''}
+                ${car.insurance_v2?.totalLossCnt > 0 ? `
                 <div class="info-item">
                   <div class="info-label">Total Loss Claims</div>
-                  <div class="info-value">
-                    <span class="badge ${car.insurance_v2?.totalLossCnt > 0 ? 'badge-danger' : 'badge-outline'}">
-                      ${car.insurance_v2?.totalLossCnt > 0 ? `🚨 ${car.insurance_v2.totalLossCnt} claims` : 'None'}
-                    </span>
-                  </div>
-                </div>
+                  <div class="info-value"><span class="badge badge-danger">🚨 ${car.insurance_v2.totalLossCnt} claims</span></div>
+                </div>` : ''}
+                ${car.insurance_v2?.floodTotalLossCnt > 0 ? `
                 <div class="info-item">
-                  <div class="info-label">Flood Damage History</div>
-                  <div class="info-value">
-                    <span class="badge ${car.insurance_v2?.floodTotalLossCnt > 0 ? 'badge-danger' : 'badge-outline'}">
-                      ${car.insurance_v2?.floodTotalLossCnt > 0 ? `🌊 ${car.insurance_v2.floodTotalLossCnt} incidents` : 'None'}
-                    </span>
-                  </div>
-                </div>
+                  <div class="info-label">Flood Damage</div>
+                  <div class="info-value"><span class="badge badge-danger">🌊 ${car.insurance_v2.floodTotalLossCnt} incidents</span></div>
+                </div>` : ''}
+                ${car.keys_available !== undefined ? `
                 <div class="info-item">
                   <div class="info-label">Keys Availability</div>
                   <div class="info-value">
-                    <span class="badge ${car.keys_available ? 'badge-success' : car.keys_available === false ? 'badge-danger' : 'badge-outline'}">
-                      ${car.keys_available !== undefined 
-                        ? (car.keys_available ? '🔑 Available' : '❌ Not Available')
-                        : 'None'
-                      }
+                    <span class="badge ${car.keys_available ? 'badge-success' : 'badge-danger'}">
+                      ${car.keys_available ? '🔑 Available' : '❌ Not Available'}
                     </span>
                   </div>
-                </div>
+                </div>` : ''}
+                ${car.inspect?.accident_summary?.accident && car.inspect.accident_summary.accident !== "doesn't exist" ? `
                 <div class="info-item">
                   <div class="info-label">Inspection Summary</div>
                   <div class="info-value">
-                    <span class="badge ${car.inspect?.accident_summary?.accident && car.inspect.accident_summary.accident !== "doesn't exist" ? 'badge-warning' : 'badge-outline'}">
-                      ${car.inspect?.accident_summary?.accident && car.inspect.accident_summary.accident !== "doesn't exist" 
-                        ? `⚠️ ${car.inspect.accident_summary.accident}`
-                        : 'None'
-                      }
-                    </span>
+                    <span class="badge badge-warning">⚠️ ${car.inspect.accident_summary.accident}</span>
                   </div>
-                </div>
+                </div>` : ''}
               </div>
             </div>
           </div>` : ''}
 
-          ${true ? `
+          ${car.details ? `
           <div class="section">
             <div class="section-header">
               🚗 Vehicle Details
             </div>
             <div class="section-content">
               <div class="info-grid">
+                ${car.details.engine_volume ? `
                 <div class="info-item">
                   <div class="info-label">Engine Volume</div>
-                  <div class="info-value">🔧 ${car.details?.engine_volume ? car.details.engine_volume + 'cc' : 'None'}</div>
-                </div>
+                  <div class="info-value">🔧 ${car.details.engine_volume}cc</div>
+                </div>` : ''}
+                ${car.details.first_registration ? `
                 <div class="info-item">
                   <div class="info-label">First Registration</div>
-                  <div class="info-value">📅 ${car.details?.first_registration 
-                    ? `${car.details.first_registration.year}-${String(car.details.first_registration.month).padStart(2, '0')}-${String(car.details.first_registration.day).padStart(2, '0')}`
-                    : 'None'
-                  }</div>
-                </div>
+                  <div class="info-value">📅 ${car.details.first_registration.year}-${String(car.details.first_registration.month).padStart(2, '0')}-${String(car.details.first_registration.day).padStart(2, '0')}</div>
+                </div>` : ''}
+                ${car.details.badge ? `
                 <div class="info-item">
                   <div class="info-label">Vehicle Badge/Trim</div>
-                  <div class="info-value">🏷️ ${car.details?.badge || 'None'}</div>
-                </div>
+                  <div class="info-value">🏷️ ${car.details.badge}</div>
+                </div>` : ''}
+                ${car.details.seats_count ? `
                 <div class="info-item">
                   <div class="info-label">Number of Seats</div>
-                  <div class="info-value">👥 ${car.details?.seats_count ? car.details.seats_count + ' seats' : 'None'}</div>
-                </div>
+                  <div class="info-value">👥 ${car.details.seats_count} seats</div>
+                </div>` : ''}
+                ${car.details.sell_type ? `
                 <div class="info-item">
                   <div class="info-label">Sale Type</div>
-                  <div class="info-value">🏪 ${car.details?.sell_type ? car.details.sell_type.charAt(0).toUpperCase() + car.details.sell_type.slice(1) : 'None'}</div>
-                </div>
+                  <div class="info-value">🏪 ${car.details.sell_type.charAt(0).toUpperCase() + car.details.sell_type.slice(1)}</div>
+                </div>` : ''}
               </div>
             </div>
           </div>` : ''}
 
-          ${true ? `
+          ${car.details?.options ? `
           <div class="section">
             <div class="section-header">
               ⚙️ Equipment & Options
             </div>
             <div class="section-content">
+              ${car.details.options.standard?.length ? `
               <div class="info-item">
                 <div class="info-label">Standard Equipment</div>
                 <div class="options-grid">
-                  ${car.details?.options?.standard?.length ? `
-                  <div id="standard-options">
-                    ${car.details.options.standard.slice(0, 5).map(option => `<span class="badge badge-info">${option}</span>`).join('')}
-                  </div>
-                  ${car.details.options.standard.length > 5 ? `
-                  <div id="standard-hidden" style="display: none;">
-                    ${car.details.options.standard.slice(5).map(option => `<span class="badge badge-info">${option}</span>`).join('')}
-                  </div>
-                  <button onclick="toggleOptions('standard')" id="standard-toggle" class="show-more-btn">
-                    Show ${car.details.options.standard.length - 5} more
-                  </button>` : ''}
-                  ` : '<span class="badge badge-outline">None</span>'}
+                  ${car.details.options.standard.slice(0, 5).map(option => `<span class="badge badge-info">${option}</span>`).join('')}
+                  ${car.details.options.standard.length > 5 ? `<span class="badge badge-outline">+${car.details.options.standard.length - 5} more</span>` : ''}
                 </div>
-              </div>
+              </div>` : ''}
+              ${car.details.options.choice?.length ? `
               <div class="info-item">
                 <div class="info-label">Optional Equipment</div>
                 <div class="options-grid">
-                  ${car.details?.options?.choice?.length ? `
-                  <div id="choice-options">
-                    ${car.details.options.choice.slice(0, 5).map(option => `<span class="badge badge-success">${option}</span>`).join('')}
-                  </div>
-                  ${car.details.options.choice.length > 5 ? `
-                  <div id="choice-hidden" style="display: none;">
-                    ${car.details.options.choice.slice(5).map(option => `<span class="badge badge-success">${option}</span>`).join('')}
-                  </div>
-                  <button onclick="toggleOptions('choice')" id="choice-toggle" class="show-more-btn">
-                    Show ${car.details.options.choice.length - 5} more
-                  </button>` : ''}
-                  ` : '<span class="badge badge-outline">None</span>'}
+                  ${car.details.options.choice.map(option => `<span class="badge badge-success">${option}</span>`).join('')}
                 </div>
-              </div>
+              </div>` : ''}
+              ${car.details.options.tuning?.length ? `
               <div class="info-item">
                 <div class="info-label">Tuning Modifications</div>
                 <div class="options-grid">
-                  ${car.details?.options?.tuning?.length ? `
-                  <div id="tuning-options">
-                    ${car.details.options.tuning.slice(0, 5).map(option => `<span class="badge badge-warning">${option}</span>`).join('')}
-                  </div>
-                  ${car.details.options.tuning.length > 5 ? `
-                  <div id="tuning-hidden" style="display: none;">
-                    ${car.details.options.tuning.slice(5).map(option => `<span class="badge badge-warning">${option}</span>`).join('')}
-                  </div>
-                  <button onclick="toggleOptions('tuning')" id="tuning-toggle" class="show-more-btn">
-                    Show ${car.details.options.tuning.length - 5} more
-                  </button>` : ''}
-                  ` : '<span class="badge badge-outline">None</span>'}
+                  ${car.details.options.tuning.map(option => `<span class="badge badge-warning">${option}</span>`).join('')}
                 </div>
-              </div>
+              </div>` : ''}
             </div>
           </div>` : ''}
 
@@ -708,145 +671,22 @@ const CarDetails = () => {
             </div>
             <div class="section-content">
               <div class="car-diagram">
-                <h4 style="text-align: center; margin-bottom: 20px; color: hsl(var(--foreground));">Vehicle Inspection Diagram</h4>
-                
-                <!-- Car Inspection Diagram - Simple Black Lines -->
-                <div style="display: flex; justify-content: center; margin-bottom: 30px;">
-                  <svg width="800" height="500" viewBox="0 0 800 500" style="border: 1px solid hsl(var(--border)); border-radius: 8px; background: hsl(var(--card));">
-                    <!-- Title -->
-                    <text x="400" y="25" text-anchor="middle" fill="hsl(var(--foreground))" font-size="18" font-weight="bold">Vehicle Inspection Diagram</text>
-                    
-                    <!-- Front View (앞/전방) -->
-                    <g transform="translate(50, 60)">
-                      <text x="150" y="-5" text-anchor="middle" fill="hsl(var(--foreground))" font-size="14" font-weight="bold">Front View (앞/전방)</text>
-                      
-                      <!-- Car outline from front - Simple black lines -->
-                      <path d="M50 50 L50 280 L80 300 L220 300 L250 280 L250 50 Z" 
-                            fill="white" stroke="black" stroke-width="2"/>
-                      
-                      <!-- Hood -->
-                      <rect x="70" y="50" width="160" height="40" fill="white" stroke="black" stroke-width="1" id="hood-front"/>
-                      <text x="150" y="75" text-anchor="middle" fill="black" font-size="10" font-weight="bold">Hood</text>
-                      <text x="150" y="63" text-anchor="middle" fill="red" font-size="14" font-weight="bold" id="hood-marker"></text>
-                      
-                      <!-- Front Bumper -->
-                      <rect x="60" y="90" width="180" height="25" fill="white" stroke="black" stroke-width="1" id="front-bumper-main"/>
-                      <text x="150" y="107" text-anchor="middle" fill="black" font-size="10" font-weight="bold">Front Bumper</text>
-                      <text x="150" y="98" text-anchor="middle" fill="red" font-size="14" font-weight="bold" id="front-bumper-marker"></text>
-                      
-                      <!-- Left Front Fender -->
-                      <rect x="50" y="115" width="40" height="60" fill="white" stroke="black" stroke-width="1" id="left-front-fender"/>
-                      <text x="70" y="150" text-anchor="middle" fill="black" font-size="9" font-weight="bold">L Fender</text>
-                      <text x="70" y="130" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="left-front-fender-marker"></text>
-                      
-                      <!-- Right Front Fender -->
-                      <rect x="210" y="115" width="40" height="60" fill="white" stroke="black" stroke-width="1" id="right-front-fender"/>
-                      <text x="230" y="150" text-anchor="middle" fill="black" font-size="9" font-weight="bold">R Fender</text>
-                      <text x="230" y="130" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="right-front-fender-marker"></text>
-                      
-                      <!-- Left Front Door -->
-                      <rect x="90" y="115" width="50" height="80" fill="white" stroke="black" stroke-width="1" id="left-front-door"/>
-                      <text x="115" y="160" text-anchor="middle" fill="black" font-size="9" font-weight="bold">L F Door</text>
-                      <text x="115" y="140" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="left-front-door-marker"></text>
-                      
-                      <!-- Right Front Door -->
-                      <rect x="160" y="115" width="50" height="80" fill="white" stroke="black" stroke-width="1" id="right-front-door"/>
-                      <text x="185" y="160" text-anchor="middle" fill="black" font-size="9" font-weight="bold">R F Door</text>
-                      <text x="185" y="140" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="right-front-door-marker"></text>
-                      
-                      <!-- Left Rear Door -->
-                      <rect x="90" y="195" width="50" height="70" fill="white" stroke="black" stroke-width="1" id="left-rear-door"/>
-                      <text x="115" y="235" text-anchor="middle" fill="black" font-size="9" font-weight="bold">L R Door</text>
-                      <text x="115" y="215" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="left-rear-door-marker"></text>
-                      
-                      <!-- Right Rear Door -->
-                      <rect x="160" y="195" width="50" height="70" fill="white" stroke="black" stroke-width="1" id="right-rear-door"/>
-                      <text x="185" y="235" text-anchor="middle" fill="black" font-size="9" font-weight="bold">R R Door</text>
-                      <text x="185" y="215" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="right-rear-door-marker"></text>
-                      
-                      <!-- Trunk -->
-                      <rect x="70" y="265" width="160" height="35" fill="white" stroke="black" stroke-width="1" id="trunk-main"/>
-                      <text x="150" y="285" text-anchor="middle" fill="black" font-size="10" font-weight="bold">Trunk</text>
-                      <text x="150" y="275" text-anchor="middle" fill="red" font-size="14" font-weight="bold" id="trunk-marker"></text>
-                      
-                      <!-- Wheels -->
-                      <circle cx="80" cy="320" r="15" fill="white" stroke="black" stroke-width="2" id="front-left-wheel"/>
-                      <circle cx="220" cy="320" r="15" fill="white" stroke="black" stroke-width="2" id="front-right-wheel"/>
-                    </g>
-                    
-                    <!-- Top View (위/후방) -->
-                    <g transform="translate(400, 60)">
-                      <text x="150" y="-5" text-anchor="middle" fill="hsl(var(--foreground))" font-size="14" font-weight="bold">Top View (위/후방)</text>
-                      
-                      <!-- Car outline from top -->
-                      <path d="M80 50 L80 80 L50 100 L50 250 L80 270 L220 270 L250 250 L250 100 L220 80 L220 50 Z" 
-                            fill="white" stroke="black" stroke-width="2"/>
-                      
-                      <!-- Roof -->
-                      <rect x="80" y="50" width="140" height="220" fill="white" stroke="black" stroke-width="1" id="roof-main"/>
-                      <text x="150" y="165" text-anchor="middle" fill="black" font-size="12" font-weight="bold">Roof</text>
-                      <text x="150" y="145" text-anchor="middle" fill="red" font-size="14" font-weight="bold" id="roof-marker"></text>
-                      
-                      <!-- Windshield -->
-                      <rect x="85" y="55" width="130" height="25" fill="white" stroke="black" stroke-width="1"/>
-                      <text x="150" y="72" text-anchor="middle" fill="black" font-size="9">Windshield</text>
-                      
-                      <!-- Rear Window -->
-                      <rect x="85" y="240" width="130" height="25" fill="white" stroke="black" stroke-width="1"/>
-                      <text x="150" y="257" text-anchor="middle" fill="black" font-size="9">Rear Window</text>
-                      
-                      <!-- Side Mirrors -->
-                      <rect x="65" y="85" width="15" height="10" fill="white" stroke="black" stroke-width="1"/>
-                      <rect x="220" y="85" width="15" height="10" fill="white" stroke="black" stroke-width="1"/>
-                      
-                      <!-- Wheels positions -->
-                      <rect x="40" y="90" width="20" height="40" fill="white" stroke="black" stroke-width="1"/>
-                      <rect x="240" y="90" width="20" height="40" fill="white" stroke="black" stroke-width="1"/>
-                      <rect x="40" y="190" width="20" height="40" fill="white" stroke="black" stroke-width="1"/>
-                      <rect x="240" y="190" width="20" height="40" fill="white" stroke="black" stroke-width="1"/>
-                    </g>
-                    
-                    <!-- Rear View -->
-                    <g transform="translate(150, 370)">
-                      <text x="100" y="-5" text-anchor="middle" fill="hsl(var(--foreground))" font-size="14" font-weight="bold">Rear View (뒤/후방)</text>
-                      
-                      <!-- Rear Bumper -->
-                      <rect x="20" y="10" width="160" height="25" fill="white" stroke="black" stroke-width="1" id="rear-bumper-main"/>
-                      <text x="100" y="27" text-anchor="middle" fill="black" font-size="10" font-weight="bold">Rear Bumper</text>
-                      <text x="100" y="18" text-anchor="middle" fill="red" font-size="14" font-weight="bold" id="rear-bumper-marker"></text>
-                      
-                      <!-- Quarter Panels -->
-                      <rect x="10" y="35" width="35" height="50" fill="white" stroke="black" stroke-width="1" id="left-quarter-panel"/>
-                      <text x="27" y="65" text-anchor="middle" fill="black" font-size="9" font-weight="bold">L Quarter</text>
-                      <text x="27" y="50" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="left-quarter-panel-marker"></text>
-                      
-                      <rect x="155" y="35" width="35" height="50" fill="white" stroke="black" stroke-width="1" id="right-quarter-panel"/>
-                      <text x="172" y="65" text-anchor="middle" fill="black" font-size="9" font-weight="bold">R Quarter</text>
-                      <text x="172" y="50" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="right-quarter-panel-marker"></text>
-                      
-                      <!-- Rear Lights -->
-                      <rect x="45" y="40" width="15" height="20" fill="white" stroke="black" stroke-width="1"/>
-                      <rect x="140" y="40" width="15" height="20" fill="white" stroke="black" stroke-width="1"/>
-                    </g>
-                  </svg>
-                </div>
-                
+                <h4 style="text-align: center; margin-bottom: 15px; color: hsl(215.4, 16.3%, 46.9%);">Vehicle Inspection Overview</h4>
                 <div class="legend">
                   <div class="legend-item">
                     <div class="legend-color" style="background: hsl(142.1, 76.2%, 36.3%);"></div>
-                    <span>Normal Condition</span>
+                    <span>Normal</span>
                   </div>
                   <div class="legend-item">
                     <div class="legend-color" style="background: hsl(47.9, 95.8%, 53.1%);"></div>
-                    <span>Repair/Welding Required</span>
+                    <span>Repair/Welding</span>
                   </div>
                   <div class="legend-item">
                     <div class="legend-color" style="background: hsl(0, 84.2%, 60.2%);"></div>
-                    <span>Exchange/Replacement</span>
+                    <span>Exchange/Replace</span>
                   </div>
                 </div>
               </div>
-              
               <div class="info-grid">
                 ${car.details.inspect_outer.map(item => `
                 <div class="info-item">
@@ -862,42 +702,32 @@ const CarDetails = () => {
             </div>
           </div>` : ''}
 
-          ${car.bid || car.final_bid || car.details?.original_price || car.insurance_v2?.preAccidentValue || car.insurance_v2?.wholesaleValue || car.insurance_v2?.actualCashValue ? `
+          ${car.bid || car.buy_now || car.final_bid || car.details?.original_price ? `
           <div class="section">
             <div class="section-header">
               💰 Market Values & Pricing
             </div>
             <div class="section-content">
               <div class="info-grid">
-                ${car.insurance_v2?.preAccidentValue ? `
+                ${car.details?.original_price ? `
                 <div class="info-item">
-                  <div class="info-label">Pre-Accident Value</div>
-                  <div class="info-value">💎 $${car.insurance_v2.preAccidentValue.toLocaleString()}</div>
-                </div>` : ''}
-                ${car.insurance_v2?.wholesaleValue ? `
-                <div class="info-item">
-                  <div class="info-label">Wholesale Value</div>
-                  <div class="info-value">🏪 $${car.insurance_v2.wholesaleValue.toLocaleString()}</div>
-                </div>` : ''}
-                ${car.insurance_v2?.actualCashValue ? `
-                <div class="info-item">
-                  <div class="info-label">Actual Cash Value</div>
-                  <div class="info-value">💵 $${car.insurance_v2.actualCashValue.toLocaleString()}</div>
+                  <div class="info-label">Original Korean Price</div>
+                  <div class="info-value">₩${car.details.original_price.toLocaleString()}</div>
                 </div>` : ''}
                 ${car.bid ? `
                 <div class="info-item">
                   <div class="info-label">Current Bid</div>
-                  <div class="info-value">🎯 $${car.bid.toLocaleString()}</div>
+                  <div class="info-value">💵 $${car.bid.toLocaleString()}</div>
+                </div>` : ''}
+                ${car.buy_now ? `
+                <div class="info-item">
+                  <div class="info-label">Buy Now Price</div>
+                  <div class="info-value">🛒 $${car.buy_now.toLocaleString()}</div>
                 </div>` : ''}
                 ${car.final_bid ? `
                 <div class="info-item">
                   <div class="info-label">Final Bid</div>
-                  <div class="info-value">🏆 $${car.final_bid.toLocaleString()}</div>
-                </div>` : ''}
-                ${car.insurance_v2?.estimatedRepairCost ? `
-                <div class="info-item">
-                  <div class="info-label">Estimated Repair Costs</div>
-                  <div class="info-value">🔧 $${car.insurance_v2.estimatedRepairCost.toLocaleString()}</div>
+                  <div class="info-value">🎯 $${car.final_bid.toLocaleString()}</div>
                 </div>` : ''}
                 <div class="info-item">
                   <div class="info-label">KORAUTO Price</div>
@@ -913,11 +743,6 @@ const CarDetails = () => {
             </div>
             <div class="section-content">
               <div class="info-grid">
-                ${car.id || car.lot ? `
-                <div class="info-item">
-                  <div class="info-label">External ID</div>
-                  <div class="info-value">🆔 ${car.id || car.lot || 'N/A'}</div>
-                </div>` : ''}
                 ${car.lot ? `
                 <div class="info-item">
                   <div class="info-label">Lot Number</div>
@@ -937,21 +762,6 @@ const CarDetails = () => {
                 <div class="info-item">
                   <div class="info-label">Sale Date</div>
                   <div class="info-value">📅 ${new Date(car.sale_date).toLocaleDateString()}</div>
-                </div>` : ''}
-                ${car.details?.created_at ? `
-                <div class="info-item">
-                  <div class="info-label">Last Updated</div>
-                  <div class="info-value">🔄 ${new Date(car.details.created_at).toLocaleDateString()}</div>
-                </div>` : ''}
-                ${car.details?.auction_date ? `
-                <div class="info-item">
-                  <div class="info-label">Auction Date</div>
-                  <div class="info-value">🏛️ ${new Date(car.details.auction_date).toLocaleDateString()}</div>
-                </div>` : ''}
-                ${car.location ? `
-                <div class="info-item">
-                  <div class="info-label">Location</div>
-                  <div class="info-value">📍 ${car.location}</div>
                 </div>` : ''}
               </div>
             </div>
@@ -975,110 +785,6 @@ const CarDetails = () => {
             </div>
           </div>
         </div>
-        
-        <script>
-          // Ensure DOM is loaded before executing scripts
-          if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializePage);
-          } else {
-            initializePage();
-          }
-          
-          function initializePage() {
-            console.log('Initializing car details page...');
-            
-            // Apply markers to car parts based on inspection data
-            const inspectionData = ${JSON.stringify(car.details?.inspect_outer || [])};
-            console.log('Inspection data:', inspectionData);
-            
-            const partMappings = [
-              { id: 'hood-marker', codes: ['hood', 'bonnet'] },
-              { id: 'front-bumper-marker', codes: ['front_bumper', 'front bumper'] },
-              { id: 'left-front-fender-marker', codes: ['front_fender_left', 'left front fender', 'front left fender'] },
-              { id: 'right-front-fender-marker', codes: ['front_fender_right', 'right front fender', 'front right fender'] },
-              { id: 'left-front-door-marker', codes: ['front_door_left', 'left front door', 'front left door'] },
-              { id: 'right-front-door-marker', codes: ['front_door_right', 'right front door', 'front right door'] },
-              { id: 'left-rear-door-marker', codes: ['rear_door_left', 'left rear door', 'rear left door'] },
-              { id: 'right-rear-door-marker', codes: ['rear_door_right', 'right rear door', 'rear right door'] },
-              { id: 'trunk-marker', codes: ['trunk', 'boot', 'tailgate'] },
-              { id: 'rear-bumper-marker', codes: ['rear_bumper', 'rear bumper'] },
-              { id: 'left-quarter-panel-marker', codes: ['quarter_panel_left', 'left quarter panel', 'rear left quarter'] },
-              { id: 'right-quarter-panel-marker', codes: ['quarter_panel_right', 'right quarter panel', 'rear right quarter'] },
-              { id: 'roof-marker', codes: ['roof'] }
-            ];
-            
-            partMappings.forEach(mapping => {
-              const element = document.getElementById(mapping.id);
-              if (element) {
-                const marker = getPartMarker(mapping.codes, inspectionData);
-                if (marker) {
-                  element.textContent = marker;
-                  console.log('Applied marker', marker, 'to part', mapping.id);
-                }
-              }
-            });
-          }
-          
-          function getPartMarker(partCodes, inspectionData) {
-            const part = inspectionData.find(item => {
-              const itemCode = item.type.code ? item.type.code.toLowerCase() : '';
-              const itemTitle = item.type.title ? item.type.title.toLowerCase() : '';
-              
-              return partCodes.some(code => {
-                const searchCode = code.toLowerCase();
-                return itemCode.includes(searchCode) || 
-                       itemTitle.includes(searchCode) ||
-                       itemTitle.includes(searchCode.replace('_', ' ')) ||
-                       itemTitle.includes(searchCode.replace('_', ''));
-              });
-            });
-            
-            if (!part || !part.statusTypes || part.statusTypes.length === 0) {
-              return null; // No marker for normal parts
-            }
-            
-            const hasExchange = part.statusTypes.some(status => status.code === 'X');
-            const hasRepair = part.statusTypes.some(status => status.code === 'W');
-            
-            if (hasExchange) return 'X'; // Exchange/replacement
-            if (hasRepair) return 'W'; // Repair/welding
-            return null; // Normal condition
-          }
-          
-          function toggleOptions(type) {
-            const hiddenDiv = document.getElementById(type + '-hidden');
-            const toggleBtn = document.getElementById(type + '-toggle');
-            
-            if (hiddenDiv && toggleBtn) {
-              if (hiddenDiv.style.display === 'none') {
-                hiddenDiv.style.display = 'block';
-                toggleBtn.textContent = 'Show less';
-              } else {
-                hiddenDiv.style.display = 'none';
-                const count = hiddenDiv.children.length;
-                toggleBtn.textContent = 'Show ' + count + ' more';
-              }
-            }
-          }
-          
-          function toggleTheme() {
-            const html = document.documentElement;
-            const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
-            html.classList.remove('light', 'dark');
-            html.classList.add(newTheme);
-            
-            // Update toggle icon
-            const toggle = document.getElementById('themeToggle');
-            if (toggle) {
-              if (newTheme === 'dark') {
-                toggle.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>';
-              } else {
-                toggle.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>';
-              }
-            }
-          }
       </body>
       </html>
     `;
@@ -1424,9 +1130,7 @@ const CarDetails = () => {
                     onClick={() => {
                       const detailsWindow = window.open('', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
                       if (detailsWindow) {
-                        const htmlContent = generateDetailedInfoHTML(car);
-                        detailsWindow.document.write(htmlContent);
-                        detailsWindow.document.close(); // Important: close the document stream
+                        detailsWindow.document.write(generateDetailedInfoHTML(car));
                         detailsWindow.document.title = `${car.year} ${car.make} ${car.model} - Detailed Information`;
                       }
                     }}
