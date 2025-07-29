@@ -168,7 +168,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
                      key={manufacturer.id} 
                      value={manufacturer.id.toString()}
                    >
-                     {manufacturer.name} {manufacturer?.cars_qty ?? "" }
+                     {manufacturer.name} {manufacturer?.cars_qty ? `(${manufacturer?.cars_qty})` :"" }
                    </SelectItem>
                  );
                 })}
