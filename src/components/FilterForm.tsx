@@ -50,7 +50,6 @@ interface FilterFormProps {
     color?: string;
     fuel_type?: string;
     transmission?: string;
-    seats?: string;
     odometer_from_km?: string;
     odometer_to_km?: string;
     from_year?: string;
@@ -322,23 +321,6 @@ const FilterForm: React.FC<FilterFormProps> = ({
                       </SelectItem>
                     );
                   })}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="seats">Numri i Ulëseve</Label>
-              <Select value={filters.seats || 'all'} onValueChange={(value) => updateFilter('seats', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Të gjithë" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Të gjithë</SelectItem>
-                  <SelectItem value="2">2 Ulëse</SelectItem>
-                  <SelectItem value="4">4 Ulëse</SelectItem>
-                  <SelectItem value="5">5 Ulëse</SelectItem>
-                  <SelectItem value="7">7 Ulëse</SelectItem>
-                  <SelectItem value="8">8+ Ulëse</SelectItem>
                 </SelectContent>
               </Select>
             </div>

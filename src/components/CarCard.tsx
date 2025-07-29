@@ -323,8 +323,10 @@ const CarCard = ({
   };
 
   const handleCardClick = () => {
-    // Navigate to car details page using React Router
-    navigate(`/car/${id || lot}`);
+    // Save current page and any filter state before navigating
+    setPreviousPage(window.location.pathname + window.location.search);
+    // Open in new tab
+    window.open(`/car/${lot}`, '_blank');
   };
   return <div className="bg-card rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-border cursor-pointer group touch-manipulation" onClick={handleCardClick}>
       <div className="relative h-48 sm:h-52 bg-muted overflow-hidden">

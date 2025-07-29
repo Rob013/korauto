@@ -43,7 +43,6 @@ interface ApiFilters {
   buy_now_price_to?: string;
   transmission?: string;
   fuel_type?: string;
-  seats?: string;
 }
 
 const HomeCarsSection = () => {
@@ -59,8 +58,6 @@ const HomeCarsSection = () => {
   const [filterCounts, setFilterCounts] = useState<any>(null);
   const [loadingCounts, setLoadingCounts] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('popular');
-  const [showAllCars, setShowAllCars] = useState(false);
-  const [randomizedCars, setRandomizedCars] = useState<any[]>([]);
   
   // Use daily rotating cars with German car priority when no filters are applied
   const hasFilters = Object.keys(filters).some(key => filters[key] !== undefined && filters[key] !== '');
@@ -98,7 +95,7 @@ const HomeCarsSection = () => {
     }
   };
 
-  // Load manufacturers and random cars on mount
+  // Load manufacturers on mount
   useEffect(() => {
     const loadManufacturers = async () => {
       const manufacturerData = await fetchManufacturers();
@@ -108,14 +105,6 @@ const HomeCarsSection = () => {
     loadManufacturers();
     fetchCars(1, {}, true);
   }, []);
-
-  // Update randomized cars when cars change
-  useEffect(() => {
-    if (cars.length > 0 && !hasFilters) {
-      const shuffled = [...cars].sort(() => Math.random() - 0.5);
-      setRandomizedCars(shuffled.slice(0, 50));
-    }
-  }, [cars, hasFilters]);
 
   // Handle filter changes and fetch counts
   useEffect(() => {
@@ -255,7 +244,7 @@ const HomeCarsSection = () => {
         {/* Car Cards */}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0">
-            {[...Array(8)].map((_, i) => (
+            {[...Array(6)].map((_, i) => (
               <div key={i} className="bg-card rounded-lg p-4 animate-pulse">
                 <div className="h-48 bg-muted rounded mb-4"></div>
                 <div className="h-4 bg-muted rounded mb-2"></div>
@@ -263,7 +252,7 @@ const HomeCarsSection = () => {
               </div>
             ))}
           </div>
-        ) : (hasFilters ? cars : randomizedCars).length === 0 ? (
+        ) : cars.length === 0 ? (
           <div className="text-center py-8 sm:py-12 px-4">
             <p className="text-base sm:text-lg text-muted-foreground mb-4">
               Nuk u gjetën makina me këto filtra.
@@ -274,8 +263,8 @@ const HomeCarsSection = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0">
-              {(hasFilters ? displayedCars : (showAllCars ? randomizedCars : randomizedCars.slice(0, 8))).map((car) => {
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0">
+              {displayedCars.map((car) => {
                 const lot = car.lots?.[0];
                 const usdPrice = lot?.buy_now || 25000;
                 const price = convertUSDtoEUR(Math.round(usdPrice + 2200));
@@ -333,23 +322,13 @@ const HomeCarsSection = () => {
             </div>
             
             {/* Show More Button */}
-            <div className="text-center mt-8 space-y-4">
-              {!hasFilters && !showAllCars && randomizedCars.length > 8 && (
-                <Button 
-                  onClick={() => setShowAllCars(true)}
-                  variant="outline"
-                  size="lg"
-                  className="mr-4 px-8 py-3"
-                >
-                  Shfaq të gjitha {randomizedCars.length} makinat
-                </Button>
-              )}
+            <div className="text-center mt-8">
               <Button 
                 onClick={() => navigate('/catalog')} 
                 size="lg"
                 className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3"
               >
-                Shfleto katalogun e plotë
+                Shfleto të gjitha makinat
               </Button>
             </div>
           </>
