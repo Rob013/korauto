@@ -299,17 +299,34 @@ const CarDetails = () => {
             <Button 
               variant="outline" 
               onClick={() => {
-                // Intelligent back navigation
-                if (previousPage) {
-                  console.log('🔙 Going back to saved page:', previousPage);
+                // Smart back navigation with multiple fallbacks
+                console.log('🔙 Attempting to go back...');
+                console.log('Previous page from context:', previousPage);
+                console.log('Document referrer:', document.referrer);
+                console.log('History length:', window.history.length);
+                
+                // Try multiple methods in order of preference
+                if (previousPage && previousPage !== window.location.href) {
+                  console.log('🔙 Using saved previous page:', previousPage);
                   navigate(previousPage);
+                } else if (document.referrer && document.referrer !== window.location.href) {
+                  // If the referrer is from our domain, use it
+                  const referrerUrl = new URL(document.referrer);
+                  const currentUrl = new URL(window.location.href);
+                  if (referrerUrl.origin === currentUrl.origin) {
+                    console.log('🔙 Using document referrer:', document.referrer);
+                    window.location.href = document.referrer;
+                    return;
+                  }
                 } else if (window.history.length > 1) {
                   console.log('🔙 Using browser back');
                   window.history.back();
-                } else {
-                  console.log('🔙 Fallback to catalog');
-                  navigate('/catalog');
+                  return;
                 }
+                
+                // Final fallbacks
+                console.log('🔙 Using fallback to catalog');
+                navigate('/catalog');
               }} 
               className="shadow-sm border-2 hover:shadow-md transition-all"
             >
