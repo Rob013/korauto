@@ -64,8 +64,7 @@ const HomeCarsSection = () => {
   // Use daily rotating API cars when no filters, regular cars when filtered
   const hasFilters = Object.keys(filters).some(key => filters[key] !== undefined && filters[key] !== '');
   const carsToDisplay = hasFilters ? cars : dailyCars;
-  const sortedCars = useSortedCars(carsToDisplay, sortBy);
-  const displayedCars = sortedCars.slice(0, 6);
+  const displayedCars = useSortedCars(carsToDisplay, sortBy);
   const currentLoading = hasFilters ? loading : dailyLoading;
   const currentError = hasFilters ? error : dailyError;
   
@@ -165,7 +164,7 @@ const HomeCarsSection = () => {
         <div className="text-center mb-4 sm:mb-6">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground">Makinat e Disponueshme</h2>
           <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
-            Shfletoni përzgjedhjen tonë me fokus në markët gjermane premium.
+            Shfletoni përzgjedhjen tonë të 50 mjeteve të reja çdo ditë me fokus në markët gjermane premium.
           </p>
           
           <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 mt-4 sm:mt-6">
@@ -243,7 +242,7 @@ const HomeCarsSection = () => {
               </div>
             ))}
           </div>
-        ) : displayedCars.length === 0 ? (
+        ) : cars.length === 0 ? (
           <div className="text-center py-8 sm:py-12 px-4">
             <p className="text-base sm:text-lg text-muted-foreground mb-4">
               Nuk u gjetën makina me këto filtra.
