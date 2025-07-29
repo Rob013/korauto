@@ -21,9 +21,13 @@ interface Model {
 }
 
 interface Generation {
-  id: number;
-  name: string;
-  car_count?: number;
+cars_qty:number;
+from_year:number;
+id:number;
+manufacturer_id:number;
+model_id:number;
+name:string;
+to_year:number;
 }
 
 interface FilterCounts {
@@ -219,17 +223,16 @@ const FilterForm: React.FC<FilterFormProps> = ({
             </SelectTrigger>
             <SelectContent className="max-h-60 overflow-y-auto">
               <SelectItem value="all">Të gjitha Gjeneratat</SelectItem>
-               {generations.map((generation) => {
-                const count = filterCounts?.generations[generation.id.toString()];
-                return (
-                  <SelectItem 
-                    key={generation.id} 
-                    value={generation.id.toString()}
-                  >
-                    {generation.name} {count !== undefined && count > 0 && `(${count})`}
-                  </SelectItem>
-                );
-               })}
+            {generations
+              .filter((generation) => generation.cars_qty > 0)
+              .map((generation) => (
+                <SelectItem 
+                  key={generation.id} 
+                  value={generation.id.toString()}
+                >
+                  {generation.name} ({generation.from_year}–{generation.to_year})
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
