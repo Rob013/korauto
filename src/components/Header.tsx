@@ -46,7 +46,7 @@ const Header = () => {
               <img 
                 src="/lovable-uploads/91efade6-53ff-4c15-ae10-6ac8f338c2b9.png" 
                 alt="KORAUTO Logo" 
-                className="h-5 w-5 sm:h-6 sm:w-6 object-contain"
+                className="h-5 w-5 sm:h-6 sm:w-6 object-contain dark:invert dark:brightness-0 dark:contrast-100 transition-all duration-200"
               />
             </div>
             <span className="font-bold text-lg sm:text-2xl bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent hidden xs:block truncate">
