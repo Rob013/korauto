@@ -6,10 +6,12 @@ export const useDailyRotatingCars = (cars: any[], hasFilters: boolean, limit: nu
       return cars; // Return normal order when filters are applied
     }
     
-    // Get today's date as seed for daily rotation (changes every 24 hours)
+    // Get today's date as seed for daily rotation (changes every 24 hours at midnight)
     const today = new Date();
-    const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
-    const dailySeed = dayOfYear + today.getFullYear(); // Unique seed per day
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const day = today.getDate();
+    const dailySeed = year * 10000 + month * 100 + day; // Unique seed per day (YYYYMMDD format)
     
     // Only show Audi, Volkswagen, Mercedes-Benz, and BMW cars
     const targetBrands = ['Audi', 'Volkswagen', 'Mercedes-Benz', 'BMW'];

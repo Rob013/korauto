@@ -83,12 +83,12 @@ const HomeCarsSection = memo(() => {
   const [sortBy, setSortBy] = useState<SortOption>('popular');
   const [germanManufacturerIds, setGermanManufacturerIds] = useState<string[]>([]);
 
-  // Use daily rotating cars with German car priority when no filters are applied - get 50 cars
+  // Use daily rotating cars with German car priority - get 50 cars, show 8
   const hasFilters = Object.keys(filters).some(key => filters[key] !== undefined && filters[key] !== '');
   const dailyRotatingCars = useDailyRotatingCars(cars, hasFilters, 50);
   const sortedCars = useSortedCars(dailyRotatingCars, sortBy);
 
-  // Always display only 8 cars from the rotated selection
+  // Always display exactly 8 cars from the daily rotated selection
   const displayedCars = sortedCars.slice(0, 8);
   
   // Function to fetch initial set of cars (50 cars total)
