@@ -116,9 +116,8 @@ export const useAuctionAPI = () => {
 
       const response = await fetch(`${API_BASE_URL}/cars?${params}`, {
         headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'KORAUTO-WebApp/1.0',
-          'X-API-Key': API_KEY
+          'accept': '*/*',
+          'x-api-key': API_KEY
         }
       });
 
