@@ -1787,7 +1787,7 @@ const CarDetails = () => {
                            <div className="space-y-3">
                              <div className="flex justify-between items-center py-2 border-b border-border/30">
                                <span className="text-muted-foreground font-medium">Vehicle Name:</span>
-                               <span className="text-foreground">{car.make} {car.model} {car.grade || ''}</span>
+                               <span className="text-foreground">{car.make} {car.model}</span>
                              </div>
                              <div className="flex justify-between items-center py-2 border-b border-border/30">
                                <span className="text-muted-foreground font-medium">Vehicle Number:</span>
@@ -1795,7 +1795,7 @@ const CarDetails = () => {
                              </div>
                              <div className="flex justify-between items-center py-2 border-b border-border/30">
                                <span className="text-muted-foreground font-medium">First Registration:</span>
-                               <span className="text-foreground">{car.first_registration_date || 'N/A'}</span>
+                               <span className="text-foreground">{car.insurance_v2?.firstDate || 'N/A'}</span>
                              </div>
                              <div className="flex justify-between items-center py-2 border-b border-border/30">
                                <span className="text-muted-foreground font-medium">Fuel Type:</span>
@@ -1813,7 +1813,7 @@ const CarDetails = () => {
                              </div>
                              <div className="flex justify-between items-center py-2 border-b border-border/30">
                                <span className="text-muted-foreground font-medium">Inspection Valid Until:</span>
-                               <span className="text-foreground">{car.inspection?.valid_until || 'N/A'}</span>
+                               <span className="text-foreground">N/A</span>
                              </div>
                              <div className="flex justify-between items-center py-2 border-b border-border/30">
                                <span className="text-muted-foreground font-medium">Transmission:</span>
@@ -1825,7 +1825,7 @@ const CarDetails = () => {
                              </div>
                              <div className="flex justify-between items-center py-2 border-b border-border/30">
                                <span className="text-muted-foreground font-medium">Engine Type:</span>
-                               <span className="text-foreground">{car.engine?.name || car.engine?.type || 'N/A'}</span>
+                               <span className="text-foreground">{car.engine?.name || 'N/A'}</span>
                              </div>
                            </div>
                          </div>
@@ -1872,7 +1872,7 @@ const CarDetails = () => {
                                  <td className="py-2 px-3">
                                    <Badge variant="default">Normal</Badge>
                                  </td>
-                                 <td className="py-2 px-3 text-foreground">{car.emissions || 'N/A'}</td>
+                                 <td className="py-2 px-3 text-foreground">N/A</td>
                                </tr>
                                <tr className="border-b border-border/30">
                                  <td className="py-2 px-3 text-muted-foreground">Tuning</td>
@@ -1884,9 +1884,9 @@ const CarDetails = () => {
                                <tr className="border-b border-border/30">
                                  <td className="py-2 px-3 text-muted-foreground">Special History</td>
                                  <td className="py-2 px-3">
-                                   <Badge variant={car.insurance_v2?.flood_damage ? 'destructive' : 'default'}>
-                                     {car.insurance_v2?.flood_damage ? 'Present' : 'None'}
-                                   </Badge>
+                                <Badge variant={car.insurance_v2?.floodTotalLossCnt && car.insurance_v2.floodTotalLossCnt > 0 ? 'destructive' : 'default'}>
+                                      {car.insurance_v2?.floodTotalLossCnt && car.insurance_v2.floodTotalLossCnt > 0 ? 'Present' : 'None'}
+                                    </Badge>
                                  </td>
                                  <td className="py-2 px-3 text-foreground">-</td>
                                </tr>
@@ -1932,9 +1932,9 @@ const CarDetails = () => {
                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                              <div className="flex justify-between items-center py-2 border-b border-border/30">
                                <span className="text-muted-foreground font-medium">Accident History:</span>
-                               <Badge variant={car.insurance_v2?.accident_history === 'clean' ? 'default' : 'destructive'}>
-                                 {car.insurance_v2?.accident_history === 'clean' ? 'None' : car.insurance_v2?.accident_history || 'Unknown'}
-                               </Badge>
+                                <Badge variant={car.insurance_v2?.accidentCnt === 0 ? 'default' : 'destructive'}>
+                                  {car.insurance_v2?.accidentCnt === 0 ? 'None' : `${car.insurance_v2?.accidentCnt || 0} accidents`}
+                                </Badge>
                              </div>
                              <div className="flex justify-between items-center py-2 border-b border-border/30">
                                <span className="text-muted-foreground font-medium">Simple Repair:</span>
@@ -1970,7 +1970,6 @@ const CarDetails = () => {
                                                  status.code === 'W' ? 'secondary' : 
                                                  'outline'
                                                }
-                                               size="sm"
                                              >
                                                {status.code === 'X' ? 'X' : status.code === 'W' ? 'W' : status.title}
                                              </Badge>
@@ -2030,11 +2029,11 @@ const CarDetails = () => {
                                        <span className="text-sm text-muted-foreground">Normal</span>
                                      </div>
                                      <div className="flex items-center gap-2">
-                                       <Badge variant="secondary" size="sm">W</Badge>
+                                       <Badge variant="secondary">W</Badge>
                                        <span className="text-sm text-muted-foreground">Sheet Metal/Welding</span>
                                      </div>
                                      <div className="flex items-center gap-2">
-                                       <Badge variant="destructive" size="sm">X</Badge>
+                                       <Badge variant="destructive">X</Badge>
                                        <span className="text-sm text-muted-foreground">Exchanged/Replaced</span>
                                      </div>
                                    </div>
@@ -2050,60 +2049,9 @@ const CarDetails = () => {
                          <h3 className="text-lg font-semibold mb-4 text-foreground border-b border-border pb-2">
                            Equipment & Options
                          </h3>
-                         <div className="space-y-4">
-                           {car.standard_equipment && car.standard_equipment.length > 0 && (
-                             <div>
-                               <h4 className="font-medium mb-2 text-foreground">Standard Equipment</h4>
-                               <div className="flex flex-wrap gap-2">
-                                 {car.standard_equipment.slice(0, featuresExpanded ? undefined : 8).map((item, index) => (
-                                   <Badge key={index} variant="secondary">
-                                     {item}
-                                   </Badge>
-                                 ))}
-                                 {car.standard_equipment.length > 8 && (
-                                   <Button
-                                     variant="ghost"
-                                     size="sm"
-                                     onClick={() => setFeaturesExpanded(!featuresExpanded)}
-                                     className="h-6 px-2 text-xs"
-                                   >
-                                     {featuresExpanded ? 'Show Less' : `+${car.standard_equipment.length - 8} more`}
-                                   </Button>
-                                 )}
-                               </div>
-                             </div>
-                           )}
-                           
-                           {car.optional_equipment && car.optional_equipment.length > 0 && (
-                             <div>
-                               <h4 className="font-medium mb-2 text-foreground">Optional Equipment</h4>
-                               <div className="flex flex-wrap gap-2">
-                                 {car.optional_equipment.map((item, index) => (
-                                   <Badge key={index} variant="outline">
-                                     {item}
-                                   </Badge>
-                                 ))}
-                               </div>
-                             </div>
-                           )}
-
-                           {car.choice_packages && car.choice_packages.length > 0 && (
-                             <div>
-                               <h4 className="font-medium mb-2 text-foreground">Choice Packages</h4>
-                               <div className="flex flex-wrap gap-2">
-                                 {car.choice_packages.map((item, index) => (
-                                   <Badge key={index} variant="secondary">
-                                     {item}
-                                   </Badge>
-                                 ))}
-                               </div>
-                             </div>
-                           )}
-
-                           {!car.standard_equipment?.length && !car.optional_equipment?.length && !car.choice_packages?.length && (
-                             <p className="text-muted-foreground">No equipment information available</p>
-                           )}
-                         </div>
+                          <div className="space-y-4">
+                            <p className="text-muted-foreground">Equipment information not available in current data source</p>
+                          </div>
                        </Card>
 
                        {/* Market Values */}
@@ -2113,28 +2061,28 @@ const CarDetails = () => {
                          </h3>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                            <div className="space-y-3">
-                             <div className="flex justify-between items-center py-2 border-b border-border/30">
-                               <span className="text-muted-foreground">Pre-accident Value:</span>
-                               <span className="text-foreground">{car.insurance_v2?.pre_accident_value || 'N/A'}</span>
-                             </div>
-                             <div className="flex justify-between items-center py-2 border-b border-border/30">
-                               <span className="text-muted-foreground">Wholesale Value:</span>
-                               <span className="text-foreground">{car.insurance_v2?.wholesale_value || 'N/A'}</span>
-                             </div>
-                             <div className="flex justify-between items-center py-2 border-b border-border/30">
-                               <span className="text-muted-foreground">Actual Cash Value:</span>
-                               <span className="text-foreground">{car.insurance_v2?.actual_cash_value || 'N/A'}</span>
-                             </div>
+                              <div className="flex justify-between items-center py-2 border-b border-border/30">
+                                <span className="text-muted-foreground">Pre-accident Value:</span>
+                                <span className="text-foreground">N/A</span>
+                              </div>
+                              <div className="flex justify-between items-center py-2 border-b border-border/30">
+                                <span className="text-muted-foreground">Wholesale Value:</span>
+                                <span className="text-foreground">N/A</span>
+                              </div>
+                              <div className="flex justify-between items-center py-2 border-b border-border/30">
+                                <span className="text-muted-foreground">Actual Cash Value:</span>
+                                <span className="text-foreground">N/A</span>
+                              </div>
                            </div>
                            <div className="space-y-3">
-                             <div className="flex justify-between items-center py-2 border-b border-border/30">
-                               <span className="text-muted-foreground">Current Bid:</span>
-                               <span className="text-foreground font-semibold">{convertPrice(car.current_bid)}</span>
-                             </div>
-                             <div className="flex justify-between items-center py-2 border-b border-border/30">
-                               <span className="text-muted-foreground">Estimated Repair Cost:</span>
-                               <span className="text-foreground">{car.estimated_repair_cost || 'N/A'}</span>
-                             </div>
+                              <div className="flex justify-between items-center py-2 border-b border-border/30">
+                                <span className="text-muted-foreground">Current Bid:</span>
+                                <span className="text-foreground font-semibold">{car.price ? `$${car.price.toLocaleString()}` : 'N/A'}</span>
+                              </div>
+                              <div className="flex justify-between items-center py-2 border-b border-border/30">
+                                <span className="text-muted-foreground">Estimated Repair Cost:</span>
+                                <span className="text-foreground">N/A</span>
+                              </div>
                              <div className="flex justify-between items-center py-2 border-b border-border/30">
                                <span className="text-muted-foreground">Sale Date:</span>
                                <span className="text-foreground">{car.sale_date || 'N/A'}</span>
@@ -2152,7 +2100,7 @@ const CarDetails = () => {
                            <div className="space-y-3">
                              <div className="flex justify-between items-center py-2 border-b border-border/30">
                                <span className="text-muted-foreground">External ID:</span>
-                               <span className="text-foreground font-mono text-sm">{car.external_id || 'N/A'}</span>
+                               <span className="text-foreground font-mono text-sm">{car.id || 'N/A'}</span>
                              </div>
                              <div className="flex justify-between items-center py-2 border-b border-border/30">
                                <span className="text-muted-foreground">Lot Number:</span>
