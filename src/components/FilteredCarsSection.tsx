@@ -7,6 +7,8 @@ import FilterForm from './FilterForm';
 
 interface APIFilters {
   manufacturer_id?: string;
+  model_id?: string;
+  generation_id?: string;
   color?: string;
   fuel_type?: string;
   transmission?: string;
@@ -16,6 +18,8 @@ interface APIFilters {
   to_year?: string;
   buy_now_price_from?: string;
   buy_now_price_to?: string;
+  seats_count?: string;
+  search?: string;
 }
 
 const FilteredCarsSection = () => {

@@ -25,6 +25,7 @@ interface APIFilters {
   buy_now_price_from?: string;
   buy_now_price_to?: string;
   search?: string;
+  seats_count?: string;
 }
 
 const EncarCatalog = () => {

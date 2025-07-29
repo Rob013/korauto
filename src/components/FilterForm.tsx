@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Filter, X, Loader2 } from "lucide-react";
+import { Filter, X, Loader2, Search } from "lucide-react";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS } from '@/hooks/useAuctionAPI';
 
 interface Manufacturer {
@@ -56,6 +56,8 @@ interface FilterFormProps {
     to_year?: string;
     buy_now_price_from?: string;
     buy_now_price_to?: string;
+    seats_count?: string;
+    search?: string;
   };
   manufacturers: Manufacturer[];
   models?: Model[];
@@ -84,6 +86,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
   showAdvanced = false,
   onToggleAdvanced
 }) => {
+  const [searchTerm, setSearchTerm] = useState(filters.search || '');
   console.log("generation",generations)
   const updateFilter = (key: string, value: string) => {
     // Handle special "all" values by converting them to undefined
@@ -113,6 +116,15 @@ const FilterForm: React.FC<FilterFormProps> = ({
     }
   };
 
+  const handleSearch = () => {
+    updateFilter('search', searchTerm.trim());
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    updateFilter('search', '');
+  };
+
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 25 }, (_, i) => currentYear - i);
 
@@ -127,6 +139,26 @@ const FilterForm: React.FC<FilterFormProps> = ({
           <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
           Pastro
         </Button>
+      </div>
+
+      {/* Search Bar */}
+      <div className="flex gap-2 mb-4">
+        <Input
+          placeholder="Kërko sipas markës, modelit ose titullit..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+          className="flex-1 h-10 bg-background border-border"
+        />
+        <Button onClick={handleSearch} size="sm" className="h-10 px-4">
+          <Search className="h-4 w-4 mr-1" />
+          Kërko
+        </Button>
+        {filters.search && (
+          <Button onClick={handleClearSearch} variant="outline" size="sm" className="h-10 px-3">
+            <X className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {/* Basic Filters - Responsive Grid */}
@@ -357,6 +389,24 @@ const FilterForm: React.FC<FilterFormProps> = ({
                       {year}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="seats">Numri i Vendeve</Label>
+              <Select value={filters.seats_count || 'all'} onValueChange={(value) => updateFilter('seats_count', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Të gjitha" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Të gjitha</SelectItem>
+                  <SelectItem value="2">2 Vende</SelectItem>
+                  <SelectItem value="4">4 Vende</SelectItem>
+                  <SelectItem value="5">5 Vende</SelectItem>
+                  <SelectItem value="7">7 Vende</SelectItem>
+                  <SelectItem value="8">8 Vende</SelectItem>
+                  <SelectItem value="9">9+ Vende</SelectItem>
                 </SelectContent>
               </Select>
             </div>

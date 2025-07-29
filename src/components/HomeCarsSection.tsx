@@ -43,6 +43,8 @@ interface ApiFilters {
   buy_now_price_to?: string;
   transmission?: string;
   fuel_type?: string;
+  seats_count?: string;
+  search?: string;
 }
 
 const HomeCarsSection = () => {

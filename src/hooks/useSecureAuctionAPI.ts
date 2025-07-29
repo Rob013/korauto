@@ -206,6 +206,7 @@ interface APIFilters {
   to_year?: string;
   buy_now_price_from?: string;
   buy_now_price_to?: string;
+  seats_count?: string;
   search?: string;
 }
 
