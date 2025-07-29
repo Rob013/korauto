@@ -49,9 +49,6 @@ const Header = () => {
                 className=" object-contain dark:invert dark:brightness-0 dark:contrast-100 transition-all duration-200"
               />
             </div>
-            <span className="font-bold text-lg sm:text-2xl bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent hidden xs:block truncate">
-              KORAUTO
-            </span>
           </Link>
 
           {/* Desktop Navigation */}
