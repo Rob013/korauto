@@ -10,6 +10,8 @@ interface Manufacturer {
   id: number;
   name: string;
   car_count?: number;
+  cars_qty?:number;
+  
 }
 
 interface Model {
