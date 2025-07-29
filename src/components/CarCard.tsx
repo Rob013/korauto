@@ -323,6 +323,13 @@ const CarCard = ({
   };
 
   const handleCardClick = () => {
+    console.log('🔍 CarCard clicked - lot value:', lot, 'id value:', id);
+    
+    if (!lot) {
+      console.error('❌ No lot value available for navigation!');
+      return;
+    }
+    
     // Save current page and any filter state before navigating
     setPreviousPage(window.location.pathname + window.location.search);
     // Open in new tab

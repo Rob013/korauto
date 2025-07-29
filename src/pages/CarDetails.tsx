@@ -172,13 +172,49 @@ const CarDetails = () => {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
+        console.log('❌ Lot search failed, trying by car ID...');
+        
+        // Try searching by car ID if lot search fails
+        const carSearchController = new AbortController();
+        const carSearchTimeoutId = setTimeout(() => carSearchController.abort(), 10000);
+        
+        try {
+          response = await fetch(`${API_BASE_URL}/cars/${lot}`, {
+            headers: {
+              accept: '*/*',
+              'x-api-key': API_KEY,
+            },
+            signal: carSearchController.signal,
+          });
+          
+          clearTimeout(carSearchTimeoutId);
+          
+          if (!response.ok) {
+            console.log('❌ Car ID search also failed, trying cars cache...');
+          }
+        } catch (carSearchError) {
+          console.log('❌ Car ID search failed:', carSearchError);
+        }
+      }
+
+      if (!response.ok) {
         console.log('❌ Lot search failed, trying cars cache...');
-        // Fallback: try to get from our cached cars
-        const { data: cachedCar } = await supabase
+        // Fallback: try to get from our cached cars (try both lot_number and id)
+        let { data: cachedCar } = await supabase
           .from('cars_cache')
           .select('*')
           .eq('lot_number', lot)
           .single();
+
+        if (!cachedCar) {
+          // Try searching by ID if lot_number search failed
+          const { data: cachedCarById } = await supabase
+            .from('cars_cache')
+            .select('*')
+            .eq('id', lot)
+            .single();
+          cachedCar = cachedCarById;
+        }
 
         if (cachedCar) {
           console.log('✅ Found car in cache:', cachedCar);
