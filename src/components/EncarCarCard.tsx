@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useNavigation } from "@/contexts/NavigationContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,10 +29,13 @@ const EncarCarCard = ({
   id, make, model, year, price, image, mileage, fuel, location, isNew, isCertified 
 }: EncarCarCardProps) => {
   const navigate = useNavigate();
+  const { setPreviousPage } = useNavigation();
   const { toast } = useToast();
   const [isLiked, setIsLiked] = useState(false);
 
   const handleCardClick = () => {
+    // Save current page and any filter state before navigating
+    setPreviousPage(window.location.pathname + window.location.search);
     navigate(`/car/${id}`);
   };
 

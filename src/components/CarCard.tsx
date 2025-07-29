@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useNavigation } from "@/contexts/NavigationContext";
 import { Car, Search, Gauge, Settings, Fuel, Palette, Hash, Heart, Cog, Truck, Key, Shield, Calendar, DollarSign, AlertTriangle } from "lucide-react";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
 import { useState, useEffect } from "react";
@@ -89,6 +90,7 @@ const CarCard = ({
   external_id
 }: CarCardProps) => {
   const navigate = useNavigate();
+  const { setPreviousPage } = useNavigation();
   const { toast } = useToast();
   const [isFavorite, setIsFavorite] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -181,6 +183,8 @@ const CarCard = ({
   };
 
   const handleCardClick = () => {
+    // Save current page and any filter state before navigating
+    setPreviousPage(window.location.pathname + window.location.search);
     navigate(`/car/${id}`);
   };
   return <div className="bg-card rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-border cursor-pointer group touch-manipulation" onClick={handleCardClick}>

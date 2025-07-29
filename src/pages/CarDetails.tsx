@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useNavigation } from "@/contexts/NavigationContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -69,6 +70,7 @@ const CarDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { goBack, previousPage, filterState } = useNavigation();
   const [car, setCar] = useState<CarDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -200,15 +202,20 @@ const CarDetails = () => {
 
         console.log(`🌐 Car not in cache, fetching from API...`);
 
-        // Try to fetch specific car details from API
-        const response = await fetch(`${API_BASE_URL}/cars/${id}`, {
-          headers: {
-            'accept': '*/*',
-            'x-api-key': API_KEY
-          }
-        });
+        // Try to fetch specific car details from API with better error handling
+        try {
+          const response = await fetch(`${API_BASE_URL}/cars/${id}`, {
+            headers: {
+              'accept': '*/*',
+              'x-api-key': API_KEY
+            },
+            signal: AbortSignal.timeout(10000) // 10 second timeout
+          });
 
-        if (response.ok) {
+          if (!response.ok) {
+            throw new Error(`API returned ${response.status}: ${response.statusText}`);
+          }
+
           const data = await response.json();
           const carData = data.data || data;
           
@@ -248,7 +255,6 @@ const CarDetails = () => {
               bid: lot?.bid,
               buy_now: lot?.buy_now,
               final_bid: lot?.final_bid,
-              // Get real features from API data
               features: getCarFeatures(carData, lot),
               safety_features: getSafetyFeatures(carData, lot),
               comfort_features: getComfortFeatures(carData, lot),
@@ -256,78 +262,91 @@ const CarDetails = () => {
               popularity_score: 85
             };
             setCar(transformedCar);
+            setLoading(false);
             return;
           }
+        } catch (apiError) {
+          console.error('❌ Failed to fetch from individual API:', apiError);
         }
 
-        // If specific car endpoint fails, try to find it in the cars list
-        console.log(`🔍 Searching in cars list...`);
-        const listResponse = await fetch(`${API_BASE_URL}/cars?per_page=100&page=1`, {
-          headers: {
-            'accept': '*/*',
-            'x-api-key': API_KEY
-          }
-        });
+        // Fallback: Try searching in cars list
+        try {
+          console.log(`🔍 Searching in cars list...`);
+          const listResponse = await fetch(`${API_BASE_URL}/cars?per_page=100&page=1`, {
+            headers: {
+              'accept': '*/*',
+              'x-api-key': API_KEY
+            },
+            signal: AbortSignal.timeout(10000)
+          });
 
-        if (listResponse.ok) {
-          const listData = await listResponse.json();
-          const carsArray = Array.isArray(listData.data) ? listData.data : [];
-          const foundCar = carsArray.find((car: any) => car.id?.toString() === id);
-          
-          if (foundCar) {
-            const lot = foundCar.lots?.[0];
-            const basePrice = lot?.buy_now || lot?.final_bid || foundCar.price || 25000;
-            const price = Math.round(basePrice + 2200);
+          if (listResponse.ok) {
+            const listData = await listResponse.json();
+            const carsArray = Array.isArray(listData.data) ? listData.data : [];
+            const foundCar = carsArray.find((car: any) => car.id?.toString() === id);
+            
+            if (foundCar) {
+              const lot = foundCar.lots?.[0];
+              const basePrice = lot?.buy_now || lot?.final_bid || foundCar.price || 25000;
+              const price = Math.round(basePrice + 2200);
 
-            const transformedCar: CarDetails = {
-              id: foundCar.id?.toString() || id,
-              make: foundCar.manufacturer?.name || 'Unknown',
-              model: foundCar.model?.name || 'Unknown',
-              year: foundCar.year || 2020,
-              price: price,
-              image: lot?.images?.normal?.[0] || lot?.images?.big?.[0],
-              images: lot?.images?.normal || lot?.images?.big || [],
-              vin: foundCar.vin,
-              mileage: lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined,
-              transmission: foundCar.transmission?.name,
-              fuel: foundCar.fuel?.name,
-              color: foundCar.color?.name,
-              condition: lot?.condition?.name?.replace('run_and_drives', 'Good Condition'),
-              lot: lot?.lot,
-              title: foundCar.title,
-              odometer: lot?.odometer,
-              engine: foundCar.engine,
-              cylinders: foundCar.cylinders,
-              drive_wheel: foundCar.drive_wheel,
-              body_type: foundCar.body_type,
-              damage: lot?.damage,
-              keys_available: lot?.keys_available,
-              airbags: lot?.airbags,
-              grade_iaai: lot?.grade_iaai,
-              seller: lot?.seller,
-              seller_type: lot?.seller_type,
-              sale_date: lot?.sale_date,
-              bid: lot?.bid,
-              buy_now: lot?.buy_now,
-              final_bid: lot?.final_bid,
-              // Get real features from API data
-              features: getCarFeatures(foundCar, lot),
-              safety_features: getSafetyFeatures(foundCar, lot),
-              comfort_features: getComfortFeatures(foundCar, lot),
-              performance_rating: 4.5,
-              popularity_score: 85
-            };
-            setCar(transformedCar);
-            return;
+              const transformedCar: CarDetails = {
+                id: foundCar.id?.toString() || id,
+                make: foundCar.manufacturer?.name || 'Unknown',
+                model: foundCar.model?.name || 'Unknown',
+                year: foundCar.year || 2020,
+                price: price,
+                image: lot?.images?.normal?.[0] || lot?.images?.big?.[0],
+                images: lot?.images?.normal || lot?.images?.big || [],
+                vin: foundCar.vin,
+                mileage: lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined,
+                transmission: foundCar.transmission?.name,
+                fuel: foundCar.fuel?.name,
+                color: foundCar.color?.name,
+                condition: lot?.condition?.name?.replace('run_and_drives', 'Good Condition'),
+                lot: lot?.lot,
+                title: foundCar.title,
+                odometer: lot?.odometer,
+                engine: foundCar.engine,
+                cylinders: foundCar.cylinders,
+                drive_wheel: foundCar.drive_wheel,
+                body_type: foundCar.body_type,
+                damage: lot?.damage,
+                keys_available: lot?.keys_available,
+                airbags: lot?.airbags,
+                grade_iaai: lot?.grade_iaai,
+                seller: lot?.seller,
+                seller_type: lot?.seller_type,
+                sale_date: lot?.sale_date,
+                bid: lot?.bid,
+                buy_now: lot?.buy_now,
+                final_bid: lot?.final_bid,
+                features: getCarFeatures(foundCar, lot),
+                safety_features: getSafetyFeatures(foundCar, lot),
+                comfort_features: getComfortFeatures(foundCar, lot),
+                performance_rating: 4.5,
+                popularity_score: 85
+              };
+              setCar(transformedCar);
+              setLoading(false);
+              return;
+            } else {
+              console.error('❌ Car not found in cars list either');
+            }
+          } else {
+            console.error('❌ Failed to fetch cars list:', listResponse.status, listResponse.statusText);
           }
+        } catch (listError) {
+          console.error('❌ Failed to fetch cars list:', listError);
         }
 
         // If car not found, show error
         console.log(`❌ Car ${id} not found in API or cache`);
         setError('Car not found');
-      } catch (err) {
-        console.error('Failed to fetch car details:', err);
-        setError('Failed to load car details');
+
+      } catch (error) {
+        console.error('❌ Failed to fetch car details:', error);
+        setError('Unable to load car details. Please check your connection and try again.');
       } finally {
         setLoading(false);
       }
@@ -413,9 +432,21 @@ const CarDetails = () => {
           <Button 
             variant="outline" 
             onClick={() => {
-              if (window.history.length > 1) {
+              // Intelligent back navigation
+              if (previousPage) {
+                console.log('🔙 Going back to saved page:', previousPage);
+                if (filterState) {
+                  console.log('📋 With filters:', filterState);
+                  // Navigate to previous page and filters will be restored by the catalog components
+                  navigate(previousPage);
+                } else {
+                  navigate(previousPage);
+                }
+              } else if (window.history.length > 1) {
+                console.log('🔙 Using browser back');
                 window.history.back();
               } else {
+                console.log('🔙 Fallback to catalog');
                 navigate('/catalog');
               }
             }} 
