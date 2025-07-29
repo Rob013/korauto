@@ -237,7 +237,7 @@ const CarCard = ({
           .from('user_roles')
           .select('role')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
         
         setIsAdmin(userRole?.role === 'admin');
         
@@ -247,7 +247,7 @@ const CarCard = ({
           .select('id')
           .eq('user_id', user.id)
           .eq('car_id', id)
-          .single();
+          .maybeSingle();
         
         setIsFavorite(!!data);
       }
