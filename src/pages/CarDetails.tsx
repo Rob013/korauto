@@ -5,14 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { useToast } from "@/hooks/use-toast";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
 import { ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, Fuel, Palette, Hash, Calendar, Shield, FileText, Search, Info, Eye, CheckCircle, AlertTriangle, Star, Clock, Users, MessageCircle, Share2, Heart, ChevronRight, Expand, Copy, ChevronDown, ChevronUp } from "lucide-react";
 import { ImageZoom } from "@/components/ImageZoom";
 import { supabase } from "@/integrations/supabase/client";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import SimilarCarsTab from "@/components/SimilarCarsTab";
+
+
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 
@@ -87,7 +87,6 @@ const CarDetails = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [featuresExpanded, setFeaturesExpanded] = useState(false);
   const [showDetailedInfo, setShowDetailedInfo] = useState(false);
   
   const API_BASE_URL = 'https://auctionsapi.com/api';
@@ -1261,154 +1260,6 @@ const CarDetails = () => {
               </CardContent>
             </Card>
 
-            {/* Enhanced Information Tabs */}
-            <Card className="shadow-lg border-0">
-              <CardContent className="p-6 md:p-10">
-                <Tabs defaultValue="maintenance" className="w-full">
-                  <TabsList className="grid w-full grid-cols-1 lg:grid-cols-3 h-20 lg:h-16 bg-muted/30 p-2 rounded-xl gap-2">
-                    <TabsTrigger value="maintenance" className="rounded-lg text-sm md:text-base font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-3 py-3 text-center leading-tight min-h-[3.5rem] flex items-center justify-center">
-                      <span className="whitespace-nowrap">Mirëmbajtja</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="inspection" className="rounded-lg text-sm md:text-base font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-3 py-3 text-center leading-tight min-h-[3.5rem] flex items-center justify-center">
-                      <span className="whitespace-nowrap">Inspektimi</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="similar" className="rounded-lg text-sm md:text-base font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-3 py-3 text-center leading-tight min-h-[3.5rem] flex items-center justify-center">
-                      <span className="whitespace-nowrap">Të Ngjashme</span>
-                    </TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="maintenance" className="mt-8">
-                    <div className="space-y-6">
-                      <h4 className="font-semibold text-lg text-foreground">Historia e Mirëmbajtjes & Sigurisë</h4>
-                      
-                      {/* Maintenance History from API */}
-                      <div className="space-y-3">
-                        <h5 className="font-medium text-foreground">Regjistrimet e Mirëmbajtjes:</h5>
-                        {car.grade_iaai && (
-                          <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-blue-50 dark:bg-blue-950/30">
-                            <div className="flex items-center gap-3">
-                              <Star className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                              <span className="text-sm text-foreground">Vlerësimi IAAI</span>
-                            </div>
-                            <span className="text-xs font-medium text-blue-600 dark:text-blue-400">{car.grade_iaai}</span>
-                          </div>
-                        )}
-                        
-                        {car.condition && (
-                          <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/20">
-                            <div className="flex items-center gap-3">
-                              <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                              <span className="text-sm text-foreground">Gjendja e Përgjithshme</span>
-                            </div>
-                            <span className="text-xs text-muted-foreground capitalize">{car.condition.replace('_', ' ')}</span>
-                          </div>
-                        )}
-
-                        {car.keys_available !== undefined && (
-                          <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/20">
-                            <div className="flex items-center gap-3">
-                              <Shield className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                              <span className="text-sm text-foreground">Çelësat e Disponueshëm</span>
-                            </div>
-                            <span className="text-xs text-muted-foreground">{car.keys_available ? 'Po' : 'Jo'}</span>
-                          </div>
-                        )}
-
-                        {car.odometer?.status && (
-                          <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/20">
-                            <div className="flex items-center gap-3">
-                              <Gauge className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                              <span className="text-sm text-foreground">Statusi i Kilometrave</span>
-                            </div>
-                            <span className="text-xs text-muted-foreground">{car.odometer.status.name}</span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Insurance/Safety Information */}
-                      <div className="space-y-3">
-                        <h5 className="font-medium text-foreground">Informacionet e Sigurisë:</h5>
-                        
-                        {car.airbags && (
-                          <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-blue-50 dark:bg-blue-950/30">
-                            <div className="flex items-center gap-3">
-                              <Shield className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                              <span className="text-sm text-foreground">Sistemi i Airbag-ëve</span>
-                            </div>
-                            <span className="text-xs font-medium text-blue-600 dark:text-blue-400">{car.airbags}</span>
-                          </div>
-                        )}
-
-                        {car.sale_date && (
-                          <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/20">
-                            <div className="flex items-center gap-3">
-                              <Calendar className="h-4 w-4 text-orange-500 flex-shrink-0" />
-                              <span className="text-sm text-foreground">Data e Shitjes</span>
-                            </div>
-                            <span className="text-xs text-muted-foreground">{new Date(car.sale_date).toLocaleDateString()}</span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-                          <span className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Verifikuar nga KORAUTO</span>
-                        </div>
-                        <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-2">
-                          Të gjitha informacionet e mësipërme janë verifikuar nga sistemi ynë professional i inspektimit.
-                        </p>
-                      </div>
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="inspection" className="mt-8">
-                    <div className="space-y-6">
-                      <h4 className="font-semibold text-lg text-foreground">Raporti i Inspektimit KORAUTO</h4>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="text-center p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg">
-                          <Star className="h-8 w-8 text-emerald-600 dark:text-emerald-400 mx-auto mb-2" />
-                          <div className="font-semibold text-emerald-600 dark:text-emerald-400">9.2/10</div>
-                          <div className="text-xs text-emerald-700 dark:text-emerald-300">Vlerësimi i Përgjithshëm</div>
-                        </div>
-                        <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
-                          <CheckCircle className="h-8 w-8 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
-                          <div className="font-semibold text-blue-600 dark:text-blue-400">Excellent</div>
-                          <div className="text-xs text-blue-700 dark:text-blue-300">Gjendja e Motorit</div>
-                        </div>
-                        <div className="text-center p-4 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-lg">
-                          <Shield className="h-8 w-8 text-purple-600 dark:text-purple-400 mx-auto mb-2" />
-                          <div className="font-semibold text-purple-600 dark:text-purple-400">Verified</div>
-                          <div className="text-xs text-purple-700 dark:text-purple-300">Dokumentacioni</div>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <h5 className="font-medium text-foreground">Kontrollet e Kryera:</h5>
-                        {[
-                          'Kontrolli i motorit dhe transmisionit',
-                          'Sistemi i frënimit dhe pezullimit',
-                          'Sistemet elektrike dhe elektronike',
-                          'Karoseria dhe ngjyra',
-                          'Interiori dhe pajisjet',
-                          'Dokumentacioni dhe historia'
-                        ].map((check, index) => (
-                          <div key={index} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                            <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                            <span className="text-sm text-foreground">{check}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="similar" className="mt-8">
-                    <SimilarCarsTab carMake={car.make} carModel={car.model} currentCarId={car.id} />
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Right Column - Car Info and Contact */}
