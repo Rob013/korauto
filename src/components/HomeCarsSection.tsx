@@ -81,7 +81,6 @@ const HomeCarsSection = memo(() => {
   const [filterCounts, setFilterCounts] = useState<any>(null);
   const [loadingCounts, setLoadingCounts] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('popular');
-  const [showAllCars, setShowAllCars] = useState(false);
   const [germanManufacturerIds, setGermanManufacturerIds] = useState<string[]>([]);
 
   // Use daily rotating cars with German car priority when no filters are applied - get 50 cars
@@ -89,13 +88,11 @@ const HomeCarsSection = memo(() => {
   const dailyRotatingCars = useDailyRotatingCars(cars, hasFilters, 50);
   const sortedCars = useSortedCars(dailyRotatingCars, sortBy);
 
-  // Display logic: show 8 initially, then all on "show more"
-  const displayedCars = showAllCars ? sortedCars : sortedCars.slice(0, 8);
+  // Always display only 8 cars from the rotated selection
+  const displayedCars = sortedCars.slice(0, 8);
   
   // Function to fetch mixed cars from German manufacturers specifically  
   const fetchGermanCars = useCallback(async (manufacturerIds: string[]) => {
-    setShowAllCars(false);
-    
     try {
       console.log(`🔍 Fetching mixed cars for manufacturer IDs: ${manufacturerIds.join(', ')}`);
       
@@ -129,14 +126,12 @@ const HomeCarsSection = memo(() => {
   
   const handleFiltersChange = useCallback((newFilters: ApiFilters) => {
     setFilters(newFilters);
-    setShowAllCars(false); // Reset to showing 8 cars when filters change
     fetchCars(1, newFilters, true);
   }, [fetchCars]);
   const handleClearFilters = useCallback(() => {
     setFilters({});
     setModels([]);
     setGenerations([]);
-    setShowAllCars(false); // Reset to showing 8 cars when clearing filters
     
     // When clearing filters, go back to fetching German cars specifically
     if (germanManufacturerIds.length > 0) {
@@ -333,12 +328,8 @@ const HomeCarsSection = memo(() => {
           })}
             </div>
             
-            {/* Show More Button */}
-            <div className="text-center mt-8 space-y-4">
-              {!hasFilters && sortedCars.length > 8 && !showAllCars && <Button onClick={() => setShowAllCars(true)} variant="outline" size="lg" className="bg-card border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3">
-                  Shiko më shumë ({sortedCars.length - 8} të tjera)
-                </Button>}
-              
+            {/* Browse All Cars Button */}
+            <div className="text-center mt-8">
               <Button onClick={() => navigate('/catalog')} size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3">
                 Shfleto të gjitha makinat
               </Button>
