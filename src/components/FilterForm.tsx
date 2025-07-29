@@ -178,8 +178,8 @@ const FilterForm = memo<FilterFormProps>(({
       </div>
 
 
-      {/* Basic Filters - Vertical Layout */}
-      <div className="space-y-3">{/* Changed from grid to vertical stack */}
+      {/* Basic Filters - Horizontal Layout for Main Filters */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">{/* Changed back to horizontal grid for basic filters */}
         <div className="space-y-1">
           <Label htmlFor="manufacturer" className="text-xs font-medium">Marka</Label>
           <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
