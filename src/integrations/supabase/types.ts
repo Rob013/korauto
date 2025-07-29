@@ -190,33 +190,6 @@ export type Database = {
         }
         Relationships: []
       }
-      rate_limits: {
-        Row: {
-          action: string
-          count: number | null
-          created_at: string | null
-          id: string
-          identifier: string
-          window_start: string | null
-        }
-        Insert: {
-          action: string
-          count?: number | null
-          created_at?: string | null
-          id?: string
-          identifier: string
-          window_start?: string | null
-        }
-        Update: {
-          action?: string
-          count?: number | null
-          created_at?: string | null
-          id?: string
-          identifier?: string
-          window_start?: string | null
-        }
-        Relationships: []
-      }
       sync_status: {
         Row: {
           archived_lots_processed: number | null
@@ -317,15 +290,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      check_rate_limit: {
-        Args: {
-          _identifier: string
-          _action: string
-          _max_requests?: number
-          _window_minutes?: number
-        }
-        Returns: boolean
-      }
       generate_sample_cars: {
         Args: { car_count?: number }
         Returns: number

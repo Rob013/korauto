@@ -108,27 +108,27 @@ const FilterForm: React.FC<FilterFormProps> = ({
   const years = Array.from({ length: 25 }, (_, i) => currentYear - i);
 
   return (
-    <div className="bg-card border border-border rounded-lg p-3 sm:p-4 space-y-4">
+    <div className="bg-card border border-border rounded-lg p-4 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4" />
-          <h3 className="text-base sm:text-lg font-semibold">Filtrat</h3>
+          <h3 className="text-lg font-semibold">Filtrat</h3>
         </div>
-        <Button variant="outline" size="sm" onClick={onClearFilters} className="text-xs sm:text-sm">
-          <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+        <Button variant="outline" size="sm" onClick={onClearFilters}>
+          <X className="h-4 w-4 mr-1" />
           Pastro
         </Button>
       </div>
 
-      {/* Basic Filters - Responsive Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+      {/* Basic Filters - Only Brand, Model, Generation */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="manufacturer" className="text-sm">Marka</Label>
+          <Label htmlFor="manufacturer">Marka</Label>
           <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
-            <SelectTrigger className="h-9 sm:h-10">
+            <SelectTrigger>
               <SelectValue placeholder="Të gjitha Markat" />
             </SelectTrigger>
-            <SelectContent className="max-h-60 overflow-y-auto">
+            <SelectContent>
               <SelectItem value="all">Të gjitha Markat</SelectItem>
                {manufacturers
                 .sort((a, b) => {
@@ -177,16 +177,16 @@ const FilterForm: React.FC<FilterFormProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="model" className="text-sm">Modeli</Label>
+          <Label htmlFor="model">Modeli</Label>
           <Select 
             value={filters.model_id || 'all'} 
             onValueChange={(value) => updateFilter('model_id', value)}
             disabled={!filters.manufacturer_id}
           >
-            <SelectTrigger className="h-9 sm:h-10">
+            <SelectTrigger>
               <SelectValue placeholder={filters.manufacturer_id ? "Të gjithë Modelet" : "Zgjidh markën së pari"} />
             </SelectTrigger>
-            <SelectContent className="max-h-60 overflow-y-auto">
+            <SelectContent>
               <SelectItem value="all">Të gjithë Modelet</SelectItem>
                {models.map((model) => {
                 const count = filterCounts?.models[model.id.toString()];
@@ -204,16 +204,16 @@ const FilterForm: React.FC<FilterFormProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="generation" className="text-sm">Gjeneratat</Label>
+          <Label htmlFor="generation">Gjeneratat</Label>
           <Select
             value={filters.generation_id || 'all'} 
             onValueChange={(value) => updateFilter('generation_id', value)}
             disabled={!filters.model_id}
           >
-            <SelectTrigger className="h-9 sm:h-10">
+            <SelectTrigger>
               <SelectValue placeholder={filters.model_id ? "Të gjitha Gjeneratat" : "Zgjidh modelin së pari"} />
             </SelectTrigger>
-            <SelectContent className="max-h-60 overflow-y-auto">
+            <SelectContent>
               <SelectItem value="all">Të gjitha Gjeneratat</SelectItem>
                {generations.map((generation) => {
                 const count = filterCounts?.generations[generation.id.toString()];
@@ -233,7 +233,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
 
       {/* Toggle Advanced Filters */}
       {onToggleAdvanced && (
-        <Button variant="ghost" size="sm" onClick={onToggleAdvanced} className="w-full sm:w-auto text-sm">
+        <Button variant="ghost" size="sm" onClick={onToggleAdvanced}>
           {showAdvanced ? 'Fshih' : 'Shfaq'} Filtrat e Avancuara
         </Button>
       )}
@@ -241,7 +241,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
       {/* Advanced Filters */}
       {showAdvanced && (
         <div className="border-t pt-4 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="color">Ngjyra</Label>
               <Select value={filters.color || 'all'} onValueChange={(value) => updateFilter('color', value)}>
