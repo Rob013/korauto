@@ -38,58 +38,49 @@ const Header = () => {
   return (
     <header className="bg-background/95 backdrop-blur-sm shadow-sm border-b border-border sticky top-0 z-50">
       {/* Main header */}
-      <div className="container-responsive py-3">
-        <div className="flex items-center justify-between">
+      <div className="container mx-auto">
+        <div className="flex h-16 items-center justify-between px-4">
           {/* Logo */}
-          <div className="flex items-center space-x-4 flex-shrink-0">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 flex items-center justify-center">
-              <img 
-                src="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png" 
-                alt="KORAUTO Logo"
-                className="w-full h-full object-contain dark:invert transition-all duration-300"
-              />
+          <Link to="/" className="flex items-center space-x-2 group">
+            <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
+              <Car className="h-6 w-6 text-primary-foreground" />
             </div>
-            <div className="min-w-0">
-              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-primary">KORAUTO</h1>
-              <p className="text-xs md:text-sm text-muted-foreground whitespace-nowrap hidden sm:block">Ekspertë të Inspektimit të Makinave</p>
-            </div>
-          </div>
-          
+            <span className="font-bold text-2xl bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent hidden sm:block">
+              KORAUTO
+            </span>
+          </Link>
+
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center justify-center space-x-8">
-            <Link to="/" className="text-foreground hover:text-primary font-medium transition-all duration-200 hover:scale-105 focus-enhanced relative group">
-              Kryefaqja
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
-            </Link>
-            <Link to="/catalog" className="text-foreground hover:text-primary font-medium transition-all duration-200 hover:scale-105 focus-enhanced relative group">
-              Katalogu
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
-            </Link>
-            <Link to="/inspections" className="text-foreground hover:text-primary font-medium transition-all duration-200 hover:scale-105 focus-enhanced relative group">
-              Inspektimet
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
-            </Link>
-            <button 
-              onClick={() => {
-                navigate('/');
-                setTimeout(() => {
-                  document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
-                }, 100);
-              }}
-              className="text-foreground hover:text-primary font-medium transition-all duration-200 hover:scale-105 bg-transparent border-none cursor-pointer focus-enhanced relative group"
+          <nav className="hidden lg:flex items-center space-x-6">
+            <Link 
+              to="/" 
+              className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200"
             >
-              Kontakti
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
-            </button>
-            <Link to="/favorites" className="flex items-center gap-2 text-foreground hover:text-primary font-medium transition-all duration-200 hover:scale-105 focus-enhanced relative group">
+              Kryefaqja
+            </Link>
+            <Link 
+              to="/catalog" 
+              className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200"
+            >
+              Katalogu
+            </Link>
+            <Link 
+              to="/inspections" 
+              className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200"
+            >
+              Inspektimet
+            </Link>
+            <Link 
+              to="/favorites" 
+              className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200 flex items-center gap-1"
+            >
               <Heart className="h-4 w-4" />
-              <span className="hidden xl:inline">Të Preferuarat</span>
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
+              Favorites
             </Link>
           </nav>
-          
+
           {/* Right side actions */}
-          <div className="flex items-center space-x-2 sm:space-x-4">
+          <div className="flex items-center space-x-2">
             <ThemeToggle />
             
             {/* Mobile menu button */}
@@ -145,18 +136,35 @@ const Header = () => {
               >
                 Inspektimet
               </Link>
-              <button 
-                onClick={() => {
-                  navigate('/');
-                  setIsMobileMenuOpen(false);
-                  setTimeout(() => {
-                    document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
-                  }, 100);
-                }}
-                className="text-left text-foreground hover:text-primary font-medium transition-colors py-2 px-3 rounded-md hover:bg-primary/10 bg-transparent border-none cursor-pointer"
-              >
-                Kontakti
-              </button>
+
+              {/* Contact Info for Mobile */}
+              <div className="flex flex-col space-y-2 pt-4 border-t border-border">
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <div className="flex items-center space-x-1">
+                    <span>📞</span>
+                    <span>+38348181116</span>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <div className="flex items-center space-x-1">
+                    <span>✉️</span>
+                    <span>INFO.RGSHPK@gmail.com</span>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <div className="flex items-center space-x-1">
+                    <span>📍</span>
+                    <span>Rr. Ilaz Kodra 70, Prishtinë</span>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <div className="flex items-center space-x-1">
+                    <span>🕒</span>
+                    <span>9:00-18:00</span>
+                  </div>
+                </div>
+              </div>
+
               <Link 
                 to="/favorites" 
                 className="flex items-center gap-2 text-foreground hover:text-primary font-medium transition-colors py-2 px-3 rounded-md hover:bg-primary/10"
@@ -183,25 +191,21 @@ const Header = () => {
                   size="sm" 
                   className="w-full text-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
                   onClick={() => {
-                    const message = "Përshëndetje! Dëshiroj informacion për shërbimet tuaja të inspektimit të makinave.";
-                    const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
-                    window.open(whatsappUrl, '_blank');
                     setIsMobileMenuOpen(false);
+                    navigate("/catalog");
                   }}
-                  aria-label="Kontaktoni nëpërmjet WhatsApp për informacion rreth shërbimeve"
                 >
-                  Na Kontaktoni
+                  Shiko Makinat
                 </Button>
                 <Button 
                   size="sm" 
-                  className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200"
                   onClick={() => {
-                    document.getElementById('cars')?.scrollIntoView({ behavior: 'smooth' });
                     setIsMobileMenuOpen(false);
+                    window.open('https://wa.me/38348181116', '_blank');
                   }}
-                  aria-label="Shikoni listën e makinave të disponueshme"
                 >
-                  Shiko Makinat
+                  Kontakto WhatsApp
                 </Button>
               </div>
             </nav>
