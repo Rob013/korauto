@@ -46,7 +46,7 @@ const Header = () => {
               <img 
                 src="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png" 
                 alt="KORAUTO Logo" 
-                className=" object-contain dark:invert dark:brightness-0 dark:contrast-100 transition-all duration-200"
+                className="h-10 w-auto object-contain dark:invert dark:brightness-0 dark:contrast-100 transition-all duration-200"
               />
             </div>
           </Link>
