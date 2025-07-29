@@ -299,15 +299,21 @@ const CarDetails = () => {
             <Button 
               variant="outline" 
               onClick={() => {
-                // Smart back navigation with multiple fallbacks
-                console.log('🔙 Attempting to go back...');
-                console.log('Previous page from context:', previousPage);
-                console.log('Document referrer:', document.referrer);
-                console.log('History length:', window.history.length);
+                // Use the cached navigation system
+                const cachedPage = localStorage.getItem('korauto_previous_page');
+                const currentPage = window.location.pathname + window.location.search;
                 
-                // Try multiple methods in order of preference
-                if (previousPage && previousPage !== window.location.href) {
-                  console.log('🔙 Using saved previous page:', previousPage);
+                console.log('🔙 Back button clicked');
+                console.log('🔙 Cached page:', cachedPage);
+                console.log('🔙 Previous page from context:', previousPage);
+                console.log('🔙 Current page:', currentPage);
+                
+                // Try cached page first, then context, then other methods
+                if (cachedPage && cachedPage !== currentPage) {
+                  console.log('🔙 Using cached page:', cachedPage);
+                  navigate(cachedPage);
+                } else if (previousPage && previousPage !== currentPage) {
+                  console.log('🔙 Using context previous page:', previousPage);
                   navigate(previousPage);
                 } else if (document.referrer && document.referrer !== window.location.href) {
                   // If the referrer is from our domain, use it
@@ -324,10 +330,10 @@ const CarDetails = () => {
                   return;
                 }
                 
-                // Final fallbacks
+                // Final fallback
                 console.log('🔙 Using fallback to catalog');
                 navigate('/catalog');
-              }} 
+              }}
               className="shadow-sm border-2 hover:shadow-md transition-all"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
