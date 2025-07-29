@@ -378,6 +378,11 @@ const EncarCatalog = () => {
                   grade_iaai={lot?.grade_iaai}
                   domain={lot?.domain?.name}
                   external_id={lot?.external_id}
+                  insurance={(lot as any)?.insurance}
+                  insurance_v2={(lot as any)?.insurance_v2}
+                  location={(lot as any)?.location}
+                  inspect={(lot as any)?.inspect}
+                  details={(lot as any)?.details}
                 />
               );
             })}

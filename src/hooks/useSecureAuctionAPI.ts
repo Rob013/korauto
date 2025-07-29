@@ -1,6 +1,153 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+interface Lot {
+  buy_now?: number;
+  odometer?: { km?: number };
+  popularity_score?: number;
+  images?: { normal?: string[]; big?: string[] };
+  bid?: number;
+  lot?: string;
+  status?: string;
+  sale_status?: string;
+  final_price?: number;
+  estimate_repair_price?: number;
+  pre_accident_price?: number;
+  clean_wholesale_price?: number;
+  actual_cash_value?: number;
+  sale_date?: string;
+  seller?: string;
+  seller_type?: string;
+  detailed_title?: string;
+  damage?: { main?: string; second?: string };
+  keys_available?: boolean;
+  airbags?: string;
+  grade_iaai?: string;
+  domain?: { name: string };
+  external_id?: string;
+  // Enhanced data from your API response
+  insurance?: {
+    accident_history?: string;
+    repair_count?: string;
+    total_loss?: string;
+    repair_cost?: string;
+    flood_damage?: string;
+    own_damage?: string;
+    other_damage?: string;
+    car_info?: {
+      make?: string;
+      accident_history?: string;
+      repair_count?: string;
+      total_loss?: string;
+      repair_cost?: string;
+      flood_damage?: string;
+    };
+    general_info?: {
+      model?: string;
+      year?: string;
+      usage_type?: string;
+      insurance_start_date?: string;
+    };
+    usage_history?: Array<{
+      description: string;
+      value: string;
+    }>;
+    owner_changes?: Array<{
+      date: string;
+      change_type: string;
+      previous_number?: string;
+      usage_type: string;
+    }>;
+    special_accident_history?: Array<{
+      type: string;
+      value: string;
+    }>;
+  };
+  insurance_v2?: {
+    regDate?: string;
+    year?: number;
+    maker?: string;
+    displacement?: number;
+    firstDate?: string;
+    model?: string;
+    myAccidentCnt?: number;
+    otherAccidentCnt?: number;
+    ownerChangeCnt?: number;
+    robberCnt?: number;
+    totalLossCnt?: number;
+    floodTotalLossCnt?: number;
+    government?: number;
+    business?: number;
+    loan?: number;
+    carNoChangeCnt?: number;
+    myAccidentCost?: number;
+    otherAccidentCost?: number;
+    carInfoChanges?: Array<{
+      date: string;
+      carNo: string;
+    }>;
+    carInfoUse1s?: string[];
+    carInfoUse2s?: string[];
+    ownerChanges?: any[];
+    accidentCnt?: number;
+    accidents?: any[];
+  };
+  location?: {
+    country?: { name: string; iso: string };
+    city?: { name: string };
+    state?: string;
+    location?: string;
+    latitude?: number;
+    longitude?: number;
+    postal_code?: string;
+    is_offsite?: boolean;
+    raw?: string;
+    offsite?: string;
+  };
+  inspect?: {
+    accident_summary?: {
+      main_framework?: string;
+      exterior1rank?: string;
+      exterior2rank?: string;
+      simple_repair?: string;
+      accident?: string;
+    };
+    outer?: Record<string, string[]>;
+    inner?: Record<string, string>;
+  };
+  details?: {
+    engine_volume?: number;
+    original_price?: number;
+    year?: number;
+    month?: number;
+    first_registration?: {
+      year: number;
+      month: number;
+      day: number;
+    };
+    badge?: string;
+    comment?: string;
+    description_ko?: string;
+    description_en?: string;
+    is_leasing?: boolean;
+    sell_type?: string;
+    equipment?: any;
+    options?: {
+      type?: string;
+      standard?: string[];
+      etc?: string[];
+      choice?: string[];
+      tuning?: string[];
+    };
+    inspect_outer?: Array<{
+      type: { code: string; title: string };
+      statusTypes: Array<{ code: string; title: string }>;
+      attributes: string[];
+    }>;
+    seats_count?: number;
+  };
+}
+
 interface Car {
   id: string;
   manufacturer: { id: number; name: string };
@@ -25,7 +172,7 @@ interface Car {
   drive_wheel?: string;
   vehicle_type?: { id: number; name: string };
   cylinders?: number;
-  lots?: any[];
+  lots?: Lot[];
 }
 
 interface Manufacturer {

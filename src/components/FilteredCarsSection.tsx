@@ -153,7 +153,7 @@ const FilteredCarsSection = () => {
                     condition={car.condition?.replace('run_and_drives', 'Good')}
                     lot={car.lot_number || lot?.lot}
                     title={car.title}
-                    status={car.status || lot?.status}
+                    status={Number(car.status || lot?.status || 1)}
                     sale_status={car.sale_status || lot?.sale_status}
                     final_price={car.final_price || lot?.final_price}
                     generation={car.generation?.name}
@@ -178,6 +178,11 @@ const FilteredCarsSection = () => {
                     grade_iaai={lot?.grade_iaai}
                     domain={lot?.domain?.name}
                     external_id={lot?.external_id}
+                    insurance={(lot as any)?.insurance}
+                    insurance_v2={(lot as any)?.insurance_v2}
+                    location={(lot as any)?.location}
+                    inspect={(lot as any)?.inspect}
+                    details={(lot as any)?.details}
                   />
                 );
               })}
