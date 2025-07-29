@@ -1,12 +1,39 @@
 import { Button } from "@/components/ui/button";
-import { Car, Heart, Menu, X } from "lucide-react";
+import { Car, Heart, Menu, X, User } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Header = () => {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
+  // Check authentication state
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleAuthClick = () => {
+    if (user) {
+      navigate('/account');
+    } else {
+      navigate('/auth');
+    }
+  };
 
   return (
     <header className="bg-background/95 backdrop-blur-sm shadow-sm border-b border-border sticky top-0 z-50">
@@ -80,10 +107,11 @@ const Header = () => {
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => navigate('/auth')}
-                className="btn-enhanced focus-enhanced"
+                onClick={handleAuthClick}
+                className="btn-enhanced focus-enhanced flex items-center gap-2"
               >
-                Llogaria Ime
+                <User className="h-4 w-4" />
+                {user ? 'Llogaria Ime' : 'Llogaria Ime'}
               </Button>
             </div>
           </div>
@@ -137,13 +165,16 @@ const Header = () => {
                 <Heart className="h-4 w-4" />
                 Favorites
               </Link>
-              <Link 
-                to="/auth" 
-                className="text-foreground hover:text-primary font-medium transition-colors py-2 px-3 rounded-md hover:bg-primary/10"
-                onClick={() => setIsMobileMenuOpen(false)}
+              <button 
+                className="flex items-center gap-2 text-foreground hover:text-primary font-medium transition-colors py-2 px-3 rounded-md hover:bg-primary/10 w-full text-left"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  handleAuthClick();
+                }}
               >
-                Llogaria Ime
-              </Link>
+                <User className="h-4 w-4" />
+                {user ? 'Llogaria Ime' : 'Llogaria Ime'}
+              </button>
               
               {/* Mobile CTA Buttons */}
               <div className="flex flex-col gap-3 pt-4 border-t border-border">

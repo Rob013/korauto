@@ -204,13 +204,18 @@ const CarDetails = () => {
 
         // Try to fetch specific car details from API with better error handling
         try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000); // Reduced to 5 seconds
+          
           const response = await fetch(`${API_BASE_URL}/cars/${id}`, {
             headers: {
               'accept': '*/*',
               'x-api-key': API_KEY
             },
-            signal: AbortSignal.timeout(10000) // 10 second timeout
+            signal: controller.signal
           });
+
+          clearTimeout(timeoutId);
 
           if (!response.ok) {
             throw new Error(`API returned ${response.status}: ${response.statusText}`);
@@ -277,7 +282,7 @@ const CarDetails = () => {
               'accept': '*/*',
               'x-api-key': API_KEY
             },
-            signal: AbortSignal.timeout(10000)
+            signal: AbortSignal.timeout(5000) // 5 second timeout for faster response
           });
 
           if (listResponse.ok) {
@@ -428,33 +433,37 @@ const CarDetails = () => {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       <div className="container-responsive py-6 max-w-7xl">
         {/* Header with Actions */}
-        <div className="flex justify-between items-center mb-8">
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              // Intelligent back navigation
-              if (previousPage) {
-                console.log('🔙 Going back to saved page:', previousPage);
-                if (filterState) {
-                  console.log('📋 With filters:', filterState);
-                  // Navigate to previous page and filters will be restored by the catalog components
+        <div className="flex flex-wrap gap-3 justify-between items-center mb-8">
+          <div className="flex gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                // Intelligent back navigation
+                if (previousPage) {
+                  console.log('🔙 Going back to saved page:', previousPage);
                   navigate(previousPage);
+                } else if (window.history.length > 1) {
+                  console.log('🔙 Using browser back');
+                  window.history.back();
                 } else {
-                  navigate(previousPage);
+                  console.log('🔙 Fallback to catalog');
+                  navigate('/catalog');
                 }
-              } else if (window.history.length > 1) {
-                console.log('🔙 Using browser back');
-                window.history.back();
-              } else {
-                console.log('🔙 Fallback to catalog');
-                navigate('/catalog');
-              }
-            }} 
-            className="shadow-sm border-2 hover:shadow-md transition-all"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Kthehu te Makinat
-          </Button>
+              }} 
+              className="shadow-sm border-2 hover:shadow-md transition-all"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Kthehu te Makinat
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/')} 
+              className="shadow-sm border-2 hover:shadow-md transition-all"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Kryefaqja
+            </Button>
+          </div>
           <div className="flex gap-3">
             <Button variant="outline" size="sm" onClick={handleLike} className="shadow-sm hover:shadow-md transition-all">
               <Heart className={`h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
