@@ -31,171 +31,135 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
     return statuses.some(s => s.code === 'X'); // X = Exchange/Replace
   };
 
+  const getStatusColor = (statuses: Array<{ code: string; title: string }>) => {
+    if (statuses.length === 0) return '#10b981'; // Default green
+    const hasExchange = statuses.some(s => s.code === 'X');
+    const hasWelding = statuses.some(s => s.code === 'W');
+    
+    if (hasExchange) return '#ef4444'; // Red for exchange
+    if (hasWelding) return '#f59e0b'; // Orange for welding/repair
+    return '#10b981'; // Green for good
+  };
+
   // Red marker component
   const RedMarker = ({ x, y, size = 8 }: { x: number; y: number; size?: number }) => (
     <circle cx={x} cy={y} r={size} fill="#ef4444" stroke="#fff" strokeWidth="2" opacity="0.9" />
   );
 
   return (
-    <div className={`w-full max-w-4xl mx-auto p-6 bg-card border border-border rounded-lg ${className}`}>
-      <h3 className="text-lg font-semibold text-center text-foreground mb-6">Vehicle Inspection Diagram</h3>
+    <div className={`w-full max-w-2xl mx-auto p-4 bg-card border border-border rounded-lg ${className}`}>
+      <h3 className="text-lg font-semibold text-center text-foreground mb-4">Vehicle Inspection Diagram</h3>
       
-      {/* Four-view layout in quadrants */}
-      <div className="grid grid-cols-2 gap-8 mb-6">
-        
-        {/* FRONT VIEW - Top Left Quadrant */}
-        <div className="text-center">
-          <h4 className="text-sm font-semibold mb-3 text-foreground">Front (Forward)</h4>
-          <div className="relative w-full max-w-sm mx-auto">
-            <svg viewBox="0 0 200 160" className="w-full h-auto border border-border rounded">
-              {/* Car outline - front view */}
-              <path
-                d="M40 20 Q40 15 45 15 L155 15 Q160 15 160 20 L160 140 Q160 145 155 145 L45 145 Q40 145 40 140 Z"
-                fill="none"
-                stroke="#64748b"
-                strokeWidth="2"
-              />
-              
-              {/* Windshield */}
-              <rect x="50" y="25" width="100" height="40" fill="#9ca3af" stroke="#64748b" strokeWidth="1" rx="3" />
-              
-              {/* Headlights */}
-              <ellipse cx="65" cy="135" rx="12" ry="8" fill="none" stroke="#64748b" strokeWidth="1" />
-              <ellipse cx="135" cy="135" rx="12" ry="8" fill="none" stroke="#64748b" strokeWidth="1" />
-              
-              {/* Front grille */}
-              <rect x="80" y="120" width="40" height="15" fill="none" stroke="#64748b" strokeWidth="1" rx="2" />
-              
-              {/* Hood line */}
-              <line x1="60" y1="80" x2="140" y2="80" stroke="#64748b" strokeWidth="1" />
-              
-              {/* Front bumper */}
-              <path d="M50 140 Q100 150 150 140" fill="none" stroke="#64748b" strokeWidth="2" />
-              
-              {/* Red markers for exchanged parts */}
-              {isExchangedPart('P051') && <RedMarker x={100} y={50} />} {/* Hood */}
-              {isExchangedPart('front_bumper') && <RedMarker x={100} y={140} />} {/* Front bumper */}
-              {isExchangedPart('P021') && <RedMarker x={65} y={100} />} {/* Left front fender */}
-              {isExchangedPart('P022') && <RedMarker x={135} y={100} />} {/* Right front fender */}
-            </svg>
-          </div>
-        </div>
-
-        {/* RIGHT VIEW - Top Right Quadrant */}
-        <div className="text-center">
-          <h4 className="text-sm font-semibold mb-3 text-foreground">Right (Right Side)</h4>
-          <div className="relative w-full max-w-sm mx-auto">
-            <svg viewBox="0 0 200 120" className="w-full h-auto border border-border rounded">
-              {/* Car outline - right side view */}
-              <path
-                d="M20 80 L30 80 Q40 70 50 65 L60 60 Q70 55 80 55 L120 55 Q130 55 140 60 L150 65 Q160 70 170 80 L180 80 Q180 85 175 90 L25 90 Q20 85 20 80 Z"
-                fill="none"
-                stroke="#64748b"
-                strokeWidth="2"
-              />
-              
-              {/* Windows */}
-              <rect x="55" y="35" width="30" height="20" fill="#9ca3af" stroke="#64748b" strokeWidth="1" rx="2" />
-              <rect x="90" y="35" width="30" height="20" fill="#9ca3af" stroke="#64748b" strokeWidth="1" rx="2" />
-              <rect x="125" y="35" width="30" height="20" fill="#9ca3af" stroke="#64748b" strokeWidth="1" rx="2" />
-              
-              {/* Doors */}
-              <line x1="85" y1="55" x2="85" y2="85" stroke="#64748b" strokeWidth="1" />
-              <line x1="120" y1="55" x2="120" y2="85" stroke="#64748b" strokeWidth="1" />
-              
-              {/* Door handles */}
-              <circle cx="80" cy="70" r="2" fill="none" stroke="#64748b" strokeWidth="1" />
-              <circle cx="115" cy="70" r="2" fill="none" stroke="#64748b" strokeWidth="1" />
-              <circle cx="150" cy="70" r="2" fill="none" stroke="#64748b" strokeWidth="1" />
-              
-              {/* Wheels */}
-              <circle cx="45" cy="95" r="12" fill="none" stroke="#64748b" strokeWidth="2" />
-              <circle cx="155" cy="95" r="12" fill="none" stroke="#64748b" strokeWidth="2" />
-              
-              {/* Red markers for exchanged parts */}
-              {isExchangedPart('P012') && <RedMarker x={70} y={70} />} {/* Right front door */}
-              {isExchangedPart('P014') && <RedMarker x={105} y={70} />} {/* Right rear door */}
-              {isExchangedPart('P024') && <RedMarker x={140} y={70} />} {/* Right quarter panel */}
-            </svg>
-          </div>
-        </div>
-
-        {/* LEFT VIEW - Bottom Left Quadrant */}
-        <div className="text-center">
-          <h4 className="text-sm font-semibold mb-3 text-foreground">Left (Left Side)</h4>
-          <div className="relative w-full max-w-sm mx-auto">
-            <svg viewBox="0 0 200 120" className="w-full h-auto border border-border rounded">
-              {/* Car outline - left side view (mirrored) */}
-              <path
-                d="M180 80 L170 80 Q160 70 150 65 L140 60 Q130 55 120 55 L80 55 Q70 55 60 60 L50 65 Q40 70 30 80 L20 80 Q20 85 25 90 L175 90 Q180 85 180 80 Z"
-                fill="none"
-                stroke="#64748b"
-                strokeWidth="2"
-              />
-              
-              {/* Windows */}
-              <rect x="45" y="35" width="30" height="20" fill="#9ca3af" stroke="#64748b" strokeWidth="1" rx="2" />
-              <rect x="80" y="35" width="30" height="20" fill="#9ca3af" stroke="#64748b" strokeWidth="1" rx="2" />
-              <rect x="115" y="35" width="30" height="20" fill="#9ca3af" stroke="#64748b" strokeWidth="1" rx="2" />
-              
-              {/* Doors */}
-              <line x1="115" y1="55" x2="115" y2="85" stroke="#64748b" strokeWidth="1" />
-              <line x1="80" y1="55" x2="80" y2="85" stroke="#64748b" strokeWidth="1" />
-              
-              {/* Door handles */}
-              <circle cx="120" cy="70" r="2" fill="none" stroke="#64748b" strokeWidth="1" />
-              <circle cx="85" cy="70" r="2" fill="none" stroke="#64748b" strokeWidth="1" />
-              <circle cx="50" cy="70" r="2" fill="none" stroke="#64748b" strokeWidth="1" />
-              
-              {/* Wheels */}
-              <circle cx="155" cy="95" r="12" fill="none" stroke="#64748b" strokeWidth="2" />
-              <circle cx="45" cy="95" r="12" fill="none" stroke="#64748b" strokeWidth="2" />
-              
-              {/* Red markers for exchanged parts */}
-              {isExchangedPart('P011') && <RedMarker x={130} y={70} />} {/* Left front door */}
-              {isExchangedPart('P013') && <RedMarker x={95} y={70} />} {/* Left rear door */}
-              {isExchangedPart('P023') && <RedMarker x={60} y={70} />} {/* Left quarter panel */}
-            </svg>
-          </div>
-        </div>
-
-        {/* REAR VIEW - Bottom Right Quadrant */}
-        <div className="text-center">
-          <h4 className="text-sm font-semibold mb-3 text-foreground">Rear (Backward)</h4>
-          <div className="relative w-full max-w-sm mx-auto">
-            <svg viewBox="0 0 200 160" className="w-full h-auto border border-border rounded">
-              {/* Car outline - rear view */}
-              <path
-                d="M40 20 Q40 15 45 15 L155 15 Q160 15 160 20 L160 140 Q160 145 155 145 L45 145 Q40 145 40 140 Z"
-                fill="none"
-                stroke="#64748b"
-                strokeWidth="2"
-              />
-              
-              {/* Rear window */}
-              <rect x="50" y="25" width="100" height="40" fill="#9ca3af" stroke="#64748b" strokeWidth="1" rx="3" />
-              
-              {/* Taillights */}
-              <ellipse cx="65" cy="135" rx="12" ry="8" fill="none" stroke="#64748b" strokeWidth="1" />
-              <ellipse cx="135" cy="135" rx="12" ry="8" fill="none" stroke="#64748b" strokeWidth="1" />
-              
-              {/* License plate area */}
-              <rect x="85" y="120" width="30" height="12" fill="none" stroke="#64748b" strokeWidth="1" rx="1" />
-              
-              {/* Trunk line */}
-              <line x1="60" y1="80" x2="140" y2="80" stroke="#64748b" strokeWidth="1" />
-              
-              {/* Rear bumper */}
-              <path d="M50 140 Q100 150 150 140" fill="none" stroke="#64748b" strokeWidth="2" />
-              
-              {/* Red markers for exchanged parts */}
-              {isExchangedPart('trunk') && <RedMarker x={100} y={50} />} {/* Trunk */}
-              {isExchangedPart('rear_bumper') && <RedMarker x={100} y={140} />} {/* Rear bumper */}
-              {isExchangedPart('P043') && <RedMarker x={65} y={100} />} {/* Left rear quarter */}
-              {isExchangedPart('P044') && <RedMarker x={135} y={100} />} {/* Right rear quarter */}
-            </svg>
-          </div>
-        </div>
+      {/* Simple Top-Down Car Diagram */}
+      <div className="relative w-full max-w-lg mx-auto mb-6">
+        <svg viewBox="0 0 300 400" className="w-full h-auto border border-border rounded">
+          {/* Car Body Outline */}
+          <path
+            d="M75 50 Q75 30 95 30 L205 30 Q225 30 225 50 L225 350 Q225 370 205 370 L95 370 Q75 370 75 350 Z"
+            fill="#f8fafc"
+            stroke="#64748b"
+            strokeWidth="2"
+          />
+          
+          {/* Hood */}
+          <rect x="100" y="50" width="100" height="40" 
+                fill={getStatusColor(getPartStatus('P051'))} 
+                stroke="#475569" strokeWidth="1" rx="5" />
+          <text x="150" y="72" textAnchor="middle" fontSize="10" fill="#000">Hood</text>
+          {isExchangedPart('P051') && <RedMarker x={150} y={65} />}
+          
+          {/* Front Bumper */}
+          <rect x="85" y="30" width="130" height="20" 
+                fill={getStatusColor(getPartStatus('front_bumper'))} 
+                stroke="#475569" strokeWidth="1" rx="8" />
+          <text x="150" y="42" textAnchor="middle" fontSize="9" fill="#000">Front Bumper</text>
+          {isExchangedPart('front_bumper') && <RedMarker x={150} y={40} />}
+          
+          {/* Windshield */}
+          <rect x="90" y="90" width="120" height="30" fill="#9ca3af" stroke="#64748b" strokeWidth="1" rx="3" />
+          <text x="150" y="107" textAnchor="middle" fontSize="9" fill="#000">Windshield</text>
+          
+          {/* Left Side Parts */}
+          <rect x="50" y="100" width="25" height="50" 
+                fill={getStatusColor(getPartStatus('P021'))} 
+                stroke="#475569" strokeWidth="1" rx="3" />
+          <text x="62" y="128" textAnchor="middle" fontSize="8" fill="#000">L Fender</text>
+          {isExchangedPart('P021') && <RedMarker x={62} y={120} />}
+          
+          <rect x="50" y="150" width="25" height="60" 
+                fill={getStatusColor(getPartStatus('P011'))} 
+                stroke="#475569" strokeWidth="1" rx="3" />
+          <text x="62" y="183" textAnchor="middle" fontSize="8" fill="#000">L F Door</text>
+          {isExchangedPart('P011') && <RedMarker x={62} y={175} />}
+          
+          <rect x="50" y="210" width="25" height="60" 
+                fill={getStatusColor(getPartStatus('P013'))} 
+                stroke="#475569" strokeWidth="1" rx="3" />
+          <text x="62" y="243" textAnchor="middle" fontSize="8" fill="#000">L R Door</text>
+          {isExchangedPart('P013') && <RedMarker x={62} y={235} />}
+          
+          <rect x="50" y="270" width="25" height="50" 
+                fill={getStatusColor(getPartStatus('P023'))} 
+                stroke="#475569" strokeWidth="1" rx="3" />
+          <text x="62" y="298" textAnchor="middle" fontSize="8" fill="#000">L Quarter</text>
+          {isExchangedPart('P023') && <RedMarker x={62} y={290} />}
+          
+          {/* Right Side Parts */}
+          <rect x="225" y="100" width="25" height="50" 
+                fill={getStatusColor(getPartStatus('P022'))} 
+                stroke="#475569" strokeWidth="1" rx="3" />
+          <text x="237" y="128" textAnchor="middle" fontSize="8" fill="#000">R Fender</text>
+          {isExchangedPart('P022') && <RedMarker x={237} y={120} />}
+          
+          <rect x="225" y="150" width="25" height="60" 
+                fill={getStatusColor(getPartStatus('P012'))} 
+                stroke="#475569" strokeWidth="1" rx="3" />
+          <text x="237" y="183" textAnchor="middle" fontSize="8" fill="#000">R F Door</text>
+          {isExchangedPart('P012') && <RedMarker x={237} y={175} />}
+          
+          <rect x="225" y="210" width="25" height="60" 
+                fill={getStatusColor(getPartStatus('P014'))} 
+                stroke="#475569" strokeWidth="1" rx="3" />
+          <text x="237" y="243" textAnchor="middle" fontSize="8" fill="#000">R R Door</text>
+          {isExchangedPart('P014') && <RedMarker x={237} y={235} />}
+          
+          <rect x="225" y="270" width="25" height="50" 
+                fill={getStatusColor(getPartStatus('P024'))} 
+                stroke="#475569" strokeWidth="1" rx="3" />
+          <text x="237" y="298" textAnchor="middle" fontSize="8" fill="#000">R Quarter</text>
+          {isExchangedPart('P024') && <RedMarker x={237} y={290} />}
+          
+          {/* Roof */}
+          <rect x="90" y="120" width="120" height="160" 
+                fill={getStatusColor(getPartStatus('roof'))} 
+                stroke="#475569" strokeWidth="1" rx="3" />
+          <text x="150" y="205" textAnchor="middle" fontSize="10" fill="#000">Roof</text>
+          {isExchangedPart('roof') && <RedMarker x={150} y={195} />}
+          
+          {/* Rear Window */}
+          <rect x="90" y="280" width="120" height="30" fill="#9ca3af" stroke="#64748b" strokeWidth="1" rx="3" />
+          <text x="150" y="297" textAnchor="middle" fontSize="9" fill="#000">Rear Window</text>
+          
+          {/* Trunk */}
+          <rect x="100" y="310" width="100" height="40" 
+                fill={getStatusColor(getPartStatus('trunk'))} 
+                stroke="#475569" strokeWidth="1" rx="5" />
+          <text x="150" y="332" textAnchor="middle" fontSize="10" fill="#000">Trunk</text>
+          {isExchangedPart('trunk') && <RedMarker x={150} y={325} />}
+          
+          {/* Rear Bumper */}
+          <rect x="85" y="350" width="130" height="20" 
+                fill={getStatusColor(getPartStatus('rear_bumper'))} 
+                stroke="#475569" strokeWidth="1" rx="8" />
+          <text x="150" y="362" textAnchor="middle" fontSize="9" fill="#000">Rear Bumper</text>
+          {isExchangedPart('rear_bumper') && <RedMarker x={150} y={360} />}
+          
+          {/* Wheels */}
+          <circle cx="90" cy="130" r="15" fill="#475569" stroke="#334155" strokeWidth="2" />
+          <circle cx="210" cy="130" r="15" fill="#475569" stroke="#334155" strokeWidth="2" />
+          <circle cx="90" cy="270" r="15" fill="#475569" stroke="#334155" strokeWidth="2" />
+          <circle cx="210" cy="270" r="15" fill="#475569" stroke="#334155" strokeWidth="2" />
+        </svg>
       </div>
 
       {/* Legend */}
