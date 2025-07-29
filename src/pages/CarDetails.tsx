@@ -85,12 +85,12 @@ const CarDetails = () => {
   // Extract features from car data
   const getCarFeatures = (carData: any, lot: any): string[] => {
     const features = [];
-    if (carData.transmission?.name) features.push(Transmisioni ${carData.transmission.name});
-    if (carData.fuel?.name) features.push(Karburanti: ${carData.fuel.name});
-    if (carData.color?.name) features.push(Ngjyra: ${carData.color.name});
-    if (carData.engine?.name) features.push(Motori: ${carData.engine.name});
-    if (carData.cylinders) features.push(${carData.cylinders} Cilindra);
-    if (carData.drive_wheel?.name) features.push(Tërheqje: ${carData.drive_wheel.name});
+    if (carData.transmission?.name) features.push(`Transmisioni: ${carData.transmission.name}`);
+    if (carData.fuel?.name) features.push(`Karburanti: ${carData.fuel.name}`);
+    if (carData.color?.name) features.push(`Ngjyra: ${carData.color.name}`);
+    if (carData.engine?.name) features.push(`Motori: ${carData.engine.name}`);
+    if (carData.cylinders) features.push(`${carData.cylinders} Cilindra`);
+    if (carData.drive_wheel?.name) features.push(`Tërheqje: ${carData.drive_wheel.name}`);
     if (lot?.keys_available) features.push('Çelësat të Disponueshëm');
     
     // Add basic features if list is empty
