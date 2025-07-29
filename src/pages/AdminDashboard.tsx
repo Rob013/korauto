@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RefreshCw, Mail, Phone, Car, ArrowLeft, LogOut, Users, Activity, TrendingUp, Calendar, Eye, Heart, Clock, AlertCircle, CheckCircle, UserCheck, Database, User as UserIcon, FileText } from "lucide-react";
+import { RefreshCw, Mail, Phone, Car, ArrowLeft, LogOut, Users, Activity, TrendingUp, Calendar, Eye, Heart, Clock, AlertCircle, CheckCircle, UserCheck, Database, User as UserIcon, FileText, Monitor, BarChart3, MousePointer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import AuthLogin from "@/components/AuthLogin";
@@ -35,6 +35,23 @@ interface AdminStats {
   requestsThisMonth: number;
   totalCachedCars: number;
   recentCarSyncs: number;
+  // Analytics stats
+  totalPageViews: number;
+  uniqueVisitors: number;
+  carViewsToday: number;
+  favoritesToday: number;
+  searchesToday: number;
+  popularCars: Array<{car_id: string, count: number}>;
+}
+
+interface AnalyticsData {
+  total_events: number;
+  unique_sessions: number;
+  page_views: number;
+  car_views: number;
+  favorites_added: number;
+  searches: number;
+  popular_cars: Array<{car_id: string, count: number}>;
 }
 
 const AdminDashboard = () => {
@@ -50,6 +67,21 @@ const AdminDashboard = () => {
     requestsThisMonth: 0,
     totalCachedCars: 0,
     recentCarSyncs: 0,
+    totalPageViews: 0,
+    uniqueVisitors: 0,
+    carViewsToday: 0,
+    favoritesToday: 0,
+    searchesToday: 0,
+    popularCars: [],
+  });
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData>({
+    total_events: 0,
+    unique_sessions: 0,
+    page_views: 0,
+    car_views: 0,
+    favorites_added: 0,
+    searches: 0,
+    popular_cars: [],
   });
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
@@ -175,6 +207,46 @@ const AdminDashboard = () => {
         .order('created_at', { ascending: false })
         .limit(1);
 
+      // Fetch analytics data
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const { data: analyticsStats } = await supabase
+        .from('website_analytics')
+        .select('action_type, car_id, session_id, created_at')
+        .gte('created_at', oneWeekAgo.toISOString());
+
+      const todayAnalytics = analyticsStats?.filter(stat => 
+        new Date(stat.created_at) >= today
+      ) || [];
+
+      const pageViews = analyticsStats?.filter(stat => stat.action_type === 'page_view').length || 0;
+      const uniqueVisitors = new Set(analyticsStats?.map(stat => stat.session_id)).size || 0;
+      const carViewsToday = todayAnalytics.filter(stat => stat.action_type === 'car_view').length;
+      const favoritesToday = todayAnalytics.filter(stat => stat.action_type === 'favorite_add').length;
+      const searchesToday = todayAnalytics.filter(stat => stat.action_type === 'search').length;
+
+      // Get popular cars
+      const carViews = analyticsStats?.filter(stat => stat.action_type === 'car_view' && stat.car_id) || [];
+      const carViewCounts = carViews.reduce((acc: any, view) => {
+        acc[view.car_id] = (acc[view.car_id] || 0) + 1;
+        return acc;
+      }, {});
+      const popularCars = Object.entries(carViewCounts)
+        .sort(([,a], [,b]) => (b as number) - (a as number))
+        .slice(0, 5)
+        .map(([car_id, count]) => ({ car_id, count: count as number }));
+
+      setAnalyticsData({
+        total_events: analyticsStats?.length || 0,
+        unique_sessions: uniqueVisitors,
+        page_views: pageViews,
+        car_views: carViews.length,
+        favorites_added: analyticsStats?.filter(stat => stat.action_type === 'favorite_add').length || 0,
+        searches: analyticsStats?.filter(stat => stat.action_type === 'search').length || 0,
+        popular_cars: popularCars,
+      });
+
       setStats({
         totalInspectionRequests: totalRequests,
         pendingRequests,
@@ -186,6 +258,12 @@ const AdminDashboard = () => {
         requestsThisMonth,
         totalCachedCars: totalCachedCars || 0,
         recentCarSyncs: recentCarSyncs || 0,
+        totalPageViews: pageViews,
+        uniqueVisitors,
+        carViewsToday,
+        favoritesToday,
+        searchesToday,
+        popularCars,
       });
 
     } catch (error) {
@@ -303,10 +381,11 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="inspections">Inspections</TabsTrigger>
-            <TabsTrigger value="traffic">Traffic & Analytics</TabsTrigger>
+            <TabsTrigger value="favorites">Favorites</TabsTrigger>
+            <TabsTrigger value="traffic">Live Analytics</TabsTrigger>
             <TabsTrigger value="system">System Management</TabsTrigger>
           </TabsList>
 
@@ -457,6 +536,78 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="favorites" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Heart className="h-5 w-5 text-red-500" />
+                  User Favorites Management
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Favorites</CardTitle>
+                      <Heart className="h-4 w-4 text-red-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{stats.totalFavorites}</div>
+                      <p className="text-xs text-muted-foreground">
+                        Cars saved by users
+                      </p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Added Today</CardTitle>
+                      <TrendingUp className="h-4 w-4 text-green-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{stats.favoritesToday}</div>
+                      <p className="text-xs text-muted-foreground">
+                        New favorites today
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Popular Cars</CardTitle>
+                      <Eye className="h-4 w-4 text-blue-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{stats.popularCars.length}</div>
+                      <p className="text-xs text-muted-foreground">
+                        Most favorited cars
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {stats.popularCars.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Most Popular Cars</h3>
+                    <div className="space-y-2">
+                      {stats.popularCars.map((car, index) => (
+                        <div key={car.car_id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                          <div className="flex items-center space-x-3">
+                            <Badge variant="secondary">#{index + 1}</Badge>
+                            <span className="font-medium">Car ID: {car.car_id}</span>
+                          </div>
+                          <Badge variant="outline">
+                            {car.count} views
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="inspections" className="space-y-6">

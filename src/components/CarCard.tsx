@@ -7,6 +7,7 @@ import InspectionRequestForm from "@/components/InspectionRequestForm";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAnalytics } from "@/hooks/useAnalytics";
 interface CarCardProps {
   id: string;
   make: string;
@@ -222,6 +223,7 @@ const CarCard = ({
   const navigate = useNavigate();
   const { setPreviousPage } = useNavigation();
   const { toast } = useToast();
+  const { trackCarView, trackFavoriteAction } = useAnalytics();
   const [isFavorite, setIsFavorite] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -288,6 +290,7 @@ const CarCard = ({
           .eq('car_id', id);
         
         setIsFavorite(false);
+        trackFavoriteAction(id, 'remove');
         toast({
           title: "Removed from favorites",
           description: "Car removed from your favorites",
@@ -298,15 +301,11 @@ const CarCard = ({
           .from('favorite_cars')
           .insert({
             user_id: user.id,
-            car_id: id,
-            car_make: make,
-            car_model: model,
-            car_year: year,
-            car_price: price,
-            car_image: image
+            car_id: id
           });
         
         setIsFavorite(true);
+        trackFavoriteAction(id, 'add');
         toast({
           title: "Added to favorites",
           description: "Car saved to your favorites",
@@ -325,8 +324,10 @@ const CarCard = ({
   const handleCardClick = () => {
     // Save current page and any filter state before navigating
     setPreviousPage(window.location.pathname + window.location.search);
-    // Open in new tab
-    window.open(`/car/${lot}`, '_blank');
+    // Track car view
+    trackCarView(id || lot || '');
+    // Navigate to car details
+    navigate(`/car/${lot || id}`);
   };
   return <div className="bg-card rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-border cursor-pointer group touch-manipulation" onClick={handleCardClick}>
       <div className="relative h-48 sm:h-52 bg-muted overflow-hidden">
@@ -346,7 +347,17 @@ const CarCard = ({
           </div>
         )}
         
-  
+        {/* Favorite Heart Button */}
+        <div className="absolute top-3 left-3">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="bg-background/80 hover:bg-background"
+            onClick={handleFavoriteToggle}
+          >
+            <Heart className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`} />
+          </Button>
+        </div>
       </div>
       
       <div className="p-4 sm:p-5">

@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from "@/hooks/use-toast";
 import { MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAnalytics } from "@/hooks/useAnalytics";
 
 interface InspectionRequestFormProps {
   trigger: React.ReactNode;
@@ -33,6 +34,7 @@ const sanitizeInput = (input: string): string => {
 
 const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: InspectionRequestFormProps) => {
   const { toast } = useToast();
+  const { trackInspectionRequest } = useAnalytics();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -142,6 +144,9 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
       }
 
       console.log('✅ Successfully saved to database:', data);
+      
+      // Track analytics
+      trackInspectionRequest(carId);
 
       // Send email notifications
       try {
