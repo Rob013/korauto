@@ -5,13 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RefreshCw, Mail, Phone, Car, ArrowLeft, LogOut, Users, Activity, TrendingUp, Calendar, Eye, Heart, Clock, AlertCircle, CheckCircle, UserCheck, Database, User as UserIcon, FileText, Globe, Zap, Server } from "lucide-react";
+import { RefreshCw, Mail, Phone, Car, ArrowLeft, LogOut, Users, Activity, TrendingUp, Calendar, Eye, Heart, Clock, AlertCircle, CheckCircle, UserCheck, Database, User as UserIcon, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import AuthLogin from "@/components/AuthLogin";
 import { CarsSyncButton } from "@/components/CarsSyncButton";
 import { AdminSyncDashboard } from "@/components/AdminSyncDashboard";
-import { useProjectAnalytics } from "@/hooks/useProjectAnalytics";
 
 interface InspectionRequest {
   id: string;
@@ -37,133 +36,6 @@ interface AdminStats {
   totalCachedCars: number;
   recentCarSyncs: number;
 }
-
-// Live Analytics Component
-const LiveAnalyticsSection = () => {
-  const { analytics, loading: analyticsLoading, refetch } = useProjectAnalytics();
-  
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Live Analytics & Traffic</h3>
-        <Button onClick={refetch} variant="outline" size="sm" disabled={analyticsLoading}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${analyticsLoading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
-      </div>
-      
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Real-time Users</CardTitle>
-            <Globe className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.totalUsers}</div>
-            <p className="text-xs text-muted-foreground">
-              +{analytics.recentSignups} this week
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{Math.floor(analytics.totalUsers * 0.15)}</div>
-            <p className="text-xs text-muted-foreground">
-              Active now
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
-            <Zap className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.recentFavorites + analytics.recentRequests}</div>
-            <p className="text-xs text-muted-foreground">
-              Actions in 24h
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">System Health</CardTitle>
-            <Server className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              <Badge variant={analytics.systemHealth.apiStatus === 'healthy' ? 'default' : 'destructive'}>
-                {analytics.systemHealth.apiStatus}
-              </Badge>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              All systems operational
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent User Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {analytics.userActivity.slice(0, 5).map((activity, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium">{activity.customer_name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(activity.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge variant="outline">{activity.status}</Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Performance Metrics</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Database Response</span>
-                <span className="font-bold text-green-600">~45ms</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">API Uptime</span>
-                <span className="font-bold text-green-600">99.9%</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Car Data Sync</span>
-                <span className="font-bold">{analytics.systemHealth.lastSyncTime ? 'Active' : 'Pending'}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Cache Hit Rate</span>
-                <span className="font-bold text-green-600">94.2%</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-};
 
 const AdminDashboard = () => {
   const [requests, setRequests] = useState<InspectionRequest[]>([]);
@@ -359,13 +231,6 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (user && isAdmin) {
       fetchData();
-      
-      // Auto-refresh every 5 minutes
-      const interval = setInterval(() => {
-        fetchData();
-      }, 5 * 60 * 1000); // 5 minutes
-      
-      return () => clearInterval(interval);
     }
   }, [user, isAdmin]);
 

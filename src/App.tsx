@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Catalog from "./pages/Catalog";
 import CarDetails from "./pages/CarDetails";
-import CarDetailsOptimized from "./components/CarDetailsOptimized";
 import AdminDashboard from "./pages/AdminDashboard";
 import AuthPage from "./pages/AuthPage";
 import FavoritesPage from "./pages/FavoritesPage";
@@ -26,7 +25,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/catalog" element={<Catalog />} />
-          <Route path="/car/:id" element={<CarDetailsOptimized />} />
+          <Route path="/car/:id" element={<CarDetails />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/sync" element={<AdminSyncDashboard />} />
           <Route path="/auth" element={<AuthPage />} />
