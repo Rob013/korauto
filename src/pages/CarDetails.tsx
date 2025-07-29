@@ -160,52 +160,54 @@ const CarDetails = () => {
 
   const data = await response.json();
   const carData = data;
+const lotData = data.lots?.[0];
 
-  if (carData) {
-    const basePrice = carData.buy_now || carData.final_bid || carData.price || 25000;
-    const price = Math.round(basePrice + 2200);
+      if (!lotData) throw new Error("Missing lot data");
+      
+      const basePrice = lotData.buy_now ?? lotData.final_bid ?? lotData.price ?? 25000;
+      const price = Math.round(basePrice + 2200);
+      
+      const transformedCar: CarDetails = {
+        id: carData.id?.toString() || lotData.lot,
+        make: carData.manufacturer?.name || 'Unknown',
+        model: carData.model?.name || 'Unknown',
+        year: carData.year || 2020,
+        price,
+        image: lotData.images?.normal?.[0] || lotData.images?.big?.[0],
+        images: lotData.images?.normal || lotData.images?.big || [],
+        vin: carData.vin,
+        mileage: lotData.odometer?.km ? `${lotData.odometer.km.toLocaleString()} km` : undefined,
+        transmission: carData.transmission?.name,
+        fuel: carData.fuel?.name,
+        color: carData.color?.name,
+        condition: lotData.condition?.name?.replace('run_and_drives', 'Good Condition'),
+        lot: lotData.lot,
+        title: lotData.title || carData.title,
+        odometer: lotData.odometer,
+        engine: carData.engine,
+        cylinders: carData.cylinders,
+        drive_wheel: carData.drive_wheel,
+        body_type: carData.body_type,
+        damage: lotData.damage,
+        keys_available: lotData.keys_available,
+        airbags: lotData.airbags,
+        grade_iaai: lotData.grade_iaai,
+        seller: lotData.seller,
+        seller_type: lotData.seller_type,
+        sale_date: lotData.sale_date,
+        bid: lotData.bid,
+        buy_now: lotData.buy_now,
+        final_bid: lotData.final_bid,
+        features: getCarFeatures(carData, lotData),
+        safety_features: getSafetyFeatures(carData, lotData),
+        comfort_features: getComfortFeatures(carData, lotData),
+        performance_rating: 4.5,
+        popularity_score: 85
+      };
 
-    const transformedCar: CarDetails = {
-      id: carData.id?.toString() || lot,
-      make: carData.manufacturer?.name || 'Unknown',
-      model: carData.model?.name || 'Unknown',
-      year: carData.year || 2020,
-      price,
-      image: carData.images?.normal?.[0] || carData.images?.big?.[0],
-      images: carData.images?.normal || carData.images?.big || [],
-      vin: carData.vin,
-      mileage: carData.odometer?.km ? `${carData.odometer.km.toLocaleString()} km`: undefined,
-      transmission: carData.transmission?.name,
-      fuel: carData.fuel?.name,
-      color: carData.color?.name,
-      condition: carData.condition?.name?.replace('run_and_drives', 'Good Condition'),
-      lot: carData.lot,
-      title: carData.title,
-      odometer: carData.odometer,
-      engine: carData.engine,
-      cylinders: carData.cylinders,
-      drive_wheel: carData.drive_wheel,
-      body_type: carData.body_type,
-      damage: carData.damage,
-      keys_available: carData.keys_available,
-      airbags: carData.airbags,
-      grade_iaai: carData.grade_iaai,
-      seller: carData.seller,
-      seller_type: carData.seller_type,
-      sale_date: carData.sale_date,
-      bid: carData.bid,
-      buy_now: carData.buy_now,
-      final_bid: carData.final_bid,
-      features: getCarFeatures(carData, carData),
-      safety_features: getSafetyFeatures(carData, carData),
-      comfort_features: getComfortFeatures(carData, carData),
-      performance_rating: 4.5,
-      popularity_score: 85
-    };
-
-    setCar(transformedCar);
-    setLoading(false);
-    return;
+        setCar(transformedCar);
+        setLoading(false);
+        return;
   }
 } catch (apiError) {
   console.error('❌ Failed to fetch from lot endpoint:', apiError);
