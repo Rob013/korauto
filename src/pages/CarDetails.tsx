@@ -710,168 +710,139 @@ const CarDetails = () => {
               <div class="car-diagram">
                 <h4 style="text-align: center; margin-bottom: 20px; color: hsl(var(--foreground));">Vehicle Inspection Diagram</h4>
                 
-                <!-- Four-View Car Inspection Diagram -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
-                  
-                  <!-- FRONT VIEW - Top Left Quadrant -->
-                  <div style="text-align: center;">
-                    <h5 style="font-size: 14px; font-weight: bold; margin-bottom: 15px; color: hsl(var(--foreground));">Front (Forward)</h5>
-                    <div style="border: 1px solid hsl(var(--border)); border-radius: 8px; padding: 10px; background: hsl(var(--card));">
-                      <svg viewBox="0 0 200 160" style="width: 100%; height: auto; max-width: 300px;">
-                        <!-- Car outline - front view -->
-                        <path d="M40 20 Q40 15 45 15 L155 15 Q160 15 160 20 L160 140 Q160 145 155 145 L45 145 Q40 145 40 140 Z"
-                              fill="none" stroke="#64748b" stroke-width="2"/>
-                        
-                        <!-- Windshield -->
-                        <rect x="50" y="25" width="100" height="40" fill="#9ca3af" stroke="#64748b" stroke-width="1" rx="3" />
-                        
-                        <!-- Headlights -->
-                        <ellipse cx="65" cy="135" rx="12" ry="8" fill="none" stroke="#64748b" stroke-width="1" />
-                        <ellipse cx="135" cy="135" rx="12" ry="8" fill="none" stroke="#64748b" stroke-width="1" />
-                        
-                        <!-- Front grille -->
-                        <rect x="80" y="120" width="40" height="15" fill="none" stroke="#64748b" stroke-width="1" rx="2" />
-                        
-                        <!-- Hood line -->
-                        <line x1="60" y1="80" x2="140" y2="80" stroke="#64748b" stroke-width="1" />
-                        
-                        <!-- Front bumper -->
-                        <path d="M50 140 Q100 150 150 140" fill="none" stroke="#64748b" stroke-width="2" />
-                        
-                        <!-- Dynamic Red markers based on inspection data -->
-                        ${car.details.inspect_outer.find(item => item.type.code === 'P051' || item.type.title.toLowerCase().includes('hood'))?.statusTypes.some(s => s.code === 'X') ? 
-                          '<circle cx="100" cy="50" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
-                        ${car.details.inspect_outer.find(item => item.type.title.toLowerCase().includes('front') && item.type.title.toLowerCase().includes('bumper'))?.statusTypes.some(s => s.code === 'X') ? 
-                          '<circle cx="100" cy="140" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
-                        ${car.details.inspect_outer.find(item => item.type.code === 'P021')?.statusTypes.some(s => s.code === 'X') ? 
-                          '<circle cx="65" cy="100" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
-                        ${car.details.inspect_outer.find(item => item.type.code === 'P022')?.statusTypes.some(s => s.code === 'X') ? 
-                          '<circle cx="135" cy="100" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
-                      </svg>
-                    </div>
-                  </div>
-
-                  <!-- RIGHT VIEW - Top Right Quadrant -->
-                  <div style="text-align: center;">
-                    <h5 style="font-size: 14px; font-weight: bold; margin-bottom: 15px; color: hsl(var(--foreground));">Right (Right Side)</h5>
-                    <div style="border: 1px solid hsl(var(--border)); border-radius: 8px; padding: 10px; background: hsl(var(--card));">
-                      <svg viewBox="0 0 200 120" style="width: 100%; height: auto; max-width: 300px;">
-                        <!-- Car outline - right side view -->
-                        <path d="M20 80 L30 80 Q40 70 50 65 L60 60 Q70 55 80 55 L120 55 Q130 55 140 60 L150 65 Q160 70 170 80 L180 80 Q180 85 175 90 L25 90 Q20 85 20 80 Z"
-                              fill="none" stroke="#64748b" stroke-width="2"/>
-                        
-                        <!-- Windows -->
-                        <rect x="55" y="35" width="30" height="20" fill="#9ca3af" stroke="#64748b" stroke-width="1" rx="2" />
-                        <rect x="90" y="35" width="30" height="20" fill="#9ca3af" stroke="#64748b" stroke-width="1" rx="2" />
-                        <rect x="125" y="35" width="30" height="20" fill="#9ca3af" stroke="#64748b" stroke-width="1" rx="2" />
-                        
-                        <!-- Doors -->
-                        <line x1="85" y1="55" x2="85" y2="85" stroke="#64748b" stroke-width="1" />
-                        <line x1="120" y1="55" x2="120" y2="85" stroke="#64748b" stroke-width="1" />
-                        
-                        <!-- Wheels -->
-                        <circle cx="45" cy="95" r="12" fill="none" stroke="#64748b" stroke-width="2" />
-                        <circle cx="155" cy="95" r="12" fill="none" stroke="#64748b" stroke-width="2" />
-                        
-                        <!-- Dynamic Red markers -->
-                        ${car.details.inspect_outer.find(item => item.type.code === 'P012')?.statusTypes.some(s => s.code === 'X') ? 
-                          '<circle cx="70" cy="70" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
-                        ${car.details.inspect_outer.find(item => item.type.code === 'P014')?.statusTypes.some(s => s.code === 'X') ? 
-                          '<circle cx="105" cy="70" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
-                        ${car.details.inspect_outer.find(item => item.type.code === 'P024')?.statusTypes.some(s => s.code === 'X') ? 
-                          '<circle cx="140" cy="70" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
-                      </svg>
-                    </div>
-                  </div>
-
-                  <!-- LEFT VIEW - Bottom Left Quadrant -->
-                  <div style="text-align: center;">
-                    <h5 style="font-size: 14px; font-weight: bold; margin-bottom: 15px; color: hsl(var(--foreground));">Left (Left Side)</h5>
-                    <div style="border: 1px solid hsl(var(--border)); border-radius: 8px; padding: 10px; background: hsl(var(--card));">
-                      <svg viewBox="0 0 200 120" style="width: 100%; height: auto; max-width: 300px;">
-                        <!-- Car outline - left side view (mirrored) -->
-                        <path d="M180 80 L170 80 Q160 70 150 65 L140 60 Q130 55 120 55 L80 55 Q70 55 60 60 L50 65 Q40 70 30 80 L20 80 Q20 85 25 90 L175 90 Q180 85 180 80 Z"
-                              fill="none" stroke="#64748b" stroke-width="2"/>
-                        
-                        <!-- Windows -->
-                        <rect x="45" y="35" width="30" height="20" fill="#9ca3af" stroke="#64748b" stroke-width="1" rx="2" />
-                        <rect x="80" y="35" width="30" height="20" fill="#9ca3af" stroke="#64748b" stroke-width="1" rx="2" />
-                        <rect x="115" y="35" width="30" height="20" fill="#9ca3af" stroke="#64748b" stroke-width="1" rx="2" />
-                        
-                        <!-- Doors -->
-                        <line x1="115" y1="55" x2="115" y2="85" stroke="#64748b" stroke-width="1" />
-                        <line x1="80" y1="55" x2="80" y2="85" stroke="#64748b" stroke-width="1" />
-                        
-                        <!-- Wheels -->
-                        <circle cx="155" cy="95" r="12" fill="none" stroke="#64748b" stroke-width="2" />
-                        <circle cx="45" cy="95" r="12" fill="none" stroke="#64748b" stroke-width="2" />
-                        
-                        <!-- Dynamic Red markers -->
-                        ${car.details.inspect_outer.find(item => item.type.code === 'P011')?.statusTypes.some(s => s.code === 'X') ? 
-                          '<circle cx="130" cy="70" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
-                        ${car.details.inspect_outer.find(item => item.type.code === 'P013')?.statusTypes.some(s => s.code === 'X') ? 
-                          '<circle cx="95" cy="70" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
-                        ${car.details.inspect_outer.find(item => item.type.code === 'P023')?.statusTypes.some(s => s.code === 'X') ? 
-                          '<circle cx="60" cy="70" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
-                      </svg>
-                    </div>
-                  </div>
-
-                  <!-- REAR VIEW - Bottom Right Quadrant -->
-                  <div style="text-align: center;">
-                    <h5 style="font-size: 14px; font-weight: bold; margin-bottom: 15px; color: hsl(var(--foreground));">Rear (Backward)</h5>
-                    <div style="border: 1px solid hsl(var(--border)); border-radius: 8px; padding: 10px; background: hsl(var(--card));">
-                      <svg viewBox="0 0 200 160" style="width: 100%; height: auto; max-width: 300px;">
-                        <!-- Car outline - rear view -->
-                        <path d="M40 20 Q40 15 45 15 L155 15 Q160 15 160 20 L160 140 Q160 145 155 145 L45 145 Q40 145 40 140 Z"
-                              fill="none" stroke="#64748b" stroke-width="2"/>
-                        
-                        <!-- Rear window -->
-                        <rect x="50" y="25" width="100" height="40" fill="#9ca3af" stroke="#64748b" stroke-width="1" rx="3" />
-                        
-                        <!-- Taillights -->
-                        <ellipse cx="65" cy="135" rx="12" ry="8" fill="none" stroke="#64748b" stroke-width="1" />
-                        <ellipse cx="135" cy="135" rx="12" ry="8" fill="none" stroke="#64748b" stroke-width="1" />
-                        
-                        <!-- License plate area -->
-                        <rect x="85" y="120" width="30" height="12" fill="none" stroke="#64748b" stroke-width="1" rx="1" />
-                        
-                        <!-- Trunk line -->
-                        <line x1="60" y1="80" x2="140" y2="80" stroke="#64748b" stroke-width="1" />
-                        
-                        <!-- Rear bumper -->
-                        <path d="M50 140 Q100 150 150 140" fill="none" stroke="#64748b" stroke-width="2" />
-                        
-                        <!-- Dynamic Red markers -->
-                        ${car.details.inspect_outer.find(item => item.type.title.toLowerCase().includes('trunk'))?.statusTypes.some(s => s.code === 'X') ? 
-                          '<circle cx="100" cy="50" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
-                        ${car.details.inspect_outer.find(item => item.type.title.toLowerCase().includes('rear') && item.type.title.toLowerCase().includes('bumper'))?.statusTypes.some(s => s.code === 'X') ? 
-                          '<circle cx="100" cy="140" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
-                        ${car.details.inspect_outer.find(item => item.type.code === 'P043')?.statusTypes.some(s => s.code === 'X') ? 
-                          '<circle cx="65" cy="100" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
-                        ${car.details.inspect_outer.find(item => item.type.code === 'P044')?.statusTypes.some(s => s.code === 'X') ? 
-                          '<circle cx="135" cy="100" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
-                      </svg>
-                    </div>
-                  </div>
+                <!-- Car Inspection Diagram - Simple Black Lines -->
+                <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+                  <svg width="800" height="500" viewBox="0 0 800 500" style="border: 1px solid hsl(var(--border)); border-radius: 8px; background: hsl(var(--card));">
+                    <!-- Title -->
+                    <text x="400" y="25" text-anchor="middle" fill="hsl(var(--foreground))" font-size="18" font-weight="bold">Vehicle Inspection Diagram</text>
+                    
+                    <!-- Front View (앞/전방) -->
+                    <g transform="translate(50, 60)">
+                      <text x="150" y="-5" text-anchor="middle" fill="hsl(var(--foreground))" font-size="14" font-weight="bold">Front View (앞/전방)</text>
+                      
+                      <!-- Car outline from front - Simple black lines -->
+                      <path d="M50 50 L50 280 L80 300 L220 300 L250 280 L250 50 Z" 
+                            fill="white" stroke="black" stroke-width="2"/>
+                      
+                      <!-- Hood -->
+                      <rect x="70" y="50" width="160" height="40" fill="white" stroke="black" stroke-width="1" id="hood-front"/>
+                      <text x="150" y="75" text-anchor="middle" fill="black" font-size="10" font-weight="bold">Hood</text>
+                      <text x="150" y="63" text-anchor="middle" fill="red" font-size="14" font-weight="bold" id="hood-marker"></text>
+                      
+                      <!-- Front Bumper -->
+                      <rect x="60" y="90" width="180" height="25" fill="white" stroke="black" stroke-width="1" id="front-bumper-main"/>
+                      <text x="150" y="107" text-anchor="middle" fill="black" font-size="10" font-weight="bold">Front Bumper</text>
+                      <text x="150" y="98" text-anchor="middle" fill="red" font-size="14" font-weight="bold" id="front-bumper-marker"></text>
+                      
+                      <!-- Left Front Fender -->
+                      <rect x="50" y="115" width="40" height="60" fill="white" stroke="black" stroke-width="1" id="left-front-fender"/>
+                      <text x="70" y="150" text-anchor="middle" fill="black" font-size="9" font-weight="bold">L Fender</text>
+                      <text x="70" y="130" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="left-front-fender-marker"></text>
+                      
+                      <!-- Right Front Fender -->
+                      <rect x="210" y="115" width="40" height="60" fill="white" stroke="black" stroke-width="1" id="right-front-fender"/>
+                      <text x="230" y="150" text-anchor="middle" fill="black" font-size="9" font-weight="bold">R Fender</text>
+                      <text x="230" y="130" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="right-front-fender-marker"></text>
+                      
+                      <!-- Left Front Door -->
+                      <rect x="90" y="115" width="50" height="80" fill="white" stroke="black" stroke-width="1" id="left-front-door"/>
+                      <text x="115" y="160" text-anchor="middle" fill="black" font-size="9" font-weight="bold">L F Door</text>
+                      <text x="115" y="140" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="left-front-door-marker"></text>
+                      
+                      <!-- Right Front Door -->
+                      <rect x="160" y="115" width="50" height="80" fill="white" stroke="black" stroke-width="1" id="right-front-door"/>
+                      <text x="185" y="160" text-anchor="middle" fill="black" font-size="9" font-weight="bold">R F Door</text>
+                      <text x="185" y="140" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="right-front-door-marker"></text>
+                      
+                      <!-- Left Rear Door -->
+                      <rect x="90" y="195" width="50" height="70" fill="white" stroke="black" stroke-width="1" id="left-rear-door"/>
+                      <text x="115" y="235" text-anchor="middle" fill="black" font-size="9" font-weight="bold">L R Door</text>
+                      <text x="115" y="215" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="left-rear-door-marker"></text>
+                      
+                      <!-- Right Rear Door -->
+                      <rect x="160" y="195" width="50" height="70" fill="white" stroke="black" stroke-width="1" id="right-rear-door"/>
+                      <text x="185" y="235" text-anchor="middle" fill="black" font-size="9" font-weight="bold">R R Door</text>
+                      <text x="185" y="215" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="right-rear-door-marker"></text>
+                      
+                      <!-- Trunk -->
+                      <rect x="70" y="265" width="160" height="35" fill="white" stroke="black" stroke-width="1" id="trunk-main"/>
+                      <text x="150" y="285" text-anchor="middle" fill="black" font-size="10" font-weight="bold">Trunk</text>
+                      <text x="150" y="275" text-anchor="middle" fill="red" font-size="14" font-weight="bold" id="trunk-marker"></text>
+                      
+                      <!-- Wheels -->
+                      <circle cx="80" cy="320" r="15" fill="white" stroke="black" stroke-width="2" id="front-left-wheel"/>
+                      <circle cx="220" cy="320" r="15" fill="white" stroke="black" stroke-width="2" id="front-right-wheel"/>
+                    </g>
+                    
+                    <!-- Top View (위/후방) -->
+                    <g transform="translate(400, 60)">
+                      <text x="150" y="-5" text-anchor="middle" fill="hsl(var(--foreground))" font-size="14" font-weight="bold">Top View (위/후방)</text>
+                      
+                      <!-- Car outline from top -->
+                      <path d="M80 50 L80 80 L50 100 L50 250 L80 270 L220 270 L250 250 L250 100 L220 80 L220 50 Z" 
+                            fill="white" stroke="black" stroke-width="2"/>
+                      
+                      <!-- Roof -->
+                      <rect x="80" y="50" width="140" height="220" fill="white" stroke="black" stroke-width="1" id="roof-main"/>
+                      <text x="150" y="165" text-anchor="middle" fill="black" font-size="12" font-weight="bold">Roof</text>
+                      <text x="150" y="145" text-anchor="middle" fill="red" font-size="14" font-weight="bold" id="roof-marker"></text>
+                      
+                      <!-- Windshield -->
+                      <rect x="85" y="55" width="130" height="25" fill="white" stroke="black" stroke-width="1"/>
+                      <text x="150" y="72" text-anchor="middle" fill="black" font-size="9">Windshield</text>
+                      
+                      <!-- Rear Window -->
+                      <rect x="85" y="240" width="130" height="25" fill="white" stroke="black" stroke-width="1"/>
+                      <text x="150" y="257" text-anchor="middle" fill="black" font-size="9">Rear Window</text>
+                      
+                      <!-- Side Mirrors -->
+                      <rect x="65" y="85" width="15" height="10" fill="white" stroke="black" stroke-width="1"/>
+                      <rect x="220" y="85" width="15" height="10" fill="white" stroke="black" stroke-width="1"/>
+                      
+                      <!-- Wheels positions -->
+                      <rect x="40" y="90" width="20" height="40" fill="white" stroke="black" stroke-width="1"/>
+                      <rect x="240" y="90" width="20" height="40" fill="white" stroke="black" stroke-width="1"/>
+                      <rect x="40" y="190" width="20" height="40" fill="white" stroke="black" stroke-width="1"/>
+                      <rect x="240" y="190" width="20" height="40" fill="white" stroke="black" stroke-width="1"/>
+                    </g>
+                    
+                    <!-- Rear View -->
+                    <g transform="translate(150, 370)">
+                      <text x="100" y="-5" text-anchor="middle" fill="hsl(var(--foreground))" font-size="14" font-weight="bold">Rear View (뒤/후방)</text>
+                      
+                      <!-- Rear Bumper -->
+                      <rect x="20" y="10" width="160" height="25" fill="white" stroke="black" stroke-width="1" id="rear-bumper-main"/>
+                      <text x="100" y="27" text-anchor="middle" fill="black" font-size="10" font-weight="bold">Rear Bumper</text>
+                      <text x="100" y="18" text-anchor="middle" fill="red" font-size="14" font-weight="bold" id="rear-bumper-marker"></text>
+                      
+                      <!-- Quarter Panels -->
+                      <rect x="10" y="35" width="35" height="50" fill="white" stroke="black" stroke-width="1" id="left-quarter-panel"/>
+                      <text x="27" y="65" text-anchor="middle" fill="black" font-size="9" font-weight="bold">L Quarter</text>
+                      <text x="27" y="50" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="left-quarter-panel-marker"></text>
+                      
+                      <rect x="155" y="35" width="35" height="50" fill="white" stroke="black" stroke-width="1" id="right-quarter-panel"/>
+                      <text x="172" y="65" text-anchor="middle" fill="black" font-size="9" font-weight="bold">R Quarter</text>
+                      <text x="172" y="50" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="right-quarter-panel-marker"></text>
+                      
+                      <!-- Rear Lights -->
+                      <rect x="45" y="40" width="15" height="20" fill="white" stroke="black" stroke-width="1"/>
+                      <rect x="140" y="40" width="15" height="20" fill="white" stroke="black" stroke-width="1"/>
+                    </g>
+                  </svg>
                 </div>
                 
-                <!-- Legend -->
-                <div style="margin-bottom: 20px; padding: 15px; background: hsl(var(--muted)); border-radius: 8px;">
-                  <h5 style="font-size: 14px; font-weight: bold; margin-bottom: 10px; color: hsl(var(--foreground));">Legend</h5>
-                  <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                      <div style="width: 16px; height: 16px; background: #ef4444; border-radius: 50%;"></div>
-                      <span style="font-size: 12px; color: hsl(var(--foreground));">Exchanged/Replaced Parts</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                      <div style="width: 16px; height: 16px; background: #9ca3af; border-radius: 4px;"></div>
-                      <span style="font-size: 12px; color: hsl(var(--foreground));">Windows</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                      <div style="width: 16px; height: 16px; border: 2px solid #64748b; border-radius: 4px; background: transparent;"></div>
-                      <span style="font-size: 12px; color: hsl(var(--foreground));">Car Body</span>
-                    </div>
+                <div class="legend">
+                  <div class="legend-item">
+                    <div class="legend-color" style="background: hsl(142.1, 76.2%, 36.3%);"></div>
+                    <span>Normal Condition</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-color" style="background: hsl(47.9, 95.8%, 53.1%);"></div>
+                    <span>Repair/Welding Required</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-color" style="background: hsl(0, 84.2%, 60.2%);"></div>
+                    <span>Exchange/Replacement</span>
                   </div>
                 </div>
               </div>
@@ -1462,6 +1433,7 @@ const CarDetails = () => {
                     className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
                   >
                     Shiko Detajet
+                    <ChevronDown className="h-4 w-4 ml-2" />
                   </Button>
                 </div>
 
@@ -1804,46 +1776,351 @@ const CarDetails = () => {
                     </div>
                   </TabsContent>
                   
-                  <TabsContent value="inspection" className="mt-8">
-                    <div className="space-y-6">
-                      <h4 className="font-semibold text-lg text-foreground">Raporti i Inspektimit KORAUTO</h4>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="text-center p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg">
-                          <Star className="h-8 w-8 text-emerald-600 dark:text-emerald-400 mx-auto mb-2" />
-                          <div className="font-semibold text-emerald-600 dark:text-emerald-400">9.2/10</div>
-                          <div className="text-xs text-emerald-700 dark:text-emerald-300">Vlerësimi i Përgjithshëm</div>
-                        </div>
-                        <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
-                          <CheckCircle className="h-8 w-8 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
-                          <div className="font-semibold text-blue-600 dark:text-blue-400">Excellent</div>
-                          <div className="text-xs text-blue-700 dark:text-blue-300">Gjendja e Motorit</div>
-                        </div>
-                        <div className="text-center p-4 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-lg">
-                          <Shield className="h-8 w-8 text-purple-600 dark:text-purple-400 mx-auto mb-2" />
-                          <div className="font-semibold text-purple-600 dark:text-purple-400">Verified</div>
-                          <div className="text-xs text-purple-700 dark:text-purple-300">Dokumentacioni</div>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <h5 className="font-medium text-foreground">Kontrollet e Kryera:</h5>
-                        {[
-                          'Kontrolli i motorit dhe transmisionit',
-                          'Sistemi i frënimit dhe pezullimit',
-                          'Sistemet elektrike dhe elektronike',
-                          'Karoseria dhe ngjyra',
-                          'Interiori dhe pajisjet',
-                          'Dokumentacioni dhe historia'
-                        ].map((check, index) => (
-                          <div key={index} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                            <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                            <span className="text-sm text-foreground">{check}</span>
+                   <TabsContent value="inspection" className="mt-8">
+                     <div className="space-y-6">
+                       {/* Vehicle Basic Information - Korean Style */}
+                       <Card className="p-6">
+                         <h3 className="text-lg font-semibold mb-4 text-foreground border-b border-border pb-2">
+                           Vehicle Basic Information
+                         </h3>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                           <div className="space-y-3">
+                             <div className="flex justify-between items-center py-2 border-b border-border/30">
+                               <span className="text-muted-foreground font-medium">Vehicle Name:</span>
+                               <span className="text-foreground">{car.make} {car.model}</span>
+                             </div>
+                             <div className="flex justify-between items-center py-2 border-b border-border/30">
+                               <span className="text-muted-foreground font-medium">Vehicle Number:</span>
+                               <span className="text-foreground">{car.lot || 'N/A'}</span>
+                             </div>
+                             <div className="flex justify-between items-center py-2 border-b border-border/30">
+                               <span className="text-muted-foreground font-medium">First Registration:</span>
+                               <span className="text-foreground">{car.insurance_v2?.firstDate || 'N/A'}</span>
+                             </div>
+                             <div className="flex justify-between items-center py-2 border-b border-border/30">
+                               <span className="text-muted-foreground font-medium">Fuel Type:</span>
+                               <span className="text-foreground">{car.fuel || 'N/A'}</span>
+                             </div>
+                             <div className="flex justify-between items-center py-2 border-b border-border/30">
+                               <span className="text-muted-foreground font-medium">Insurance Type:</span>
+                               <span className="text-foreground">{car.insurance_v2?.type || 'N/A'}</span>
+                             </div>
+                           </div>
+                           <div className="space-y-3">
+                             <div className="flex justify-between items-center py-2 border-b border-border/30">
+                               <span className="text-muted-foreground font-medium">Model Year:</span>
+                               <span className="text-foreground">{car.year}</span>
+                             </div>
+                             <div className="flex justify-between items-center py-2 border-b border-border/30">
+                               <span className="text-muted-foreground font-medium">Inspection Valid Until:</span>
+                               <span className="text-foreground">N/A</span>
+                             </div>
+                             <div className="flex justify-between items-center py-2 border-b border-border/30">
+                               <span className="text-muted-foreground font-medium">Transmission:</span>
+                               <span className="text-foreground">{car.transmission || 'N/A'}</span>
+                             </div>
+                             <div className="flex justify-between items-center py-2 border-b border-border/30">
+                               <span className="text-muted-foreground font-medium">VIN:</span>
+                               <span className="text-foreground font-mono text-sm">{car.vin || 'N/A'}</span>
+                             </div>
+                             <div className="flex justify-between items-center py-2 border-b border-border/30">
+                               <span className="text-muted-foreground font-medium">Engine Type:</span>
+                               <span className="text-foreground">{car.engine?.name || 'N/A'}</span>
+                             </div>
+                           </div>
+                         </div>
+                       </Card>
+
+                       {/* Vehicle Comprehensive Status */}
+                       <Card className="p-6">
+                         <h3 className="text-lg font-semibold mb-4 text-foreground border-b border-border pb-2">
+                           Vehicle Comprehensive Status
+                         </h3>
+                         <div className="overflow-x-auto">
+                           <table className="w-full text-sm">
+                             <thead>
+                               <tr className="border-b border-border">
+                                 <th className="text-left py-2 px-3 font-medium text-muted-foreground">Item</th>
+                                 <th className="text-left py-2 px-3 font-medium text-muted-foreground">Status</th>
+                                 <th className="text-left py-2 px-3 font-medium text-muted-foreground">Details</th>
+                               </tr>
+                             </thead>
+                             <tbody>
+                               <tr className="border-b border-border/30">
+                                 <td className="py-2 px-3 text-muted-foreground">Odometer Status</td>
+                                 <td className="py-2 px-3">
+                                   <Badge variant="default">Good</Badge>
+                                 </td>
+                                 <td className="py-2 px-3 text-foreground">-</td>
+                               </tr>
+                               <tr className="border-b border-border/30">
+                                 <td className="py-2 px-3 text-muted-foreground">Mileage</td>
+                                 <td className="py-2 px-3">
+                                   <Badge variant="secondary">Normal</Badge>
+                                 </td>
+                                 <td className="py-2 px-3 text-foreground">{car.mileage?.toLocaleString()} km</td>
+                               </tr>
+                               <tr className="border-b border-border/30">
+                                 <td className="py-2 px-3 text-muted-foreground">VIN Display</td>
+                                 <td className="py-2 px-3">
+                                   <Badge variant="default">Good</Badge>
+                                 </td>
+                                 <td className="py-2 px-3 text-foreground">-</td>
+                               </tr>
+                               <tr className="border-b border-border/30">
+                                 <td className="py-2 px-3 text-muted-foreground">Emissions</td>
+                                 <td className="py-2 px-3">
+                                   <Badge variant="default">Normal</Badge>
+                                 </td>
+                                 <td className="py-2 px-3 text-foreground">N/A</td>
+                               </tr>
+                               <tr className="border-b border-border/30">
+                                 <td className="py-2 px-3 text-muted-foreground">Tuning</td>
+                                 <td className="py-2 px-3">
+                                   <Badge variant="default">None</Badge>
+                                 </td>
+                                 <td className="py-2 px-3 text-foreground">-</td>
+                               </tr>
+                               <tr className="border-b border-border/30">
+                                 <td className="py-2 px-3 text-muted-foreground">Special History</td>
+                                 <td className="py-2 px-3">
+                                <Badge variant={car.insurance_v2?.floodTotalLossCnt && car.insurance_v2.floodTotalLossCnt > 0 ? 'destructive' : 'default'}>
+                                      {car.insurance_v2?.floodTotalLossCnt && car.insurance_v2.floodTotalLossCnt > 0 ? 'Present' : 'None'}
+                                    </Badge>
+                                 </td>
+                                 <td className="py-2 px-3 text-foreground">-</td>
+                               </tr>
+                               <tr className="border-b border-border/30">
+                                 <td className="py-2 px-3 text-muted-foreground">Usage Change</td>
+                                 <td className="py-2 px-3">
+                                   <Badge variant="default">None</Badge>
+                                 </td>
+                                 <td className="py-2 px-3 text-foreground">-</td>
+                               </tr>
+                               <tr className="border-b border-border/30">
+                                 <td className="py-2 px-3 text-muted-foreground">Color</td>
+                                 <td className="py-2 px-3">
+                                   <Badge variant="secondary">Present</Badge>
+                                 </td>
+                                 <td className="py-2 px-3 text-foreground">{car.color || 'N/A'}</td>
+                               </tr>
+                               <tr className="border-b border-border/30">
+                                 <td className="py-2 px-3 text-muted-foreground">Main Options</td>
+                                 <td className="py-2 px-3">
+                                   <Badge variant="secondary">Present</Badge>
+                                 </td>
+                                 <td className="py-2 px-3 text-foreground">-</td>
+                               </tr>
+                               <tr className="border-b border-border/30">
+                                 <td className="py-2 px-3 text-muted-foreground">Recall Target</td>
+                                 <td className="py-2 px-3">
+                                   <Badge variant="default">Not Applicable</Badge>
+                                 </td>
+                                 <td className="py-2 px-3 text-foreground">-</td>
+                               </tr>
+                             </tbody>
+                           </table>
+                         </div>
+                       </Card>
+
+                       {/* Accident, Exchange, Repair History with Real API Data */}
+                       <Card className="p-6">
+                         <h3 className="text-lg font-semibold mb-4 text-foreground border-b border-border pb-2">
+                           Accident, Exchange, Repair History
+                         </h3>
+                         <div className="space-y-4">
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <div className="flex justify-between items-center py-2 border-b border-border/30">
+                               <span className="text-muted-foreground font-medium">Accident History:</span>
+                                <Badge variant={car.insurance_v2?.accidentCnt === 0 ? 'default' : 'destructive'}>
+                                  {car.insurance_v2?.accidentCnt === 0 ? 'None' : `${car.insurance_v2?.accidentCnt || 0} accidents`}
+                                </Badge>
+                             </div>
+                             <div className="flex justify-between items-center py-2 border-b border-border/30">
+                               <span className="text-muted-foreground font-medium">Simple Repair:</span>
+                               <Badge variant="default">None</Badge>
+                             </div>
+                           </div>
+
+                           {/* Simple Car Diagram with Real API Data */}
+                           <div className="mt-6">
+                             <h4 className="font-medium mb-4 text-foreground">Vehicle Inspection Diagram</h4>
+                             
+                             {/* Use the existing CarInspectionDiagram component if inspection data exists */}
+                             {car.details?.inspect_outer && car.details.inspect_outer.length > 0 ? (
+                               <div className="space-y-4">
+                                 <CarInspectionDiagram 
+                                   inspectionData={car.details.inspect_outer}
+                                   className="bg-muted/20 p-4 rounded-lg border"
+                                 />
+                                 
+                                 {/* Real Inspection Results */}
+                                 <div className="mt-4">
+                                   <h5 className="font-medium mb-2 text-foreground">Inspection Details</h5>
+                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                     {car.details.inspect_outer.slice(0, 10).map((item, index) => (
+                                       <div key={index} className="flex justify-between items-center p-2 bg-muted/30 rounded">
+                                         <span className="text-sm text-muted-foreground">{item.type.title}</span>
+                                         <div className="flex gap-1">
+                                           {item.status_types.map((status, statusIndex) => (
+                                             <Badge 
+                                               key={statusIndex} 
+                                               variant={
+                                                 status.code === 'X' ? 'destructive' : 
+                                                 status.code === 'W' ? 'secondary' : 
+                                                 'outline'
+                                               }
+                                             >
+                                               {status.code === 'X' ? 'X' : status.code === 'W' ? 'W' : status.title}
+                                             </Badge>
+                                           ))}
+                                         </div>
+                                       </div>
+                                     ))}
+                                   </div>
+                                   
+                                   {car.details.inspect_outer.length > 10 && (
+                                     <p className="text-sm text-muted-foreground mt-2">
+                                       +{car.details.inspect_outer.length - 10} more inspection items available
+                                     </p>
+                                   )}
+                                 </div>
+                               </div>
+                             ) : (
+                               /* Fallback simple diagram when no inspection data */
+                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                 <div className="space-y-2">
+                                   <h5 className="text-sm font-medium text-muted-foreground text-center">Vehicle Diagram</h5>
+                                   <div className="bg-muted/20 p-4 rounded-lg border">
+                                     <svg viewBox="0 0 400 200" className="w-full h-auto">
+                                       <g stroke="hsl(var(--foreground))" strokeWidth="2" fill="none">
+                                         {/* Simple car outline */}
+                                         <rect x="100" y="60" width="200" height="80" rx="10" />
+                                         <text x="200" y="40" textAnchor="middle" className="text-xs fill-current">Vehicle Overview</text>
+                                         
+                                         {/* Front section */}
+                                         <rect x="80" y="70" width="40" height="20" />
+                                         <text x="100" y="83" textAnchor="middle" className="text-xs fill-current">Front</text>
+                                         
+                                         {/* Rear section */}
+                                         <rect x="280" y="70" width="40" height="20" />
+                                         <text x="300" y="83" textAnchor="middle" className="text-xs fill-current">Rear</text>
+                                         
+                                         {/* Doors */}
+                                         <rect x="120" y="100" width="30" height="30" />
+                                         <text x="135" y="118" textAnchor="middle" className="text-xs fill-current">L.Door</text>
+                                         
+                                         <rect x="250" y="100" width="30" height="30" />
+                                         <text x="265" y="118" textAnchor="middle" className="text-xs fill-current">R.Door</text>
+                                         
+                                         {/* Roof */}
+                                         <rect x="160" y="70" width="80" height="20" />
+                                         <text x="200" y="83" textAnchor="middle" className="text-xs fill-current">Roof</text>
+                                       </g>
+                                     </svg>
+                                   </div>
+                                 </div>
+                                 
+                                 <div className="space-y-4">
+                                   <h5 className="text-sm font-medium text-muted-foreground">Status Legend</h5>
+                                   <div className="space-y-2">
+                                     <div className="flex items-center gap-2">
+                                       <div className="w-4 h-4 border border-foreground bg-background"></div>
+                                       <span className="text-sm text-muted-foreground">Normal</span>
+                                     </div>
+                                     <div className="flex items-center gap-2">
+                                       <Badge variant="secondary">W</Badge>
+                                       <span className="text-sm text-muted-foreground">Sheet Metal/Welding</span>
+                                     </div>
+                                     <div className="flex items-center gap-2">
+                                       <Badge variant="destructive">X</Badge>
+                                       <span className="text-sm text-muted-foreground">Exchanged/Replaced</span>
+                                     </div>
+                                   </div>
+                                 </div>
+                               </div>
+                             )}
+                           </div>
+                         </div>
+                       </Card>
+
+                       {/* Equipment & Options with Real Data */}
+                       <Card className="p-6">
+                         <h3 className="text-lg font-semibold mb-4 text-foreground border-b border-border pb-2">
+                           Equipment & Options
+                         </h3>
+                          <div className="space-y-4">
+                            <p className="text-muted-foreground">Equipment information not available in current data source</p>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  </TabsContent>
+                       </Card>
+
+                       {/* Market Values */}
+                       <Card className="p-6">
+                         <h3 className="text-lg font-semibold mb-4 text-foreground border-b border-border pb-2">
+                           Market Values & Pricing
+                         </h3>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                           <div className="space-y-3">
+                              <div className="flex justify-between items-center py-2 border-b border-border/30">
+                                <span className="text-muted-foreground">Pre-accident Value:</span>
+                                <span className="text-foreground">N/A</span>
+                              </div>
+                              <div className="flex justify-between items-center py-2 border-b border-border/30">
+                                <span className="text-muted-foreground">Wholesale Value:</span>
+                                <span className="text-foreground">N/A</span>
+                              </div>
+                              <div className="flex justify-between items-center py-2 border-b border-border/30">
+                                <span className="text-muted-foreground">Actual Cash Value:</span>
+                                <span className="text-foreground">N/A</span>
+                              </div>
+                           </div>
+                           <div className="space-y-3">
+                              <div className="flex justify-between items-center py-2 border-b border-border/30">
+                                <span className="text-muted-foreground">Current Bid:</span>
+                                <span className="text-foreground font-semibold">{car.price ? `$${car.price.toLocaleString()}` : 'N/A'}</span>
+                              </div>
+                              <div className="flex justify-between items-center py-2 border-b border-border/30">
+                                <span className="text-muted-foreground">Estimated Repair Cost:</span>
+                                <span className="text-foreground">N/A</span>
+                              </div>
+                             <div className="flex justify-between items-center py-2 border-b border-border/30">
+                               <span className="text-muted-foreground">Sale Date:</span>
+                               <span className="text-foreground">{car.sale_date || 'N/A'}</span>
+                             </div>
+                           </div>
+                         </div>
+                       </Card>
+
+                       {/* Source Information */}
+                       <Card className="p-6">
+                         <h3 className="text-lg font-semibold mb-4 text-foreground border-b border-border pb-2">
+                           Source Information
+                         </h3>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                           <div className="space-y-3">
+                             <div className="flex justify-between items-center py-2 border-b border-border/30">
+                               <span className="text-muted-foreground">External ID:</span>
+                               <span className="text-foreground font-mono text-sm">{car.id || 'N/A'}</span>
+                             </div>
+                             <div className="flex justify-between items-center py-2 border-b border-border/30">
+                               <span className="text-muted-foreground">Lot Number:</span>
+                               <span className="text-foreground font-mono text-sm">{car.lot || 'N/A'}</span>
+                             </div>
+                           </div>
+                           <div className="space-y-3">
+                             <div className="flex justify-between items-center py-2 border-b border-border/30">
+                               <span className="text-muted-foreground">VIN:</span>
+                               <span className="text-foreground font-mono text-sm">{car.vin || 'N/A'}</span>
+                             </div>
+                             <div className="flex justify-between items-center py-2 border-b border-border/30">
+                               <span className="text-muted-foreground">Location:</span>
+                               <span className="text-foreground">{car.location || 'N/A'}</span>
+                             </div>
+                           </div>
+                         </div>
+                       </Card>
+                     </div>
+                   </TabsContent>
                   
                   <TabsContent value="similar" className="mt-8">
                     <SimilarCarsTab carMake={car.make} carModel={car.model} currentCarId={car.id} />

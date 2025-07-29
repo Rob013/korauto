@@ -16,258 +16,197 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
   inspectionData = [], 
   className = "" 
 }) => {
-  // Helper functions to determine part status
+  // Map Korean part names to our inspection data
   const getPartStatus = (partCode: string) => {
     const part = inspectionData.find(item => 
       item.type.code === partCode || 
-      item.type.title.toLowerCase().includes(partCode.toLowerCase()) ||
-      item.type.code.includes(partCode)
+      item.type.title.toLowerCase().includes(partCode.toLowerCase())
     );
     return part?.statusTypes || [];
   };
 
-  const hasDamage = (partCode: string) => {
-    const statuses = getPartStatus(partCode);
-    return statuses.length > 0 && statuses.some(s => s.code === 'X' || s.code === 'W');
-  };
-
-  const getDamageColor = (partCode: string) => {
-    const statuses = getPartStatus(partCode);
-    if (statuses.length === 0) return "#e5e7eb"; // Default neutral gray
-    
+  const getStatusColor = (statuses: Array<{ code: string; title: string }>) => {
+    if (statuses.length === 0) return '#e2e8f0'; // Default gray
     const hasExchange = statuses.some(s => s.code === 'X');
     const hasWelding = statuses.some(s => s.code === 'W');
     
-    if (hasExchange) return "#ef4444"; // Red for exchange/replacement
-    if (hasWelding) return "#f59e0b"; // Orange for welding/repair
-    return "#e5e7eb"; // Neutral gray for no damage
-  };
-
-  const getDamageMarker = (partCode: string, x: number, y: number) => {
-    if (!hasDamage(partCode)) return null;
-    return <circle cx={x} cy={y} r="6" fill="#dc2626" stroke="#fff" strokeWidth="2" opacity="0.9" />;
+    if (hasExchange) return '#ef4444'; // Red for exchange
+    if (hasWelding) return '#f59e0b'; // Orange for welding/repair
+    return '#10b981'; // Green for good
   };
 
   return (
     <div className={`w-full max-w-4xl mx-auto p-6 bg-card border border-border rounded-lg ${className}`}>
-      <h3 className="text-xl font-semibold text-center text-foreground mb-6">Vehicle Damage Assessment</h3>
-      
-      {/* Professional Unfolded Car Diagram */}
-      <div className="relative w-full max-w-3xl mx-auto mb-8">
-        <svg viewBox="0 0 800 600" className="w-full h-auto border border-border rounded-lg bg-background">
-          {/* Grid Lines for Reference */}
-          <defs>
-            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#f1f5f9" strokeWidth="1"/>
-            </pattern>
-          </defs>
-          <rect width="800" height="600" fill="url(#grid)" opacity="0.3"/>
-          
-          {/* FRONT VIEW (Top Center) */}
-          <g transform="translate(300, 50)">
-            <text x="100" y="-10" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#374151">FRONT VIEW</text>
-            
-            {/* Front Bumper */}
-            <rect x="20" y="20" width="160" height="25" 
-                  fill={getDamageColor('P031')} 
-                  stroke="#64748b" strokeWidth="1.5" rx="8"/>
-            <text x="100" y="35" textAnchor="middle" fontSize="10" fill="#1f2937">Front Bumper</text>
-            {getDamageMarker('P031', 100, 32)}
-            
-            {/* Hood */}
-            <rect x="30" y="45" width="140" height="60" 
-                  fill={getDamageColor('P051')} 
-                  stroke="#64748b" strokeWidth="1.5" rx="5"/>
-            <text x="100" y="78" textAnchor="middle" fontSize="11" fill="#1f2937">Hood</text>
-            {getDamageMarker('P051', 100, 75)}
-            
-            {/* Windshield */}
-            <rect x="35" y="105" width="130" height="40" 
-                  fill="#9ca3af" stroke="#64748b" strokeWidth="1.5" rx="3"/>
-            <text x="100" y="128" textAnchor="middle" fontSize="10" fill="#1f2937">Windshield</text>
-            
-            {/* Left Fender */}
-            <rect x="0" y="45" width="30" height="60" 
-                  fill={getDamageColor('P021')} 
-                  stroke="#64748b" strokeWidth="1.5" rx="3"/>
-            <text x="15" y="78" textAnchor="middle" fontSize="9" fill="#1f2937" transform="rotate(-90, 15, 78)">L Fender</text>
-            {getDamageMarker('P021', 15, 75)}
-            
-            {/* Right Fender */}
-            <rect x="170" y="45" width="30" height="60" 
-                  fill={getDamageColor('P022')} 
-                  stroke="#64748b" strokeWidth="1.5" rx="3"/>
-            <text x="185" y="78" textAnchor="middle" fontSize="9" fill="#1f2937" transform="rotate(90, 185, 78)">R Fender</text>
-            {getDamageMarker('P022', 185, 75)}
-            
-            {/* Headlights */}
-            <ellipse cx="60" cy="35" rx="15" ry="8" fill="#f3f4f6" stroke="#64748b" strokeWidth="1"/>
-            <ellipse cx="140" cy="35" rx="15" ry="8" fill="#f3f4f6" stroke="#64748b" strokeWidth="1"/>
-          </g>
-          
-          {/* LEFT SIDE VIEW */}
-          <g transform="translate(50, 200)">
-            <text x="100" y="-10" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#374151">LEFT SIDE</text>
-            
-            {/* Left Front Door */}
-            <rect x="40" y="20" width="60" height="80" 
-                  fill={getDamageColor('P011')} 
-                  stroke="#64748b" strokeWidth="1.5" rx="5"/>
-            <text x="70" y="63" textAnchor="middle" fontSize="10" fill="#1f2937">Front Door</text>
-            {getDamageMarker('P011', 70, 60)}
-            
-            {/* Left Rear Door */}
-            <rect x="100" y="20" width="60" height="80" 
-                  fill={getDamageColor('P013')} 
-                  stroke="#64748b" strokeWidth="1.5" rx="5"/>
-            <text x="130" y="63" textAnchor="middle" fontSize="10" fill="#1f2937">Rear Door</text>
-            {getDamageMarker('P013', 130, 60)}
-            
-            {/* Left Quarter Panel */}
-            <rect x="160" y="30" width="40" height="70" 
-                  fill={getDamageColor('P023')} 
-                  stroke="#64748b" strokeWidth="1.5" rx="5"/>
-            <text x="180" y="68" textAnchor="middle" fontSize="9" fill="#1f2937">Quarter</text>
-            {getDamageMarker('P023', 180, 65)}
-            
-            {/* Side Windows */}
-            <rect x="45" y="25" width="50" height="20" fill="#9ca3af" stroke="#64748b" strokeWidth="1" rx="2"/>
-            <rect x="105" y="25" width="50" height="20" fill="#9ca3af" stroke="#64748b" strokeWidth="1" rx="2"/>
-            
-            {/* Door Handles */}
-            <rect x="95" y="55" width="8" height="4" fill="#64748b" rx="2"/>
-            <rect x="155" y="55" width="8" height="4" fill="#64748b" rx="2"/>
-          </g>
-          
-          {/* RIGHT SIDE VIEW */}
-          <g transform="translate(550, 200)">
-            <text x="100" y="-10" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#374151">RIGHT SIDE</text>
-            
-            {/* Right Front Door */}
-            <rect x="40" y="20" width="60" height="80" 
-                  fill={getDamageColor('P012')} 
-                  stroke="#64748b" strokeWidth="1.5" rx="5"/>
-            <text x="70" y="63" textAnchor="middle" fontSize="10" fill="#1f2937">Front Door</text>
-            {getDamageMarker('P012', 70, 60)}
-            
-            {/* Right Rear Door */}
-            <rect x="100" y="20" width="60" height="80" 
-                  fill={getDamageColor('P014')} 
-                  stroke="#64748b" strokeWidth="1.5" rx="5"/>
-            <text x="130" y="63" textAnchor="middle" fontSize="10" fill="#1f2937">Rear Door</text>
-            {getDamageMarker('P014', 130, 60)}
-            
-            {/* Right Quarter Panel */}
-            <rect x="160" y="30" width="40" height="70" 
-                  fill={getDamageColor('P024')} 
-                  stroke="#64748b" strokeWidth="1.5" rx="5"/>
-            <text x="180" y="68" textAnchor="middle" fontSize="9" fill="#1f2937">Quarter</text>
-            {getDamageMarker('P024', 180, 65)}
-            
-            {/* Side Windows */}
-            <rect x="45" y="25" width="50" height="20" fill="#9ca3af" stroke="#64748b" strokeWidth="1" rx="2"/>
-            <rect x="105" y="25" width="50" height="20" fill="#9ca3af" stroke="#64748b" strokeWidth="1" rx="2"/>
-            
-            {/* Door Handles */}
-            <rect x="95" y="55" width="8" height="4" fill="#64748b" rx="2"/>
-            <rect x="155" y="55" width="8" height="4" fill="#64748b" rx="2"/>
-          </g>
-          
-          {/* REAR VIEW (Bottom Center) */}
-          <g transform="translate(300, 400)">
-            <text x="100" y="-10" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#374151">REAR VIEW</text>
-            
-            {/* Rear Window */}
-            <rect x="35" y="20" width="130" height="40" 
-                  fill="#9ca3af" stroke="#64748b" strokeWidth="1.5" rx="3"/>
-            <text x="100" y="43" textAnchor="middle" fontSize="10" fill="#1f2937">Rear Window</text>
-            
-            {/* Trunk */}
-            <rect x="30" y="60" width="140" height="60" 
-                  fill={getDamageColor('P052')} 
-                  stroke="#64748b" strokeWidth="1.5" rx="5"/>
-            <text x="100" y="93" textAnchor="middle" fontSize="11" fill="#1f2937">Trunk</text>
-            {getDamageMarker('P052', 100, 90)}
-            
-            {/* Rear Bumper */}
-            <rect x="20" y="120" width="160" height="25" 
-                  fill={getDamageColor('P032')} 
-                  stroke="#64748b" strokeWidth="1.5" rx="8"/>
-            <text x="100" y="135" textAnchor="middle" fontSize="10" fill="#1f2937">Rear Bumper</text>
-            {getDamageMarker('P032', 100, 132)}
-            
-            {/* Taillights */}
-            <ellipse cx="60" cy="132" rx="15" ry="8" fill="#fef3c7" stroke="#64748b" strokeWidth="1"/>
-            <ellipse cx="140" cy="132" rx="15" ry="8" fill="#fef3c7" stroke="#64748b" strokeWidth="1"/>
-          </g>
-          
-          {/* CENTER ROOF VIEW */}
-          <g transform="translate(300, 200)">
-            <rect x="35" y="20" width="130" height="120" 
-                  fill={getDamageColor('P061')} 
-                  stroke="#64748b" strokeWidth="1.5" rx="5"/>
-            <text x="100" y="83" textAnchor="middle" fontSize="12" fill="#1f2937">Roof</text>
-            {getDamageMarker('P061', 100, 80)}
-            
-            {/* Sunroof (if applicable) */}
-            <rect x="60" y="45" width="80" height="30" 
-                  fill="#9ca3af" stroke="#64748b" strokeWidth="1" rx="3" opacity="0.6"/>
-          </g>
-        </svg>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        {/* Front View - 앞(전방) */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-center text-foreground">앞 (전방)</h3>
+          <div className="relative w-full max-w-md mx-auto">
+            <svg viewBox="0 0 300 400" className="w-full h-auto">
+              {/* Car Body Outline */}
+              <path
+                d="M50 80 Q50 60 70 60 L230 60 Q250 60 250 80 L250 320 Q250 340 230 340 L70 340 Q50 340 50 320 Z"
+                fill="#f8fafc"
+                stroke="#cbd5e1"
+                strokeWidth="2"
+              />
+              
+              {/* Windshield */}
+              <rect x="80" y="80" width="140" height="60" 
+                    fill={getStatusColor(getPartStatus('windshield'))} 
+                    stroke="#64748b" strokeWidth="1" rx="5" />
+              
+              {/* Hood */}
+              <rect x="90" y="50" width="120" height="30" 
+                    fill={getStatusColor(getPartStatus('hood'))} 
+                    stroke="#64748b" strokeWidth="1" rx="5" />
+              
+              {/* Front Bumper */}
+              <rect x="70" y="20" width="160" height="30" 
+                    fill={getStatusColor(getPartStatus('front_bumper'))} 
+                    stroke="#64748b" strokeWidth="1" rx="10" />
+              
+              {/* Left Front Fender */}
+              <rect x="20" y="60" width="30" height="80" 
+                    fill={getStatusColor(getPartStatus('P021'))} 
+                    stroke="#64748b" strokeWidth="1" rx="5" />
+              
+              {/* Right Front Fender */}
+              <rect x="250" y="60" width="30" height="80" 
+                    fill={getStatusColor(getPartStatus('P022'))} 
+                    stroke="#64748b" strokeWidth="1" rx="5" />
+              
+              {/* Left Front Door */}
+              <rect x="30" y="150" width="50" height="80" 
+                    fill={getStatusColor(getPartStatus('front_door_left'))} 
+                    stroke="#64748b" strokeWidth="1" rx="5" />
+              
+              {/* Right Front Door */}
+              <rect x="220" y="150" width="50" height="80" 
+                    fill={getStatusColor(getPartStatus('front_door_right'))} 
+                    stroke="#64748b" strokeWidth="1" rx="5" />
+              
+              {/* Left Rear Door */}
+              <rect x="30" y="240" width="50" height="80" 
+                    fill={getStatusColor(getPartStatus('rear_door_left'))} 
+                    stroke="#64748b" strokeWidth="1" rx="5" />
+              
+              {/* Right Rear Door */}
+              <rect x="220" y="240" width="50" height="80" 
+                    fill={getStatusColor(getPartStatus('rear_door_right'))} 
+                    stroke="#64748b" strokeWidth="1" rx="5" />
+              
+              {/* Radiator Support */}
+              <rect x="120" y="40" width="60" height="20" 
+                    fill={getStatusColor(getPartStatus('P051'))} 
+                    stroke="#64748b" strokeWidth="1" rx="3" />
+              
+              {/* Wheels */}
+              <circle cx="80" cy="360" r="25" fill="#475569" stroke="#334155" strokeWidth="2" />
+              <circle cx="220" cy="360" r="25" fill="#475569" stroke="#334155" strokeWidth="2" />
+              <circle cx="80" cy="40" r="25" fill="#475569" stroke="#334155" strokeWidth="2" />
+              <circle cx="220" cy="40" r="25" fill="#475569" stroke="#334155" strokeWidth="2" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Rear View - 뒤(후방) */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-center text-foreground">뒤 (후방)</h3>
+          <div className="relative w-full max-w-md mx-auto">
+            <svg viewBox="0 0 300 400" className="w-full h-auto">
+              {/* Car Body Outline */}
+              <path
+                d="M50 80 Q50 60 70 60 L230 60 Q250 60 250 80 L250 320 Q250 340 230 340 L70 340 Q50 340 50 320 Z"
+                fill="#f8fafc"
+                stroke="#cbd5e1"
+                strokeWidth="2"
+              />
+              
+              {/* Rear Window */}
+              <rect x="80" y="260" width="140" height="60" 
+                    fill={getStatusColor(getPartStatus('rear_window'))} 
+                    stroke="#64748b" strokeWidth="1" rx="5" />
+              
+              {/* Trunk */}
+              <rect x="90" y="320" width="120" height="30" 
+                    fill={getStatusColor(getPartStatus('trunk'))} 
+                    stroke="#64748b" strokeWidth="1" rx="5" />
+              
+              {/* Rear Bumper */}
+              <rect x="70" y="350" width="160" height="30" 
+                    fill={getStatusColor(getPartStatus('rear_bumper'))} 
+                    stroke="#64748b" strokeWidth="1" rx="10" />
+              
+              {/* Left Quarter Panel */}
+              <rect x="20" y="220" width="30" height="80" 
+                    fill={getStatusColor(getPartStatus('quarter_panel_left'))} 
+                    stroke="#64748b" strokeWidth="1" rx="5" />
+              
+              {/* Right Quarter Panel */}
+              <rect x="250" y="220" width="30" height="80" 
+                    fill={getStatusColor(getPartStatus('quarter_panel_right'))} 
+                    stroke="#64748b" strokeWidth="1" rx="5" />
+              
+              {/* Interior view */}
+              <rect x="100" y="120" width="100" height="120" 
+                    fill="#f1f5f9" 
+                    stroke="#cbd5e1" strokeWidth="1" rx="5" />
+              
+              {/* Seats */}
+              <rect x="110" y="140" width="35" height="30" 
+                    fill="#64748b" stroke="#475569" strokeWidth="1" rx="5" />
+              <rect x="155" y="140" width="35" height="30" 
+                    fill="#64748b" stroke="#475569" strokeWidth="1" rx="5" />
+              <rect x="110" y="190" width="35" height="30" 
+                    fill="#64748b" stroke="#475569" strokeWidth="1" rx="5" />
+              <rect x="155" y="190" width="35" height="30" 
+                    fill="#64748b" stroke="#475569" strokeWidth="1" rx="5" />
+              
+              {/* Wheels */}
+              <circle cx="80" cy="360" r="25" fill="#475569" stroke="#334155" strokeWidth="2" />
+              <circle cx="220" cy="360" r="25" fill="#475569" stroke="#334155" strokeWidth="2" />
+              <circle cx="80" cy="40" r="25" fill="#475569" stroke="#334155" strokeWidth="2" />
+              <circle cx="220" cy="40" r="25" fill="#475569" stroke="#334155" strokeWidth="2" />
+            </svg>
+          </div>
+        </div>
       </div>
 
       {/* Legend */}
-      <div className="mb-6 p-4 bg-muted/50 rounded-lg">
-        <h4 className="text-sm font-semibold mb-3 text-foreground">How to Read This Diagram</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div className="w-5 h-5 bg-gray-300 border border-gray-400 rounded" />
-              <span className="text-sm text-muted-foreground">Normal Part (No Damage)</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-5 h-5 bg-orange-400 border border-gray-400 rounded" />
-              <span className="text-sm text-muted-foreground">Repaired/Welded Part</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-5 h-5 bg-red-500 border border-gray-400 rounded" />
-              <span className="text-sm text-muted-foreground">Exchanged/Replaced Part</span>
-            </div>
+      <div className="mt-8 p-4 bg-muted/50 rounded-lg">
+        <h4 className="text-sm font-semibold mb-3 text-foreground">Legend</h4>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-green-500 rounded" />
+            <span className="text-xs text-muted-foreground">Normal</span>
           </div>
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div className="w-5 h-5 bg-gray-400 border border-gray-500 rounded" />
-              <span className="text-sm text-muted-foreground">Glass/Windows</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-4 h-4 bg-red-600 border-2 border-white rounded-full" />
-              <span className="text-sm text-muted-foreground">Damage Marker</span>
-            </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-amber-500 rounded" />
+            <span className="text-xs text-muted-foreground">Repair/Welding</span>
           </div>
-        </div>
-        <div className="mt-3 text-xs text-muted-foreground italic">
-          Only damaged parts are highlighted. Normal parts remain uncolored.
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-red-500 rounded" />
+            <span className="text-xs text-muted-foreground">Exchange/Replace</span>
+          </div>
         </div>
       </div>
 
-      {/* Real Inspection Data */}
+      {/* Inspection Details */}
       {inspectionData.length > 0 && (
-        <div className="space-y-3">
-          <h4 className="text-sm font-semibold text-foreground">Detailed Inspection Report</h4>
-          <div className="space-y-2 max-h-48 overflow-y-auto">
+        <div className="mt-6">
+          <h4 className="text-sm font-semibold mb-3 text-foreground">Inspection Details</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {inspectionData.map((item, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-background border border-border rounded-lg text-sm">
-                <span className="text-foreground font-medium">{item.type.title}</span>
+              <div key={index} className="flex items-center justify-between p-3 bg-background border border-border rounded-lg">
+                <span className="text-sm text-foreground">{item.type.title}</span>
                 <div className="flex gap-1">
                   {item.statusTypes.map((status, i) => (
                     <Badge 
                       key={i} 
-                      variant={
-                        status.code === 'X' ? "destructive" : 
-                        status.code === 'W' ? "secondary" : 
-                        "outline"
-                      }
-                      className="text-xs px-2 py-1"
+                      variant={status.code === 'X' ? "destructive" : status.code === 'W' ? "secondary" : "outline"}
+                      className="text-xs"
                     >
                       {status.title}
                     </Badge>
@@ -276,12 +215,6 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
               </div>
             ))}
           </div>
-        </div>
-      )}
-      
-      {inspectionData.length === 0 && (
-        <div className="text-center text-muted-foreground text-sm py-4">
-          No inspection data available for this vehicle
         </div>
       )}
     </div>
