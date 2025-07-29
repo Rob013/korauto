@@ -263,57 +263,237 @@ const CarDetails = () => {
         <title>${car.year} ${car.make} ${car.model} - Detailed Information</title>
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
+          body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            line-height: 1.6; 
+            color: hsl(222.2, 84%, 4.9%); 
+            background: hsl(210, 40%, 98%);
+            min-height: 100vh;
+          }
           .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; text-align: center; }
+          
+          .header { 
+            background: linear-gradient(135deg, hsl(221.2, 83.2%, 53.3%) 0%, hsl(212, 27%, 84%) 100%); 
+            color: white; 
+            padding: 30px; 
+            border-radius: 12px; 
+            margin-bottom: 30px; 
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          }
           .title { font-size: 2.5rem; font-weight: bold; margin-bottom: 10px; }
           .subtitle { font-size: 1.2rem; opacity: 0.9; }
-          .section { background: white; margin-bottom: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden; }
-          .section-header { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 20px; font-size: 1.3rem; font-weight: 600; }
+          
+          .section { 
+            background: white; 
+            margin-bottom: 25px; 
+            border-radius: 12px; 
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); 
+            overflow: hidden;
+            border: 1px solid hsl(214.3, 31.8%, 91.4%);
+          }
+          .section-header { 
+            background: linear-gradient(135deg, hsl(221.2, 83.2%, 53.3%) 0%, hsl(221.2, 83.2%, 65%) 100%); 
+            color: white; 
+            padding: 20px; 
+            font-size: 1.3rem; 
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
           .section-content { padding: 25px; }
-          .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
-          .info-item { background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea; }
-          .info-label { font-weight: 600; color: #475569; margin-bottom: 5px; }
-          .info-value { color: #1e293b; font-size: 1.1rem; }
-          .badge { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; margin: 2px; }
-          .badge-success { background: #dcfce7; color: #166534; }
-          .badge-warning { background: #fef3c7; color: #92400e; }
-          .badge-danger { background: #fee2e2; color: #dc2626; }
-          .badge-info { background: #dbeafe; color: #1d4ed8; }
-          .options-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-          .print-btn { position: fixed; top: 20px; right: 20px; background: #667eea; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: 500; }
-          @media print { .print-btn { display: none; } }
+          
+          .info-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+            gap: 15px; 
+          }
+          .info-item { 
+            background: hsl(210, 40%, 98%); 
+            padding: 15px; 
+            border-radius: 8px; 
+            border-left: 4px solid hsl(221.2, 83.2%, 53.3%);
+            transition: all 0.2s ease;
+          }
+          .info-item:hover {
+            background: hsl(214.3, 31.8%, 91.4%);
+            transform: translateY(-1px);
+          }
+          .info-label { 
+            font-weight: 600; 
+            color: hsl(215.4, 16.3%, 46.9%); 
+            margin-bottom: 5px; 
+            font-size: 0.9rem;
+          }
+          .info-value { 
+            color: hsl(222.2, 84%, 4.9%); 
+            font-size: 1.1rem; 
+            font-weight: 500;
+          }
+          
+          .badge { 
+            display: inline-block; 
+            padding: 6px 12px; 
+            border-radius: 20px; 
+            font-size: 0.85rem; 
+            font-weight: 500; 
+            margin: 2px;
+            border: 1px solid transparent;
+          }
+          .badge-success { 
+            background: hsl(142.1, 76.2%, 36.3%); 
+            color: white; 
+          }
+          .badge-warning { 
+            background: hsl(47.9, 95.8%, 53.1%); 
+            color: hsl(222.2, 84%, 4.9%); 
+          }
+          .badge-danger { 
+            background: hsl(0, 84.2%, 60.2%); 
+            color: white; 
+          }
+          .badge-info { 
+            background: hsl(221.2, 83.2%, 53.3%); 
+            color: white; 
+          }
+          .badge-outline { 
+            background: transparent; 
+            color: hsl(222.2, 84%, 4.9%); 
+            border: 1px solid hsl(214.3, 31.8%, 91.4%);
+          }
+          
+          .options-grid { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 8px; 
+            margin-top: 10px; 
+          }
+          
+          .print-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: hsl(221.2, 83.2%, 53.3%); 
+            color: white; 
+            border: none; 
+            padding: 12px 20px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: 500;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+          }
+          .print-btn:hover {
+            background: hsl(221.2, 83.2%, 48%);
+            transform: translateY(-1px);
+          }
+          
+          .car-diagram {
+            background: white;
+            border: 1px solid hsl(214.3, 31.8%, 91.4%);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+          }
+          
+          .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+          }
+          .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+          }
+          .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+          }
+          
+          .contact-info {
+            background: linear-gradient(135deg, hsl(142.1, 76.2%, 36.3%) 0%, hsl(142.1, 76.2%, 45%) 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+          }
+          
+          @media (max-width: 768px) {
+            .container { padding: 15px; }
+            .title { font-size: 2rem; }
+            .subtitle { font-size: 1rem; }
+            .info-grid { grid-template-columns: 1fr; }
+            .section-content { padding: 20px; }
+            .print-btn { position: relative; width: 100%; margin-bottom: 20px; }
+            .legend { justify-content: flex-start; }
+          }
+          
+          @media print { 
+            .print-btn { display: none; }
+            .section { break-inside: avoid; }
+          }
         </style>
       </head>
       <body>
-        <button class="print-btn" onclick="window.print()">Print Details</button>
+        <button class="print-btn" onclick="window.print()">🖨️ Print Details</button>
         <div class="container">
           <div class="header">
             <div class="title">${car.year} ${car.make} ${car.model}</div>
             <div class="subtitle">€${car.price.toLocaleString()} • Lot #${car.lot || 'N/A'}</div>
           </div>
 
-          ${car.insurance_v2 ? `
+          ${car.insurance_v2 || car.insurance || car.inspect ? `
           <div class="section">
-            <div class="section-header">🛡️ Insurance & Safety Report</div>
+            <div class="section-header">
+              🛡️ Insurance & Safety Report
+            </div>
             <div class="section-content">
               <div class="info-grid">
+                ${car.insurance_v2?.accidentCnt !== undefined ? `
                 <div class="info-item">
                   <div class="info-label">Accident History</div>
                   <div class="info-value">
                     <span class="badge ${car.insurance_v2.accidentCnt === 0 ? 'badge-success' : 'badge-danger'}">
-                      ${car.insurance_v2.accidentCnt === 0 ? 'Clean Record' : car.insurance_v2.accidentCnt + ' accidents'}
+                      ${car.insurance_v2.accidentCnt === 0 ? '✅ Clean Record' : `⚠️ ${car.insurance_v2.accidentCnt} accidents`}
                     </span>
                   </div>
-                </div>
+                </div>` : ''}
+                ${car.insurance_v2?.ownerChangeCnt !== undefined ? `
                 <div class="info-item">
                   <div class="info-label">Previous Owners</div>
-                  <div class="info-value">${car.insurance_v2.ownerChangeCnt || 0}</div>
-                </div>
-                ${car.insurance_v2.totalLossCnt > 0 ? `
+                  <div class="info-value">${car.insurance_v2.ownerChangeCnt} owners</div>
+                </div>` : ''}
+                ${car.insurance_v2?.totalLossCnt > 0 ? `
                 <div class="info-item">
                   <div class="info-label">Total Loss Claims</div>
-                  <div class="info-value"><span class="badge badge-danger">${car.insurance_v2.totalLossCnt}</span></div>
+                  <div class="info-value"><span class="badge badge-danger">🚨 ${car.insurance_v2.totalLossCnt} claims</span></div>
+                </div>` : ''}
+                ${car.insurance_v2?.floodTotalLossCnt > 0 ? `
+                <div class="info-item">
+                  <div class="info-label">Flood Damage</div>
+                  <div class="info-value"><span class="badge badge-danger">🌊 ${car.insurance_v2.floodTotalLossCnt} incidents</span></div>
+                </div>` : ''}
+                ${car.keys_available !== undefined ? `
+                <div class="info-item">
+                  <div class="info-label">Keys Availability</div>
+                  <div class="info-value">
+                    <span class="badge ${car.keys_available ? 'badge-success' : 'badge-danger'}">
+                      ${car.keys_available ? '🔑 Available' : '❌ Not Available'}
+                    </span>
+                  </div>
+                </div>` : ''}
+                ${car.inspect?.accident_summary?.accident && car.inspect.accident_summary.accident !== "doesn't exist" ? `
+                <div class="info-item">
+                  <div class="info-label">Inspection Summary</div>
+                  <div class="info-value">
+                    <span class="badge badge-warning">⚠️ ${car.inspect.accident_summary.accident}</span>
+                  </div>
                 </div>` : ''}
               </div>
             </div>
@@ -321,28 +501,35 @@ const CarDetails = () => {
 
           ${car.details ? `
           <div class="section">
-            <div class="section-header">🚗 Vehicle Details</div>
+            <div class="section-header">
+              🚗 Vehicle Details
+            </div>
             <div class="section-content">
               <div class="info-grid">
                 ${car.details.engine_volume ? `
                 <div class="info-item">
                   <div class="info-label">Engine Volume</div>
-                  <div class="info-value">${car.details.engine_volume}cc</div>
-                </div>` : ''}
-                ${car.details.original_price ? `
-                <div class="info-item">
-                  <div class="info-label">Original Price</div>
-                  <div class="info-value">₩${car.details.original_price.toLocaleString()}</div>
+                  <div class="info-value">🔧 ${car.details.engine_volume}cc</div>
                 </div>` : ''}
                 ${car.details.first_registration ? `
                 <div class="info-item">
                   <div class="info-label">First Registration</div>
-                  <div class="info-value">${car.details.first_registration.year}-${String(car.details.first_registration.month).padStart(2, '0')}-${String(car.details.first_registration.day).padStart(2, '0')}</div>
+                  <div class="info-value">📅 ${car.details.first_registration.year}-${String(car.details.first_registration.month).padStart(2, '0')}-${String(car.details.first_registration.day).padStart(2, '0')}</div>
+                </div>` : ''}
+                ${car.details.badge ? `
+                <div class="info-item">
+                  <div class="info-label">Vehicle Badge/Trim</div>
+                  <div class="info-value">🏷️ ${car.details.badge}</div>
                 </div>` : ''}
                 ${car.details.seats_count ? `
                 <div class="info-item">
                   <div class="info-label">Number of Seats</div>
-                  <div class="info-value">${car.details.seats_count}</div>
+                  <div class="info-value">👥 ${car.details.seats_count} seats</div>
+                </div>` : ''}
+                ${car.details.sell_type ? `
+                <div class="info-item">
+                  <div class="info-label">Sale Type</div>
+                  <div class="info-value">🏪 ${car.details.sell_type.charAt(0).toUpperCase() + car.details.sell_type.slice(1)}</div>
                 </div>` : ''}
               </div>
             </div>
@@ -350,13 +537,16 @@ const CarDetails = () => {
 
           ${car.details?.options ? `
           <div class="section">
-            <div class="section-header">⚙️ Equipment & Options</div>
+            <div class="section-header">
+              ⚙️ Equipment & Options
+            </div>
             <div class="section-content">
               ${car.details.options.standard?.length ? `
               <div class="info-item">
                 <div class="info-label">Standard Equipment</div>
                 <div class="options-grid">
-                  ${car.details.options.standard.map(option => `<span class="badge badge-info">${option}</span>`).join('')}
+                  ${car.details.options.standard.slice(0, 5).map(option => `<span class="badge badge-info">${option}</span>`).join('')}
+                  ${car.details.options.standard.length > 5 ? `<span class="badge badge-outline">+${car.details.options.standard.length - 5} more</span>` : ''}
                 </div>
               </div>` : ''}
               ${car.details.options.choice?.length ? `
@@ -366,21 +556,47 @@ const CarDetails = () => {
                   ${car.details.options.choice.map(option => `<span class="badge badge-success">${option}</span>`).join('')}
                 </div>
               </div>` : ''}
+              ${car.details.options.tuning?.length ? `
+              <div class="info-item">
+                <div class="info-label">Tuning Modifications</div>
+                <div class="options-grid">
+                  ${car.details.options.tuning.map(option => `<span class="badge badge-warning">${option}</span>`).join('')}
+                </div>
+              </div>` : ''}
             </div>
           </div>` : ''}
 
           ${car.details?.inspect_outer?.length ? `
           <div class="section">
-            <div class="section-header">🔍 Detailed Inspection Report</div>
+            <div class="section-header">
+              🔍 Detailed Inspection Report
+            </div>
             <div class="section-content">
+              <div class="car-diagram">
+                <h4 style="text-align: center; margin-bottom: 15px; color: hsl(215.4, 16.3%, 46.9%);">Vehicle Inspection Overview</h4>
+                <div class="legend">
+                  <div class="legend-item">
+                    <div class="legend-color" style="background: hsl(142.1, 76.2%, 36.3%);"></div>
+                    <span>Normal</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-color" style="background: hsl(47.9, 95.8%, 53.1%);"></div>
+                    <span>Repair/Welding</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-color" style="background: hsl(0, 84.2%, 60.2%);"></div>
+                    <span>Exchange/Replace</span>
+                  </div>
+                </div>
+              </div>
               <div class="info-grid">
                 ${car.details.inspect_outer.map(item => `
                 <div class="info-item">
                   <div class="info-label">${item.type.title}</div>
                   <div class="info-value">
                     ${item.statusTypes.map(status => `
-                    <span class="badge ${status.code === 'X' ? 'badge-danger' : status.code === 'W' ? 'badge-warning' : 'badge-info'}">
-                      ${status.title}
+                    <span class="badge ${status.code === 'X' ? 'badge-danger' : status.code === 'W' ? 'badge-warning' : 'badge-outline'}">
+                      ${status.code === 'X' ? '🔄' : status.code === 'W' ? '🔧' : '✅'} ${status.title}
                     </span>`).join('')}
                   </div>
                 </div>`).join('')}
@@ -388,18 +604,85 @@ const CarDetails = () => {
             </div>
           </div>` : ''}
 
+          ${car.bid || car.buy_now || car.final_bid || car.details?.original_price ? `
           <div class="section">
-            <div class="section-header">📞 Contact Information</div>
+            <div class="section-header">
+              💰 Market Values & Pricing
+            </div>
             <div class="section-content">
               <div class="info-grid">
+                ${car.details?.original_price ? `
                 <div class="info-item">
-                  <div class="info-label">Company</div>
-                  <div class="info-value">KORAUTO - Professional Import Service</div>
-                </div>
+                  <div class="info-label">Original Korean Price</div>
+                  <div class="info-value">₩${car.details.original_price.toLocaleString()}</div>
+                </div>` : ''}
+                ${car.bid ? `
                 <div class="info-item">
-                  <div class="info-label">WhatsApp</div>
-                  <div class="info-value">+383 48 181 116</div>
+                  <div class="info-label">Current Bid</div>
+                  <div class="info-value">💵 $${car.bid.toLocaleString()}</div>
+                </div>` : ''}
+                ${car.buy_now ? `
+                <div class="info-item">
+                  <div class="info-label">Buy Now Price</div>
+                  <div class="info-value">🛒 $${car.buy_now.toLocaleString()}</div>
+                </div>` : ''}
+                ${car.final_bid ? `
+                <div class="info-item">
+                  <div class="info-label">Final Bid</div>
+                  <div class="info-value">🎯 $${car.final_bid.toLocaleString()}</div>
+                </div>` : ''}
+                <div class="info-item">
+                  <div class="info-label">KORAUTO Price</div>
+                  <div class="info-value">🏷️ €${car.price.toLocaleString()}</div>
                 </div>
+              </div>
+            </div>
+          </div>` : ''}
+
+          <div class="section">
+            <div class="section-header">
+              📋 Source Information
+            </div>
+            <div class="section-content">
+              <div class="info-grid">
+                ${car.lot ? `
+                <div class="info-item">
+                  <div class="info-label">Lot Number</div>
+                  <div class="info-value">🏷️ ${car.lot}</div>
+                </div>` : ''}
+                ${car.vin ? `
+                <div class="info-item">
+                  <div class="info-label">VIN Number</div>
+                  <div class="info-value">🔍 ${car.vin}</div>
+                </div>` : ''}
+                ${car.seller ? `
+                <div class="info-item">
+                  <div class="info-label">Seller</div>
+                  <div class="info-value">🏪 ${car.seller}</div>
+                </div>` : ''}
+                ${car.sale_date ? `
+                <div class="info-item">
+                  <div class="info-label">Sale Date</div>
+                  <div class="info-value">📅 ${new Date(car.sale_date).toLocaleDateString()}</div>
+                </div>` : ''}
+              </div>
+            </div>
+          </div>
+
+          <div class="contact-info">
+            <h3 style="margin-bottom: 15px; font-size: 1.5rem;">📞 Contact KORAUTO</h3>
+            <div class="info-grid" style="gap: 20px;">
+              <div>
+                <div style="font-weight: 600; margin-bottom: 5px;">WhatsApp</div>
+                <div style="font-size: 1.2rem;">+383 48 181 116</div>
+              </div>
+              <div>
+                <div style="font-weight: 600; margin-bottom: 5px;">Service</div>
+                <div>Professional Import Service</div>
+              </div>
+              <div>
+                <div style="font-weight: 600; margin-bottom: 5px;">Delivery</div>
+                <div>Door to Port of Durres + €350 to Pristina</div>
               </div>
             </div>
           </div>
