@@ -16,35 +16,117 @@ interface InspectionRequestFormProps {
   carYear?: number;
 }
 
+// Input validation functions
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+const validatePhone = (phone: string): boolean => {
+  const phoneRegex = /^\+?[\d\s\-\(\)]{8,15}$/;
+  return phoneRegex.test(phone);
+};
+
+const sanitizeInput = (input: string): string => {
+  return input.trim().replace(/[<>\"'&]/g, '');
+};
+
 const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: InspectionRequestFormProps) => {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
     whatsappPhone: ""
   });
+  const [errors, setErrors] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    whatsappPhone: ""
+  });
+
+  const validateForm = (): boolean => {
+    const newErrors = {
+      firstName: "",
+      lastName: "",
+      email: "",
+      whatsappPhone: ""
+    };
+
+    // Validate first name
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = "First name is required";
+    } else if (formData.firstName.trim().length < 2) {
+      newErrors.firstName = "First name must be at least 2 characters";
+    }
+
+    // Validate last name
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = "Last name is required";
+    } else if (formData.lastName.trim().length < 2) {
+      newErrors.lastName = "Last name must be at least 2 characters";
+    }
+
+    // Validate email
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!validateEmail(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    // Validate phone
+    if (!formData.whatsappPhone.trim()) {
+      newErrors.whatsappPhone = "Phone number is required";
+    } else if (!validatePhone(formData.whatsappPhone)) {
+      newErrors.whatsappPhone = "Please enter a valid phone number";
+    }
+
+    setErrors(newErrors);
+    return !Object.values(newErrors).some(error => error !== "");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    console.log('Form submitted');
-    console.log('Form data:', formData);
+    if (isSubmitting) return;
+    
+    // Validate form
+    if (!validateForm()) {
+      toast({
+        title: "Validation Error",
+        description: "Please fix the errors in the form",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
     
     try {
       console.log('🚀 Starting form submission...');
-      console.log('📝 Form data:', formData);
+      
+      // Sanitize inputs
+      const sanitizedData = {
+        firstName: sanitizeInput(formData.firstName),
+        lastName: sanitizeInput(formData.lastName),
+        email: sanitizeInput(formData.email.toLowerCase()),
+        whatsappPhone: sanitizeInput(formData.whatsappPhone)
+      };
+
+      console.log('📝 Sanitized form data:', sanitizedData);
       console.log('🚗 Car details:', { carId, carMake, carModel, carYear });
       
       // Store in Supabase database with all form and car information
       const { data, error } = await supabase
         .from('inspection_requests')
         .insert({
-          customer_name: `${formData.firstName} ${formData.lastName}`,
-          customer_email: formData.email,
-          customer_phone: formData.whatsappPhone,
+          customer_name: `${sanitizedData.firstName} ${sanitizedData.lastName}`,
+          customer_email: sanitizedData.email,
+          customer_phone: sanitizedData.whatsappPhone,
           car_id: carId || null,
           notes: carId && carMake && carModel && carYear 
             ? `Car: ${carYear} ${carMake} ${carModel}` 
