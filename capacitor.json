@@ -1,0 +1,22 @@
+{
+  "name": "korauto",
+  "displayName": "KORAUTO",
+  "version": "1.0.0",
+  "description": "Premium car auctions platform",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview",
+    "cap:copy": "cap copy",
+    "cap:sync": "cap sync",
+    "cap:open": "cap open",
+    "ios": "npm run build && npx cap copy ios && npx cap open ios",
+    "android": "npm run build && npx cap copy android && npx cap open android"
+  },
+  "keywords": ["capacitor", "ionic", "mobile", "cars", "auction"],
+  "author": "KORAUTO Team",
+  "license": "MIT"
+}

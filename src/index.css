@@ -150,7 +150,7 @@ All colors MUST be HSL.
   
   /* Mobile-first responsive utilities */
   .container-responsive {
-    @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    @apply w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8;
   }
   
   /* Text responsive classes */
@@ -172,7 +172,16 @@ All colors MUST be HSL.
   
   /* Grid responsive utilities */
   .grid-responsive-cards {
-    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6;
+    @apply grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6;
+  }
+  
+  /* Mobile touch improvements */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  .mobile-padding {
+    @apply px-3 sm:px-4 lg:px-6;
   }
   
   /* Button enhancements */

@@ -39,13 +39,17 @@ const Header = () => {
     <header className="bg-background/95 backdrop-blur-sm shadow-sm border-b border-border sticky top-0 z-50">
       {/* Main header */}
       <div className="container mx-auto">
-        <div className="flex h-16 items-center justify-between px-4">
+        <div className="flex h-14 sm:h-16 items-center justify-between px-3 sm:px-4">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 group">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-              <Car className="h-6 w-6 text-primary-foreground" />
+          <Link to="/" className="flex items-center space-x-2 group min-w-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
+              <img 
+                src="/lovable-uploads/91efade6-53ff-4c15-ae10-6ac8f338c2b9.png" 
+                alt="KORAUTO Logo" 
+                className="h-5 w-5 sm:h-6 sm:w-6 object-contain dark:invert dark:brightness-0 dark:contrast-100 transition-all duration-200"
+              />
             </div>
-            <span className="font-bold text-2xl bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent hidden sm:block">
+            <span className="font-bold text-lg sm:text-2xl bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent hidden xs:block truncate">
               KORAUTO
             </span>
           </Link>
@@ -80,14 +84,14 @@ const Header = () => {
           </nav>
 
           {/* Right side actions */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 sm:space-x-2">
             <ThemeToggle />
             
             {/* Mobile menu button */}
             <Button
               variant="ghost"
               size="sm"
-              className="lg:hidden focus-enhanced"
+              className="lg:hidden focus-enhanced p-2"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
