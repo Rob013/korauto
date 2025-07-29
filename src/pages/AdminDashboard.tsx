@@ -496,7 +496,7 @@ const AdminDashboard = () => {
                           {request.customer_name}
                         </CardTitle>
                         <p className="text-sm text-muted-foreground">
-                          Request ID: {request.id.substring(0, 8)}... • Submitted {formatDate(request.created_at)}
+                          Request ID: {request.id} • Submitted {formatDate(request.created_at)}
                         </p>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -507,22 +507,50 @@ const AdminDashboard = () => {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-6">
+                    {/* Database Record Information */}
+                    <div className="bg-slate-50 dark:bg-slate-950/20 rounded-lg p-4">
+                      <h4 className="font-semibold text-sm text-foreground mb-3 flex items-center gap-2">
+                        <Database className="h-4 w-4 text-slate-600" />
+                        Database Record Details
+                      </h4>
+                      <div className="grid md:grid-cols-2 gap-3 text-xs">
+                        <div className="space-y-1">
+                          <div><span className="font-medium">ID:</span> <code className="bg-slate-200 dark:bg-slate-800 px-1 rounded">{request.id}</code></div>
+                          <div><span className="font-medium">Created:</span> {formatDate(request.created_at)}</div>
+                          <div><span className="font-medium">Updated:</span> {formatDate(request.updated_at)}</div>
+                        </div>
+                        <div className="space-y-1">
+                          <div><span className="font-medium">Status:</span> <Badge variant="outline" className="text-xs">{request.status}</Badge></div>
+                          <div><span className="font-medium">Car ID:</span> {request.car_id || <span className="text-muted-foreground italic">None</span>}</div>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Customer Information Section */}
                     <div className="bg-muted/30 rounded-lg p-4">
                       <h4 className="font-semibold text-sm text-foreground mb-3 flex items-center gap-2">
                         <UserCheck className="h-4 w-4 text-primary" />
-                        Customer Information
+                        Customer Information (From Form)
                       </h4>
                       <div className="grid md:grid-cols-2 gap-3">
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium">Email:</span>
-                          <span className="text-sm">{request.customer_email}</span>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <UserIcon className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">Full Name:</span>
+                            <span className="text-sm font-semibold text-primary">{request.customer_name}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">Email:</span>
+                            <span className="text-sm">{request.customer_email}</span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium">Phone:</span>
-                          <span className="text-sm">{request.customer_phone}</span>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">WhatsApp:</span>
+                            <span className="text-sm">{request.customer_phone}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -531,19 +559,19 @@ const AdminDashboard = () => {
                     <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4">
                       <h4 className="font-semibold text-sm text-foreground mb-3 flex items-center gap-2">
                         <Car className="h-4 w-4 text-blue-600" />
-                        Car Information
+                        Car Information (From Request)
                       </h4>
                       {request.car_id ? (
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">Car ID:</span>
-                            <Badge variant="outline" className="text-xs">
+                            <span className="text-sm font-medium">Car Database ID:</span>
+                            <Badge variant="outline" className="text-xs font-mono">
                               {request.car_id}
                             </Badge>
                           </div>
                           {request.notes && request.notes.includes('Car:') && (
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium">Vehicle:</span>
+                              <span className="text-sm font-medium">Vehicle Details:</span>
                               <span className="text-sm text-blue-700 dark:text-blue-300 font-medium">
                                 {request.notes.replace('Car: ', '')}
                               </span>
@@ -557,13 +585,16 @@ const AdminDashboard = () => {
                         </div>
                       )}
                       
-                      {request.notes && !request.notes.includes('Car:') && (
+                      {/* All Notes Section */}
+                      {request.notes && (
                         <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded border-l-4 border-yellow-400">
                           <div className="flex items-start gap-2">
                             <FileText className="h-4 w-4 text-yellow-600 mt-0.5" />
-                            <div>
-                              <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Additional Notes:</span>
-                              <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">{request.notes}</p>
+                            <div className="w-full">
+                              <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Database Notes Field:</span>
+                              <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1 font-mono bg-yellow-100 dark:bg-yellow-900/30 p-2 rounded">
+                                {request.notes}
+                              </p>
                             </div>
                           </div>
                         </div>
