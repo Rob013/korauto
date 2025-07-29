@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { RefreshCw, AlertCircle } from "lucide-react";
-import { useAuctionAPI } from '@/hooks/useAuctionAPI';
+import { useSecureAuctionAPI } from '@/hooks/useSecureAuctionAPI';
 import FilterForm from '@/components/FilterForm';
 import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
 import { useRandomCars } from '@/hooks/useRandomCars';
@@ -56,7 +56,7 @@ const HomeCarsSection = memo(() => {
     fetchModels,
     fetchGenerations,
     fetchFilterCounts
-  } = useAuctionAPI();
+  } = useSecureAuctionAPI();
   const {
     convertUSDtoEUR
   } = useCurrencyAPI();
@@ -96,8 +96,9 @@ const HomeCarsSection = memo(() => {
   const fetchGermanCars = useCallback(async (manufacturerIds: string[]) => {
     try {
       console.log(`🔍 Fetching cars for German manufacturers: ${manufacturerIds.join(', ')}`);
+      console.log('🔍 Current cars length before fetch:', cars.length);
       
-      // Fetch 50 cars total with German manufacturer preference
+      // Fetch cars - the API hook will handle pagination to get more cars
       await fetchCars(1, {}, true);
       
       console.log(`✅ Fetched cars for German manufacturers`);
@@ -107,7 +108,7 @@ const HomeCarsSection = memo(() => {
       // Fallback to regular fetch
       fetchCars(1, {}, true);
     }
-  }, [fetchCars]);
+  }, [fetchCars, cars.length]);
   
   const handleFiltersChange = useCallback((newFilters: ApiFilters) => {
     setFilters(newFilters);
@@ -141,9 +142,10 @@ const HomeCarsSection = memo(() => {
     }
   }, [fetchGenerations]);
   const handleRefresh = useCallback(() => {
+    console.log('🔄 Refresh button clicked, current cars:', cars.length);
     // Always use normal fetch for refresh
     fetchCars(1, filters, true);
-  }, [fetchCars, filters]);
+  }, [fetchCars, filters, cars.length]);
 
   // Load manufacturers on mount and set up German brands fetching
   useEffect(() => {

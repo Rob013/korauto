@@ -268,23 +268,51 @@ export const useSecureAuctionAPI = () => {
     setError(null);
 
     try {
-      const apiFilters = {
-        ...filters,
-        page: page.toString(),
-        per_page: '12',
-        simple_paginate: '0'
-      };
-
-      const data: APIResponse = await makeSecureAPICall('cars', apiFilters);
+      // For homepage, fetch multiple pages to get ~50 cars total
+      const isHomepage = Object.keys(filters).length === 0;
+      const pagesToFetch = isHomepage ? 5 : 1; // 5 pages × 12 cars = 60 cars for homepage
       
-      setTotalCount(data.meta?.total || 0);
-      setHasMorePages(page < (data.meta?.last_page || 1));
+      let allCars: Car[] = [];
+      
+      for (let currentPage = 1; currentPage <= pagesToFetch; currentPage++) {
+        const apiFilters = {
+          ...filters,
+          page: currentPage.toString(),
+          per_page: '12',
+          simple_paginate: '0'
+        };
+
+        console.log(`🔄 Fetching page ${currentPage}/${pagesToFetch}`);
+        const data: APIResponse = await makeSecureAPICall('cars', apiFilters);
+        
+        if (data.data && data.data.length > 0) {
+          allCars = [...allCars, ...data.data];
+        }
+        
+        // Set metadata from first page
+        if (currentPage === 1) {
+          setTotalCount(data.meta?.total || 0);
+          setHasMorePages(currentPage < (data.meta?.last_page || 1));
+        }
+        
+        // Break if no more data
+        if (!data.data || data.data.length === 0) {
+          break;
+        }
+        
+        // Small delay between requests to avoid rate limiting
+        if (currentPage < pagesToFetch) {
+          await delay(100);
+        }
+      }
+      
+      console.log(`✅ Fetched ${allCars.length} total cars from ${pagesToFetch} pages`);
       
       if (resetList || page === 1) {
-        setCars(data.data || []);
+        setCars(allCars);
         setCurrentPage(1);
       } else {
-        setCars(prev => [...prev, ...(data.data || [])]);
+        setCars(prev => [...prev, ...allCars]);
         setCurrentPage(page);
       }
 
