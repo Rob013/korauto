@@ -12,15 +12,15 @@ const ContactSection = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-6xl mx-auto px-2 sm:px-0">
-          <Card className="text-center hover:shadow-lg transition-shadow duration-300">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-6xl mx-auto">
+          <Card className="text-center hover:shadow-lg transition-shadow duration-300 h-full">
             <CardHeader className="pb-3">
               <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-3">
                 <Mail className="h-6 w-6 text-primary-foreground" />
               </div>
               <CardTitle className="text-lg">Email</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1 flex flex-col justify-between">
               <p className="text-muted-foreground mb-2 text-sm">Dërgoni një mesazh</p>
               <a 
                 href="mailto:INFO.RGSHPK@gmail.com" 
@@ -31,14 +31,14 @@ const ContactSection = () => {
             </CardContent>
           </Card>
 
-          <Card className="text-center hover:shadow-lg transition-shadow duration-300">
+          <Card className="text-center hover:shadow-lg transition-shadow duration-300 h-full">
             <CardHeader>
               <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
                 <MapPin className="h-6 w-6 text-primary-foreground" />
               </div>
               <CardTitle className="text-lg">Vendndodhja</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1 flex flex-col justify-between">
               <p className="text-muted-foreground mb-2">Vizitoni zyrën tonë</p>
               <a 
                 href="https://maps.google.com/?q=KORAUTO,Rr.+Ilaz+Kodra+70,Prishtinë,Kosovo" 
@@ -51,14 +51,14 @@ const ContactSection = () => {
             </CardContent>
           </Card>
 
-          <Card className="text-center hover:shadow-lg transition-shadow duration-300">
+          <Card className="text-center hover:shadow-lg transition-shadow duration-300 h-full">
             <CardHeader>
               <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
                 <Clock className="h-6 w-6 text-primary-foreground" />
               </div>
               <CardTitle className="text-lg">Orari</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1 flex flex-col justify-between">
               <p className="text-muted-foreground mb-2">Jemi të disponueshëm</p>
               <div className="text-primary font-medium">
                 <p>Çdo ditë: 9:00-18:00</p>
@@ -66,14 +66,14 @@ const ContactSection = () => {
             </CardContent>
           </Card>
 
-          <Card className="text-center hover:shadow-lg transition-shadow duration-300">
+          <Card className="text-center hover:shadow-lg transition-shadow duration-300 h-full">
             <CardHeader>
               <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
                 <Phone className="h-6 w-6 text-primary-foreground" />
               </div>
               <CardTitle className="text-lg">Robert Gashi</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1 flex flex-col justify-between">
               <p className="text-muted-foreground mb-2">Agent shitjesh</p>
               <div className="space-y-2">
                 <a 
@@ -82,7 +82,7 @@ const ContactSection = () => {
                 >
                   +38348181116
                 </a>
-                <div className="flex gap-2">
+                <div className="flex gap-2 justify-center">
                   <a 
                     href="https://wa.me/38348181116" 
                     target="_blank" 
@@ -103,15 +103,15 @@ const ContactSection = () => {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-6xl mx-auto px-2 sm:px-0 mt-6">
-          <Card className="text-center hover:shadow-lg transition-shadow duration-300">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-6xl mx-auto mt-6">
+          <Card className="text-center hover:shadow-lg transition-shadow duration-300 h-full">
             <CardHeader>
               <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
                 <Phone className="h-6 w-6 text-primary-foreground" />
               </div>
               <CardTitle className="text-lg">Rajmond</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1 flex flex-col justify-between">
               <p className="text-muted-foreground mb-2">Agent shitjesh</p>
               <div className="space-y-2">
                 <a 
@@ -120,7 +120,7 @@ const ContactSection = () => {
                 >
                   +38346105588
                 </a>
-                <div className="flex gap-2">
+                <div className="flex gap-2 justify-center">
                   <a 
                     href="https://wa.me/38346105588" 
                     target="_blank" 
@@ -140,14 +140,14 @@ const ContactSection = () => {
             </CardContent>
           </Card>
 
-          <Card className="text-center hover:shadow-lg transition-shadow duration-300">
+          <Card className="text-center hover:shadow-lg transition-shadow duration-300 h-full">
             <CardHeader>
               <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
                 <Phone className="h-6 w-6 text-primary-foreground" />
               </div>
               <CardTitle className="text-lg">Renato</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1 flex flex-col justify-between">
               <p className="text-muted-foreground mb-2">Agent shitjesh</p>
               <div className="space-y-2">
                 <a 
@@ -156,7 +156,7 @@ const ContactSection = () => {
                 >
                   +38348181117
                 </a>
-                <div className="flex gap-2">
+                <div className="flex gap-2 justify-center">
                   <a 
                     href="https://wa.me/38348181117" 
                     target="_blank" 
@@ -176,14 +176,14 @@ const ContactSection = () => {
             </CardContent>
           </Card>
 
-          <Card className="text-center hover:shadow-lg transition-shadow duration-300">
+          <Card className="text-center hover:shadow-lg transition-shadow duration-300 h-full">
             <CardHeader>
               <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
                 <Phone className="h-6 w-6 text-primary-foreground" />
               </div>
               <CardTitle className="text-lg">Leonit</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1 flex flex-col justify-between">
               <p className="text-muted-foreground mb-2">Agent shitjesh</p>
               <div className="space-y-2">
                 <a 
@@ -192,7 +192,7 @@ const ContactSection = () => {
                 >
                   +38348244999
                 </a>
-                <div className="flex gap-2">
+                <div className="flex gap-2 justify-center">
                   <a 
                     href="https://wa.me/38348244999" 
                     target="_blank" 
@@ -212,14 +212,14 @@ const ContactSection = () => {
             </CardContent>
           </Card>
 
-          <Card className="text-center hover:shadow-lg transition-shadow duration-300">
+          <Card className="text-center hover:shadow-lg transition-shadow duration-300 h-full">
             <CardHeader>
               <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
                 <Phone className="h-6 w-6 text-primary-foreground" />
               </div>
               <CardTitle className="text-lg">Reuf</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1 flex flex-col justify-between">
               <p className="text-muted-foreground mb-2">Agent shitjesh</p>
               <div className="space-y-2">
                 <a 
@@ -228,7 +228,7 @@ const ContactSection = () => {
                 >
                   +38344661161
                 </a>
-                <div className="flex gap-2">
+                <div className="flex gap-2 justify-center">
                   <a 
                     href="https://wa.me/38344661161" 
                     target="_blank" 

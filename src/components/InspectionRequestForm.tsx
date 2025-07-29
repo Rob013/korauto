@@ -34,17 +34,17 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
     console.log('Form data:', formData);
     
     try {
-      // Store in Supabase database
+      // Store in Supabase database with all form and car information
       const { error } = await supabase
         .from('inspection_requests')
         .insert({
           customer_name: `${formData.firstName} ${formData.lastName}`,
           customer_email: formData.email,
           customer_phone: formData.whatsappPhone,
-          car_id: carId,
-          car_make: carMake,
-          car_model: carModel,
-          car_year: carYear
+          car_id: carId || null,
+          notes: carId && carMake && carModel && carYear 
+            ? `Car: ${carYear} ${carMake} ${carModel}` 
+            : 'General inspection request'
         });
 
       if (error) {

@@ -410,7 +410,17 @@ const CarDetails = () => {
       <div className="container-responsive py-6 max-w-7xl">
         {/* Header with Actions */}
         <div className="flex justify-between items-center mb-8">
-          <Button variant="outline" onClick={() => window.history.back()} className="shadow-sm border-2 hover:shadow-md transition-all">
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              if (window.history.length > 1) {
+                window.history.back();
+              } else {
+                navigate('/catalog');
+              }
+            }} 
+            className="shadow-sm border-2 hover:shadow-md transition-all"
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Kthehu te Makinat
           </Button>
