@@ -24,6 +24,21 @@ interface InspectionRequest {
   updated_at: string;
 }
 
+interface CarData {
+  id: string;
+  make: string;
+  model: string;
+  year: number;
+  price?: number;
+  image?: string;
+  vin?: string;
+  mileage?: string;
+  fuel?: string;
+  transmission?: string;
+  color?: string;
+  lot_number?: string;
+}
+
 interface AdminStats {
   totalInspectionRequests: number;
   pendingRequests: number;
@@ -39,6 +54,7 @@ interface AdminStats {
 
 const AdminDashboard = () => {
   const [requests, setRequests] = useState<InspectionRequest[]>([]);
+  const [carDetails, setCarDetails] = useState<{[key: string]: CarData}>({});
   const [stats, setStats] = useState<AdminStats>({
     totalInspectionRequests: 0,
     pendingRequests: 0,
@@ -120,6 +136,48 @@ const AdminDashboard = () => {
     recheckAuth();
   };
 
+  const fetchCarDetails = async (carIds: string[]) => {
+    const uniqueCarIds = [...new Set(carIds.filter(Boolean))];
+    if (uniqueCarIds.length === 0) return;
+
+    try {
+      const { data: carsData, error } = await supabase
+        .from('cars_cache')
+        .select('*')
+        .in('api_id', uniqueCarIds);
+
+      if (error) {
+        console.error('Error fetching car details:', error);
+        return;
+      }
+
+      const carDetailsMap: {[key: string]: CarData} = {};
+      carsData?.forEach(car => {
+        // Type assertion for car_data since it's stored as JSON
+        const carData = car.car_data as any;
+        const lot = carData?.lots?.[0];
+        carDetailsMap[car.api_id] = {
+          id: car.api_id,
+          make: car.make,
+          model: car.model,
+          year: car.year,
+          price: lot?.buy_now ? Math.round(lot.buy_now + 2200) : undefined,
+          image: lot?.images?.normal?.[0] || lot?.images?.big?.[0],
+          vin: car.vin,
+          mileage: lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined,
+          fuel: carData?.fuel?.name,
+          transmission: carData?.transmission?.name,
+          color: carData?.color?.name,
+          lot_number: car.lot_number || lot?.lot
+        };
+      });
+
+      setCarDetails(carDetailsMap);
+    } catch (error) {
+      console.error('Error fetching car details:', error);
+    }
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -131,6 +189,12 @@ const AdminDashboard = () => {
 
       if (requestsError) throw requestsError;
       setRequests(requestsData || []);
+
+      // Fetch car details for requests that have car_id
+      const carIds = requestsData?.map(r => r.car_id).filter(Boolean) || [];
+      if (carIds.length > 0) {
+        await fetchCarDetails(carIds);
+      }
 
       // Calculate stats
       const totalRequests = requestsData?.length || 0;
@@ -400,20 +464,51 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {requests.slice(0, 5).map((request) => (
-                      <div key={request.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <Car className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <p className="text-sm font-medium">{request.customer_name}</p>
-                            <p className="text-xs text-muted-foreground">{formatDate(request.created_at)}</p>
-                          </div>
-                        </div>
-                        <Badge className={getStatusColor(request.status)}>
-                          {request.status}
-                        </Badge>
-                      </div>
-                    ))}
+                     {requests.slice(0, 5).map((request) => {
+                       const car = request.car_id ? carDetails[request.car_id] : null;
+                       return (
+                         <div key={request.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
+                           <div className="flex items-center space-x-3">
+                             {car ? (
+                               <div className="flex items-center space-x-3">
+                                 {car.image && (
+                                   <img src={car.image} alt={`${car.year} ${car.make} ${car.model}`} className="w-12 h-8 object-cover rounded" />
+                                 )}
+                                 <div>
+                                   <p className="text-sm font-medium">{request.customer_name}</p>
+                                   <p className="text-xs text-muted-foreground">{formatDate(request.created_at)}</p>
+                                   <div className="flex items-center gap-2 mt-1">
+                                     <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                       {car.year} {car.make} {car.model}
+                                     </span>
+                                     {request.car_id && (
+                                       <button
+                                         onClick={() => navigate(`/car/${request.car_id}`)}
+                                         className="text-xs text-blue-600 hover:text-blue-800 underline"
+                                       >
+                                         View Car →
+                                       </button>
+                                     )}
+                                   </div>
+                                 </div>
+                               </div>
+                             ) : (
+                               <div className="flex items-center space-x-3">
+                                 <Car className="h-4 w-4 text-muted-foreground" />
+                                 <div>
+                                   <p className="text-sm font-medium">{request.customer_name}</p>
+                                   <p className="text-xs text-muted-foreground">{formatDate(request.created_at)}</p>
+                                   <p className="text-xs text-muted-foreground">General inspection request</p>
+                                 </div>
+                               </div>
+                             )}
+                           </div>
+                           <Badge className={getStatusColor(request.status)}>
+                             {request.status}
+                           </Badge>
+                         </div>
+                       );
+                     })}
                   </div>
                 </CardContent>
               </Card>
@@ -567,9 +662,44 @@ const AdminDashboard = () => {
                               <div className="text-[10px] text-muted-foreground">📱 WhatsApp field</div>
                             </div>
                           </td>
-                          <td className="border border-border px-3 py-2 text-xs font-mono">
-                            {request.car_id || <span className="text-muted-foreground italic">NULL</span>}
-                          </td>
+                           <td className="border border-border px-3 py-2 text-xs">
+                             {request.car_id ? (
+                               <div className="space-y-2">
+                                 <div className="font-mono text-xs bg-muted px-2 py-1 rounded">
+                                   ID: {request.car_id}
+                                 </div>
+                                 {carDetails[request.car_id] && (
+                                   <div className="flex items-center space-x-2">
+                                     {carDetails[request.car_id].image && (
+                                       <img 
+                                         src={carDetails[request.car_id].image} 
+                                         alt="Car" 
+                                         className="w-16 h-12 object-cover rounded border"
+                                       />
+                                     )}
+                                     <div className="flex-1 min-w-0">
+                                       <div className="text-xs font-medium truncate">
+                                         {carDetails[request.car_id].year} {carDetails[request.car_id].make} {carDetails[request.car_id].model}
+                                       </div>
+                                       <div className="text-[10px] text-muted-foreground space-y-0.5">
+                                         {carDetails[request.car_id].price && (
+                                           <div>€{carDetails[request.car_id].price?.toLocaleString()}</div>
+                                         )}
+                                         {carDetails[request.car_id].mileage && (
+                                           <div>{carDetails[request.car_id].mileage}</div>
+                                         )}
+                                         {carDetails[request.car_id].fuel && carDetails[request.car_id].transmission && (
+                                           <div>{carDetails[request.car_id].fuel} • {carDetails[request.car_id].transmission}</div>
+                                         )}
+                                       </div>
+                                     </div>
+                                   </div>
+                                 )}
+                               </div>
+                             ) : (
+                               <span className="text-muted-foreground italic">NULL</span>
+                             )}
+                           </td>
                           <td className="border border-border px-3 py-2 text-xs">
                             <Badge className={getStatusColor(request.status)} variant="outline">
                               {request.status}
@@ -603,16 +733,18 @@ const AdminDashboard = () => {
                                 <Phone className="h-3 w-3" />
                               </Button>
                               
-                              {request.car_id && (
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => navigate(`/car/${request.car_id}`)}
-                                  className="h-6 px-2 text-xs"
-                                >
-                                  <Car className="h-3 w-3" />
-                                </Button>
-                              )}
+                               {request.car_id && (
+                                 <Button 
+                                   size="sm" 
+                                   variant="default"
+                                   onClick={() => navigate(`/car/${request.car_id}`)}
+                                   className="h-6 px-2 text-xs bg-primary hover:bg-primary/90"
+                                   title={carDetails[request.car_id] ? `View ${carDetails[request.car_id].year} ${carDetails[request.car_id].make} ${carDetails[request.car_id].model}` : 'View Car Details'}
+                                 >
+                                   <Car className="h-3 w-3 mr-1" />
+                                   View
+                                 </Button>
+                               )}
                               
                               <select
                                 value={request.status}
