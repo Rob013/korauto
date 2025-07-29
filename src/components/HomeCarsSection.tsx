@@ -270,7 +270,8 @@ const HomeCarsSection = () => {
                 const price = convertUSDtoEUR(Math.round(usdPrice + 2200));
                 
                 // Ensure we have a valid lot identifier for navigation
-                const lotId = car.lot_number || lot?.lot || car.id;
+                const lotId = lot?.lot || car.id?.toString();
+                console.log('🚗 Car mapping:', { carId: car.id, lotNumber: lot?.lot, finalLotId: lotId });
                 
                 return (
                   <CarCard
