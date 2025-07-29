@@ -155,7 +155,7 @@ const CarDetails = () => {
   clearTimeout(timeoutId);
 
   if (!response.ok) {
-    throw new Error(API returned ${response.status}: ${response.statusText});
+    throw new Error(`API returned ${response.status}: ${response.statusText}`);
   }
 
   const data = await response.json();
@@ -214,8 +214,8 @@ const CarDetails = () => {
   }, [lot]);
 
   const handleContactWhatsApp = () => {
-    const message = Përshëndetje! Jam i interesuar për ${car?.year} ${car?.make} ${car?.model} (€${car?.price.toLocaleString()}). A mund të më jepni më shumë informacion?;
-    const whatsappUrl = https://wa.me/38348181116?text=${encodeURIComponent(message)};
+    const message = `Përshëndetje! Jam i interesuar për ${car?.year} ${car?.make} ${car?.model} (€${car?.price.toLocaleString()}). A mund të më jepni më shumë informacion?;
+    const whatsappUrl = https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
