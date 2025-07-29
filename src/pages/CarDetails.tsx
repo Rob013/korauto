@@ -138,35 +138,36 @@ const CarDetails = () => {
   }, []);
 
   useEffect(() => {
-    const fetchCarDetails = async () => {
-      if (!lot) return;
+  const fetchCarDetails = async () => {
+    if (!lot) return;
+
     try {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-  const response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
-    headers: {
-      'accept': '*/*',
-      'x-api-key': API_KEY
-    },
-    signal: controller.signal
-  });
+      const response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
+        headers: {
+          accept: '*/*',
+          'x-api-key': API_KEY,
+        },
+        signal: controller.signal,
+      });
 
-  clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
 
-  if (!response.ok) {
-    throw new Error(`API returned ${response.status}: ${response.statusText}`);
-  }
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}: ${response.statusText}`);
+      }
 
-  const data = await response.json();
-  const carData = data;
-const lotData = data.lots?.[0];
+      const data = await response.json();
+      const carData = data;
+      const lotData = data.lots?.[0];
 
       if (!lotData) throw new Error("Missing lot data");
-      
+
       const basePrice = lotData.buy_now ?? lotData.final_bid ?? lotData.price ?? 25000;
       const price = Math.round(basePrice + 2200);
-      
+
       const transformedCar: CarDetails = {
         id: carData.id?.toString() || lotData.lot,
         make: carData.manufacturer?.name || 'Unknown',
@@ -202,19 +203,21 @@ const lotData = data.lots?.[0];
         safety_features: getSafetyFeatures(carData, lotData),
         comfort_features: getComfortFeatures(carData, lotData),
         performance_rating: 4.5,
-        popularity_score: 85
+        popularity_score: 85,
       };
 
-        setCar(transformedCar);
-        setLoading(false);
-        return;
-  }
-} catch (apiError) {
-  console.error('❌ Failed to fetch from lot endpoint:', apiError);
-}
+      setCar(transformedCar);
+      setLoading(false);
+    } catch (apiError) {
+      console.error('❌ Failed to fetch from lot endpoint:', apiError);
+      setError('Failed to load car data');
+      setLoading(false);
     }
-    fetchCarDetails();
-  }, [lot]);
+  };
+
+  fetchCarDetails();
+}, [lot]);
+
 
   const handleContactWhatsApp = () => {
     const message = `Përshëndetje! Jam i interesuar për ${car?.year} ${car?.make} ${car?.model} (€${car?.price.toLocaleString()}). A mund të më jepni më shumë informacion?`;
