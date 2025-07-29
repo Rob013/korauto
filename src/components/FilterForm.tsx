@@ -178,7 +178,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
                         >
                           
                         <div className="flex items-center gap-2">
-                          {manufacturer.image && (
+                          {manufacturer?.image && (
                             <img
                               src={manufacturer?.image}
                               alt={manufacturer.name}
