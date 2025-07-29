@@ -100,33 +100,56 @@ const EncarCatalog = () => {
   };
 
   const handleManufacturerChange = async (manufacturerId: string) => {
-    if (manufacturerId) {
-      const modelData = await fetchModels(manufacturerId);
-      setModels(modelData);
-    } else {
-      setModels([]);
-    }
+    const modelData = manufacturerId ? await fetchModels(manufacturerId) : [];
+    setModels(modelData);
+
+    const newFilters: APIFilters = {
+      ...filters,
+      manufacturer_id: manufacturerId || undefined,
+      model_id: undefined,
+      generation_id: undefined
+    };
+    setFilters(newFilters);
+    setSearchParams(Object.fromEntries(Object.entries(newFilters).filter(([_, v]) => v)));
     setGenerations([]);
   };
 
   const handleModelChange = async (modelId: string) => {
-    if (modelId) {
-      const generationData = await fetchGenerations(modelId);
-      setGenerations(generationData);
-    } else {
-      setGenerations([]);
-    }
+    const generationData = modelId ? await fetchGenerations(modelId) : [];
+    setGenerations(generationData);
+
+    const newFilters: APIFilters = {
+      ...filters,
+      model_id: modelId || undefined,
+      generation_id: undefined
+    };
+    setFilters(newFilters);
+    setSearchParams(Object.fromEntries(Object.entries(newFilters).filter(([_, v]) => v)));
   };
 
   useEffect(() => {
     const loadManufacturers = async () => {
       const manufacturerData = await fetchManufacturers();
       setManufacturers(manufacturerData);
-      console.log("manufacturer data", manufacturerData)
     };
 
-    loadManufacturers();
-    fetchCars(1, filters, true);
+    const init = async () => {
+      await loadManufacturers();
+
+      if (filters.manufacturer_id) {
+        const models = await fetchModels(filters.manufacturer_id);
+        setModels(models);
+      }
+
+      if (filters.model_id) {
+        const generations = await fetchGenerations(filters.model_id);
+        setGenerations(generations);
+      }
+
+      fetchCars(1, filters, true);
+    };
+
+    init();
   }, []);
 
   useEffect(() => {
@@ -154,10 +177,8 @@ const EncarCatalog = () => {
       if (manufacturers.length > 0) {
         setLoadingCounts(true);
         try {
-          console.log('Loading initial filter counts for', manufacturers.length, 'manufacturers');
           const counts = await fetchFilterCounts({}, manufacturers);
           setFilterCounts(counts);
-          console.log('Initial filter counts loaded:', counts);
         } finally {
           setLoadingCounts(false);
         }
