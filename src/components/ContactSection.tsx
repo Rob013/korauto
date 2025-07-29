@@ -154,7 +154,7 @@ const ContactSection = () => {
                   href="tel:+38348181117" 
                   className="block text-primary hover:text-primary/80 transition-colors font-medium"
                 >
-                  +38348181117
+                  +38346181117
                 </a>
                 <div className="flex gap-2 justify-center">
                   <a 
@@ -174,79 +174,7 @@ const ContactSection = () => {
                 </div>
               </div>
             </CardContent>
-          </Card>
-
-          <Card className="text-center hover:shadow-lg transition-shadow duration-300 h-full">
-            <CardHeader>
-              <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
-                <Phone className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <CardTitle className="text-lg">Leonit</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col justify-between">
-              <p className="text-muted-foreground mb-2">Agent shitjesh</p>
-              <div className="space-y-2">
-                <a 
-                  href="tel:+38348244999" 
-                  className="block text-primary hover:text-primary/80 transition-colors font-medium"
-                >
-                  +38348244999
-                </a>
-                <div className="flex gap-2 justify-center">
-                  <a 
-                    href="https://wa.me/38348244999" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition-colors"
-                  >
-                    WhatsApp
-                  </a>
-                  <a 
-                    href="viber://chat?number=+38348244999" 
-                    className="text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600 transition-colors"
-                  >
-                    Viber
-                  </a>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="text-center hover:shadow-lg transition-shadow duration-300 h-full">
-            <CardHeader>
-              <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
-                <Phone className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <CardTitle className="text-lg">Reuf</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col justify-between">
-              <p className="text-muted-foreground mb-2">Agent shitjesh</p>
-              <div className="space-y-2">
-                <a 
-                  href="tel:+38344661161" 
-                  className="block text-primary hover:text-primary/80 transition-colors font-medium"
-                >
-                  +38344661161
-                </a>
-                <div className="flex gap-2 justify-center">
-                  <a 
-                    href="https://wa.me/38344661161" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition-colors"
-                  >
-                    WhatsApp
-                  </a>
-                  <a 
-                    href="viber://chat?number=+38344661161" 
-                    className="text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600 transition-colors"
-                  >
-                    Viber
-                  </a>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          </Card> 
         </div>
 
         <div className="text-center mt-6">
