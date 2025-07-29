@@ -18,6 +18,7 @@ interface Model {
   id: number;
   name: string;
   car_count?: number;
+  cars_qty?:number;
 }
 
 interface Generation {
@@ -197,7 +198,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
                     key={model.id} 
                     value={model.id.toString()}
                   >
-                    {model.name} {count !== undefined && count > 0 && `(${count})`}
+                    {model.name} {model?.cars_qty ? `(${model?.cars_qty})` :"" }
                   </SelectItem>
                 );
                })}
