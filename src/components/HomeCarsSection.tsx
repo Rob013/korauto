@@ -269,10 +269,6 @@ const HomeCarsSection = () => {
                 const usdPrice = lot?.buy_now || 25000;
                 const price = convertUSDtoEUR(Math.round(usdPrice + 2200));
                 
-                // Ensure we have a valid lot identifier for navigation
-                const lotId = lot?.lot || car.id?.toString();
-                console.log('🚗 Car mapping:', { carId: car.id, lotNumber: lot?.lot, finalLotId: lotId });
-                
                 return (
                   <CarCard
                     key={car.id}
@@ -288,7 +284,7 @@ const HomeCarsSection = () => {
                     fuel={car.fuel?.name}
                     color={car.color?.name}
                     condition={car.condition?.replace('run_and_drives', 'Good')}
-                    lot={lotId}
+                    lot={car.lot_number || lot?.lot}
                     title={car.title}
                     status={Number(car.status || lot?.status || 1)}
                     sale_status={car.sale_status || lot?.sale_status}
