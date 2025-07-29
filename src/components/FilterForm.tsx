@@ -11,6 +11,7 @@ interface Manufacturer {
   name: string;
   car_count?: number;
   cars_qty?:number;
+  image:string;
   
 }
 
@@ -174,7 +175,17 @@ const FilterForm: React.FC<FilterFormProps> = ({
                           key={manufacturer.id} 
                           value={manufacturer.id.toString()}
                         >
-                          {manufacturer.name} ({manufacturer.cars_qty})
+                          
+                        <div className="flex items-center gap-2">
+                          {manufacturer.image && (
+                            <img
+                              src={manufacturer.image}
+                              alt={manufacturer.name}
+                              className="w-5 h-5 object-contain"
+                            />
+                          )}
+                      <span>{manufacturer.name} ({manufacturer.cars_qty})</span>
+                    </div>
                         </SelectItem>
                       );
                    })}
