@@ -7,6 +7,7 @@ interface Car {
   id: string;
   manufacturer: { id: number; name: string };
   model: { id: number; name: string };
+  generation?: { id: number; name: string; manufacturer_id: number; model_id: number };
   year: number;
   price?: string;
   mileage?: string;
@@ -21,12 +22,36 @@ interface Car {
   status?: number; // 1 = active, 2 = pending, 3 = sold
   sale_status?: string; // 'active', 'pending', 'sold'
   final_price?: number; // Sale price if sold
+  body_type?: { id: number; name: string };
+  engine?: { id: number; name: string };
+  drive_wheel?: string;
+  vehicle_type?: { id: number; name: string };
+  cylinders?: string;
   lots?: {
-    buy_now?: number;
+    id: number;
     lot?: string;
+    buy_now?: number;
     status?: number;
     sale_status?: string;
     final_price?: number;
+    bid?: number;
+    estimate_repair_price?: number;
+    pre_accident_price?: number;
+    clean_wholesale_price?: number;
+    actual_cash_value?: number;
+    sale_date?: string;
+    seller?: string;
+    seller_type?: string;
+    detailed_title?: string;
+    damage?: {
+      main?: string;
+      second?: string;
+    };
+    keys_available?: boolean;
+    airbags?: string;
+    grade_iaai?: string;
+    domain?: { id: number; name: string };
+    external_id?: string;
     odometer?: {
       km?: number;
       mi?: number;

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Car, Search, Gauge, Settings, Fuel, Palette, Hash, Heart } from "lucide-react";
+import { Car, Search, Gauge, Settings, Fuel, Palette, Hash, Heart, Cog, Truck, Key, Shield, Calendar, DollarSign, AlertTriangle } from "lucide-react";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +23,29 @@ interface CarCardProps {
   status?: number; // 1 = active, 2 = pending, 3 = sold
   sale_status?: string; // 'active', 'pending', 'sold'
   final_price?: number; // Sale price if sold
+  // Additional API fields
+  generation?: string;
+  body_type?: string;
+  engine?: string;
+  drive_wheel?: string;
+  vehicle_type?: string;
+  cylinders?: string;
+  bid?: number;
+  estimate_repair_price?: number;
+  pre_accident_price?: number;
+  clean_wholesale_price?: number;
+  actual_cash_value?: number;
+  sale_date?: string;
+  seller?: string;
+  seller_type?: string;
+  detailed_title?: string;
+  damage_main?: string;
+  damage_second?: string;
+  keys_available?: boolean;
+  airbags?: string;
+  grade_iaai?: string;
+  domain?: string;
+  external_id?: string;
 }
 const CarCard = ({
   id,
@@ -41,7 +64,29 @@ const CarCard = ({
   title,
   status,
   sale_status,
-  final_price
+  final_price,
+  generation,
+  body_type,
+  engine,
+  drive_wheel,
+  vehicle_type,
+  cylinders,
+  bid,
+  estimate_repair_price,
+  pre_accident_price,
+  clean_wholesale_price,
+  actual_cash_value,
+  sale_date,
+  seller,
+  seller_type,
+  detailed_title,
+  damage_main,
+  damage_second,
+  keys_available,
+  airbags,
+  grade_iaai,
+  domain,
+  external_id
 }: CarCardProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -180,7 +225,12 @@ const CarCard = ({
           {title && title !== `${make} ${model}` && <p className="text-sm text-muted-foreground mb-1 line-clamp-1">{title}</p>}
         </div>
 
+        {/* Basic Vehicle Info */}
         <div className="space-y-2 mb-4 text-sm">
+          {generation && <div className="flex items-center gap-2">
+              <Cog className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className="truncate">Generation: {generation}</span>
+            </div>}
           {mileage && <div className="flex items-center gap-2">
               <Gauge className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <span className="truncate">{mileage}</span>
@@ -197,22 +247,162 @@ const CarCard = ({
               <Palette className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <span className="capitalize truncate">{color}</span>
             </div>}
-          {vin && <div className="flex items-center gap-2">
-              <Hash className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="text-xs font-mono truncate">{vin}</span>
+          {body_type && <div className="flex items-center gap-2">
+              <Truck className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className="capitalize truncate">{body_type.replace('_', ' ')}</span>
             </div>}
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-          <span className="text-xl sm:text-2xl font-bold text-primary">
-            €{price.toLocaleString()}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            Deri ne portin e Durresit
-          </span>
+        {/* Technical Details */}
+        {(engine || drive_wheel || cylinders || vehicle_type) && (
+          <div className="space-y-1 mb-4 text-xs border-t pt-3">
+            <h4 className="font-medium text-muted-foreground mb-2">Technical Details</h4>
+            {engine && <div className="flex items-center gap-2">
+                <Cog className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                <span className="truncate">Engine: {engine}</span>
+              </div>}
+            {drive_wheel && <div className="flex items-center gap-2">
+                <Settings className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                <span className="truncate">Drive: {drive_wheel}</span>
+              </div>}
+            {cylinders && <div className="flex items-center gap-2">
+                <Cog className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                <span className="truncate">Cylinders: {cylinders}</span>
+              </div>}
+            {vehicle_type && <div className="flex items-center gap-2">
+                <Car className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                <span className="capitalize truncate">{vehicle_type}</span>
+              </div>}
+          </div>
+        )}
+
+        {/* Safety & Features */}
+        {(keys_available !== undefined || airbags || grade_iaai) && (
+          <div className="space-y-1 mb-4 text-xs border-t pt-3">
+            <h4 className="font-medium text-muted-foreground mb-2">Safety & Features</h4>
+            {keys_available !== undefined && <div className="flex items-center gap-2">
+                <Key className={`h-3 w-3 flex-shrink-0 ${keys_available ? 'text-green-500' : 'text-red-500'}`} />
+                <span className="truncate">Keys: {keys_available ? 'Available' : 'Not Available'}</span>
+              </div>}
+            {airbags && <div className="flex items-center gap-2">
+                <Shield className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                <span className="truncate">Airbags: {airbags}</span>
+              </div>}
+            {grade_iaai && <div className="flex items-center gap-2">
+                <Shield className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                <span className="truncate">Grade: {grade_iaai}</span>
+              </div>}
+          </div>
+        )}
+
+        {/* Damage & Condition */}
+        {(damage_main || damage_second || condition) && (
+          <div className="space-y-1 mb-4 text-xs border-t pt-3">
+            <h4 className="font-medium text-muted-foreground mb-2">Condition</h4>
+            {condition && <div className="flex items-center gap-2">
+                <Car className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                <span className="capitalize truncate">{condition.replace('_', ' ')}</span>
+              </div>}
+            {damage_main && <div className="flex items-center gap-2">
+                <AlertTriangle className="h-3 w-3 text-orange-500 flex-shrink-0" />
+                <span className="truncate">Main Damage: {damage_main}</span>
+              </div>}
+            {damage_second && <div className="flex items-center gap-2">
+                <AlertTriangle className="h-3 w-3 text-yellow-500 flex-shrink-0" />
+                <span className="truncate">Secondary: {damage_second}</span>
+              </div>}
+          </div>
+        )}
+
+        {/* Pricing Information */}
+        <div className="space-y-2 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="space-y-1">
+              <span className="text-xl sm:text-2xl font-bold text-primary">
+                €{price.toLocaleString()}
+              </span>
+              {bid && bid !== price && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <DollarSign className="h-3 w-3" />
+                  <span>Current Bid: €{bid.toLocaleString()}</span>
+                </div>
+              )}
+              {final_price && (
+                <div className="flex items-center gap-1 text-xs text-green-600">
+                  <DollarSign className="h-3 w-3" />
+                  <span>Final Price: €{final_price.toLocaleString()}</span>
+                </div>
+              )}
+            </div>
+            <span className="text-xs text-muted-foreground">
+              Deri ne portin e Durresit
+            </span>
+          </div>
+          
+          {/* Additional Pricing Details */}
+          {(estimate_repair_price || pre_accident_price || clean_wholesale_price || actual_cash_value) && (
+            <div className="grid grid-cols-2 gap-2 text-xs border-t pt-2">
+              {estimate_repair_price && (
+                <div className="flex items-center gap-1">
+                  <DollarSign className="h-3 w-3 text-orange-500" />
+                  <span>Repair: €{estimate_repair_price.toLocaleString()}</span>
+                </div>
+              )}
+              {pre_accident_price && (
+                <div className="flex items-center gap-1">
+                  <DollarSign className="h-3 w-3 text-blue-500" />
+                  <span>Pre-accident: €{pre_accident_price.toLocaleString()}</span>
+                </div>
+              )}
+              {clean_wholesale_price && (
+                <div className="flex items-center gap-1">
+                  <DollarSign className="h-3 w-3 text-green-500" />
+                  <span>Wholesale: €{clean_wholesale_price.toLocaleString()}</span>
+                </div>
+              )}
+              {actual_cash_value && (
+                <div className="flex items-center gap-1">
+                  <DollarSign className="h-3 w-3 text-purple-500" />
+                  <span>Cash Value: €{actual_cash_value.toLocaleString()}</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        
+        {/* Sale Information */}
+        {(sale_date || seller || seller_type || domain) && (
+          <div className="space-y-1 mb-4 text-xs border-t pt-3">
+            <h4 className="font-medium text-muted-foreground mb-2">Sale Information</h4>
+            {sale_date && <div className="flex items-center gap-2">
+                <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                <span className="truncate">Sale Date: {new Date(sale_date).toLocaleDateString()}</span>
+              </div>}
+            {seller && <div className="flex items-center gap-2">
+                <Car className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                <span className="truncate">Seller: {seller}</span>
+              </div>}
+            {seller_type && <div className="flex items-center gap-2">
+                <Car className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                <span className="capitalize truncate">Type: {seller_type}</span>
+              </div>}
+            {domain && <div className="flex items-center gap-2">
+                <Car className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                <span className="truncate">Source: {domain.replace('_', '.')}</span>
+              </div>}
+          </div>
+        )}
+
+        {/* VIN */}
+        {vin && (
+          <div className="mb-4 text-xs border-t pt-3">
+            <div className="flex items-center gap-2">
+              <Hash className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="font-mono text-xs break-all">VIN: {vin}</span>
+            </div>
+          </div>
+        )}
+
         <div className="text-center">
           <p className="text-xs text-muted-foreground">
             KORAUTO Shërbim profesional i importit

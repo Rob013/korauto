@@ -267,6 +267,28 @@ const EncarCatalog = () => {
                   status={car.status || lot?.status}
                   sale_status={car.sale_status || lot?.sale_status}
                   final_price={car.final_price || lot?.final_price}
+                  generation={car.generation?.name}
+                  body_type={car.body_type?.name}
+                  engine={car.engine?.name}
+                  drive_wheel={car.drive_wheel}
+                  vehicle_type={car.vehicle_type?.name}
+                  cylinders={car.cylinders}
+                  bid={lot?.bid}
+                  estimate_repair_price={lot?.estimate_repair_price}
+                  pre_accident_price={lot?.pre_accident_price}
+                  clean_wholesale_price={lot?.clean_wholesale_price}
+                  actual_cash_value={lot?.actual_cash_value}
+                  sale_date={lot?.sale_date}
+                  seller={lot?.seller}
+                  seller_type={lot?.seller_type}
+                  detailed_title={lot?.detailed_title}
+                  damage_main={lot?.damage?.main}
+                  damage_second={lot?.damage?.second}
+                  keys_available={lot?.keys_available}
+                  airbags={lot?.airbags}
+                  grade_iaai={lot?.grade_iaai}
+                  domain={lot?.domain?.name}
+                  external_id={lot?.external_id}
                 />
               );
             })}
