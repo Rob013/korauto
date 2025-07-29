@@ -21,13 +21,13 @@ interface Model {
 }
 
 interface Generation {
-cars_qty:number;
-from_year:number;
-id:number;
-manufacturer_id:number;
-model_id:number;
-name:string;
-to_year:number;
+  cars_qty:number;
+  from_year:number;
+  id:number;
+  manufacturer_id:number;
+  model_id:number;
+  name:string;
+  to_year:number;
 }
 
 interface FilterCounts {
@@ -223,9 +223,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
             </SelectTrigger>
             <SelectContent className="max-h-60 overflow-y-auto">
               <SelectItem value="all">Të gjitha Gjeneratat</SelectItem>
-            {generations
-              .filter((generation) => generation.cars_qty > 0)
-              .map((generation) => (
+            {generations.map((generation) => (
                 <SelectItem 
                   key={generation.id} 
                   value={generation.id.toString()}
