@@ -137,11 +137,85 @@ const CarDetails = () => {
     checkAdminStatus();
   }, []);
 
+  useEffect(() => {
+    const fetchCarDetails = async () => {
+      if (!lot) return;
+    try {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
 
+  const response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
+    headers: {
+      'accept': '*/*',
+      'x-api-key': API_KEY
+    },
+    signal: controller.signal
+  });
+
+  clearTimeout(timeoutId);
+
+  if (!response.ok) {
+    throw new Error(`API returned ${response.status}: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  const carData = data;
+
+  if (carData) {
+    const basePrice = carData.buy_now || carData.final_bid || carData.price || 25000;
+    const price = Math.round(basePrice + 2200);
+
+    const transformedCar: CarDetails = {
+      id: carData.id?.toString() || lot,
+      make: carData.manufacturer?.name || 'Unknown',
+      model: carData.model?.name || 'Unknown',
+      year: carData.year || 2020,
+      price,
+      image: carData.images?.normal?.[0] || carData.images?.big?.[0],
+      images: carData.images?.normal || carData.images?.big || [],
+      vin: carData.vin,
+      mileage: carData.odometer?.km ? `${carData.odometer.km.toLocaleString()} km`: undefined,
+      transmission: carData.transmission?.name,
+      fuel: carData.fuel?.name,
+      color: carData.color?.name,
+      condition: carData.condition?.name?.replace('run_and_drives', 'Good Condition'),
+      lot: carData.lot,
+      title: carData.title,
+      odometer: carData.odometer,
+      engine: carData.engine,
+      cylinders: carData.cylinders,
+      drive_wheel: carData.drive_wheel,
+      body_type: carData.body_type,
+      damage: carData.damage,
+      keys_available: carData.keys_available,
+      airbags: carData.airbags,
+      grade_iaai: carData.grade_iaai,
+      seller: carData.seller,
+      seller_type: carData.seller_type,
+      sale_date: carData.sale_date,
+      bid: carData.bid,
+      buy_now: carData.buy_now,
+      final_bid: carData.final_bid,
+      features: getCarFeatures(carData, carData),
+      safety_features: getSafetyFeatures(carData, carData),
+      comfort_features: getComfortFeatures(carData, carData),
+      performance_rating: 4.5,
+      popularity_score: 85
+    };
+
+    setCar(transformedCar);
+    setLoading(false);
+    return;
+  }
+} catch (apiError) {
+  console.error('❌ Failed to fetch from lot endpoint:', apiError);
+}
+    }
+  }, [lot]);
 
   const handleContactWhatsApp = () => {
-    const message = `Përshëndetje! Jam i interesuar për ${car?.year} ${car?.make} ${car?.model} (€${car?.price.toLocaleString()}). A mund të më jepni më shumë informacion?;
-    const whatsappUrl = https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
+    const message = `Përshëndetje! Jam i interesuar për ${car?.year} ${car?.make} ${car?.model} (€${car?.price.toLocaleString()}). A mund të më jepni më shumë informacion?`;
+    const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
@@ -246,7 +320,7 @@ const CarDetails = () => {
           </div>
           <div className="flex gap-3">
             <Button variant="outline" size="sm" onClick={handleLike} className="shadow-sm hover:shadow-md transition-all">
-              <Heart className={h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}} />
+              <Heart className={`h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
             </Button>
             <Button variant="outline" size="sm" onClick={handleShare} className="shadow-sm hover:shadow-md transition-all">
               <Share2 className="h-4 w-4" />
@@ -265,7 +339,7 @@ const CarDetails = () => {
                   {images.length > 0 ? (
                     <img 
                       src={images[selectedImageIndex]} 
-                      alt={${car.year} ${car.make} ${car.model}} 
+                      alt={`${car.year} ${car.make} ${car.model}`} 
                       className="w-full h-full object-cover transition-transform duration-300 hover:scale-105" 
                       onError={(e) => {
                         e.currentTarget.src = "/placeholder.svg";
@@ -296,13 +370,13 @@ const CarDetails = () => {
                   <button
                     key={index}
                     onClick={() => setSelectedImageIndex(index)}
-                    className={relative h-20 bg-muted rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
+                    className={`relative h-20 bg-muted rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
                       selectedImageIndex === index ? 'border-primary shadow-lg' : 'border-transparent hover:border-primary/50'
-                    }}
+                    }`}
                   >
                     <img 
                       src={image} 
-                      alt={View ${index + 1}} 
+                      alt={`View ${index + 1}`} 
                       className="w-full h-full object-cover" 
                       onError={(e) => {
                         e.currentTarget.src = "/placeholder.svg";
@@ -492,8 +566,8 @@ const CarDetails = () => {
                             >
                               <span className="mr-2">
                                 {featuresExpanded 
-                                  ? Fshih të gjitha (${(car.features?.length || 0) + (car.safety_features?.length || 0) + (car.comfort_features?.length || 0)}) 
-                                  : Shiko të gjitha (${(car.features?.length || 0) + (car.safety_features?.length || 0) + (car.comfort_features?.length || 0)})
+                                  ? `Fshih të gjitha (${(car.features?.length || 0) + (car.safety_features?.length || 0) + (car.comfort_features?.length || 0)})` 
+                                  : `Shiko të gjitha (${(car.features?.length || 0) + (car.safety_features?.length || 0) + (car.comfort_features?.length || 0)})`
                                 }
                               </span>
                               {featuresExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -783,7 +857,7 @@ const CarDetails = () => {
         {isImageZoomOpen && (
           <ImageZoom
             src={images[selectedImageIndex] || ''}
-            alt={Car image ${selectedImageIndex + 1}}
+            alt={`Car image ${selectedImageIndex + 1}`}
             isOpen={isImageZoomOpen}
             onClose={() => setIsImageZoomOpen(false)}
           />
