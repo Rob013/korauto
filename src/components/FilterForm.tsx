@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo, useCallback, useMemo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -72,7 +72,7 @@ interface FilterFormProps {
   loadingCounts?: boolean;
 }
 
-const FilterForm: React.FC<FilterFormProps> = ({
+const FilterForm = memo<FilterFormProps>(({
   filters,
   manufacturers,
   models = [],
@@ -87,8 +87,8 @@ const FilterForm: React.FC<FilterFormProps> = ({
   onToggleAdvanced
 }) => {
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
-  console.log("generation",generations)
-  const updateFilter = (key: string, value: string) => {
+
+  const updateFilter = useCallback((key: string, value: string) => {
     // Handle special "all" values by converting them to undefined
     const actualValue = value === 'all' || value === 'any' ? undefined : value;
     
@@ -114,19 +114,55 @@ const FilterForm: React.FC<FilterFormProps> = ({
         [key]: actualValue
       });
     }
-  };
+  }, [filters, onFiltersChange, onManufacturerChange, onModelChange]);
 
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     updateFilter('search', searchTerm.trim());
-  };
+  }, [updateFilter, searchTerm]);
 
-  const handleClearSearch = () => {
+  const handleClearSearch = useCallback(() => {
     setSearchTerm('');
     updateFilter('search', '');
-  };
+  }, [updateFilter]);
 
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 25 }, (_, i) => currentYear - i);
+  const currentYear = useMemo(() => new Date().getFullYear(), []);
+  const years = useMemo(() => Array.from({ length: 25 }, (_, i) => currentYear - i), [currentYear]);
+
+  // Memoize sorted manufacturers to prevent unnecessary re-renders
+  const sortedManufacturers = useMemo(() => {
+    return manufacturers
+      .sort((a, b) => {
+        // German cars priority
+        const germanBrands = ['BMW', 'Mercedes-Benz', 'Audi', 'Volkswagen', 'Porsche', 'Opel'];
+        // Korean cars priority  
+        const koreanBrands = ['Hyundai', 'Kia', 'Genesis'];
+        // Other popular cars
+        const popularBrands = ['Toyota', 'Honda', 'Nissan', 'Ford', 'Chevrolet', 'Mazda', 'Subaru', 'Lexus'];
+        
+        const aIsGerman = germanBrands.includes(a.name);
+        const bIsGerman = germanBrands.includes(b.name);
+        const aIsKorean = koreanBrands.includes(a.name);
+        const bIsKorean = koreanBrands.includes(b.name);
+        const aIsPopular = popularBrands.includes(a.name);
+        const bIsPopular = popularBrands.includes(b.name);
+        
+        // German brands first
+        if (aIsGerman && !bIsGerman) return -1;
+        if (!aIsGerman && bIsGerman) return 1;
+        
+        // Korean brands second
+        if (aIsKorean && !bIsKorean && !bIsGerman) return -1;
+        if (!aIsKorean && bIsKorean && !aIsGerman) return 1;
+        
+        // Popular brands third
+        if (aIsPopular && !bIsPopular && !bIsGerman && !bIsKorean) return -1;
+        if (!aIsPopular && bIsPopular && !aIsGerman && !aIsKorean) return 1;
+        
+        // Alphabetical within same category
+        return a.name.localeCompare(b.name);
+      })
+      .filter((m) => m.cars_qty && m.cars_qty > 0);
+  }, [manufacturers]);
 
   return (
     <div className="bg-card border border-border rounded-lg p-3 sm:p-4 space-y-4">
@@ -171,57 +207,27 @@ const FilterForm: React.FC<FilterFormProps> = ({
             </SelectTrigger>
             <SelectContent className="max-h-60 overflow-y-auto">
               <SelectItem value="all">Të gjitha Markat</SelectItem>
-               {manufacturers
-                .sort((a, b) => {
-                  // German cars priority
-                  const germanBrands = ['BMW', 'Mercedes-Benz', 'Audi', 'Volkswagen', 'Porsche', 'Opel'];
-                  // Korean cars priority  
-                  const koreanBrands = ['Hyundai', 'Kia', 'Genesis'];
-                  // Other popular cars
-                  const popularBrands = ['Toyota', 'Honda', 'Nissan', 'Ford', 'Chevrolet', 'Mazda', 'Subaru', 'Lexus'];
-                  
-                  const aIsGerman = germanBrands.includes(a.name);
-                  const bIsGerman = germanBrands.includes(b.name);
-                  const aIsKorean = koreanBrands.includes(a.name);
-                  const bIsKorean = koreanBrands.includes(b.name);
-                  const aIsPopular = popularBrands.includes(a.name);
-                  const bIsPopular = popularBrands.includes(b.name);
-                  
-                  // German brands first
-                  if (aIsGerman && !bIsGerman) return -1;
-                  if (!aIsGerman && bIsGerman) return 1;
-                  
-                  // Korean brands second
-                  if (aIsKorean && !bIsKorean && !bIsGerman) return -1;
-                  if (!aIsKorean && bIsKorean && !aIsGerman) return 1;
-                  
-                  // Popular brands third
-                  if (aIsPopular && !bIsPopular && !bIsGerman && !bIsKorean) return -1;
-                  if (!aIsPopular && bIsPopular && !aIsGerman && !aIsKorean) return 1;
-                  
-                  // Alphabetical within same category
-                  return a.name.localeCompare(b.name);
-                }).filter((m) => m.cars_qty && m.cars_qty > 0).map((manufacturer) => {
-                      const count = filterCounts?.manufacturers[manufacturer.id.toString()];
-                      return (
-                        <SelectItem 
-                          key={manufacturer.id} 
-                          value={manufacturer.id.toString()}
-                        >
-                          
-                        <div className="flex items-center gap-2">
-                          {manufacturer?.image && (
-                            <img
-                              src={manufacturer?.image}
-                              alt={manufacturer.name}
-                              className="w-5 h-5 object-contain"
-                            />
-                          )}
-                      <span>{manufacturer.name} ({manufacturer.cars_qty})</span>
-                    </div>
-                        </SelectItem>
-                      );
-                   })}
+               {sortedManufacturers.map((manufacturer) => {
+                     const count = filterCounts?.manufacturers[manufacturer.id.toString()];
+                     return (
+                       <SelectItem 
+                         key={manufacturer.id} 
+                         value={manufacturer.id.toString()}
+                       >
+                         
+                       <div className="flex items-center gap-2">
+                         {manufacturer?.image && (
+                           <img
+                             src={manufacturer?.image}
+                             alt={manufacturer.name}
+                             className="w-5 h-5 object-contain"
+                           />
+                         )}
+                     <span>{manufacturer.name} ({manufacturer.cars_qty})</span>
+                   </div>
+                       </SelectItem>
+                     );
+                  })}
 
             </SelectContent>
           </Select>
@@ -453,6 +459,8 @@ const FilterForm: React.FC<FilterFormProps> = ({
       )}
     </div>
   );
-};
+});
+
+FilterForm.displayName = 'FilterForm';
 
 export default FilterForm;

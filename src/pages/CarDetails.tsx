@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, memo, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { Button } from "@/components/ui/button";
@@ -12,9 +12,9 @@ import { ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, Fuel, Palette, Ha
 import { ImageZoom } from "@/components/ImageZoom";
 import { supabase } from "@/integrations/supabase/client";
 
-
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import CarInspectionDiagram from "@/components/CarInspectionDiagram";
+import { useImagePreload } from "@/hooks/useImagePreload";
 
 interface CarDetails {
   id: string;
@@ -75,7 +75,7 @@ interface CarDetails {
   details?: any;
 }
 
-const CarDetails = () => {
+const CarDetails = memo(() => {
   const { id: lot } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -148,108 +148,118 @@ const CarDetails = () => {
   }, []);
 
   useEffect(() => {
-  const fetchCarDetails = async () => {
-    if (!lot) return;
+    let isMounted = true;
+    
+    const fetchCarDetails = async () => {
+      if (!lot) return;
 
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // Increased timeout
 
-      const response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
-        headers: {
-          accept: '*/*',
-          'x-api-key': API_KEY,
-        },
-        signal: controller.signal,
-      });
+        const response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
+          headers: {
+            accept: '*/*',
+            'x-api-key': API_KEY,
+          },
+          signal: controller.signal,
+        });
 
-      clearTimeout(timeoutId);
+        clearTimeout(timeoutId);
 
-      if (!response.ok) {
-        throw new Error(`API returned ${response.status}: ${response.statusText}`);
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        
+        if (!isMounted) return;
+        
+        const carData = data.data;
+        const lotData = carData.lots?.[0];
+
+        if (!lotData) throw new Error("Missing lot data");
+
+        const basePrice = lotData.buy_now ?? lotData.final_bid ?? lotData.price ?? 25000;
+        const price = convertUSDtoEUR(Math.round(basePrice + 2200));
+
+        const transformedCar: CarDetails = {
+          id: carData.id?.toString() || lotData.lot,
+          make: carData.manufacturer?.name || 'Unknown',
+          model: carData.model?.name || 'Unknown',
+          year: carData.year || 2020,
+          price,
+          image: lotData.images?.normal?.[0] || lotData.images?.big?.[0],
+          images: lotData.images?.normal || lotData.images?.big || [],
+          vin: carData.vin,
+          mileage: lotData.odometer?.km ? `${lotData.odometer.km.toLocaleString()} km` : undefined,
+          transmission: carData.transmission?.name,
+          fuel: carData.fuel?.name,
+          color: carData.color?.name,
+          condition: lotData.condition?.name?.replace('run_and_drives', 'Good Condition'),
+          lot: lotData.lot,
+          title: lotData.title || carData.title,
+          odometer: lotData.odometer,
+          engine: carData.engine,
+          cylinders: carData.cylinders,
+          drive_wheel: carData.drive_wheel,
+          body_type: carData.body_type,
+          damage: lotData.damage,
+          keys_available: lotData.keys_available,
+          airbags: lotData.airbags,
+          grade_iaai: lotData.grade_iaai,
+          seller: lotData.seller,
+          seller_type: lotData.seller_type,
+          sale_date: lotData.sale_date,
+          bid: lotData.bid,
+          buy_now: lotData.buy_now,
+          final_bid: lotData.final_bid,
+          features: getCarFeatures(carData, lotData),
+          safety_features: getSafetyFeatures(carData, lotData),
+          comfort_features: getComfortFeatures(carData, lotData),
+          performance_rating: 4.5,
+          popularity_score: 85,
+          // Enhanced API data
+          insurance: lotData.insurance,
+          insurance_v2: lotData.insurance_v2,
+          location: lotData.location,
+          inspect: lotData.inspect,
+          details: lotData.details,
+        };
+
+        setCar(transformedCar);
+        setLoading(false);
+      } catch (apiError) {
+        console.error('❌ Failed to fetch from lot endpoint:', apiError);
+        if (isMounted) {
+          setError('Failed to load car data');
+          setLoading(false);
+        }
       }
+    };
 
-      const data = await response.json();
-      const carData = data.data;
-      const lotData = carData.lots?.[0];
-      console.log("lotsdata",lotData)
-
-      if (!lotData) throw new Error("Missing lot data");
-
-      const basePrice = lotData.buy_now ?? lotData.final_bid ?? lotData.price ?? 25000;
-      const price = convertUSDtoEUR(Math.round(basePrice + 2200));
-
-      const transformedCar: CarDetails = {
-        id: carData.id?.toString() || lotData.lot,
-        make: carData.manufacturer?.name || 'Unknown',
-        model: carData.model?.name || 'Unknown',
-        year: carData.year || 2020,
-        price,
-        image: lotData.images?.normal?.[0] || lotData.images?.big?.[0],
-        images: lotData.images?.normal || lotData.images?.big || [],
-        vin: carData.vin,
-        mileage: lotData.odometer?.km ? `${lotData.odometer.km.toLocaleString()} km` : undefined,
-        transmission: carData.transmission?.name,
-        fuel: carData.fuel?.name,
-        color: carData.color?.name,
-        condition: lotData.condition?.name?.replace('run_and_drives', 'Good Condition'),
-        lot: lotData.lot,
-        title: lotData.title || carData.title,
-        odometer: lotData.odometer,
-        engine: carData.engine,
-        cylinders: carData.cylinders,
-        drive_wheel: carData.drive_wheel,
-        body_type: carData.body_type,
-        damage: lotData.damage,
-        keys_available: lotData.keys_available,
-        airbags: lotData.airbags,
-        grade_iaai: lotData.grade_iaai,
-        seller: lotData.seller,
-        seller_type: lotData.seller_type,
-        sale_date: lotData.sale_date,
-        bid: lotData.bid,
-        buy_now: lotData.buy_now,
-        final_bid: lotData.final_bid,
-        features: getCarFeatures(carData, lotData),
-        safety_features: getSafetyFeatures(carData, lotData),
-        comfort_features: getComfortFeatures(carData, lotData),
-        performance_rating: 4.5,
-        popularity_score: 85,
-        // Enhanced API data
-        insurance: lotData.insurance,
-        insurance_v2: lotData.insurance_v2,
-        location: lotData.location,
-        inspect: lotData.inspect,
-        details: lotData.details,
-      };
-
-      setCar(transformedCar);
-      setLoading(false);
-    } catch (apiError) {
-      console.error('❌ Failed to fetch from lot endpoint:', apiError);
-      setError('Failed to load car data');
-      setLoading(false);
-    }
-  };
-
-  fetchCarDetails();
-}, [lot]);
+    fetchCarDetails();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [lot, convertUSDtoEUR]);
 
 
-  const handleContactWhatsApp = () => {
+  const handleContactWhatsApp = useCallback(() => {
     const message = `Përshëndetje! Jam i interesuar për ${car?.year} ${car?.make} ${car?.model} (€${car?.price.toLocaleString()}). A mund të më jepni më shumë informacion?`;
     const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
-  };
+  }, [car]);
 
-  const handleShare = () => {
+  const handleShare = useCallback(() => {
     navigator.clipboard.writeText(window.location.href);
     toast({
       title: "Link-u u kopjua",
       description: "Link-u i makinës u kopjua në clipboard",
       duration: 3000
     });
-  };
+  }, [toast]);
 
   // Generate detailed info HTML for new window
   const generateDetailedInfoHTML = (car: CarDetails) => {
@@ -755,16 +765,22 @@ const CarDetails = () => {
     `;
   };
 
+  // Memoize images array for performance
+  const carImages = useMemo(() => car?.images || [], [car?.images]);
+  
   const [isLiked, setIsLiked] = useState(false);
   
-  const handleLike = () => {
+  const handleLike = useCallback(() => {
     setIsLiked(!isLiked);
     toast({
       title: isLiked ? "U hoq nga të preferuarat" : "U shtua në të preferuarat",
       description: isLiked ? "Makina u hoq nga lista juaj e të preferuarave" : "Makina u shtua në listën tuaj të të preferuarave",
       duration: 3000
     });
-  };
+  }, [isLiked, toast]);
+
+  // Preload important images
+  useImagePreload(car?.image);
 
   if (loading) {
     return (
@@ -1339,6 +1355,6 @@ const CarDetails = () => {
       </div>
     </div>
   );
-};
+});
 
 export default CarDetails;

@@ -1,5 +1,5 @@
-import CarCard from "./CarCard";
-import { useRef } from "react";
+import LazyCarCard from "./LazyCarCard";
+import { useRef, memo, useCallback } from "react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -12,6 +12,7 @@ import { useDailyRotatingCars } from '@/hooks/useDailyRotatingCars';
 import { useSortedCars, getSortOptions, SortOption } from '@/hooks/useSortedCars';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowUpDown } from 'lucide-react';
+import { preloadImages } from '@/hooks/useImagePreload';
 
 interface Car {
   id: string;
@@ -47,7 +48,7 @@ interface ApiFilters {
   search?: string;
 }
 
-const HomeCarsSection = () => {
+const HomeCarsSection = memo(() => {
   const navigate = useNavigate();
   const { cars, loading, error, fetchCars, fetchManufacturers, fetchModels, fetchGenerations, fetchFilterCounts } = useAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
@@ -70,21 +71,21 @@ const HomeCarsSection = () => {
   // Display logic: show 8 initially, then all on "show more"
   const displayedCars = showAllCars ? sortedCars : sortedCars.slice(0, 8);
   
-  const handleFiltersChange = (newFilters: ApiFilters) => {
+  const handleFiltersChange = useCallback((newFilters: ApiFilters) => {
     setFilters(newFilters);
     setShowAllCars(false); // Reset to showing 8 cars when filters change
     fetchCars(1, newFilters, true);
-  };
+  }, [fetchCars]);
 
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     setFilters({});
     setModels([]);
     setGenerations([]);
     setShowAllCars(false); // Reset to showing 8 cars when clearing filters
     fetchCars(1, {}, true);
-  };
+  }, [fetchCars]);
 
-  const handleManufacturerChange = async (manufacturerId: string) => {
+  const handleManufacturerChange = useCallback(async (manufacturerId: string) => {
     if (manufacturerId) {
       const modelData = await fetchModels(manufacturerId);
       setModels(modelData);
@@ -92,16 +93,20 @@ const HomeCarsSection = () => {
       setModels([]);
     }
     setGenerations([]);
-  };
+  }, [fetchModels]);
 
-  const handleModelChange = async (modelId: string) => {
+  const handleModelChange = useCallback(async (modelId: string) => {
     if (modelId) {
       const generationData = await fetchGenerations(modelId);
       setGenerations(generationData);
     } else {
       setGenerations([]);
     }
-  };
+  }, [fetchGenerations]);
+
+  const handleRefresh = useCallback(() => {
+    fetchCars(1, filters, true);
+  }, [fetchCars, filters]);
 
   // Load manufacturers on mount
   useEffect(() => {
@@ -172,9 +177,20 @@ const HomeCarsSection = () => {
     return () => clearInterval(interval);
   }, [hasFilters, fetchCars]);
 
-  const handleRefresh = () => {
-    fetchCars(1, filters, true);
-  };
+
+  // Preload images for better performance
+  useEffect(() => {
+    if (displayedCars.length > 0) {
+      const imageUrls = displayedCars
+        .slice(0, 8) // Preload first 8 images
+        .map(car => car.lots?.[0]?.images?.normal?.[0] || car.lots?.[0]?.images?.big?.[0])
+        .filter(Boolean) as string[];
+      
+      if (imageUrls.length > 0) {
+        preloadImages(imageUrls);
+      }
+    }
+  }, [displayedCars]);
 
   return (
     <section id="cars" className="py-4 sm:py-6 lg:py-8 bg-secondary/30">
@@ -279,7 +295,7 @@ const HomeCarsSection = () => {
                 const price = convertUSDtoEUR(Math.round(usdPrice + 2200));
                 
                 return (
-                  <CarCard
+                  <LazyCarCard
                     key={car.id}
                     id={car.id}
                     make={car.manufacturer?.name || 'Unknown'}
@@ -298,32 +314,7 @@ const HomeCarsSection = () => {
                     status={Number(car.status || lot?.status || 1)}
                     sale_status={car.sale_status || lot?.sale_status}
                     final_price={car.final_price || lot?.final_price}
-                    generation={car.generation?.name}
-                    body_type={car.body_type?.name}
-                    engine={car.engine?.name}
-                    drive_wheel={car.drive_wheel}
-                    vehicle_type={car.vehicle_type?.name}
-                    cylinders={car.cylinders}
-                    bid={lot?.bid}
-                    estimate_repair_price={lot?.estimate_repair_price}
-                    pre_accident_price={lot?.pre_accident_price}
-                    clean_wholesale_price={lot?.clean_wholesale_price}
-                    actual_cash_value={lot?.actual_cash_value}
-                    sale_date={lot?.sale_date}
-                    seller={lot?.seller}
-                    seller_type={lot?.seller_type}
-                    detailed_title={lot?.detailed_title}
-                    damage_main={lot?.damage?.main}
-                    damage_second={lot?.damage?.second}
-                    keys_available={lot?.keys_available}
-                    airbags={lot?.airbags}
-                    grade_iaai={lot?.grade_iaai}
-                    domain={lot?.domain?.name}
-                    external_id={lot?.external_id}
-                    insurance={(lot as any)?.insurance}
                     insurance_v2={(lot as any)?.insurance_v2}
-                    location={(lot as any)?.location}
-                    inspect={(lot as any)?.inspect}
                     details={(lot as any)?.details}
                   />
                 );
@@ -356,6 +347,8 @@ const HomeCarsSection = () => {
       </div>
     </section>
   );
-};
+});
+
+HomeCarsSection.displayName = 'HomeCarsSection';
 
 export default HomeCarsSection;
