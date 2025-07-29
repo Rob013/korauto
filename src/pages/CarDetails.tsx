@@ -543,103 +543,114 @@ const CarDetails = () => {
             <div class="subtitle">€${car.price.toLocaleString()} • Lot #${car.lot || 'N/A'}</div>
           </div>
 
-          ${car.insurance_v2 || car.insurance || car.inspect ? `
+          ${true ? `
           <div class="section">
             <div class="section-header">
               🛡️ Insurance & Safety Report
             </div>
             <div class="section-content">
               <div class="info-grid">
-                ${car.insurance_v2?.accidentCnt !== undefined ? `
                 <div class="info-item">
                   <div class="info-label">Accident History</div>
                   <div class="info-value">
-                    <span class="badge ${car.insurance_v2.accidentCnt === 0 ? 'badge-success' : 'badge-danger'}">
-                      ${car.insurance_v2.accidentCnt === 0 ? '✅ Clean Record' : `⚠️ ${car.insurance_v2.accidentCnt} accidents`}
+                    <span class="badge ${car.insurance_v2?.accidentCnt === 0 ? 'badge-success' : car.insurance_v2?.accidentCnt > 0 ? 'badge-danger' : 'badge-outline'}">
+                      ${car.insurance_v2?.accidentCnt !== undefined 
+                        ? (car.insurance_v2.accidentCnt === 0 ? '✅ Clean Record' : `⚠️ ${car.insurance_v2.accidentCnt} accidents`)
+                        : 'None'
+                      }
                     </span>
                   </div>
-                </div>` : ''}
-                ${car.insurance_v2?.ownerChangeCnt !== undefined ? `
+                </div>
                 <div class="info-item">
                   <div class="info-label">Previous Owners</div>
-                  <div class="info-value">${car.insurance_v2.ownerChangeCnt} owners</div>
-                </div>` : ''}
-                ${car.insurance_v2?.totalLossCnt > 0 ? `
+                  <div class="info-value">${car.insurance_v2?.ownerChangeCnt !== undefined ? car.insurance_v2.ownerChangeCnt + ' owners' : 'None'}</div>
+                </div>
                 <div class="info-item">
                   <div class="info-label">Total Loss Claims</div>
-                  <div class="info-value"><span class="badge badge-danger">🚨 ${car.insurance_v2.totalLossCnt} claims</span></div>
-                </div>` : ''}
-                ${car.insurance_v2?.floodTotalLossCnt > 0 ? `
+                  <div class="info-value">
+                    <span class="badge ${car.insurance_v2?.totalLossCnt > 0 ? 'badge-danger' : 'badge-outline'}">
+                      ${car.insurance_v2?.totalLossCnt > 0 ? `🚨 ${car.insurance_v2.totalLossCnt} claims` : 'None'}
+                    </span>
+                  </div>
+                </div>
                 <div class="info-item">
-                  <div class="info-label">Flood Damage</div>
-                  <div class="info-value"><span class="badge badge-danger">🌊 ${car.insurance_v2.floodTotalLossCnt} incidents</span></div>
-                </div>` : ''}
-                ${car.keys_available !== undefined ? `
+                  <div class="info-label">Flood Damage History</div>
+                  <div class="info-value">
+                    <span class="badge ${car.insurance_v2?.floodTotalLossCnt > 0 ? 'badge-danger' : 'badge-outline'}">
+                      ${car.insurance_v2?.floodTotalLossCnt > 0 ? `🌊 ${car.insurance_v2.floodTotalLossCnt} incidents` : 'None'}
+                    </span>
+                  </div>
+                </div>
                 <div class="info-item">
                   <div class="info-label">Keys Availability</div>
                   <div class="info-value">
-                    <span class="badge ${car.keys_available ? 'badge-success' : 'badge-danger'}">
-                      ${car.keys_available ? '🔑 Available' : '❌ Not Available'}
+                    <span class="badge ${car.keys_available ? 'badge-success' : car.keys_available === false ? 'badge-danger' : 'badge-outline'}">
+                      ${car.keys_available !== undefined 
+                        ? (car.keys_available ? '🔑 Available' : '❌ Not Available')
+                        : 'None'
+                      }
                     </span>
                   </div>
-                </div>` : ''}
-                ${car.inspect?.accident_summary?.accident && car.inspect.accident_summary.accident !== "doesn't exist" ? `
+                </div>
                 <div class="info-item">
                   <div class="info-label">Inspection Summary</div>
                   <div class="info-value">
-                    <span class="badge badge-warning">⚠️ ${car.inspect.accident_summary.accident}</span>
+                    <span class="badge ${car.inspect?.accident_summary?.accident && car.inspect.accident_summary.accident !== "doesn't exist" ? 'badge-warning' : 'badge-outline'}">
+                      ${car.inspect?.accident_summary?.accident && car.inspect.accident_summary.accident !== "doesn't exist" 
+                        ? `⚠️ ${car.inspect.accident_summary.accident}`
+                        : 'None'
+                      }
+                    </span>
                   </div>
-                </div>` : ''}
+                </div>
               </div>
             </div>
           </div>` : ''}
 
-          ${car.details ? `
+          ${true ? `
           <div class="section">
             <div class="section-header">
               🚗 Vehicle Details
             </div>
             <div class="section-content">
               <div class="info-grid">
-                ${car.details.engine_volume ? `
                 <div class="info-item">
                   <div class="info-label">Engine Volume</div>
-                  <div class="info-value">🔧 ${car.details.engine_volume}cc</div>
-                </div>` : ''}
-                ${car.details.first_registration ? `
+                  <div class="info-value">🔧 ${car.details?.engine_volume ? car.details.engine_volume + 'cc' : 'None'}</div>
+                </div>
                 <div class="info-item">
                   <div class="info-label">First Registration</div>
-                  <div class="info-value">📅 ${car.details.first_registration.year}-${String(car.details.first_registration.month).padStart(2, '0')}-${String(car.details.first_registration.day).padStart(2, '0')}</div>
-                </div>` : ''}
-                ${car.details.badge ? `
+                  <div class="info-value">📅 ${car.details?.first_registration 
+                    ? `${car.details.first_registration.year}-${String(car.details.first_registration.month).padStart(2, '0')}-${String(car.details.first_registration.day).padStart(2, '0')}`
+                    : 'None'
+                  }</div>
+                </div>
                 <div class="info-item">
                   <div class="info-label">Vehicle Badge/Trim</div>
-                  <div class="info-value">🏷️ ${car.details.badge}</div>
-                </div>` : ''}
-                ${car.details.seats_count ? `
+                  <div class="info-value">🏷️ ${car.details?.badge || 'None'}</div>
+                </div>
                 <div class="info-item">
                   <div class="info-label">Number of Seats</div>
-                  <div class="info-value">👥 ${car.details.seats_count} seats</div>
-                </div>` : ''}
-                ${car.details.sell_type ? `
+                  <div class="info-value">👥 ${car.details?.seats_count ? car.details.seats_count + ' seats' : 'None'}</div>
+                </div>
                 <div class="info-item">
                   <div class="info-label">Sale Type</div>
-                  <div class="info-value">🏪 ${car.details.sell_type.charAt(0).toUpperCase() + car.details.sell_type.slice(1)}</div>
-                </div>` : ''}
+                  <div class="info-value">🏪 ${car.details?.sell_type ? car.details.sell_type.charAt(0).toUpperCase() + car.details.sell_type.slice(1) : 'None'}</div>
+                </div>
               </div>
             </div>
           </div>` : ''}
 
-          ${car.details?.options ? `
+          ${true ? `
           <div class="section">
             <div class="section-header">
               ⚙️ Equipment & Options
             </div>
             <div class="section-content">
-              ${car.details.options.standard?.length ? `
               <div class="info-item">
                 <div class="info-label">Standard Equipment</div>
                 <div class="options-grid">
+                  ${car.details?.options?.standard?.length ? `
                   <div id="standard-options">
                     ${car.details.options.standard.slice(0, 5).map(option => `<span class="badge badge-info">${option}</span>`).join('')}
                   </div>
@@ -650,12 +661,13 @@ const CarDetails = () => {
                   <button onclick="toggleOptions('standard')" id="standard-toggle" class="show-more-btn">
                     Show ${car.details.options.standard.length - 5} more
                   </button>` : ''}
+                  ` : '<span class="badge badge-outline">None</span>'}
                 </div>
-              </div>` : ''}
-              ${car.details.options.choice?.length ? `
+              </div>
               <div class="info-item">
                 <div class="info-label">Optional Equipment</div>
                 <div class="options-grid">
+                  ${car.details?.options?.choice?.length ? `
                   <div id="choice-options">
                     ${car.details.options.choice.slice(0, 5).map(option => `<span class="badge badge-success">${option}</span>`).join('')}
                   </div>
@@ -666,12 +678,13 @@ const CarDetails = () => {
                   <button onclick="toggleOptions('choice')" id="choice-toggle" class="show-more-btn">
                     Show ${car.details.options.choice.length - 5} more
                   </button>` : ''}
+                  ` : '<span class="badge badge-outline">None</span>'}
                 </div>
-              </div>` : ''}
-              ${car.details.options.tuning?.length ? `
+              </div>
               <div class="info-item">
                 <div class="info-label">Tuning Modifications</div>
                 <div class="options-grid">
+                  ${car.details?.options?.tuning?.length ? `
                   <div id="tuning-options">
                     ${car.details.options.tuning.slice(0, 5).map(option => `<span class="badge badge-warning">${option}</span>`).join('')}
                   </div>
@@ -682,8 +695,9 @@ const CarDetails = () => {
                   <button onclick="toggleOptions('tuning')" id="tuning-toggle" class="show-more-btn">
                     Show ${car.details.options.tuning.length - 5} more
                   </button>` : ''}
+                  ` : '<span class="badge badge-outline">None</span>'}
                 </div>
-              </div>` : ''}
+              </div>
             </div>
           </div>` : ''}
 
@@ -696,7 +710,7 @@ const CarDetails = () => {
               <div class="car-diagram">
                 <h4 style="text-align: center; margin-bottom: 20px; color: hsl(var(--foreground));">Vehicle Inspection Diagram</h4>
                 
-                <!-- Car Inspection Diagram - Korean Style -->
+                <!-- Car Inspection Diagram - Simple Black Lines -->
                 <div style="display: flex; justify-content: center; margin-bottom: 30px;">
                   <svg width="800" height="500" viewBox="0 0 800 500" style="border: 1px solid hsl(var(--border)); border-radius: 8px; background: hsl(var(--card));">
                     <!-- Title -->
@@ -706,49 +720,58 @@ const CarDetails = () => {
                     <g transform="translate(50, 60)">
                       <text x="150" y="-5" text-anchor="middle" fill="hsl(var(--foreground))" font-size="14" font-weight="bold">Front View (앞/전방)</text>
                       
-                      <!-- Car outline from front -->
+                      <!-- Car outline from front - Simple black lines -->
                       <path d="M50 50 L50 280 L80 300 L220 300 L250 280 L250 50 Z" 
-                            fill="none" stroke="hsl(var(--border))" stroke-width="2"/>
+                            fill="white" stroke="black" stroke-width="2"/>
                       
                       <!-- Hood -->
-                      <rect x="70" y="50" width="160" height="40" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="3" id="hood-front"/>
-                      <text x="150" y="75" text-anchor="middle" fill="white" font-size="10" font-weight="bold">Hood</text>
+                      <rect x="70" y="50" width="160" height="40" fill="white" stroke="black" stroke-width="1" id="hood-front"/>
+                      <text x="150" y="75" text-anchor="middle" fill="black" font-size="10" font-weight="bold">Hood</text>
+                      <text x="150" y="63" text-anchor="middle" fill="red" font-size="14" font-weight="bold" id="hood-marker"></text>
                       
                       <!-- Front Bumper -->
-                      <rect x="60" y="90" width="180" height="25" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="3" id="front-bumper-main"/>
-                      <text x="150" y="107" text-anchor="middle" fill="white" font-size="10" font-weight="bold">Front Bumper</text>
+                      <rect x="60" y="90" width="180" height="25" fill="white" stroke="black" stroke-width="1" id="front-bumper-main"/>
+                      <text x="150" y="107" text-anchor="middle" fill="black" font-size="10" font-weight="bold">Front Bumper</text>
+                      <text x="150" y="98" text-anchor="middle" fill="red" font-size="14" font-weight="bold" id="front-bumper-marker"></text>
                       
                       <!-- Left Front Fender -->
-                      <rect x="50" y="115" width="40" height="60" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="3" id="left-front-fender"/>
-                      <text x="70" y="150" text-anchor="middle" fill="white" font-size="9" font-weight="bold">L Fender</text>
+                      <rect x="50" y="115" width="40" height="60" fill="white" stroke="black" stroke-width="1" id="left-front-fender"/>
+                      <text x="70" y="150" text-anchor="middle" fill="black" font-size="9" font-weight="bold">L Fender</text>
+                      <text x="70" y="130" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="left-front-fender-marker"></text>
                       
                       <!-- Right Front Fender -->
-                      <rect x="210" y="115" width="40" height="60" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="3" id="right-front-fender"/>
-                      <text x="230" y="150" text-anchor="middle" fill="white" font-size="9" font-weight="bold">R Fender</text>
+                      <rect x="210" y="115" width="40" height="60" fill="white" stroke="black" stroke-width="1" id="right-front-fender"/>
+                      <text x="230" y="150" text-anchor="middle" fill="black" font-size="9" font-weight="bold">R Fender</text>
+                      <text x="230" y="130" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="right-front-fender-marker"></text>
                       
                       <!-- Left Front Door -->
-                      <rect x="90" y="115" width="50" height="80" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="3" id="left-front-door"/>
-                      <text x="115" y="160" text-anchor="middle" fill="white" font-size="9" font-weight="bold">L F Door</text>
+                      <rect x="90" y="115" width="50" height="80" fill="white" stroke="black" stroke-width="1" id="left-front-door"/>
+                      <text x="115" y="160" text-anchor="middle" fill="black" font-size="9" font-weight="bold">L F Door</text>
+                      <text x="115" y="140" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="left-front-door-marker"></text>
                       
                       <!-- Right Front Door -->
-                      <rect x="160" y="115" width="50" height="80" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="3" id="right-front-door"/>
-                      <text x="185" y="160" text-anchor="middle" fill="white" font-size="9" font-weight="bold">R F Door</text>
+                      <rect x="160" y="115" width="50" height="80" fill="white" stroke="black" stroke-width="1" id="right-front-door"/>
+                      <text x="185" y="160" text-anchor="middle" fill="black" font-size="9" font-weight="bold">R F Door</text>
+                      <text x="185" y="140" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="right-front-door-marker"></text>
                       
                       <!-- Left Rear Door -->
-                      <rect x="90" y="195" width="50" height="70" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="3" id="left-rear-door"/>
-                      <text x="115" y="235" text-anchor="middle" fill="white" font-size="9" font-weight="bold">L R Door</text>
+                      <rect x="90" y="195" width="50" height="70" fill="white" stroke="black" stroke-width="1" id="left-rear-door"/>
+                      <text x="115" y="235" text-anchor="middle" fill="black" font-size="9" font-weight="bold">L R Door</text>
+                      <text x="115" y="215" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="left-rear-door-marker"></text>
                       
                       <!-- Right Rear Door -->
-                      <rect x="160" y="195" width="50" height="70" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="3" id="right-rear-door"/>
-                      <text x="185" y="235" text-anchor="middle" fill="white" font-size="9" font-weight="bold">R R Door</text>
+                      <rect x="160" y="195" width="50" height="70" fill="white" stroke="black" stroke-width="1" id="right-rear-door"/>
+                      <text x="185" y="235" text-anchor="middle" fill="black" font-size="9" font-weight="bold">R R Door</text>
+                      <text x="185" y="215" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="right-rear-door-marker"></text>
                       
                       <!-- Trunk -->
-                      <rect x="70" y="265" width="160" height="35" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="3" id="trunk-main"/>
-                      <text x="150" y="285" text-anchor="middle" fill="white" font-size="10" font-weight="bold">Trunk</text>
+                      <rect x="70" y="265" width="160" height="35" fill="white" stroke="black" stroke-width="1" id="trunk-main"/>
+                      <text x="150" y="285" text-anchor="middle" fill="black" font-size="10" font-weight="bold">Trunk</text>
+                      <text x="150" y="275" text-anchor="middle" fill="red" font-size="14" font-weight="bold" id="trunk-marker"></text>
                       
                       <!-- Wheels -->
-                      <circle cx="80" cy="320" r="15" fill="#6b7280" stroke="hsl(var(--border))" stroke-width="1" id="front-left-wheel"/>
-                      <circle cx="220" cy="320" r="15" fill="#6b7280" stroke="hsl(var(--border))" stroke-width="1" id="front-right-wheel"/>
+                      <circle cx="80" cy="320" r="15" fill="white" stroke="black" stroke-width="2" id="front-left-wheel"/>
+                      <circle cx="220" cy="320" r="15" fill="white" stroke="black" stroke-width="2" id="front-right-wheel"/>
                     </g>
                     
                     <!-- Top View (위/후방) -->
@@ -757,29 +780,30 @@ const CarDetails = () => {
                       
                       <!-- Car outline from top -->
                       <path d="M80 50 L80 80 L50 100 L50 250 L80 270 L220 270 L250 250 L250 100 L220 80 L220 50 Z" 
-                            fill="none" stroke="hsl(var(--border))" stroke-width="2"/>
+                            fill="white" stroke="black" stroke-width="2"/>
                       
                       <!-- Roof -->
-                      <rect x="80" y="50" width="140" height="220" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="5" id="roof-main"/>
-                      <text x="150" y="165" text-anchor="middle" fill="white" font-size="12" font-weight="bold">Roof</text>
+                      <rect x="80" y="50" width="140" height="220" fill="white" stroke="black" stroke-width="1" id="roof-main"/>
+                      <text x="150" y="165" text-anchor="middle" fill="black" font-size="12" font-weight="bold">Roof</text>
+                      <text x="150" y="145" text-anchor="middle" fill="red" font-size="14" font-weight="bold" id="roof-marker"></text>
                       
                       <!-- Windshield -->
-                      <rect x="85" y="55" width="130" height="25" fill="#e5e7eb" stroke="hsl(var(--border))" stroke-width="1" rx="3"/>
+                      <rect x="85" y="55" width="130" height="25" fill="white" stroke="black" stroke-width="1"/>
                       <text x="150" y="72" text-anchor="middle" fill="black" font-size="9">Windshield</text>
                       
                       <!-- Rear Window -->
-                      <rect x="85" y="240" width="130" height="25" fill="#e5e7eb" stroke="hsl(var(--border))" stroke-width="1" rx="3"/>
+                      <rect x="85" y="240" width="130" height="25" fill="white" stroke="black" stroke-width="1"/>
                       <text x="150" y="257" text-anchor="middle" fill="black" font-size="9">Rear Window</text>
                       
                       <!-- Side Mirrors -->
-                      <rect x="65" y="85" width="15" height="10" fill="#6b7280" stroke="hsl(var(--border))" stroke-width="1" rx="2"/>
-                      <rect x="220" y="85" width="15" height="10" fill="#6b7280" stroke="hsl(var(--border))" stroke-width="1" rx="2"/>
+                      <rect x="65" y="85" width="15" height="10" fill="white" stroke="black" stroke-width="1"/>
+                      <rect x="220" y="85" width="15" height="10" fill="white" stroke="black" stroke-width="1"/>
                       
                       <!-- Wheels positions -->
-                      <rect x="40" y="90" width="20" height="40" fill="#374151" stroke="hsl(var(--border))" stroke-width="1" rx="3"/>
-                      <rect x="240" y="90" width="20" height="40" fill="#374151" stroke="hsl(var(--border))" stroke-width="1" rx="3"/>
-                      <rect x="40" y="190" width="20" height="40" fill="#374151" stroke="hsl(var(--border))" stroke-width="1" rx="3"/>
-                      <rect x="240" y="190" width="20" height="40" fill="#374151" stroke="hsl(var(--border))" stroke-width="1" rx="3"/>
+                      <rect x="40" y="90" width="20" height="40" fill="white" stroke="black" stroke-width="1"/>
+                      <rect x="240" y="90" width="20" height="40" fill="white" stroke="black" stroke-width="1"/>
+                      <rect x="40" y="190" width="20" height="40" fill="white" stroke="black" stroke-width="1"/>
+                      <rect x="240" y="190" width="20" height="40" fill="white" stroke="black" stroke-width="1"/>
                     </g>
                     
                     <!-- Rear View -->
@@ -787,19 +811,22 @@ const CarDetails = () => {
                       <text x="100" y="-5" text-anchor="middle" fill="hsl(var(--foreground))" font-size="14" font-weight="bold">Rear View (뒤/후방)</text>
                       
                       <!-- Rear Bumper -->
-                      <rect x="20" y="10" width="160" height="25" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="3" id="rear-bumper-main"/>
-                      <text x="100" y="27" text-anchor="middle" fill="white" font-size="10" font-weight="bold">Rear Bumper</text>
+                      <rect x="20" y="10" width="160" height="25" fill="white" stroke="black" stroke-width="1" id="rear-bumper-main"/>
+                      <text x="100" y="27" text-anchor="middle" fill="black" font-size="10" font-weight="bold">Rear Bumper</text>
+                      <text x="100" y="18" text-anchor="middle" fill="red" font-size="14" font-weight="bold" id="rear-bumper-marker"></text>
                       
                       <!-- Quarter Panels -->
-                      <rect x="10" y="35" width="35" height="50" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="3" id="left-quarter-panel"/>
-                      <text x="27" y="65" text-anchor="middle" fill="white" font-size="9" font-weight="bold">L Quarter</text>
+                      <rect x="10" y="35" width="35" height="50" fill="white" stroke="black" stroke-width="1" id="left-quarter-panel"/>
+                      <text x="27" y="65" text-anchor="middle" fill="black" font-size="9" font-weight="bold">L Quarter</text>
+                      <text x="27" y="50" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="left-quarter-panel-marker"></text>
                       
-                      <rect x="155" y="35" width="35" height="50" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="3" id="right-quarter-panel"/>
-                      <text x="172" y="65" text-anchor="middle" fill="white" font-size="9" font-weight="bold">R Quarter</text>
+                      <rect x="155" y="35" width="35" height="50" fill="white" stroke="black" stroke-width="1" id="right-quarter-panel"/>
+                      <text x="172" y="65" text-anchor="middle" fill="black" font-size="9" font-weight="bold">R Quarter</text>
+                      <text x="172" y="50" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="right-quarter-panel-marker"></text>
                       
                       <!-- Rear Lights -->
-                      <rect x="45" y="40" width="15" height="20" fill="#ef4444" stroke="hsl(var(--border))" stroke-width="1" rx="2"/>
-                      <rect x="140" y="40" width="15" height="20" fill="#ef4444" stroke="hsl(var(--border))" stroke-width="1" rx="2"/>
+                      <rect x="45" y="40" width="15" height="20" fill="white" stroke="black" stroke-width="1"/>
+                      <rect x="140" y="40" width="15" height="20" fill="white" stroke="black" stroke-width="1"/>
                     </g>
                   </svg>
                 </div>
@@ -960,53 +987,62 @@ const CarDetails = () => {
           function initializePage() {
             console.log('Initializing car details page...');
             
-            // Apply colors to car parts
+            // Apply markers to car parts based on inspection data
             const inspectionData = ${JSON.stringify(car.details?.inspect_outer || [])};
             console.log('Inspection data:', inspectionData);
             
-            const parts = [
-              'front-bumper', 'hood', 'front-fender-left', 'front-fender-right',
-              'front-door-left', 'front-door-right', 'roof', 'rear-door-left',
-              'rear-door-right', 'trunk', 'rear-bumper', 'quarter-panel-left',
-              'quarter-panel-right'
+            const partMappings = [
+              { id: 'hood-marker', codes: ['hood', 'bonnet'] },
+              { id: 'front-bumper-marker', codes: ['front_bumper', 'front bumper'] },
+              { id: 'left-front-fender-marker', codes: ['front_fender_left', 'left front fender', 'front left fender'] },
+              { id: 'right-front-fender-marker', codes: ['front_fender_right', 'right front fender', 'front right fender'] },
+              { id: 'left-front-door-marker', codes: ['front_door_left', 'left front door', 'front left door'] },
+              { id: 'right-front-door-marker', codes: ['front_door_right', 'right front door', 'front right door'] },
+              { id: 'left-rear-door-marker', codes: ['rear_door_left', 'left rear door', 'rear left door'] },
+              { id: 'right-rear-door-marker', codes: ['rear_door_right', 'right rear door', 'rear right door'] },
+              { id: 'trunk-marker', codes: ['trunk', 'boot', 'tailgate'] },
+              { id: 'rear-bumper-marker', codes: ['rear_bumper', 'rear bumper'] },
+              { id: 'left-quarter-panel-marker', codes: ['quarter_panel_left', 'left quarter panel', 'rear left quarter'] },
+              { id: 'right-quarter-panel-marker', codes: ['quarter_panel_right', 'right quarter panel', 'rear right quarter'] },
+              { id: 'roof-marker', codes: ['roof'] }
             ];
             
-            parts.forEach(partId => {
-              const element = document.getElementById(partId);
+            partMappings.forEach(mapping => {
+              const element = document.getElementById(mapping.id);
               if (element) {
-                const color = getPartColor(partId, inspectionData);
-                element.setAttribute('fill', color);
-                console.log('Applied color', color, 'to part', partId);
-              } else {
-                console.warn('Element not found:', partId);
+                const marker = getPartMarker(mapping.codes, inspectionData);
+                if (marker) {
+                  element.textContent = marker;
+                  console.log('Applied marker', marker, 'to part', mapping.id);
+                }
               }
             });
           }
           
-          function getPartColor(partCode, inspectionData) {
+          function getPartMarker(partCodes, inspectionData) {
             const part = inspectionData.find(item => {
               const itemCode = item.type.code ? item.type.code.toLowerCase() : '';
               const itemTitle = item.type.title ? item.type.title.toLowerCase() : '';
-              const searchCode = partCode.toLowerCase().replace(/-/g, '_');
               
-              return itemCode.includes(searchCode) || 
-                     itemTitle.includes(searchCode.replace('_', ' ')) ||
-                     itemTitle.includes(searchCode.replace('_', '')) ||
-                     (searchCode.includes('fender') && itemTitle.includes('fender')) ||
-                     (searchCode.includes('door') && itemTitle.includes('door')) ||
-                     (searchCode.includes('bumper') && itemTitle.includes('bumper'));
+              return partCodes.some(code => {
+                const searchCode = code.toLowerCase();
+                return itemCode.includes(searchCode) || 
+                       itemTitle.includes(searchCode) ||
+                       itemTitle.includes(searchCode.replace('_', ' ')) ||
+                       itemTitle.includes(searchCode.replace('_', ''));
+              });
             });
             
             if (!part || !part.statusTypes || part.statusTypes.length === 0) {
-              return '#22c55e'; // Normal - green
+              return null; // No marker for normal parts
             }
             
             const hasExchange = part.statusTypes.some(status => status.code === 'X');
             const hasRepair = part.statusTypes.some(status => status.code === 'W');
             
-            if (hasExchange) return '#ef4444'; // Exchange - red
-            if (hasRepair) return '#f59e0b'; // Repair - orange
-            return '#22c55e'; // Normal - green
+            if (hasExchange) return 'X'; // Exchange/replacement
+            if (hasRepair) return 'W'; // Repair/welding
+            return null; // Normal condition
           }
           
           function toggleOptions(type) {
