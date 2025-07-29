@@ -226,38 +226,22 @@ const EncarCatalog = () => {
           </div>
         </div>
         
-        {/* View Mode Toggle and Sort */}
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
-            <SelectTrigger className="w-full sm:w-48">
-              <ArrowUpDown className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Rreshtoni sipas..." />
-            </SelectTrigger>
-            <SelectContent>
-              {getSortOptions().map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          <div className="flex gap-2">
-            <Button
-              variant={viewMode === 'grid' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('grid')}
-            >
-              <Grid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
+        {/* View Mode Toggle */}
+        <div className="flex gap-2">
+          <Button
+            variant={viewMode === 'grid' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('grid')}
+          >
+            <Grid className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === 'list' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('list')}
+          >
+            <List className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
@@ -276,8 +260,8 @@ const EncarCatalog = () => {
         </Button>
       </div>
 
-      {/* Filter Form */}
-      <div className="mb-6">
+      {/* Filter Form with Sort */}
+      <div className="mb-6 space-y-4">
         <FilterForm
           filters={filters}
           manufacturers={manufacturers}
@@ -292,6 +276,23 @@ const EncarCatalog = () => {
           showAdvanced={showAdvancedFilters}
           onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
         />
+        
+        {/* Sort Control - positioned under filters, right side */}
+        <div className="flex justify-end">
+          <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+            <SelectTrigger className="w-48">
+              <ArrowUpDown className="h-3 w-3 mr-2" />
+              <SelectValue placeholder="Rreshtoni sipas..." />
+            </SelectTrigger>
+            <SelectContent>
+              {getSortOptions().map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Error State */}
