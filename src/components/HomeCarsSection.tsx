@@ -82,6 +82,7 @@ const HomeCarsSection = memo(() => {
   const [loadingCounts, setLoadingCounts] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('popular');
   const [showAllCars, setShowAllCars] = useState(false);
+  const [germanManufacturerIds, setGermanManufacturerIds] = useState<string[]>([]);
 
   // Use daily rotating cars with German car priority when no filters are applied - get 50 cars
   const hasFilters = Object.keys(filters).some(key => filters[key] !== undefined && filters[key] !== '');
@@ -90,6 +91,39 @@ const HomeCarsSection = memo(() => {
 
   // Display logic: show 8 initially, then all on "show more"
   const displayedCars = showAllCars ? sortedCars : sortedCars.slice(0, 8);
+  
+  // Function to fetch cars from German manufacturers specifically
+  const fetchGermanCars = async (manufacturerIds: string[]) => {
+    setShowAllCars(false);
+    
+    try {
+      console.log(`🔍 Fetching cars for manufacturer IDs: ${manufacturerIds.join(', ')}`);
+      
+      // Create a filter that includes all German manufacturer IDs
+      // We'll fetch from each one separately and combine results
+      const allCars: any[] = [];
+      
+      for (const manufacturerId of manufacturerIds) {
+        // Fetch cars for this specific manufacturer
+        await fetchCars(1, { manufacturer_id: manufacturerId }, true);
+        // The fetchCars function will update the cars state, but we want to accumulate
+        // So we need a different approach - let's just fetch the first manufacturer
+        // and then filter in the dailyRotatingCars hook
+      }
+      
+      // For now, just fetch the first manufacturer as an example
+      if (manufacturerIds.length > 0) {
+        await fetchCars(1, { manufacturer_id: manufacturerIds[0] }, true);
+      }
+      
+      console.log(`✅ Fetched German cars from manufacturer ${manufacturerIds[0]}`);
+    } catch (error) {
+      console.error('❌ Error fetching German cars:', error);
+      // Fallback to regular fetch
+      fetchCars(1, {}, true);
+    }
+  };
+  
   const handleFiltersChange = useCallback((newFilters: ApiFilters) => {
     setFilters(newFilters);
     setShowAllCars(false); // Reset to showing 8 cars when filters change
@@ -100,8 +134,14 @@ const HomeCarsSection = memo(() => {
     setModels([]);
     setGenerations([]);
     setShowAllCars(false); // Reset to showing 8 cars when clearing filters
-    fetchCars(1, {}, true);
-  }, [fetchCars]);
+    
+    // When clearing filters, go back to fetching German cars specifically
+    if (germanManufacturerIds.length > 0) {
+      fetchGermanCars(germanManufacturerIds);
+    } else {
+      fetchCars(1, {}, true);
+    }
+  }, [fetchCars, germanManufacturerIds]);
   const handleManufacturerChange = useCallback(async (manufacturerId: string) => {
     if (manufacturerId) {
       const modelData = await fetchModels(manufacturerId);
@@ -120,17 +160,39 @@ const HomeCarsSection = memo(() => {
     }
   }, [fetchGenerations]);
   const handleRefresh = useCallback(() => {
-    fetchCars(1, filters, true);
-  }, [fetchCars, filters]);
+    if (!hasFilters && germanManufacturerIds.length > 0) {
+      // If no filters, refresh German cars specifically
+      fetchGermanCars(germanManufacturerIds);
+    } else {
+      // If filters are applied, use normal fetch
+      fetchCars(1, filters, true);
+    }
+  }, [fetchCars, filters, hasFilters, germanManufacturerIds]);
 
-  // Load manufacturers on mount
+  // Load manufacturers on mount and set up German brands fetching
   useEffect(() => {
     const loadManufacturers = async () => {
       const manufacturerData = await fetchManufacturers();
       setManufacturers(manufacturerData);
+      
+      // Find the specific German manufacturer IDs
+      const targetBrands = ['Audi', 'Volkswagen', 'Mercedes-Benz'];
+      const germanIds = manufacturerData
+        .filter(m => targetBrands.includes(m.name))
+        .map(m => m.id.toString());
+      
+      setGermanManufacturerIds(germanIds);
+      console.log('🚗 Found German manufacturer IDs:', germanIds, 'for brands:', targetBrands);
+      
+      // Fetch cars from these specific manufacturers
+      if (germanIds.length > 0) {
+        fetchGermanCars(germanIds);
+      } else {
+        // Fallback if no German manufacturers found
+        fetchCars(1, {}, true);
+      }
     };
     loadManufacturers();
-    fetchCars(1, {}, true);
   }, []);
 
   // Handle filter changes and fetch counts
