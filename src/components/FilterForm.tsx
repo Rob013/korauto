@@ -19,6 +19,7 @@ interface Model {
   id: number;
   name: string;
   car_count?: number;
+  cars_qty?:number;
 }
 
 interface Generation {
