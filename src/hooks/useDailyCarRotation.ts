@@ -35,10 +35,10 @@ export const useDailyCarRotation = () => {
         // Rotate through different criteria each day
         ...(currentRotation === 0 && {}), // All cars
         ...(currentRotation === 1 && { from_year: '2018' }), // Newer cars
-        ...(currentRotation === 2 && { to_year: '2020' }), // Older cars  
+        ...(currentRotation === 2 && { from_year: '2015' }), // 2015 and newer cars  
         ...(currentRotation === 3 && { buy_now_price_to: '30000' }), // Lower price range
         ...(currentRotation === 4 && { buy_now_price_from: '25000' }), // Higher price range
-        ...(currentRotation === 5 && { fuel_type: '4' }), // Gasoline only
+        ...(currentRotation === 5 && { fuel_type: '1' }), // Diesel only
         ...(currentRotation === 6 && { transmission: '1' }), // Automatic only
       };
       
