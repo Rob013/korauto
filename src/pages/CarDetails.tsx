@@ -872,6 +872,9 @@ const CarDetails = () => {
             alt={`Car image ${selectedImageIndex + 1}`}
             isOpen={isImageZoomOpen}
             onClose={() => setIsImageZoomOpen(false)}
+            images={images}
+            currentIndex={selectedImageIndex}
+            onImageChange={setSelectedImageIndex}
           />
         )}
       </div>

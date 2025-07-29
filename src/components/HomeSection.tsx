@@ -39,8 +39,8 @@ const HomeSection = () => {
           {/* Quick Stats */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-2xl mx-auto mt-8">
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-primary mb-1">500+</div>
-              <div className="text-sm text-muted-foreground">Makina të Inspektuara</div>
+              <div className="text-3xl md:text-4xl font-bold text-primary mb-1">300+</div>
+              <div className="text-sm text-muted-foreground">Makina të Shitura në Kosovë</div>
             </div>
             <div className="text-center">
               <div className="text-3xl md:text-4xl font-bold text-primary mb-1">100%</div>

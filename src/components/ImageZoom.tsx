@@ -1,16 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { X, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
+import { X, ZoomIn, ZoomOut, RotateCw, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ImageZoomProps {
   src: string;
   alt: string;
   isOpen: boolean;
   onClose: () => void;
+  images?: string[];
+  currentIndex?: number;
+  onImageChange?: (index: number) => void;
 }
 
-export const ImageZoom = ({ src, alt, isOpen, onClose }: ImageZoomProps) => {
+export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex = 0, onImageChange }: ImageZoomProps) => {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
 
@@ -21,6 +24,34 @@ export const ImageZoom = ({ src, alt, isOpen, onClose }: ImageZoomProps) => {
     setZoom(1);
     setRotation(0);
   };
+
+  const handlePrevImage = () => {
+    if (images.length > 1 && onImageChange && currentIndex > 0) {
+      onImageChange(currentIndex - 1);
+      handleReset();
+    }
+  };
+
+  const handleNextImage = () => {
+    if (images.length > 1 && onImageChange && currentIndex < images.length - 1) {
+      onImageChange(currentIndex + 1);
+      handleReset();
+    }
+  };
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') handlePrevImage();
+    if (e.key === 'ArrowRight') handleNextImage();
+    if (e.key === 'Escape') onClose();
+  };
+
+  // Add keyboard listeners
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isOpen, currentIndex]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -35,6 +66,30 @@ export const ImageZoom = ({ src, alt, isOpen, onClose }: ImageZoomProps) => {
           >
             <X className="h-6 w-6" />
           </Button>
+
+          {/* Navigation Arrows */}
+          {images.length > 1 && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handlePrevImage}
+                disabled={currentIndex === 0}
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 z-50 bg-black/50 hover:bg-black/70 text-white disabled:opacity-30"
+              >
+                <ChevronLeft className="h-8 w-8" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleNextImage}
+                disabled={currentIndex === images.length - 1}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 z-50 bg-black/50 hover:bg-black/70 text-white disabled:opacity-30"
+              >
+                <ChevronRight className="h-8 w-8" />
+              </Button>
+            </>
+          )}
 
           {/* Controls */}
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50 flex gap-2 bg-black/50 rounded-lg p-2">
@@ -81,9 +136,12 @@ export const ImageZoom = ({ src, alt, isOpen, onClose }: ImageZoomProps) => {
             }}
           />
 
-          {/* Zoom indicator */}
-          <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded text-sm">
-            {Math.round(zoom * 100)}%
+          {/* Image counter and zoom indicator */}
+          <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-2 rounded flex flex-col gap-1 text-sm">
+            <div>{Math.round(zoom * 100)}%</div>
+            {images.length > 1 && (
+              <div>{currentIndex + 1} / {images.length}</div>
+            )}
           </div>
         </div>
       </DialogContent>
