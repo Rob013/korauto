@@ -30,9 +30,30 @@ const EncarCatalog = () => {
   const [filters, setFilters] = useState<APIFilters>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [manufacturers, setManufacturers] = useState<{id: number, name: string, car_count?: number}[]>([]);
-  const [models, setModels] = useState<{id: number, name: string, car_count?: number}[]>([]);
-  const [generations, setGenerations] = useState<{id: number, name: string, car_count?: number}[]>([]);
+  const [manufacturers, setManufacturers] = useState<{
+    id: number;
+    name: string;
+    car_count?: number;
+    cars_qty?: number;
+    image: string;
+  }[]>([]);
+  
+  const [models, setModels] = useState<{
+    id: number;
+    name: string;
+    car_count?: number;
+    cars_qty?: number;
+  }[]>([]);
+  
+  const [generations, setGenerations] = useState<{
+    id: number;
+    name: string;
+    manufacturer_id: number;
+    model_id: number;
+    from_year: number;
+    to_year: number;
+    cars_qty: number;
+  }[]>([]);
   const [filterCounts, setFilterCounts] = useState<any>(null);
   const [loadingCounts, setLoadingCounts] = useState(false);
 
