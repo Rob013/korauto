@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Grid, List, ArrowLeft } from 'lucide-react';
+import { Loader2, Search, Grid, List, ArrowLeft, ArrowUpDown } from 'lucide-react';
 import CarCard from '@/components/CarCard';
 import { useAuctionAPI } from '@/hooks/useAuctionAPI';
 import FilterForm from '@/components/FilterForm';
 import { useSearchParams } from 'react-router-dom';
+import { useSortedCars, getSortOptions, SortOption } from '@/hooks/useSortedCars';
+import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
 
 interface APIFilters {
   manufacturer_id?: string;
@@ -27,8 +30,20 @@ interface APIFilters {
 const EncarCatalog = () => {
   const { toast } = useToast();
   const { cars, loading, error, totalCount, hasMorePages, fetchCars, fetchManufacturers, fetchModels, fetchGenerations, fetchFilterCounts, loadMore } = useAuctionAPI();
+  const { convertUSDtoEUR } = useCurrencyAPI();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [sortBy, setSortBy] = useState<SortOption>('price_low');
   const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Type conversion to match the sorting hook interface
+  const carsForSorting = cars.map(car => ({
+    ...car,
+    status: String(car.status || ''),
+    lot_number: String(car.lot_number || ''),
+    cylinders: Number(car.cylinders || 0)
+  }));
+  
+  const sortedCars = useSortedCars(carsForSorting, sortBy);
 
   const [filters, setFilters] = useState<APIFilters>(() => {
     const params = Object.fromEntries(searchParams.entries());
@@ -211,22 +226,38 @@ const EncarCatalog = () => {
           </div>
         </div>
         
-        {/* View Mode Toggle */}
-        <div className="flex gap-2">
-          <Button
-            variant={viewMode === 'grid' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('grid')}
-          >
-            <Grid className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={viewMode === 'list' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('list')}
-          >
-            <List className="h-4 w-4" />
-          </Button>
+        {/* View Mode Toggle and Sort */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+            <SelectTrigger className="w-full sm:w-48">
+              <ArrowUpDown className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Rreshtoni sipas..." />
+            </SelectTrigger>
+            <SelectContent>
+              {getSortOptions().map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <div className="flex gap-2">
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('grid')}
+            >
+              <Grid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -299,9 +330,10 @@ const EncarCatalog = () => {
             ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
             : "space-y-4"
           }>
-            {cars.map((car) => {
+            {sortedCars.map((car) => {
               const lot = car.lots?.[0];
-              const price = lot?.buy_now ? Math.round(lot.buy_now + 2200) : 25000;
+              const usdPrice = lot?.buy_now || 25000;
+              const price = convertUSDtoEUR(Math.round(usdPrice + 2200));
               
               return (
                 <CarCard
@@ -318,9 +350,9 @@ const EncarCatalog = () => {
                   fuel={car.fuel?.name}
                   color={car.color?.name}
                   condition={car.condition?.replace('run_and_drives', 'Good')}
-                  lot={car.lot_number || lot?.lot}
-                  title={car.title}
-                  status={car.status || lot?.status}
+                  lot={car.lot_number || lot?.lot || ''}
+                  title={car.title || ''}
+                  status={Number(car.status || lot?.status || 1)}
                   sale_status={car.sale_status || lot?.sale_status}
                   final_price={car.final_price || lot?.final_price}
                   generation={car.generation?.name}
@@ -328,7 +360,7 @@ const EncarCatalog = () => {
                   engine={car.engine?.name}
                   drive_wheel={car.drive_wheel}
                   vehicle_type={car.vehicle_type?.name}
-                  cylinders={car.cylinders}
+                  cylinders={String(car.cylinders || '')}
                   bid={lot?.bid}
                   estimate_repair_price={lot?.estimate_repair_price}
                   pre_accident_price={lot?.pre_accident_price}

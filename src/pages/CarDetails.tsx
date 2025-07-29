@@ -12,6 +12,8 @@ import { ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, Fuel, Palette, Ha
 import { ImageZoom } from "@/components/ImageZoom";
 import { supabase } from "@/integrations/supabase/client";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import SimilarCarsTab from "@/components/SimilarCarsTab";
+import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 
 interface CarDetails {
   id: string;
@@ -71,6 +73,7 @@ const CarDetails = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { goBack, previousPage, filterState } = useNavigation();
+  const { convertUSDtoEUR } = useCurrencyAPI();
   const [car, setCar] = useState<CarDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -167,7 +170,7 @@ const CarDetails = () => {
       if (!lotData) throw new Error("Missing lot data");
 
       const basePrice = lotData.buy_now ?? lotData.final_bid ?? lotData.price ?? 25000;
-      const price = Math.round(basePrice + 2200);
+      const price = convertUSDtoEUR(Math.round(basePrice + 2200));
 
       const transformedCar: CarDetails = {
         id: carData.id?.toString() || lotData.lot,
@@ -788,32 +791,7 @@ const CarDetails = () => {
                   </TabsContent>
                   
                   <TabsContent value="similar" className="mt-8">
-                    <div className="space-y-6">
-                      <h4 className="font-semibold text-lg text-foreground">Makina të Ngjashme</h4>
-                      <div className="text-sm text-muted-foreground">
-                        Zbuloni makina të tjera të ngjashme në inventarin tonë:
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {[
-                          { year: '2022', make: 'BMW', model: '320i', price: '€34,500' },
-                          { year: '2020', make: 'BMW', model: '330i', price: '€29,800' },
-                          { year: '2021', make: 'Audi', model: 'A4', price: '€31,200' },
-                          { year: '2021', make: 'Mercedes', model: 'C200', price: '€33,900' }
-                        ].map((similarCar, index) => (
-                          <div key={index} className="p-4 border border-border rounded-lg cursor-pointer hover:bg-muted/30 transition-colors bg-card">
-                            <div className="font-medium text-foreground">{similarCar.year} {similarCar.make} {similarCar.model}</div>
-                            <div className="text-primary font-semibold">{similarCar.price}</div>
-                            <div className="text-xs text-muted-foreground">Klic për më shumë detaje</div>
-                          </div>
-                        ))}
-                      </div>
-                      
-                      <Button variant="outline" className="w-full mt-6 h-12 text-base font-medium border-2 hover:bg-primary hover:text-primary-foreground transition-colors" onClick={() => navigate('/catalog')}>
-                        <ChevronRight className="h-5 w-5 mr-2" />
-                        Shiko të Gjitha Makinat e Ngjashme
-                      </Button>
-                    </div>
+                    <SimilarCarsTab carMake={car.make} carModel={car.model} currentCarId={car.id} />
                   </TabsContent>
                 </Tabs>
               </CardContent>

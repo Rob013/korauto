@@ -123,7 +123,7 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch inspection requests
+      // Fetch inspection requests with real data
       const { data: requestsData, error: requestsError } = await supabase
         .from('inspection_requests')
         .select('*')
@@ -144,7 +144,7 @@ const AdminDashboard = () => {
       const requestsThisWeek = requestsData?.filter(r => new Date(r.created_at) > oneWeekAgo).length || 0;
       const requestsThisMonth = requestsData?.filter(r => new Date(r.created_at) > oneMonthAgo).length || 0;
 
-      // Fetch user stats
+      // Fetch real user stats
       const { count: totalUsers } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true });
@@ -158,7 +158,7 @@ const AdminDashboard = () => {
         .select('*', { count: 'exact', head: true })
         .gte('created_at', oneWeekAgo.toISOString());
 
-      // Fetch cars cache data for analytics
+      // Fetch real cars cache data for analytics
       const { count: totalCachedCars } = await supabase
         .from('cars_cache')
         .select('*', { count: 'exact', head: true });
@@ -167,6 +167,13 @@ const AdminDashboard = () => {
         .from('cars_cache')
         .select('*', { count: 'exact', head: true })
         .gte('last_api_sync', oneWeekAgo.toISOString());
+
+      // Get latest sync status for real-time data
+      const { data: syncStatusData } = await supabase
+        .from('sync_status')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1);
 
       setStats({
         totalInspectionRequests: totalRequests,

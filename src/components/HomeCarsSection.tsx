@@ -6,6 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { RefreshCw, AlertCircle } from "lucide-react";
 import { useAuctionAPI } from '@/hooks/useAuctionAPI';
 import FilterForm from '@/components/FilterForm';
+import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
+import { useRandomCars } from '@/hooks/useRandomCars';
 
 interface Car {
   id: string;
@@ -42,6 +44,7 @@ interface ApiFilters {
 const HomeCarsSection = () => {
   const navigate = useNavigate();
   const { cars, loading, error, fetchCars, fetchManufacturers, fetchModels, fetchGenerations, fetchFilterCounts } = useAuctionAPI();
+  const { convertUSDtoEUR } = useCurrencyAPI();
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [filters, setFilters] = useState<ApiFilters>({});
@@ -50,6 +53,10 @@ const HomeCarsSection = () => {
   const [generations, setGenerations] = useState<{id: number, name: string, car_count?: number}[]>([]);
   const [filterCounts, setFilterCounts] = useState<any>(null);
   const [loadingCounts, setLoadingCounts] = useState(false);
+  
+  // Use random cars when no filters are applied
+  const hasFilters = Object.keys(filters).some(key => filters[key] !== undefined && filters[key] !== '');
+  const displayedCars = useRandomCars(cars, hasFilters);
   
   const handleFiltersChange = (newFilters: ApiFilters) => {
     setFilters(newFilters);
@@ -131,6 +138,17 @@ const HomeCarsSection = () => {
     
     loadInitialCounts();
   }, [manufacturers]);
+
+  // Refresh cars on component mount to ensure fresh random order
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!hasFilters) {
+        fetchCars(1, {}, true); // Refresh only when no filters
+      }
+    }, 30000); // Refresh every 30 seconds when no filters
+
+    return () => clearInterval(interval);
+  }, [hasFilters, fetchCars]);
 
   const handleRefresh = () => {
     fetchCars(1, filters, true);
@@ -215,9 +233,10 @@ const HomeCarsSection = () => {
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0">
-              {cars.map((car) => {
+              {displayedCars.map((car) => {
                 const lot = car.lots?.[0];
-                const price = lot?.buy_now ? Math.round(lot.buy_now + 2200) : 25000;
+                const usdPrice = lot?.buy_now || 25000;
+                const price = convertUSDtoEUR(Math.round(usdPrice + 2200));
                 
                 return (
                   <CarCard
