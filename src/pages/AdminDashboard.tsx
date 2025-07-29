@@ -485,205 +485,131 @@ const AdminDashboard = () => {
               </Card>
             </div>
 
-            <div className="space-y-4">
-              {requests.map((request) => (
-                <Card key={request.id} className="border-l-4 border-l-primary">
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          <UserIcon className="h-5 w-5 text-primary" />
-                          {request.customer_name}
-                        </CardTitle>
-                        <p className="text-sm text-muted-foreground">
-                          Request ID: {request.id} • Submitted {formatDate(request.created_at)}
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge className={getStatusColor(request.status)}>
-                          {request.status.replace('_', ' ').toUpperCase()}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Database Record Information */}
-                    <div className="bg-slate-50 dark:bg-slate-950/20 rounded-lg p-4">
-                      <h4 className="font-semibold text-sm text-foreground mb-3 flex items-center gap-2">
-                        <Database className="h-4 w-4 text-slate-600" />
-                        Database Record Details
-                      </h4>
-                      <div className="grid md:grid-cols-2 gap-3 text-xs">
-                        <div className="space-y-1">
-                          <div><span className="font-medium">ID:</span> <code className="bg-slate-200 dark:bg-slate-800 px-1 rounded">{request.id}</code></div>
-                          <div><span className="font-medium">Created:</span> {formatDate(request.created_at)}</div>
-                          <div><span className="font-medium">Updated:</span> {formatDate(request.updated_at)}</div>
-                        </div>
-                        <div className="space-y-1">
-                          <div><span className="font-medium">Status:</span> <Badge variant="outline" className="text-xs">{request.status}</Badge></div>
-                          <div><span className="font-medium">Car ID:</span> {request.car_id || <span className="text-muted-foreground italic">None</span>}</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Customer Information Section */}
-                    <div className="bg-muted/30 rounded-lg p-4">
-                      <h4 className="font-semibold text-sm text-foreground mb-3 flex items-center gap-2">
-                        <UserCheck className="h-4 w-4 text-primary" />
-                        Customer Information (From Form)
-                      </h4>
-                      <div className="grid md:grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <UserIcon className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">Full Name:</span>
-                            <span className="text-sm font-semibold text-primary">{request.customer_name}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Mail className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">Email:</span>
-                            <span className="text-sm">{request.customer_email}</span>
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Phone className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">WhatsApp:</span>
-                            <span className="text-sm">{request.customer_phone}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Car Information Section */}
-                    <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4">
-                      <h4 className="font-semibold text-sm text-foreground mb-3 flex items-center gap-2">
-                        <Car className="h-4 w-4 text-blue-600" />
-                        Car Information (From Request)
-                      </h4>
-                      {request.car_id ? (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">Car Database ID:</span>
-                            <Badge variant="outline" className="text-xs font-mono">
-                              {request.car_id}
+            {/* Database Table View - Exactly like Supabase */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="h-5 w-5" />
+                  inspection_requests Table (Database View)
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Displaying data exactly as stored in Supabase database
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse border border-border">
+                    <thead>
+                      <tr className="bg-muted">
+                        <th className="border border-border px-3 py-2 text-left text-xs font-medium">id</th>
+                        <th className="border border-border px-3 py-2 text-left text-xs font-medium">created_at</th>
+                        <th className="border border-border px-3 py-2 text-left text-xs font-medium">updated_at</th>
+                        <th className="border border-border px-3 py-2 text-left text-xs font-medium">customer_name</th>
+                        <th className="border border-border px-3 py-2 text-left text-xs font-medium">customer_email</th>
+                        <th className="border border-border px-3 py-2 text-left text-xs font-medium">customer_phone</th>
+                        <th className="border border-border px-3 py-2 text-left text-xs font-medium">car_id</th>
+                        <th className="border border-border px-3 py-2 text-left text-xs font-medium">status</th>
+                        <th className="border border-border px-3 py-2 text-left text-xs font-medium">notes</th>
+                        <th className="border border-border px-3 py-2 text-left text-xs font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {requests.map((request) => (
+                        <tr key={request.id} className="hover:bg-muted/50">
+                          <td className="border border-border px-3 py-2 text-xs font-mono">
+                            <div className="max-w-[120px] truncate" title={request.id}>
+                              {request.id}
+                            </div>
+                          </td>
+                          <td className="border border-border px-3 py-2 text-xs">
+                            {new Date(request.created_at).toISOString()}
+                          </td>
+                          <td className="border border-border px-3 py-2 text-xs">
+                            {new Date(request.updated_at).toISOString()}
+                          </td>
+                          <td className="border border-border px-3 py-2 text-xs font-medium">
+                            {request.customer_name}
+                          </td>
+                          <td className="border border-border px-3 py-2 text-xs">
+                            {request.customer_email}
+                          </td>
+                          <td className="border border-border px-3 py-2 text-xs">
+                            {request.customer_phone}
+                          </td>
+                          <td className="border border-border px-3 py-2 text-xs font-mono">
+                            {request.car_id || <span className="text-muted-foreground italic">NULL</span>}
+                          </td>
+                          <td className="border border-border px-3 py-2 text-xs">
+                            <Badge className={getStatusColor(request.status)} variant="outline">
+                              {request.status}
                             </Badge>
-                          </div>
-                          {request.notes && request.notes.includes('Car:') && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium">Vehicle Details:</span>
-                              <span className="text-sm text-blue-700 dark:text-blue-300 font-medium">
-                                {request.notes.replace('Car: ', '')}
-                              </span>
+                          </td>
+                          <td className="border border-border px-3 py-2 text-xs">
+                            <div className="max-w-[200px] truncate" title={request.notes || ''}>
+                              {request.notes || <span className="text-muted-foreground italic">NULL</span>}
                             </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <AlertCircle className="h-4 w-4" />
-                          <span className="text-sm">General inspection request (no specific car selected)</span>
-                        </div>
-                      )}
-                      
-                      {/* All Notes Section */}
-                      {request.notes && (
-                        <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded border-l-4 border-yellow-400">
-                          <div className="flex items-start gap-2">
-                            <FileText className="h-4 w-4 text-yellow-600 mt-0.5" />
-                            <div className="w-full">
-                              <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Database Notes Field:</span>
-                              <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1 font-mono bg-yellow-100 dark:bg-yellow-900/30 p-2 rounded">
-                                {request.notes}
-                              </p>
+                          </td>
+                          <td className="border border-border px-3 py-2 text-xs">
+                            <div className="flex gap-1">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => window.open(`mailto:${request.customer_email}?subject=Car Inspection Request&body=Dear ${request.customer_name},%0D%0A%0D%0AThank you for your inspection request.%0D%0A%0D%0ABest regards,%0D%0AKORAUTO Team`, '_blank')}
+                                className="h-6 px-2 text-xs"
+                              >
+                                <Mail className="h-3 w-3" />
+                              </Button>
+                              
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => {
+                                  const message = `Hello ${request.customer_name}! Thank you for your car inspection request. We will contact you within 24 hours. - KORAUTO Team`;
+                                  window.open(`https://wa.me/${request.customer_phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+                                }}
+                                className="h-6 px-2 text-xs"
+                              >
+                                <Phone className="h-3 w-3" />
+                              </Button>
+                              
+                              {request.car_id && (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => navigate(`/car/${request.car_id}`)}
+                                  className="h-6 px-2 text-xs"
+                                >
+                                  <Car className="h-3 w-3" />
+                                </Button>
+                              )}
+                              
+                              <select
+                                value={request.status}
+                                onChange={(e) => updateRequestStatus(request.id, e.target.value)}
+                                className="text-xs border border-border rounded px-1 py-0.5 bg-background"
+                              >
+                                <option value="pending">pending</option>
+                                <option value="in_progress">in_progress</option>
+                                <option value="completed">completed</option>
+                                <option value="cancelled">cancelled</option>
+                              </select>
                             </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Action Buttons */}
-                    <div className="flex gap-2 flex-wrap pt-2 border-t border-border">
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => window.open(`mailto:${request.customer_email}?subject=Car Inspection Request - ${request.id.substring(0, 8)}&body=Dear ${request.customer_name},%0D%0A%0D%0AThank you for your inspection request.%0D%0A%0D%0ABest regards,%0D%0AKORAUTO Team`, '_blank')}
-                        className="flex items-center gap-1"
-                      >
-                        <Mail className="h-3 w-3" />
-                        Send Email
-                      </Button>
-                      
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => {
-                          const message = `Hello ${request.customer_name}! Thank you for your car inspection request (ID: ${request.id.substring(0, 8)}). We will contact you within 24 hours to schedule your inspection. - KORAUTO Team`;
-                          window.open(`https://wa.me/${request.customer_phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
-                        }}
-                        className="flex items-center gap-1"
-                      >
-                        <Phone className="h-3 w-3" />
-                        WhatsApp
-                      </Button>
-                      
-                      {request.car_id && (
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => window.open(`/car/${request.car_id}`, '_blank')}
-                          className="flex items-center gap-1"
-                        >
-                          <Eye className="h-3 w-3" />
-                          View Car
-                        </Button>
-                      )}
-                      
-                      {request.status === 'pending' && (
-                        <>
-                          <Button 
-                            size="sm" 
-                            onClick={() => updateRequestStatus(request.id, 'in_progress')}
-                            className="flex items-center gap-1"
-                          >
-                            <Clock className="h-3 w-3" />
-                            Start Processing
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="secondary"
-                            onClick={() => updateRequestStatus(request.id, 'completed')}
-                            className="flex items-center gap-1"
-                          >
-                            <CheckCircle className="h-3 w-3" />
-                            Mark Complete
-                          </Button>
-                        </>
-                      )}
-                      
-                      {request.status === 'in_progress' && (
-                        <Button 
-                          size="sm" 
-                          onClick={() => updateRequestStatus(request.id, 'completed')}
-                          className="flex items-center gap-1"
-                        >
-                          <CheckCircle className="h-3 w-3" />
-                          Mark Complete
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                
+                {requests.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No inspection requests found in database</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-            {requests.length === 0 && !loading && (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <Car className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No inspection requests found</p>
-                </CardContent>
-              </Card>
-            )}
           </TabsContent>
 
           <TabsContent value="traffic" className="space-y-6">
