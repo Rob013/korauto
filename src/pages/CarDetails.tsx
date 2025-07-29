@@ -144,7 +144,7 @@ const CarDetails = () => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-  const response = await fetch(${API_BASE_URL}/search-lot/${lot}/iaai, {
+  const response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
     headers: {
       'accept': '*/*',
       'x-api-key': API_KEY
