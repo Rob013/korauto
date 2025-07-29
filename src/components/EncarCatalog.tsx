@@ -85,6 +85,7 @@ const EncarCatalog = () => {
     const loadManufacturers = async () => {
       const manufacturerData = await fetchManufacturers();
       setManufacturers(manufacturerData);
+      console.log("manufacturer data",manufacturerData)
     };
     
     loadManufacturers();
