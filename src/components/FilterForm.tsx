@@ -78,6 +78,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
   showAdvanced = false,
   onToggleAdvanced
 }) => {
+  console.log("generation",generations)
   const updateFilter = (key: string, value: string) => {
     // Handle special "all" values by converting them to undefined
     const actualValue = value === 'all' || value === 'any' ? undefined : value;
