@@ -205,20 +205,7 @@ const CarCard = ({
           </div>
         )}
         
-        {/* Favorite Button - Mobile Optimized */}
-        <button
-          onClick={handleFavoriteToggle}
-          className="absolute top-2 left-2 p-3 sm:p-2 bg-white/90 hover:bg-white rounded-full shadow-md transition-all duration-200 hover:scale-110 touch-manipulation"
-          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
-        >
-          <Heart 
-            className={`h-5 w-5 sm:h-4 sm:w-4 transition-colors ${
-              isFavorite 
-                ? "fill-red-500 text-red-500" 
-                : "text-gray-600 hover:text-red-500"
-            }`} 
-          />
-        </button>
+  
       </div>
       
       <div className="p-4 sm:p-5">
