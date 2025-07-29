@@ -6,6 +6,7 @@ import { Loader2, Search, Grid, List, ArrowLeft } from 'lucide-react';
 import CarCard from '@/components/CarCard';
 import { useAuctionAPI } from '@/hooks/useAuctionAPI';
 import FilterForm from '@/components/FilterForm';
+import { useSearchParams } from 'react-router-dom';
 
 interface APIFilters {
   manufacturer_id?: string;
@@ -27,8 +28,20 @@ const EncarCatalog = () => {
   const { toast } = useToast();
   const { cars, loading, error, totalCount, hasMorePages, fetchCars, fetchManufacturers, fetchModels, fetchGenerations, fetchFilterCounts, loadMore } = useAuctionAPI();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [filters, setFilters] = useState<APIFilters>({});
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const [filters, setFilters] = useState<APIFilters>(() => {
+    const params = Object.fromEntries(searchParams.entries());
+    return {
+      ...params,
+      manufacturer_id: params.manufacturer_id || undefined,
+      model_id: params.model_id || undefined,
+      generation_id: params.generation_id || undefined,
+      search: params.search || undefined,
+    };
+  });
+
+  const [searchTerm, setSearchTerm] = useState(filters.search || '');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [manufacturers, setManufacturers] = useState<{
     id: number;
@@ -37,14 +50,14 @@ const EncarCatalog = () => {
     cars_qty?: number;
     image?: string;
   }[]>([]);
-  
+
   const [models, setModels] = useState<{
     id: number;
     name: string;
     car_count?: number;
     cars_qty?: number;
   }[]>([]);
-  
+
   const [generations, setGenerations] = useState<{
     id: number;
     name: string;
@@ -60,6 +73,9 @@ const EncarCatalog = () => {
   const handleFiltersChange = (newFilters: APIFilters) => {
     setFilters(newFilters);
     fetchCars(1, newFilters, true);
+
+    const nonEmpty = Object.entries(newFilters).filter(([_, v]) => v !== undefined && v !== '');
+    setSearchParams(Object.fromEntries(nonEmpty));
   };
 
   const handleClearFilters = () => {
@@ -68,6 +84,7 @@ const EncarCatalog = () => {
     setModels([]);
     setGenerations([]);
     fetchCars(1, {}, true);
+    setSearchParams({});
   };
 
   const handleSearch = () => {
@@ -101,26 +118,23 @@ const EncarCatalog = () => {
     }
   };
 
-  // Load manufacturers on mount
   useEffect(() => {
     const loadManufacturers = async () => {
       const manufacturerData = await fetchManufacturers();
       setManufacturers(manufacturerData);
-      console.log("manufacturer data",manufacturerData)
+      console.log("manufacturer data", manufacturerData)
     };
-    
+
     loadManufacturers();
-    fetchCars(1, {}, true);
+    fetchCars(1, filters, true);
   }, []);
 
-  // Handle filter changes and fetch counts
   useEffect(() => {
     const loadData = async () => {
       if (Object.keys(filters).length > 0) {
         fetchCars(1, filters, true);
       }
-      
-      // Only fetch filter counts if manufacturers are loaded
+
       if (manufacturers.length > 0) {
         setLoadingCounts(true);
         try {
@@ -131,11 +145,10 @@ const EncarCatalog = () => {
         }
       }
     };
-    
+
     loadData();
   }, [filters, manufacturers]);
 
-  // Load filter counts on mount and when manufacturers change
   useEffect(() => {
     const loadInitialCounts = async () => {
       if (manufacturers.length > 0) {
@@ -150,7 +163,7 @@ const EncarCatalog = () => {
         }
       }
     };
-    
+
     loadInitialCounts();
   }, [manufacturers]);
 
