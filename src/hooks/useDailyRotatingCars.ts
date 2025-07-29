@@ -6,12 +6,13 @@ export const useDailyRotatingCars = (cars: any[], hasFilters: boolean, limit: nu
       return cars; // Return normal order when filters are applied
     }
     
-    // Get today's date as seed for consistent daily rotation
-    const today = new Date().toDateString();
-    const seed = today.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    // Get current timestamp + random factor for rotation on refresh
+    const now = Date.now();
+    const randomFactor = Math.floor(Math.random() * 1000);
+    const seed = now + randomFactor;
     
-    // Only show Audi, Volkswagen, and Mercedes-Benz cars
-    const targetBrands = ['Audi', 'Volkswagen', 'Mercedes-Benz'];
+    // Only show Audi, Volkswagen, Mercedes-Benz, and BMW cars
+    const targetBrands = ['Audi', 'Volkswagen', 'Mercedes-Benz', 'BMW'];
     const filteredCars = cars.filter(car => 
       targetBrands.includes(car.manufacturer?.name)
     );

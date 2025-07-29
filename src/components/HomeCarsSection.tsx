@@ -92,37 +92,40 @@ const HomeCarsSection = memo(() => {
   // Display logic: show 8 initially, then all on "show more"
   const displayedCars = showAllCars ? sortedCars : sortedCars.slice(0, 8);
   
-  // Function to fetch cars from German manufacturers specifically
-  const fetchGermanCars = async (manufacturerIds: string[]) => {
+  // Function to fetch mixed cars from German manufacturers specifically  
+  const fetchGermanCars = useCallback(async (manufacturerIds: string[]) => {
     setShowAllCars(false);
     
     try {
-      console.log(`🔍 Fetching cars for manufacturer IDs: ${manufacturerIds.join(', ')}`);
+      console.log(`🔍 Fetching mixed cars for manufacturer IDs: ${manufacturerIds.join(', ')}`);
       
-      // Create a filter that includes all German manufacturer IDs
-      // We'll fetch from each one separately and combine results
-      const allCars: any[] = [];
+      // Fetch from each manufacturer separately to ensure we get cars from all brands
+      // and create rotation by fetching different cars each time
+      const carsPerBrand = Math.ceil(50 / manufacturerIds.length); // Distribute 50 cars evenly
       
-      for (const manufacturerId of manufacturerIds) {
-        // Fetch cars for this specific manufacturer
-        await fetchCars(1, { manufacturer_id: manufacturerId }, true);
-        // The fetchCars function will update the cars state, but we want to accumulate
-        // So we need a different approach - let's just fetch the first manufacturer
-        // and then filter in the dailyRotatingCars hook
+      for (let i = 0; i < manufacturerIds.length; i++) {
+        const manufacturerId = manufacturerIds[i];
+        console.log(`🚗 Fetching ${carsPerBrand} cars from manufacturer: ${manufacturerId}`);
+        
+        // Fetch cars from this manufacturer 
+        await fetchCars(1, { 
+          manufacturer_id: manufacturerId
+        }, i === 0); // Only reset cars list on first manufacturer
+        
+        // Small delay between requests to avoid rate limiting
+        if (i < manufacturerIds.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
       }
       
-      // For now, just fetch the first manufacturer as an example
-      if (manufacturerIds.length > 0) {
-        await fetchCars(1, { manufacturer_id: manufacturerIds[0] }, true);
-      }
+      console.log(`✅ Fetched mixed cars from ${manufacturerIds.length} German manufacturers`);
       
-      console.log(`✅ Fetched German cars from manufacturer ${manufacturerIds[0]}`);
     } catch (error) {
       console.error('❌ Error fetching German cars:', error);
       // Fallback to regular fetch
       fetchCars(1, {}, true);
     }
-  };
+  }, [fetchCars]);
   
   const handleFiltersChange = useCallback((newFilters: ApiFilters) => {
     setFilters(newFilters);
@@ -141,7 +144,7 @@ const HomeCarsSection = memo(() => {
     } else {
       fetchCars(1, {}, true);
     }
-  }, [fetchCars, germanManufacturerIds]);
+  }, [fetchCars, germanManufacturerIds, fetchGermanCars]);
   const handleManufacturerChange = useCallback(async (manufacturerId: string) => {
     if (manufacturerId) {
       const modelData = await fetchModels(manufacturerId);
@@ -167,7 +170,7 @@ const HomeCarsSection = memo(() => {
       // If filters are applied, use normal fetch
       fetchCars(1, filters, true);
     }
-  }, [fetchCars, filters, hasFilters, germanManufacturerIds]);
+  }, [fetchCars, filters, hasFilters, germanManufacturerIds, fetchGermanCars]);
 
   // Load manufacturers on mount and set up German brands fetching
   useEffect(() => {
@@ -176,7 +179,7 @@ const HomeCarsSection = memo(() => {
       setManufacturers(manufacturerData);
       
       // Find the specific German manufacturer IDs
-      const targetBrands = ['Audi', 'Volkswagen', 'Mercedes-Benz'];
+      const targetBrands = ['Audi', 'Volkswagen', 'Mercedes-Benz', 'BMW'];
       const germanIds = manufacturerData
         .filter(m => targetBrands.includes(m.name))
         .map(m => m.id.toString());
@@ -193,7 +196,7 @@ const HomeCarsSection = memo(() => {
       }
     };
     loadManufacturers();
-  }, []);
+  }, [fetchCars, fetchManufacturers, fetchGermanCars]);
 
   // Handle filter changes and fetch counts
   useEffect(() => {
