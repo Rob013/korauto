@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import SimilarCarsTab from "@/components/SimilarCarsTab";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
+import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 
 interface CarDetails {
   id: string;
@@ -813,20 +814,6 @@ const CarDetails = () => {
                               <span className="font-medium">{car.details.engine_volume}cc</span>
                             </div>
                           )}
-                          {car.details.original_price && (
-                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
-                              <span className="text-sm">Çmimi Origjinal:</span>
-                              <span className="font-medium">₩{car.details.original_price.toLocaleString()}</span>
-                            </div>
-                          )}
-                          {car.details.first_registration && (
-                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
-                              <span className="text-sm">Regjistrimi i Parë:</span>
-                              <span className="font-medium">
-                                {car.details.first_registration.year}-{String(car.details.first_registration.month).padStart(2, '0')}-{String(car.details.first_registration.day).padStart(2, '0')}
-                              </span>
-                            </div>
-                          )}
                           {car.details.seats_count && (
                             <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
                               <span className="text-sm">Numri i Vendeve:</span>
@@ -879,56 +866,20 @@ const CarDetails = () => {
                       </div>
                     )}
 
-                    {/* Inspection Report */}
+                    {/* Inspection Report with Car Diagram */}
                     {car.details?.inspect_outer && car.details.inspect_outer.length > 0 && (
                       <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
                         <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
                           <FileText className="h-5 w-5" />
                           Raporti i Inspektimit të Detajuar
                         </h4>
-                        <div className="space-y-3">
-                          {car.details.inspect_outer.map((item, index) => (
-                            <div key={index} className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
-                              <span className="text-sm">{item.type.title}:</span>
-                              <div className="flex gap-2">
-                                {item.statusTypes.map((status, i) => (
-                                  <Badge 
-                                    key={i} 
-                                    variant={status.code === 'X' ? "destructive" : status.code === 'W' ? "secondary" : "outline"}
-                                  >
-                                    {status.title}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                        <CarInspectionDiagram 
+                          inspectionData={car.details.inspect_outer}
+                          className="mt-4"
+                        />
                       </div>
                     )}
 
-                    {/* Location Information */}
-                    {car.location && (
-                      <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                        <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                          <MapPin className="h-5 w-5" />
-                          Informacione të Lokacionit
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {car.location.country && (
-                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
-                              <span className="text-sm">Shteti:</span>
-                              <span className="font-medium">{car.location.country.name.toUpperCase()}</span>
-                            </div>
-                          )}
-                          {car.location.city && (
-                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
-                              <span className="text-sm">Qyteti:</span>
-                              <span className="font-medium capitalize">{car.location.city.name}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
 
                     {/* Admin Only Pricing Details */}
                     {isAdmin && (

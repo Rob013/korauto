@@ -375,10 +375,6 @@ const CarCard = ({
               <Palette className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <span className="capitalize truncate">{color}</span>
             </div>}
-          {location?.city && <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate">{location.city.name}</span>
-            </div>}
         </div>
 
         {/* Quick Status Indicators */}
@@ -409,13 +405,8 @@ const CarCard = ({
 
         <div className="text-center">
           <p className="text-xs text-muted-foreground">
-            KORAUTO Shërbim profesional i importit
+            KORAUTO
           </p>
-          {details?.comment && (
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-              {details.comment}
-            </p>
-          )}
         </div>
       </div>
     </div>;
