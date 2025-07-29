@@ -256,25 +256,111 @@ const CarDetails = () => {
   const generateDetailedInfoHTML = (car: CarDetails) => {
     return `
       <!DOCTYPE html>
-      <html lang="en">
+      <html lang="en" class="light">
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${car.year} ${car.make} ${car.model} - Detailed Information</title>
         <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
+          @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap');
+          
+          :root {
+            --background: 0 0% 100%;
+            --foreground: 0 0% 3.9%;
+            --card: 0 0% 100%;
+            --card-foreground: 0 0% 3.9%;
+            --primary: 0 0% 9%;
+            --primary-foreground: 0 0% 98%;
+            --secondary: 0 0% 96.1%;
+            --secondary-foreground: 0 0% 9%;
+            --muted: 0 0% 96.1%;
+            --muted-foreground: 0 0% 45.1%;
+            --accent: 0 0% 96.1%;
+            --accent-foreground: 0 0% 9%;
+            --border: 0 0% 89.8%;
+            --ring: 0 0% 3.9%;
+          }
+          
+          .dark {
+            --background: 0 0% 3.9%;
+            --foreground: 0 0% 98%;
+            --card: 0 0% 3.9%;
+            --card-foreground: 0 0% 98%;
+            --primary: 0 0% 98%;
+            --primary-foreground: 0 0% 9%;
+            --secondary: 0 0% 14.9%;
+            --secondary-foreground: 0 0% 98%;
+            --muted: 0 0% 14.9%;
+            --muted-foreground: 0 0% 63.9%;
+            --accent: 0 0% 14.9%;
+            --accent-foreground: 0 0% 98%;
+            --border: 0 0% 14.9%;
+            --ring: 0 0% 83.1%;
+          }
+          
+          * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+          }
+          
           body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            font-family: 'Noto Sans', sans-serif; 
             line-height: 1.6; 
-            color: hsl(222.2, 84%, 4.9%); 
-            background: hsl(210, 40%, 98%);
+            background: hsl(var(--background));
+            color: hsl(var(--foreground));
             min-height: 100vh;
           }
+          
           .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
           
+          .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 10px;
+            flex-wrap: wrap;
+          }
+          
+          .theme-toggle {
+            background: hsl(var(--secondary));
+            color: hsl(var(--secondary-foreground));
+            border: 1px solid hsl(var(--border));
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+          }
+          .theme-toggle:hover {
+            background: hsl(var(--accent));
+          }
+          
+          .print-btn { 
+            background: hsl(var(--primary)); 
+            color: hsl(var(--primary-foreground)); 
+            border: none; 
+            padding: 10px 16px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: 500;
+            transition: all 0.2s ease;
+            font-size: 14px;
+          }
+          .print-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+          }
+          
           .header { 
-            background: linear-gradient(135deg, hsl(221.2, 83.2%, 53.3%) 0%, hsl(212, 27%, 84%) 100%); 
-            color: white; 
+            background: hsl(var(--primary));
+            color: hsl(var(--primary-foreground)); 
             padding: 30px; 
             border-radius: 12px; 
             margin-bottom: 30px; 
@@ -285,16 +371,17 @@ const CarDetails = () => {
           .subtitle { font-size: 1.2rem; opacity: 0.9; }
           
           .section { 
-            background: white; 
+            background: hsl(var(--card)); 
+            color: hsl(var(--card-foreground));
             margin-bottom: 25px; 
             border-radius: 12px; 
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); 
             overflow: hidden;
-            border: 1px solid hsl(214.3, 31.8%, 91.4%);
+            border: 1px solid hsl(var(--border));
           }
           .section-header { 
-            background: linear-gradient(135deg, hsl(221.2, 83.2%, 53.3%) 0%, hsl(221.2, 83.2%, 65%) 100%); 
-            color: white; 
+            background: hsl(var(--primary));
+            color: hsl(var(--primary-foreground)); 
             padding: 20px; 
             font-size: 1.3rem; 
             font-weight: 600;
@@ -310,24 +397,24 @@ const CarDetails = () => {
             gap: 15px; 
           }
           .info-item { 
-            background: hsl(210, 40%, 98%); 
+            background: hsl(var(--muted)); 
             padding: 15px; 
             border-radius: 8px; 
-            border-left: 4px solid hsl(221.2, 83.2%, 53.3%);
+            border-left: 4px solid hsl(var(--primary));
             transition: all 0.2s ease;
           }
           .info-item:hover {
-            background: hsl(214.3, 31.8%, 91.4%);
+            background: hsl(var(--accent));
             transform: translateY(-1px);
           }
           .info-label { 
             font-weight: 600; 
-            color: hsl(215.4, 16.3%, 46.9%); 
+            color: hsl(var(--muted-foreground)); 
             margin-bottom: 5px; 
             font-size: 0.9rem;
           }
           .info-value { 
-            color: hsl(222.2, 84%, 4.9%); 
+            color: hsl(var(--foreground)); 
             font-size: 1.1rem; 
             font-weight: 500;
           }
@@ -347,20 +434,20 @@ const CarDetails = () => {
           }
           .badge-warning { 
             background: hsl(47.9, 95.8%, 53.1%); 
-            color: hsl(222.2, 84%, 4.9%); 
+            color: hsl(var(--foreground)); 
           }
           .badge-danger { 
             background: hsl(0, 84.2%, 60.2%); 
             color: white; 
           }
           .badge-info { 
-            background: hsl(221.2, 83.2%, 53.3%); 
-            color: white; 
+            background: hsl(var(--primary)); 
+            color: hsl(var(--primary-foreground)); 
           }
           .badge-outline { 
             background: transparent; 
-            color: hsl(222.2, 84%, 4.9%); 
-            border: 1px solid hsl(214.3, 31.8%, 91.4%);
+            color: hsl(var(--foreground)); 
+            border: 1px solid hsl(var(--border));
           }
           
           .options-grid { 
@@ -370,28 +457,9 @@ const CarDetails = () => {
             margin-top: 10px; 
           }
           
-          .print-btn { 
-            position: fixed; 
-            top: 20px; 
-            right: 20px; 
-            background: hsl(221.2, 83.2%, 53.3%); 
-            color: white; 
-            border: none; 
-            padding: 12px 20px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-weight: 500;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            transition: all 0.2s ease;
-          }
-          .print-btn:hover {
-            background: hsl(221.2, 83.2%, 48%);
-            transform: translateY(-1px);
-          }
-          
           .car-diagram {
-            background: white;
-            border: 1px solid hsl(214.3, 31.8%, 91.4%);
+            background: hsl(var(--card));
+            border: 1px solid hsl(var(--border));
             border-radius: 8px;
             padding: 20px;
             margin: 20px 0;
@@ -409,6 +477,7 @@ const CarDetails = () => {
             align-items: center;
             gap: 8px;
             font-size: 0.9rem;
+            color: hsl(var(--foreground));
           }
           .legend-color {
             width: 16px;
@@ -417,7 +486,7 @@ const CarDetails = () => {
           }
           
           .contact-info {
-            background: linear-gradient(135deg, hsl(142.1, 76.2%, 36.3%) 0%, hsl(142.1, 76.2%, 45%) 100%);
+            background: hsl(142.1, 76.2%, 36.3%);
             color: white;
             padding: 20px;
             border-radius: 8px;
@@ -430,23 +499,52 @@ const CarDetails = () => {
             .subtitle { font-size: 1rem; }
             .info-grid { grid-template-columns: 1fr; }
             .section-content { padding: 20px; }
-            .print-btn { position: relative; width: 100%; margin-bottom: 20px; }
-            .legend { justify-content: flex-start; }
+            .controls { justify-content: center; }
           }
           
           @media print { 
-            .print-btn { display: none; }
+            .controls, .theme-toggle, .print-btn { display: none; }
             .section { break-inside: avoid; }
           }
         </style>
       </head>
       <body>
-        <button class="print-btn" onclick="window.print()">🖨️ Print Details</button>
         <div class="container">
+          <div class="controls">
+            <h1 style="font-size: 1.5rem; font-weight: 600;">Car Details Report</h1>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <button onclick="toggleTheme()" class="theme-toggle" id="themeToggle" title="Toggle theme">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+              </button>
+              <button onclick="window.print()" class="print-btn">🖨️ Print</button>
+            </div>
+          </div>
+          
           <div class="header">
             <div class="title">${car.year} ${car.make} ${car.model}</div>
             <div class="subtitle">€${car.price.toLocaleString()} • Lot #${car.lot || 'N/A'}</div>
           </div>
+          
+          <script>
+            function toggleTheme() {
+              const html = document.documentElement;
+              const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
+              const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+              
+              html.classList.remove('light', 'dark');
+              html.classList.add(newTheme);
+              
+              // Update toggle icon
+              const toggle = document.getElementById('themeToggle');
+              if (newTheme === 'dark') {
+                toggle.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>';
+              } else {
+                toggle.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>';
+              }
+            }
+          </script>
 
           ${car.insurance_v2 || car.insurance || car.inspect ? `
           <div class="section">
