@@ -14,7 +14,6 @@ import MyAccount from "./pages/MyAccount";
 import NotFound from "./pages/NotFound";
 import Contacts from "./pages/Contacts";
 import { AdminSyncDashboard } from "./components/AdminSyncDashboard";
-import { NavigationProvider } from "./contexts/NavigationContext";
 
 const queryClient = new QueryClient();
 
@@ -24,22 +23,20 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <NavigationProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/catalog" element={<Catalog />} />
-            <Route path="/car/:id" element={<CarDetails />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/sync" element={<AdminSyncDashboard />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/account" element={<MyAccount />} />
-            <Route path="/favorites" element={<FavoritesPage />} />
-            <Route path="/inspections" element={<InspectionServices />} />
-            <Route path="/contacts" element={<Contacts />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </NavigationProvider>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/catalog" element={<Catalog />} />
+          <Route path="/car/:id" element={<CarDetails />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/sync" element={<AdminSyncDashboard />} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/account" element={<MyAccount />} />
+          <Route path="/favorites" element={<FavoritesPage />} />
+          <Route path="/inspections" element={<InspectionServices />} />
+          <Route path="/contacts" element={<Contacts />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

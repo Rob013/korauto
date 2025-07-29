@@ -178,13 +178,13 @@ const FilterForm = memo<FilterFormProps>(({
       </div>
 
 
-      {/* Basic Filters - Always 3 columns beside each other */}
-      <div className="grid grid-cols-3 gap-2">{/* Always 3 columns, smaller gap */}
-        <div className="space-y-1">
-          <Label htmlFor="manufacturer" className="text-xs font-medium truncate">Marka</Label>
+      {/* Basic Filters - Responsive Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="manufacturer" className="text-sm">Marka</Label>
           <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
-            <SelectTrigger className="h-7 text-xs">
-              <SelectValue placeholder="Markat" />
+            <SelectTrigger className="h-9 sm:h-10">
+              <SelectValue placeholder="Të gjitha Markat" />
             </SelectTrigger>
             <SelectContent className="max-h-60 overflow-y-auto">
               <SelectItem value="all">Të gjitha Markat</SelectItem>
@@ -214,15 +214,15 @@ const FilterForm = memo<FilterFormProps>(({
           </Select>
         </div>
 
-        <div className="space-y-1">
-          <Label htmlFor="model" className="text-xs font-medium truncate">Modeli</Label>
+        <div className="space-y-2">
+          <Label htmlFor="model" className="text-sm">Modeli</Label>
           <Select 
             value={filters.model_id || 'all'} 
             onValueChange={(value) => updateFilter('model_id', value)}
             disabled={!filters.manufacturer_id}
           >
-            <SelectTrigger className="h-7 text-xs">
-              <SelectValue placeholder={filters.manufacturer_id ? "Modelet" : "Marka së pari"} />
+            <SelectTrigger className="h-9 sm:h-10">
+              <SelectValue placeholder={filters.manufacturer_id ? "Të gjithë Modelet" : "Zgjidh markën së pari"} />
             </SelectTrigger>
             <SelectContent className="max-h-60 overflow-y-auto">
               <SelectItem value="all">Të gjithë Modelet</SelectItem>
@@ -242,15 +242,15 @@ const FilterForm = memo<FilterFormProps>(({
           </Select>
         </div>
 
-        <div className="space-y-1">
-          <Label htmlFor="generation" className="text-xs font-medium truncate">Gjeneratat</Label>
+        <div className="space-y-2">
+          <Label htmlFor="generation" className="text-sm">Gjeneratat</Label>
           <Select
             value={filters.generation_id || 'all'} 
             onValueChange={(value) => updateFilter('generation_id', value)}
             disabled={!filters.model_id}
           >
-            <SelectTrigger className="h-7 text-xs">
-              <SelectValue placeholder={filters.model_id ? "Gjeneratat" : "Modeli së pari"} />
+            <SelectTrigger className="h-9 sm:h-10">
+              <SelectValue placeholder={filters.model_id ? "Të gjitha Gjeneratat" : "Zgjidh modelin së pari"} />
             </SelectTrigger>
             <SelectContent className="max-h-60 overflow-y-auto">
               <SelectItem value="all">Të gjitha Gjeneratat</SelectItem>
@@ -277,11 +277,11 @@ const FilterForm = memo<FilterFormProps>(({
       {/* Advanced Filters */}
       {showAdvanced && (
         <div className="border-t pt-4 space-y-4">
-          <div className="space-y-3">{/* Changed advanced filters to vertical too */}
-            <div className="space-y-1">
-              <Label htmlFor="color" className="text-xs font-medium">Ngjyra</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="color">Ngjyra</Label>
               <Select value={filters.color || 'all'} onValueChange={(value) => updateFilter('color', value)}>
-                <SelectTrigger className="h-8 text-sm">
+                <SelectTrigger>
                   <SelectValue placeholder="Të gjitha Ngjyrat" />
                 </SelectTrigger>
                 <SelectContent>
@@ -300,10 +300,10 @@ const FilterForm = memo<FilterFormProps>(({
               </Select>
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="fuel_type" className="text-xs font-medium">Lloji i Karburantit</Label>
+            <div className="space-y-2">
+              <Label htmlFor="fuel_type">Lloji i Karburantit</Label>
               <Select value={filters.fuel_type || 'all'} onValueChange={(value) => updateFilter('fuel_type', value)}>
-                <SelectTrigger className="h-8 text-sm">
+                <SelectTrigger>
                   <SelectValue placeholder="Të gjithë Llojet" />
                 </SelectTrigger>
                 <SelectContent>
@@ -322,10 +322,10 @@ const FilterForm = memo<FilterFormProps>(({
               </Select>
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="transmission" className="text-xs font-medium">Transmisioni</Label>
+            <div className="space-y-2">
+              <Label htmlFor="transmission">Transmisioni</Label>
               <Select value={filters.transmission || 'all'} onValueChange={(value) => updateFilter('transmission', value)}>
-                <SelectTrigger className="h-8 text-sm">
+                <SelectTrigger>
                   <SelectValue placeholder="Të gjithë" />
                 </SelectTrigger>
                 <SelectContent>
@@ -345,11 +345,11 @@ const FilterForm = memo<FilterFormProps>(({
             </div>
           </div>
 
-          <div className="space-y-3">{/* Continue vertical layout for remaining filters */}
-            <div className="space-y-1">
-              <Label htmlFor="from_year" className="text-xs font-medium">Nga Viti</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="from_year">Nga Viti</Label>
               <Select value={filters.from_year || 'any'} onValueChange={(value) => updateFilter('from_year', value)}>
-                <SelectTrigger className="h-8 text-sm">
+                <SelectTrigger>
                   <SelectValue placeholder="Çdo vit" />
                 </SelectTrigger>
                 <SelectContent>
@@ -363,10 +363,10 @@ const FilterForm = memo<FilterFormProps>(({
               </Select>
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="to_year" className="text-xs font-medium">Deri në Vitin</Label>
+            <div className="space-y-2">
+              <Label htmlFor="to_year">Deri në Vitin</Label>
               <Select value={filters.to_year || 'any'} onValueChange={(value) => updateFilter('to_year', value)}>
-                <SelectTrigger className="h-8 text-sm">
+                <SelectTrigger>
                   <SelectValue placeholder="Çdo vit" />
                 </SelectTrigger>
                 <SelectContent>
@@ -380,10 +380,10 @@ const FilterForm = memo<FilterFormProps>(({
               </Select>
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="seats" className="text-xs font-medium">Numri i Vendeve</Label>
+            <div className="space-y-2">
+              <Label htmlFor="seats">Numri i Vendeve</Label>
               <Select value={filters.seats_count || 'all'} onValueChange={(value) => updateFilter('seats_count', value)}>
-                <SelectTrigger className="h-8 text-sm">
+                <SelectTrigger>
                   <SelectValue placeholder="Të gjitha" />
                 </SelectTrigger>
                 <SelectContent>
@@ -399,21 +399,19 @@ const FilterForm = memo<FilterFormProps>(({
             </div>
           </div>
 
-          <div className="space-y-4">{/* Make price and mileage vertical too */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-xs font-medium">Intervali i Çmimit (Blerje direkte)</Label>
+              <Label>Intervali i Çmimit (Blerje direkte)</Label>
               <div className="flex gap-2">
                 <Input
                   placeholder="Minimum"
                   type="number"
-                  className="h-8 text-sm"
                   value={filters.buy_now_price_from || ''}
                   onChange={(e) => updateFilter('buy_now_price_from', e.target.value)}
                 />
                 <Input
                   placeholder="Maksimum"
                   type="number"
-                  className="h-8 text-sm"
                   value={filters.buy_now_price_to || ''}
                   onChange={(e) => updateFilter('buy_now_price_to', e.target.value)}
                 />
@@ -421,19 +419,17 @@ const FilterForm = memo<FilterFormProps>(({
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs font-medium">Intervali i Kilometrazhit (km)</Label>
+              <Label>Intervali i Kilometrazhit (km)</Label>
               <div className="flex gap-2">
                 <Input
                   placeholder="Minimum"
                   type="number"
-                  className="h-8 text-sm"
                   value={filters.odometer_from_km || ''}
                   onChange={(e) => updateFilter('odometer_from_km', e.target.value)}
                 />
                 <Input
                   placeholder="Maksimum"
                   type="number"
-                  className="h-8 text-sm"
                   value={filters.odometer_to_km || ''}
                   onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
                 />

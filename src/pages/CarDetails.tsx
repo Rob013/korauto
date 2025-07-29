@@ -84,12 +84,6 @@ const CarDetails = memo(() => {
   const [car, setCar] = useState<CarDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Debug logging
-  console.log('CarDetails - lot param:', lot);
-  console.log('CarDetails - loading:', loading);
-  console.log('CarDetails - error:', error);
-  console.log('CarDetails - car:', car);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -157,14 +151,7 @@ const CarDetails = memo(() => {
     let isMounted = true;
     
     const fetchCarDetails = async () => {
-      if (!lot) {
-        console.log('❌ No lot parameter provided');
-        setError('Invalid car ID');
-        setLoading(false);
-        return;
-      }
-
-      console.log('🔄 Fetching car details for lot:', lot);
+      if (!lot) return;
 
       try {
         const controller = new AbortController();
