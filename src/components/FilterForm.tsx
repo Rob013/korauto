@@ -178,13 +178,13 @@ const FilterForm = memo<FilterFormProps>(({
       </div>
 
 
-      {/* Basic Filters - Horizontal Layout for Main Filters */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">{/* Changed back to horizontal grid for basic filters */}
+      {/* Basic Filters - Always 3 columns beside each other */}
+      <div className="grid grid-cols-3 gap-2">{/* Always 3 columns, smaller gap */}
         <div className="space-y-1">
-          <Label htmlFor="manufacturer" className="text-xs font-medium">Marka</Label>
+          <Label htmlFor="manufacturer" className="text-xs font-medium truncate">Marka</Label>
           <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
-            <SelectTrigger className="h-8 text-sm">
-              <SelectValue placeholder="Të gjitha Markat" />
+            <SelectTrigger className="h-7 text-xs">
+              <SelectValue placeholder="Markat" />
             </SelectTrigger>
             <SelectContent className="max-h-60 overflow-y-auto">
               <SelectItem value="all">Të gjitha Markat</SelectItem>
@@ -215,14 +215,14 @@ const FilterForm = memo<FilterFormProps>(({
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="model" className="text-xs font-medium">Modeli</Label>
+          <Label htmlFor="model" className="text-xs font-medium truncate">Modeli</Label>
           <Select 
             value={filters.model_id || 'all'} 
             onValueChange={(value) => updateFilter('model_id', value)}
             disabled={!filters.manufacturer_id}
           >
-            <SelectTrigger className="h-8 text-sm">
-              <SelectValue placeholder={filters.manufacturer_id ? "Të gjithë Modelet" : "Zgjidh markën së pari"} />
+            <SelectTrigger className="h-7 text-xs">
+              <SelectValue placeholder={filters.manufacturer_id ? "Modelet" : "Marka së pari"} />
             </SelectTrigger>
             <SelectContent className="max-h-60 overflow-y-auto">
               <SelectItem value="all">Të gjithë Modelet</SelectItem>
@@ -243,14 +243,14 @@ const FilterForm = memo<FilterFormProps>(({
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="generation" className="text-xs font-medium">Gjeneratat</Label>
+          <Label htmlFor="generation" className="text-xs font-medium truncate">Gjeneratat</Label>
           <Select
             value={filters.generation_id || 'all'} 
             onValueChange={(value) => updateFilter('generation_id', value)}
             disabled={!filters.model_id}
           >
-            <SelectTrigger className="h-8 text-sm">
-              <SelectValue placeholder={filters.model_id ? "Të gjitha Gjeneratat" : "Zgjidh modelin së pari"} />
+            <SelectTrigger className="h-7 text-xs">
+              <SelectValue placeholder={filters.model_id ? "Gjeneratat" : "Modeli së pari"} />
             </SelectTrigger>
             <SelectContent className="max-h-60 overflow-y-auto">
               <SelectItem value="all">Të gjitha Gjeneratat</SelectItem>
