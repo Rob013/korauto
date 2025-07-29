@@ -426,7 +426,12 @@ const CarCard = ({
         <div className="flex flex-col sm:flex-row gap-2 mb-4">
           <InspectionRequestForm 
             trigger={
-              <Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground flex-1">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground flex-1"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <FileText className="h-4 w-4 mr-1" />
                 Kërkesë për Inspektim
               </Button>
