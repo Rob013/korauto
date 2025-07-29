@@ -58,7 +58,7 @@ const FilteredCarsSection = () => {
 
   return (
     <section id="cars" className="py-8 sm:py-12 lg:py-16 bg-secondary/30">
-      <div className="container mx-auto px-4 sm:px-6">
+      <div className="container-responsive">
         <div className="text-center mb-8 sm:mb-12">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground">
             Available Cars

@@ -364,7 +364,7 @@ const CarDetails = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8">
+        <div className="container-responsive py-8">
           <div className="animate-pulse space-y-6">
             <div className="h-8 bg-muted rounded w-32"></div>
             <div className="h-64 bg-muted rounded"></div>
@@ -388,7 +388,7 @@ const CarDetails = () => {
   if (error || !car) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8">
+        <div className="container-responsive py-8">
           <Button variant="outline" onClick={() => navigate('/')} className="mb-6">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Kryefaqja
@@ -407,7 +407,7 @@ const CarDetails = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
-      <div className="container mx-auto px-4 py-6 max-w-7xl">
+      <div className="container-responsive py-6 max-w-7xl">
         {/* Header with Actions */}
         <div className="flex justify-between items-center mb-8">
           <Button variant="outline" onClick={() => window.history.back()} className="shadow-sm border-2 hover:shadow-md transition-all">

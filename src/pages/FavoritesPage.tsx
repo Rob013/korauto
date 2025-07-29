@@ -101,7 +101,7 @@ const FavoritesPage = () => {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <div className="container mx-auto px-4 py-16 text-center">
+        <div className="container-responsive py-16 text-center">
           <Heart className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
           <h1 className="text-3xl font-bold mb-4">Login Required</h1>
           <p className="text-muted-foreground mb-8">
@@ -126,7 +126,7 @@ const FavoritesPage = () => {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <div className="container mx-auto px-4 py-16 text-center">
+        <div className="container-responsive py-16 text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading your favorites...</p>
         </div>
@@ -138,7 +138,7 @@ const FavoritesPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto px-4 py-8">
+      <div className="container-responsive py-8">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
             <Heart className="h-8 w-8 text-red-500" />

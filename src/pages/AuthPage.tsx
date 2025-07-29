@@ -84,17 +84,21 @@ const AuthPage = () => {
         description: "Successfully logged in.",
       });
       
-      // Check if user is admin and redirect accordingly
+      // Check if user is admin or specific email and redirect accordingly
       try {
         const { data: adminCheck } = await supabase.rpc('is_admin');
-        if (adminCheck) {
+        if (adminCheck || email === '0013rob@gmail.com') {
           navigate('/admin');
         } else {
           navigate('/');
         }
       } catch (error) {
-        // If role check fails, just go to homepage
-        navigate('/');
+        // If role check fails, check email directly
+        if (email === '0013rob@gmail.com') {
+          navigate('/admin');
+        } else {
+          navigate('/');
+        }
       }
     } catch (error: any) {
       toast({

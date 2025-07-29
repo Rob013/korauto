@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 const HomeSection = () => {
   return <section id="home" className="min-h-[85vh] flex items-center justify-center bg-background pt-2 pb-4 relative">
-      <div className="container mx-auto px-4 text-center">
+      <div className="container-responsive text-center">
         <div className="max-w-4xl mx-auto">
           {/* Logo on Homepage */}
           <div className="mb-4">

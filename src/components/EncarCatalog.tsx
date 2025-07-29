@@ -133,7 +133,7 @@ const EncarCatalog = () => {
   }, [manufacturers]);
 
   return (
-    <div className="container mx-auto px-4 py-6 sm:py-8">
+    <div className="container-responsive py-6 sm:py-8">
       {/* Header with Back Button */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
