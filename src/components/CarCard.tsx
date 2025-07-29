@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
-import { Car, Search, Gauge, Settings, Fuel, Palette, Hash, Heart, Cog, Truck, Key, Shield, Calendar, DollarSign, AlertTriangle } from "lucide-react";
+import { Car, Search, Gauge, Settings, Fuel, Palette, Hash, Heart, Cog, Truck, Key, Shield, Calendar, DollarSign, AlertTriangle, MapPin, FileText, Wrench, Award, Info, CheckCircle, XCircle } from "lucide-react";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,21 +57,76 @@ interface CarCardProps {
     flood_damage?: string;
     own_damage?: string;
     other_damage?: string;
+    car_info?: {
+      make?: string;
+      accident_history?: string;
+      repair_count?: string;
+      total_loss?: string;
+      repair_cost?: string;
+      flood_damage?: string;
+    };
+    general_info?: {
+      model?: string;
+      year?: string;
+      usage_type?: string;
+      insurance_start_date?: string;
+    };
+    usage_history?: Array<{
+      description: string;
+      value: string;
+    }>;
+    owner_changes?: Array<{
+      date: string;
+      change_type: string;
+      previous_number?: string;
+      usage_type: string;
+    }>;
+    special_accident_history?: Array<{
+      type: string;
+      value: string;
+    }>;
   };
   insurance_v2?: {
+    regDate?: string;
+    year?: number;
+    maker?: string;
+    displacement?: number;
+    firstDate?: string;
+    model?: string;
     myAccidentCnt?: number;
     otherAccidentCnt?: number;
     ownerChangeCnt?: number;
     robberCnt?: number;
     totalLossCnt?: number;
     floodTotalLossCnt?: number;
+    government?: number;
+    business?: number;
+    loan?: number;
+    carNoChangeCnt?: number;
+    myAccidentCost?: number;
+    otherAccidentCost?: number;
+    carInfoChanges?: Array<{
+      date: string;
+      carNo: string;
+    }>;
+    carInfoUse1s?: string[];
+    carInfoUse2s?: string[];
+    ownerChanges?: any[];
     accidentCnt?: number;
+    accidents?: any[];
   };
   // Location details
   location?: {
     country?: { name: string; iso: string };
     city?: { name: string };
     state?: string;
+    location?: string;
+    latitude?: number;
+    longitude?: number;
+    postal_code?: string;
+    is_offsite?: boolean;
+    raw?: string;
+    offsite?: string;
   };
   // Inspection details
   inspect?: {
@@ -81,6 +137,40 @@ interface CarCardProps {
       simple_repair?: string;
       accident?: string;
     };
+    outer?: Record<string, string[]>;
+    inner?: Record<string, string>;
+  };
+  // Vehicle details from lots
+  details?: {
+    engine_volume?: number;
+    original_price?: number;
+    year?: number;
+    month?: number;
+    first_registration?: {
+      year: number;
+      month: number;
+      day: number;
+    };
+    badge?: string;
+    comment?: string;
+    description_ko?: string;
+    description_en?: string;
+    is_leasing?: boolean;
+    sell_type?: string;
+    equipment?: any;
+    options?: {
+      type?: string;
+      standard?: string[];
+      etc?: string[];
+      choice?: string[];
+      tuning?: string[];
+    };
+    inspect_outer?: Array<{
+      type: { code: string; title: string };
+      statusTypes: Array<{ code: string; title: string }>;
+      attributes: string[];
+    }>;
+    seats_count?: number;
   };
 }
 const CarCard = ({
@@ -126,7 +216,8 @@ const CarCard = ({
   insurance,
   insurance_v2,
   location,
-  inspect
+  inspect,
+  details
 }: CarCardProps) => {
   const navigate = useNavigate();
   const { setPreviousPage } = useNavigation();
@@ -293,50 +384,270 @@ const CarCard = ({
         </div>
 
         {/* Insurance & Safety Info */}
-        {(insurance_v2 || inspect) && (
-          <div className="space-y-1 mb-4 text-xs">
-            {insurance_v2?.accidentCnt !== undefined && (
-              <div className="flex items-center gap-2">
-                <Shield className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="truncate">
-                  Accidents: {insurance_v2.accidentCnt} | Owners: {insurance_v2.ownerChangeCnt || 0}
-                </span>
-              </div>
-            )}
-            {inspect?.accident_summary?.accident && (
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-3 w-3 text-amber-500 flex-shrink-0" />
-                <span className="truncate text-amber-600">
-                  Accident: {inspect.accident_summary.accident}
-                </span>
-              </div>
-            )}
-            {keys_available !== undefined && (
-              <div className="flex items-center gap-2">
-                <Key className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="truncate">
-                  Keys: {keys_available ? 'Available' : 'Not Available'}
-                </span>
-              </div>
-            )}
+        {(insurance_v2 || inspect || insurance) && (
+          <div className="space-y-2 mb-4 p-3 bg-muted/50 rounded-lg">
+            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Insurance & Safety Report
+            </h4>
+            <div className="space-y-1 text-xs">
+              {insurance_v2?.accidentCnt !== undefined && (
+                <div className="flex items-center justify-between">
+                  <span>Accident History:</span>
+                  <Badge variant={insurance_v2.accidentCnt === 0 ? "secondary" : "destructive"} className="text-xs">
+                    {insurance_v2.accidentCnt === 0 ? 'Clean Record' : `${insurance_v2.accidentCnt} accidents`}
+                  </Badge>
+                </div>
+              )}
+              {insurance_v2?.ownerChangeCnt !== undefined && (
+                <div className="flex items-center justify-between">
+                  <span>Previous Owners:</span>
+                  <span className="font-medium">{insurance_v2.ownerChangeCnt}</span>
+                </div>
+              )}
+              {insurance_v2?.totalLossCnt !== undefined && insurance_v2.totalLossCnt > 0 && (
+                <div className="flex items-center justify-between">
+                  <span>Total Loss Claims:</span>
+                  <Badge variant="destructive" className="text-xs">{insurance_v2.totalLossCnt}</Badge>
+                </div>
+              )}
+              {insurance_v2?.floodTotalLossCnt !== undefined && insurance_v2.floodTotalLossCnt > 0 && (
+                <div className="flex items-center justify-between">
+                  <span>Flood Damage:</span>
+                  <Badge variant="destructive" className="text-xs">{insurance_v2.floodTotalLossCnt}</Badge>
+                </div>
+              )}
+              {inspect?.accident_summary?.accident && inspect.accident_summary.accident !== "doesn't exist" && (
+                <div className="flex items-center gap-2 text-amber-600">
+                  <AlertTriangle className="h-3 w-3" />
+                  <span>Inspection: {inspect.accident_summary.accident}</span>
+                </div>
+              )}
+              {keys_available !== undefined && (
+                <div className="flex items-center justify-between">
+                  <span>Keys Available:</span>
+                  <Badge variant={keys_available ? "secondary" : "destructive"} className="text-xs">
+                    {keys_available ? 'Yes' : 'No'}
+                  </Badge>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Vehicle Details */}
+        {details && (
+          <div className="space-y-2 mb-4 p-3 bg-muted/50 rounded-lg">
+            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Info className="h-4 w-4" />
+              Vehicle Details
+            </h4>
+            <div className="space-y-1 text-xs">
+              {details.engine_volume && (
+                <div className="flex items-center justify-between">
+                  <span>Engine Volume:</span>
+                  <span className="font-medium">{details.engine_volume}cc</span>
+                </div>
+              )}
+              {details.original_price && (
+                <div className="flex items-center justify-between">
+                  <span>Original Price:</span>
+                  <span className="font-medium">₩{details.original_price.toLocaleString()}</span>
+                </div>
+              )}
+              {details.first_registration && (
+                <div className="flex items-center justify-between">
+                  <span>First Registration:</span>
+                  <span className="font-medium">
+                    {details.first_registration.year}-{String(details.first_registration.month).padStart(2, '0')}-{String(details.first_registration.day).padStart(2, '0')}
+                  </span>
+                </div>
+              )}
+              {details.badge && (
+                <div className="flex items-center justify-between">
+                  <span>Badge:</span>
+                  <span className="font-medium">{details.badge}</span>
+                </div>
+              )}
+              {details.seats_count && (
+                <div className="flex items-center justify-between">
+                  <span>Seats:</span>
+                  <span className="font-medium">{details.seats_count}</span>
+                </div>
+              )}
+              {details.sell_type && (
+                <div className="flex items-center justify-between">
+                  <span>Sale Type:</span>
+                  <span className="font-medium capitalize">{details.sell_type}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Equipment & Options */}
+        {details?.options && (
+          <div className="space-y-2 mb-4 p-3 bg-muted/50 rounded-lg">
+            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Award className="h-4 w-4" />
+              Equipment & Options
+            </h4>
+            <div className="space-y-1 text-xs">
+              {details.options.standard && details.options.standard.length > 0 && (
+                <div>
+                  <span className="font-medium">Standard:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {details.options.standard.slice(0, 5).map((option, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">{option}</Badge>
+                    ))}
+                    {details.options.standard.length > 5 && (
+                      <Badge variant="secondary" className="text-xs">+{details.options.standard.length - 5} more</Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+              {details.options.choice && details.options.choice.length > 0 && (
+                <div>
+                  <span className="font-medium">Optional:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {details.options.choice.slice(0, 3).map((option, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs">{option}</Badge>
+                    ))}
+                    {details.options.choice.length > 3 && (
+                      <Badge variant="outline" className="text-xs">+{details.options.choice.length - 3} more</Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Inspection Report */}
+        {details?.inspect_outer && details.inspect_outer.length > 0 && (
+          <div className="space-y-2 mb-4 p-3 bg-muted/50 rounded-lg">
+            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Wrench className="h-4 w-4" />
+              Inspection Report
+            </h4>
+            <div className="space-y-1 text-xs">
+              {details.inspect_outer.slice(0, 3).map((item, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <span>{item.type.title}:</span>
+                  <div className="flex gap-1">
+                    {item.statusTypes.map((status, i) => (
+                      <Badge 
+                        key={i} 
+                        variant={status.code === 'X' ? "destructive" : status.code === 'W' ? "secondary" : "outline"} 
+                        className="text-xs"
+                      >
+                        {status.title}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {details.inspect_outer.length > 3 && (
+                <div className="text-center">
+                  <Badge variant="outline" className="text-xs">+{details.inspect_outer.length - 3} more items</Badge>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
         {/* Pricing Information */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-          <span className="text-xl sm:text-2xl font-bold text-primary">
-            €{price.toLocaleString()}
-          </span>
+          <div className="space-y-1">
+            <span className="text-xl sm:text-2xl font-bold text-primary">
+              €{price.toLocaleString()}
+            </span>
+            {bid && bid !== price && (
+              <div className="text-sm text-muted-foreground">
+                Current Bid: €{bid.toLocaleString()}
+              </div>
+            )}
+            {estimate_repair_price && (
+              <div className="text-sm text-amber-600">
+                Est. Repair: €{estimate_repair_price.toLocaleString()}
+              </div>
+            )}
+          </div>
           <span className="text-xs text-muted-foreground">
             Deri ne portin e Durresit
           </span>
         </div>
+
+        {/* Additional Pricing Info */}
+        {(pre_accident_price || clean_wholesale_price || actual_cash_value) && (
+          <div className="space-y-1 mb-4 p-3 bg-muted/50 rounded-lg">
+            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <DollarSign className="h-4 w-4" />
+              Market Values
+            </h4>
+            <div className="grid grid-cols-1 gap-1 text-xs">
+              {pre_accident_price && (
+                <div className="flex justify-between">
+                  <span>Pre-Accident Value:</span>
+                  <span className="font-medium">€{pre_accident_price.toLocaleString()}</span>
+                </div>
+              )}
+              {clean_wholesale_price && (
+                <div className="flex justify-between">
+                  <span>Wholesale Value:</span>
+                  <span className="font-medium">€{clean_wholesale_price.toLocaleString()}</span>
+                </div>
+              )}
+              {actual_cash_value && (
+                <div className="flex justify-between">
+                  <span>Actual Cash Value:</span>
+                  <span className="font-medium">€{actual_cash_value.toLocaleString()}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Seller Information */}
+        {(seller || domain) && (
+          <div className="space-y-1 mb-4 p-3 bg-muted/50 rounded-lg">
+            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Source Information
+            </h4>
+            <div className="space-y-1 text-xs">
+              {domain && (
+                <div className="flex justify-between">
+                  <span>Source:</span>
+                  <span className="font-medium capitalize">{domain.replace('_', ' ')}</span>
+                </div>
+              )}
+              {seller && (
+                <div className="flex justify-between">
+                  <span>Seller:</span>
+                  <span className="font-medium">{seller}</span>
+                </div>
+              )}
+              {external_id && (
+                <div className="flex justify-between">
+                  <span>External ID:</span>
+                  <span className="font-medium">{external_id}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
 
         <div className="text-center">
           <p className="text-xs text-muted-foreground">
             KORAUTO Shërbim profesional i importit
           </p>
+          {details?.comment && (
+            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+              {details.comment}
+            </p>
+          )}
         </div>
       </div>
     </div>;

@@ -8,7 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   Car, MapPin, Gauge, Fuel, Calendar, Eye,
   Heart, Share2, ArrowRight, MessageCircle, Shield, 
-  AlertTriangle, Key, Settings, Palette, Hash
+  AlertTriangle, Key, Settings, Palette, Hash, Info,
+  Award, Wrench, DollarSign, FileText
 } from "lucide-react";
 import InspectionRequestForm from "./InspectionRequestForm";
 
@@ -66,12 +67,44 @@ interface EncarCarCardProps {
       accident?: string;
     };
   };
+  // Vehicle details from lots
+  details?: {
+    engine_volume?: number;
+    original_price?: number;
+    year?: number;
+    month?: number;
+    first_registration?: {
+      year: number;
+      month: number;
+      day: number;
+    };
+    badge?: string;
+    comment?: string;
+    description_ko?: string;
+    description_en?: string;
+    is_leasing?: boolean;
+    sell_type?: string;
+    equipment?: any;
+    options?: {
+      type?: string;
+      standard?: string[];
+      etc?: string[];
+      choice?: string[];
+      tuning?: string[];
+    };
+    inspect_outer?: Array<{
+      type: { code: string; title: string };
+      statusTypes: Array<{ code: string; title: string }>;
+      attributes: string[];
+    }>;
+    seats_count?: number;
+  };
 }
 
 const EncarCarCard = ({ 
   id, make, model, year, price, image, mileage, fuel, location, isNew, isCertified,
   vin, transmission, color, condition, lot, cylinders, insurance, insurance_v2, 
-  locationDetails, inspect
+  locationDetails, inspect, details
 }: EncarCarCardProps) => {
   const navigate = useNavigate();
   const { setPreviousPage } = useNavigation();
@@ -221,30 +254,150 @@ const EncarCarCard = ({
 
         {/* Insurance & Safety Info */}
         {(insurance_v2 || inspect) && (
-          <div className="space-y-1 mb-3 text-xs">
+          <div className="space-y-1 mb-3 p-2 bg-gray-50 rounded-md">
+            <h5 className="text-xs font-semibold text-gray-700 flex items-center gap-1">
+              <Shield className="h-3 w-3" />
+              Insurance Report
+            </h5>
             {insurance_v2?.accidentCnt !== undefined && (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1">
-                  <Shield className="h-3 w-3 text-blue-500" />
-                  <span>Insurance Clear</span>
-                </div>
-                <span className="text-green-600 font-medium">
-                  {insurance_v2.accidentCnt === 0 ? '✓ Clean' : `${insurance_v2.accidentCnt} accidents`}
-                </span>
+              <div className="flex items-center justify-between text-xs">
+                <span>Accidents:</span>
+                <Badge variant={insurance_v2.accidentCnt === 0 ? "secondary" : "destructive"} className="text-xs px-1 py-0">
+                  {insurance_v2.accidentCnt === 0 ? 'Clean' : insurance_v2.accidentCnt}
+                </Badge>
+              </div>
+            )}
+            {insurance_v2?.ownerChangeCnt !== undefined && (
+              <div className="flex items-center justify-between text-xs">
+                <span>Owners:</span>
+                <span className="font-medium">{insurance_v2.ownerChangeCnt}</span>
               </div>
             )}
             {inspect?.accident_summary?.accident && inspect.accident_summary.accident !== "doesn't exist" && (
-              <div className="flex items-center gap-1 text-amber-600">
+              <div className="flex items-center gap-1 text-xs text-amber-600">
                 <AlertTriangle className="h-3 w-3" />
-                <span>Accident: {inspect.accident_summary.accident}</span>
+                <span>{inspect.accident_summary.accident}</span>
               </div>
             )}
             {lot && (
-              <div className="flex items-center gap-1">
-                <Key className="h-3 w-3 text-gray-500" />
-                <span>Lot: {lot}</span>
+              <div className="flex items-center justify-between text-xs">
+                <span>Lot:</span>
+                <span className="font-medium">{lot}</span>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Vehicle Details */}
+        {details && (
+          <div className="space-y-1 mb-3 p-2 bg-blue-50 rounded-md">
+            <h5 className="text-xs font-semibold text-blue-700 flex items-center gap-1">
+              <Info className="h-3 w-3" />
+              Details
+            </h5>
+            <div className="grid grid-cols-2 gap-1 text-xs">
+              {details.engine_volume && (
+                <div>
+                  <span className="text-gray-600">Engine:</span>
+                  <div className="font-medium">{details.engine_volume}cc</div>
+                </div>
+              )}
+              {details.first_registration && (
+                <div>
+                  <span className="text-gray-600">Registered:</span>
+                  <div className="font-medium">{details.first_registration.year}-{String(details.first_registration.month).padStart(2, '0')}</div>
+                </div>
+              )}
+              {details.badge && (
+                <div className="col-span-2">
+                  <span className="text-gray-600">Badge:</span>
+                  <div className="font-medium">{details.badge}</div>
+                </div>
+              )}
+              {details.seats_count && (
+                <div>
+                  <span className="text-gray-600">Seats:</span>
+                  <div className="font-medium">{details.seats_count}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Equipment & Options */}
+        {details?.options && (details.options.standard?.length || details.options.choice?.length) && (
+          <div className="space-y-1 mb-3 p-2 bg-green-50 rounded-md">
+            <h5 className="text-xs font-semibold text-green-700 flex items-center gap-1">
+              <Award className="h-3 w-3" />
+              Equipment
+            </h5>
+            {details.options.standard && details.options.standard.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {details.options.standard.slice(0, 3).map((option, index) => (
+                  <Badge key={index} variant="outline" className="text-xs px-1 py-0">{option}</Badge>
+                ))}
+                {details.options.standard.length > 3 && (
+                  <Badge variant="secondary" className="text-xs px-1 py-0">+{details.options.standard.length - 3}</Badge>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Inspection Report */}
+        {details?.inspect_outer && details.inspect_outer.length > 0 && (
+          <div className="space-y-1 mb-3 p-2 bg-orange-50 rounded-md">
+            <h5 className="text-xs font-semibold text-orange-700 flex items-center gap-1">
+              <Wrench className="h-3 w-3" />
+              Inspection
+            </h5>
+            <div className="space-y-1">
+              {details.inspect_outer.slice(0, 2).map((item, index) => (
+                <div key={index} className="flex items-center justify-between text-xs">
+                  <span className="truncate">{item.type.title}:</span>
+                  <div className="flex gap-1">
+                    {item.statusTypes.map((status, i) => (
+                      <Badge 
+                        key={i} 
+                        variant={status.code === 'X' ? "destructive" : status.code === 'W' ? "secondary" : "outline"} 
+                        className="text-xs px-1 py-0"
+                      >
+                        {status.code}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {details.inspect_outer.length > 2 && (
+                <div className="text-center">
+                  <Badge variant="outline" className="text-xs px-1 py-0">+{details.inspect_outer.length - 2} more</Badge>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Source Information */}
+        {(details?.sell_type || details?.original_price) && (
+          <div className="space-y-1 mb-3 p-2 bg-purple-50 rounded-md">
+            <h5 className="text-xs font-semibold text-purple-700 flex items-center gap-1">
+              <FileText className="h-3 w-3" />
+              Source Info
+            </h5>
+            <div className="grid grid-cols-1 gap-1 text-xs">
+              {details.sell_type && (
+                <div className="flex justify-between">
+                  <span>Type:</span>
+                  <span className="font-medium capitalize">{details.sell_type}</span>
+                </div>
+              )}
+              {details.original_price && (
+                <div className="flex justify-between">
+                  <span>Original:</span>
+                  <span className="font-medium">₩{details.original_price.toLocaleString()}</span>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
