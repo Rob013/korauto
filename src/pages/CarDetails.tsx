@@ -210,7 +210,7 @@ const CarDetails = () => {
 } catch (apiError) {
   console.error('❌ Failed to fetch from lot endpoint:', apiError);
 }
-
+    }
   }, [lot]);
 
   const handleContactWhatsApp = () => {
