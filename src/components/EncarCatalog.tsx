@@ -35,7 +35,7 @@ const EncarCatalog = () => {
     name: string;
     car_count?: number;
     cars_qty?: number;
-    image: string;
+    image?: string;
   }[]>([]);
   
   const [models, setModels] = useState<{
@@ -48,11 +48,11 @@ const EncarCatalog = () => {
   const [generations, setGenerations] = useState<{
     id: number;
     name: string;
-    manufacturer_id: number;
-    model_id: number;
-    from_year: number;
-    to_year: number;
-    cars_qty: number;
+    manufacturer_id?: number;
+    model_id?: number;
+    from_year?: number;
+    to_year?: number;
+    cars_qty?: number;
   }[]>([]);
   const [filterCounts, setFilterCounts] = useState<any>(null);
   const [loadingCounts, setLoadingCounts] = useState(false);
