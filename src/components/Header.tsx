@@ -43,7 +43,11 @@ const Header = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 group min-w-0">
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
-              <Car className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" />
+              <img 
+                src="/src/assets/korauto-logo.png" 
+                alt="KORAUTO Logo" 
+                className="h-5 w-5 sm:h-6 sm:w-6 object-contain"
+              />
             </div>
             <span className="font-bold text-lg sm:text-2xl bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent hidden xs:block truncate">
               KORAUTO
