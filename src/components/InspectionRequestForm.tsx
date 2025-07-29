@@ -49,6 +49,8 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
   });
 
   const validateForm = (): boolean => {
+    console.log('🔍 Validating form with data:', formData);
+    
     const newErrors = {
       firstName: "",
       lastName: "",
@@ -59,43 +61,74 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
     // Validate first name
     if (!formData.firstName.trim()) {
       newErrors.firstName = "First name is required";
+      console.log('❌ First name validation failed: empty');
     } else if (formData.firstName.trim().length < 2) {
       newErrors.firstName = "First name must be at least 2 characters";
+      console.log('❌ First name validation failed: too short');
+    } else {
+      console.log('✅ First name validation passed');
     }
 
     // Validate last name
     if (!formData.lastName.trim()) {
       newErrors.lastName = "Last name is required";
+      console.log('❌ Last name validation failed: empty');
     } else if (formData.lastName.trim().length < 2) {
       newErrors.lastName = "Last name must be at least 2 characters";
+      console.log('❌ Last name validation failed: too short');
+    } else {
+      console.log('✅ Last name validation passed');
     }
 
     // Validate email
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
+      console.log('❌ Email validation failed: empty');
     } else if (!validateEmail(formData.email)) {
       newErrors.email = "Please enter a valid email address";
+      console.log('❌ Email validation failed: invalid format');
+    } else {
+      console.log('✅ Email validation passed');
     }
 
     // Validate phone
     if (!formData.whatsappPhone.trim()) {
       newErrors.whatsappPhone = "Phone number is required";
+      console.log('❌ Phone validation failed: empty');
     } else if (!validatePhone(formData.whatsappPhone)) {
       newErrors.whatsappPhone = "Please enter a valid phone number";
+      console.log('❌ Phone validation failed: invalid format');
+    } else {
+      console.log('✅ Phone validation passed');
     }
 
     setErrors(newErrors);
-    return !Object.values(newErrors).some(error => error !== "");
+    const isValid = !Object.values(newErrors).some(error => error !== "");
+    console.log('🔍 Final validation result:', isValid, 'Errors:', newErrors);
+    return isValid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    if (isSubmitting) return;
+    console.log('🔵 Form submission triggered!');
+    console.log('🔵 Current form data:', formData);
+    console.log('🔵 Is submitting:', isSubmitting);
+    
+    if (isSubmitting) {
+      console.log('⚠️ Already submitting, returning early');
+      return;
+    }
     
     // Validate form
-    if (!validateForm()) {
+    console.log('🔵 Starting form validation...');
+    const isValid = validateForm();
+    console.log('🔵 Form validation result:', isValid);
+    console.log('🔵 Current errors:', errors);
+    
+    if (!isValid) {
+      console.log('❌ Form validation failed');
       toast({
         title: "Validation Error",
         description: "Please fix the errors in the form",
@@ -211,6 +244,8 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    
+    console.log(`📝 Input changed: ${name} = "${value}"`);
     
     // Clear error for this field when user starts typing
     if (errors[name as keyof typeof errors]) {
