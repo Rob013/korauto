@@ -102,6 +102,10 @@ const InspectionSection = () => {
                       Kërkesë për Inspektim (€50)
                     </Button>
                   }
+                  carId={undefined}
+                  carMake={undefined}
+                  carModel={undefined}
+                  carYear={undefined}
                 />
               </CardContent>
             </Card>
