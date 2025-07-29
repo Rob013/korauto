@@ -76,10 +76,6 @@ const InspectionService = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-5 w-5 text-green-500" />
-                    <span className="text-sm">Same-day delivery</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
                     <span className="text-sm">Money-back guarantee</span>
                   </div>
                 </div>

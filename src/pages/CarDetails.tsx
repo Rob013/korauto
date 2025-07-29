@@ -753,10 +753,6 @@ const CarDetails = memo(() => {
                 <div style="font-weight: 600; margin-bottom: 5px;">Service</div>
                 <div>Professional Import Service</div>
               </div>
-              <div>
-                <div style="font-weight: 600; margin-bottom: 5px;">Delivery</div>
-                <div>Door to Port of Durres + €350 to Pristina</div>
-              </div>
             </div>
           </div>
         </div>
@@ -992,13 +988,24 @@ const CarDetails = memo(() => {
                     <span className="text-muted-foreground font-medium text-right">{car.make} {car.model}</span>
                   </div>
                   
-                  <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <Calendar className="h-5 w-5 text-primary" />
-                      <span className="font-semibold text-foreground">Viti</span>
-                    </div>
-                    <span className="text-muted-foreground font-medium">{car.year}</span>
-                  </div>
+                   <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                     <div className="flex items-center gap-3">
+                       <Calendar className="h-5 w-5 text-primary" />
+                       <span className="font-semibold text-foreground">Viti</span>
+                     </div>
+                     <span className="text-muted-foreground font-medium">{car.year}</span>
+                   </div>
+                   
+                   {/* Add Production Year */}
+                   {car.details?.first_registration && (
+                     <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                       <div className="flex items-center gap-3">
+                         <Calendar className="h-5 w-5 text-primary" />
+                         <span className="font-semibold text-foreground">Viti i Prodhimit</span>
+                       </div>
+                       <span className="text-muted-foreground font-medium">{car.details.first_registration.year}</span>
+                     </div>
+                   )}
                   
                   {car.mileage && (
                     <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
@@ -1041,19 +1048,29 @@ const CarDetails = memo(() => {
                   )}
                 </div>
 
-                {/* Technical Details */}
-                <Separator className="my-6" />
-                <h4 className="text-lg font-semibold mb-4 text-foreground">Detaje Teknike</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {car.engine && (
-                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-primary rounded-full"></div>
-                        <span className="font-semibold text-foreground">Motori</span>
-                      </div>
-                      <span className="text-muted-foreground font-medium">{car.engine.name}</span>
-                    </div>
-                  )}
+                 {/* Technical Details */}
+                 <Separator className="my-6" />
+                 <h4 className="text-lg font-semibold mb-4 text-foreground">Detaje Teknike</h4>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   {/* Engine Displacement */}
+                   {car.details?.engine_volume && (
+                     <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                       <div className="flex items-center gap-3">
+                         <div className="w-2 h-2 bg-primary rounded-full"></div>
+                         <span className="font-semibold text-foreground">Vëllimi Motorit</span>
+                       </div>
+                       <span className="text-muted-foreground font-medium">{car.details.engine_volume}L</span>
+                     </div>
+                   )}
+                   {car.engine && (
+                     <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                       <div className="flex items-center gap-3">
+                         <div className="w-2 h-2 bg-primary rounded-full"></div>
+                         <span className="font-semibold text-foreground">Motori</span>
+                       </div>
+                       <span className="text-muted-foreground font-medium">{car.engine.name}</span>
+                     </div>
+                   )}
                   {car.cylinders && (
                     <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">

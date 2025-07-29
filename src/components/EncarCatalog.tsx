@@ -246,20 +246,6 @@ const EncarCatalog = () => {
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="flex gap-2 mb-6">
-        <Input
-          placeholder="Search by brand, model, or title..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-          className="flex-1 h-11 bg-background border-border"
-        />
-        <Button onClick={handleSearch} disabled={loading} className="h-11 px-6">
-          <Search className="h-4 w-4 mr-2" />
-          Search
-        </Button>
-      </div>
 
       {/* Filter Form with Sort */}
       <div className="mb-6 space-y-4">

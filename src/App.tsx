@@ -12,6 +12,7 @@ import FavoritesPage from "./pages/FavoritesPage";
 import InspectionServices from "./pages/InspectionServices";
 import MyAccount from "./pages/MyAccount";
 import NotFound from "./pages/NotFound";
+import Contacts from "./pages/Contacts";
 import { AdminSyncDashboard } from "./components/AdminSyncDashboard";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/account" element={<MyAccount />} />
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/inspections" element={<InspectionServices />} />
+          <Route path="/contacts" element={<Contacts />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -377,6 +377,25 @@ const CarCard = ({
             </div>}
         </div>
 
+        {/* Technical Details */}
+        <div className="mb-4">
+          <h4 className="text-sm font-semibold mb-2 text-foreground">Detaje Teknike</h4>
+          <div className="grid grid-cols-1 gap-2 text-xs">
+            {details?.engine_volume && (
+              <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
+                <span className="text-muted-foreground">Vëllimi Motorit</span>
+                <span className="font-medium">{details.engine_volume}L</span>
+              </div>
+            )}
+            {engine && (
+              <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
+                <span className="text-muted-foreground">Motori</span>
+                <span className="font-medium">{engine}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Quick Status Indicators */}
         <div className="flex flex-wrap gap-2 mb-4">
           {insurance_v2?.accidentCnt === 0 && (

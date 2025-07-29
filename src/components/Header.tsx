@@ -72,6 +72,12 @@ const Header = () => {
               Inspektimet
             </Link>
             <Link 
+              to="/contacts" 
+              className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200"
+            >
+              Kontaktet
+            </Link>
+            <Link 
               to="/favorites" 
               className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200 flex items-center gap-1"
             >
@@ -137,34 +143,13 @@ const Header = () => {
               >
                 Inspektimet
               </Link>
-
-              {/* Contact Info for Mobile */}
-              <div className="flex flex-col space-y-2 pt-4 border-t border-border">
-                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                  <div className="flex items-center space-x-1">
-                    <span>📞</span>
-                    <span>+38348181116</span>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                  <div className="flex items-center space-x-1">
-                    <span>✉️</span>
-                    <span>INFO.RGSHPK@gmail.com</span>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                  <div className="flex items-center space-x-1">
-                    <span>📍</span>
-                    <span>Rr. Ilaz Kodra 70, Prishtinë</span>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                  <div className="flex items-center space-x-1">
-                    <span>🕒</span>
-                    <span>9:00-18:00</span>
-                  </div>
-                </div>
-              </div>
+              <Link 
+                to="/contacts" 
+                className="text-foreground hover:text-primary font-medium transition-colors py-2 px-3 rounded-md hover:bg-primary/10"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Kontaktet
+              </Link>
 
               <Link 
                 to="/favorites" 

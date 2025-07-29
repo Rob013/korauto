@@ -177,25 +177,6 @@ const FilterForm = memo<FilterFormProps>(({
         </Button>
       </div>
 
-      {/* Search Bar */}
-      <div className="flex gap-2 mb-4">
-        <Input
-          placeholder="Kërko sipas markës, modelit ose titullit..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-          className="flex-1 h-10 bg-background border-border"
-        />
-        <Button onClick={handleSearch} size="sm" className="h-10 px-4">
-          <Search className="h-4 w-4 mr-1" />
-          Kërko
-        </Button>
-        {filters.search && (
-          <Button onClick={handleClearSearch} variant="outline" size="sm" className="h-10 px-3">
-            <X className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
 
       {/* Basic Filters - Responsive Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
