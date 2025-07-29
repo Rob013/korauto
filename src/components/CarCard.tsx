@@ -185,7 +185,7 @@ const CarCard = ({
   const handleCardClick = () => {
     // Save current page and any filter state before navigating
     setPreviousPage(window.location.pathname + window.location.search);
-    navigate(`/car/${id}`);
+    navigate(`/car/${lot}`);
   };
   return <div className="bg-card rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-border cursor-pointer group touch-manipulation" onClick={handleCardClick}>
       <div className="relative h-48 sm:h-52 bg-muted overflow-hidden">
