@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RefreshCw, Mail, Phone, Car, ArrowLeft, LogOut, Users, Activity, TrendingUp, Calendar, Eye, Heart, Clock, AlertCircle, CheckCircle, UserCheck, Database } from "lucide-react";
+import { RefreshCw, Mail, Phone, Car, ArrowLeft, LogOut, Users, Activity, TrendingUp, Calendar, Eye, Heart, Clock, AlertCircle, CheckCircle, UserCheck, Database, User as UserIcon, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import AuthLogin from "@/components/AuthLogin";
@@ -487,91 +487,143 @@ const AdminDashboard = () => {
 
             <div className="space-y-4">
               {requests.map((request) => (
-                <Card key={request.id}>
+                <Card key={request.id} className="border-l-4 border-l-primary">
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div>
-                        <CardTitle className="text-lg">{request.customer_name}</CardTitle>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <UserIcon className="h-5 w-5 text-primary" />
+                          {request.customer_name}
+                        </CardTitle>
                         <p className="text-sm text-muted-foreground">
-                          Request ID: {request.id.substring(0, 8)}...
+                          Request ID: {request.id.substring(0, 8)}... • Submitted {formatDate(request.created_at)}
                         </p>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Badge className={getStatusColor(request.status)}>
-                          {request.status}
+                          {request.status.replace('_', ' ').toUpperCase()}
                         </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {formatDate(request.created_at)}
-                        </span>
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
+                  <CardContent className="space-y-6">
+                    {/* Customer Information Section */}
+                    <div className="bg-muted/30 rounded-lg p-4">
+                      <h4 className="font-semibold text-sm text-foreground mb-3 flex items-center gap-2">
+                        <UserCheck className="h-4 w-4 text-primary" />
+                        Customer Information
+                      </h4>
+                      <div className="grid md:grid-cols-2 gap-3">
                         <div className="flex items-center gap-2">
                           <Mail className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">Email:</span>
                           <span className="text-sm">{request.customer_email}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Phone className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">Phone:</span>
                           <span className="text-sm">{request.customer_phone}</span>
                         </div>
                       </div>
+                    </div>
+
+                    {/* Car Information Section */}
+                    <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4">
+                      <h4 className="font-semibold text-sm text-foreground mb-3 flex items-center gap-2">
+                        <Car className="h-4 w-4 text-blue-600" />
+                        Car Information
+                      </h4>
+                      {request.car_id ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">Car ID:</span>
+                            <Badge variant="outline" className="text-xs">
+                              {request.car_id}
+                            </Badge>
+                          </div>
+                          {request.notes && request.notes.includes('Car:') && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">Vehicle:</span>
+                              <span className="text-sm text-blue-700 dark:text-blue-300 font-medium">
+                                {request.notes.replace('Car: ', '')}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <AlertCircle className="h-4 w-4" />
+                          <span className="text-sm">General inspection request (no specific car selected)</span>
+                        </div>
+                      )}
                       
-                      <div className="space-y-2">
-                        {request.car_id ? (
-                          <div className="flex items-center gap-2">
-                            <Car className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">Car ID: {request.car_id}</span>
+                      {request.notes && !request.notes.includes('Car:') && (
+                        <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded border-l-4 border-yellow-400">
+                          <div className="flex items-start gap-2">
+                            <FileText className="h-4 w-4 text-yellow-600 mt-0.5" />
+                            <div>
+                              <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Additional Notes:</span>
+                              <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">{request.notes}</p>
+                            </div>
                           </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <Car className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">No specific car</span>
-                          </div>
-                        )}
-                        
-                        {request.notes && (
-                          <div className="text-sm">
-                            <span className="font-medium">Notes:</span> {request.notes}
-                          </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                     
-                    <div className="flex gap-2 flex-wrap">
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 flex-wrap pt-2 border-t border-border">
                       <Button 
                         size="sm" 
                         variant="outline"
-                        onClick={() => window.open(`mailto:${request.customer_email}`, '_blank')}
+                        onClick={() => window.open(`mailto:${request.customer_email}?subject=Car Inspection Request - ${request.id.substring(0, 8)}&body=Dear ${request.customer_name},%0D%0A%0D%0AThank you for your inspection request.%0D%0A%0D%0ABest regards,%0D%0AKORAUTO Team`, '_blank')}
+                        className="flex items-center gap-1"
                       >
-                        <Mail className="h-3 w-3 mr-1" />
-                        Email
+                        <Mail className="h-3 w-3" />
+                        Send Email
                       </Button>
                       
                       <Button 
                         size="sm" 
                         variant="outline"
-                        onClick={() => window.open(`https://wa.me/${request.customer_phone.replace(/[^0-9]/g, '')}`, '_blank')}
+                        onClick={() => {
+                          const message = `Hello ${request.customer_name}! Thank you for your car inspection request (ID: ${request.id.substring(0, 8)}). We will contact you within 24 hours to schedule your inspection. - KORAUTO Team`;
+                          window.open(`https://wa.me/${request.customer_phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+                        }}
+                        className="flex items-center gap-1"
                       >
-                        <Phone className="h-3 w-3 mr-1" />
+                        <Phone className="h-3 w-3" />
                         WhatsApp
                       </Button>
+                      
+                      {request.car_id && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => window.open(`/car/${request.car_id}`, '_blank')}
+                          className="flex items-center gap-1"
+                        >
+                          <Eye className="h-3 w-3" />
+                          View Car
+                        </Button>
+                      )}
                       
                       {request.status === 'pending' && (
                         <>
                           <Button 
                             size="sm" 
                             onClick={() => updateRequestStatus(request.id, 'in_progress')}
+                            className="flex items-center gap-1"
                           >
+                            <Clock className="h-3 w-3" />
                             Start Processing
                           </Button>
                           <Button 
                             size="sm" 
-                            variant="outline"
+                            variant="secondary"
                             onClick={() => updateRequestStatus(request.id, 'completed')}
+                            className="flex items-center gap-1"
                           >
+                            <CheckCircle className="h-3 w-3" />
                             Mark Complete
                           </Button>
                         </>
@@ -581,7 +633,9 @@ const AdminDashboard = () => {
                         <Button 
                           size="sm" 
                           onClick={() => updateRequestStatus(request.id, 'completed')}
+                          className="flex items-center gap-1"
                         >
+                          <CheckCircle className="h-3 w-3" />
                           Mark Complete
                         </Button>
                       )}
