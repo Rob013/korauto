@@ -168,7 +168,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
                      key={manufacturer.id} 
                      value={manufacturer.id.toString()}
                    >
-                     {manufacturer.name} {count !== undefined && count > 0 && `(${count})`}
+                     {manufacturer.name} {manufacturer?.cars_qty !== undefined && manufacturer?.cars_qty > 0 && `(${manufacturer?.cars_qty})`}
                    </SelectItem>
                  );
                 })}
