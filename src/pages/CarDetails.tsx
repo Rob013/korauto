@@ -702,40 +702,6 @@ const CarDetails = () => {
             </div>
           </div>` : ''}
 
-          ${car.bid || car.buy_now || car.final_bid || car.details?.original_price ? `
-          <div class="section">
-            <div class="section-header">
-              💰 Market Values & Pricing
-            </div>
-            <div class="section-content">
-              <div class="info-grid">
-                ${car.details?.original_price ? `
-                <div class="info-item">
-                  <div class="info-label">Original Korean Price</div>
-                  <div class="info-value">₩${car.details.original_price.toLocaleString()}</div>
-                </div>` : ''}
-                ${car.bid ? `
-                <div class="info-item">
-                  <div class="info-label">Current Bid</div>
-                  <div class="info-value">💵 $${car.bid.toLocaleString()}</div>
-                </div>` : ''}
-                ${car.buy_now ? `
-                <div class="info-item">
-                  <div class="info-label">Buy Now Price</div>
-                  <div class="info-value">🛒 $${car.buy_now.toLocaleString()}</div>
-                </div>` : ''}
-                ${car.final_bid ? `
-                <div class="info-item">
-                  <div class="info-label">Final Bid</div>
-                  <div class="info-value">🎯 $${car.final_bid.toLocaleString()}</div>
-                </div>` : ''}
-                <div class="info-item">
-                  <div class="info-label">KORAUTO Price</div>
-                  <div class="info-value">🏷️ €${car.price.toLocaleString()}</div>
-                </div>
-              </div>
-            </div>
-          </div>` : ''}
 
           <div class="section">
             <div class="section-header">
@@ -1298,11 +1264,8 @@ const CarDetails = () => {
             {/* Enhanced Information Tabs */}
             <Card className="shadow-lg border-0">
               <CardContent className="p-6 md:p-10">
-                <Tabs defaultValue="overview" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-20 lg:h-16 bg-muted/30 p-2 rounded-xl gap-2">
-                    <TabsTrigger value="overview" className="rounded-lg text-sm md:text-base font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-3 py-3 text-center leading-tight min-h-[3.5rem] flex items-center justify-center">
-                      <span className="whitespace-nowrap">Përshkrimi</span>
-                    </TabsTrigger>
+                <Tabs defaultValue="maintenance" className="w-full">
+                  <TabsList className="grid w-full grid-cols-1 lg:grid-cols-3 h-20 lg:h-16 bg-muted/30 p-2 rounded-xl gap-2">
                     <TabsTrigger value="maintenance" className="rounded-lg text-sm md:text-base font-medium data-[state=active]:bg-background data-[state=active]:shadow-md transition-all px-3 py-3 text-center leading-tight min-h-[3.5rem] flex items-center justify-center">
                       <span className="whitespace-nowrap">Mirëmbajtja</span>
                     </TabsTrigger>
@@ -1313,86 +1276,6 @@ const CarDetails = () => {
                       <span className="whitespace-nowrap">Të Ngjashme</span>
                     </TabsTrigger>
                   </TabsList>
-                  
-                  <TabsContent value="overview" className="mt-8">
-                    <div className="space-y-6">
-                      {/* Collapsible Features Section */}
-                      <Collapsible open={featuresExpanded} onOpenChange={setFeaturesExpanded}>
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-semibold text-lg text-foreground">Karakteristikat</h4>
-                          <CollapsibleTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="text-primary hover:text-primary-foreground hover:bg-primary"
-                            >
-                              <span className="mr-2">
-                                {featuresExpanded 
-                                  ? `Fshih të gjitha (${(car.features?.length || 0) + (car.safety_features?.length || 0) + (car.comfort_features?.length || 0)})` 
-                                  : `Shiko të gjitha (${(car.features?.length || 0) + (car.safety_features?.length || 0) + (car.comfort_features?.length || 0)})`
-                                }
-                              </span>
-                              {featuresExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                            </Button>
-                          </CollapsibleTrigger>
-                        </div>
-                        
-                        {/* Always show first few features */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {car.features?.slice(0, 4).map((feature, index) => (
-                            <div key={index} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                              <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                              <span className="text-sm text-foreground">{feature}</span>
-                            </div>
-                          ))}
-                        </div>
-                        
-                        <CollapsibleContent className="space-y-6">
-                          {/* Remaining main features */}
-                          {car.features && car.features.length > 4 && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              {car.features.slice(4).map((feature, index) => (
-                                <div key={index + 4} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                                  <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                                  <span className="text-sm text-foreground">{feature}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          
-                          {/* Safety Features */}
-                          {car.safety_features && car.safety_features.length > 0 && (
-                            <>
-                              <h5 className="font-semibold text-md text-foreground mt-6">Karakteristikat e Sigurisë</h5>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {car.safety_features.map((feature, index) => (
-                                  <div key={index} className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
-                                    <Shield className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                                    <span className="text-sm text-foreground">{feature}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </>
-                          )}
-                          
-                          {/* Comfort Features */}
-                          {car.comfort_features && car.comfort_features.length > 0 && (
-                            <>
-                              <h5 className="font-semibold text-md text-foreground mt-6">Karakteristikat e Komforit</h5>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {car.comfort_features.map((feature, index) => (
-                                  <div key={index} className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-950/30 rounded-lg">
-                                    <Star className="h-4 w-4 text-green-500 flex-shrink-0" />
-                                    <span className="text-sm text-foreground">{feature}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </>
-                          )}
-                        </CollapsibleContent>
-                      </Collapsible>
-                    </div>
-                  </TabsContent>
                   
                   <TabsContent value="maintenance" className="mt-8">
                     <div className="space-y-6">
