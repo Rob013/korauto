@@ -253,145 +253,15 @@ const CarCard = ({
             </div>}
         </div>
 
-        {/* Technical Details */}
-        {(engine || drive_wheel || cylinders || vehicle_type) && (
-          <div className="space-y-1 mb-4 text-xs border-t pt-3">
-            <h4 className="font-medium text-muted-foreground mb-2">Technical Details</h4>
-            {engine && <div className="flex items-center gap-2">
-                <Cog className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="truncate">Engine: {String(engine)}</span>
-              </div>}
-            {drive_wheel && <div className="flex items-center gap-2">
-                <Settings className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="truncate">Drive: {String(drive_wheel)}</span>
-              </div>}
-            {cylinders && <div className="flex items-center gap-2">
-                <Cog className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="truncate">Cylinders: {String(cylinders)}</span>
-              </div>}
-            {vehicle_type && <div className="flex items-center gap-2">
-                <Car className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="capitalize truncate">{String(vehicle_type)}</span>
-              </div>}
-          </div>
-        )}
-
-        {/* Safety & Features */}
-        {(keys_available !== undefined || airbags || grade_iaai) && (
-          <div className="space-y-1 mb-4 text-xs border-t pt-3">
-            <h4 className="font-medium text-muted-foreground mb-2">Safety & Features</h4>
-            {keys_available !== undefined && <div className="flex items-center gap-2">
-                <Key className={`h-3 w-3 flex-shrink-0 ${keys_available ? 'text-green-500' : 'text-red-500'}`} />
-                <span className="truncate">Keys: {keys_available ? 'Available' : 'Not Available'}</span>
-              </div>}
-            {airbags && <div className="flex items-center gap-2">
-                <Shield className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="truncate">Airbags: {String(airbags)}</span>
-              </div>}
-            {grade_iaai && <div className="flex items-center gap-2">
-                <Shield className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="truncate">Grade: {String(grade_iaai)}</span>
-              </div>}
-          </div>
-        )}
-
-        {/* Damage & Condition */}
-        {(damage_main || damage_second || condition) && (
-          <div className="space-y-1 mb-4 text-xs border-t pt-3">
-            <h4 className="font-medium text-muted-foreground mb-2">Condition</h4>
-            {condition && <div className="flex items-center gap-2">
-                <Car className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="capitalize truncate">{condition.replace('_', ' ')}</span>
-              </div>}
-            {damage_main && <div className="flex items-center gap-2">
-                <AlertTriangle className="h-3 w-3 text-orange-500 flex-shrink-0" />
-                <span className="truncate">Main Damage: {String(damage_main)}</span>
-              </div>}
-            {damage_second && <div className="flex items-center gap-2">
-                <AlertTriangle className="h-3 w-3 text-yellow-500 flex-shrink-0" />
-                <span className="truncate">Secondary: {String(damage_second)}</span>
-              </div>}
-          </div>
-        )}
-
         {/* Pricing Information */}
-        <div className="space-y-2 mb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <div className="space-y-1">
-              <span className="text-xl sm:text-2xl font-bold text-primary">
-                €{price.toLocaleString()}
-              </span>
-              {bid && bid !== price && (
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <DollarSign className="h-3 w-3" />
-                  <span>Current Bid: €{bid.toLocaleString()}</span>
-                </div>
-              )}
-              {final_price && (
-                <div className="flex items-center gap-1 text-xs text-green-600">
-                  <DollarSign className="h-3 w-3" />
-                  <span>Final Price: €{final_price.toLocaleString()}</span>
-                </div>
-              )}
-            </div>
-            <span className="text-xs text-muted-foreground">
-              Deri ne portin e Durresit
-            </span>
-          </div>
-          
-          {/* Additional Pricing Details */}
-          {(estimate_repair_price || pre_accident_price || clean_wholesale_price || actual_cash_value) && (
-            <div className="grid grid-cols-2 gap-2 text-xs border-t pt-2">
-              {estimate_repair_price && (
-                <div className="flex items-center gap-1">
-                  <DollarSign className="h-3 w-3 text-orange-500" />
-                  <span>Repair: €{estimate_repair_price.toLocaleString()}</span>
-                </div>
-              )}
-              {pre_accident_price && (
-                <div className="flex items-center gap-1">
-                  <DollarSign className="h-3 w-3 text-blue-500" />
-                  <span>Pre-accident: €{pre_accident_price.toLocaleString()}</span>
-                </div>
-              )}
-              {clean_wholesale_price && (
-                <div className="flex items-center gap-1">
-                  <DollarSign className="h-3 w-3 text-green-500" />
-                  <span>Wholesale: €{clean_wholesale_price.toLocaleString()}</span>
-                </div>
-              )}
-              {actual_cash_value && (
-                <div className="flex items-center gap-1">
-                  <DollarSign className="h-3 w-3 text-purple-500" />
-                  <span>Cash Value: €{actual_cash_value.toLocaleString()}</span>
-                </div>
-              )}
-            </div>
-          )}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+          <span className="text-xl sm:text-2xl font-bold text-primary">
+            €{price.toLocaleString()}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            Deri ne portin e Durresit
+          </span>
         </div>
-
-        {/* Sale Information */}
-        {(sale_date || seller || seller_type || domain) && (
-          <div className="space-y-1 mb-4 text-xs border-t pt-3">
-            <h4 className="font-medium text-muted-foreground mb-2">Sale Information</h4>
-            {sale_date && <div className="flex items-center gap-2">
-                <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="truncate">Sale Date: {new Date(sale_date).toLocaleDateString()}</span>
-              </div>}
-            {seller && <div className="flex items-center gap-2">
-                <Car className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="truncate">Seller: {String(seller)}</span>
-              </div>}
-            {seller_type && <div className="flex items-center gap-2">
-                <Car className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="capitalize truncate">Type: {String(seller_type)}</span>
-              </div>}
-            {domain && <div className="flex items-center gap-2">
-                <Car className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="truncate">Source: {String(domain).replace('_', '.')}</span>
-              </div>}
-          </div>
-        )}
 
         {/* VIN */}
         {vin && (
