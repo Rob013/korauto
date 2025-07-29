@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 
 export type SortOption = 'price_low' | 'price_high' | 'year_new' | 'year_old' | 'mileage_low' | 'mileage_high' | 'make_az' | 'make_za' | 'popular';
 
-interface Car {
+// Use a generic type that works with both secure API cars and other car types
+interface FlexibleCar {
   id: string;
   manufacturer?: { name: string };
   model?: { name: string };
@@ -14,7 +15,7 @@ interface Car {
   condition?: string;
   lot_number?: string;
   title?: string;
-  status?: string;
+  status?: number | string; // Allow both to handle different API types
   sale_status?: string;
   final_price?: number;
   generation?: { name: string };
@@ -33,7 +34,7 @@ interface Car {
     };
     bid?: number;
     lot?: string;
-    status?: string;
+    status?: string | number;
     sale_status?: string;
     final_price?: number;
     estimate_repair_price?: number;
@@ -57,7 +58,7 @@ interface Car {
   popularity_score?: number;
 }
 
-export const useSortedCars = (cars: Car[], sortBy: SortOption) => {
+export const useSortedCars = (cars: FlexibleCar[], sortBy: SortOption) => {
   return useMemo(() => {
     if (!cars || cars.length === 0) return [];
 

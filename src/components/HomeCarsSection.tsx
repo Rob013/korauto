@@ -8,27 +8,10 @@ import { useSecureAuctionAPI } from '@/hooks/useSecureAuctionAPI';
 import FilterForm from '@/components/FilterForm';
 import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
 import { useRandomCars } from '@/hooks/useRandomCars';
-import { useDailyRotatingCars } from '@/hooks/useDailyRotatingCars';
 import { useSortedCars, getSortOptions, SortOption } from '@/hooks/useSortedCars';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowUpDown } from 'lucide-react';
 import { preloadImages } from '@/hooks/useImagePreload';
-interface Car {
-  id: string;
-  make: string;
-  model: string;
-  year: number;
-  price: number;
-  image?: string;
-  vin?: string;
-  mileage?: string;
-  transmission?: string;
-  fuel?: string;
-  color?: string;
-  condition?: string;
-  lot?: string;
-  title?: string;
-}
 interface ApiFilters {
   manufacturer_id?: string;
   model_id?: string;
@@ -84,12 +67,11 @@ const HomeCarsSection = memo(() => {
   const [showAllCars, setShowAllCars] = useState(false);
   const [germanManufacturerIds, setGermanManufacturerIds] = useState<string[]>([]);
 
-  // Use daily rotating cars with German car priority - get 50 cars, show 8 initially
+  // Just use the fetched cars directly without rotation - show 50 cars, display 8 initially
   const hasFilters = Object.keys(filters).some(key => filters[key] !== undefined && filters[key] !== '');
-  const dailyRotatingCars = useDailyRotatingCars(cars, hasFilters, 50);
-  const sortedCars = useSortedCars(dailyRotatingCars, sortBy);
+  const sortedCars = useSortedCars(cars, sortBy);
 
-  // Display logic: show 8 initially, then all 50 on "show more"
+  // Display logic: show 8 initially, then all 50+ on "show more"
   const displayedCars = showAllCars ? sortedCars : sortedCars.slice(0, 8);
   
   // Function to fetch initial set of cars (50 cars total)
@@ -317,7 +299,7 @@ const HomeCarsSection = memo(() => {
                   size="lg" 
                   className="bg-card border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3"
                 >
-                  Shiko më shumë ({sortedCars.length - 8} të tjera)
+                  Shiko të gjitha ({sortedCars.length} makina)
                 </Button>
               )}
               

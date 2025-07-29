@@ -268,9 +268,9 @@ export const useSecureAuctionAPI = () => {
     setError(null);
 
     try {
-      // For homepage, fetch multiple pages to get ~50 cars total
+      // For homepage, fetch multiple pages to get ~36 cars total (reduced from 60)
       const isHomepage = Object.keys(filters).length === 0;
-      const pagesToFetch = isHomepage ? 5 : 1; // 5 pages × 12 cars = 60 cars for homepage
+      const pagesToFetch = isHomepage ? 3 : 1; // 3 pages × 12 cars = 36 cars for homepage
       
       let allCars: Car[] = [];
       
