@@ -710,139 +710,168 @@ const CarDetails = () => {
               <div class="car-diagram">
                 <h4 style="text-align: center; margin-bottom: 20px; color: hsl(var(--foreground));">Vehicle Inspection Diagram</h4>
                 
-                <!-- Car Inspection Diagram - Simple Black Lines -->
-                <div style="display: flex; justify-content: center; margin-bottom: 30px;">
-                  <svg width="800" height="500" viewBox="0 0 800 500" style="border: 1px solid hsl(var(--border)); border-radius: 8px; background: hsl(var(--card));">
-                    <!-- Title -->
-                    <text x="400" y="25" text-anchor="middle" fill="hsl(var(--foreground))" font-size="18" font-weight="bold">Vehicle Inspection Diagram</text>
-                    
-                    <!-- Front View (앞/전방) -->
-                    <g transform="translate(50, 60)">
-                      <text x="150" y="-5" text-anchor="middle" fill="hsl(var(--foreground))" font-size="14" font-weight="bold">Front View (앞/전방)</text>
-                      
-                      <!-- Car outline from front - Simple black lines -->
-                      <path d="M50 50 L50 280 L80 300 L220 300 L250 280 L250 50 Z" 
-                            fill="white" stroke="black" stroke-width="2"/>
-                      
-                      <!-- Hood -->
-                      <rect x="70" y="50" width="160" height="40" fill="white" stroke="black" stroke-width="1" id="hood-front"/>
-                      <text x="150" y="75" text-anchor="middle" fill="black" font-size="10" font-weight="bold">Hood</text>
-                      <text x="150" y="63" text-anchor="middle" fill="red" font-size="14" font-weight="bold" id="hood-marker"></text>
-                      
-                      <!-- Front Bumper -->
-                      <rect x="60" y="90" width="180" height="25" fill="white" stroke="black" stroke-width="1" id="front-bumper-main"/>
-                      <text x="150" y="107" text-anchor="middle" fill="black" font-size="10" font-weight="bold">Front Bumper</text>
-                      <text x="150" y="98" text-anchor="middle" fill="red" font-size="14" font-weight="bold" id="front-bumper-marker"></text>
-                      
-                      <!-- Left Front Fender -->
-                      <rect x="50" y="115" width="40" height="60" fill="white" stroke="black" stroke-width="1" id="left-front-fender"/>
-                      <text x="70" y="150" text-anchor="middle" fill="black" font-size="9" font-weight="bold">L Fender</text>
-                      <text x="70" y="130" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="left-front-fender-marker"></text>
-                      
-                      <!-- Right Front Fender -->
-                      <rect x="210" y="115" width="40" height="60" fill="white" stroke="black" stroke-width="1" id="right-front-fender"/>
-                      <text x="230" y="150" text-anchor="middle" fill="black" font-size="9" font-weight="bold">R Fender</text>
-                      <text x="230" y="130" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="right-front-fender-marker"></text>
-                      
-                      <!-- Left Front Door -->
-                      <rect x="90" y="115" width="50" height="80" fill="white" stroke="black" stroke-width="1" id="left-front-door"/>
-                      <text x="115" y="160" text-anchor="middle" fill="black" font-size="9" font-weight="bold">L F Door</text>
-                      <text x="115" y="140" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="left-front-door-marker"></text>
-                      
-                      <!-- Right Front Door -->
-                      <rect x="160" y="115" width="50" height="80" fill="white" stroke="black" stroke-width="1" id="right-front-door"/>
-                      <text x="185" y="160" text-anchor="middle" fill="black" font-size="9" font-weight="bold">R F Door</text>
-                      <text x="185" y="140" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="right-front-door-marker"></text>
-                      
-                      <!-- Left Rear Door -->
-                      <rect x="90" y="195" width="50" height="70" fill="white" stroke="black" stroke-width="1" id="left-rear-door"/>
-                      <text x="115" y="235" text-anchor="middle" fill="black" font-size="9" font-weight="bold">L R Door</text>
-                      <text x="115" y="215" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="left-rear-door-marker"></text>
-                      
-                      <!-- Right Rear Door -->
-                      <rect x="160" y="195" width="50" height="70" fill="white" stroke="black" stroke-width="1" id="right-rear-door"/>
-                      <text x="185" y="235" text-anchor="middle" fill="black" font-size="9" font-weight="bold">R R Door</text>
-                      <text x="185" y="215" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="right-rear-door-marker"></text>
-                      
-                      <!-- Trunk -->
-                      <rect x="70" y="265" width="160" height="35" fill="white" stroke="black" stroke-width="1" id="trunk-main"/>
-                      <text x="150" y="285" text-anchor="middle" fill="black" font-size="10" font-weight="bold">Trunk</text>
-                      <text x="150" y="275" text-anchor="middle" fill="red" font-size="14" font-weight="bold" id="trunk-marker"></text>
-                      
-                      <!-- Wheels -->
-                      <circle cx="80" cy="320" r="15" fill="white" stroke="black" stroke-width="2" id="front-left-wheel"/>
-                      <circle cx="220" cy="320" r="15" fill="white" stroke="black" stroke-width="2" id="front-right-wheel"/>
-                    </g>
-                    
-                    <!-- Top View (위/후방) -->
-                    <g transform="translate(400, 60)">
-                      <text x="150" y="-5" text-anchor="middle" fill="hsl(var(--foreground))" font-size="14" font-weight="bold">Top View (위/후방)</text>
-                      
-                      <!-- Car outline from top -->
-                      <path d="M80 50 L80 80 L50 100 L50 250 L80 270 L220 270 L250 250 L250 100 L220 80 L220 50 Z" 
-                            fill="white" stroke="black" stroke-width="2"/>
-                      
-                      <!-- Roof -->
-                      <rect x="80" y="50" width="140" height="220" fill="white" stroke="black" stroke-width="1" id="roof-main"/>
-                      <text x="150" y="165" text-anchor="middle" fill="black" font-size="12" font-weight="bold">Roof</text>
-                      <text x="150" y="145" text-anchor="middle" fill="red" font-size="14" font-weight="bold" id="roof-marker"></text>
-                      
-                      <!-- Windshield -->
-                      <rect x="85" y="55" width="130" height="25" fill="white" stroke="black" stroke-width="1"/>
-                      <text x="150" y="72" text-anchor="middle" fill="black" font-size="9">Windshield</text>
-                      
-                      <!-- Rear Window -->
-                      <rect x="85" y="240" width="130" height="25" fill="white" stroke="black" stroke-width="1"/>
-                      <text x="150" y="257" text-anchor="middle" fill="black" font-size="9">Rear Window</text>
-                      
-                      <!-- Side Mirrors -->
-                      <rect x="65" y="85" width="15" height="10" fill="white" stroke="black" stroke-width="1"/>
-                      <rect x="220" y="85" width="15" height="10" fill="white" stroke="black" stroke-width="1"/>
-                      
-                      <!-- Wheels positions -->
-                      <rect x="40" y="90" width="20" height="40" fill="white" stroke="black" stroke-width="1"/>
-                      <rect x="240" y="90" width="20" height="40" fill="white" stroke="black" stroke-width="1"/>
-                      <rect x="40" y="190" width="20" height="40" fill="white" stroke="black" stroke-width="1"/>
-                      <rect x="240" y="190" width="20" height="40" fill="white" stroke="black" stroke-width="1"/>
-                    </g>
-                    
-                    <!-- Rear View -->
-                    <g transform="translate(150, 370)">
-                      <text x="100" y="-5" text-anchor="middle" fill="hsl(var(--foreground))" font-size="14" font-weight="bold">Rear View (뒤/후방)</text>
-                      
-                      <!-- Rear Bumper -->
-                      <rect x="20" y="10" width="160" height="25" fill="white" stroke="black" stroke-width="1" id="rear-bumper-main"/>
-                      <text x="100" y="27" text-anchor="middle" fill="black" font-size="10" font-weight="bold">Rear Bumper</text>
-                      <text x="100" y="18" text-anchor="middle" fill="red" font-size="14" font-weight="bold" id="rear-bumper-marker"></text>
-                      
-                      <!-- Quarter Panels -->
-                      <rect x="10" y="35" width="35" height="50" fill="white" stroke="black" stroke-width="1" id="left-quarter-panel"/>
-                      <text x="27" y="65" text-anchor="middle" fill="black" font-size="9" font-weight="bold">L Quarter</text>
-                      <text x="27" y="50" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="left-quarter-panel-marker"></text>
-                      
-                      <rect x="155" y="35" width="35" height="50" fill="white" stroke="black" stroke-width="1" id="right-quarter-panel"/>
-                      <text x="172" y="65" text-anchor="middle" fill="black" font-size="9" font-weight="bold">R Quarter</text>
-                      <text x="172" y="50" text-anchor="middle" fill="red" font-size="12" font-weight="bold" id="right-quarter-panel-marker"></text>
-                      
-                      <!-- Rear Lights -->
-                      <rect x="45" y="40" width="15" height="20" fill="white" stroke="black" stroke-width="1"/>
-                      <rect x="140" y="40" width="15" height="20" fill="white" stroke="black" stroke-width="1"/>
-                    </g>
-                  </svg>
+                <!-- Four-View Car Inspection Diagram -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+                  
+                  <!-- FRONT VIEW - Top Left Quadrant -->
+                  <div style="text-align: center;">
+                    <h5 style="font-size: 14px; font-weight: bold; margin-bottom: 15px; color: hsl(var(--foreground));">Front (Forward)</h5>
+                    <div style="border: 1px solid hsl(var(--border)); border-radius: 8px; padding: 10px; background: hsl(var(--card));">
+                      <svg viewBox="0 0 200 160" style="width: 100%; height: auto; max-width: 300px;">
+                        <!-- Car outline - front view -->
+                        <path d="M40 20 Q40 15 45 15 L155 15 Q160 15 160 20 L160 140 Q160 145 155 145 L45 145 Q40 145 40 140 Z"
+                              fill="none" stroke="#64748b" stroke-width="2"/>
+                        
+                        <!-- Windshield -->
+                        <rect x="50" y="25" width="100" height="40" fill="#9ca3af" stroke="#64748b" stroke-width="1" rx="3" />
+                        
+                        <!-- Headlights -->
+                        <ellipse cx="65" cy="135" rx="12" ry="8" fill="none" stroke="#64748b" stroke-width="1" />
+                        <ellipse cx="135" cy="135" rx="12" ry="8" fill="none" stroke="#64748b" stroke-width="1" />
+                        
+                        <!-- Front grille -->
+                        <rect x="80" y="120" width="40" height="15" fill="none" stroke="#64748b" stroke-width="1" rx="2" />
+                        
+                        <!-- Hood line -->
+                        <line x1="60" y1="80" x2="140" y2="80" stroke="#64748b" stroke-width="1" />
+                        
+                        <!-- Front bumper -->
+                        <path d="M50 140 Q100 150 150 140" fill="none" stroke="#64748b" stroke-width="2" />
+                        
+                        <!-- Dynamic Red markers based on inspection data -->
+                        ${car.details.inspect_outer.find(item => item.type.code === 'P051' || item.type.title.toLowerCase().includes('hood'))?.statusTypes.some(s => s.code === 'X') ? 
+                          '<circle cx="100" cy="50" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
+                        ${car.details.inspect_outer.find(item => item.type.title.toLowerCase().includes('front') && item.type.title.toLowerCase().includes('bumper'))?.statusTypes.some(s => s.code === 'X') ? 
+                          '<circle cx="100" cy="140" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
+                        ${car.details.inspect_outer.find(item => item.type.code === 'P021')?.statusTypes.some(s => s.code === 'X') ? 
+                          '<circle cx="65" cy="100" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
+                        ${car.details.inspect_outer.find(item => item.type.code === 'P022')?.statusTypes.some(s => s.code === 'X') ? 
+                          '<circle cx="135" cy="100" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
+                      </svg>
+                    </div>
+                  </div>
+
+                  <!-- RIGHT VIEW - Top Right Quadrant -->
+                  <div style="text-align: center;">
+                    <h5 style="font-size: 14px; font-weight: bold; margin-bottom: 15px; color: hsl(var(--foreground));">Right (Right Side)</h5>
+                    <div style="border: 1px solid hsl(var(--border)); border-radius: 8px; padding: 10px; background: hsl(var(--card));">
+                      <svg viewBox="0 0 200 120" style="width: 100%; height: auto; max-width: 300px;">
+                        <!-- Car outline - right side view -->
+                        <path d="M20 80 L30 80 Q40 70 50 65 L60 60 Q70 55 80 55 L120 55 Q130 55 140 60 L150 65 Q160 70 170 80 L180 80 Q180 85 175 90 L25 90 Q20 85 20 80 Z"
+                              fill="none" stroke="#64748b" stroke-width="2"/>
+                        
+                        <!-- Windows -->
+                        <rect x="55" y="35" width="30" height="20" fill="#9ca3af" stroke="#64748b" stroke-width="1" rx="2" />
+                        <rect x="90" y="35" width="30" height="20" fill="#9ca3af" stroke="#64748b" stroke-width="1" rx="2" />
+                        <rect x="125" y="35" width="30" height="20" fill="#9ca3af" stroke="#64748b" stroke-width="1" rx="2" />
+                        
+                        <!-- Doors -->
+                        <line x1="85" y1="55" x2="85" y2="85" stroke="#64748b" stroke-width="1" />
+                        <line x1="120" y1="55" x2="120" y2="85" stroke="#64748b" stroke-width="1" />
+                        
+                        <!-- Wheels -->
+                        <circle cx="45" cy="95" r="12" fill="none" stroke="#64748b" stroke-width="2" />
+                        <circle cx="155" cy="95" r="12" fill="none" stroke="#64748b" stroke-width="2" />
+                        
+                        <!-- Dynamic Red markers -->
+                        ${car.details.inspect_outer.find(item => item.type.code === 'P012')?.statusTypes.some(s => s.code === 'X') ? 
+                          '<circle cx="70" cy="70" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
+                        ${car.details.inspect_outer.find(item => item.type.code === 'P014')?.statusTypes.some(s => s.code === 'X') ? 
+                          '<circle cx="105" cy="70" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
+                        ${car.details.inspect_outer.find(item => item.type.code === 'P024')?.statusTypes.some(s => s.code === 'X') ? 
+                          '<circle cx="140" cy="70" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
+                      </svg>
+                    </div>
+                  </div>
+
+                  <!-- LEFT VIEW - Bottom Left Quadrant -->
+                  <div style="text-align: center;">
+                    <h5 style="font-size: 14px; font-weight: bold; margin-bottom: 15px; color: hsl(var(--foreground));">Left (Left Side)</h5>
+                    <div style="border: 1px solid hsl(var(--border)); border-radius: 8px; padding: 10px; background: hsl(var(--card));">
+                      <svg viewBox="0 0 200 120" style="width: 100%; height: auto; max-width: 300px;">
+                        <!-- Car outline - left side view (mirrored) -->
+                        <path d="M180 80 L170 80 Q160 70 150 65 L140 60 Q130 55 120 55 L80 55 Q70 55 60 60 L50 65 Q40 70 30 80 L20 80 Q20 85 25 90 L175 90 Q180 85 180 80 Z"
+                              fill="none" stroke="#64748b" stroke-width="2"/>
+                        
+                        <!-- Windows -->
+                        <rect x="45" y="35" width="30" height="20" fill="#9ca3af" stroke="#64748b" stroke-width="1" rx="2" />
+                        <rect x="80" y="35" width="30" height="20" fill="#9ca3af" stroke="#64748b" stroke-width="1" rx="2" />
+                        <rect x="115" y="35" width="30" height="20" fill="#9ca3af" stroke="#64748b" stroke-width="1" rx="2" />
+                        
+                        <!-- Doors -->
+                        <line x1="115" y1="55" x2="115" y2="85" stroke="#64748b" stroke-width="1" />
+                        <line x1="80" y1="55" x2="80" y2="85" stroke="#64748b" stroke-width="1" />
+                        
+                        <!-- Wheels -->
+                        <circle cx="155" cy="95" r="12" fill="none" stroke="#64748b" stroke-width="2" />
+                        <circle cx="45" cy="95" r="12" fill="none" stroke="#64748b" stroke-width="2" />
+                        
+                        <!-- Dynamic Red markers -->
+                        ${car.details.inspect_outer.find(item => item.type.code === 'P011')?.statusTypes.some(s => s.code === 'X') ? 
+                          '<circle cx="130" cy="70" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
+                        ${car.details.inspect_outer.find(item => item.type.code === 'P013')?.statusTypes.some(s => s.code === 'X') ? 
+                          '<circle cx="95" cy="70" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
+                        ${car.details.inspect_outer.find(item => item.type.code === 'P023')?.statusTypes.some(s => s.code === 'X') ? 
+                          '<circle cx="60" cy="70" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
+                      </svg>
+                    </div>
+                  </div>
+
+                  <!-- REAR VIEW - Bottom Right Quadrant -->
+                  <div style="text-align: center;">
+                    <h5 style="font-size: 14px; font-weight: bold; margin-bottom: 15px; color: hsl(var(--foreground));">Rear (Backward)</h5>
+                    <div style="border: 1px solid hsl(var(--border)); border-radius: 8px; padding: 10px; background: hsl(var(--card));">
+                      <svg viewBox="0 0 200 160" style="width: 100%; height: auto; max-width: 300px;">
+                        <!-- Car outline - rear view -->
+                        <path d="M40 20 Q40 15 45 15 L155 15 Q160 15 160 20 L160 140 Q160 145 155 145 L45 145 Q40 145 40 140 Z"
+                              fill="none" stroke="#64748b" stroke-width="2"/>
+                        
+                        <!-- Rear window -->
+                        <rect x="50" y="25" width="100" height="40" fill="#9ca3af" stroke="#64748b" stroke-width="1" rx="3" />
+                        
+                        <!-- Taillights -->
+                        <ellipse cx="65" cy="135" rx="12" ry="8" fill="none" stroke="#64748b" stroke-width="1" />
+                        <ellipse cx="135" cy="135" rx="12" ry="8" fill="none" stroke="#64748b" stroke-width="1" />
+                        
+                        <!-- License plate area -->
+                        <rect x="85" y="120" width="30" height="12" fill="none" stroke="#64748b" stroke-width="1" rx="1" />
+                        
+                        <!-- Trunk line -->
+                        <line x1="60" y1="80" x2="140" y2="80" stroke="#64748b" stroke-width="1" />
+                        
+                        <!-- Rear bumper -->
+                        <path d="M50 140 Q100 150 150 140" fill="none" stroke="#64748b" stroke-width="2" />
+                        
+                        <!-- Dynamic Red markers -->
+                        ${car.details.inspect_outer.find(item => item.type.title.toLowerCase().includes('trunk'))?.statusTypes.some(s => s.code === 'X') ? 
+                          '<circle cx="100" cy="50" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
+                        ${car.details.inspect_outer.find(item => item.type.title.toLowerCase().includes('rear') && item.type.title.toLowerCase().includes('bumper'))?.statusTypes.some(s => s.code === 'X') ? 
+                          '<circle cx="100" cy="140" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
+                        ${car.details.inspect_outer.find(item => item.type.code === 'P043')?.statusTypes.some(s => s.code === 'X') ? 
+                          '<circle cx="65" cy="100" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
+                        ${car.details.inspect_outer.find(item => item.type.code === 'P044')?.statusTypes.some(s => s.code === 'X') ? 
+                          '<circle cx="135" cy="100" r="8" fill="#ef4444" stroke="#fff" stroke-width="2" opacity="0.9" />' : ''}
+                      </svg>
+                    </div>
+                  </div>
                 </div>
                 
-                <div class="legend">
-                  <div class="legend-item">
-                    <div class="legend-color" style="background: hsl(142.1, 76.2%, 36.3%);"></div>
-                    <span>Normal Condition</span>
-                  </div>
-                  <div class="legend-item">
-                    <div class="legend-color" style="background: hsl(47.9, 95.8%, 53.1%);"></div>
-                    <span>Repair/Welding Required</span>
-                  </div>
-                  <div class="legend-item">
-                    <div class="legend-color" style="background: hsl(0, 84.2%, 60.2%);"></div>
-                    <span>Exchange/Replacement</span>
+                <!-- Legend -->
+                <div style="margin-bottom: 20px; padding: 15px; background: hsl(var(--muted)); border-radius: 8px;">
+                  <h5 style="font-size: 14px; font-weight: bold; margin-bottom: 10px; color: hsl(var(--foreground));">Legend</h5>
+                  <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <div style="width: 16px; height: 16px; background: #ef4444; border-radius: 50%;"></div>
+                      <span style="font-size: 12px; color: hsl(var(--foreground));">Exchanged/Replaced Parts</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <div style="width: 16px; height: 16px; background: #9ca3af; border-radius: 4px;"></div>
+                      <span style="font-size: 12px; color: hsl(var(--foreground));">Windows</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <div style="width: 16px; height: 16px; border: 2px solid #64748b; border-radius: 4px; background: transparent;"></div>
+                      <span style="font-size: 12px; color: hsl(var(--foreground));">Car Body</span>
+                    </div>
                   </div>
                 </div>
               </div>
