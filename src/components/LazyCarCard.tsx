@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { Car, Gauge, Settings, Fuel, Palette, Shield, Heart } from "lucide-react";
-import InspectionRequestForm from "@/components/InspectionRequestForm";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
