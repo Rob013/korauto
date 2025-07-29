@@ -908,13 +908,13 @@ const CarDetails = () => {
         </div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
           {/* Left Column - Images and Gallery */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-4 lg:space-y-8">
             {/* Main Image */}
             <Card className="shadow-lg border-0 overflow-hidden">
               <CardContent className="p-0">
-                <div className="relative h-[500px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer" onClick={() => setIsImageZoomOpen(true)}>
+                <div className="relative h-[300px] sm:h-[400px] lg:h-[500px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer" onClick={() => setIsImageZoomOpen(true)}>
                   {images.length > 0 ? (
                     <img 
                       src={images[selectedImageIndex]} 
@@ -968,40 +968,40 @@ const CarDetails = () => {
 
             {/* Enhanced Vehicle Specifications */}
             <Card className="shadow-lg border-0">
-              <CardContent className="p-8">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-2xl font-bold flex items-center text-foreground">
-                    <Settings className="h-6 w-6 mr-3 text-primary" />
-                    Specifikimet Teknike
-                  </h3>
-                  
-                  {/* Small buttons beside title */}
-                   <div className="flex items-center gap-2">
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-primary">
-                        €{car.price.toLocaleString()}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        +350 euro deri ne Prishtine
-                      </div>
-                    </div>
-                    <InspectionRequestForm 
-                      trigger={
-                        <Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
-                          <FileText className="h-4 w-4 mr-1" />
-                          Kërko Inspektim
-                        </Button>
-                      }
-                      carId={car.id}
-                      carMake={car.make}
-                      carModel={car.model}
-                      carYear={car.year}
-                    />
-                  </div>
+              <CardContent className="p-4 lg:p-8">
+                 <div className="flex flex-col gap-4 mb-6">
+                   <h3 className="text-xl lg:text-2xl font-bold flex items-center text-foreground">
+                     <Settings className="h-5 w-5 lg:h-6 lg:w-6 mr-2 lg:mr-3 text-primary" />
+                     Specifikimet Teknike
+                   </h3>
+                   
+                   {/* Price and action buttons */}
+                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                     <div className="text-left">
+                       <div className="text-xl lg:text-2xl font-bold text-primary">
+                         €{car.price.toLocaleString()}
+                       </div>
+                       <div className="text-sm text-muted-foreground">
+                         +350€ deri në Prishtinë
+                       </div>
+                     </div>
+                     <InspectionRequestForm 
+                       trigger={
+                         <Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto">
+                           <FileText className="h-4 w-4 mr-1" />
+                           Kërko Inspektim
+                         </Button>
+                       }
+                       carId={car.id}
+                       carMake={car.make}
+                       carModel={car.model}
+                       carYear={car.year}
+                     />
+                   </div>
                 </div>
                 
-                {/* Main Specifications Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                 {/* Main Specifications Grid */}
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4 mb-6">
                   {/* Basic Info */}
                   <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-3">
@@ -1119,26 +1119,25 @@ const CarDetails = () => {
 
             {/* Detailed Information Section */}
             <Card className="shadow-lg border-0">
-              <CardContent className="p-8">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-2xl font-bold flex items-center text-foreground">
-                    <Info className="h-6 w-6 mr-3 text-primary" />
-                    Informacione të Detajuara
-                  </h3>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      const detailsWindow = window.open('', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
-                      if (detailsWindow) {
-                        detailsWindow.document.write(generateDetailedInfoHTML(car));
-                        detailsWindow.document.title = `${car.year} ${car.make} ${car.model} - Detailed Information`;
-                      }
-                    }}
-                    className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                  >
-                    Shiko Detajet
-                    <ChevronDown className="h-4 w-4 ml-2" />
-                  </Button>
+              <CardContent className="p-4 lg:p-8">
+                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                   <h3 className="text-xl lg:text-2xl font-bold flex items-center text-foreground">
+                     <Info className="h-5 w-5 lg:h-6 lg:w-6 mr-2 lg:mr-3 text-primary" />
+                     Informacione të Detajuara
+                   </h3>
+                   <Button
+                     variant="outline"
+                     onClick={() => {
+                       const detailsWindow = window.open('', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+                       if (detailsWindow) {
+                         detailsWindow.document.write(generateDetailedInfoHTML(car));
+                         detailsWindow.document.title = `${car.year} ${car.make} ${car.model} - Informacione të Detajuara`;
+                       }
+                     }}
+                     className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto"
+                   >
+                     Shiko Detajet
+                   </Button>
                 </div>
 
                 {showDetailedInfo && (
