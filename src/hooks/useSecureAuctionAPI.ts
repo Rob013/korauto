@@ -189,6 +189,36 @@ export const useSecureAuctionAPI = () => {
     }
   };
 
+  const fetchFilterCounts = async (currentFilters: APIFilters = {}, manufacturersList: any[] = []) => {
+    // Mock implementation for backward compatibility
+    console.log('📊 fetchFilterCounts called with filters:', currentFilters);
+    return {
+      manufacturers: {},
+      models: {},
+      generations: {},
+      colors: {},
+      fuelTypes: {},
+      transmissions: {},
+      years: {}
+    };
+  };
+
+  const fetchCarCounts = async (filters: APIFilters = {}): Promise<{ [key: string]: number }> => {
+    try {
+      const apiFilters = {
+        ...filters,
+        per_page: '1',
+        simple_paginate: '1'
+      };
+
+      const data: APIResponse = await makeSecureAPICall('cars', apiFilters);
+      return { total: data.meta?.total || 0 };
+    } catch (err) {
+      console.error('❌ Error fetching car counts:', err);
+      return { total: 0 };
+    }
+  };
+
   const fetchCarById = async (carId: string): Promise<Car | null> => {
     try {
       const data = await makeSecureAPICall('cars', {}, carId);
@@ -216,6 +246,8 @@ export const useSecureAuctionAPI = () => {
     fetchModels,
     fetchGenerations,
     fetchCarById,
+    fetchCarCounts,
+    fetchFilterCounts,
     loadMore
   };
 };
