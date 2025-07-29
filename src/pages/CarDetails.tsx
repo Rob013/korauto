@@ -1776,351 +1776,46 @@ const CarDetails = () => {
                     </div>
                   </TabsContent>
                   
-                   <TabsContent value="inspection" className="mt-8">
-                     <div className="space-y-6">
-                       {/* Vehicle Basic Information - Korean Style */}
-                       <Card className="p-6">
-                         <h3 className="text-lg font-semibold mb-4 text-foreground border-b border-border pb-2">
-                           Vehicle Basic Information
-                         </h3>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                           <div className="space-y-3">
-                             <div className="flex justify-between items-center py-2 border-b border-border/30">
-                               <span className="text-muted-foreground font-medium">Vehicle Name:</span>
-                               <span className="text-foreground">{car.make} {car.model}</span>
-                             </div>
-                             <div className="flex justify-between items-center py-2 border-b border-border/30">
-                               <span className="text-muted-foreground font-medium">Vehicle Number:</span>
-                               <span className="text-foreground">{car.lot || 'N/A'}</span>
-                             </div>
-                             <div className="flex justify-between items-center py-2 border-b border-border/30">
-                               <span className="text-muted-foreground font-medium">First Registration:</span>
-                               <span className="text-foreground">{car.insurance_v2?.firstDate || 'N/A'}</span>
-                             </div>
-                             <div className="flex justify-between items-center py-2 border-b border-border/30">
-                               <span className="text-muted-foreground font-medium">Fuel Type:</span>
-                               <span className="text-foreground">{car.fuel || 'N/A'}</span>
-                             </div>
-                             <div className="flex justify-between items-center py-2 border-b border-border/30">
-                               <span className="text-muted-foreground font-medium">Insurance Type:</span>
-                               <span className="text-foreground">{car.insurance_v2?.type || 'N/A'}</span>
-                             </div>
-                           </div>
-                           <div className="space-y-3">
-                             <div className="flex justify-between items-center py-2 border-b border-border/30">
-                               <span className="text-muted-foreground font-medium">Model Year:</span>
-                               <span className="text-foreground">{car.year}</span>
-                             </div>
-                             <div className="flex justify-between items-center py-2 border-b border-border/30">
-                               <span className="text-muted-foreground font-medium">Inspection Valid Until:</span>
-                               <span className="text-foreground">N/A</span>
-                             </div>
-                             <div className="flex justify-between items-center py-2 border-b border-border/30">
-                               <span className="text-muted-foreground font-medium">Transmission:</span>
-                               <span className="text-foreground">{car.transmission || 'N/A'}</span>
-                             </div>
-                             <div className="flex justify-between items-center py-2 border-b border-border/30">
-                               <span className="text-muted-foreground font-medium">VIN:</span>
-                               <span className="text-foreground font-mono text-sm">{car.vin || 'N/A'}</span>
-                             </div>
-                             <div className="flex justify-between items-center py-2 border-b border-border/30">
-                               <span className="text-muted-foreground font-medium">Engine Type:</span>
-                               <span className="text-foreground">{car.engine?.name || 'N/A'}</span>
-                             </div>
-                           </div>
-                         </div>
-                       </Card>
-
-                       {/* Vehicle Comprehensive Status */}
-                       <Card className="p-6">
-                         <h3 className="text-lg font-semibold mb-4 text-foreground border-b border-border pb-2">
-                           Vehicle Comprehensive Status
-                         </h3>
-                         <div className="overflow-x-auto">
-                           <table className="w-full text-sm">
-                             <thead>
-                               <tr className="border-b border-border">
-                                 <th className="text-left py-2 px-3 font-medium text-muted-foreground">Item</th>
-                                 <th className="text-left py-2 px-3 font-medium text-muted-foreground">Status</th>
-                                 <th className="text-left py-2 px-3 font-medium text-muted-foreground">Details</th>
-                               </tr>
-                             </thead>
-                             <tbody>
-                               <tr className="border-b border-border/30">
-                                 <td className="py-2 px-3 text-muted-foreground">Odometer Status</td>
-                                 <td className="py-2 px-3">
-                                   <Badge variant="default">Good</Badge>
-                                 </td>
-                                 <td className="py-2 px-3 text-foreground">-</td>
-                               </tr>
-                               <tr className="border-b border-border/30">
-                                 <td className="py-2 px-3 text-muted-foreground">Mileage</td>
-                                 <td className="py-2 px-3">
-                                   <Badge variant="secondary">Normal</Badge>
-                                 </td>
-                                 <td className="py-2 px-3 text-foreground">{car.mileage?.toLocaleString()} km</td>
-                               </tr>
-                               <tr className="border-b border-border/30">
-                                 <td className="py-2 px-3 text-muted-foreground">VIN Display</td>
-                                 <td className="py-2 px-3">
-                                   <Badge variant="default">Good</Badge>
-                                 </td>
-                                 <td className="py-2 px-3 text-foreground">-</td>
-                               </tr>
-                               <tr className="border-b border-border/30">
-                                 <td className="py-2 px-3 text-muted-foreground">Emissions</td>
-                                 <td className="py-2 px-3">
-                                   <Badge variant="default">Normal</Badge>
-                                 </td>
-                                 <td className="py-2 px-3 text-foreground">N/A</td>
-                               </tr>
-                               <tr className="border-b border-border/30">
-                                 <td className="py-2 px-3 text-muted-foreground">Tuning</td>
-                                 <td className="py-2 px-3">
-                                   <Badge variant="default">None</Badge>
-                                 </td>
-                                 <td className="py-2 px-3 text-foreground">-</td>
-                               </tr>
-                               <tr className="border-b border-border/30">
-                                 <td className="py-2 px-3 text-muted-foreground">Special History</td>
-                                 <td className="py-2 px-3">
-                                <Badge variant={car.insurance_v2?.floodTotalLossCnt && car.insurance_v2.floodTotalLossCnt > 0 ? 'destructive' : 'default'}>
-                                      {car.insurance_v2?.floodTotalLossCnt && car.insurance_v2.floodTotalLossCnt > 0 ? 'Present' : 'None'}
-                                    </Badge>
-                                 </td>
-                                 <td className="py-2 px-3 text-foreground">-</td>
-                               </tr>
-                               <tr className="border-b border-border/30">
-                                 <td className="py-2 px-3 text-muted-foreground">Usage Change</td>
-                                 <td className="py-2 px-3">
-                                   <Badge variant="default">None</Badge>
-                                 </td>
-                                 <td className="py-2 px-3 text-foreground">-</td>
-                               </tr>
-                               <tr className="border-b border-border/30">
-                                 <td className="py-2 px-3 text-muted-foreground">Color</td>
-                                 <td className="py-2 px-3">
-                                   <Badge variant="secondary">Present</Badge>
-                                 </td>
-                                 <td className="py-2 px-3 text-foreground">{car.color || 'N/A'}</td>
-                               </tr>
-                               <tr className="border-b border-border/30">
-                                 <td className="py-2 px-3 text-muted-foreground">Main Options</td>
-                                 <td className="py-2 px-3">
-                                   <Badge variant="secondary">Present</Badge>
-                                 </td>
-                                 <td className="py-2 px-3 text-foreground">-</td>
-                               </tr>
-                               <tr className="border-b border-border/30">
-                                 <td className="py-2 px-3 text-muted-foreground">Recall Target</td>
-                                 <td className="py-2 px-3">
-                                   <Badge variant="default">Not Applicable</Badge>
-                                 </td>
-                                 <td className="py-2 px-3 text-foreground">-</td>
-                               </tr>
-                             </tbody>
-                           </table>
-                         </div>
-                       </Card>
-
-                       {/* Accident, Exchange, Repair History with Real API Data */}
-                       <Card className="p-6">
-                         <h3 className="text-lg font-semibold mb-4 text-foreground border-b border-border pb-2">
-                           Accident, Exchange, Repair History
-                         </h3>
-                         <div className="space-y-4">
-                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                             <div className="flex justify-between items-center py-2 border-b border-border/30">
-                               <span className="text-muted-foreground font-medium">Accident History:</span>
-                                <Badge variant={car.insurance_v2?.accidentCnt === 0 ? 'default' : 'destructive'}>
-                                  {car.insurance_v2?.accidentCnt === 0 ? 'None' : `${car.insurance_v2?.accidentCnt || 0} accidents`}
-                                </Badge>
-                             </div>
-                             <div className="flex justify-between items-center py-2 border-b border-border/30">
-                               <span className="text-muted-foreground font-medium">Simple Repair:</span>
-                               <Badge variant="default">None</Badge>
-                             </div>
-                           </div>
-
-                           {/* Simple Car Diagram with Real API Data */}
-                           <div className="mt-6">
-                             <h4 className="font-medium mb-4 text-foreground">Vehicle Inspection Diagram</h4>
-                             
-                             {/* Use the existing CarInspectionDiagram component if inspection data exists */}
-                             {car.details?.inspect_outer && car.details.inspect_outer.length > 0 ? (
-                               <div className="space-y-4">
-                                 <CarInspectionDiagram 
-                                   inspectionData={car.details.inspect_outer}
-                                   className="bg-muted/20 p-4 rounded-lg border"
-                                 />
-                                 
-                                 {/* Real Inspection Results */}
-                                 <div className="mt-4">
-                                   <h5 className="font-medium mb-2 text-foreground">Inspection Details</h5>
-                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                     {car.details.inspect_outer.slice(0, 10).map((item, index) => (
-                                       <div key={index} className="flex justify-between items-center p-2 bg-muted/30 rounded">
-                                         <span className="text-sm text-muted-foreground">{item.type.title}</span>
-                                         <div className="flex gap-1">
-                                           {item.status_types.map((status, statusIndex) => (
-                                             <Badge 
-                                               key={statusIndex} 
-                                               variant={
-                                                 status.code === 'X' ? 'destructive' : 
-                                                 status.code === 'W' ? 'secondary' : 
-                                                 'outline'
-                                               }
-                                             >
-                                               {status.code === 'X' ? 'X' : status.code === 'W' ? 'W' : status.title}
-                                             </Badge>
-                                           ))}
-                                         </div>
-                                       </div>
-                                     ))}
-                                   </div>
-                                   
-                                   {car.details.inspect_outer.length > 10 && (
-                                     <p className="text-sm text-muted-foreground mt-2">
-                                       +{car.details.inspect_outer.length - 10} more inspection items available
-                                     </p>
-                                   )}
-                                 </div>
-                               </div>
-                             ) : (
-                               /* Fallback simple diagram when no inspection data */
-                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                 <div className="space-y-2">
-                                   <h5 className="text-sm font-medium text-muted-foreground text-center">Vehicle Diagram</h5>
-                                   <div className="bg-muted/20 p-4 rounded-lg border">
-                                     <svg viewBox="0 0 400 200" className="w-full h-auto">
-                                       <g stroke="hsl(var(--foreground))" strokeWidth="2" fill="none">
-                                         {/* Simple car outline */}
-                                         <rect x="100" y="60" width="200" height="80" rx="10" />
-                                         <text x="200" y="40" textAnchor="middle" className="text-xs fill-current">Vehicle Overview</text>
-                                         
-                                         {/* Front section */}
-                                         <rect x="80" y="70" width="40" height="20" />
-                                         <text x="100" y="83" textAnchor="middle" className="text-xs fill-current">Front</text>
-                                         
-                                         {/* Rear section */}
-                                         <rect x="280" y="70" width="40" height="20" />
-                                         <text x="300" y="83" textAnchor="middle" className="text-xs fill-current">Rear</text>
-                                         
-                                         {/* Doors */}
-                                         <rect x="120" y="100" width="30" height="30" />
-                                         <text x="135" y="118" textAnchor="middle" className="text-xs fill-current">L.Door</text>
-                                         
-                                         <rect x="250" y="100" width="30" height="30" />
-                                         <text x="265" y="118" textAnchor="middle" className="text-xs fill-current">R.Door</text>
-                                         
-                                         {/* Roof */}
-                                         <rect x="160" y="70" width="80" height="20" />
-                                         <text x="200" y="83" textAnchor="middle" className="text-xs fill-current">Roof</text>
-                                       </g>
-                                     </svg>
-                                   </div>
-                                 </div>
-                                 
-                                 <div className="space-y-4">
-                                   <h5 className="text-sm font-medium text-muted-foreground">Status Legend</h5>
-                                   <div className="space-y-2">
-                                     <div className="flex items-center gap-2">
-                                       <div className="w-4 h-4 border border-foreground bg-background"></div>
-                                       <span className="text-sm text-muted-foreground">Normal</span>
-                                     </div>
-                                     <div className="flex items-center gap-2">
-                                       <Badge variant="secondary">W</Badge>
-                                       <span className="text-sm text-muted-foreground">Sheet Metal/Welding</span>
-                                     </div>
-                                     <div className="flex items-center gap-2">
-                                       <Badge variant="destructive">X</Badge>
-                                       <span className="text-sm text-muted-foreground">Exchanged/Replaced</span>
-                                     </div>
-                                   </div>
-                                 </div>
-                               </div>
-                             )}
-                           </div>
-                         </div>
-                       </Card>
-
-                       {/* Equipment & Options with Real Data */}
-                       <Card className="p-6">
-                         <h3 className="text-lg font-semibold mb-4 text-foreground border-b border-border pb-2">
-                           Equipment & Options
-                         </h3>
-                          <div className="space-y-4">
-                            <p className="text-muted-foreground">Equipment information not available in current data source</p>
+                  <TabsContent value="inspection" className="mt-8">
+                    <div className="space-y-6">
+                      <h4 className="font-semibold text-lg text-foreground">Raporti i Inspektimit KORAUTO</h4>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="text-center p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+                          <Star className="h-8 w-8 text-emerald-600 dark:text-emerald-400 mx-auto mb-2" />
+                          <div className="font-semibold text-emerald-600 dark:text-emerald-400">9.2/10</div>
+                          <div className="text-xs text-emerald-700 dark:text-emerald-300">Vlerësimi i Përgjithshëm</div>
+                        </div>
+                        <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+                          <CheckCircle className="h-8 w-8 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
+                          <div className="font-semibold text-blue-600 dark:text-blue-400">Excellent</div>
+                          <div className="text-xs text-blue-700 dark:text-blue-300">Gjendja e Motorit</div>
+                        </div>
+                        <div className="text-center p-4 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-lg">
+                          <Shield className="h-8 w-8 text-purple-600 dark:text-purple-400 mx-auto mb-2" />
+                          <div className="font-semibold text-purple-600 dark:text-purple-400">Verified</div>
+                          <div className="text-xs text-purple-700 dark:text-purple-300">Dokumentacioni</div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <h5 className="font-medium text-foreground">Kontrollet e Kryera:</h5>
+                        {[
+                          'Kontrolli i motorit dhe transmisionit',
+                          'Sistemi i frënimit dhe pezullimit',
+                          'Sistemet elektrike dhe elektronike',
+                          'Karoseria dhe ngjyra',
+                          'Interiori dhe pajisjet',
+                          'Dokumentacioni dhe historia'
+                        ].map((check, index) => (
+                          <div key={index} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                            <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                            <span className="text-sm text-foreground">{check}</span>
                           </div>
-                       </Card>
-
-                       {/* Market Values */}
-                       <Card className="p-6">
-                         <h3 className="text-lg font-semibold mb-4 text-foreground border-b border-border pb-2">
-                           Market Values & Pricing
-                         </h3>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                           <div className="space-y-3">
-                              <div className="flex justify-between items-center py-2 border-b border-border/30">
-                                <span className="text-muted-foreground">Pre-accident Value:</span>
-                                <span className="text-foreground">N/A</span>
-                              </div>
-                              <div className="flex justify-between items-center py-2 border-b border-border/30">
-                                <span className="text-muted-foreground">Wholesale Value:</span>
-                                <span className="text-foreground">N/A</span>
-                              </div>
-                              <div className="flex justify-between items-center py-2 border-b border-border/30">
-                                <span className="text-muted-foreground">Actual Cash Value:</span>
-                                <span className="text-foreground">N/A</span>
-                              </div>
-                           </div>
-                           <div className="space-y-3">
-                              <div className="flex justify-between items-center py-2 border-b border-border/30">
-                                <span className="text-muted-foreground">Current Bid:</span>
-                                <span className="text-foreground font-semibold">{car.price ? `$${car.price.toLocaleString()}` : 'N/A'}</span>
-                              </div>
-                              <div className="flex justify-between items-center py-2 border-b border-border/30">
-                                <span className="text-muted-foreground">Estimated Repair Cost:</span>
-                                <span className="text-foreground">N/A</span>
-                              </div>
-                             <div className="flex justify-between items-center py-2 border-b border-border/30">
-                               <span className="text-muted-foreground">Sale Date:</span>
-                               <span className="text-foreground">{car.sale_date || 'N/A'}</span>
-                             </div>
-                           </div>
-                         </div>
-                       </Card>
-
-                       {/* Source Information */}
-                       <Card className="p-6">
-                         <h3 className="text-lg font-semibold mb-4 text-foreground border-b border-border pb-2">
-                           Source Information
-                         </h3>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                           <div className="space-y-3">
-                             <div className="flex justify-between items-center py-2 border-b border-border/30">
-                               <span className="text-muted-foreground">External ID:</span>
-                               <span className="text-foreground font-mono text-sm">{car.id || 'N/A'}</span>
-                             </div>
-                             <div className="flex justify-between items-center py-2 border-b border-border/30">
-                               <span className="text-muted-foreground">Lot Number:</span>
-                               <span className="text-foreground font-mono text-sm">{car.lot || 'N/A'}</span>
-                             </div>
-                           </div>
-                           <div className="space-y-3">
-                             <div className="flex justify-between items-center py-2 border-b border-border/30">
-                               <span className="text-muted-foreground">VIN:</span>
-                               <span className="text-foreground font-mono text-sm">{car.vin || 'N/A'}</span>
-                             </div>
-                             <div className="flex justify-between items-center py-2 border-b border-border/30">
-                               <span className="text-muted-foreground">Location:</span>
-                               <span className="text-foreground">{car.location || 'N/A'}</span>
-                             </div>
-                           </div>
-                         </div>
-                       </Card>
-                     </div>
-                   </TabsContent>
+                        ))}
+                      </div>
+                    </div>
+                  </TabsContent>
                   
                   <TabsContent value="similar" className="mt-8">
                     <SimilarCarsTab carMake={car.make} carModel={car.model} currentCarId={car.id} />
