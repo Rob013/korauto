@@ -58,14 +58,19 @@ const HomeCarsSection = () => {
   const [filterCounts, setFilterCounts] = useState<any>(null);
   const [loadingCounts, setLoadingCounts] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('popular');
+  const [showAllCars, setShowAllCars] = useState(false);
   
-  // Use daily rotating cars with German car priority when no filters are applied
+  // Use daily rotating cars with German car priority when no filters are applied - get 50 cars
   const hasFilters = Object.keys(filters).some(key => filters[key] !== undefined && filters[key] !== '');
-  const dailyRotatingCars = useDailyRotatingCars(cars, hasFilters);
-  const displayedCars = useSortedCars(dailyRotatingCars, sortBy);
+  const dailyRotatingCars = useDailyRotatingCars(cars, hasFilters, 50);
+  const sortedCars = useSortedCars(dailyRotatingCars, sortBy);
+  
+  // Display logic: show 8 initially, then all on "show more"
+  const displayedCars = showAllCars ? sortedCars : sortedCars.slice(0, 8);
   
   const handleFiltersChange = (newFilters: ApiFilters) => {
     setFilters(newFilters);
+    setShowAllCars(false); // Reset to showing 8 cars when filters change
     fetchCars(1, newFilters, true);
   };
 
@@ -73,6 +78,7 @@ const HomeCarsSection = () => {
     setFilters({});
     setModels([]);
     setGenerations([]);
+    setShowAllCars(false); // Reset to showing 8 cars when clearing filters
     fetchCars(1, {}, true);
   };
 
@@ -174,7 +180,8 @@ const HomeCarsSection = () => {
         <div className="text-center mb-4 sm:mb-6">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground">Makinat e Disponueshme</h2>
           <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
-            Shfletoni përzgjedhjen tonë të mjeteve të cilësisë së lartë me fokus në markët gjermane. Makinat ndryshohen çdo ditë.
+            Shfletoni përzgjedhjen tonë të {hasFilters ? 'filtruara të' : '50'} mjeteve të cilësisë së lartë me fokus në markët gjermane. 
+            {!hasFilters && ' Makinat ndryshohen çdo ditë me rotacion automatik.'}
           </p>
           
           <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 mt-4 sm:mt-6">
@@ -322,7 +329,18 @@ const HomeCarsSection = () => {
             </div>
             
             {/* Show More Button */}
-            <div className="text-center mt-8">
+            <div className="text-center mt-8 space-y-4">
+              {!hasFilters && sortedCars.length > 8 && !showAllCars && (
+                <Button 
+                  onClick={() => setShowAllCars(true)}
+                  variant="outline"
+                  size="lg"
+                  className="bg-card border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3"
+                >
+                  Shiko më shumë ({sortedCars.length - 8} të tjera)
+                </Button>
+              )}
+              
               <Button 
                 onClick={() => navigate('/catalog')} 
                 size="lg"

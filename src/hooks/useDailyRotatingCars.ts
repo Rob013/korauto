@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-export const useDailyRotatingCars = (cars: any[], hasFilters: boolean) => {
+export const useDailyRotatingCars = (cars: any[], hasFilters: boolean, limit: number = 50) => {
   return useMemo(() => {
     if (hasFilters || cars.length === 0) {
       return cars; // Return normal order when filters are applied
@@ -40,7 +40,7 @@ export const useDailyRotatingCars = (cars: any[], hasFilters: boolean) => {
     const shuffledOtherCars = shuffleWithSeed(otherCars, seed + 1000);
     
     // Combine: Show 70% German cars, 30% other cars
-    const totalCarsToShow = Math.min(cars.length, 12); // Show max 12 cars on homepage
+    const totalCarsToShow = Math.min(cars.length, limit); // Show up to limit cars
     const germanCarsToShow = Math.ceil(totalCarsToShow * 0.7);
     const otherCarsToShow = totalCarsToShow - germanCarsToShow;
     
@@ -51,5 +51,5 @@ export const useDailyRotatingCars = (cars: any[], hasFilters: boolean) => {
     const finalSelection = [...selectedGermanCars, ...selectedOtherCars];
     return shuffleWithSeed(finalSelection, seed + 2000);
     
-  }, [cars, hasFilters]);
+  }, [cars, hasFilters, limit]);
 };
