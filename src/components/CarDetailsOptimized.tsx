@@ -86,6 +86,9 @@ const CarDetailsOptimized = () => {
         clearTimeout(timeoutId);
 
         if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error("Makina nuk u gjet në sistemin e ankandeve");
+          }
           throw new Error(`API returned ${response.status}: ${response.statusText}`);
         }
 
@@ -139,7 +142,7 @@ const CarDetailsOptimized = () => {
         setCar(transformedCar);
       } catch (error: any) {
         console.error('Error fetching car details:', error);
-        setError('Nuk mundëm të ngarkojmë të dhënat e makinës');
+        setError(error.message || 'Nuk mundëm të ngarkojmë të dhënat e makinës');
       } finally {
         setLoading(false);
       }
