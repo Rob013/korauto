@@ -151,7 +151,7 @@ const ContactSection = () => {
               <p className="text-muted-foreground mb-2">Agent shitjesh</p>
               <div className="space-y-2">
                 <a 
-                  href="tel:+38348181117" 
+                  href="tel:+38346181117" 
                   className="block text-primary hover:text-primary/80 transition-colors font-medium"
                 >
                   +38348181117
