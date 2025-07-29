@@ -44,9 +44,9 @@ const Header = () => {
           <Link to="/" className="flex items-center space-x-2 group min-w-0">
             <div className=" rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
               <img 
-                src="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png" 
+                src="/lovable-uploads/6ac817df-ac7d-49fa-b2dc-04c810445562.png" 
                 alt="KORAUTO Logo" 
-                className="h-20 w-auto object-contain dark:invert dark:brightness-0 dark:contrast-100 transition-all duration-200"
+                className="h-20 w-auto object-contain transition-all duration-200"
               />
             </div>
           </Link>

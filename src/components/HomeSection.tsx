@@ -8,9 +8,9 @@ const HomeSection = () => {
           <div className="mb-4">
             <div className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 mx-auto flex items-center justify-center mb-2">
               <img 
-                src="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png" 
+                src="/lovable-uploads/6ac817df-ac7d-49fa-b2dc-04c810445562.png" 
                 alt="KORAUTO Logo" 
-                className="w-full h-full object-contain dark:invert transition-all duration-300" 
+                className="w-full h-full object-contain transition-all duration-300" 
               />
             </div>
           </div>
