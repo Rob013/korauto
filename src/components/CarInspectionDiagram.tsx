@@ -38,7 +38,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
 
   return (
     <div className={`w-full max-w-4xl mx-auto p-6 bg-card border border-border rounded-lg ${className}`}>
-      <h3 className="text-lg font-semibold text-center text-foreground mb-6">Car Inspection Diagram - Four Views</h3>
+      <h3 className="text-lg font-semibold text-center text-foreground mb-6">Vehicle Inspection Diagram</h3>
       
       {/* Four-view layout in quadrants */}
       <div className="grid grid-cols-2 gap-8 mb-6">
