@@ -164,7 +164,7 @@ const HomeCarsSection = () => {
         <div className="text-center mb-4 sm:mb-6">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground">Makinat e Disponueshme</h2>
           <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
-            Shfletoni përzgjedhjen tonë të 50 mjeteve të reja çdo ditë me fokus në markët gjermane premium.
+            Shfletoni përzgjedhjen tonë me fokus në markët gjermane premium.
           </p>
           
           <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 mt-4 sm:mt-6">
