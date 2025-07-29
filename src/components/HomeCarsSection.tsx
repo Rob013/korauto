@@ -8,6 +8,9 @@ import { useAuctionAPI } from '@/hooks/useAuctionAPI';
 import FilterForm from '@/components/FilterForm';
 import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
 import { useRandomCars } from '@/hooks/useRandomCars';
+import { useSortedCars, getSortOptions, SortOption } from '@/hooks/useSortedCars';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowUpDown } from 'lucide-react';
 
 interface Car {
   id: string;
@@ -53,10 +56,12 @@ const HomeCarsSection = () => {
   const [generations, setGenerations] = useState<{id: number, name: string, car_count?: number}[]>([]);
   const [filterCounts, setFilterCounts] = useState<any>(null);
   const [loadingCounts, setLoadingCounts] = useState(false);
+  const [sortBy, setSortBy] = useState<SortOption>('popular');
   
   // Use random cars when no filters are applied
   const hasFilters = Object.keys(filters).some(key => filters[key] !== undefined && filters[key] !== '');
-  const displayedCars = useRandomCars(cars, hasFilters);
+  const randomCars = useRandomCars(cars, hasFilters);
+  const displayedCars = useSortedCars(randomCars, sortBy);
   
   const handleFiltersChange = (newFilters: ApiFilters) => {
     setFilters(newFilters);
@@ -192,8 +197,8 @@ const HomeCarsSection = () => {
           </div>
         )}
 
-        {/* Filter Form */}
-        <div className="mb-6 sm:mb-8 mx-2 sm:mx-0">
+        {/* Filter Form with Sort */}
+        <div className="mb-6 sm:mb-8 mx-2 sm:mx-0 space-y-4">
           <FilterForm
             filters={filters}
             manufacturers={manufacturers}
@@ -208,6 +213,23 @@ const HomeCarsSection = () => {
             showAdvanced={showMoreFilters}
             onToggleAdvanced={() => setShowMoreFilters(!showMoreFilters)}
           />
+          
+          {/* Sort Control - positioned under filters, right side */}
+          <div className="flex justify-end">
+            <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+              <SelectTrigger className="w-48">
+                <ArrowUpDown className="h-3 w-3 mr-2" />
+                <SelectValue placeholder="Rreshtoni sipas..." />
+              </SelectTrigger>
+              <SelectContent>
+                {getSortOptions().map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Car Cards */}
@@ -255,7 +277,7 @@ const HomeCarsSection = () => {
                     condition={car.condition?.replace('run_and_drives', 'Good')}
                     lot={car.lot_number || lot?.lot}
                     title={car.title}
-                    status={car.status || lot?.status}
+                    status={Number(car.status || lot?.status || 1)}
                     sale_status={car.sale_status || lot?.sale_status}
                     final_price={car.final_price || lot?.final_price}
                     generation={car.generation?.name}
@@ -263,7 +285,7 @@ const HomeCarsSection = () => {
                     engine={car.engine?.name}
                     drive_wheel={car.drive_wheel}
                     vehicle_type={car.vehicle_type?.name}
-                    cylinders={car.cylinders}
+                    cylinders={String(car.cylinders || '')}
                     bid={lot?.bid}
                     estimate_repair_price={lot?.estimate_repair_price}
                     pre_accident_price={lot?.pre_accident_price}
