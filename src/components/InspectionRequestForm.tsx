@@ -156,18 +156,25 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
       console.log('📝 Sanitized form data:', sanitizedData);
       console.log('🚗 Final car details for submission:', { carId, carMake, carModel, carYear });
       
+      console.log('🚀 Starting database insertion...');
+      
       // Store in Supabase database with all form and car information
+      const insertData = {
+        customer_name: `${sanitizedData.firstName} ${sanitizedData.lastName}`,
+        customer_email: sanitizedData.email,
+        customer_phone: sanitizedData.whatsappPhone,
+        car_id: carId || null,
+        notes: carId && carMake && carModel && carYear 
+          ? `Car: ${carYear} ${carMake} ${carModel}` 
+          : 'General inspection request',
+        status: 'pending'
+      };
+      
+      console.log('📝 Data to insert:', insertData);
+      
       const { data, error } = await supabase
         .from('inspection_requests')
-        .insert({
-          customer_name: `${sanitizedData.firstName} ${sanitizedData.lastName}`,
-          customer_email: sanitizedData.email,
-          customer_phone: sanitizedData.whatsappPhone,
-          car_id: carId || null,
-          notes: carId && carMake && carModel && carYear 
-            ? `Car: ${carYear} ${carMake} ${carModel}` 
-            : 'General inspection request'
-        })
+        .insert(insertData)
         .select();
 
       console.log('📊 Database response:', { data, error });

@@ -10,13 +10,10 @@ export const useDailyRotatingCars = (cars: any[], hasFilters: boolean, limit: nu
     const today = new Date().toDateString();
     const seed = today.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     
-    // Separate German cars from others
-    const germanBrands = ['BMW', 'Mercedes-Benz', 'Audi', 'Volkswagen', 'Porsche', 'Opel'];
-    const germanCars = cars.filter(car => 
-      germanBrands.includes(car.manufacturer?.name)
-    );
-    const otherCars = cars.filter(car => 
-      !germanBrands.includes(car.manufacturer?.name)
+    // Only show Audi, Volkswagen, and Mercedes-Benz cars
+    const targetBrands = ['Audi', 'Volkswagen', 'Mercedes-Benz'];
+    const filteredCars = cars.filter(car => 
+      targetBrands.includes(car.manufacturer?.name)
     );
     
     // Seeded random function that produces same results for same seed
@@ -35,21 +32,9 @@ export const useDailyRotatingCars = (cars: any[], hasFilters: boolean, limit: nu
       return shuffled;
     };
     
-    // Shuffle both arrays with today's seed
-    const shuffledGermanCars = shuffleWithSeed(germanCars, seed);
-    const shuffledOtherCars = shuffleWithSeed(otherCars, seed + 1000);
-    
-    // Combine: Show 70% German cars, 30% other cars
-    const totalCarsToShow = Math.min(cars.length, limit); // Show up to limit cars
-    const germanCarsToShow = Math.ceil(totalCarsToShow * 0.7);
-    const otherCarsToShow = totalCarsToShow - germanCarsToShow;
-    
-    const selectedGermanCars = shuffledGermanCars.slice(0, germanCarsToShow);
-    const selectedOtherCars = shuffledOtherCars.slice(0, otherCarsToShow);
-    
-    // Merge and shuffle the final selection with seed
-    const finalSelection = [...selectedGermanCars, ...selectedOtherCars];
-    return shuffleWithSeed(finalSelection, seed + 2000);
+    // Shuffle and limit the filtered cars
+    const shuffledCars = shuffleWithSeed(filteredCars, seed);
+    return shuffledCars.slice(0, Math.min(filteredCars.length, limit));
     
   }, [cars, hasFilters, limit]);
 };
