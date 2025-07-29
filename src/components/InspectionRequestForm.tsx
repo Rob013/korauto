@@ -274,7 +274,7 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
       <DialogTrigger asChild>
         {trigger}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto" aria-describedby="inspection-form-description">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto" aria-describedby="inspection-form-description" onClick={(e) => e.stopPropagation()}>
         <DialogHeader className="pb-4">
           <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
             <MessageCircle className="h-5 w-5 text-primary" />
