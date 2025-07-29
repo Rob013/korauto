@@ -102,7 +102,7 @@ const CarDetails = () => {
 
   const getSafetyFeatures = (carData: any, lot: any): string[] => {
     const safety = [];
-    if (lot?.airbags) safety.push(Sistemi i Airbag-ëve: ${lot.airbags});
+    if (lot?.airbags) safety.push(`Sistemi i Airbag-ëve: ${lot.airbags}`);
     if (carData.transmission?.name === 'automatic') safety.push('ABS Sistemi i Frënimit');
     safety.push('Sistemi i Stabilitetit Elektronik');
     if (lot?.keys_available) safety.push('Sistemi i Sigurisë');
