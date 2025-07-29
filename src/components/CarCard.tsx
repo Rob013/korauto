@@ -249,7 +249,7 @@ const CarCard = ({
             </div>}
           {body_type && <div className="flex items-center gap-2">
               <Truck className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate">{body_type.replace('_', ' ')}</span>
+              <span className="capitalize truncate">{String(body_type).replace('_', ' ')}</span>
             </div>}
         </div>
 
@@ -259,19 +259,19 @@ const CarCard = ({
             <h4 className="font-medium text-muted-foreground mb-2">Technical Details</h4>
             {engine && <div className="flex items-center gap-2">
                 <Cog className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="truncate">Engine: {engine}</span>
+                <span className="truncate">Engine: {String(engine)}</span>
               </div>}
             {drive_wheel && <div className="flex items-center gap-2">
                 <Settings className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="truncate">Drive: {drive_wheel}</span>
+                <span className="truncate">Drive: {String(drive_wheel)}</span>
               </div>}
             {cylinders && <div className="flex items-center gap-2">
                 <Cog className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="truncate">Cylinders: {cylinders}</span>
+                <span className="truncate">Cylinders: {String(cylinders)}</span>
               </div>}
             {vehicle_type && <div className="flex items-center gap-2">
                 <Car className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="capitalize truncate">{vehicle_type}</span>
+                <span className="capitalize truncate">{String(vehicle_type)}</span>
               </div>}
           </div>
         )}
@@ -286,11 +286,11 @@ const CarCard = ({
               </div>}
             {airbags && <div className="flex items-center gap-2">
                 <Shield className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="truncate">Airbags: {airbags}</span>
+                <span className="truncate">Airbags: {String(airbags)}</span>
               </div>}
             {grade_iaai && <div className="flex items-center gap-2">
                 <Shield className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="truncate">Grade: {grade_iaai}</span>
+                <span className="truncate">Grade: {String(grade_iaai)}</span>
               </div>}
           </div>
         )}
@@ -305,11 +305,11 @@ const CarCard = ({
               </div>}
             {damage_main && <div className="flex items-center gap-2">
                 <AlertTriangle className="h-3 w-3 text-orange-500 flex-shrink-0" />
-                <span className="truncate">Main Damage: {damage_main}</span>
+                <span className="truncate">Main Damage: {String(damage_main)}</span>
               </div>}
             {damage_second && <div className="flex items-center gap-2">
                 <AlertTriangle className="h-3 w-3 text-yellow-500 flex-shrink-0" />
-                <span className="truncate">Secondary: {damage_second}</span>
+                <span className="truncate">Secondary: {String(damage_second)}</span>
               </div>}
           </div>
         )}
@@ -380,15 +380,15 @@ const CarCard = ({
               </div>}
             {seller && <div className="flex items-center gap-2">
                 <Car className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="truncate">Seller: {seller}</span>
+                <span className="truncate">Seller: {String(seller)}</span>
               </div>}
             {seller_type && <div className="flex items-center gap-2">
                 <Car className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="capitalize truncate">Type: {seller_type}</span>
+                <span className="capitalize truncate">Type: {String(seller_type)}</span>
               </div>}
             {domain && <div className="flex items-center gap-2">
                 <Car className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="truncate">Source: {domain.replace('_', '.')}</span>
+                <span className="truncate">Source: {String(domain).replace('_', '.')}</span>
               </div>}
           </div>
         )}
