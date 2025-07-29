@@ -11,7 +11,7 @@ interface Manufacturer {
   name: string;
   car_count?: number;
   cars_qty?:number;
-  image:string;
+  image?:string;
   
 }
 
@@ -23,13 +23,13 @@ interface Model {
 }
 
 interface Generation {
-  cars_qty:number;
-  from_year:number;
+  cars_qty?:number;
+  from_year?:number;
   id:number;
-  manufacturer_id:number;
-  model_id:number;
+  manufacturer_id?:number;
+  model_id?:number;
   name:string;
-  to_year:number;
+  to_year?:number;
 }
 
 interface FilterCounts {
@@ -180,7 +180,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
                         <div className="flex items-center gap-2">
                           {manufacturer.image && (
                             <img
-                              src={manufacturer.image}
+                              src={manufacturer?.image}
                               alt={manufacturer.name}
                               className="w-5 h-5 object-contain"
                             />
