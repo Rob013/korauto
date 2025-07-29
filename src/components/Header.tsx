@@ -83,14 +83,7 @@ const Header = () => {
                 onClick={() => navigate('/auth')}
                 className="btn-enhanced focus-enhanced"
               >
-                Hyr
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={() => navigate('/admin')}
-                className="btn-enhanced focus-enhanced"
-              >
-                Admin
+                Llogaria Ime
               </Button>
             </div>
           </div>
@@ -149,7 +142,7 @@ const Header = () => {
                 className="text-foreground hover:text-primary font-medium transition-colors py-2 px-3 rounded-md hover:bg-primary/10"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                My Account
+                Llogaria Ime
               </Link>
               
               {/* Mobile CTA Buttons */}

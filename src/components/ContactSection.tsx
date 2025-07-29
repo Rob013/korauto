@@ -187,14 +187,14 @@ const ContactSection = () => {
               <p className="text-muted-foreground mb-2">Agent shitjesh</p>
               <div className="space-y-2">
                 <a 
-                  href="tel:045244999" 
+                  href="tel:+38348244999" 
                   className="block text-primary hover:text-primary/80 transition-colors font-medium"
                 >
-                  045244999
+                  +38348244999
                 </a>
                 <div className="flex gap-2">
                   <a 
-                    href="https://wa.me/045244999" 
+                    href="https://wa.me/38348244999" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition-colors"
@@ -202,7 +202,7 @@ const ContactSection = () => {
                     WhatsApp
                   </a>
                   <a 
-                    href="viber://chat?number=045244999" 
+                    href="viber://chat?number=+38348244999" 
                     className="text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600 transition-colors"
                   >
                     Viber

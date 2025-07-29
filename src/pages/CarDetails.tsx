@@ -391,7 +391,7 @@ const CarDetails = () => {
         <div className="container mx-auto px-4 py-8">
           <Button variant="outline" onClick={() => navigate('/')} className="mb-6">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Kthehu
+            Kryefaqja
           </Button>
           <div className="text-center py-12">
             <AlertTriangle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
@@ -410,7 +410,7 @@ const CarDetails = () => {
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         {/* Header with Actions */}
         <div className="flex justify-between items-center mb-8">
-          <Button variant="outline" onClick={() => navigate('/')} className="shadow-sm border-2 hover:shadow-md transition-all">
+          <Button variant="outline" onClick={() => window.history.back()} className="shadow-sm border-2 hover:shadow-md transition-all">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Kthehu te Makinat
           </Button>
@@ -623,15 +623,6 @@ const CarDetails = () => {
                         {car.damage.main && car.damage.second && <span>, </span>}
                         {car.damage.second && <span>{car.damage.second}</span>}
                       </span>
-                    </div>
-                  )}
-                  {car.vin && (
-                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors md:col-span-2">
-                      <div className="flex items-center gap-3">
-                        <Hash className="h-4 w-4 text-primary" />
-                        <span className="font-semibold text-foreground">VIN</span>
-                      </div>
-                      <span className="text-muted-foreground font-mono text-sm">{car.vin}</span>
                     </div>
                   )}
                 </div>

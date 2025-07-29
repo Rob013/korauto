@@ -263,15 +263,6 @@ const CarCard = ({
           </span>
         </div>
 
-        {/* VIN */}
-        {vin && (
-          <div className="mb-4 text-xs border-t pt-3">
-            <div className="flex items-center gap-2">
-              <Hash className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="font-mono text-xs break-all">VIN: {vin}</span>
-            </div>
-          </div>
-        )}
 
         <div className="text-center">
           <p className="text-xs text-muted-foreground">
