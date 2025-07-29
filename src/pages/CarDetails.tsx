@@ -525,83 +525,23 @@ const CarDetails = () => {
         </style>
       </head>
       <body>
-        <script>
-          // Car inspection data
-          const inspectionData = ${JSON.stringify(car.details?.inspect_outer || [])};
+        <div class="container">
+          <div class="controls">
+            <h1 style="font-size: 1.5rem; font-weight: 600;">Car Details Report</h1>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <button onclick="toggleTheme()" class="theme-toggle" id="themeToggle" title="Toggle theme">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+              </button>
+              <button onclick="window.print()" class="print-btn">🖨️ Print</button>
+            </div>
+          </div>
           
-          function getPartColor(partCode) {
-            const part = inspectionData.find(item => {
-              const itemCode = item.type.code ? item.type.code.toLowerCase() : '';
-              const itemTitle = item.type.title ? item.type.title.toLowerCase() : '';
-              const searchCode = partCode.toLowerCase().replace(/-/g, '_');
-              
-              return itemCode.includes(searchCode) || 
-                     itemTitle.includes(searchCode.replace('_', ' ')) ||
-                     itemTitle.includes(searchCode.replace('_', '')) ||
-                     (searchCode.includes('fender') && itemTitle.includes('fender')) ||
-                     (searchCode.includes('door') && itemTitle.includes('door')) ||
-                     (searchCode.includes('bumper') && itemTitle.includes('bumper'));
-            });
-            
-            if (!part || !part.statusTypes || part.statusTypes.length === 0) {
-              return '#22c55e'; // Normal - green
-            }
-            
-            const hasExchange = part.statusTypes.some(status => status.code === 'X');
-            const hasRepair = part.statusTypes.some(status => status.code === 'W');
-            
-            if (hasExchange) return '#ef4444'; // Exchange - red
-            if (hasRepair) return '#f59e0b'; // Repair - orange
-            return '#22c55e'; // Normal - green
-          }
-          
-          // Apply colors to car parts after page loads
-          window.addEventListener('DOMContentLoaded', function() {
-            const parts = [
-              'front-bumper', 'hood', 'front-fender-left', 'front-fender-right',
-              'front-door-left', 'front-door-right', 'roof', 'rear-door-left',
-              'rear-door-right', 'trunk', 'rear-bumper', 'quarter-panel-left',
-              'quarter-panel-right'
-            ];
-            
-            parts.forEach(partId => {
-              const element = document.getElementById(partId);
-              if (element) {
-                element.setAttribute('fill', getPartColor(partId));
-              }
-            });
-          });
-          
-          function toggleOptions(type) {
-            const hiddenDiv = document.getElementById(type + '-hidden');
-            const toggleBtn = document.getElementById(type + '-toggle');
-            
-            if (hiddenDiv.style.display === 'none') {
-              hiddenDiv.style.display = 'block';
-              toggleBtn.textContent = 'Show less';
-            } else {
-              hiddenDiv.style.display = 'none';
-              const count = hiddenDiv.children.length;
-              toggleBtn.textContent = 'Show ' + count + ' more';
-            }
-          }
-          
-          function toggleTheme() {
-            const html = document.documentElement;
-            const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
-            html.classList.remove('light', 'dark');
-            html.classList.add(newTheme);
-            
-            // Update toggle icon
-            const toggle = document.getElementById('themeToggle');
-            if (newTheme === 'dark') {
-              toggle.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>';
-            } else {
-              toggle.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>';
-            }
-          }
+          <div class="header">
+            <div class="title">${car.year} ${car.make} ${car.model}</div>
+            <div class="subtitle">€${car.price.toLocaleString()} • Lot #${car.lot || 'N/A'}</div>
+          </div>
 
           ${car.insurance_v2 || car.insurance || car.inspect ? `
           <div class="section">
@@ -923,6 +863,101 @@ const CarDetails = () => {
             </div>
           </div>
         </div>
+        
+        <script>
+          // Ensure DOM is loaded before executing scripts
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializePage);
+          } else {
+            initializePage();
+          }
+          
+          function initializePage() {
+            console.log('Initializing car details page...');
+            
+            // Apply colors to car parts
+            const inspectionData = ${JSON.stringify(car.details?.inspect_outer || [])};
+            console.log('Inspection data:', inspectionData);
+            
+            const parts = [
+              'front-bumper', 'hood', 'front-fender-left', 'front-fender-right',
+              'front-door-left', 'front-door-right', 'roof', 'rear-door-left',
+              'rear-door-right', 'trunk', 'rear-bumper', 'quarter-panel-left',
+              'quarter-panel-right'
+            ];
+            
+            parts.forEach(partId => {
+              const element = document.getElementById(partId);
+              if (element) {
+                const color = getPartColor(partId, inspectionData);
+                element.setAttribute('fill', color);
+                console.log('Applied color', color, 'to part', partId);
+              } else {
+                console.warn('Element not found:', partId);
+              }
+            });
+          }
+          
+          function getPartColor(partCode, inspectionData) {
+            const part = inspectionData.find(item => {
+              const itemCode = item.type.code ? item.type.code.toLowerCase() : '';
+              const itemTitle = item.type.title ? item.type.title.toLowerCase() : '';
+              const searchCode = partCode.toLowerCase().replace(/-/g, '_');
+              
+              return itemCode.includes(searchCode) || 
+                     itemTitle.includes(searchCode.replace('_', ' ')) ||
+                     itemTitle.includes(searchCode.replace('_', '')) ||
+                     (searchCode.includes('fender') && itemTitle.includes('fender')) ||
+                     (searchCode.includes('door') && itemTitle.includes('door')) ||
+                     (searchCode.includes('bumper') && itemTitle.includes('bumper'));
+            });
+            
+            if (!part || !part.statusTypes || part.statusTypes.length === 0) {
+              return '#22c55e'; // Normal - green
+            }
+            
+            const hasExchange = part.statusTypes.some(status => status.code === 'X');
+            const hasRepair = part.statusTypes.some(status => status.code === 'W');
+            
+            if (hasExchange) return '#ef4444'; // Exchange - red
+            if (hasRepair) return '#f59e0b'; // Repair - orange
+            return '#22c55e'; // Normal - green
+          }
+          
+          function toggleOptions(type) {
+            const hiddenDiv = document.getElementById(type + '-hidden');
+            const toggleBtn = document.getElementById(type + '-toggle');
+            
+            if (hiddenDiv && toggleBtn) {
+              if (hiddenDiv.style.display === 'none') {
+                hiddenDiv.style.display = 'block';
+                toggleBtn.textContent = 'Show less';
+              } else {
+                hiddenDiv.style.display = 'none';
+                const count = hiddenDiv.children.length;
+                toggleBtn.textContent = 'Show ' + count + ' more';
+              }
+            }
+          }
+          
+          function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            html.classList.remove('light', 'dark');
+            html.classList.add(newTheme);
+            
+            // Update toggle icon
+            const toggle = document.getElementById('themeToggle');
+            if (toggle) {
+              if (newTheme === 'dark') {
+                toggle.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>';
+              } else {
+                toggle.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>';
+              }
+            }
+          }
       </body>
       </html>
     `;
@@ -1268,7 +1303,9 @@ const CarDetails = () => {
                     onClick={() => {
                       const detailsWindow = window.open('', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
                       if (detailsWindow) {
-                        detailsWindow.document.write(generateDetailedInfoHTML(car));
+                        const htmlContent = generateDetailedInfoHTML(car);
+                        detailsWindow.document.write(htmlContent);
+                        detailsWindow.document.close(); // Important: close the document stream
                         detailsWindow.document.title = `${car.year} ${car.make} ${car.model} - Detailed Information`;
                       }
                     }}
