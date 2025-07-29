@@ -287,12 +287,6 @@ const LazyCarCard = memo(({
               <span className="capitalize truncate">{color}</span>
             </div>
           )}
-          {details?.seats_count && (
-            <div className="flex items-center gap-2">
-              <Settings className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="truncate">{details.seats_count} Seats</span>
-            </div>
-          )}
         </div>
 
         {/* Status Indicators */}
