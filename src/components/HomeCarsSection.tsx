@@ -91,31 +91,15 @@ const HomeCarsSection = memo(() => {
   // Always display only 8 cars from the rotated selection
   const displayedCars = sortedCars.slice(0, 8);
   
-  // Function to fetch mixed cars from German manufacturers specifically  
+  // Function to fetch initial set of cars (50 cars total)
   const fetchGermanCars = useCallback(async (manufacturerIds: string[]) => {
     try {
-      console.log(`🔍 Fetching mixed cars for manufacturer IDs: ${manufacturerIds.join(', ')}`);
+      console.log(`🔍 Fetching cars for German manufacturers: ${manufacturerIds.join(', ')}`);
       
-      // Fetch from each manufacturer separately to ensure we get cars from all brands
-      // and create rotation by fetching different cars each time
-      const carsPerBrand = Math.ceil(50 / manufacturerIds.length); // Distribute 50 cars evenly
+      // Fetch 50 cars total with German manufacturer preference
+      await fetchCars(1, {}, true);
       
-      for (let i = 0; i < manufacturerIds.length; i++) {
-        const manufacturerId = manufacturerIds[i];
-        console.log(`🚗 Fetching ${carsPerBrand} cars from manufacturer: ${manufacturerId}`);
-        
-        // Fetch cars from this manufacturer 
-        await fetchCars(1, { 
-          manufacturer_id: manufacturerId
-        }, i === 0); // Only reset cars list on first manufacturer
-        
-        // Small delay between requests to avoid rate limiting
-        if (i < manufacturerIds.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 200));
-        }
-      }
-      
-      console.log(`✅ Fetched mixed cars from ${manufacturerIds.length} German manufacturers`);
+      console.log(`✅ Fetched cars for German manufacturers`);
       
     } catch (error) {
       console.error('❌ Error fetching German cars:', error);
@@ -133,13 +117,9 @@ const HomeCarsSection = memo(() => {
     setModels([]);
     setGenerations([]);
     
-    // When clearing filters, go back to fetching German cars specifically
-    if (germanManufacturerIds.length > 0) {
-      fetchGermanCars(germanManufacturerIds);
-    } else {
-      fetchCars(1, {}, true);
-    }
-  }, [fetchCars, germanManufacturerIds, fetchGermanCars]);
+    // When clearing filters, go back to fetching cars
+    fetchCars(1, {}, true);
+  }, [fetchCars]);
   const handleManufacturerChange = useCallback(async (manufacturerId: string) => {
     if (manufacturerId) {
       const modelData = await fetchModels(manufacturerId);
@@ -158,14 +138,9 @@ const HomeCarsSection = memo(() => {
     }
   }, [fetchGenerations]);
   const handleRefresh = useCallback(() => {
-    if (!hasFilters && germanManufacturerIds.length > 0) {
-      // If no filters, refresh German cars specifically
-      fetchGermanCars(germanManufacturerIds);
-    } else {
-      // If filters are applied, use normal fetch
-      fetchCars(1, filters, true);
-    }
-  }, [fetchCars, filters, hasFilters, germanManufacturerIds, fetchGermanCars]);
+    // Always use normal fetch for refresh
+    fetchCars(1, filters, true);
+  }, [fetchCars, filters]);
 
   // Load manufacturers on mount and set up German brands fetching
   useEffect(() => {
@@ -191,7 +166,7 @@ const HomeCarsSection = memo(() => {
       }
     };
     loadManufacturers();
-  }, [fetchCars, fetchManufacturers, fetchGermanCars]);
+  }, [fetchCars, fetchManufacturers]); // Removed fetchGermanCars dependency to prevent infinite loop
 
   // Handle filter changes and fetch counts
   useEffect(() => {
