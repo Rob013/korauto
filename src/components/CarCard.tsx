@@ -117,8 +117,13 @@ interface CarCardProps {
   };
   // Location details
   location?: {
-    country?: { name: string; iso: string };
-    city?: { name: string };
+    country?: {
+      name: string;
+      iso: string;
+    };
+    city?: {
+      name: string;
+    };
     state?: string;
     location?: string;
     latitude?: number;
@@ -166,8 +171,14 @@ interface CarCardProps {
       tuning?: string[];
     };
     inspect_outer?: Array<{
-      type: { code: string; title: string };
-      statusTypes: Array<{ code: string; title: string }>;
+      type: {
+        code: string;
+        title: string;
+      };
+      statusTypes: Array<{
+        code: string;
+        title: string;
+      }>;
       attributes: string[];
     }>;
     seats_count?: number;
@@ -220,96 +231,86 @@ const CarCard = ({
   details
 }: CarCardProps) => {
   const navigate = useNavigate();
-  const { setPreviousPage } = useNavigation();
-  const { toast } = useToast();
+  const {
+    setPreviousPage
+  } = useNavigation();
+  const {
+    toast
+  } = useToast();
   const [isFavorite, setIsFavorite] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       setUser(user);
-      
       if (user) {
         // Check if user is admin
-        const { data: userRole } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        
+        const {
+          data: userRole
+        } = await supabase.from('user_roles').select('role').eq('user_id', user.id).maybeSingle();
         setIsAdmin(userRole?.role === 'admin');
-        
+
         // Check if this car is already favorited
-        const { data } = await supabase
-          .from('favorite_cars')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('car_id', id)
-          .maybeSingle();
-        
+        const {
+          data
+        } = await supabase.from('favorite_cars').select('id').eq('user_id', user.id).eq('car_id', id).maybeSingle();
         setIsFavorite(!!data);
       }
     };
-    
     getUser();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: {
+        subscription
+      }
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
       if (!session?.user) {
         setIsFavorite(false);
       }
     });
-
     return () => subscription.unsubscribe();
   }, [id]);
-
   const handleFavoriteToggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    
     if (!user) {
       toast({
         title: "Login Required",
-        description: "Please login to save favorite cars",
+        description: "Please login to save favorite cars"
       });
       navigate('/auth');
       return;
     }
-
     try {
       if (isFavorite) {
         // Remove from favorites
-        await supabase
-          .from('favorite_cars')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('car_id', id);
-        
+        await supabase.from('favorite_cars').delete().eq('user_id', user.id).eq('car_id', id);
         setIsFavorite(false);
         toast({
           title: "Removed from favorites",
-          description: "Car removed from your favorites",
+          description: "Car removed from your favorites"
         });
       } else {
         // Add to favorites
-        await supabase
-          .from('favorite_cars')
-          .insert({
-            user_id: user.id,
-            car_id: id,
-            car_make: make,
-            car_model: model,
-            car_year: year,
-            car_price: price,
-            car_image: image
-          });
-        
+        await supabase.from('favorite_cars').insert({
+          user_id: user.id,
+          car_id: id,
+          car_make: make,
+          car_model: model,
+          car_year: year,
+          car_price: price,
+          car_image: image
+        });
         setIsFavorite(true);
         toast({
           title: "Added to favorites",
-          description: "Car saved to your favorites",
+          description: "Car saved to your favorites"
         });
       }
     } catch (error) {
@@ -317,11 +318,10 @@ const CarCard = ({
       toast({
         title: "Error",
         description: "Failed to update favorites",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
-
   const handleCardClick = () => {
     // Save current page and any filter state before navigating
     setPreviousPage(window.location.pathname + window.location.search);
@@ -336,15 +336,11 @@ const CarCard = ({
             <Car className="h-16 w-16 text-muted-foreground" />
           </div>}
         {/* Sold Out Badge - Takes priority over lot number */}
-        {(status === 3 || sale_status === 'sold') ? (
-          <div className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded text-xs font-bold shadow-lg z-10">
+        {status === 3 || sale_status === 'sold' ? <div className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded text-xs font-bold shadow-lg z-10">
             SOLD OUT
-          </div>
-        ) : (
-          lot && <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-semibold">
+          </div> : lot && <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-semibold">
             Kodi #{lot}
-          </div>
-        )}
+          </div>}
         
   
       </div>
@@ -380,35 +376,16 @@ const CarCard = ({
         {/* Technical Details */}
         <div className="mb-4">
           <h4 className="text-sm font-semibold mb-2 text-foreground">Detaje Teknike</h4>
-          <div className="grid grid-cols-1 gap-2 text-xs">
-            {details?.engine_volume && (
-              <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
-                <span className="text-muted-foreground">Vëllimi Motorit</span>
-                <span className="font-medium">{details.engine_volume}L</span>
-              </div>
-            )}
-            {engine && (
-              <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
-                <span className="text-muted-foreground">Motori</span>
-                <span className="font-medium">{engine}</span>
-              </div>
-            )}
-          </div>
+          
         </div>
 
         {/* Quick Status Indicators */}
         <div className="flex flex-wrap gap-2 mb-4">
-          {insurance_v2?.accidentCnt === 0 && (
-            <Badge variant="secondary" className="text-xs">
+          {insurance_v2?.accidentCnt === 0 && <Badge variant="secondary" className="text-xs">
               <Shield className="h-3 w-3 mr-1" />
               Clean Record
-            </Badge>
-          )}
-          {details?.seats_count && (
-            <Badge variant="outline" className="text-xs">
-              {details.seats_count} Seats
-            </Badge>
-          )}
+            </Badge>}
+          {details?.seats_count}
         </div>
 
         {/* Pricing Information */}
@@ -424,29 +401,11 @@ const CarCard = ({
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-2 mb-4">
-          <InspectionRequestForm 
-            trigger={
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground flex-1"
-                onClick={(e) => e.stopPropagation()}
-              >
+          <InspectionRequestForm trigger={<Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground flex-1">
                 <FileText className="h-4 w-4 mr-1" />
                 Kërkesë për Inspektim
-              </Button>
-            }
-            carId={id}
-            carMake={make}
-            carModel={model}
-            carYear={year}
-          />
-          <Button 
-            size="sm" 
-            variant="ghost" 
-            onClick={handleFavoriteToggle}
-            className="border border-border hover:bg-muted flex-1"
-          >
+              </Button>} carId={id} carMake={make} carModel={model} carYear={year} />
+          <Button size="sm" variant="ghost" onClick={handleFavoriteToggle} className="border border-border hover:bg-muted flex-1">
             <Heart className={`h-4 w-4 mr-1 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`} />
             {isFavorite ? 'Favorit' : 'Ruaj'}
           </Button>
