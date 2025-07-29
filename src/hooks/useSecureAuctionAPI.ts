@@ -228,12 +228,20 @@ export const useSecureAuctionAPI = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [hasMorePages, setHasMorePages] = useState(false);
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
 
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   const makeSecureAPICall = async (endpoint: string, filters: APIFilters = {}, carId?: string): Promise<any> => {
     try {
       console.log('🔐 Making secure API call:', { endpoint, filters, carId });
+      
+      // Add a small delay to prevent rapid successive calls
+      const now = Date.now();
+      if (now - lastFetchTime < 500) { // 500ms minimum between calls
+        await delay(500 - (now - lastFetchTime));
+      }
+      setLastFetchTime(Date.now());
       
       const { data, error: functionError } = await supabase.functions.invoke('secure-cars-api', {
         body: { endpoint, filters, carId }

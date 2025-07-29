@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Search, Grid, List, ArrowLeft, ArrowUpDown } from 'lucide-react';
 import CarCard from '@/components/CarCard';
-import { useAuctionAPI } from '@/hooks/useAuctionAPI';
+import { useSecureAuctionAPI } from '@/hooks/useSecureAuctionAPI';
 import FilterForm from '@/components/FilterForm';
 import { useSearchParams } from 'react-router-dom';
 import { useSortedCars, getSortOptions, SortOption } from '@/hooks/useSortedCars';
@@ -30,7 +30,7 @@ interface APIFilters {
 
 const EncarCatalog = () => {
   const { toast } = useToast();
-  const { cars, loading, error, totalCount, hasMorePages, fetchCars, fetchManufacturers, fetchModels, fetchGenerations, fetchFilterCounts, loadMore } = useAuctionAPI();
+  const { cars, loading, error, totalCount, hasMorePages, fetchCars, fetchManufacturers, fetchModels, fetchGenerations, fetchFilterCounts, loadMore } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<SortOption>('price_low');
