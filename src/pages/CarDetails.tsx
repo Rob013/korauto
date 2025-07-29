@@ -66,6 +66,12 @@ interface CarDetails {
   comfort_features?: string[];
   performance_rating?: number;
   popularity_score?: number;
+  // Enhanced API data
+  insurance?: any;
+  insurance_v2?: any;
+  location?: any;
+  inspect?: any;
+  details?: any;
 }
 
 const CarDetails = () => {
@@ -81,6 +87,7 @@ const CarDetails = () => {
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [featuresExpanded, setFeaturesExpanded] = useState(false);
+  const [showDetailedInfo, setShowDetailedInfo] = useState(false);
   
   const API_BASE_URL = 'https://auctionsapi.com/api';
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
@@ -208,6 +215,12 @@ const CarDetails = () => {
         comfort_features: getComfortFeatures(carData, lotData),
         performance_rating: 4.5,
         popularity_score: 85,
+        // Enhanced API data
+        insurance: lotData.insurance,
+        insurance_v2: lotData.insurance_v2,
+        location: lotData.location,
+        inspect: lotData.inspect,
+        details: lotData.details,
       };
 
       setCar(transformedCar);
@@ -424,11 +437,17 @@ const CarDetails = () => {
                   </h3>
                   
                   {/* Small buttons beside title */}
-                  <div className="flex items-center gap-2">
+                   <div className="flex items-center gap-2">
                     <div className="text-right">
-                      <div className="text-lg font-bold text-primary">
-                        €{car.price.toLocaleString()}
-                      </div>
+                      {isAdmin ? (
+                        <div className="text-lg font-bold text-primary">
+                          €{car.price.toLocaleString()}
+                        </div>
+                      ) : (
+                        <div className="text-lg font-bold text-primary">
+                          Contact for Price
+                        </div>
+                      )}
                       <div className="text-sm text-muted-foreground">
                         +350 euro deri ne Prishtine
                       </div>
@@ -562,6 +581,229 @@ const CarDetails = () => {
                     </div>
                   )}
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Detailed Information Section */}
+            <Card className="shadow-lg border-0">
+              <CardContent className="p-8">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-2xl font-bold flex items-center text-foreground">
+                    <Info className="h-6 w-6 mr-3 text-primary" />
+                    Informacione të Detajuara
+                  </h3>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowDetailedInfo(!showDetailedInfo)}
+                    className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                  >
+                    {showDetailedInfo ? 'Fshih Detajet' : 'Shiko Detajet'}
+                    {showDetailedInfo ? <ChevronUp className="h-4 w-4 ml-2" /> : <ChevronDown className="h-4 w-4 ml-2" />}
+                  </Button>
+                </div>
+
+                {showDetailedInfo && (
+                  <div className="space-y-6">
+                    {/* Insurance & Safety Report */}
+                    {(car.insurance_v2 || car.inspect || car.insurance) && (
+                      <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                        <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                          <Shield className="h-5 w-5" />
+                          Raporti i Sigurisë dhe Sigurimit
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {car.insurance_v2?.accidentCnt !== undefined && (
+                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                              <span className="text-sm">Historia e Aksidenteve:</span>
+                              <Badge variant={car.insurance_v2.accidentCnt === 0 ? "secondary" : "destructive"}>
+                                {car.insurance_v2.accidentCnt === 0 ? 'E Pastër' : `${car.insurance_v2.accidentCnt} aksidente`}
+                              </Badge>
+                            </div>
+                          )}
+                          {car.insurance_v2?.ownerChangeCnt !== undefined && (
+                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                              <span className="text-sm">Ndryshime Pronësie:</span>
+                              <span className="font-medium">{car.insurance_v2.ownerChangeCnt}</span>
+                            </div>
+                          )}
+                          {car.insurance_v2?.totalLossCnt !== undefined && car.insurance_v2.totalLossCnt > 0 && (
+                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                              <span className="text-sm">Humbje Totale:</span>
+                              <Badge variant="destructive">{car.insurance_v2.totalLossCnt}</Badge>
+                            </div>
+                          )}
+                          {car.insurance_v2?.floodTotalLossCnt !== undefined && car.insurance_v2.floodTotalLossCnt > 0 && (
+                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                              <span className="text-sm">Dëmtime nga Përmbytjet:</span>
+                              <Badge variant="destructive">{car.insurance_v2.floodTotalLossCnt}</Badge>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Vehicle Details */}
+                    {car.details && (
+                      <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                        <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                          <Car className="h-5 w-5" />
+                          Detaje të Veturës
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {car.details.engine_volume && (
+                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                              <span className="text-sm">Vëllimi i Motorit:</span>
+                              <span className="font-medium">{car.details.engine_volume}cc</span>
+                            </div>
+                          )}
+                          {car.details.original_price && (
+                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                              <span className="text-sm">Çmimi Origjinal:</span>
+                              <span className="font-medium">₩{car.details.original_price.toLocaleString()}</span>
+                            </div>
+                          )}
+                          {car.details.first_registration && (
+                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                              <span className="text-sm">Regjistrimi i Parë:</span>
+                              <span className="font-medium">
+                                {car.details.first_registration.year}-{String(car.details.first_registration.month).padStart(2, '0')}-{String(car.details.first_registration.day).padStart(2, '0')}
+                              </span>
+                            </div>
+                          )}
+                          {car.details.seats_count && (
+                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                              <span className="text-sm">Numri i Vendeve:</span>
+                              <span className="font-medium">{car.details.seats_count}</span>
+                            </div>
+                          )}
+                          {car.details.badge && (
+                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                              <span className="text-sm">Versioni:</span>
+                              <span className="font-medium">{car.details.badge}</span>
+                            </div>
+                          )}
+                          {car.details.sell_type && (
+                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                              <span className="text-sm">Lloji i Shitjes:</span>
+                              <span className="font-medium capitalize">{car.details.sell_type}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Equipment & Options */}
+                    {car.details?.options && (
+                      <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                        <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                          <Settings className="h-5 w-5" />
+                          Pajisjet dhe Opsionet
+                        </h4>
+                        {car.details.options.standard && car.details.options.standard.length > 0 && (
+                          <div>
+                            <h5 className="font-medium mb-2">Pajisje Standarde:</h5>
+                            <div className="flex flex-wrap gap-2">
+                              {car.details.options.standard.map((option, index) => (
+                                <Badge key={index} variant="outline">{option}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {car.details.options.choice && car.details.options.choice.length > 0 && (
+                          <div>
+                            <h5 className="font-medium mb-2">Pajisje Opsionale:</h5>
+                            <div className="flex flex-wrap gap-2">
+                              {car.details.options.choice.map((option, index) => (
+                                <Badge key={index} variant="secondary">{option}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Inspection Report */}
+                    {car.details?.inspect_outer && car.details.inspect_outer.length > 0 && (
+                      <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                        <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                          <FileText className="h-5 w-5" />
+                          Raporti i Inspektimit të Detajuar
+                        </h4>
+                        <div className="space-y-3">
+                          {car.details.inspect_outer.map((item, index) => (
+                            <div key={index} className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                              <span className="text-sm">{item.type.title}:</span>
+                              <div className="flex gap-2">
+                                {item.statusTypes.map((status, i) => (
+                                  <Badge 
+                                    key={i} 
+                                    variant={status.code === 'X' ? "destructive" : status.code === 'W' ? "secondary" : "outline"}
+                                  >
+                                    {status.title}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Location Information */}
+                    {car.location && (
+                      <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                        <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                          <MapPin className="h-5 w-5" />
+                          Informacione të Lokacionit
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {car.location.country && (
+                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                              <span className="text-sm">Shteti:</span>
+                              <span className="font-medium">{car.location.country.name.toUpperCase()}</span>
+                            </div>
+                          )}
+                          {car.location.city && (
+                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                              <span className="text-sm">Qyteti:</span>
+                              <span className="font-medium capitalize">{car.location.city.name}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Admin Only Pricing Details */}
+                    {isAdmin && (
+                      <div className="space-y-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                        <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                          <FileText className="h-5 w-5" />
+                          Detaje Çmimi (Vetëm Admin)
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {car.bid && (
+                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                              <span className="text-sm">Oferta Aktuale:</span>
+                              <span className="font-medium">€{car.bid.toLocaleString()}</span>
+                            </div>
+                          )}
+                          {car.buy_now && (
+                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                              <span className="text-sm">Çmimi Blerje Tani:</span>
+                              <span className="font-medium">€{car.buy_now.toLocaleString()}</span>
+                            </div>
+                          )}
+                          {car.final_bid && (
+                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                              <span className="text-sm">Oferta Finale:</span>
+                              <span className="font-medium">€{car.final_bid.toLocaleString()}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { Button } from "@/components/ui/button";
@@ -110,6 +111,24 @@ const EncarCarCard = ({
   const { setPreviousPage } = useNavigation();
   const { toast } = useToast();
   const [isLiked, setIsLiked] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: userRole } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+        
+        setIsAdmin(userRole?.role === 'admin');
+      }
+    };
+    
+    checkAdminStatus();
+  }, []);
 
   const handleCardClick = () => {
     // Save current page and any filter state before navigating
@@ -234,178 +253,38 @@ const EncarCarCard = ({
               <span className="capitalize">{transmission}</span>
             </div>
           )}
-          {color && (
-            <div className="flex items-center gap-1">
-              <Palette className="h-3 w-3" />
-              <span className="capitalize">{color}</span>
-            </div>
-          )}
-          {cylinders && (
-            <div className="flex items-center gap-1">
-              <Hash className="h-3 w-3" />
-              <span>{cylinders} Cyl</span>
-            </div>
-          )}
           <div className="flex items-center gap-1">
             <Calendar className="h-3 w-3" />
             <span>{year}</span>
           </div>
         </div>
 
-        {/* Insurance & Safety Info */}
-        {(insurance_v2 || inspect) && (
-          <div className="space-y-1 mb-3 p-2 bg-gray-50 rounded-md">
-            <h5 className="text-xs font-semibold text-gray-700 flex items-center gap-1">
-              <Shield className="h-3 w-3" />
-              Insurance Report
-            </h5>
-            {insurance_v2?.accidentCnt !== undefined && (
-              <div className="flex items-center justify-between text-xs">
-                <span>Accidents:</span>
-                <Badge variant={insurance_v2.accidentCnt === 0 ? "secondary" : "destructive"} className="text-xs px-1 py-0">
-                  {insurance_v2.accidentCnt === 0 ? 'Clean' : insurance_v2.accidentCnt}
-                </Badge>
-              </div>
-            )}
-            {insurance_v2?.ownerChangeCnt !== undefined && (
-              <div className="flex items-center justify-between text-xs">
-                <span>Owners:</span>
-                <span className="font-medium">{insurance_v2.ownerChangeCnt}</span>
-              </div>
-            )}
-            {inspect?.accident_summary?.accident && inspect.accident_summary.accident !== "doesn't exist" && (
-              <div className="flex items-center gap-1 text-xs text-amber-600">
-                <AlertTriangle className="h-3 w-3" />
-                <span>{inspect.accident_summary.accident}</span>
-              </div>
-            )}
-            {lot && (
-              <div className="flex items-center justify-between text-xs">
-                <span>Lot:</span>
-                <span className="font-medium">{lot}</span>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Quick Status Indicators */}
+        <div className="flex flex-wrap gap-1 mb-3">
+          {insurance_v2?.accidentCnt === 0 && (
+            <Badge variant="secondary" className="text-xs px-1 py-0">
+              <Shield className="h-3 w-3 mr-1" />
+              Clean
+            </Badge>
+          )}
+          {lot && (
+            <Badge variant="outline" className="text-xs px-1 py-0">
+              Lot: {lot}
+            </Badge>
+          )}
+        </div>
 
-        {/* Vehicle Details */}
-        {details && (
-          <div className="space-y-1 mb-3 p-2 bg-blue-50 rounded-md">
-            <h5 className="text-xs font-semibold text-blue-700 flex items-center gap-1">
-              <Info className="h-3 w-3" />
-              Details
-            </h5>
-            <div className="grid grid-cols-2 gap-1 text-xs">
-              {details.engine_volume && (
-                <div>
-                  <span className="text-gray-600">Engine:</span>
-                  <div className="font-medium">{details.engine_volume}cc</div>
-                </div>
-              )}
-              {details.first_registration && (
-                <div>
-                  <span className="text-gray-600">Registered:</span>
-                  <div className="font-medium">{details.first_registration.year}-{String(details.first_registration.month).padStart(2, '0')}</div>
-                </div>
-              )}
-              {details.badge && (
-                <div className="col-span-2">
-                  <span className="text-gray-600">Badge:</span>
-                  <div className="font-medium">{details.badge}</div>
-                </div>
-              )}
-              {details.seats_count && (
-                <div>
-                  <span className="text-gray-600">Seats:</span>
-                  <div className="font-medium">{details.seats_count}</div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Equipment & Options */}
-        {details?.options && (details.options.standard?.length || details.options.choice?.length) && (
-          <div className="space-y-1 mb-3 p-2 bg-green-50 rounded-md">
-            <h5 className="text-xs font-semibold text-green-700 flex items-center gap-1">
-              <Award className="h-3 w-3" />
-              Equipment
-            </h5>
-            {details.options.standard && details.options.standard.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {details.options.standard.slice(0, 3).map((option, index) => (
-                  <Badge key={index} variant="outline" className="text-xs px-1 py-0">{option}</Badge>
-                ))}
-                {details.options.standard.length > 3 && (
-                  <Badge variant="secondary" className="text-xs px-1 py-0">+{details.options.standard.length - 3}</Badge>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Inspection Report */}
-        {details?.inspect_outer && details.inspect_outer.length > 0 && (
-          <div className="space-y-1 mb-3 p-2 bg-orange-50 rounded-md">
-            <h5 className="text-xs font-semibold text-orange-700 flex items-center gap-1">
-              <Wrench className="h-3 w-3" />
-              Inspection
-            </h5>
-            <div className="space-y-1">
-              {details.inspect_outer.slice(0, 2).map((item, index) => (
-                <div key={index} className="flex items-center justify-between text-xs">
-                  <span className="truncate">{item.type.title}:</span>
-                  <div className="flex gap-1">
-                    {item.statusTypes.map((status, i) => (
-                      <Badge 
-                        key={i} 
-                        variant={status.code === 'X' ? "destructive" : status.code === 'W' ? "secondary" : "outline"} 
-                        className="text-xs px-1 py-0"
-                      >
-                        {status.code}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              ))}
-              {details.inspect_outer.length > 2 && (
-                <div className="text-center">
-                  <Badge variant="outline" className="text-xs px-1 py-0">+{details.inspect_outer.length - 2} more</Badge>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Source Information */}
-        {(details?.sell_type || details?.original_price) && (
-          <div className="space-y-1 mb-3 p-2 bg-purple-50 rounded-md">
-            <h5 className="text-xs font-semibold text-purple-700 flex items-center gap-1">
-              <FileText className="h-3 w-3" />
-              Source Info
-            </h5>
-            <div className="grid grid-cols-1 gap-1 text-xs">
-              {details.sell_type && (
-                <div className="flex justify-between">
-                  <span>Type:</span>
-                  <span className="font-medium capitalize">{details.sell_type}</span>
-                </div>
-              )}
-              {details.original_price && (
-                <div className="flex justify-between">
-                  <span>Original:</span>
-                  <span className="font-medium">₩{details.original_price.toLocaleString()}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Price */}
+        {/* Price - Admin Only */}
         <div className="flex items-center justify-between mb-3">
-          <div className="text-lg font-bold text-primary">
-            €{price.toLocaleString()}
-          </div>
+          {isAdmin ? (
+            <div className="text-lg font-bold text-primary">
+              €{price.toLocaleString()}
+            </div>
+          ) : (
+            <div className="text-lg font-bold text-primary">
+              Contact for Price
+            </div>
+          )}
           <div className="text-xs text-gray-500">
             KORAUTO Price
           </div>
