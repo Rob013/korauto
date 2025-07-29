@@ -504,12 +504,12 @@ const AdminDashboard = () => {
                         <th className="border border-border px-3 py-2 text-left text-xs font-medium">id</th>
                         <th className="border border-border px-3 py-2 text-left text-xs font-medium">created_at</th>
                         <th className="border border-border px-3 py-2 text-left text-xs font-medium">updated_at</th>
-                        <th className="border border-border px-3 py-2 text-left text-xs font-medium">customer_name</th>
-                        <th className="border border-border px-3 py-2 text-left text-xs font-medium">customer_email</th>
-                        <th className="border border-border px-3 py-2 text-left text-xs font-medium">customer_phone</th>
-                        <th className="border border-border px-3 py-2 text-left text-xs font-medium">car_id</th>
+                        <th className="border border-border px-3 py-2 text-left text-xs font-medium">customer_name<br/><span className="text-[10px] text-muted-foreground">(First + Last Name)</span></th>
+                        <th className="border border-border px-3 py-2 text-left text-xs font-medium">customer_email<br/><span className="text-[10px] text-muted-foreground">(Email from form)</span></th>
+                        <th className="border border-border px-3 py-2 text-left text-xs font-medium">customer_phone<br/><span className="text-[10px] text-muted-foreground">(WhatsApp from form)</span></th>
+                        <th className="border border-border px-3 py-2 text-left text-xs font-medium">car_id<br/><span className="text-[10px] text-muted-foreground">(Selected car)</span></th>
                         <th className="border border-border px-3 py-2 text-left text-xs font-medium">status</th>
-                        <th className="border border-border px-3 py-2 text-left text-xs font-medium">notes</th>
+                        <th className="border border-border px-3 py-2 text-left text-xs font-medium">notes<br/><span className="text-[10px] text-muted-foreground">(Car details or general)</span></th>
                         <th className="border border-border px-3 py-2 text-left text-xs font-medium">Actions</th>
                       </tr>
                     </thead>
@@ -522,19 +522,43 @@ const AdminDashboard = () => {
                             </div>
                           </td>
                           <td className="border border-border px-3 py-2 text-xs">
-                            {new Date(request.created_at).toISOString()}
+                            <div className="space-y-1">
+                              <div className="font-mono">{new Date(request.created_at).toISOString().split('T')[0]}</div>
+                              <div className="text-[10px] text-muted-foreground">{new Date(request.created_at).toISOString().split('T')[1].split('.')[0]}</div>
+                            </div>
                           </td>
                           <td className="border border-border px-3 py-2 text-xs">
-                            {new Date(request.updated_at).toISOString()}
-                          </td>
-                          <td className="border border-border px-3 py-2 text-xs font-medium">
-                            {request.customer_name}
-                          </td>
-                          <td className="border border-border px-3 py-2 text-xs">
-                            {request.customer_email}
+                            <div className="space-y-1">
+                              <div className="font-mono">{new Date(request.updated_at).toISOString().split('T')[0]}</div>
+                              <div className="text-[10px] text-muted-foreground">{new Date(request.updated_at).toISOString().split('T')[1].split('.')[0]}</div>
+                            </div>
                           </td>
                           <td className="border border-border px-3 py-2 text-xs">
-                            {request.customer_phone}
+                            <div className="space-y-1">
+                              <div className="font-medium text-primary">{request.customer_name}</div>
+                              <div className="text-[10px] text-muted-foreground">
+                                {request.customer_name.includes(' ') ? (
+                                  <>
+                                    First: {request.customer_name.split(' ')[0]}<br/>
+                                    Last: {request.customer_name.split(' ').slice(1).join(' ')}
+                                  </>
+                                ) : (
+                                  'Single name entered'
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="border border-border px-3 py-2 text-xs">
+                            <div className="space-y-1">
+                              <div className="font-medium">{request.customer_email}</div>
+                              <div className="text-[10px] text-muted-foreground">📧 Form email field</div>
+                            </div>
+                          </td>
+                          <td className="border border-border px-3 py-2 text-xs">
+                            <div className="space-y-1">
+                              <div className="font-medium">{request.customer_phone}</div>
+                              <div className="text-[10px] text-muted-foreground">📱 WhatsApp field</div>
+                            </div>
                           </td>
                           <td className="border border-border px-3 py-2 text-xs font-mono">
                             {request.car_id || <span className="text-muted-foreground italic">NULL</span>}
