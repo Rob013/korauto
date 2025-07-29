@@ -274,17 +274,11 @@ const EncarCarCard = ({
           )}
         </div>
 
-        {/* Price - Admin Only */}
+        {/* Price */}
         <div className="flex items-center justify-between mb-3">
-          {isAdmin ? (
-            <div className="text-lg font-bold text-primary">
-              €{price.toLocaleString()}
-            </div>
-          ) : (
-            <div className="text-lg font-bold text-primary">
-              Contact for Price
-            </div>
-          )}
+          <div className="text-lg font-bold text-primary">
+            €{price.toLocaleString()}
+          </div>
           <div className="text-xs text-gray-500">
             KORAUTO Price
           </div>

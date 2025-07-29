@@ -389,12 +389,6 @@ const CarCard = ({
               Clean Record
             </Badge>
           )}
-          {keys_available && (
-            <Badge variant="outline" className="text-xs">
-              <Key className="h-3 w-3 mr-1" />
-              Keys Available
-            </Badge>
-          )}
           {details?.seats_count && (
             <Badge variant="outline" className="text-xs">
               {details.seats_count} Seats
@@ -404,15 +398,9 @@ const CarCard = ({
 
         {/* Pricing Information */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-          {isAdmin ? (
-            <span className="text-xl sm:text-2xl font-bold text-primary">
-              €{price.toLocaleString()}
-            </span>
-          ) : (
-            <span className="text-xl sm:text-2xl font-bold text-primary">
-              Contact for Price
-            </span>
-          )}
+          <span className="text-xl sm:text-2xl font-bold text-primary">
+            €{price.toLocaleString()}
+          </span>
           <span className="text-xs text-muted-foreground">
             Deri ne portin e Durresit
           </span>

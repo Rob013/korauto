@@ -251,6 +251,163 @@ const CarDetails = () => {
     });
   };
 
+  // Generate detailed info HTML for new window
+  const generateDetailedInfoHTML = (car: CarDetails) => {
+    return `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${car.year} ${car.make} ${car.model} - Detailed Information</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
+          .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; text-align: center; }
+          .title { font-size: 2.5rem; font-weight: bold; margin-bottom: 10px; }
+          .subtitle { font-size: 1.2rem; opacity: 0.9; }
+          .section { background: white; margin-bottom: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden; }
+          .section-header { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 20px; font-size: 1.3rem; font-weight: 600; }
+          .section-content { padding: 25px; }
+          .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
+          .info-item { background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea; }
+          .info-label { font-weight: 600; color: #475569; margin-bottom: 5px; }
+          .info-value { color: #1e293b; font-size: 1.1rem; }
+          .badge { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; margin: 2px; }
+          .badge-success { background: #dcfce7; color: #166534; }
+          .badge-warning { background: #fef3c7; color: #92400e; }
+          .badge-danger { background: #fee2e2; color: #dc2626; }
+          .badge-info { background: #dbeafe; color: #1d4ed8; }
+          .options-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+          .print-btn { position: fixed; top: 20px; right: 20px; background: #667eea; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: 500; }
+          @media print { .print-btn { display: none; } }
+        </style>
+      </head>
+      <body>
+        <button class="print-btn" onclick="window.print()">Print Details</button>
+        <div class="container">
+          <div class="header">
+            <div class="title">${car.year} ${car.make} ${car.model}</div>
+            <div class="subtitle">€${car.price.toLocaleString()} • Lot #${car.lot || 'N/A'}</div>
+          </div>
+
+          ${car.insurance_v2 ? `
+          <div class="section">
+            <div class="section-header">🛡️ Insurance & Safety Report</div>
+            <div class="section-content">
+              <div class="info-grid">
+                <div class="info-item">
+                  <div class="info-label">Accident History</div>
+                  <div class="info-value">
+                    <span class="badge ${car.insurance_v2.accidentCnt === 0 ? 'badge-success' : 'badge-danger'}">
+                      ${car.insurance_v2.accidentCnt === 0 ? 'Clean Record' : car.insurance_v2.accidentCnt + ' accidents'}
+                    </span>
+                  </div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Previous Owners</div>
+                  <div class="info-value">${car.insurance_v2.ownerChangeCnt || 0}</div>
+                </div>
+                ${car.insurance_v2.totalLossCnt > 0 ? `
+                <div class="info-item">
+                  <div class="info-label">Total Loss Claims</div>
+                  <div class="info-value"><span class="badge badge-danger">${car.insurance_v2.totalLossCnt}</span></div>
+                </div>` : ''}
+              </div>
+            </div>
+          </div>` : ''}
+
+          ${car.details ? `
+          <div class="section">
+            <div class="section-header">🚗 Vehicle Details</div>
+            <div class="section-content">
+              <div class="info-grid">
+                ${car.details.engine_volume ? `
+                <div class="info-item">
+                  <div class="info-label">Engine Volume</div>
+                  <div class="info-value">${car.details.engine_volume}cc</div>
+                </div>` : ''}
+                ${car.details.original_price ? `
+                <div class="info-item">
+                  <div class="info-label">Original Price</div>
+                  <div class="info-value">₩${car.details.original_price.toLocaleString()}</div>
+                </div>` : ''}
+                ${car.details.first_registration ? `
+                <div class="info-item">
+                  <div class="info-label">First Registration</div>
+                  <div class="info-value">${car.details.first_registration.year}-${String(car.details.first_registration.month).padStart(2, '0')}-${String(car.details.first_registration.day).padStart(2, '0')}</div>
+                </div>` : ''}
+                ${car.details.seats_count ? `
+                <div class="info-item">
+                  <div class="info-label">Number of Seats</div>
+                  <div class="info-value">${car.details.seats_count}</div>
+                </div>` : ''}
+              </div>
+            </div>
+          </div>` : ''}
+
+          ${car.details?.options ? `
+          <div class="section">
+            <div class="section-header">⚙️ Equipment & Options</div>
+            <div class="section-content">
+              ${car.details.options.standard?.length ? `
+              <div class="info-item">
+                <div class="info-label">Standard Equipment</div>
+                <div class="options-grid">
+                  ${car.details.options.standard.map(option => `<span class="badge badge-info">${option}</span>`).join('')}
+                </div>
+              </div>` : ''}
+              ${car.details.options.choice?.length ? `
+              <div class="info-item">
+                <div class="info-label">Optional Equipment</div>
+                <div class="options-grid">
+                  ${car.details.options.choice.map(option => `<span class="badge badge-success">${option}</span>`).join('')}
+                </div>
+              </div>` : ''}
+            </div>
+          </div>` : ''}
+
+          ${car.details?.inspect_outer?.length ? `
+          <div class="section">
+            <div class="section-header">🔍 Detailed Inspection Report</div>
+            <div class="section-content">
+              <div class="info-grid">
+                ${car.details.inspect_outer.map(item => `
+                <div class="info-item">
+                  <div class="info-label">${item.type.title}</div>
+                  <div class="info-value">
+                    ${item.statusTypes.map(status => `
+                    <span class="badge ${status.code === 'X' ? 'badge-danger' : status.code === 'W' ? 'badge-warning' : 'badge-info'}">
+                      ${status.title}
+                    </span>`).join('')}
+                  </div>
+                </div>`).join('')}
+              </div>
+            </div>
+          </div>` : ''}
+
+          <div class="section">
+            <div class="section-header">📞 Contact Information</div>
+            <div class="section-content">
+              <div class="info-grid">
+                <div class="info-item">
+                  <div class="info-label">Company</div>
+                  <div class="info-value">KORAUTO - Professional Import Service</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">WhatsApp</div>
+                  <div class="info-value">+383 48 181 116</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  };
+
   const [isLiked, setIsLiked] = useState(false);
   
   const handleLike = () => {
@@ -439,15 +596,9 @@ const CarDetails = () => {
                   {/* Small buttons beside title */}
                    <div className="flex items-center gap-2">
                     <div className="text-right">
-                      {isAdmin ? (
-                        <div className="text-lg font-bold text-primary">
-                          €{car.price.toLocaleString()}
-                        </div>
-                      ) : (
-                        <div className="text-lg font-bold text-primary">
-                          Contact for Price
-                        </div>
-                      )}
+                      <div className="text-lg font-bold text-primary">
+                        €{car.price.toLocaleString()}
+                      </div>
                       <div className="text-sm text-muted-foreground">
                         +350 euro deri ne Prishtine
                       </div>
@@ -594,11 +745,17 @@ const CarDetails = () => {
                   </h3>
                   <Button
                     variant="outline"
-                    onClick={() => setShowDetailedInfo(!showDetailedInfo)}
+                    onClick={() => {
+                      const detailsWindow = window.open('', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+                      if (detailsWindow) {
+                        detailsWindow.document.write(generateDetailedInfoHTML(car));
+                        detailsWindow.document.title = `${car.year} ${car.make} ${car.model} - Detailed Information`;
+                      }
+                    }}
                     className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
                   >
-                    {showDetailedInfo ? 'Fshih Detajet' : 'Shiko Detajet'}
-                    {showDetailedInfo ? <ChevronUp className="h-4 w-4 ml-2" /> : <ChevronDown className="h-4 w-4 ml-2" />}
+                    Shiko Detajet
+                    <ChevronDown className="h-4 w-4 ml-2" />
                   </Button>
                 </div>
 
