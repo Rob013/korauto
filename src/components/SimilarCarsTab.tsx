@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAuctionAPI } from '@/hooks/useAuctionAPI';
+import { useSecureAuctionAPI } from '@/hooks/useSecureAuctionAPI';
 import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
 import CarCard from './CarCard';
 
@@ -14,7 +14,7 @@ interface SimilarCarsTabProps {
 
 const SimilarCarsTab = ({ carMake, carModel, currentCarId }: SimilarCarsTabProps) => {
   const navigate = useNavigate();
-  const { cars, fetchCars, fetchManufacturers } = useAuctionAPI();
+  const { cars, fetchCars, fetchManufacturers } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
   const [similarCars, setSimilarCars] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
