@@ -141,6 +141,65 @@ const CarDetails = () => {
       try {
         setLoading(true);
 
+        // First try to get car from Supabase cache
+        console.log(`🔍 Checking cache for car ID: ${id}`);
+        const { data: cachedCar, error: cacheError } = await supabase
+          .from('cars_cache')
+          .select('*')
+          .eq('api_id', id)
+          .single();
+
+        if (cachedCar && !cacheError) {
+          console.log(`✅ Found car in cache: ${cachedCar.make} ${cachedCar.model}`);
+          
+          const carData = typeof cachedCar.car_data === 'string' ? JSON.parse(cachedCar.car_data) : cachedCar.car_data;
+          const lotData = typeof cachedCar.lot_data === 'string' ? JSON.parse(cachedCar.lot_data || '{}') : (cachedCar.lot_data || {});
+          const images = typeof cachedCar.images === 'string' ? JSON.parse(cachedCar.images || '[]') : (cachedCar.images || []);
+
+          const transformedCar: CarDetails = {
+            id: cachedCar.id,
+            make: cachedCar.make,
+            model: cachedCar.model,
+            year: cachedCar.year,
+            price: cachedCar.price || 25000,
+            image: images[0],
+            images: images,
+            vin: cachedCar.vin,
+            mileage: cachedCar.mileage,
+            transmission: cachedCar.transmission,
+            fuel: cachedCar.fuel,
+            color: cachedCar.color,
+            condition: cachedCar.condition,
+            lot: cachedCar.lot_number,
+            title: carData.title,
+            odometer: lotData.odometer,
+            engine: carData.engine,
+            cylinders: carData.cylinders,
+            drive_wheel: carData.drive_wheel,
+            body_type: carData.body_type,
+            damage: lotData.damage,
+            keys_available: lotData.keys_available,
+            airbags: lotData.airbags,
+            grade_iaai: lotData.grade_iaai,
+            seller: lotData.seller,
+            seller_type: lotData.seller_type,
+            sale_date: lotData.sale_date,
+            bid: lotData.bid,
+            buy_now: lotData.buy_now,
+            final_bid: lotData.final_bid,
+            features: getCarFeatures(carData, lotData),
+            safety_features: getSafetyFeatures(carData, lotData),
+            comfort_features: getComfortFeatures(carData, lotData),
+            performance_rating: 4.5,
+            popularity_score: 85
+          };
+          setCar(transformedCar);
+          setLoading(false);
+          return;
+        }
+
+        console.log(`🌐 Car not in cache, fetching from API...`);
+
         // Try to fetch specific car details from API
         const response = await fetch(`${API_BASE_URL}/cars/${id}`, {
           headers: {
@@ -202,6 +261,7 @@ const CarDetails = () => {
         }
 
         // If specific car endpoint fails, try to find it in the cars list
+        console.log(`🔍 Searching in cars list...`);
         const listResponse = await fetch(`${API_BASE_URL}/cars?per_page=100&page=1`, {
           headers: {
             'accept': '*/*',
@@ -251,18 +311,9 @@ const CarDetails = () => {
               buy_now: lot?.buy_now,
               final_bid: lot?.final_bid,
               // Get real features from API data
-              features: foundCar.features || lot?.features || [
-                'Air Conditioning', 'Power Windows', 'Central Locking', 'ABS Brakes',
-                'Driver Airbag', 'Passenger Airbag', 'Electric Mirrors', 'Power Steering'
-              ],
-              safety_features: foundCar.safety_features || lot?.safety_features || [
-                'ABS Braking System', 'Electronic Stability Program', 'Airbag System',
-                'Immobilizer', 'Central Locking', 'Child Safety Locks'
-              ],
-              comfort_features: foundCar.comfort_features || lot?.comfort_features || [
-                'Air Conditioning', 'Power Windows', 'Electric Mirrors', 'Radio/CD Player',
-                'Remote Central Locking', 'Adjustable Steering Wheel'
-              ],
+              features: getCarFeatures(foundCar, lot),
+              safety_features: getSafetyFeatures(foundCar, lot),
+              comfort_features: getComfortFeatures(foundCar, lot),
               performance_rating: 4.5,
               popularity_score: 85
             };
@@ -272,6 +323,7 @@ const CarDetails = () => {
         }
 
         // If car not found, show error
+        console.log(`❌ Car ${id} not found in API or cache`);
         setError('Car not found');
       } catch (err) {
         console.error('Failed to fetch car details:', err);

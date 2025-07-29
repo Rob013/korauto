@@ -35,6 +35,72 @@ export type Database = {
         }
         Relationships: []
       }
+      cars_cache: {
+        Row: {
+          api_id: string
+          car_data: Json
+          color: string | null
+          condition: string | null
+          created_at: string | null
+          fuel: string | null
+          id: string
+          images: Json | null
+          last_api_sync: string | null
+          lot_data: Json | null
+          lot_number: string | null
+          make: string
+          mileage: string | null
+          model: string
+          price: number | null
+          transmission: string | null
+          updated_at: string | null
+          vin: string | null
+          year: number
+        }
+        Insert: {
+          api_id: string
+          car_data: Json
+          color?: string | null
+          condition?: string | null
+          created_at?: string | null
+          fuel?: string | null
+          id: string
+          images?: Json | null
+          last_api_sync?: string | null
+          lot_data?: Json | null
+          lot_number?: string | null
+          make: string
+          mileage?: string | null
+          model: string
+          price?: number | null
+          transmission?: string | null
+          updated_at?: string | null
+          vin?: string | null
+          year: number
+        }
+        Update: {
+          api_id?: string
+          car_data?: Json
+          color?: string | null
+          condition?: string | null
+          created_at?: string | null
+          fuel?: string | null
+          id?: string
+          images?: Json | null
+          last_api_sync?: string | null
+          lot_data?: Json | null
+          lot_number?: string | null
+          make?: string
+          mileage?: string | null
+          model?: string
+          price?: number | null
+          transmission?: string | null
+          updated_at?: string | null
+          vin?: string | null
+          year?: number
+        }
+        Relationships: []
+      }
       favorite_cars: {
         Row: {
           car_id: string

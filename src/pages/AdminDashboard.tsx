@@ -9,6 +9,7 @@ import { RefreshCw, Mail, Phone, Car, ArrowLeft, LogOut, Users, Activity, Trendi
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import AuthLogin from "@/components/AuthLogin";
+import { CarsSyncButton } from "@/components/CarsSyncButton";
 import { AdminSyncDashboard } from "@/components/AdminSyncDashboard";
 
 interface InspectionRequest {
@@ -253,6 +254,7 @@ const AdminDashboard = () => {
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+            <CarsSyncButton />
             <p className="text-muted-foreground">Logged in as: {user.email}</p>
           </div>
           <div className="flex gap-2">
