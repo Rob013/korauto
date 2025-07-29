@@ -144,9 +144,8 @@ const CarDetails = () => {
         // Try to fetch specific car details from API
         const response = await fetch(`${API_BASE_URL}/cars/${id}`, {
           headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'KORAUTO-WebApp/1.0',
-            'X-API-Key': API_KEY
+            'accept': '*/*',
+            'x-api-key': API_KEY
           }
         });
 
@@ -205,9 +204,8 @@ const CarDetails = () => {
         // If specific car endpoint fails, try to find it in the cars list
         const listResponse = await fetch(`${API_BASE_URL}/cars?per_page=100&page=1`, {
           headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'KORAUTO-WebApp/1.0',
-            'X-API-Key': API_KEY
+            'accept': '*/*',
+            'x-api-key': API_KEY
           }
         });
 
