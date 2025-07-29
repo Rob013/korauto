@@ -18,7 +18,6 @@ interface Model {
   id: number;
   name: string;
   car_count?: number;
-  cars_qty?:number;
 }
 
 interface Generation {
@@ -164,17 +163,20 @@ const FilterForm: React.FC<FilterFormProps> = ({
                   // Alphabetical within same category
                   return a.name.localeCompare(b.name);
                 })
-                .map((manufacturer) => {
-                 const count = filterCounts?.manufacturers[manufacturer.id.toString()];
-                 return (
-                   <SelectItem 
-                     key={manufacturer.id} 
-                     value={manufacturer.id.toString()}
-                   >
-                     {manufacturer.name} {manufacturer?.cars_qty ? `(${manufacturer?.cars_qty})` :"" }
-                   </SelectItem>
-                 );
-                })}
+                {manufacturers
+                    .filter((m) => m.cars_qty && m.cars_qty > 0)
+                    .map((manufacturer) => {
+                      const count = filterCounts?.manufacturers[manufacturer.id.toString()];
+                      return (
+                        <SelectItem 
+                          key={manufacturer.id} 
+                          value={manufacturer.id.toString()}
+                        >
+                          {manufacturer.name} ({manufacturer.cars_qty})
+                        </SelectItem>
+                      );
+                    })}
+
             </SelectContent>
           </Select>
         </div>
@@ -198,7 +200,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
                     key={model.id} 
                     value={model.id.toString()}
                   >
-                    {model.name} {model?.cars_qty ? `(${model?.cars_qty})` :"" }
+                    {model.name} {count !== undefined && count > 0 && `(${count})`}
                   </SelectItem>
                 );
                })}
