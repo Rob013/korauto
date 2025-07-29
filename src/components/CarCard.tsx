@@ -245,9 +245,12 @@ const CarCard = ({
         </div>
 
         {/* Pricing Information */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+        <div className="flex flex-col gap-1 mb-4">
           <span className="text-xl sm:text-2xl font-bold text-primary">
             €{price.toLocaleString()}
+          </span>
+          <span className="text-sm text-muted-foreground">
+            +350 euro deri ne Prishtine
           </span>
           <span className="text-xs text-muted-foreground">
             Deri ne portin e Durresit
