@@ -405,8 +405,13 @@ const CarDetails = () => {
                   
                   {/* Small buttons beside title */}
                   <div className="flex items-center gap-2">
-                    <div className="text-lg font-bold text-primary">
-                      €{car.price.toLocaleString()}
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-primary">
+                        €{car.price.toLocaleString()}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        +350 euro deri ne Prishtine
+                      </div>
                     </div>
                     <InspectionRequestForm 
                       trigger={
