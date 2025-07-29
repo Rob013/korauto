@@ -190,17 +190,23 @@ const FilterForm: React.FC<FilterFormProps> = ({
             </SelectTrigger>
             <SelectContent className="max-h-60 overflow-y-auto">
               <SelectItem value="all">Të gjithë Modelet</SelectItem>
-               {models.map((model) => {
-                const count = filterCounts?.models[model.id.toString()];
-                return (
-                  <SelectItem 
-                    key={model.id} 
-                    value={model.id.toString()}
-                  >
-                    {model.name} {count !== undefined && count > 0 && `(${count})`}
-                  </SelectItem>
-                );
-               })}
+               {models
+                  .filter((model) => {
+                    const count = filterCounts?.models[model.id.toString()];
+                    return count === undefined || count > 0;
+                  })
+                  .map((model) => {
+                    const count = filterCounts?.models[model.id.toString()];
+                    return (
+                      <SelectItem 
+                        key={model.id} 
+                        value={model.id.toString()}
+                      >
+                        {model.name} {count !== undefined && `(${count})`}
+                      </SelectItem>
+                    );
+                  })}
+
             </SelectContent>
           </Select>
         </div>
