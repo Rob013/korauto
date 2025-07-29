@@ -34,8 +34,12 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
     console.log('Form data:', formData);
     
     try {
+      console.log('🚀 Starting form submission...');
+      console.log('📝 Form data:', formData);
+      console.log('🚗 Car details:', { carId, carMake, carModel, carYear });
+      
       // Store in Supabase database with all form and car information
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('inspection_requests')
         .insert({
           customer_name: `${formData.firstName} ${formData.lastName}`,
@@ -45,12 +49,17 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
           notes: carId && carMake && carModel && carYear 
             ? `Car: ${carYear} ${carMake} ${carModel}` 
             : 'General inspection request'
-        });
+        })
+        .select();
+
+      console.log('📊 Database response:', { data, error });
 
       if (error) {
-        console.error('Supabase error:', error);
+        console.error('❌ Supabase error:', error);
         throw error;
       }
+
+      console.log('✅ Successfully saved to database:', data);
 
       // Send email notifications
       try {
