@@ -493,6 +493,22 @@ const CarDetails = () => {
             margin-top: 20px;
           }
           
+          .show-more-btn {
+            background: hsl(var(--secondary));
+            color: hsl(var(--secondary-foreground));
+            border: 1px solid hsl(var(--border));
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-top: 10px;
+            transition: all 0.2s ease;
+          }
+          .show-more-btn:hover {
+            background: hsl(var(--accent));
+          }
+          
           @media (max-width: 768px) {
             .container { padding: 15px; }
             .title { font-size: 2rem; }
@@ -509,42 +525,83 @@ const CarDetails = () => {
         </style>
       </head>
       <body>
-        <div class="container">
-          <div class="controls">
-            <h1 style="font-size: 1.5rem; font-weight: 600;">Car Details Report</h1>
-            <div style="display: flex; gap: 10px; align-items: center;">
-              <button onclick="toggleTheme()" class="theme-toggle" id="themeToggle" title="Toggle theme">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                </svg>
-              </button>
-              <button onclick="window.print()" class="print-btn">🖨️ Print</button>
-            </div>
-          </div>
+        <script>
+          // Car inspection data
+          const inspectionData = ${JSON.stringify(car.details?.inspect_outer || [])};
           
-          <div class="header">
-            <div class="title">${car.year} ${car.make} ${car.model}</div>
-            <div class="subtitle">€${car.price.toLocaleString()} • Lot #${car.lot || 'N/A'}</div>
-          </div>
-          
-          <script>
-            function toggleTheme() {
-              const html = document.documentElement;
-              const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
-              const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+          function getPartColor(partCode) {
+            const part = inspectionData.find(item => {
+              const itemCode = item.type.code ? item.type.code.toLowerCase() : '';
+              const itemTitle = item.type.title ? item.type.title.toLowerCase() : '';
+              const searchCode = partCode.toLowerCase().replace(/-/g, '_');
               
-              html.classList.remove('light', 'dark');
-              html.classList.add(newTheme);
-              
-              // Update toggle icon
-              const toggle = document.getElementById('themeToggle');
-              if (newTheme === 'dark') {
-                toggle.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>';
-              } else {
-                toggle.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>';
-              }
+              return itemCode.includes(searchCode) || 
+                     itemTitle.includes(searchCode.replace('_', ' ')) ||
+                     itemTitle.includes(searchCode.replace('_', '')) ||
+                     (searchCode.includes('fender') && itemTitle.includes('fender')) ||
+                     (searchCode.includes('door') && itemTitle.includes('door')) ||
+                     (searchCode.includes('bumper') && itemTitle.includes('bumper'));
+            });
+            
+            if (!part || !part.statusTypes || part.statusTypes.length === 0) {
+              return '#22c55e'; // Normal - green
             }
-          </script>
+            
+            const hasExchange = part.statusTypes.some(status => status.code === 'X');
+            const hasRepair = part.statusTypes.some(status => status.code === 'W');
+            
+            if (hasExchange) return '#ef4444'; // Exchange - red
+            if (hasRepair) return '#f59e0b'; // Repair - orange
+            return '#22c55e'; // Normal - green
+          }
+          
+          // Apply colors to car parts after page loads
+          window.addEventListener('DOMContentLoaded', function() {
+            const parts = [
+              'front-bumper', 'hood', 'front-fender-left', 'front-fender-right',
+              'front-door-left', 'front-door-right', 'roof', 'rear-door-left',
+              'rear-door-right', 'trunk', 'rear-bumper', 'quarter-panel-left',
+              'quarter-panel-right'
+            ];
+            
+            parts.forEach(partId => {
+              const element = document.getElementById(partId);
+              if (element) {
+                element.setAttribute('fill', getPartColor(partId));
+              }
+            });
+          });
+          
+          function toggleOptions(type) {
+            const hiddenDiv = document.getElementById(type + '-hidden');
+            const toggleBtn = document.getElementById(type + '-toggle');
+            
+            if (hiddenDiv.style.display === 'none') {
+              hiddenDiv.style.display = 'block';
+              toggleBtn.textContent = 'Show less';
+            } else {
+              hiddenDiv.style.display = 'none';
+              const count = hiddenDiv.children.length;
+              toggleBtn.textContent = 'Show ' + count + ' more';
+            }
+          }
+          
+          function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            html.classList.remove('light', 'dark');
+            html.classList.add(newTheme);
+            
+            // Update toggle icon
+            const toggle = document.getElementById('themeToggle');
+            if (newTheme === 'dark') {
+              toggle.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>';
+            } else {
+              toggle.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>';
+            }
+          }
 
           ${car.insurance_v2 || car.insurance || car.inspect ? `
           <div class="section">
@@ -643,22 +700,48 @@ const CarDetails = () => {
               <div class="info-item">
                 <div class="info-label">Standard Equipment</div>
                 <div class="options-grid">
-                  ${car.details.options.standard.slice(0, 5).map(option => `<span class="badge badge-info">${option}</span>`).join('')}
-                  ${car.details.options.standard.length > 5 ? `<span class="badge badge-outline">+${car.details.options.standard.length - 5} more</span>` : ''}
+                  <div id="standard-options">
+                    ${car.details.options.standard.slice(0, 5).map(option => `<span class="badge badge-info">${option}</span>`).join('')}
+                  </div>
+                  ${car.details.options.standard.length > 5 ? `
+                  <div id="standard-hidden" style="display: none;">
+                    ${car.details.options.standard.slice(5).map(option => `<span class="badge badge-info">${option}</span>`).join('')}
+                  </div>
+                  <button onclick="toggleOptions('standard')" id="standard-toggle" class="show-more-btn">
+                    Show ${car.details.options.standard.length - 5} more
+                  </button>` : ''}
                 </div>
               </div>` : ''}
               ${car.details.options.choice?.length ? `
               <div class="info-item">
                 <div class="info-label">Optional Equipment</div>
                 <div class="options-grid">
-                  ${car.details.options.choice.map(option => `<span class="badge badge-success">${option}</span>`).join('')}
+                  <div id="choice-options">
+                    ${car.details.options.choice.slice(0, 5).map(option => `<span class="badge badge-success">${option}</span>`).join('')}
+                  </div>
+                  ${car.details.options.choice.length > 5 ? `
+                  <div id="choice-hidden" style="display: none;">
+                    ${car.details.options.choice.slice(5).map(option => `<span class="badge badge-success">${option}</span>`).join('')}
+                  </div>
+                  <button onclick="toggleOptions('choice')" id="choice-toggle" class="show-more-btn">
+                    Show ${car.details.options.choice.length - 5} more
+                  </button>` : ''}
                 </div>
               </div>` : ''}
               ${car.details.options.tuning?.length ? `
               <div class="info-item">
                 <div class="info-label">Tuning Modifications</div>
                 <div class="options-grid">
-                  ${car.details.options.tuning.map(option => `<span class="badge badge-warning">${option}</span>`).join('')}
+                  <div id="tuning-options">
+                    ${car.details.options.tuning.slice(0, 5).map(option => `<span class="badge badge-warning">${option}</span>`).join('')}
+                  </div>
+                  ${car.details.options.tuning.length > 5 ? `
+                  <div id="tuning-hidden" style="display: none;">
+                    ${car.details.options.tuning.slice(5).map(option => `<span class="badge badge-warning">${option}</span>`).join('')}
+                  </div>
+                  <button onclick="toggleOptions('tuning')" id="tuning-toggle" class="show-more-btn">
+                    Show ${car.details.options.tuning.length - 5} more
+                  </button>` : ''}
                 </div>
               </div>` : ''}
             </div>
@@ -671,22 +754,87 @@ const CarDetails = () => {
             </div>
             <div class="section-content">
               <div class="car-diagram">
-                <h4 style="text-align: center; margin-bottom: 15px; color: hsl(215.4, 16.3%, 46.9%);">Vehicle Inspection Overview</h4>
+                <h4 style="text-align: center; margin-bottom: 20px; color: hsl(var(--foreground));">Vehicle Inspection Diagram</h4>
+                
+                <!-- Car Diagram SVG -->
+                <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+                  <svg width="600" height="400" viewBox="0 0 600 400" style="border: 1px solid hsl(var(--border)); border-radius: 8px; background: hsl(var(--card));">
+                    <!-- Front View -->
+                    <g transform="translate(50, 50)">
+                      <text x="125" y="-10" text-anchor="middle" fill="hsl(var(--foreground))" font-weight="bold">Front View</text>
+                      
+                      <!-- Front Bumper -->
+                      <rect x="0" y="0" width="250" height="30" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="front-bumper"/>
+                      <text x="125" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">Front Bumper</text>
+                      
+                      <!-- Hood -->
+                      <rect x="25" y="30" width="200" height="60" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="hood"/>
+                      <text x="125" y="65" text-anchor="middle" fill="white" font-size="12" font-weight="bold">Hood</text>
+                      
+                      <!-- Front Fenders -->
+                      <rect x="0" y="90" width="60" height="80" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="front-fender-left"/>
+                      <text x="30" y="135" text-anchor="middle" fill="white" font-size="10" font-weight="bold">L Fender</text>
+                      
+                      <rect x="190" y="90" width="60" height="80" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="front-fender-right"/>
+                      <text x="220" y="135" text-anchor="middle" fill="white" font-size="10" font-weight="bold">R Fender</text>
+                      
+                      <!-- Front Doors -->
+                      <rect x="60" y="90" width="65" height="80" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="front-door-left"/>
+                      <text x="92" y="135" text-anchor="middle" fill="white" font-size="10" font-weight="bold">L F Door</text>
+                      
+                      <rect x="125" y="90" width="65" height="80" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="front-door-right"/>
+                      <text x="157" y="135" text-anchor="middle" fill="white" font-size="10" font-weight="bold">R F Door</text>
+                      
+                      <!-- Roof -->
+                      <rect x="60" y="170" width="130" height="40" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="roof"/>
+                      <text x="125" y="195" text-anchor="middle" fill="white" font-size="12" font-weight="bold">Roof</text>
+                      
+                      <!-- Rear Doors -->
+                      <rect x="60" y="210" width="65" height="80" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="rear-door-left"/>
+                      <text x="92" y="255" text-anchor="middle" fill="white" font-size="10" font-weight="bold">L R Door</text>
+                      
+                      <rect x="125" y="210" width="65" height="80" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="rear-door-right"/>
+                      <text x="157" y="255" text-anchor="middle" fill="white" font-size="10" font-weight="bold">R R Door</text>
+                      
+                      <!-- Trunk -->
+                      <rect x="25" y="290" width="200" height="50" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="trunk"/>
+                      <text x="125" y="320" text-anchor="middle" fill="white" font-size="12" font-weight="bold">Trunk</text>
+                    </g>
+                    
+                    <!-- Rear View -->
+                    <g transform="translate(350, 50)">
+                      <text x="125" y="-10" text-anchor="middle" fill="hsl(var(--foreground))" font-weight="bold">Rear View</text>
+                      
+                      <!-- Rear Bumper -->
+                      <rect x="0" y="290" width="250" height="30" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="rear-bumper"/>
+                      <text x="125" y="310" text-anchor="middle" fill="white" font-size="12" font-weight="bold">Rear Bumper</text>
+                      
+                      <!-- Quarter Panels -->
+                      <rect x="0" y="210" width="60" height="80" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="quarter-panel-left"/>
+                      <text x="30" y="255" text-anchor="middle" fill="white" font-size="10" font-weight="bold">L Quarter</text>
+                      
+                      <rect x="190" y="210" width="60" height="80" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="quarter-panel-right"/>
+                      <text x="220" y="255" text-anchor="middle" fill="white" font-size="10" font-weight="bold">R Quarter</text>
+                    </g>
+                  </svg>
+                </div>
+                
                 <div class="legend">
                   <div class="legend-item">
                     <div class="legend-color" style="background: hsl(142.1, 76.2%, 36.3%);"></div>
-                    <span>Normal</span>
+                    <span>Normal Condition</span>
                   </div>
                   <div class="legend-item">
                     <div class="legend-color" style="background: hsl(47.9, 95.8%, 53.1%);"></div>
-                    <span>Repair/Welding</span>
+                    <span>Repair/Welding Required</span>
                   </div>
                   <div class="legend-item">
                     <div class="legend-color" style="background: hsl(0, 84.2%, 60.2%);"></div>
-                    <span>Exchange/Replace</span>
+                    <span>Exchange/Replacement</span>
                   </div>
                 </div>
               </div>
+              
               <div class="info-grid">
                 ${car.details.inspect_outer.map(item => `
                 <div class="info-item">
@@ -702,27 +850,17 @@ const CarDetails = () => {
             </div>
           </div>` : ''}
 
-          ${car.bid || car.buy_now || car.final_bid || car.details?.original_price ? `
+          ${car.bid || car.final_bid ? `
           <div class="section">
             <div class="section-header">
               💰 Market Values & Pricing
             </div>
             <div class="section-content">
               <div class="info-grid">
-                ${car.details?.original_price ? `
-                <div class="info-item">
-                  <div class="info-label">Original Korean Price</div>
-                  <div class="info-value">₩${car.details.original_price.toLocaleString()}</div>
-                </div>` : ''}
                 ${car.bid ? `
                 <div class="info-item">
                   <div class="info-label">Current Bid</div>
                   <div class="info-value">💵 $${car.bid.toLocaleString()}</div>
-                </div>` : ''}
-                ${car.buy_now ? `
-                <div class="info-item">
-                  <div class="info-label">Buy Now Price</div>
-                  <div class="info-value">🛒 $${car.buy_now.toLocaleString()}</div>
                 </div>` : ''}
                 ${car.final_bid ? `
                 <div class="info-item">
