@@ -160,9 +160,9 @@ const CarDetails = () => {
       }
 
       const data = await response.json();
-      const carData = data;
-      const lotData = data.lots?.[0];
-      console.log("lotsdata",carData)
+      const carData = data.data;
+      const lotData = carData.lots?.[0];
+      console.log("lotsdata",lotData)
 
       if (!lotData) throw new Error("Missing lot data");
 
