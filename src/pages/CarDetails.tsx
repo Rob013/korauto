@@ -1043,7 +1043,10 @@ const CarDetails = memo(() => {
                         <Palette className="h-5 w-5 text-primary" />
                         <span className="font-semibold text-foreground">Ngjyra</span>
                       </div>
-                      <span className="text-muted-foreground font-medium capitalize">{car.color}</span>
+                      <span className="text-muted-foreground font-medium capitalize">
+                        {car.color}
+                        {car.details?.seats_count && ` • ${car.details.seats_count} Vende`}
+                      </span>
                     </div>
                   )}
                 </div>
