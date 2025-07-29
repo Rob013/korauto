@@ -128,7 +128,7 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
     console.log('🔵 Current errors:', errors);
     
     if (!isValid) {
-      console.log('❌ Form validation failed');
+      console.log('❌ Form validation failed - stopping submission');
       toast({
         title: "Validation Error",
         description: "Please fix the errors in the form",
@@ -137,6 +137,7 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
       return;
     }
 
+    console.log('✅ Form validation passed, proceeding with submission');
     setIsSubmitting(true);
     
     try {
