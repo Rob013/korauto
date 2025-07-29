@@ -1433,7 +1433,6 @@ const CarDetails = () => {
                     className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
                   >
                     Shiko Detajet
-                    <ChevronDown className="h-4 w-4 ml-2" />
                   </Button>
                 </div>
 

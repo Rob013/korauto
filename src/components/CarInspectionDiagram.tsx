@@ -16,7 +16,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
   inspectionData = [], 
   className = "" 
 }) => {
-  // Map Korean part names to our inspection data
+  // Map part codes to inspection data
   const getPartStatus = (partCode: string) => {
     const part = inspectionData.find(item => 
       item.type.code === partCode || 
@@ -26,7 +26,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
   };
 
   const getStatusColor = (statuses: Array<{ code: string; title: string }>) => {
-    if (statuses.length === 0) return '#e2e8f0'; // Default gray
+    if (statuses.length === 0) return '#10b981'; // Default green
     const hasExchange = statuses.some(s => s.code === 'X');
     const hasWelding = statuses.some(s => s.code === 'W');
     
@@ -36,177 +36,116 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
   };
 
   return (
-    <div className={`w-full max-w-4xl mx-auto p-6 bg-card border border-border rounded-lg ${className}`}>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
-        {/* Front View - 앞(전방) */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-center text-foreground">앞 (전방)</h3>
-          <div className="relative w-full max-w-md mx-auto">
-            <svg viewBox="0 0 300 400" className="w-full h-auto">
-              {/* Car Body Outline */}
-              <path
-                d="M50 80 Q50 60 70 60 L230 60 Q250 60 250 80 L250 320 Q250 340 230 340 L70 340 Q50 340 50 320 Z"
-                fill="#f8fafc"
-                stroke="#cbd5e1"
-                strokeWidth="2"
-              />
-              
-              {/* Windshield */}
-              <rect x="80" y="80" width="140" height="60" 
-                    fill={getStatusColor(getPartStatus('windshield'))} 
-                    stroke="#64748b" strokeWidth="1" rx="5" />
-              
-              {/* Hood */}
-              <rect x="90" y="50" width="120" height="30" 
-                    fill={getStatusColor(getPartStatus('hood'))} 
-                    stroke="#64748b" strokeWidth="1" rx="5" />
-              
-              {/* Front Bumper */}
-              <rect x="70" y="20" width="160" height="30" 
-                    fill={getStatusColor(getPartStatus('front_bumper'))} 
-                    stroke="#64748b" strokeWidth="1" rx="10" />
-              
-              {/* Left Front Fender */}
-              <rect x="20" y="60" width="30" height="80" 
-                    fill={getStatusColor(getPartStatus('P021'))} 
-                    stroke="#64748b" strokeWidth="1" rx="5" />
-              
-              {/* Right Front Fender */}
-              <rect x="250" y="60" width="30" height="80" 
-                    fill={getStatusColor(getPartStatus('P022'))} 
-                    stroke="#64748b" strokeWidth="1" rx="5" />
-              
-              {/* Left Front Door */}
-              <rect x="30" y="150" width="50" height="80" 
-                    fill={getStatusColor(getPartStatus('front_door_left'))} 
-                    stroke="#64748b" strokeWidth="1" rx="5" />
-              
-              {/* Right Front Door */}
-              <rect x="220" y="150" width="50" height="80" 
-                    fill={getStatusColor(getPartStatus('front_door_right'))} 
-                    stroke="#64748b" strokeWidth="1" rx="5" />
-              
-              {/* Left Rear Door */}
-              <rect x="30" y="240" width="50" height="80" 
-                    fill={getStatusColor(getPartStatus('rear_door_left'))} 
-                    stroke="#64748b" strokeWidth="1" rx="5" />
-              
-              {/* Right Rear Door */}
-              <rect x="220" y="240" width="50" height="80" 
-                    fill={getStatusColor(getPartStatus('rear_door_right'))} 
-                    stroke="#64748b" strokeWidth="1" rx="5" />
-              
-              {/* Radiator Support */}
-              <rect x="120" y="40" width="60" height="20" 
-                    fill={getStatusColor(getPartStatus('P051'))} 
-                    stroke="#64748b" strokeWidth="1" rx="3" />
-              
-              {/* Wheels */}
-              <circle cx="80" cy="360" r="25" fill="#475569" stroke="#334155" strokeWidth="2" />
-              <circle cx="220" cy="360" r="25" fill="#475569" stroke="#334155" strokeWidth="2" />
-              <circle cx="80" cy="40" r="25" fill="#475569" stroke="#334155" strokeWidth="2" />
-              <circle cx="220" cy="40" r="25" fill="#475569" stroke="#334155" strokeWidth="2" />
-            </svg>
-          </div>
-        </div>
-
-        {/* Rear View - 뒤(후방) */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-center text-foreground">뒤 (후방)</h3>
-          <div className="relative w-full max-w-md mx-auto">
-            <svg viewBox="0 0 300 400" className="w-full h-auto">
-              {/* Car Body Outline */}
-              <path
-                d="M50 80 Q50 60 70 60 L230 60 Q250 60 250 80 L250 320 Q250 340 230 340 L70 340 Q50 340 50 320 Z"
-                fill="#f8fafc"
-                stroke="#cbd5e1"
-                strokeWidth="2"
-              />
-              
-              {/* Rear Window */}
-              <rect x="80" y="260" width="140" height="60" 
-                    fill={getStatusColor(getPartStatus('rear_window'))} 
-                    stroke="#64748b" strokeWidth="1" rx="5" />
-              
-              {/* Trunk */}
-              <rect x="90" y="320" width="120" height="30" 
-                    fill={getStatusColor(getPartStatus('trunk'))} 
-                    stroke="#64748b" strokeWidth="1" rx="5" />
-              
-              {/* Rear Bumper */}
-              <rect x="70" y="350" width="160" height="30" 
-                    fill={getStatusColor(getPartStatus('rear_bumper'))} 
-                    stroke="#64748b" strokeWidth="1" rx="10" />
-              
-              {/* Left Quarter Panel */}
-              <rect x="20" y="220" width="30" height="80" 
-                    fill={getStatusColor(getPartStatus('quarter_panel_left'))} 
-                    stroke="#64748b" strokeWidth="1" rx="5" />
-              
-              {/* Right Quarter Panel */}
-              <rect x="250" y="220" width="30" height="80" 
-                    fill={getStatusColor(getPartStatus('quarter_panel_right'))} 
-                    stroke="#64748b" strokeWidth="1" rx="5" />
-              
-              {/* Interior view */}
-              <rect x="100" y="120" width="100" height="120" 
-                    fill="#f1f5f9" 
-                    stroke="#cbd5e1" strokeWidth="1" rx="5" />
-              
-              {/* Seats */}
-              <rect x="110" y="140" width="35" height="30" 
-                    fill="#64748b" stroke="#475569" strokeWidth="1" rx="5" />
-              <rect x="155" y="140" width="35" height="30" 
-                    fill="#64748b" stroke="#475569" strokeWidth="1" rx="5" />
-              <rect x="110" y="190" width="35" height="30" 
-                    fill="#64748b" stroke="#475569" strokeWidth="1" rx="5" />
-              <rect x="155" y="190" width="35" height="30" 
-                    fill="#64748b" stroke="#475569" strokeWidth="1" rx="5" />
-              
-              {/* Wheels */}
-              <circle cx="80" cy="360" r="25" fill="#475569" stroke="#334155" strokeWidth="2" />
-              <circle cx="220" cy="360" r="25" fill="#475569" stroke="#334155" strokeWidth="2" />
-              <circle cx="80" cy="40" r="25" fill="#475569" stroke="#334155" strokeWidth="2" />
-              <circle cx="220" cy="40" r="25" fill="#475569" stroke="#334155" strokeWidth="2" />
-            </svg>
-          </div>
-        </div>
+    <div className={`w-full max-w-2xl mx-auto p-4 bg-card border border-border rounded-lg ${className}`}>
+      <h3 className="text-lg font-semibold text-center text-foreground mb-4">Car Inspection Diagram</h3>
+      
+      {/* Simple Car Diagram */}
+      <div className="relative w-full max-w-md mx-auto mb-6">
+        <svg viewBox="0 0 400 200" className="w-full h-auto border border-border rounded">
+          {/* Car Body */}
+          <rect x="50" y="60" width="300" height="80" 
+                fill="#f8fafc" 
+                stroke="#64748b" strokeWidth="2" rx="10" />
+          
+          {/* Hood */}
+          <rect x="280" y="40" width="60" height="40" 
+                fill={getStatusColor(getPartStatus('hood'))} 
+                stroke="#475569" strokeWidth="1" rx="5" />
+          <text x="310" y="62" textAnchor="middle" fontSize="10" fill="#000">Hood</text>
+          
+          {/* Front Bumper */}
+          <rect x="340" y="70" width="20" height="60" 
+                fill={getStatusColor(getPartStatus('front_bumper'))} 
+                stroke="#475569" strokeWidth="1" rx="5" />
+          <text x="350" y="105" textAnchor="middle" fontSize="8" fill="#000">Front</text>
+          
+          {/* Rear Bumper */}
+          <rect x="40" y="70" width="20" height="60" 
+                fill={getStatusColor(getPartStatus('rear_bumper'))} 
+                stroke="#475569" strokeWidth="1" rx="5" />
+          <text x="50" y="105" textAnchor="middle" fontSize="8" fill="#000">Rear</text>
+          
+          {/* Left Front Door */}
+          <rect x="220" y="50" width="50" height="30" 
+                fill={getStatusColor(getPartStatus('P011'))} 
+                stroke="#475569" strokeWidth="1" rx="3" />
+          <text x="245" y="67" textAnchor="middle" fontSize="8" fill="#000">L.Front</text>
+          
+          {/* Right Front Door */}
+          <rect x="220" y="120" width="50" height="30" 
+                fill={getStatusColor(getPartStatus('P012'))} 
+                stroke="#475569" strokeWidth="1" rx="3" />
+          <text x="245" y="137" textAnchor="middle" fontSize="8" fill="#000">R.Front</text>
+          
+          {/* Left Rear Door */}
+          <rect x="130" y="50" width="50" height="30" 
+                fill={getStatusColor(getPartStatus('P013'))} 
+                stroke="#475569" strokeWidth="1" rx="3" />
+          <text x="155" y="67" textAnchor="middle" fontSize="8" fill="#000">L.Rear</text>
+          
+          {/* Right Rear Door */}
+          <rect x="130" y="120" width="50" height="30" 
+                fill={getStatusColor(getPartStatus('P014'))} 
+                stroke="#475569" strokeWidth="1" rx="3" />
+          <text x="155" y="137" textAnchor="middle" fontSize="8" fill="#000">R.Rear</text>
+          
+          {/* Trunk */}
+          <rect x="70" y="40" width="60" height="40" 
+                fill={getStatusColor(getPartStatus('trunk'))} 
+                stroke="#475569" strokeWidth="1" rx="5" />
+          <text x="100" y="62" textAnchor="middle" fontSize="10" fill="#000">Trunk</text>
+          
+          {/* Roof */}
+          <rect x="120" y="90" width="160" height="20" 
+                fill={getStatusColor(getPartStatus('roof'))} 
+                stroke="#475569" strokeWidth="1" rx="3" />
+          <text x="200" y="102" textAnchor="middle" fontSize="10" fill="#000">Roof</text>
+          
+          {/* Wheels */}
+          <circle cx="90" cy="160" r="15" fill="#475569" stroke="#334155" strokeWidth="2" />
+          <circle cx="310" cy="160" r="15" fill="#475569" stroke="#334155" strokeWidth="2" />
+          <circle cx="90" cy="40" r="15" fill="#475569" stroke="#334155" strokeWidth="2" />
+          <circle cx="310" cy="40" r="15" fill="#475569" stroke="#334155" strokeWidth="2" />
+        </svg>
       </div>
 
       {/* Legend */}
-      <div className="mt-8 p-4 bg-muted/50 rounded-lg">
-        <h4 className="text-sm font-semibold mb-3 text-foreground">Legend</h4>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <div className="mb-4 p-3 bg-muted/50 rounded-lg">
+        <h4 className="text-sm font-semibold mb-2 text-foreground">Status Legend</h4>
+        <div className="flex flex-wrap gap-4 justify-center">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-green-500 rounded" />
-            <span className="text-xs text-muted-foreground">Normal</span>
+            <span className="text-xs text-muted-foreground">Normal/Good</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-amber-500 rounded" />
-            <span className="text-xs text-muted-foreground">Repair/Welding</span>
+            <span className="text-xs text-muted-foreground">Repaired/Welding</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-red-500 rounded" />
-            <span className="text-xs text-muted-foreground">Exchange/Replace</span>
+            <span className="text-xs text-muted-foreground">Exchanged/Replaced</span>
           </div>
         </div>
       </div>
 
-      {/* Inspection Details */}
+      {/* Real Inspection Data */}
       {inspectionData.length > 0 && (
-        <div className="mt-6">
-          <h4 className="text-sm font-semibold mb-3 text-foreground">Inspection Details</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="space-y-3">
+          <h4 className="text-sm font-semibold text-foreground">Inspection Report</h4>
+          <div className="space-y-2 max-h-48 overflow-y-auto">
             {inspectionData.map((item, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-background border border-border rounded-lg">
-                <span className="text-sm text-foreground">{item.type.title}</span>
+              <div key={index} className="flex items-center justify-between p-2 bg-background border border-border rounded text-sm">
+                <span className="text-foreground font-medium">{item.type.title}</span>
                 <div className="flex gap-1">
                   {item.statusTypes.map((status, i) => (
                     <Badge 
                       key={i} 
-                      variant={status.code === 'X' ? "destructive" : status.code === 'W' ? "secondary" : "outline"}
-                      className="text-xs"
+                      variant={
+                        status.code === 'X' ? "destructive" : 
+                        status.code === 'W' ? "secondary" : 
+                        "outline"
+                      }
+                      className="text-xs px-2 py-1"
                     >
                       {status.title}
                     </Badge>
@@ -215,6 +154,12 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
               </div>
             ))}
           </div>
+        </div>
+      )}
+      
+      {inspectionData.length === 0 && (
+        <div className="text-center text-muted-foreground text-sm">
+          No inspection data available
         </div>
       )}
     </div>
