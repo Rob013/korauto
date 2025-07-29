@@ -217,7 +217,7 @@ const HomeCarsSection = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0">
               {cars.map((car) => {
                 const lot = car.lots?.[0];
-                const price = lot?.buy_now ? Math.round(lot.buy_now + 2300) : 25000;
+                const price = lot?.buy_now ? Math.round(lot.buy_now + 2200) : 25000;
                 
                 return (
                   <CarCard

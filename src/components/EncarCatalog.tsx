@@ -245,7 +245,7 @@ const EncarCatalog = () => {
           }>
             {cars.map((car) => {
               const lot = car.lots?.[0];
-              const price = lot?.buy_now ? Math.round(lot.buy_now + 2300) : 25000;
+              const price = lot?.buy_now ? Math.round(lot.buy_now + 2200) : 25000;
               
               return (
                 <CarCard

@@ -215,7 +215,7 @@ const CarDetails = () => {
           if (carData) {
             const lot = carData.lots?.[0];
             const basePrice = lot?.buy_now || lot?.final_bid || carData.price || 25000;
-            const price = Math.round(basePrice + 2300);
+            const price = Math.round(basePrice + 2200);
 
             const transformedCar: CarDetails = {
               id: carData.id?.toString() || id,
@@ -277,7 +277,7 @@ const CarDetails = () => {
           if (foundCar) {
             const lot = foundCar.lots?.[0];
             const basePrice = lot?.buy_now || lot?.final_bid || foundCar.price || 25000;
-            const price = Math.round(basePrice + 2300);
+            const price = Math.round(basePrice + 2200);
 
             const transformedCar: CarDetails = {
               id: foundCar.id?.toString() || id,

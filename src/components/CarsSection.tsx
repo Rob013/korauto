@@ -118,8 +118,8 @@ const CarsSection = () => {
         // Extract price from lots[0].buy_now or lots[0].final_bid
         const lot = car.lots?.[0];
         const basePrice = lot?.buy_now || lot?.final_bid || 25000 + (index * 1000);
-        // Add KORAUTO markup of 2300 euro
-        const price = Math.round(basePrice + 2300);
+        // Add KORAUTO markup of 2200 euro
+        const price = Math.round(basePrice + 2200);
         
         // Extract image from lots[0].images.normal[0]
         const images = lot?.images?.normal;

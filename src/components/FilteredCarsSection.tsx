@@ -134,7 +134,7 @@ const FilteredCarsSection = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
               {cars.map((car) => {
                 const lot = car.lots?.[0];
-                const price = lot?.buy_now ? Math.round(lot.buy_now + 2300) : 25000;
+                const price = lot?.buy_now ? Math.round(lot.buy_now + 2200) : 25000;
                 
                 return (
                   <CarCard

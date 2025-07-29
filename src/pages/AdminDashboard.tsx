@@ -33,6 +33,8 @@ interface AdminStats {
   recentSignups: number;
   requestsThisWeek: number;
   requestsThisMonth: number;
+  totalCachedCars: number;
+  recentCarSyncs: number;
 }
 
 const AdminDashboard = () => {
@@ -46,6 +48,8 @@ const AdminDashboard = () => {
     recentSignups: 0,
     requestsThisWeek: 0,
     requestsThisMonth: 0,
+    totalCachedCars: 0,
+    recentCarSyncs: 0,
   });
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
@@ -154,6 +158,16 @@ const AdminDashboard = () => {
         .select('*', { count: 'exact', head: true })
         .gte('created_at', oneWeekAgo.toISOString());
 
+      // Fetch cars cache data for analytics
+      const { count: totalCachedCars } = await supabase
+        .from('cars_cache')
+        .select('*', { count: 'exact', head: true });
+
+      const { count: recentCarSyncs } = await supabase
+        .from('cars_cache')
+        .select('*', { count: 'exact', head: true })
+        .gte('last_api_sync', oneWeekAgo.toISOString());
+
       setStats({
         totalInspectionRequests: totalRequests,
         pendingRequests,
@@ -163,6 +177,8 @@ const AdminDashboard = () => {
         recentSignups: recentSignups || 0,
         requestsThisWeek,
         requestsThisMonth,
+        totalCachedCars: totalCachedCars || 0,
+        recentCarSyncs: recentCarSyncs || 0,
       });
 
     } catch (error) {
@@ -289,7 +305,7 @@ const AdminDashboard = () => {
 
           <TabsContent value="overview" className="space-y-6">
             {/* Key Metrics */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -305,8 +321,21 @@ const AdminDashboard = () => {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Inspection Requests</CardTitle>
+                  <CardTitle className="text-sm font-medium">Cars Available</CardTitle>
                   <Car className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.totalCachedCars}</div>
+                  <p className="text-xs text-muted-foreground">
+                    +{stats.recentCarSyncs} synced this week
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Inspection Requests</CardTitle>
+                  <Activity className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stats.totalInspectionRequests}</div>
@@ -331,13 +360,26 @@ const AdminDashboard = () => {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">This Month</CardTitle>
+                  <CardTitle className="text-sm font-medium">This Week</CardTitle>
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.requestsThisWeek}</div>
+                  <p className="text-xs text-muted-foreground">
+                    New requests
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">This Month</CardTitle>
+                  <Database className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stats.requestsThisMonth}</div>
                   <p className="text-xs text-muted-foreground">
-                    New requests
+                    Inspection requests
                   </p>
                 </CardContent>
               </Card>

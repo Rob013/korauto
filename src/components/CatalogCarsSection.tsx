@@ -116,7 +116,7 @@ const CatalogCarsSection = () => {
       const transformedCars: Car[] = carsArray.map((car: any, index: number) => {
         const lot = car.lots?.[0];
         const basePrice = lot?.buy_now || lot?.final_bid || 25000 + (index * 1000);
-        const price = Math.round(basePrice + 2300);
+        const price = Math.round(basePrice + 2200);
         
         const images = lot?.images?.normal;
         const image = Array.isArray(images) && images.length > 0 ? images[0] : undefined;

@@ -12,7 +12,7 @@ const ContactSection = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-4xl mx-auto px-2 sm:px-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-6xl mx-auto px-2 sm:px-0">
           <Card className="text-center hover:shadow-lg transition-shadow duration-300">
             <CardHeader className="pb-3">
               <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-3">
@@ -28,42 +28,6 @@ const ContactSection = () => {
               >
                 INFO.RGSHPK@gmail.com
               </a>
-            </CardContent>
-          </Card>
-
-          <Card className="text-center hover:shadow-lg transition-shadow duration-300">
-            <CardHeader>
-              <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
-                <Phone className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <CardTitle className="text-lg">Telefoni</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-2">Na telefononi direkt</p>
-              <div className="space-y-2">
-                <a 
-                  href="tel:+38348181116" 
-                  className="block text-primary hover:text-primary/80 transition-colors font-medium"
-                >
-                  +38348181116
-                </a>
-                <div className="flex gap-2">
-                  <a 
-                    href="https://wa.me/38348181116" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition-colors"
-                  >
-                    WhatsApp
-                  </a>
-                  <a 
-                    href="viber://chat?number=+38348181116" 
-                    className="text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600 transition-colors"
-                  >
-                    Viber
-                  </a>
-                </div>
-              </div>
             </CardContent>
           </Card>
 
@@ -98,6 +62,188 @@ const ContactSection = () => {
               <p className="text-muted-foreground mb-2">Jemi të disponueshëm</p>
               <div className="text-primary font-medium">
                 <p>Çdo ditë: 9:00-18:00</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="text-center hover:shadow-lg transition-shadow duration-300">
+            <CardHeader>
+              <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
+                <Phone className="h-6 w-6 text-primary-foreground" />
+              </div>
+              <CardTitle className="text-lg">Robert Gashi</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-2">Agent shitjesh</p>
+              <div className="space-y-2">
+                <a 
+                  href="tel:+38348181116" 
+                  className="block text-primary hover:text-primary/80 transition-colors font-medium"
+                >
+                  +38348181116
+                </a>
+                <div className="flex gap-2">
+                  <a 
+                    href="https://wa.me/38348181116" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition-colors"
+                  >
+                    WhatsApp
+                  </a>
+                  <a 
+                    href="viber://chat?number=+38348181116" 
+                    className="text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600 transition-colors"
+                  >
+                    Viber
+                  </a>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-6xl mx-auto px-2 sm:px-0 mt-6">
+          <Card className="text-center hover:shadow-lg transition-shadow duration-300">
+            <CardHeader>
+              <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
+                <Phone className="h-6 w-6 text-primary-foreground" />
+              </div>
+              <CardTitle className="text-lg">Rajmond</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-2">Agent shitjesh</p>
+              <div className="space-y-2">
+                <a 
+                  href="tel:+38346105588" 
+                  className="block text-primary hover:text-primary/80 transition-colors font-medium"
+                >
+                  +38346105588
+                </a>
+                <div className="flex gap-2">
+                  <a 
+                    href="https://wa.me/38346105588" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition-colors"
+                  >
+                    WhatsApp
+                  </a>
+                  <a 
+                    href="viber://chat?number=+38346105588" 
+                    className="text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600 transition-colors"
+                  >
+                    Viber
+                  </a>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="text-center hover:shadow-lg transition-shadow duration-300">
+            <CardHeader>
+              <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
+                <Phone className="h-6 w-6 text-primary-foreground" />
+              </div>
+              <CardTitle className="text-lg">Renato</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-2">Agent shitjesh</p>
+              <div className="space-y-2">
+                <a 
+                  href="tel:+38348181117" 
+                  className="block text-primary hover:text-primary/80 transition-colors font-medium"
+                >
+                  +38348181117
+                </a>
+                <div className="flex gap-2">
+                  <a 
+                    href="https://wa.me/38348181117" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition-colors"
+                  >
+                    WhatsApp
+                  </a>
+                  <a 
+                    href="viber://chat?number=+38348181117" 
+                    className="text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600 transition-colors"
+                  >
+                    Viber
+                  </a>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="text-center hover:shadow-lg transition-shadow duration-300">
+            <CardHeader>
+              <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
+                <Phone className="h-6 w-6 text-primary-foreground" />
+              </div>
+              <CardTitle className="text-lg">Leonit</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-2">Agent shitjesh</p>
+              <div className="space-y-2">
+                <a 
+                  href="tel:045244999" 
+                  className="block text-primary hover:text-primary/80 transition-colors font-medium"
+                >
+                  045244999
+                </a>
+                <div className="flex gap-2">
+                  <a 
+                    href="https://wa.me/045244999" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition-colors"
+                  >
+                    WhatsApp
+                  </a>
+                  <a 
+                    href="viber://chat?number=045244999" 
+                    className="text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600 transition-colors"
+                  >
+                    Viber
+                  </a>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="text-center hover:shadow-lg transition-shadow duration-300">
+            <CardHeader>
+              <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
+                <Phone className="h-6 w-6 text-primary-foreground" />
+              </div>
+              <CardTitle className="text-lg">Reuf</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-2">Agent shitjesh</p>
+              <div className="space-y-2">
+                <a 
+                  href="tel:+38344661161" 
+                  className="block text-primary hover:text-primary/80 transition-colors font-medium"
+                >
+                  +38344661161
+                </a>
+                <div className="flex gap-2">
+                  <a 
+                    href="https://wa.me/38344661161" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition-colors"
+                  >
+                    WhatsApp
+                  </a>
+                  <a 
+                    href="viber://chat?number=+38344661161" 
+                    className="text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600 transition-colors"
+                  >
+                    Viber
+                  </a>
+                </div>
               </div>
             </CardContent>
           </Card>
