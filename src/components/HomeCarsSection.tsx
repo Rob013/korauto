@@ -242,7 +242,7 @@ const HomeCarsSection = () => {
               </div>
             ))}
           </div>
-        ) : cars.length === 0 ? (
+        ) : displayedCars.length === 0 ? (
           <div className="text-center py-8 sm:py-12 px-4">
             <p className="text-base sm:text-lg text-muted-foreground mb-4">
               Nuk u gjetën makina me këto filtra.

@@ -116,7 +116,7 @@ export const useDailyCarRotation = () => {
       // Process existing cars if we haven't fetched new ones today
       setDailyCars(cars.slice(0, 50));
     }
-  }, []);
+  }, [dailyCars.length, cars.length]);
 
   // Set up midnight refresh
   useEffect(() => {
@@ -135,7 +135,7 @@ export const useDailyCarRotation = () => {
     // Check every minute for midnight
     const interval = setInterval(checkForMidnight, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchDailyCars]);
 
   return {
     dailyCars,
