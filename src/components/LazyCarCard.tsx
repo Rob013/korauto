@@ -297,6 +297,11 @@ const LazyCarCard = memo(({
               Clean Record
             </Badge>
           )}
+          {details?.seats_count && (
+            <Badge variant="outline" className="text-xs">
+              {details.seats_count} Seats
+            </Badge>
+          )}
         </div>
 
         {/* Pricing */}
