@@ -64,7 +64,8 @@ const HomeCarsSection = () => {
   // Use daily rotating API cars when no filters, regular cars when filtered
   const hasFilters = Object.keys(filters).some(key => filters[key] !== undefined && filters[key] !== '');
   const carsToDisplay = hasFilters ? cars : dailyCars;
-  const displayedCars = useSortedCars(carsToDisplay, sortBy);
+  const sortedCars = useSortedCars(carsToDisplay, sortBy);
+  const displayedCars = sortedCars.slice(0, 6);
   const currentLoading = hasFilters ? loading : dailyLoading;
   const currentError = hasFilters ? error : dailyError;
   
