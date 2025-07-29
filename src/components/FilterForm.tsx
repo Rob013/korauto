@@ -162,10 +162,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
                   
                   // Alphabetical within same category
                   return a.name.localeCompare(b.name);
-                })
-               
-                    .filter((m) => m.cars_qty && m.cars_qty > 0)
-                    .map((manufacturer) => {
+                }).filter((m) => m.cars_qty && m.cars_qty > 0).map((manufacturer) => {
                       const count = filterCounts?.manufacturers[manufacturer.id.toString()];
                       return (
                         <SelectItem 
@@ -175,7 +172,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
                           {manufacturer.name} ({manufacturer.cars_qty})
                         </SelectItem>
                       );
-                    })
+                   })}
 
             </SelectContent>
           </Select>
