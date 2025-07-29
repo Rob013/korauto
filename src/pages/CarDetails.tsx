@@ -211,7 +211,7 @@ const CarDetails = () => {
   console.error('❌ Failed to fetch from lot endpoint:', apiError);
 }
 
-  }, [id]);
+  }, [lot]);
 
   const handleContactWhatsApp = () => {
     const message = `Përshëndetje! Jam i interesuar për ${car?.year} ${car?.make} ${car?.model} (€${car?.price.toLocaleString()}). A mund të më jepni më shumë informacion?`;
