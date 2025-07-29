@@ -106,18 +106,21 @@ export type Database = {
           car_id: string
           created_at: string
           id: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
           car_id: string
           created_at?: string
           id?: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
           car_id?: string
           created_at?: string
           id?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: [
@@ -311,6 +314,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      website_analytics: {
+        Row: {
+          action_type: string
+          car_id: string | null
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          metadata: Json | null
+          page_title: string | null
+          page_url: string
+          referrer: string | null
+          session_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          car_id?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          page_title?: string | null
+          page_url: string
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          car_id?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          page_title?: string | null
+          page_url?: string
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
