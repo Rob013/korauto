@@ -24,7 +24,7 @@ interface Car {
   engine?: { id: number; name: string };
   drive_wheel?: string;
   vehicle_type?: { id: number; name: string };
-  cylinders?: string;
+  cylinders?: number;
   lots?: any[];
 }
 

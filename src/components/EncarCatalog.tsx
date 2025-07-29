@@ -361,7 +361,7 @@ const EncarCatalog = () => {
                   engine={car.engine?.name}
                   drive_wheel={car.drive_wheel}
                   vehicle_type={car.vehicle_type?.name}
-                  cylinders={String(car.cylinders || '')}
+                  cylinders={car.cylinders}
                   bid={lot?.bid}
                   estimate_repair_price={lot?.estimate_repair_price}
                   pre_accident_price={lot?.pre_accident_price}

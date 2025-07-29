@@ -30,7 +30,7 @@ interface CarCardProps {
   engine?: string;
   drive_wheel?: string;
   vehicle_type?: string;
-  cylinders?: string;
+  cylinders?: number;
   bid?: number;
   estimate_repair_price?: number;
   pre_accident_price?: number;
@@ -47,6 +47,41 @@ interface CarCardProps {
   grade_iaai?: string;
   domain?: string;
   external_id?: string;
+  // Insurance information
+  insurance?: {
+    accident_history?: string;
+    repair_count?: string;
+    total_loss?: string;
+    repair_cost?: string;
+    flood_damage?: string;
+    own_damage?: string;
+    other_damage?: string;
+  };
+  insurance_v2?: {
+    myAccidentCnt?: number;
+    otherAccidentCnt?: number;
+    ownerChangeCnt?: number;
+    robberCnt?: number;
+    totalLossCnt?: number;
+    floodTotalLossCnt?: number;
+    accidentCnt?: number;
+  };
+  // Location details
+  location?: {
+    country?: { name: string; iso: string };
+    city?: { name: string };
+    state?: string;
+  };
+  // Inspection details
+  inspect?: {
+    accident_summary?: {
+      main_framework?: string;
+      exterior1rank?: string;
+      exterior2rank?: string;
+      simple_repair?: string;
+      accident?: string;
+    };
+  };
 }
 const CarCard = ({
   id,
@@ -87,7 +122,11 @@ const CarCard = ({
   airbags,
   grade_iaai,
   domain,
-  external_id
+  external_id,
+  insurance,
+  insurance_v2,
+  location,
+  inspect
 }: CarCardProps) => {
   const navigate = useNavigate();
   const { setPreviousPage } = useNavigation();
@@ -243,7 +282,45 @@ const CarCard = ({
               <Truck className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <span className="capitalize truncate">{String(body_type).replace('_', ' ')}</span>
             </div>}
+          {location?.city && <div className="flex items-center gap-2">
+              <Hash className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className="capitalize truncate">{location.city.name}</span>
+            </div>}
+          {cylinders && <div className="flex items-center gap-2">
+              <Settings className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className="truncate">{cylinders} Cylinders</span>
+            </div>}
         </div>
+
+        {/* Insurance & Safety Info */}
+        {(insurance_v2 || inspect) && (
+          <div className="space-y-1 mb-4 text-xs">
+            {insurance_v2?.accidentCnt !== undefined && (
+              <div className="flex items-center gap-2">
+                <Shield className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                <span className="truncate">
+                  Accidents: {insurance_v2.accidentCnt} | Owners: {insurance_v2.ownerChangeCnt || 0}
+                </span>
+              </div>
+            )}
+            {inspect?.accident_summary?.accident && (
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-3 w-3 text-amber-500 flex-shrink-0" />
+                <span className="truncate text-amber-600">
+                  Accident: {inspect.accident_summary.accident}
+                </span>
+              </div>
+            )}
+            {keys_available !== undefined && (
+              <div className="flex items-center gap-2">
+                <Key className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                <span className="truncate">
+                  Keys: {keys_available ? 'Available' : 'Not Available'}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Pricing Information */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">

@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Car, MapPin, Gauge, Fuel, Calendar, Eye,
-  Heart, Share2, ArrowRight, MessageCircle
+  Heart, Share2, ArrowRight, MessageCircle, Shield, 
+  AlertTriangle, Key, Settings, Palette, Hash
 } from "lucide-react";
 import InspectionRequestForm from "./InspectionRequestForm";
 
@@ -23,10 +24,54 @@ interface EncarCarCardProps {
   location?: string;
   isNew?: boolean;
   isCertified?: boolean;
+  // Enhanced fields from API
+  vin?: string;
+  transmission?: string;
+  color?: string;
+  condition?: string;
+  lot?: string;
+  cylinders?: number;
+  // Insurance information
+  insurance?: {
+    accident_history?: string;
+    repair_count?: string;
+    total_loss?: string;
+    repair_cost?: string;
+    flood_damage?: string;
+    own_damage?: string;
+    other_damage?: string;
+  };
+  insurance_v2?: {
+    myAccidentCnt?: number;
+    otherAccidentCnt?: number;
+    ownerChangeCnt?: number;
+    robberCnt?: number;
+    totalLossCnt?: number;
+    floodTotalLossCnt?: number;
+    accidentCnt?: number;
+  };
+  // Location details
+  locationDetails?: {
+    country?: { name: string; iso: string };
+    city?: { name: string };
+    state?: string;
+  };
+  // Inspection details
+  inspect?: {
+    accident_summary?: {
+      main_framework?: string;
+      exterior1rank?: string;
+      exterior2rank?: string;
+      simple_repair?: string;
+      accident?: string;
+    };
+  };
 }
 
 const EncarCarCard = ({ 
-  id, make, model, year, price, image, mileage, fuel, location, isNew, isCertified 
+  id, make, model, year, price, image, mileage, fuel, location, isNew, isCertified,
+  vin, transmission, color, condition, lot, cylinders, insurance, insurance_v2, 
+  locationDetails, inspect
 }: EncarCarCardProps) => {
   const navigate = useNavigate();
   const { setPreviousPage } = useNavigation();
@@ -137,7 +182,7 @@ const EncarCarCard = ({
         </div>
 
         {/* Specs */}
-        <div className="flex items-center gap-4 text-xs text-gray-600 mb-3">
+        <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-3">
           {mileage && (
             <div className="flex items-center gap-1">
               <Gauge className="h-3 w-3" />
@@ -150,11 +195,58 @@ const EncarCarCard = ({
               <span className="capitalize">{fuel}</span>
             </div>
           )}
+          {transmission && (
+            <div className="flex items-center gap-1">
+              <Settings className="h-3 w-3" />
+              <span className="capitalize">{transmission}</span>
+            </div>
+          )}
+          {color && (
+            <div className="flex items-center gap-1">
+              <Palette className="h-3 w-3" />
+              <span className="capitalize">{color}</span>
+            </div>
+          )}
+          {cylinders && (
+            <div className="flex items-center gap-1">
+              <Hash className="h-3 w-3" />
+              <span>{cylinders} Cyl</span>
+            </div>
+          )}
           <div className="flex items-center gap-1">
             <Calendar className="h-3 w-3" />
             <span>{year}</span>
           </div>
         </div>
+
+        {/* Insurance & Safety Info */}
+        {(insurance_v2 || inspect) && (
+          <div className="space-y-1 mb-3 text-xs">
+            {insurance_v2?.accidentCnt !== undefined && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                  <Shield className="h-3 w-3 text-blue-500" />
+                  <span>Insurance Clear</span>
+                </div>
+                <span className="text-green-600 font-medium">
+                  {insurance_v2.accidentCnt === 0 ? '✓ Clean' : `${insurance_v2.accidentCnt} accidents`}
+                </span>
+              </div>
+            )}
+            {inspect?.accident_summary?.accident && inspect.accident_summary.accident !== "doesn't exist" && (
+              <div className="flex items-center gap-1 text-amber-600">
+                <AlertTriangle className="h-3 w-3" />
+                <span>Accident: {inspect.accident_summary.accident}</span>
+              </div>
+            )}
+            {lot && (
+              <div className="flex items-center gap-1">
+                <Key className="h-3 w-3 text-gray-500" />
+                <span>Lot: {lot}</span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Price */}
         <div className="flex items-center justify-between mb-3">
