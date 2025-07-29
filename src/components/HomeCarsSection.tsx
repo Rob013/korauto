@@ -8,6 +8,7 @@ import { useAuctionAPI } from '@/hooks/useAuctionAPI';
 import FilterForm from '@/components/FilterForm';
 import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
 import { useRandomCars } from '@/hooks/useRandomCars';
+import { useDailyRotatingCars } from '@/hooks/useDailyRotatingCars';
 import { useSortedCars, getSortOptions, SortOption } from '@/hooks/useSortedCars';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowUpDown } from 'lucide-react';
@@ -58,10 +59,10 @@ const HomeCarsSection = () => {
   const [loadingCounts, setLoadingCounts] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('popular');
   
-  // Use random cars when no filters are applied
+  // Use daily rotating cars with German car priority when no filters are applied
   const hasFilters = Object.keys(filters).some(key => filters[key] !== undefined && filters[key] !== '');
-  const randomCars = useRandomCars(cars, hasFilters);
-  const displayedCars = useSortedCars(randomCars, sortBy);
+  const dailyRotatingCars = useDailyRotatingCars(cars, hasFilters);
+  const displayedCars = useSortedCars(dailyRotatingCars, sortBy);
   
   const handleFiltersChange = (newFilters: ApiFilters) => {
     setFilters(newFilters);
@@ -144,13 +145,21 @@ const HomeCarsSection = () => {
     loadInitialCounts();
   }, [manufacturers]);
 
-  // Refresh cars on component mount to ensure fresh random order
+  // Refresh cars daily and when manufacturers change
   useEffect(() => {
     const interval = setInterval(() => {
       if (!hasFilters) {
-        fetchCars(1, {}, true); // Refresh only when no filters
+        // Refresh at midnight for new daily cars
+        const now = new Date();
+        const nextMidnight = new Date();
+        nextMidnight.setDate(now.getDate() + 1);
+        nextMidnight.setHours(0, 0, 0, 0);
+        
+        if (now.getTime() > nextMidnight.getTime() - 60000) { // Refresh 1 minute before midnight
+          fetchCars(1, {}, true);
+        }
       }
-    }, 30000); // Refresh every 30 seconds when no filters
+    }, 60000); // Check every minute
 
     return () => clearInterval(interval);
   }, [hasFilters, fetchCars]);
@@ -165,7 +174,7 @@ const HomeCarsSection = () => {
         <div className="text-center mb-4 sm:mb-6">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground">Makinat e Disponueshme</h2>
           <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
-            Shfletoni përzgjedhjen tonë të mjeteve të cilësisë së lartë. Çdo makinë mund të inspektohet profesionalisht falas.
+            Shfletoni përzgjedhjen tonë të mjeteve të cilësisë së lartë me fokus në markët gjermane. Makinat ndryshohen çdo ditë.
           </p>
           
           <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 mt-4 sm:mt-6">
