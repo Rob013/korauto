@@ -174,7 +174,7 @@ const CarDetails = () => {
       image: carData.images?.normal?.[0] || carData.images?.big?.[0],
       images: carData.images?.normal || carData.images?.big || [],
       vin: carData.vin,
-      mileage: carData.odometer?.km ? ${carData.odometer.km.toLocaleString()} km : undefined,
+      mileage: carData.odometer?.km ? `${carData.odometer.km.toLocaleString()} km`: undefined,
       transmission: carData.transmission?.name,
       fuel: carData.fuel?.name,
       color: carData.color?.name,
