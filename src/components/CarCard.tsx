@@ -375,18 +375,12 @@ const CarCard = ({
 
         {/* Technical Details */}
         <div className="mb-4">
-          <h4 className="text-sm font-semibold mb-2 text-foreground">Detaje Teknike</h4>
+          
           
         </div>
 
         {/* Quick Status Indicators */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {insurance_v2?.accidentCnt === 0 && <Badge variant="secondary" className="text-xs">
-              <Shield className="h-3 w-3 mr-1" />
-              Clean Record
-            </Badge>}
-          {details?.seats_count}
-        </div>
+        
 
         {/* Pricing Information */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
