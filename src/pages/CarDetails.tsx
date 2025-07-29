@@ -525,23 +525,83 @@ const CarDetails = () => {
         </style>
       </head>
       <body>
-        <div class="container">
-          <div class="controls">
-            <h1 style="font-size: 1.5rem; font-weight: 600;">Car Details Report</h1>
-            <div style="display: flex; gap: 10px; align-items: center;">
-              <button onclick="toggleTheme()" class="theme-toggle" id="themeToggle" title="Toggle theme">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                </svg>
-              </button>
-              <button onclick="window.print()" class="print-btn">🖨️ Print</button>
-            </div>
-          </div>
+        <script>
+          // Car inspection data
+          const inspectionData = ${JSON.stringify(car.details?.inspect_outer || [])};
           
-          <div class="header">
-            <div class="title">${car.year} ${car.make} ${car.model}</div>
-            <div class="subtitle">€${car.price.toLocaleString()} • Lot #${car.lot || 'N/A'}</div>
-          </div>
+          function getPartColor(partCode) {
+            const part = inspectionData.find(item => {
+              const itemCode = item.type.code ? item.type.code.toLowerCase() : '';
+              const itemTitle = item.type.title ? item.type.title.toLowerCase() : '';
+              const searchCode = partCode.toLowerCase().replace(/-/g, '_');
+              
+              return itemCode.includes(searchCode) || 
+                     itemTitle.includes(searchCode.replace('_', ' ')) ||
+                     itemTitle.includes(searchCode.replace('_', '')) ||
+                     (searchCode.includes('fender') && itemTitle.includes('fender')) ||
+                     (searchCode.includes('door') && itemTitle.includes('door')) ||
+                     (searchCode.includes('bumper') && itemTitle.includes('bumper'));
+            });
+            
+            if (!part || !part.statusTypes || part.statusTypes.length === 0) {
+              return '#22c55e'; // Normal - green
+            }
+            
+            const hasExchange = part.statusTypes.some(status => status.code === 'X');
+            const hasRepair = part.statusTypes.some(status => status.code === 'W');
+            
+            if (hasExchange) return '#ef4444'; // Exchange - red
+            if (hasRepair) return '#f59e0b'; // Repair - orange
+            return '#22c55e'; // Normal - green
+          }
+          
+          // Apply colors to car parts after page loads
+          window.addEventListener('DOMContentLoaded', function() {
+            const parts = [
+              'front-bumper', 'hood', 'front-fender-left', 'front-fender-right',
+              'front-door-left', 'front-door-right', 'roof', 'rear-door-left',
+              'rear-door-right', 'trunk', 'rear-bumper', 'quarter-panel-left',
+              'quarter-panel-right'
+            ];
+            
+            parts.forEach(partId => {
+              const element = document.getElementById(partId);
+              if (element) {
+                element.setAttribute('fill', getPartColor(partId));
+              }
+            });
+          });
+          
+          function toggleOptions(type) {
+            const hiddenDiv = document.getElementById(type + '-hidden');
+            const toggleBtn = document.getElementById(type + '-toggle');
+            
+            if (hiddenDiv.style.display === 'none') {
+              hiddenDiv.style.display = 'block';
+              toggleBtn.textContent = 'Show less';
+            } else {
+              hiddenDiv.style.display = 'none';
+              const count = hiddenDiv.children.length;
+              toggleBtn.textContent = 'Show ' + count + ' more';
+            }
+          }
+          
+          function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            html.classList.remove('light', 'dark');
+            html.classList.add(newTheme);
+            
+            // Update toggle icon
+            const toggle = document.getElementById('themeToggle');
+            if (newTheme === 'dark') {
+              toggle.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>';
+            } else {
+              toggle.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>';
+            }
+          }
 
           ${car.insurance_v2 || car.insurance || car.inspect ? `
           <div class="section">
@@ -696,110 +756,65 @@ const CarDetails = () => {
               <div class="car-diagram">
                 <h4 style="text-align: center; margin-bottom: 20px; color: hsl(var(--foreground));">Vehicle Inspection Diagram</h4>
                 
-                <!-- Car Inspection Diagram - Korean Style -->
-                <div style="display: flex; justify-content: center; margin-bottom: 30px;">
-                  <svg width="800" height="500" viewBox="0 0 800 500" style="border: 1px solid hsl(var(--border)); border-radius: 8px; background: hsl(var(--card));">
-                    <!-- Title -->
-                    <text x="400" y="25" text-anchor="middle" fill="hsl(var(--foreground))" font-size="18" font-weight="bold">Vehicle Inspection Diagram</text>
-                    
-                    <!-- Front View (앞/전방) -->
-                    <g transform="translate(50, 60)">
-                      <text x="150" y="-5" text-anchor="middle" fill="hsl(var(--foreground))" font-size="14" font-weight="bold">Front View (앞/전방)</text>
-                      
-                      <!-- Car outline from front -->
-                      <path d="M50 50 L50 280 L80 300 L220 300 L250 280 L250 50 Z" 
-                            fill="none" stroke="hsl(var(--border))" stroke-width="2"/>
-                      
-                      <!-- Hood -->
-                      <rect x="70" y="50" width="160" height="40" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="3" id="hood-front"/>
-                      <text x="150" y="75" text-anchor="middle" fill="white" font-size="10" font-weight="bold">Hood</text>
+                <!-- Car Diagram SVG -->
+                <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+                  <svg width="600" height="400" viewBox="0 0 600 400" style="border: 1px solid hsl(var(--border)); border-radius: 8px; background: hsl(var(--card));">
+                    <!-- Front View -->
+                    <g transform="translate(50, 50)">
+                      <text x="125" y="-10" text-anchor="middle" fill="hsl(var(--foreground))" font-weight="bold">Front View</text>
                       
                       <!-- Front Bumper -->
-                      <rect x="60" y="90" width="180" height="25" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="3" id="front-bumper-main"/>
-                      <text x="150" y="107" text-anchor="middle" fill="white" font-size="10" font-weight="bold">Front Bumper</text>
+                      <rect x="0" y="0" width="250" height="30" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="front-bumper"/>
+                      <text x="125" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">Front Bumper</text>
                       
-                      <!-- Left Front Fender -->
-                      <rect x="50" y="115" width="40" height="60" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="3" id="left-front-fender"/>
-                      <text x="70" y="150" text-anchor="middle" fill="white" font-size="9" font-weight="bold">L Fender</text>
+                      <!-- Hood -->
+                      <rect x="25" y="30" width="200" height="60" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="hood"/>
+                      <text x="125" y="65" text-anchor="middle" fill="white" font-size="12" font-weight="bold">Hood</text>
                       
-                      <!-- Right Front Fender -->
-                      <rect x="210" y="115" width="40" height="60" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="3" id="right-front-fender"/>
-                      <text x="230" y="150" text-anchor="middle" fill="white" font-size="9" font-weight="bold">R Fender</text>
+                      <!-- Front Fenders -->
+                      <rect x="0" y="90" width="60" height="80" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="front-fender-left"/>
+                      <text x="30" y="135" text-anchor="middle" fill="white" font-size="10" font-weight="bold">L Fender</text>
                       
-                      <!-- Left Front Door -->
-                      <rect x="90" y="115" width="50" height="80" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="3" id="left-front-door"/>
-                      <text x="115" y="160" text-anchor="middle" fill="white" font-size="9" font-weight="bold">L F Door</text>
+                      <rect x="190" y="90" width="60" height="80" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="front-fender-right"/>
+                      <text x="220" y="135" text-anchor="middle" fill="white" font-size="10" font-weight="bold">R Fender</text>
                       
-                      <!-- Right Front Door -->
-                      <rect x="160" y="115" width="50" height="80" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="3" id="right-front-door"/>
-                      <text x="185" y="160" text-anchor="middle" fill="white" font-size="9" font-weight="bold">R F Door</text>
+                      <!-- Front Doors -->
+                      <rect x="60" y="90" width="65" height="80" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="front-door-left"/>
+                      <text x="92" y="135" text-anchor="middle" fill="white" font-size="10" font-weight="bold">L F Door</text>
                       
-                      <!-- Left Rear Door -->
-                      <rect x="90" y="195" width="50" height="70" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="3" id="left-rear-door"/>
-                      <text x="115" y="235" text-anchor="middle" fill="white" font-size="9" font-weight="bold">L R Door</text>
-                      
-                      <!-- Right Rear Door -->
-                      <rect x="160" y="195" width="50" height="70" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="3" id="right-rear-door"/>
-                      <text x="185" y="235" text-anchor="middle" fill="white" font-size="9" font-weight="bold">R R Door</text>
-                      
-                      <!-- Trunk -->
-                      <rect x="70" y="265" width="160" height="35" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="3" id="trunk-main"/>
-                      <text x="150" y="285" text-anchor="middle" fill="white" font-size="10" font-weight="bold">Trunk</text>
-                      
-                      <!-- Wheels -->
-                      <circle cx="80" cy="320" r="15" fill="#6b7280" stroke="hsl(var(--border))" stroke-width="1" id="front-left-wheel"/>
-                      <circle cx="220" cy="320" r="15" fill="#6b7280" stroke="hsl(var(--border))" stroke-width="1" id="front-right-wheel"/>
-                    </g>
-                    
-                    <!-- Top View (위/후방) -->
-                    <g transform="translate(400, 60)">
-                      <text x="150" y="-5" text-anchor="middle" fill="hsl(var(--foreground))" font-size="14" font-weight="bold">Top View (위/후방)</text>
-                      
-                      <!-- Car outline from top -->
-                      <path d="M80 50 L80 80 L50 100 L50 250 L80 270 L220 270 L250 250 L250 100 L220 80 L220 50 Z" 
-                            fill="none" stroke="hsl(var(--border))" stroke-width="2"/>
+                      <rect x="125" y="90" width="65" height="80" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="front-door-right"/>
+                      <text x="157" y="135" text-anchor="middle" fill="white" font-size="10" font-weight="bold">R F Door</text>
                       
                       <!-- Roof -->
-                      <rect x="80" y="50" width="140" height="220" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="5" id="roof-main"/>
-                      <text x="150" y="165" text-anchor="middle" fill="white" font-size="12" font-weight="bold">Roof</text>
+                      <rect x="60" y="170" width="130" height="40" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="roof"/>
+                      <text x="125" y="195" text-anchor="middle" fill="white" font-size="12" font-weight="bold">Roof</text>
                       
-                      <!-- Windshield -->
-                      <rect x="85" y="55" width="130" height="25" fill="#e5e7eb" stroke="hsl(var(--border))" stroke-width="1" rx="3"/>
-                      <text x="150" y="72" text-anchor="middle" fill="black" font-size="9">Windshield</text>
+                      <!-- Rear Doors -->
+                      <rect x="60" y="210" width="65" height="80" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="rear-door-left"/>
+                      <text x="92" y="255" text-anchor="middle" fill="white" font-size="10" font-weight="bold">L R Door</text>
                       
-                      <!-- Rear Window -->
-                      <rect x="85" y="240" width="130" height="25" fill="#e5e7eb" stroke="hsl(var(--border))" stroke-width="1" rx="3"/>
-                      <text x="150" y="257" text-anchor="middle" fill="black" font-size="9">Rear Window</text>
+                      <rect x="125" y="210" width="65" height="80" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="rear-door-right"/>
+                      <text x="157" y="255" text-anchor="middle" fill="white" font-size="10" font-weight="bold">R R Door</text>
                       
-                      <!-- Side Mirrors -->
-                      <rect x="65" y="85" width="15" height="10" fill="#6b7280" stroke="hsl(var(--border))" stroke-width="1" rx="2"/>
-                      <rect x="220" y="85" width="15" height="10" fill="#6b7280" stroke="hsl(var(--border))" stroke-width="1" rx="2"/>
-                      
-                      <!-- Wheels positions -->
-                      <rect x="40" y="90" width="20" height="40" fill="#374151" stroke="hsl(var(--border))" stroke-width="1" rx="3"/>
-                      <rect x="240" y="90" width="20" height="40" fill="#374151" stroke="hsl(var(--border))" stroke-width="1" rx="3"/>
-                      <rect x="40" y="190" width="20" height="40" fill="#374151" stroke="hsl(var(--border))" stroke-width="1" rx="3"/>
-                      <rect x="240" y="190" width="20" height="40" fill="#374151" stroke="hsl(var(--border))" stroke-width="1" rx="3"/>
+                      <!-- Trunk -->
+                      <rect x="25" y="290" width="200" height="50" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="trunk"/>
+                      <text x="125" y="320" text-anchor="middle" fill="white" font-size="12" font-weight="bold">Trunk</text>
                     </g>
                     
                     <!-- Rear View -->
-                    <g transform="translate(150, 370)">
-                      <text x="100" y="-5" text-anchor="middle" fill="hsl(var(--foreground))" font-size="14" font-weight="bold">Rear View (뒤/후방)</text>
+                    <g transform="translate(350, 50)">
+                      <text x="125" y="-10" text-anchor="middle" fill="hsl(var(--foreground))" font-weight="bold">Rear View</text>
                       
                       <!-- Rear Bumper -->
-                      <rect x="20" y="10" width="160" height="25" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="3" id="rear-bumper-main"/>
-                      <text x="100" y="27" text-anchor="middle" fill="white" font-size="10" font-weight="bold">Rear Bumper</text>
+                      <rect x="0" y="290" width="250" height="30" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="rear-bumper"/>
+                      <text x="125" y="310" text-anchor="middle" fill="white" font-size="12" font-weight="bold">Rear Bumper</text>
                       
                       <!-- Quarter Panels -->
-                      <rect x="10" y="35" width="35" height="50" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="3" id="left-quarter-panel"/>
-                      <text x="27" y="65" text-anchor="middle" fill="white" font-size="9" font-weight="bold">L Quarter</text>
+                      <rect x="0" y="210" width="60" height="80" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="quarter-panel-left"/>
+                      <text x="30" y="255" text-anchor="middle" fill="white" font-size="10" font-weight="bold">L Quarter</text>
                       
-                      <rect x="155" y="35" width="35" height="50" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="1" rx="3" id="right-quarter-panel"/>
-                      <text x="172" y="65" text-anchor="middle" fill="white" font-size="9" font-weight="bold">R Quarter</text>
-                      
-                      <!-- Rear Lights -->
-                      <rect x="45" y="40" width="15" height="20" fill="#ef4444" stroke="hsl(var(--border))" stroke-width="1" rx="2"/>
-                      <rect x="140" y="40" width="15" height="20" fill="#ef4444" stroke="hsl(var(--border))" stroke-width="1" rx="2"/>
+                      <rect x="190" y="210" width="60" height="80" fill="#22c55e" stroke="hsl(var(--border))" stroke-width="2" rx="5" id="quarter-panel-right"/>
+                      <text x="220" y="255" text-anchor="middle" fill="white" font-size="10" font-weight="bold">R Quarter</text>
                     </g>
                   </svg>
                 </div>
@@ -835,42 +850,22 @@ const CarDetails = () => {
             </div>
           </div>` : ''}
 
-          ${car.bid || car.final_bid || car.details?.original_price || car.insurance_v2?.preAccidentValue || car.insurance_v2?.wholesaleValue || car.insurance_v2?.actualCashValue ? `
+          ${car.bid || car.final_bid ? `
           <div class="section">
             <div class="section-header">
               💰 Market Values & Pricing
             </div>
             <div class="section-content">
               <div class="info-grid">
-                ${car.insurance_v2?.preAccidentValue ? `
-                <div class="info-item">
-                  <div class="info-label">Pre-Accident Value</div>
-                  <div class="info-value">💎 $${car.insurance_v2.preAccidentValue.toLocaleString()}</div>
-                </div>` : ''}
-                ${car.insurance_v2?.wholesaleValue ? `
-                <div class="info-item">
-                  <div class="info-label">Wholesale Value</div>
-                  <div class="info-value">🏪 $${car.insurance_v2.wholesaleValue.toLocaleString()}</div>
-                </div>` : ''}
-                ${car.insurance_v2?.actualCashValue ? `
-                <div class="info-item">
-                  <div class="info-label">Actual Cash Value</div>
-                  <div class="info-value">💵 $${car.insurance_v2.actualCashValue.toLocaleString()}</div>
-                </div>` : ''}
                 ${car.bid ? `
                 <div class="info-item">
                   <div class="info-label">Current Bid</div>
-                  <div class="info-value">🎯 $${car.bid.toLocaleString()}</div>
+                  <div class="info-value">💵 $${car.bid.toLocaleString()}</div>
                 </div>` : ''}
                 ${car.final_bid ? `
                 <div class="info-item">
                   <div class="info-label">Final Bid</div>
-                  <div class="info-value">🏆 $${car.final_bid.toLocaleString()}</div>
-                </div>` : ''}
-                ${car.insurance_v2?.estimatedRepairCost ? `
-                <div class="info-item">
-                  <div class="info-label">Estimated Repair Costs</div>
-                  <div class="info-value">🔧 $${car.insurance_v2.estimatedRepairCost.toLocaleString()}</div>
+                  <div class="info-value">🎯 $${car.final_bid.toLocaleString()}</div>
                 </div>` : ''}
                 <div class="info-item">
                   <div class="info-label">KORAUTO Price</div>
@@ -886,11 +881,6 @@ const CarDetails = () => {
             </div>
             <div class="section-content">
               <div class="info-grid">
-                ${car.id || car.lot ? `
-                <div class="info-item">
-                  <div class="info-label">External ID</div>
-                  <div class="info-value">🆔 ${car.id || car.lot || 'N/A'}</div>
-                </div>` : ''}
                 ${car.lot ? `
                 <div class="info-item">
                   <div class="info-label">Lot Number</div>
@@ -910,21 +900,6 @@ const CarDetails = () => {
                 <div class="info-item">
                   <div class="info-label">Sale Date</div>
                   <div class="info-value">📅 ${new Date(car.sale_date).toLocaleDateString()}</div>
-                </div>` : ''}
-                ${car.details?.created_at ? `
-                <div class="info-item">
-                  <div class="info-label">Last Updated</div>
-                  <div class="info-value">🔄 ${new Date(car.details.created_at).toLocaleDateString()}</div>
-                </div>` : ''}
-                ${car.details?.auction_date ? `
-                <div class="info-item">
-                  <div class="info-label">Auction Date</div>
-                  <div class="info-value">🏛️ ${new Date(car.details.auction_date).toLocaleDateString()}</div>
-                </div>` : ''}
-                ${car.location ? `
-                <div class="info-item">
-                  <div class="info-label">Location</div>
-                  <div class="info-value">📍 ${car.location}</div>
                 </div>` : ''}
               </div>
             </div>
@@ -948,101 +923,6 @@ const CarDetails = () => {
             </div>
           </div>
         </div>
-        
-        <script>
-          // Ensure DOM is loaded before executing scripts
-          if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializePage);
-          } else {
-            initializePage();
-          }
-          
-          function initializePage() {
-            console.log('Initializing car details page...');
-            
-            // Apply colors to car parts
-            const inspectionData = ${JSON.stringify(car.details?.inspect_outer || [])};
-            console.log('Inspection data:', inspectionData);
-            
-            const parts = [
-              'front-bumper', 'hood', 'front-fender-left', 'front-fender-right',
-              'front-door-left', 'front-door-right', 'roof', 'rear-door-left',
-              'rear-door-right', 'trunk', 'rear-bumper', 'quarter-panel-left',
-              'quarter-panel-right'
-            ];
-            
-            parts.forEach(partId => {
-              const element = document.getElementById(partId);
-              if (element) {
-                const color = getPartColor(partId, inspectionData);
-                element.setAttribute('fill', color);
-                console.log('Applied color', color, 'to part', partId);
-              } else {
-                console.warn('Element not found:', partId);
-              }
-            });
-          }
-          
-          function getPartColor(partCode, inspectionData) {
-            const part = inspectionData.find(item => {
-              const itemCode = item.type.code ? item.type.code.toLowerCase() : '';
-              const itemTitle = item.type.title ? item.type.title.toLowerCase() : '';
-              const searchCode = partCode.toLowerCase().replace(/-/g, '_');
-              
-              return itemCode.includes(searchCode) || 
-                     itemTitle.includes(searchCode.replace('_', ' ')) ||
-                     itemTitle.includes(searchCode.replace('_', '')) ||
-                     (searchCode.includes('fender') && itemTitle.includes('fender')) ||
-                     (searchCode.includes('door') && itemTitle.includes('door')) ||
-                     (searchCode.includes('bumper') && itemTitle.includes('bumper'));
-            });
-            
-            if (!part || !part.statusTypes || part.statusTypes.length === 0) {
-              return '#22c55e'; // Normal - green
-            }
-            
-            const hasExchange = part.statusTypes.some(status => status.code === 'X');
-            const hasRepair = part.statusTypes.some(status => status.code === 'W');
-            
-            if (hasExchange) return '#ef4444'; // Exchange - red
-            if (hasRepair) return '#f59e0b'; // Repair - orange
-            return '#22c55e'; // Normal - green
-          }
-          
-          function toggleOptions(type) {
-            const hiddenDiv = document.getElementById(type + '-hidden');
-            const toggleBtn = document.getElementById(type + '-toggle');
-            
-            if (hiddenDiv && toggleBtn) {
-              if (hiddenDiv.style.display === 'none') {
-                hiddenDiv.style.display = 'block';
-                toggleBtn.textContent = 'Show less';
-              } else {
-                hiddenDiv.style.display = 'none';
-                const count = hiddenDiv.children.length;
-                toggleBtn.textContent = 'Show ' + count + ' more';
-              }
-            }
-          }
-          
-          function toggleTheme() {
-            const html = document.documentElement;
-            const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
-            html.classList.remove('light', 'dark');
-            html.classList.add(newTheme);
-            
-            // Update toggle icon
-            const toggle = document.getElementById('themeToggle');
-            if (toggle) {
-              if (newTheme === 'dark') {
-                toggle.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>';
-              } else {
-                toggle.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>';
-              }
-            }
-          }
       </body>
       </html>
     `;
@@ -1388,9 +1268,7 @@ const CarDetails = () => {
                     onClick={() => {
                       const detailsWindow = window.open('', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
                       if (detailsWindow) {
-                        const htmlContent = generateDetailedInfoHTML(car);
-                        detailsWindow.document.write(htmlContent);
-                        detailsWindow.document.close(); // Important: close the document stream
+                        detailsWindow.document.write(generateDetailedInfoHTML(car));
                         detailsWindow.document.title = `${car.year} ${car.make} ${car.model} - Detailed Information`;
                       }
                     }}
