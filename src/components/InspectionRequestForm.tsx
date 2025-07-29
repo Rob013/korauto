@@ -108,6 +108,8 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
     
     try {
       console.log('🚀 Starting form submission...');
+      console.log('🚗 Car ID being submitted:', carId);
+      console.log('🚗 Car details being submitted:', { carMake, carModel, carYear });
       
       // Sanitize inputs
       const sanitizedData = {
@@ -118,7 +120,7 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
       };
 
       console.log('📝 Sanitized form data:', sanitizedData);
-      console.log('🚗 Car details:', { carId, carMake, carModel, carYear });
+      console.log('🚗 Final car details for submission:', { carId, carMake, carModel, carYear });
       
       // Store in Supabase database with all form and car information
       const { data, error } = await supabase

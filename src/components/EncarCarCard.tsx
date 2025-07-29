@@ -298,8 +298,12 @@ const EncarCarCard = ({
                   Inspektim (€50)
                 </Button>
               }
+              carId={id}
+              carMake={make}
+              carModel={model}
+              carYear={year}
             />
-            <Button 
+            <Button
               variant="outline"
               size="sm"
               className="flex-1 text-xs h-6 border-primary text-primary hover:bg-primary hover:text-white"
