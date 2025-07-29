@@ -9,7 +9,6 @@ import FilterForm from '@/components/FilterForm';
 import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
 import { useRandomCars } from '@/hooks/useRandomCars';
 import { useDailyRotatingCars } from '@/hooks/useDailyRotatingCars';
-import { useDailyCarRotation } from '@/hooks/useDailyCarRotation';
 import { useSortedCars, getSortOptions, SortOption } from '@/hooks/useSortedCars';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowUpDown } from 'lucide-react';
@@ -48,7 +47,6 @@ interface ApiFilters {
 
 const HomeCarsSection = () => {
   const navigate = useNavigate();
-  const { dailyCars, loading: dailyLoading, error: dailyError, refreshDailyCars } = useDailyCarRotation();
   const { cars, loading, error, fetchCars, fetchManufacturers, fetchModels, fetchGenerations, fetchFilterCounts } = useAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
@@ -61,12 +59,10 @@ const HomeCarsSection = () => {
   const [loadingCounts, setLoadingCounts] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('popular');
   
-  // Use daily rotating API cars when no filters, regular cars when filtered
+  // Use daily rotating cars with German car priority when no filters are applied
   const hasFilters = Object.keys(filters).some(key => filters[key] !== undefined && filters[key] !== '');
-  const carsToDisplay = hasFilters ? cars : dailyCars;
-  const displayedCars = useSortedCars(carsToDisplay, sortBy);
-  const currentLoading = hasFilters ? loading : dailyLoading;
-  const currentError = hasFilters ? error : dailyError;
+  const dailyRotatingCars = useDailyRotatingCars(cars, hasFilters);
+  const displayedCars = useSortedCars(dailyRotatingCars, sortBy);
   
   const handleFiltersChange = (newFilters: ApiFilters) => {
     setFilters(newFilters);
@@ -149,13 +145,27 @@ const HomeCarsSection = () => {
     loadInitialCounts();
   }, [manufacturers]);
 
+  // Refresh cars daily and when manufacturers change
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!hasFilters) {
+        // Refresh at midnight for new daily cars
+        const now = new Date();
+        const nextMidnight = new Date();
+        nextMidnight.setDate(now.getDate() + 1);
+        nextMidnight.setHours(0, 0, 0, 0);
+        
+        if (now.getTime() > nextMidnight.getTime() - 60000) { // Refresh 1 minute before midnight
+          fetchCars(1, {}, true);
+        }
+      }
+    }, 60000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, [hasFilters, fetchCars]);
+
   const handleRefresh = () => {
-    if (hasFilters) {
-      fetchCars(1, filters, true);
-    } else {
-      refreshDailyCars();
-    }
-    setLastUpdate(new Date());
+    fetchCars(1, filters, true);
   };
 
   return (
@@ -164,7 +174,7 @@ const HomeCarsSection = () => {
         <div className="text-center mb-4 sm:mb-6">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground">Makinat e Disponueshme</h2>
           <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
-            Shfletoni përzgjedhjen tonë të 50 mjeteve të reja çdo ditë me fokus në markët gjermane premium.
+            Shfletoni përzgjedhjen tonë të mjeteve të cilësisë së lartë me fokus në markët gjermane. Makinat ndryshohen çdo ditë.
           </p>
           
           <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 mt-4 sm:mt-6">
@@ -172,11 +182,11 @@ const HomeCarsSection = () => {
               variant="outline" 
               size="sm" 
               onClick={handleRefresh}
-              disabled={currentLoading}
+              disabled={loading}
               className="w-full sm:w-auto border-primary text-primary hover:bg-primary hover:text-primary-foreground min-h-[44px]"
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${currentLoading ? 'animate-spin' : ''}`} />
-              {currentLoading ? 'Duke u ngarkuar...' : hasFilters ? 'Rifresko' : 'Makina të Reja'}
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              {loading ? 'Duke u ngarkuar...' : 'Rifresko'}
             </Button>
             
             {lastUpdate && (
@@ -187,11 +197,11 @@ const HomeCarsSection = () => {
           </div>
         </div>
 
-        {currentError && (
+        {error && (
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-center gap-2 mb-6 sm:mb-8 p-4 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg mx-2 sm:mx-0">
             <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5 sm:mt-0" />
             <span className="text-yellow-800 dark:text-yellow-200 text-sm sm:text-base text-left sm:text-center">
-              Problem me lidhjen API: {currentError}. Duke shfaqur makina demo me shërbim të plotë inspektimi të disponueshëm.
+              Problem me lidhjen API: {error}. Duke shfaqur makina demo me shërbim të plotë inspektimi të disponueshëm.
             </span>
           </div>
         )}
@@ -232,7 +242,7 @@ const HomeCarsSection = () => {
         </div>
 
         {/* Car Cards */}
-        {currentLoading ? (
+        {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="bg-card rounded-lg p-4 animate-pulse">
