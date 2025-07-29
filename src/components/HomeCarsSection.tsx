@@ -129,7 +129,13 @@ const HomeCarsSection = memo(() => {
     fetchCars(1, filters, true);
   }, [fetchCars, filters, cars.length]);
 
-  // Load manufacturers on mount and set up German brands fetching
+  // Fetch cars immediately on mount - don't wait for manufacturers
+  useEffect(() => {
+    console.log('🔄 Initial car fetch on mount');
+    fetchCars(1, {}, true);
+  }, []); // Only run once on mount
+
+  // Load manufacturers separately  
   useEffect(() => {
     const loadManufacturers = async () => {
       const manufacturerData = await fetchManufacturers();
@@ -143,17 +149,9 @@ const HomeCarsSection = memo(() => {
       
       setGermanManufacturerIds(germanIds);
       console.log('🚗 Found German manufacturer IDs:', germanIds, 'for brands:', targetBrands);
-      
-      // Fetch cars from these specific manufacturers
-      if (germanIds.length > 0) {
-        fetchGermanCars(germanIds);
-      } else {
-        // Fallback if no German manufacturers found
-        fetchCars(1, {}, true);
-      }
     };
     loadManufacturers();
-  }, [fetchCars, fetchManufacturers]); // Removed fetchGermanCars dependency to prevent infinite loop
+  }, [fetchManufacturers]);
 
   // Handle filter changes and fetch counts
   useEffect(() => {
