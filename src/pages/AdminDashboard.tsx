@@ -422,9 +422,21 @@ const AdminDashboard = () => {
     try {
       // Extract car ID from the request
       const request = requests.find(r => r.id === requestId);
-      const carId = request?.car_id;
+      let searchTerm = request?.car_id;
       
-      console.log(`🔍 Searching for car with ID/Lot: ${carId}`);
+      // If no car_id, try to extract from notes (e.g., "Car: 2020 Audi A6")
+      if (!searchTerm && request?.notes) {
+        const carMatch = request.notes.match(/Car:\s*(.+)/i);
+        if (carMatch) {
+          // Extract potential ID or model info from notes
+          const carText = carMatch[1].trim();
+          // Look for number patterns that might be car IDs
+          const idMatch = carText.match(/\b\d{6,8}\b/);
+          searchTerm = idMatch ? idMatch[0] : carText;
+        }
+      }
+      
+      console.log(`🔍 Searching for car with term: ${searchTerm}`);
       
       // Try multiple search approaches
       const searchMethods = [
@@ -433,7 +445,7 @@ const AdminDashboard = () => {
           method: 'Car ID',
           payload: {
             endpoint: 'cars',
-            carId: carId
+            carId: searchTerm
           }
         },
         // 2. Search by lot number in IAAI
@@ -441,7 +453,7 @@ const AdminDashboard = () => {
           method: 'Lot Number (IAAI)',
           payload: {
             endpoint: 'search-lot',
-            lotNumber: carId
+            lotNumber: searchTerm
           }
         },
         // 3. Search with general search
@@ -450,7 +462,7 @@ const AdminDashboard = () => {
           payload: {
             endpoint: 'cars',
             filters: {
-              search: carId
+              search: searchTerm
             }
           }
         }
@@ -506,7 +518,7 @@ const AdminDashboard = () => {
 
             // Open car details page in new tab
             setTimeout(() => {
-              const foundCarId = carData.id || lot?.lot || carId;
+              const foundCarId = carData.id || lot?.lot || searchTerm;
               console.log('🚗 Opening car page with ID:', foundCarId);
               window.open(`/car/${foundCarId}`, '_blank');
             }, 1000); // Small delay to show the toast
@@ -521,7 +533,7 @@ const AdminDashboard = () => {
       
       toast({
         title: "Car Not Found",
-        description: `Car with ID/Lot ${carId} not found in any auction database (tried car ID, lot number, and general search)`,
+        description: `Car with ID/Lot ${searchTerm} not found in any auction database (tried car ID, lot number, and general search)`,
         variant: "destructive",
         duration: 6000,
       });
@@ -969,22 +981,24 @@ const AdminDashboard = () => {
                                  <Phone className="h-2 w-2" />
                                </Button>
 
-                               {/* Find Car Button - Searches external API */}
-                               <Button 
-                                 size="sm" 
-                                 variant="outline"
-                                 onClick={() => findCarByLotNumber(request.id, request.notes || '')}
-                                 disabled={searchingCars[request.id]}
-                                 className="h-5 px-1 text-[9px] bg-blue-50 hover:bg-blue-100"
-                                 title="Find this car in auction databases"
-                               >
-                                 {searchingCars[request.id] ? (
-                                   <RefreshCw className="h-2 w-2 animate-spin" />
-                                 ) : (
-                                   <Search className="h-2 w-2" />
-                                 )}
-                                 Find
-                               </Button>
+                               {/* Find Car Button - Available for ALL requests with car info */}
+                               {(request.car_id || request.notes?.includes('Car:')) && (
+                                 <Button 
+                                   size="sm" 
+                                   variant="outline"
+                                   onClick={() => findCarByLotNumber(request.id, request.notes || '')}
+                                   disabled={searchingCars[request.id]}
+                                   className="h-5 px-1 text-[9px] bg-green-50 hover:bg-green-100 border-green-200"
+                                   title="Find and view this car from auction databases"
+                                 >
+                                   {searchingCars[request.id] ? (
+                                     <RefreshCw className="h-2 w-2 animate-spin" />
+                                   ) : (
+                                     <Search className="h-2 w-2" />
+                                   )}
+                                   Find Car
+                                 </Button>
+                               )}
                                
                                {/* Existing View Car Button */}
                                {request.car_id && carDetails[request.car_id] && (
