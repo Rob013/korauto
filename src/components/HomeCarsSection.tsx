@@ -381,15 +381,8 @@ const HomeCarsSection = memo(() => {
         ) : sortedCars.length === 0 ? (
           <div className="text-center py-8 sm:py-12 px-4">
             <p className="text-base sm:text-lg text-muted-foreground mb-4">
-              Nuk u gjetën makina me këto filtra. Provoni të ndryshoni filtrat.
+              Nuk ka makina të disponueshme.
             </p>
-            <Button
-              onClick={handleClearFilters}
-              variant="outline"
-              className="min-h-[44px]"
-            >
-              Hiq Filtrat
-            </Button>
           </div>
         ) : (
           <>
