@@ -1502,14 +1502,14 @@ const CarDetails = memo(() => {
                         <div className="w-2 h-2 bg-primary rounded-full"></div>
                         <span className="font-semibold text-foreground">Drejtimi</span>
                       </div>
-                      <span className="text-muted-foreground font-medium capitalize">{car.drive_wheel.name}</span>
+                      <span className="text-muted-foreground font-medium capitalize">{typeof car.drive_wheel === 'object' ? car.drive_wheel?.name : car.drive_wheel}</span>
                     </div>}
                   {car.body_type && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="w-2 h-2 bg-primary rounded-full"></div>
                         <span className="font-semibold text-foreground">Lloji i Trupit</span>
                       </div>
-                      <span className="text-muted-foreground font-medium capitalize">{car.body_type.name}</span>
+                      <span className="text-muted-foreground font-medium capitalize">{typeof car.body_type === 'object' ? car.body_type?.name : car.body_type}</span>
                     </div>}
                   {car.damage && (car.damage.main || car.damage.second) && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">
