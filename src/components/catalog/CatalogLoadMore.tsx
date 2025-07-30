@@ -10,15 +10,10 @@ interface CatalogLoadMoreProps {
 const CatalogLoadMore = ({ hasMorePages, loading, onLoadMore }: CatalogLoadMoreProps) => {
   if (!hasMorePages) return null;
 
-  const handleLoadMore = (e: React.MouseEvent) => {
-    e.preventDefault();
-    onLoadMore();
-  };
-
   return (
-    <div className="flex justify-center mt-8" id="load-more-section">
+    <div className="flex justify-center mt-8">
       <Button
-        onClick={handleLoadMore}
+        onClick={onLoadMore}
         disabled={loading}
         variant="outline"
         size="lg"
