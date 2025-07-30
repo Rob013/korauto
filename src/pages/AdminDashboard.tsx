@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RefreshCw, Mail, Phone, Car, ArrowLeft, LogOut, Users, Activity, TrendingUp, Calendar, Eye, Heart, Clock, AlertCircle, CheckCircle, UserCheck, Database, User as UserIcon, FileText } from "lucide-react";
+import { RefreshCw, Mail, Phone, Car, ArrowLeft, LogOut, Users, Activity, TrendingUp, Calendar, Eye, Heart, Clock, AlertCircle, CheckCircle, UserCheck, Database, User as UserIcon, FileText, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import AuthLogin from "@/components/AuthLogin";
@@ -56,6 +56,8 @@ interface AdminStats {
 const AdminDashboard = () => {
   const [requests, setRequests] = useState<InspectionRequest[]>([]);
   const [carDetails, setCarDetails] = useState<{[key: string]: CarData}>({});
+  const [searchingCars, setSearchingCars] = useState<{[key: string]: boolean}>({});
+  const [foundCars, setFoundCars] = useState<{[key: string]: any}>({});
   const [stats, setStats] = useState<AdminStats>({
     totalInspectionRequests: 0,
     pendingRequests: 0,
@@ -411,6 +413,72 @@ const AdminDashboard = () => {
         description: "Failed to update request status",
         variant: "destructive",
       });
+    }
+  };
+
+  const findCarByLotNumber = async (requestId: string, carInfo: string) => {
+    setSearchingCars(prev => ({ ...prev, [requestId]: true }));
+    
+    try {
+      // Extract lot number from car info if it exists in carDetails
+      const carId = requests.find(r => r.id === requestId)?.car_id;
+      let lotNumber = carId;
+      
+      // If we have car details, use the lot number from there
+      if (carId && carDetails[carId]?.lot_number) {
+        lotNumber = carDetails[carId].lot_number;
+      }
+
+      console.log(`🔍 Searching for car with lot number: ${lotNumber}`);
+      
+      const response = await fetch(`https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/secure-cars-api`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0eXlpcWlta3lzbWpuYW9jc3dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0MzkxMzQsImV4cCI6MjA2OTAxNTEzNH0.lyRCHiShhW4wrGHL3G7pK5JBUHNAtgSUQACVOBGRpL8`,
+        },
+        body: JSON.stringify({
+          endpoint: 'search-lot',
+          lotNumber: lotNumber
+        })
+      });
+
+      if (response.ok) {
+        const carData = await response.json();
+        console.log('✅ Found car data:', carData);
+        
+        setFoundCars(prev => ({ ...prev, [requestId]: carData }));
+        
+        // Create detailed car info for the toast
+        const lot = carData.lots?.[0];
+        const carInfo = `${carData.year} ${carData.manufacturer?.name} ${carData.model?.name}`;
+        const lotInfo = `Lot: ${lot?.lot} | Price: $${lot?.buy_now?.toLocaleString() || 'N/A'}`;
+        const mileageInfo = lot?.odometer?.km ? `| ${lot.odometer.km.toLocaleString()} km` : '';
+        
+        toast({
+          title: "✅ Car Found!",
+          description: `${carInfo}\n${lotInfo} ${mileageInfo}\nVIN: ${carData.vin || 'N/A'}`,
+          duration: 8000,
+        });
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.log('❌ Car not found:', response.status, errorData);
+        
+        toast({
+          title: "Car Not Found",
+          description: `Car with lot number ${lotNumber} not found in auction databases`,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error searching for car:', error);
+      toast({
+        title: "Search Error",
+        description: "Failed to search for car. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSearchingCars(prev => ({ ...prev, [requestId]: false }));
     }
   };
 
@@ -820,62 +888,80 @@ const AdminDashboard = () => {
                               {request.notes || <span className="text-muted-foreground italic">NULL</span>}
                             </div>
                           </td>
-                          <td className="border border-border px-1 py-1 text-[10px]">
-                            <div className="flex gap-0.5 flex-wrap">
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => window.open(`mailto:${request.customer_email}?subject=Car Inspection Request&body=Dear ${request.customer_name},%0D%0A%0D%0AThank you for your inspection request.%0D%0A%0D%0ABest regards,%0D%0AKORAUTO Team`, '_blank')}
-                                className="h-5 px-1 text-[9px]"
-                                title="Send Email"
-                              >
-                                <Mail className="h-2 w-2" />
-                              </Button>
-                              
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => {
-                                  const message = `Hello ${request.customer_name}! Thank you for your car inspection request. We will contact you within 24 hours. - KORAUTO Team`;
-                                  window.open(`https://wa.me/${request.customer_phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
-                                }}
-                                className="h-5 px-1 text-[9px]"
-                                title="WhatsApp"
-                              >
-                                <Phone className="h-2 w-2" />
-                              </Button>
-                              
-                                {request.car_id && carDetails[request.car_id] && (
-                                  <Button 
-                                    size="sm" 
-                                    variant="default"
-                                    onClick={() => {
-                                      const lotNumber = carDetails[request.car_id]?.lot_number;
-                                      if (lotNumber) {
-                                        window.location.href = `/catalog?highlight=${lotNumber}`;
-                                      }
-                                    }}
-                                    className="h-5 px-1 text-[9px] bg-primary hover:bg-primary/90"
-                                    title={`View car lot ${carDetails[request.car_id]?.lot_number || request.car_id} in catalog`}
-                                  >
-                                    <Car className="h-2 w-2" />
-                                    {carDetails[request.car_id]?.lot_number || request.car_id}
-                                  </Button>
-                                )}
-                              
-                              <select
-                                value={request.status}
-                                onChange={(e) => updateRequestStatus(request.id, e.target.value)}
-                                className="text-[9px] border border-border rounded px-1 py-0 bg-background h-5 min-w-[60px]"
-                              >
-                                <option value="pending">pending</option>
-                                <option value="in_progress">in_progress</option>
-                                <option value="completed">completed</option>
-                                <option value="cancelled">cancelled</option>
-                              </select>
-                            </div>
-                          </td>
-                        </tr>
+                           <td className="border border-border px-1 py-1 text-[10px]">
+                             <div className="flex gap-0.5 flex-wrap">
+                               <Button 
+                                 size="sm" 
+                                 variant="outline"
+                                 onClick={() => window.open(`mailto:${request.customer_email}?subject=Car Inspection Request&body=Dear ${request.customer_name},%0D%0A%0D%0AThank you for your inspection request.%0D%0A%0D%0ABest regards,%0D%0AKORAUTO Team`, '_blank')}
+                                 className="h-5 px-1 text-[9px]"
+                                 title="Send Email"
+                               >
+                                 <Mail className="h-2 w-2" />
+                               </Button>
+                               
+                               <Button 
+                                 size="sm" 
+                                 variant="outline"
+                                 onClick={() => {
+                                   const message = `Hello ${request.customer_name}! Thank you for your car inspection request. We will contact you within 24 hours. - KORAUTO Team`;
+                                   window.open(`https://wa.me/${request.customer_phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+                                 }}
+                                 className="h-5 px-1 text-[9px]"
+                                 title="WhatsApp"
+                               >
+                                 <Phone className="h-2 w-2" />
+                               </Button>
+
+                               {/* Find Car Button - Searches external API */}
+                               <Button 
+                                 size="sm" 
+                                 variant="outline"
+                                 onClick={() => findCarByLotNumber(request.id, request.notes || '')}
+                                 disabled={searchingCars[request.id]}
+                                 className="h-5 px-1 text-[9px] bg-blue-50 hover:bg-blue-100"
+                                 title="Find this car in auction databases"
+                               >
+                                 {searchingCars[request.id] ? (
+                                   <RefreshCw className="h-2 w-2 animate-spin" />
+                                 ) : (
+                                   <Search className="h-2 w-2" />
+                                 )}
+                                 Find
+                               </Button>
+                               
+                               {/* Existing View Car Button */}
+                               {request.car_id && carDetails[request.car_id] && (
+                                 <Button 
+                                   size="sm" 
+                                   variant="default"
+                                   onClick={() => {
+                                     const lotNumber = carDetails[request.car_id]?.lot_number;
+                                     if (lotNumber) {
+                                       window.location.href = `/catalog?highlight=${lotNumber}`;
+                                     }
+                                   }}
+                                   className="h-5 px-1 text-[9px] bg-primary hover:bg-primary/90"
+                                   title={`View car lot ${carDetails[request.car_id]?.lot_number || request.car_id} in catalog`}
+                                 >
+                                   <Car className="h-2 w-2" />
+                                   {carDetails[request.car_id]?.lot_number || request.car_id}
+                                 </Button>
+                               )}
+                               
+                               <select
+                                 value={request.status}
+                                 onChange={(e) => updateRequestStatus(request.id, e.target.value)}
+                                 className="text-[9px] border border-border rounded px-1 py-0 bg-background h-5 min-w-[60px]"
+                               >
+                                 <option value="pending">pending</option>
+                                 <option value="in_progress">in_progress</option>
+                                 <option value="completed">completed</option>
+                                 <option value="cancelled">cancelled</option>
+                               </select>
+                             </div>
+                           </td>
+                         </tr>
                       ))}
                     </tbody>
                   </table>
