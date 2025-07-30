@@ -1493,7 +1493,7 @@ const CarDetails = memo(() => {
                          <div className="w-2 h-2 bg-primary rounded-full"></div>
                          <span className="font-semibold text-foreground">Vëllimi Motorit</span>
                        </div>
-                       <span className="text-muted-foreground font-medium">1,911cc</span>
+                       <span className="text-muted-foreground font-medium">{Math.round(parseFloat(car.details.engine_volume) * 1000).toLocaleString()}cc</span>
                      </div>}
                    {car.engine && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                        <div className="flex items-center gap-3">
@@ -1589,13 +1589,22 @@ const CarDetails = memo(() => {
                           Detaje të Veturës
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {car.details.engine_volume}
+                          {car.details.engine_volume && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                              <span className="text-sm">Vëllimi i Motorit:</span>
+                              <span className="font-medium">{car.details.engine_volume}cc</span>
+                            </div>}
                           {car.details.seats_count && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
                               <span className="text-sm">Numri i Vendeve:</span>
                               <span className="font-medium">{car.details.seats_count}</span>
                             </div>}
-                          {car.details.badge}
-                          {car.details.sell_type}
+                          {car.details.badge && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                              <span className="text-sm">Versioni:</span>
+                              <span className="font-medium">{car.details.badge}</span>
+                            </div>}
+                          {car.details.sell_type && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                              <span className="text-sm">Lloji i Shitjes:</span>
+                              <span className="font-medium capitalize">{car.details.sell_type}</span>
+                            </div>}
                           
                           {/* Inspection Report Button */}
                           <div className="md:col-span-2 mt-4">
