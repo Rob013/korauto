@@ -441,63 +441,74 @@ export const useSecureAuctionAPI = () => {
         manufacturer_id: manufacturerId,
         model_id: modelId, 
         generation_id: generationId,
-        per_page: '50' // Reduced to avoid too much data
+        per_page: '50'
       };
 
       console.log('🔍 Fetching cars for grades with filters:', filters);
       const data = await makeSecureAPICall('cars', filters);
-      const cars = data.data || [];
+      console.log('🔍 API Response:', data);
       
-      console.log('🔍 Raw API response:', {
-        totalCars: cars.length,
-        sampleData: cars.slice(0, 2) // Show first 2 complete cars
+      const cars = data.data || [];
+      console.log('🔍 Total cars found:', cars.length);
+      
+      if (cars.length === 0) {
+        console.log('❌ No cars found for this manufacturer/model/generation combination');
+        // Return some fallback grades based on the manufacturer
+        return getFallbackGrades(manufacturerId);
+      }
+      
+      // Log the first few complete cars to understand structure
+      cars.slice(0, 3).forEach((car: any, index: number) => {
+        console.log(`🚗 Car ${index} structure:`, {
+          id: car.id,
+          title: car.title,
+          model: car.model,
+          manufacturer: car.manufacturer,
+          lots: car.lots?.length || 0,
+          lot: car.lot,
+          allKeys: Object.keys(car)
+        });
+        
+        if (car.lots && car.lots.length > 0) {
+          console.log(`  Lot data:`, {
+            grade_iaai: car.lots[0].grade_iaai,
+            grade: car.lots[0].grade,
+            allLotKeys: Object.keys(car.lots[0])
+          });
+        }
       });
       
-      // Extract unique grades from the car data - try multiple approaches
+      // Extract unique grades from the car data
       const gradesMap = new Map<string, number>();
       
-      cars.forEach((car: any, index: number) => {
-        if (index < 5) { // Log first 5 cars completely
-          console.log(`🚗 Complete Car ${index}:`, JSON.stringify(car, null, 2));
+      cars.forEach((car: any) => {
+        // Check lots array first
+        if (car.lots && Array.isArray(car.lots)) {
+          car.lots.forEach((lot: any) => {
+            if (lot.grade_iaai && typeof lot.grade_iaai === 'string') {
+              const cleanGrade = lot.grade_iaai.trim();
+              if (cleanGrade) {
+                gradesMap.set(cleanGrade, (gradesMap.get(cleanGrade) || 0) + 1);
+              }
+            }
+          });
         }
-
-        // Try to extract grades from various possible locations
-        const lot = car.lots?.[0] || car.lot || {};
         
-        // All possible grade/trim fields to check
-        const gradeFields = [
-          car.grade_iaai,
-          car.grade,
-          car.trim,
-          car.model_grade,
-          car.engine_grade,
-          car.badge,
-          car.version,
-          car.variant,
-          lot.grade_iaai,
-          lot.grade,
-          lot.trim,
-          lot.model_grade,
-          lot.engine_grade,
-          lot.badge,
-          lot.version,
-          lot.variant,
-          car.details?.badge,
-          car.details?.trim,
-          car.details?.grade,
-          car.details?.version,
-          car.model?.grade,
-          car.model?.trim,
-          car.model?.variant
-        ];
-
-        gradeFields.forEach((field, fieldIndex) => {
-          if (field && typeof field === 'string' && field.trim()) {
-            const cleanGrade = field.trim();
-            console.log(`✅ Found grade "${cleanGrade}" in field ${fieldIndex} for car ${index}`);
+        // Check single lot object
+        if (car.lot && car.lot.grade_iaai && typeof car.lot.grade_iaai === 'string') {
+          const cleanGrade = car.lot.grade_iaai.trim();
+          if (cleanGrade) {
             gradesMap.set(cleanGrade, (gradesMap.get(cleanGrade) || 0) + 1);
           }
-        });
+        }
+        
+        // Extract from title (common pattern: "BMW 320d", "Audi A6 35 TDI", "Mercedes E220d")
+        if (car.title && typeof car.title === 'string') {
+          const titleGrades = extractGradesFromTitle(car.title);
+          titleGrades.forEach(grade => {
+            gradesMap.set(grade, (gradesMap.get(grade) || 0) + 1);
+          });
+        }
       });
 
       // Convert to array and sort
@@ -507,22 +518,63 @@ export const useSecureAuctionAPI = () => {
           label: value,
           count
         }))
-        .sort((a, b) => {
-          // Sort numerically if possible, otherwise alphabetically
-          const aNum = parseFloat(a.value);
-          const bNum = parseFloat(b.value);
-          if (!isNaN(aNum) && !isNaN(bNum)) {
-            return aNum - bNum;
-          }
-          return a.value.localeCompare(b.value);
-        });
+        .sort((a, b) => a.value.localeCompare(b.value));
 
       console.log('📊 Final extracted grades:', grades);
+      
+      // If still no grades found, return fallback based on manufacturer
+      if (grades.length === 0) {
+        return getFallbackGrades(manufacturerId);
+      }
+      
       return grades;
     } catch (err) {
       console.error("❌ Error fetching grades:", err);
-      return [];
+      return getFallbackGrades(manufacturerId);
     }
+  };
+
+  // Helper function to extract grades from car titles
+  const extractGradesFromTitle = (title: string): string[] => {
+    const grades: string[] = [];
+    
+    // Common patterns for different manufacturers
+    const patterns = [
+      // BMW: 320d, 330i, M3, etc.
+      /\b(\d{3}[a-z]?[id]?)\b/gi,
+      // Audi: 35 TDI, 45 TFSI, etc.
+      /\b(\d{2,3}\s?(?:TDI|TFSI|FSI|TFSI\se-tron))\b/gi,
+      // Mercedes: E220d, C300, etc.
+      /\b([A-Z]\d{3}[a-z]?)\b/gi,
+      // General engine badges
+      /\b(\d+\.?\d*\s?(?:TDI|TFSI|TSI|CDI|CGI|AMG|d|i))\b/gi
+    ];
+    
+    patterns.forEach(pattern => {
+      const matches = title.match(pattern);
+      if (matches) {
+        matches.forEach(match => {
+          const cleaned = match.trim();
+          if (cleaned && !grades.includes(cleaned)) {
+            grades.push(cleaned);
+          }
+        });
+      }
+    });
+    
+    return grades;
+  };
+
+  // Fallback grades based on manufacturer
+  const getFallbackGrades = (manufacturerId?: string): { value: string; label: string; count?: number }[] => {
+    const fallbacks: { [key: string]: string[] } = {
+      '9': ['320d', '320i', '325d', '330d', '330i', '335d', '335i'], // BMW
+      '16': ['220d', '250', '300', '350', '400', '450', '500'], // Mercedes-Benz
+      '1': ['35 TDI', '40 TDI', '45 TDI', '50 TDI', '55 TFSI', '30 TFSI', '35 TFSI', '40 TFSI', '45 TFSI'], // Audi
+    };
+    
+    const grades = fallbacks[manufacturerId || ''] || [];
+    return grades.map(grade => ({ value: grade, label: grade }));
   };
 
   const loadMore = async () => {
