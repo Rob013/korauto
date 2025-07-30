@@ -500,9 +500,16 @@ const AdminDashboard = () => {
             
             toast({
               title: `✅ Car Found via ${searchMethod.method}!`,
-              description: `${carInfoText}\n${lotInfo} ${mileageInfo}\nVIN: ${carData.vin || 'N/A'}`,
-              duration: 8000,
+              description: `${carInfoText}\n${lotInfo} ${mileageInfo}\nRedirecting to car page...`,
+              duration: 3000,
             });
+
+            // Redirect to car details page
+            setTimeout(() => {
+              const foundCarId = carData.id || lot?.lot || carId;
+              window.location.href = `/car/${foundCarId}`;
+            }, 1500); // Small delay to show the toast
+
             return; // Exit the function if we found the car
           }
         }
