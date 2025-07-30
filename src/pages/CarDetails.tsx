@@ -228,8 +228,8 @@ const CarDetails = memo(() => {
           return;
         }
 
-        // If not found in cache, try Supabase edge function first
-        console.log('Trying Supabase edge function for car:', lot);
+        // If not found in cache, try Supabase edge function with lot number search
+        console.log('Trying Supabase edge function for lot number:', lot);
         try {
           const secureResponse = await fetch(`https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/secure-cars-api`, {
             method: 'POST',
@@ -238,8 +238,8 @@ const CarDetails = memo(() => {
               'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0eXlpcWlta3lzbWpuYW9jc3dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0MzkxMzQsImV4cCI6MjA2OTAxNTEzNH0.lyRCHiShhW4wrGHL3G7pK5JBUHNAtgSUQACVOBGRpL8`,
             },
             body: JSON.stringify({
-              endpoint: 'cars',
-              carId: lot
+              endpoint: 'search-lot',
+              lotNumber: lot
             })
           });
 

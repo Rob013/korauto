@@ -43,14 +43,15 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('API key not configured');
     }
 
-    const { endpoint, filters = {}, carId } = await req.json();
+    const { endpoint, filters = {}, carId, lotNumber } = await req.json();
     
-    console.log('📋 Request params:', { endpoint, filters, carId });
+    console.log('📋 Request params:', { endpoint, filters, carId, lotNumber });
 
     // Validate endpoint to prevent injection
     const allowedEndpoints = [
       'cars',
       'car',
+      'search-lot',
       'manufacturers/cars',
       'models',
       'generations'
@@ -73,6 +74,9 @@ const handler = async (req: Request): Promise<Response> => {
     if (carId && (endpoint === 'cars' || endpoint === 'car')) {
       // Individual car lookup
       url = `${API_BASE_URL}/cars/${encodeURIComponent(carId)}`;
+    } else if (lotNumber && endpoint === 'search-lot') {
+      // Lot number search - try both IAAI and Copart
+      url = `${API_BASE_URL}/search-lot/${encodeURIComponent(lotNumber)}/iaai`;
     } else if (endpoint.includes('/')) {
       // Endpoints like models/{id}/cars or generations/{id}/cars
       url = `${API_BASE_URL}/${endpoint}`;
@@ -122,6 +126,31 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!response.ok) {
       console.error('❌ API error:', response.status, response.statusText);
+      
+      // If searching lot number in IAAI failed, try Copart
+      if (lotNumber && endpoint === 'search-lot' && response.status === 404) {
+        console.log('⚠️ Lot not found in IAAI, trying Copart...');
+        const copartUrl = `${API_BASE_URL}/search-lot/${encodeURIComponent(lotNumber)}/copart`;
+        console.log('🌐 Making API request to Copart:', copartUrl);
+        
+        const copartResponse = await fetch(copartUrl, {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'KORAUTO-WebApp/1.0',
+            'X-API-Key': apiKey
+          },
+          signal: AbortSignal.timeout(30000)
+        });
+        
+        if (copartResponse.ok) {
+          const copartData = await copartResponse.json();
+          console.log('✅ Found in Copart, data length:', JSON.stringify(copartData).length);
+          return new Response(JSON.stringify(copartData), {
+            headers: { 'Content-Type': 'application/json', ...corsHeaders }
+          });
+        }
+      }
+      
       throw new Error(`API returned ${response.status}: ${response.statusText}`);
     }
 
