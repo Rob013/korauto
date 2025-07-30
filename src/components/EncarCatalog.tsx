@@ -78,20 +78,48 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     .filter((car) => {
       // Apply grade filter on frontend as fallback
       if (filters.grade_iaai && filters.grade_iaai.trim()) {
-        const targetGrade = filters.grade_iaai.toLowerCase().trim();
+        const targetGrade = decodeURIComponent(filters.grade_iaai).toLowerCase().trim().replace(/\+/g, ' ');
         let hasMatchingGrade = false;
+        
+        console.log(`🔍 Filtering for grade: "${targetGrade}" on car: ${car.id}`);
         
         // Check in lots array
         if (car.lots && Array.isArray(car.lots)) {
-          hasMatchingGrade = car.lots.some((lot: any) => 
-            lot.grade_iaai && lot.grade_iaai.toLowerCase().includes(targetGrade)
-          );
+          car.lots.forEach((lot: any, lotIndex: number) => {
+            if (lot.grade_iaai) {
+              const lotGrade = lot.grade_iaai.toLowerCase().trim();
+              console.log(`  Lot ${lotIndex} grade: "${lotGrade}"`);
+              if (lotGrade.includes(targetGrade) || targetGrade.includes(lotGrade)) {
+                hasMatchingGrade = true;
+                console.log(`  ✅ Match found in lot ${lotIndex}`);
+              }
+            }
+          });
         }
         
-        // Check in car title for grade patterns
+        // Check in car title for grade patterns (more flexible)
         if (!hasMatchingGrade && car.title) {
-          hasMatchingGrade = car.title.toLowerCase().includes(targetGrade);
+          const titleLower = car.title.toLowerCase();
+          console.log(`  Car title: "${titleLower}"`);
+          
+          // Try exact match
+          if (titleLower.includes(targetGrade)) {
+            hasMatchingGrade = true;
+            console.log(`  ✅ Exact match found in title`);
+          }
+          
+          // Try normalized match (remove spaces, dots, etc.)
+          if (!hasMatchingGrade) {
+            const normalizedTarget = targetGrade.replace(/[\s\.]/g, '');
+            const normalizedTitle = titleLower.replace(/[\s\.]/g, '');
+            if (normalizedTitle.includes(normalizedTarget) || normalizedTarget.includes(normalizedTitle)) {
+              hasMatchingGrade = true;
+              console.log(`  ✅ Normalized match found in title`);
+            }
+          }
         }
+        
+        console.log(`  Final result: ${hasMatchingGrade ? 'KEEP' : 'FILTER OUT'}`);
         
         if (!hasMatchingGrade) {
           return false;
