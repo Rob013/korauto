@@ -312,7 +312,6 @@ const CarDetails = memo(() => {
         } catch (edgeFunctionError) {
           console.log('Edge function failed:', edgeFunctionError);
         }
-        }
 
         // If edge function fails, try external API with both lot ID and as lot number
         const controller = new AbortController();
