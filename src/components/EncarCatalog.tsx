@@ -120,78 +120,44 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               const lotGrade = lot.grade_iaai.toLowerCase().trim();
               console.log(`  📋 Lot grade_iaai: "${lotGrade}"`);
               
-              // More flexible matching for lot grades
-              if (lotGrade === targetGrade || 
-                  lotGrade.includes(targetGrade) || 
-                  targetGrade.includes(lotGrade) ||
-                  lotGrade.replace(/\s+/g, '') === targetGrade.replace(/\s+/g, '')) {
+              // Exact match for lot grades
+              if (lotGrade === targetGrade) {
                 hasMatchingGrade = true;
-                console.log(`  ✅ MATCH found in lot grade_iaai`);
+                console.log(`  ✅ EXACT MATCH found in lot grade_iaai`);
                 break;
               }
             }
           }
         }
         
-        // Check in car title - make this more lenient
+        // Check in car title with strict pattern matching
         if (!hasMatchingGrade && car.title) {
           const titleLower = car.title.toLowerCase();
           console.log(`  📝 Car title: "${titleLower}"`);
           
-          // Direct string search first - more lenient
-          if (titleLower.includes(targetGrade) || titleLower.includes(targetGrade.replace(/\s+/g, ''))) {
-            hasMatchingGrade = true;
-            console.log(`  ✅ MATCH found via direct title search`);
+          // Check for exact matches first
+          const exactMatches = [
+            targetGrade,
+            targetGrade.replace(/\s+/g, ''),
+            targetGrade.replace(/i$/, '').trim() + 'i',
+            targetGrade.replace(/d$/, '').trim() + 'd'
+          ];
+          
+          for (const exactMatch of exactMatches) {
+            if (titleLower.includes(exactMatch)) {
+              hasMatchingGrade = true;
+              console.log(`  ✅ EXACT MATCH found in title: "${exactMatch}"`);
+              break;
+            }
           }
           
-          // If still no match, try extracting all possible grade patterns
+          // If no exact match, try BMW-style pattern matching (more restrictive)
           if (!hasMatchingGrade) {
-            // Extract all potential grades from the title
-            const allPossibleGrades = new Set<string>();
-            
-            // BMW/Audi style patterns (320i, 330d, etc.)
-            const bmwMatches = titleLower.match(/\b(\d{3}[a-z]*[id]?[a-z]*)\b/gi);
-            if (bmwMatches) {
-              bmwMatches.forEach(match => allPossibleGrades.add(match.trim()));
-            }
-            
-            // Engine displacement patterns (2.0, 1.8, etc.)
-            const engineMatches = titleLower.match(/\b(\d+\.?\d*)\s*(tdi|tfsi|tsi|fsi|cdi|d|i|turbo|hybrid|eco)\b/gi);
-            if (engineMatches) {
-              engineMatches.forEach(match => {
-                const cleaned = match.trim().replace(/\s+/g, '');
-                allPossibleGrades.add(cleaned);
-                // Also add without the suffix for broader matching
-                const withoutSuffix = match.replace(/(tdi|tfsi|tsi|fsi|cdi|d|i|turbo|hybrid|eco)$/gi, '').trim();
-                if (withoutSuffix) {
-                  allPossibleGrades.add(withoutSuffix);
-                }
-              });
-            }
-            
-            // Simple engine patterns (1.6, 2.0, etc.)
-            const simpleMatches = titleLower.match(/\b(\d+\.?\d*)\s*l?i?t?e?r?\b/gi);
-            if (simpleMatches) {
-              simpleMatches.forEach(match => {
-                const cleaned = match.replace(/l?i?t?e?r?$/gi, '').trim();
-                if (cleaned && /^\d+\.?\d*$/.test(cleaned)) {
-                  allPossibleGrades.add(cleaned);
-                }
-              });
-            }
-            
-            console.log(`  📊 All extracted grades: [${Array.from(allPossibleGrades).join(', ')}]`);
-            
-            // Check if any extracted grade matches our target
-            for (const grade of allPossibleGrades) {
-              if (grade === targetGrade ||
-                  grade.includes(targetGrade) ||
-                  targetGrade.includes(grade) ||
-                  grade.replace(/\s+/g, '') === targetGrade.replace(/\s+/g, '')) {
-                hasMatchingGrade = true;
-                console.log(`  ✅ MATCH found via extracted grade: "${grade}"`);
-                break;
-              }
+            // Only match BMW-style patterns that are 3+ characters and end with i/d
+            const bmwPattern = new RegExp(`\\b(${targetGrade.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'gi');
+            if (bmwPattern.test(titleLower) && targetGrade.length >= 3) {
+              hasMatchingGrade = true;
+              console.log(`  ✅ BMW PATTERN MATCH found: "${targetGrade}"`);
             }
           }
         }
