@@ -245,17 +245,20 @@ const HomeCarsSection = memo(() => {
         }
       });
       
-      // Add smooth transition effect
-      document.body.style.transition = 'opacity 0.3s ease-in-out';
-      document.body.style.opacity = '0.7';
+      // Clear any existing scroll restoration data
+      sessionStorage.removeItem('encar-catalog-scroll');
       
+      // Navigate and ensure we're at the top
+      navigate(`/catalog?${searchParams.toString()}`);
+      
+      // Force scroll to top immediately after navigation
       setTimeout(() => {
-        navigate(`/catalog?${searchParams.toString()}`);
-        // Scroll to top after navigation
+        window.scrollTo({ top: 0, behavior: 'auto' });
+        // Then smooth scroll to ensure we're at the very top
         setTimeout(() => {
           window.scrollTo({ top: 0, behavior: 'smooth' });
-        }, 100);
-      }, 150);
+        }, 50);
+      }, 0);
       return;
     }
     
