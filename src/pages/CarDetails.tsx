@@ -264,47 +264,79 @@ const CarDetails = memo(() => {
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
 
   // Feature mapping for equipment/options
-  const FEATURE_MAPPING: { [key: number]: string } = {
-    1: 'Klimatizimi',
-    2: 'Dritaret Elektrike', 
-    3: 'Mbyllja Qendrore',
-    4: 'Frena ABS',
-    5: 'Airbag Sistemi',
-    6: 'Radio/Sistemi Audio',
-    7: 'CD Player',
-    8: 'Bluetooth',
-    9: 'Navigacioni GPS',
-    10: 'Kamera e Prapme',
-    11: 'Sensorët e Parkimit',
-    12: 'Kontrolli i Kursimit',
-    13: 'Sistemi Start/Stop',
-    14: 'Dritat LED',
-    15: 'Dritat Xenon',
-    16: 'Pasqyrat Elektrike',
-    17: 'Pasqyrat e Ngrohura',
-    18: 'Kontrolli Elektronik i Stabilitetit',
-    19: 'Sistemi Kundër Bllokimit',
-    20: 'Kontrolli i Traksionit',
-    21: 'Distribimi Elektronik i Forcës së Frënimit',
-    22: 'Sistemi i Monitorimit të Presionit të Gomas',
-    23: 'Sistemi i Paralajmërimit të Largimit nga Korsia',
-    24: 'Kontrolli Adaptiv i Kursimit',
-    25: 'Sistemi i Paralajmërimit të Kolizionit',
-    26: 'Frënimi Emergjent Automatik',
-    27: 'Kontrolli i Bordit Elektronik',
-    28: 'Sistemi Keyless',
-    29: 'Filteri i Grimcave',
-    30: 'Sistemi i Kontrollit të Stabilitetit',
-    31: 'Rrota e Rezervës',
-    32: 'Kompleti i Riparimit të Gomas',
-    33: 'Kapaku i Motorit',
-    34: 'Spoiler i Prapëm',
-    35: 'Rrota Alumini',
-    36: 'Rrota Çeliku',
-    37: 'Sistemi i Ngrohjes së Ulëseve',
-    38: 'Ulëset e Lëkurës',
-    39: 'Ulëset e Tekstilit',
-    40: 'Kontrolli Elektrik i Ulëseve'
+  const FEATURE_MAPPING: { [key: string]: string } = {
+    // Basic Equipment
+    '001': 'Klimatizimi',
+    '002': 'Dritaret Elektrike',
+    '003': 'Mbyllja Qendrore',
+    '004': 'Frena ABS',
+    '005': 'Airbag Sistemi',
+    '006': 'Radio/Sistemi Audio',
+    '007': 'CD Player',
+    '008': 'Bluetooth',
+    '009': 'Navigacioni GPS',
+    '010': 'Kamera e Prapme',
+    '011': 'Sensorët e Parkimit',
+    '012': 'Kontrolli i Kursimit',
+    '013': 'Sistemi Start/Stop',
+    '014': 'Dritat LED',
+    '015': 'Dritat Xenon',
+    '016': 'Pasqyrat Elektrike',
+    '017': 'Pasqyrat e Ngrohura',
+    '018': 'Kontrolli Elektronik i Stabilitetit',
+    '019': 'Sistemi Kundër Bllokimit',
+    '020': 'Kontrolli i Traksionit',
+    '021': 'Distribimi Elektronik i Forcës së Frënimit',
+    '022': 'Sistemi i Monitorimit të Presionit të Gomas',
+    '023': 'Sistemi i Paralajmërimit të Largimit nga Korsia',
+    '024': 'Kontrolli Adaptiv i Kursimit',
+    '025': 'Sistemi i Paralajmërimit të Kolizionit',
+    '026': 'Frënimi Emergjent Automatik',
+    '027': 'Kontrolli i Bordit Elektronik',
+    '028': 'Sistemi Keyless',
+    '029': 'Filteri i Grimcave',
+    '030': 'Sistemi i Kontrollit të Stabilitetit',
+    '031': 'Rrota e Rezervës',
+    '032': 'Kompleti i Riparimit të Gomas',
+    '033': 'Kapaku i Motorit',
+    '034': 'Spoiler i Prapëm',
+    '035': 'Rrota Alumini',
+    '036': 'Rrota Çeliku',
+    '037': 'Sistemi i Ngrohjes së Ulëseve',
+    '038': 'Ulëset e Lëkurës',
+    '039': 'Ulëset e Tekstilit',
+    '040': 'Kontrolli Elektrik i Ulëseve',
+    '041': 'Dritaret me Tinte',
+    '042': 'Sistemi i Alarmshmërisë',
+    '043': 'Imobilizuesi',
+    '044': 'Kopja e Çelësave',
+    '045': 'Kontrolli i Temperaturës',
+    '046': 'Ventilimi Automatik',
+    '047': 'Sistemi i Pastrimit të Dritareve',
+    '048': 'Sistemi i Ujit të Xhamit',
+    '049': 'Defogger i Prapëm',
+    '050': 'Sistemi i Ndriçimit të Brendshëm',
+    // Add numeric fallbacks for compatibility
+    '1': 'Klimatizimi',
+    '2': 'Dritaret Elektrike',
+    '3': 'Mbyllja Qendrore',
+    '4': 'Frena ABS',
+    '5': 'Airbag Sistemi',
+    '6': 'Radio/Sistemi Audio',
+    '7': 'CD Player',
+    '8': 'Bluetooth',
+    '9': 'Navigacioni GPS',
+    '10': 'Kamera e Prapme',
+    '11': 'Sensorët e Parkimit',
+    '12': 'Kontrolli i Kursimit',
+    '13': 'Sistemi Start/Stop',
+    '14': 'Dritat LED',
+    '15': 'Dritat Xenon',
+    '16': 'Pasqyrat Elektrike',
+    '17': 'Pasqyrat e Ngrohura',
+    '18': 'Kontrolli Elektronik i Stabilitetit',
+    '19': 'Sistemi Kundër Bllokimit',
+    '20': 'Kontrolli i Traksionit'
   };
 
   // Convert option numbers to feature names
@@ -314,21 +346,24 @@ const CarDetails = memo(() => {
     const result: any = { standard: [], choice: [], tuning: [] };
     
     if (options.standard && Array.isArray(options.standard)) {
-      result.standard = options.standard.map((option: any) => 
-        typeof option === 'number' ? (FEATURE_MAPPING[option] || `Pajisje ${option}`) : option
-      );
+      result.standard = options.standard.map((option: any) => {
+        const optionStr = option.toString();
+        return FEATURE_MAPPING[optionStr] || `Pajisje ${optionStr}`;
+      });
     }
     
     if (options.choice && Array.isArray(options.choice)) {
-      result.choice = options.choice.map((option: any) => 
-        typeof option === 'number' ? (FEATURE_MAPPING[option] || `Opsion ${option}`) : option
-      );
+      result.choice = options.choice.map((option: any) => {
+        const optionStr = option.toString();
+        return FEATURE_MAPPING[optionStr] || `Opsion ${optionStr}`;
+      });
     }
     
     if (options.tuning && Array.isArray(options.tuning)) {
-      result.tuning = options.tuning.map((option: any) => 
-        typeof option === 'number' ? (FEATURE_MAPPING[option] || `Modifikim ${option}`) : option
-      );
+      result.tuning = options.tuning.map((option: any) => {
+        const optionStr = option.toString();
+        return FEATURE_MAPPING[optionStr] || `Modifikim ${optionStr}`;
+      });
     }
     
     return result;
