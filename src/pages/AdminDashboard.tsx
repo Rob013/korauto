@@ -607,8 +607,9 @@ const AdminDashboard = () => {
                                         <button
                                           onClick={() => window.open(`/car/${request.car_id}`, '_blank')}
                                           className="text-xs text-blue-600 hover:text-blue-800 underline"
+                                          title={`View car lot ${request.car_id}`}
                                         >
-                                          View Car →
+                                          View Lot {request.car_id} →
                                         </button>
                                       )}
                                    </div>
@@ -836,17 +837,18 @@ const AdminDashboard = () => {
                                 <Phone className="h-2 w-2" />
                               </Button>
                               
-                               {request.car_id && (
-                                 <Button 
-                                   size="sm" 
-                                   variant="default"
-                                   onClick={() => window.open(`/car/${request.car_id}`, '_blank')}
-                                   className="h-5 px-1 text-[9px] bg-primary hover:bg-primary/90"
-                                   title={carDetails[request.car_id] ? `View ${carDetails[request.car_id].year} ${carDetails[request.car_id].make} ${carDetails[request.car_id].model}` : 'View Car Details'}
-                                 >
-                                   <Car className="h-2 w-2" />
-                                 </Button>
-                               )}
+                                {request.car_id && (
+                                  <Button 
+                                    size="sm" 
+                                    variant="default"
+                                    onClick={() => window.open(`/car/${request.car_id}`, '_blank')}
+                                    className="h-5 px-1 text-[9px] bg-primary hover:bg-primary/90"
+                                    title={`View car lot ${request.car_id} in new tab`}
+                                  >
+                                    <Car className="h-2 w-2" />
+                                    {request.car_id}
+                                  </Button>
+                                )}
                               
                               <select
                                 value={request.status}
