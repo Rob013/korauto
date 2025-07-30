@@ -605,16 +605,19 @@ const AdminDashboard = () => {
                                      </span>
                                        {request.car_id && carDetails[request.car_id] && (
                                          <button
-                                           onClick={() => window.open(`/car/${request.car_id}`, '_blank')}
+                                           onClick={() => {
+                                             // Navigate to catalog and highlight the specific car
+                                             window.location.href = `/catalog?highlight=${request.car_id}`;
+                                           }}
                                            className="text-xs text-blue-600 hover:text-blue-800 underline"
-                                           title={`View car lot ${request.car_id}`}
+                                           title={`View car ${request.car_id} in catalog`}
                                          >
-                                           View Lot {request.car_id} →
+                                           View Car {request.car_id} →
                                          </button>
                                        )}
                                        {request.car_id && !carDetails[request.car_id] && (
                                          <span className="text-xs text-muted-foreground">
-                                           Lot {request.car_id} (Not Available)
+                                           Car {request.car_id} (Not Available)
                                          </span>
                                        )}
                                    </div>

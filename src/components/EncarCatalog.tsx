@@ -28,7 +28,11 @@ interface APIFilters {
   seats_count?: string;
 }
 
-const EncarCatalog = () => {
+interface EncarCatalogProps {
+  highlightCarId?: string | null;
+}
+
+const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const { toast } = useToast();
   const { cars, loading, error, totalCount, hasMorePages, fetchCars, fetchManufacturers, fetchModels, fetchGenerations, fetchFilterCounts, loadMore } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
@@ -204,6 +208,30 @@ const EncarCatalog = () => {
     loadInitialCounts();
   }, [manufacturers]);
 
+  // Effect to highlight and scroll to specific car
+  useEffect(() => {
+    if (highlightCarId && cars.length > 0) {
+      setTimeout(() => {
+        const carElement = document.getElementById(`car-${highlightCarId}`);
+        if (carElement) {
+          carElement.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+          // Add highlight effect
+          carElement.style.border = '3px solid #3b82f6';
+          carElement.style.boxShadow = '0 0 20px rgba(59, 130, 246, 0.5)';
+          
+          // Remove highlight after 3 seconds
+          setTimeout(() => {
+            carElement.style.border = '';
+            carElement.style.boxShadow = '';
+          }, 3000);
+        }
+      }, 500); // Small delay to ensure cars are rendered
+    }
+  }, [highlightCarId, cars]);
+
   return (
     <div className="container-responsive py-6 sm:py-8">
       {/* Header with Back Button */}
@@ -324,53 +352,54 @@ const EncarCatalog = () => {
               const price = convertUSDtoEUR(Math.round(usdPrice + 2200));
               
               return (
-                <CarCard
-                  key={car.id}
-                  id={car.id}
-                  make={car.manufacturer?.name || 'Unknown'}
-                  model={car.model?.name || 'Unknown'}
-                  year={car.year}
-                  price={price}
-                  image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]}
-                  vin={car.vin}
-                  mileage={lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined}
-                  transmission={car.transmission?.name}
-                  fuel={car.fuel?.name}
-                  color={car.color?.name}
-                  condition={car.condition?.replace('run_and_drives', 'Good')}
-                  lot={car.lot_number || lot?.lot || ''}
-                  title={car.title || ''}
-                  status={Number(car.status || lot?.status || 1)}
-                  sale_status={car.sale_status || lot?.sale_status}
-                  final_price={car.final_price || lot?.final_price}
-                  generation={car.generation?.name}
-                  body_type={car.body_type?.name}
-                  engine={car.engine?.name}
-                  drive_wheel={car.drive_wheel}
-                  vehicle_type={car.vehicle_type?.name}
-                  cylinders={car.cylinders}
-                  bid={lot?.bid}
-                  estimate_repair_price={lot?.estimate_repair_price}
-                  pre_accident_price={lot?.pre_accident_price}
-                  clean_wholesale_price={lot?.clean_wholesale_price}
-                  actual_cash_value={lot?.actual_cash_value}
-                  sale_date={lot?.sale_date}
-                  seller={lot?.seller}
-                  seller_type={lot?.seller_type}
-                  detailed_title={lot?.detailed_title}
-                  damage_main={lot?.damage?.main}
-                  damage_second={lot?.damage?.second}
-                  keys_available={lot?.keys_available}
-                  airbags={lot?.airbags}
-                  grade_iaai={lot?.grade_iaai}
-                  domain={lot?.domain?.name}
-                  external_id={lot?.external_id}
-                  insurance={(lot as any)?.insurance}
-                  insurance_v2={(lot as any)?.insurance_v2}
-                  location={(lot as any)?.location}
-                  inspect={(lot as any)?.inspect}
-                  details={(lot as any)?.details}
-                />
+                <div key={car.id} id={`car-${car.id}`}>
+                  <CarCard
+                    id={car.id}
+                    make={car.manufacturer?.name || 'Unknown'}
+                    model={car.model?.name || 'Unknown'}
+                    year={car.year}
+                    price={price}
+                    image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]}
+                    vin={car.vin}
+                    mileage={lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined}
+                    transmission={car.transmission?.name}
+                    fuel={car.fuel?.name}
+                    color={car.color?.name}
+                    condition={car.condition?.replace('run_and_drives', 'Good')}
+                    lot={car.lot_number || lot?.lot || ''}
+                    title={car.title || ''}
+                    status={Number(car.status || lot?.status || 1)}
+                    sale_status={car.sale_status || lot?.sale_status}
+                    final_price={car.final_price || lot?.final_price}
+                    generation={car.generation?.name}
+                    body_type={car.body_type?.name}
+                    engine={car.engine?.name}
+                    drive_wheel={car.drive_wheel}
+                    vehicle_type={car.vehicle_type?.name}
+                    cylinders={car.cylinders}
+                    bid={lot?.bid}
+                    estimate_repair_price={lot?.estimate_repair_price}
+                    pre_accident_price={lot?.pre_accident_price}
+                    clean_wholesale_price={lot?.clean_wholesale_price}
+                    actual_cash_value={lot?.actual_cash_value}
+                    sale_date={lot?.sale_date}
+                    seller={lot?.seller}
+                    seller_type={lot?.seller_type}
+                    detailed_title={lot?.detailed_title}
+                    damage_main={lot?.damage?.main}
+                    damage_second={lot?.damage?.second}
+                    keys_available={lot?.keys_available}
+                    airbags={lot?.airbags}
+                    grade_iaai={lot?.grade_iaai}
+                    domain={lot?.domain?.name}
+                    external_id={lot?.external_id}
+                    insurance={(lot as any)?.insurance}
+                    insurance_v2={(lot as any)?.insurance_v2}
+                    location={(lot as any)?.location}
+                    inspect={(lot as any)?.inspect}
+                    details={(lot as any)?.details}
+                  />
+                </div>
               );
             })}
           </div>
