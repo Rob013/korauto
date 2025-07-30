@@ -74,7 +74,7 @@ const HomeCarsSection = memo(() => {
     console.log('HomeCarsSection: Component mounted, loading initial data');
     fetchCars(1, {}, true);
     fetchManufacturers().then(setManufacturers);
-  }, [fetchCars, fetchManufacturers]);
+  }, []); // Empty dependency array to run only once on mount
 
   const handleFiltersChange = (newFilters: APIFilters) => {
     setFilters(newFilters);
