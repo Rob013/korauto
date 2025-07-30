@@ -1,36 +1,95 @@
 import LazyCarCard from "./LazyCarCard";
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { RefreshCw, AlertCircle } from "lucide-react";
-import { useSimpleCarAPI } from '@/hooks/useSimpleCarAPI';
+import { useSecureAuctionAPI } from '@/hooks/useSecureAuctionAPI';
 import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
 import { useSortedCars, getSortOptions, SortOption } from '@/hooks/useSortedCars';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowUpDown } from 'lucide-react';
+import FilterForm from '@/components/FilterForm';
+
+interface APIFilters {
+  manufacturer_id?: string;
+  model_id?: string;
+  generation_id?: string;
+  color?: string;
+  fuel_type?: string;
+  transmission?: string;
+  odometer_from_km?: string;
+  odometer_to_km?: string;
+  from_year?: string;
+  to_year?: string;
+  buy_now_price_from?: string;
+  buy_now_price_to?: string;
+  search?: string;
+  seats_count?: string;
+}
 
 const HomeCarsSection = memo(() => {
   const navigate = useNavigate();
-  const {
-    cars,
-    loading,
-    error,
-    refreshCars
-  } = useSimpleCarAPI();
-  const {
-    convertUSDtoEUR
-  } = useCurrencyAPI();
+  const { cars, loading, error, fetchCars, fetchManufacturers, fetchModels, fetchGenerations, fetchFilterCounts } = useSecureAuctionAPI();
+  const { convertUSDtoEUR } = useCurrencyAPI();
   const [sortBy, setSortBy] = useState<SortOption>('popular');
   const [showAllCars, setShowAllCars] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  
+  const [filters, setFilters] = useState<APIFilters>({});
+  const [manufacturers, setManufacturers] = useState<{
+    id: number;
+    name: string;
+    car_count?: number;
+    cars_qty?: number;
+  }[]>([]);
+  const [models, setModels] = useState<{
+    id: number;
+    name: string;
+    car_count?: number;
+    cars_qty?: number;
+  }[]>([]);
+  const [generations, setGenerations] = useState<{
+    id: number;
+    name: string;
+    manufacturer_id?: number;
+    model_id?: number;
+    from_year?: number;
+    to_year?: number;
+    cars_qty?: number;
+  }[]>([]);
+  const [filterCounts, setFilterCounts] = useState<any>(null);
 
-  // Sort cars and display logic: show 8 initially, then all on "show more"
-  const sortedCars = useSortedCars(cars, sortBy);
+  // Type conversion to match the sorting hook interface
+  const carsForSorting = cars.map(car => ({
+    ...car,
+    status: String(car.status || ''),
+    lot_number: String(car.lot_number || ''),
+    cylinders: Number(car.cylinders || 0)
+  }));
+  
+  const sortedCars = useSortedCars(carsForSorting, sortBy);
   const displayedCars = showAllCars ? sortedCars : sortedCars.slice(0, 8);
+
+  useEffect(() => {
+    // Load initial data
+    fetchCars(1, {}, true);
+    fetchManufacturers().then(setManufacturers);
+  }, []);
+
+  const handleFiltersChange = (newFilters: APIFilters) => {
+    setFilters(newFilters);
+    fetchCars(1, newFilters, true);
+  };
+
+  const handleClearFilters = () => {
+    setFilters({});
+    fetchCars(1, {}, true);
+  };
 
   const handleRefresh = useCallback(() => {
     console.log('🔄 Refresh button clicked');
-    refreshCars();
-  }, [refreshCars]);
+    fetchCars(1, filters, true);
+  }, [fetchCars, filters]);
 
   return (
     <section id="cars" className="py-4 sm:py-6 lg:py-8 bg-secondary/30">
@@ -51,6 +110,14 @@ const HomeCarsSection = memo(() => {
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               {loading ? 'Duke u ngarkuar...' : 'Rifresko'}
             </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowFilters(!showFilters)} 
+              className="w-full sm:w-auto border-primary text-primary hover:bg-primary hover:text-primary-foreground min-h-[44px]"
+            >
+              {showFilters ? 'Fshih Filtrat' : 'Shfaq Filtrat'}
+            </Button>
           </div>
         </div>
 
@@ -60,6 +127,32 @@ const HomeCarsSection = memo(() => {
             <span className="text-yellow-800 dark:text-yellow-200 text-sm sm:text-base text-left sm:text-center">
               Problem me lidhjen API: {error}
             </span>
+          </div>
+        )}
+
+        {/* Filter Form */}
+        {showFilters && (
+          <div className="mb-6 sm:mb-8">
+            <FilterForm
+              filters={filters}
+              manufacturers={manufacturers}
+              models={models}
+              generations={generations}
+              filterCounts={filterCounts}
+              onFiltersChange={handleFiltersChange}
+              onClearFilters={handleClearFilters}
+              onManufacturerChange={(manufacturerId) => {
+                if (manufacturerId) {
+                  fetchModels(manufacturerId).then(setModels);
+                  setGenerations([]);
+                }
+              }}
+              onModelChange={(modelId) => {
+                if (modelId) {
+                  fetchGenerations(modelId).then(setGenerations);
+                }
+              }}
+            />
           </div>
         )}
 
