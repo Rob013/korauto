@@ -441,7 +441,7 @@ export const useSecureAuctionAPI = () => {
         manufacturer_id: manufacturerId,
         model_id: modelId, 
         generation_id: generationId,
-        per_page: '1000' // Increase to get accurate counts for all grades
+        per_page: '200' // Reduce to prevent large responses that cause edge function timeouts
       };
 
       console.log('🔍 Fetching cars for grades with filters:', filters);

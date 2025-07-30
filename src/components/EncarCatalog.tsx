@@ -286,10 +286,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setFilters(newFilters);
     setLoadedPages(1); // Reset pagination when filters change
     
-    // If a specific grade is selected, increase per_page to show all cars of that grade
+    // If a specific grade is selected, increase per_page to show more cars of that grade
     const filtersWithPagination = {
       ...newFilters,
-      per_page: newFilters.grade_iaai ? "100" : "12" // Show more cars for specific grades
+      per_page: newFilters.grade_iaai ? "50" : "12" // Reduce from 100 to 50 to prevent edge function errors
     };
     
     fetchCars(1, filtersWithPagination, true);
