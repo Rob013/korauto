@@ -1026,35 +1026,35 @@ const AdminDashboard = () => {
                 </p>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse border border-border text-xs">
+                <div className="overflow-x-auto -mx-2 sm:mx-0">
+                  <table className="w-full border-collapse border border-border text-[10px] sm:text-xs">
                     <thead>
                       <tr className="bg-muted">
-                        <th className="border border-border px-1 py-1 text-left text-[10px] font-medium w-[80px]">
-                          id
+                        <th className="border border-border px-1 py-1 text-left text-[8px] sm:text-[10px] font-medium w-[60px] sm:w-[80px]">
+                          ID
                         </th>
-                        <th className="border border-border px-1 py-1 text-left text-[10px] font-medium w-[90px]">
-                          created_at
+                        <th className="border border-border px-1 py-1 text-left text-[8px] sm:text-[10px] font-medium w-[70px] sm:w-[90px]">
+                          Date
                         </th>
-                        <th className="border border-border px-1 py-1 text-left text-[10px] font-medium w-[120px]">
-                          customer_name
+                        <th className="border border-border px-1 py-1 text-left text-[8px] sm:text-[10px] font-medium w-[80px] sm:w-[120px]">
+                          Customer
                         </th>
-                        <th className="border border-border px-1 py-1 text-left text-[10px] font-medium w-[140px]">
-                          customer_email
+                        <th className="border border-border px-1 py-1 text-left text-[8px] sm:text-[10px] font-medium w-[90px] sm:w-[140px] hidden sm:table-cell">
+                          Email
                         </th>
-                        <th className="border border-border px-1 py-1 text-left text-[10px] font-medium w-[100px]">
-                          customer_phone
+                        <th className="border border-border px-1 py-1 text-left text-[8px] sm:text-[10px] font-medium w-[70px] sm:w-[100px]">
+                          Phone
                         </th>
-                        <th className="border border-border px-1 py-1 text-left text-[10px] font-medium w-[200px]">
-                          car_id
+                        <th className="border border-border px-1 py-1 text-left text-[8px] sm:text-[10px] font-medium w-[120px] sm:w-[200px]">
+                          Car
                         </th>
-                        <th className="border border-border px-1 py-1 text-left text-[10px] font-medium w-[60px]">
-                          status
+                        <th className="border border-border px-1 py-1 text-left text-[8px] sm:text-[10px] font-medium w-[50px] sm:w-[60px]">
+                          Status
                         </th>
-                        <th className="border border-border px-1 py-1 text-left text-[10px] font-medium w-[120px]">
-                          notes
+                        <th className="border border-border px-1 py-1 text-left text-[8px] sm:text-[10px] font-medium w-[80px] sm:w-[120px] hidden lg:table-cell">
+                          Notes
                         </th>
-                        <th className="border border-border px-1 py-1 text-left text-[10px] font-medium w-[120px]">
+                        <th className="border border-border px-1 py-1 text-left text-[8px] sm:text-[10px] font-medium w-[90px] sm:w-[120px]">
                           Actions
                         </th>
                       </tr>
@@ -1062,35 +1062,39 @@ const AdminDashboard = () => {
                     <tbody>
                       {requests.map((request) => (
                         <tr key={request.id} className="hover:bg-muted/50">
-                          <td className="border border-border px-1 py-1 text-[10px] font-mono">
+                          <td className="border border-border px-0.5 py-0.5 text-[8px] sm:text-[10px] font-mono">
                             <div
-                              className="max-w-[80px] truncate"
+                              className="max-w-[60px] sm:max-w-[80px] truncate"
                               title={request.id}
                             >
                               {request.id.split("-")[0]}...
                             </div>
                           </td>
-                          <td className="border border-border px-1 py-1 text-[10px]">
+                          <td className="border border-border px-0.5 py-0.5 text-[8px] sm:text-[10px]">
                             <div className="font-mono">
                               {new Date(
                                 request.created_at
-                              ).toLocaleDateString()}
+                              ).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                             </div>
-                            <div className="text-[8px] text-muted-foreground">
+                            <div className="text-[6px] sm:text-[8px] text-muted-foreground">
                               {new Date(
                                 request.created_at
-                              ).toLocaleTimeString()}
+                              ).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                             </div>
                           </td>
-                          <td className="border border-border px-1 py-1 text-[10px]">
+                          <td className="border border-border px-0.5 py-0.5 text-[8px] sm:text-[10px]">
                             <div
-                              className="font-medium text-primary truncate max-w-[120px]"
+                              className="font-medium text-primary truncate max-w-[80px] sm:max-w-[120px]"
                               title={request.customer_name}
                             >
                               {request.customer_name}
                             </div>
+                            {/* Show email on mobile under name */}
+                            <div className="sm:hidden text-[6px] text-muted-foreground truncate max-w-[80px]" title={request.customer_email}>
+                              {request.customer_email}
+                            </div>
                           </td>
-                          <td className="border border-border px-1 py-1 text-[10px]">
+                          <td className="border border-border px-0.5 py-0.5 text-[8px] sm:text-[10px] hidden sm:table-cell">
                             <div
                               className="font-medium truncate max-w-[140px]"
                               title={request.customer_email}
@@ -1098,7 +1102,7 @@ const AdminDashboard = () => {
                               {request.customer_email}
                             </div>
                           </td>
-                          <td className="border border-border px-1 py-1 text-[10px]">
+                          <td className="border border-border px-0.5 py-0.5 text-[8px] sm:text-[10px]">
                             <a
                               href={`https://wa.me/${request.customer_phone.replace(
                                 /[^0-9]/g,
@@ -1106,24 +1110,24 @@ const AdminDashboard = () => {
                               )}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="font-medium text-green-600 hover:text-green-800 hover:underline cursor-pointer truncate max-w-[100px] block"
+                              className="font-medium text-green-600 hover:text-green-800 hover:underline cursor-pointer truncate max-w-[70px] sm:max-w-[100px] block"
                               title={`WhatsApp ${request.customer_phone}`}
                             >
-                              {request.customer_phone}
+                              {request.customer_phone.replace(/^\+/, '').slice(-8)}
                             </a>
                           </td>
-                          <td className="border border-border px-1 py-1 text-[10px]">
+                          <td className="border border-border px-0.5 py-0.5 text-[8px] sm:text-[10px]">
                             {request.car_id ? (
-                              <div className="space-y-1">
+                              <div className="space-y-0.5 sm:space-y-1">
                                 <div
-                                  className="font-mono text-[9px] bg-muted px-1 rounded max-w-[80px] truncate"
+                                  className="font-mono text-[7px] sm:text-[9px] bg-muted px-0.5 sm:px-1 rounded max-w-[60px] sm:max-w-[80px] truncate"
                                   title={request.car_id}
                                 >
                                   {request.car_id}
                                 </div>
                                 {carDetails[request.car_id] && (
                                   <div
-                                    className="flex items-center space-x-1 cursor-pointer hover:bg-muted/50 rounded p-1 transition-colors"
+                                    className="flex items-center space-x-0.5 sm:space-x-1 cursor-pointer hover:bg-muted/50 rounded p-0.5 transition-colors"
                                     onClick={() => {
                                       const lotNumber =
                                         carDetails[request.car_id]?.lot_number;
@@ -1140,12 +1144,12 @@ const AdminDashboard = () => {
                                       <img
                                         src={carDetails[request.car_id].image}
                                         alt="Car"
-                                        className="w-8 h-6 object-cover rounded border"
+                                        className="w-6 h-4 sm:w-8 sm:h-6 object-cover rounded border"
                                       />
                                     )}
                                     <div className="flex-1 min-w-0">
                                       <div
-                                        className="text-[9px] font-medium truncate max-w-[100px] text-primary hover:underline"
+                                        className="text-[7px] sm:text-[9px] font-medium truncate max-w-[60px] sm:max-w-[100px] text-primary hover:underline"
                                         title={`${
                                           carDetails[request.car_id].year
                                         } ${carDetails[request.car_id].make} ${
@@ -1155,7 +1159,7 @@ const AdminDashboard = () => {
                                         {carDetails[request.car_id].year}{" "}
                                         {carDetails[request.car_id].make}
                                       </div>
-                                      <div className="text-[8px] text-muted-foreground">
+                                      <div className="text-[6px] sm:text-[8px] text-muted-foreground">
                                         {carDetails[request.car_id].price && (
                                           <div>
                                             €
@@ -1197,9 +1201,9 @@ const AdminDashboard = () => {
                               )}
                             </div>
                           </td>
-                          <td className="border border-border px-1 py-1 text-[10px]">
-                            <div className="space-y-1">
-                              {/* Top row: Contact buttons */}
+                          <td className="border border-border px-0.5 py-0.5 text-[8px] sm:text-[10px]">
+                            <div className="space-y-0.5 sm:space-y-1">
+                              {/* Contact buttons - more compact */}
                               <div className="flex gap-0.5 justify-start">
                                 <Button
                                   size="sm"
@@ -1210,10 +1214,10 @@ const AdminDashboard = () => {
                                       "_blank"
                                     )
                                   }
-                                  className="h-5 w-5 p-0"
+                                  className="h-4 w-4 sm:h-5 sm:w-5 p-0"
                                   title="Send Email"
                                 >
-                                  <Mail className="h-2.5 w-2.5" />
+                                  <Mail className="h-2 w-2 sm:h-2.5 sm:w-2.5" />
                                 </Button>
                                 <Button
                                   size="sm"
@@ -1228,13 +1232,13 @@ const AdminDashboard = () => {
                                       "_blank"
                                     );
                                   }}
-                                  className="h-5 w-5 p-0"
+                                  className="h-4 w-4 sm:h-5 sm:w-5 p-0"
                                   title="WhatsApp"
                                 >
-                                  <Phone className="h-2.5 w-2.5" />
+                                  <Phone className="h-2 w-2 sm:h-2.5 sm:w-2.5" />
                                 </Button>
 
-                                {/* View Car Button */}
+                                {/* View Car Button - smaller on mobile */}
                                 {request.car_id &&
                                   carDetails[request.car_id] && (
                                     <Button
@@ -1248,20 +1252,20 @@ const AdminDashboard = () => {
                                           lotNumber || request.car_id;
                                         window.open(`/car/${carId}`, "_blank");
                                       }}
-                                      className="h-5 px-1.5 text-[8px] text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
+                                      className="h-4 px-1 sm:h-5 sm:px-1.5 text-[6px] sm:text-[8px] text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
                                       title={`View car details for ${
                                         carDetails[request.car_id]?.year
                                       } ${carDetails[request.car_id]?.make} ${
                                         carDetails[request.car_id]?.model
                                       }`}
                                     >
-                                      <Car className="h-2.5 w-2.5 mr-0.5" />
-                                      View
+                                      <Car className="h-2 w-2 sm:h-2.5 sm:w-2.5 mr-0.5" />
+                                      <span className="hidden sm:inline">View</span>
                                     </Button>
                                   )}
                               </div>
 
-                              {/* Bottom row: Status selector */}
+                              {/* Status selector - smaller */}
                               <select
                                 value={request.status}
                                 onChange={(e) =>
@@ -1270,7 +1274,7 @@ const AdminDashboard = () => {
                                     e.target.value
                                   )
                                 }
-                                className="text-[8px] border border-border rounded px-1 py-0.5 bg-background h-5 w-full max-w-[80px]"
+                                className="text-[6px] sm:text-[8px] border border-border rounded px-0.5 py-0.5 bg-background h-4 sm:h-5 w-full max-w-[70px] sm:max-w-[80px]"
                               >
                                 <option value="pending">pending</option>
                                 <option value="in_progress">in_progress</option>
