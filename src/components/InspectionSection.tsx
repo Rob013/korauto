@@ -98,7 +98,6 @@ const InspectionSection = () => {
                     <Button 
                       className="w-full bg-inspection hover:bg-inspection/90 text-inspection-foreground mt-6" 
                       size="lg"
-                      onClick={(e) => e.stopPropagation()}
                     >
                       Kërkesë për Inspektim (€50)
                     </Button>
