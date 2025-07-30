@@ -1788,7 +1788,10 @@ const CarDetails = memo(() => {
                           {/* Inspection Report Button */}
                           <div className="md:col-span-2 mt-4">
                             <Button
-                              onClick={() => setShowDetailedInfo(!showDetailedInfo)}
+                              onClick={() => {
+                                console.log('Current showDetailedInfo:', showDetailedInfo);
+                                setShowDetailedInfo(true);
+                              }}
                               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                               size="lg"
                             >
