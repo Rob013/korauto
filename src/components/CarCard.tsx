@@ -395,10 +395,7 @@ const CarCard = ({
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-2 mb-4">
-          <InspectionRequestForm trigger={<Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground flex-1" onClick={(e) => e.stopPropagation()}>
-                <FileText className="h-4 w-4 mr-1" />
-                Kërkesë për Inspektim
-              </Button>} carId={id} carMake={make} carModel={model} carYear={year} />
+          
           <Button size="sm" variant="ghost" onClick={handleFavoriteToggle} className="border border-border hover:bg-muted flex-1">
             <Heart className={`h-4 w-4 mr-1 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`} />
             {isFavorite ? 'Favorit' : 'Ruaj'}
