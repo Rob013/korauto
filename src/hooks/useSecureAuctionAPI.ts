@@ -427,10 +427,11 @@ export const useSecureAuctionAPI = () => {
     }
   };
 
- const loadMore = async () => {
-  if (!hasMorePages || loading) return;
-  await fetchCars(currentPage + 1, filters, false); // use `filters` from state
-};
+  const loadMore = async (filters: APIFilters = {}) => {
+    if (!hasMorePages || loading) return;
+    await fetchCars(currentPage + 1, filters, false);
+  };
+
   return {
     cars,
     loading,
