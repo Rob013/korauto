@@ -479,19 +479,27 @@ const AdminDashboard = () => {
 
   const updateRequestStatus = async (requestId: string, newStatus: string) => {
     try {
+      // If status is being changed to "completed", also archive the request
+      const updateData: any = {
+        status: newStatus,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (newStatus === "completed") {
+        updateData.archived = true;
+        updateData.archived_at = new Date().toISOString();
+      }
+
       const { error } = await supabase
         .from("inspection_requests")
-        .update({
-          status: newStatus,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq("id", requestId);
 
       if (error) throw error;
 
       toast({
         title: "Status Updated",
-        description: `Request status changed to ${newStatus}`,
+        description: `Request status changed to ${newStatus}${newStatus === "completed" ? " and archived" : ""}`,
       });
 
       // Refresh data
