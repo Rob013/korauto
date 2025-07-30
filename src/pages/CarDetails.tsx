@@ -1942,6 +1942,97 @@ const CarDetails = memo(() => {
                         </div>
                       )}
 
+                      {/* Exchanged/Replaced Parts */}
+                      {(car.details?.exchanged_parts || car.details?.replaced_parts) && (
+                        <div className="mt-6">
+                          <h5 className="font-medium mb-3 text-foreground flex items-center gap-2">
+                            <Settings className="h-4 w-4 text-orange-600" />
+                            Pjesë të Këmbyera / të Zëvendësuara
+                          </h5>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {(car.details.exchanged_parts || car.details.replaced_parts || []).map((part: any, index: number) => (
+                              <div key={index} className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                                  <span className="text-sm font-medium text-orange-800">
+                                    {typeof part === 'string' ? part : part.name || part.part_name || `Pjesë ${index + 1}`}
+                                  </span>
+                                </div>
+                                {typeof part === 'object' && part.condition && (
+                                  <span className="text-xs text-orange-600">Gjendja: {part.condition}</span>
+                                )}
+                                {typeof part === 'object' && part.date && (
+                                  <span className="text-xs text-orange-600 block">Data: {part.date}</span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Repaired Parts */}
+                      {car.details?.repaired_parts && car.details.repaired_parts.length > 0 && (
+                        <div className="mt-6">
+                          <h5 className="font-medium mb-3 text-foreground flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            Pjesë të Riparuara
+                          </h5>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {car.details.repaired_parts.map((part: any, index: number) => (
+                              <div key={index} className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                  <span className="text-sm font-medium text-green-800">
+                                    {typeof part === 'string' ? part : part.name || part.part_name || `Pjesë ${index + 1}`}
+                                  </span>
+                                </div>
+                                {typeof part === 'object' && part.repair_type && (
+                                  <span className="text-xs text-green-600">Lloji: {part.repair_type}</span>
+                                )}
+                                {typeof part === 'object' && part.condition && (
+                                  <span className="text-xs text-green-600 block">Gjendja: {part.condition}</span>
+                                )}
+                                {typeof part === 'object' && part.repair_date && (
+                                  <span className="text-xs text-green-600 block">Data e Riparimit: {part.repair_date}</span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Maintenance History if available */}
+                      {car.details?.maintenance_history && car.details.maintenance_history.length > 0 && (
+                        <div className="mt-6">
+                          <h5 className="font-medium mb-3 text-foreground flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-blue-600" />
+                            Historia e Mirëmbajtjes
+                          </h5>
+                          <div className="space-y-2">
+                            {car.details.maintenance_history.map((record: any, index: number) => (
+                              <div key={index} className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <span className="text-sm font-medium text-blue-800">
+                                      {record.service_type || record.type || 'Shërbim i Përgjithshëm'}
+                                    </span>
+                                    {record.description && (
+                                      <p className="text-xs text-blue-600 mt-1">{record.description}</p>
+                                    )}
+                                  </div>
+                                  {record.date && (
+                                    <span className="text-xs text-blue-600">{record.date}</span>
+                                  )}
+                                </div>
+                                {record.mileage && (
+                                  <span className="text-xs text-blue-600 block mt-1">Kilometrazh: {record.mileage}</span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Interior/Engine Inspection if available */}
                       {car.details?.inspect_inner && car.details.inspect_inner.length > 0 && (
                         <div className="mt-6">
