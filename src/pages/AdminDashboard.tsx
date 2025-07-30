@@ -658,7 +658,13 @@ const AdminDashboard = () => {
                           </td>
                           <td className="border border-border px-3 py-2 text-xs">
                             <div className="space-y-1">
-                              <div className="font-medium">{request.customer_phone}</div>
+                              <a 
+                                href={`tel:${request.customer_phone}`}
+                                className="font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                                title={`Call ${request.customer_phone}`}
+                              >
+                                {request.customer_phone}
+                              </a>
                               <div className="text-[10px] text-muted-foreground">📱 WhatsApp field</div>
                             </div>
                           </td>
