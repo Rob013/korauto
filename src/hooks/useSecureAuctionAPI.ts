@@ -213,6 +213,7 @@ interface APIFilters {
   buy_now_price_to?: string;
   seats_count?: string;
   search?: string;
+  per_page?: string;
 }
 
 interface APIResponse {
@@ -299,7 +300,7 @@ export const useSecureAuctionAPI = () => {
       const apiFilters = {
         ...newFilters,
         page: page.toString(),
-        per_page: "12",
+        per_page: newFilters.per_page || "12", // Default to 12, but allow override
         simple_paginate: "0",
       };
 

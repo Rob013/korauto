@@ -3,7 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,10 +35,16 @@ const validatePhone = (phone: string): boolean => {
 };
 
 const sanitizeInput = (input: string): string => {
-  return input.trim().replace(/[<>"'&]/g, '');
+  return input.trim().replace(/[<>"'&]/g, "");
 };
 
-const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: InspectionRequestFormProps) => {
+const InspectionRequestForm = ({
+  trigger,
+  carId,
+  carMake,
+  carModel,
+  carYear,
+}: InspectionRequestFormProps) => {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,219 +52,236 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
     firstName: "",
     lastName: "",
     email: "",
-    whatsappPhone: ""
+    whatsappPhone: "",
   });
   const [errors, setErrors] = useState({
     firstName: "",
     lastName: "",
     email: "",
-    whatsappPhone: ""
+    whatsappPhone: "",
   });
 
   const validateForm = (): boolean => {
-    console.log('🔍 Validating form with data:', formData);
-    
+    console.log("🔍 Validating form with data:", formData);
+
     const newErrors = {
       firstName: "",
       lastName: "",
       email: "",
-      whatsappPhone: ""
+      whatsappPhone: "",
     };
 
     // Validate first name
     if (!formData.firstName.trim()) {
       newErrors.firstName = "First name is required";
-      console.log('❌ First name validation failed: empty');
+      console.log("❌ First name validation failed: empty");
     } else if (formData.firstName.trim().length < 2) {
       newErrors.firstName = "First name must be at least 2 characters";
-      console.log('❌ First name validation failed: too short');
+      console.log("❌ First name validation failed: too short");
     } else {
-      console.log('✅ First name validation passed');
+      console.log("✅ First name validation passed");
     }
 
     // Validate last name
     if (!formData.lastName.trim()) {
       newErrors.lastName = "Last name is required";
-      console.log('❌ Last name validation failed: empty');
+      console.log("❌ Last name validation failed: empty");
     } else if (formData.lastName.trim().length < 2) {
       newErrors.lastName = "Last name must be at least 2 characters";
-      console.log('❌ Last name validation failed: too short');
+      console.log("❌ Last name validation failed: too short");
     } else {
-      console.log('✅ Last name validation passed');
+      console.log("✅ Last name validation passed");
     }
 
     // Validate email
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
-      console.log('❌ Email validation failed: empty');
+      console.log("❌ Email validation failed: empty");
     } else if (!validateEmail(formData.email)) {
       newErrors.email = "Please enter a valid email address";
-      console.log('❌ Email validation failed: invalid format');
+      console.log("❌ Email validation failed: invalid format");
     } else {
-      console.log('✅ Email validation passed');
+      console.log("✅ Email validation passed");
     }
 
     // Validate phone
     if (!formData.whatsappPhone.trim()) {
       newErrors.whatsappPhone = "Phone number is required";
-      console.log('❌ Phone validation failed: empty');
+      console.log("❌ Phone validation failed: empty");
     } else if (!validatePhone(formData.whatsappPhone)) {
       newErrors.whatsappPhone = "Please enter a valid phone number";
-      console.log('❌ Phone validation failed: invalid format');
+      console.log("❌ Phone validation failed: invalid format");
     } else {
-      console.log('✅ Phone validation passed');
+      console.log("✅ Phone validation passed");
     }
 
     setErrors(newErrors);
-    const isValid = !Object.values(newErrors).some(error => error !== "");
-    console.log('🔍 Final validation result:', isValid, 'Errors:', newErrors);
+    const isValid = !Object.values(newErrors).some((error) => error !== "");
+    console.log("🔍 Final validation result:", isValid, "Errors:", newErrors);
     return isValid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    console.log('🔵 Form submission triggered!');
-    console.log('🔵 Current form data:', formData);
-    console.log('🔵 Is submitting:', isSubmitting);
-    
+
+    console.log("🔵 Form submission triggered!");
+    console.log("🔵 Current form data:", formData);
+    console.log("🔵 Is submitting:", isSubmitting);
+
     if (isSubmitting) {
-      console.log('⚠️ Already submitting, returning early');
+      console.log("⚠️ Already submitting, returning early");
       return;
     }
-    
+
     // Validate form
-    console.log('🔵 Starting form validation...');
+    console.log("🔵 Starting form validation...");
     const isValid = validateForm();
-    console.log('🔵 Form validation result:', isValid);
-    console.log('🔵 Current errors:', errors);
-    
+    console.log("🔵 Form validation result:", isValid);
+    console.log("🔵 Current errors:", errors);
+
     if (!isValid) {
-      console.log('❌ Form validation failed - stopping submission');
+      console.log("❌ Form validation failed - stopping submission");
       toast({
         title: "Validation Error",
         description: "Please fix the errors in the form",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
-    console.log('✅ Form validation passed, proceeding with submission');
+    console.log("✅ Form validation passed, proceeding with submission");
     setIsSubmitting(true);
-    
+
     try {
-      console.log('🚀 Starting form submission...');
-      console.log('🚗 Car ID being submitted:', carId);
-      console.log('🚗 Car details being submitted:', { carMake, carModel, carYear });
-      
+      console.log("🚀 Starting form submission...");
+      console.log("🚗 Car ID being submitted:", carId);
+      console.log("🚗 Car details being submitted:", {
+        carMake,
+        carModel,
+        carYear,
+      });
+
       // Sanitize inputs
       const sanitizedData = {
         firstName: sanitizeInput(formData.firstName),
         lastName: sanitizeInput(formData.lastName),
         email: sanitizeInput(formData.email.toLowerCase()),
-        whatsappPhone: sanitizeInput(formData.whatsappPhone)
+        whatsappPhone: sanitizeInput(formData.whatsappPhone),
       };
 
-      console.log('📝 Sanitized form data:', sanitizedData);
-      console.log('🚗 Final car details for submission:', { carId, carMake, carModel, carYear });
-      
-      console.log('🚀 Starting database insertion...');
-      
+      console.log("📝 Sanitized form data:", sanitizedData);
+      console.log("🚗 Final car details for submission:", {
+        carId,
+        carMake,
+        carModel,
+        carYear,
+      });
+
+      console.log("🚀 Starting database insertion...");
+
       // Store in Supabase database with all form and car information
       const insertData = {
         customer_name: `${sanitizedData.firstName} ${sanitizedData.lastName}`,
         customer_email: sanitizedData.email,
         customer_phone: sanitizedData.whatsappPhone,
         car_id: carId || null,
-        notes: carId && carMake && carModel && carYear 
-          ? `Car: ${carYear} ${carMake} ${carModel}` 
-          : 'General inspection request',
-        status: 'pending'
+        notes:
+          carId && carMake && carModel && carYear
+            ? `Car: ${carYear} ${carMake} ${carModel}`
+            : "General inspection request",
+        status: "pending",
       };
-      
-      console.log('📝 Data to insert:', insertData);
-      
+
+      console.log("📝 Data to insert:", insertData);
+
       const { data, error } = await supabase
-        .from('inspection_requests')
+        .from("inspection_requests")
         .insert(insertData)
         .select();
 
-      console.log('📊 Database response:', { data, error });
+      console.log("📊 Database response:", { data, error });
 
       if (error) {
-        console.error('❌ Supabase error:', error);
+        console.error("❌ Supabase error:", error);
         throw error;
       }
 
-      console.log('✅ Successfully saved to database:', data);
+      console.log("✅ Successfully saved to database:", data);
 
       // Send email notifications
       try {
-        await supabase.functions.invoke('send-inspection-notification', {
+        await supabase.functions.invoke("send-inspection-notification", {
           body: {
             customer_name: `${sanitizedData.firstName} ${sanitizedData.lastName}`,
             customer_email: sanitizedData.email,
             customer_phone: sanitizedData.whatsappPhone,
             car_make: carMake,
             car_model: carModel,
-            car_year: carYear
-          }
+            car_year: carYear,
+          },
         });
       } catch (emailError) {
-        console.error('Email notification failed:', emailError);
+        console.error("Email notification failed:", emailError);
         // Don't fail the whole process if email fails
       }
 
       // Send WhatsApp notification
-      const carInfo = carMake && carModel && carYear ? `🚗 Makina: ${carYear} ${carMake} ${carModel}\n` : '';
+      const carInfo =
+        carMake && carModel && carYear
+          ? `🚗 Makina: ${carYear} ${carMake} ${carModel}\n`
+          : "";
       const ownerMessage = `🔔 Kërkesë e Re për Inspektim - KORAUTO\n\n👤 Emri: ${sanitizedData.firstName} ${sanitizedData.lastName}\n📧 Email: ${sanitizedData.email}\n📱 WhatsApp: ${sanitizedData.whatsappPhone}\n${carInfo}✅ Klient i ri kërkon shërbimin e inspektimit të makinës. Kontaktojeni sa më shpejt!`;
-      
-      const ownerWhatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(ownerMessage)}`;
-      window.open(ownerWhatsappUrl, '_blank');
+
+      const ownerWhatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(
+        ownerMessage
+      )}`;
+      window.open(ownerWhatsappUrl, "_blank");
 
       // Reset form and close dialog
       setFormData({
         firstName: "",
         lastName: "",
         email: "",
-        whatsappPhone: ""
+        whatsappPhone: "",
       });
       setErrors({
         firstName: "",
         lastName: "",
         email: "",
-        whatsappPhone: ""
+        whatsappPhone: "",
       });
       setIsOpen(false);
-      
+
       // Track inspection request analytics
       trackInspectionRequest(carId || undefined, {
         customer_name: `${sanitizedData.firstName} ${sanitizedData.lastName}`,
         customer_email: sanitizedData.email,
         has_car_id: !!carId,
-        form_type: carId ? 'specific_car' : 'general_inquiry'
+        form_type: carId ? "specific_car" : "general_inquiry",
       });
-      
+
       toast({
         title: "Request Submitted Successfully",
-        description: "We have received your inspection request and will contact you soon.",
+        description:
+          "We have received your inspection request and will contact you soon.",
       });
-      
     } catch (error: any) {
-      console.error('❌ Error submitting inspection request:', error);
-      
-      let errorMessage = "There was an error submitting your request. Please try again.";
-      if (error?.message?.includes('rate')) {
+      console.error("❌ Error submitting inspection request:", error);
+
+      let errorMessage =
+        "There was an error submitting your request. Please try again.";
+      if (error?.message?.includes("rate")) {
         errorMessage = "Too many requests. Please wait a moment and try again.";
-      } else if (error?.message?.includes('network')) {
-        errorMessage = "Network error. Please check your connection and try again.";
+      } else if (error?.message?.includes("network")) {
+        errorMessage =
+          "Network error. Please check your connection and try again.";
       }
-      
+
       toast({
         title: "Error",
         description: errorMessage,
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
@@ -261,40 +290,46 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    
+
     console.log(`📝 Input changed: ${name} = "${value}"`);
-    
+
     // Clear error for this field when user starts typing
     if (errors[name as keyof typeof errors]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [name]: ""
+        [name]: "",
       }));
     }
-    
-    setFormData(prev => ({
+
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        {trigger}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto" aria-describedby="inspection-form-description" onClick={(e) => e.stopPropagation()}>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent
+        className="sm:max-w-md max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto"
+        aria-describedby="inspection-form-description"
+        onClick={(e) => e.stopPropagation()}
+      >
         <DialogHeader className="pb-4">
           <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
             <MessageCircle className="h-5 w-5 text-primary" />
             Kërkesë për Inspektim
           </DialogTitle>
-          <p id="inspection-form-description" className="text-sm text-muted-foreground">
-            Plotësoni formularin për të kërkuar shërbimin e inspektimit të makinës.
+          <p
+            id="inspection-form-description"
+            className="text-sm text-muted-foreground"
+          >
+            Plotësoni formularin për të kërkuar shërbimin e inspektimit të
+            makinës.
           </p>
         </DialogHeader>
         <Card className="border-0 shadow-none">
-          <CardContent className="p-0">
+          <CardContent className="px-2 py-4">
             <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
               <div className="space-y-4">
                 <div>
@@ -310,7 +345,9 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
                     className={errors.firstName ? "border-destructive" : ""}
                   />
                   {errors.firstName && (
-                    <p className="text-sm text-destructive mt-1">{errors.firstName}</p>
+                    <p className="text-sm text-destructive mt-1">
+                      {errors.firstName}
+                    </p>
                   )}
                 </div>
                 <div>
@@ -326,7 +363,9 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
                     className={errors.lastName ? "border-destructive" : ""}
                   />
                   {errors.lastName && (
-                    <p className="text-sm text-destructive mt-1">{errors.lastName}</p>
+                    <p className="text-sm text-destructive mt-1">
+                      {errors.lastName}
+                    </p>
                   )}
                 </div>
                 <div>
@@ -342,7 +381,9 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
                     className={errors.email ? "border-destructive" : ""}
                   />
                   {errors.email && (
-                    <p className="text-sm text-destructive mt-1">{errors.email}</p>
+                    <p className="text-sm text-destructive mt-1">
+                      {errors.email}
+                    </p>
                   )}
                 </div>
                 <div>
@@ -359,10 +400,16 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
                     className={errors.whatsappPhone ? "border-destructive" : ""}
                   />
                   {errors.whatsappPhone && (
-                    <p className="text-sm text-destructive mt-1">{errors.whatsappPhone}</p>
+                    <p className="text-sm text-destructive mt-1">
+                      {errors.whatsappPhone}
+                    </p>
                   )}
                 </div>
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isSubmitting}
+                >
                   {isSubmitting ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
