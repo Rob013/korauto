@@ -845,16 +845,21 @@ const AdminDashboard = () => {
                                 <Phone className="h-2 w-2" />
                               </Button>
                               
-                                {request.car_id && (
+                                {request.car_id && carDetails[request.car_id] && (
                                   <Button 
                                     size="sm" 
                                     variant="default"
-                                    onClick={() => window.open(`/car/${request.car_id}`, '_blank')}
+                                    onClick={() => {
+                                      const lotNumber = carDetails[request.car_id]?.lot_number;
+                                      if (lotNumber) {
+                                        window.location.href = `/catalog?highlight=${lotNumber}`;
+                                      }
+                                    }}
                                     className="h-5 px-1 text-[9px] bg-primary hover:bg-primary/90"
-                                    title={`View car lot ${request.car_id} in new tab`}
+                                    title={`View car lot ${carDetails[request.car_id]?.lot_number || request.car_id} in catalog`}
                                   >
                                     <Car className="h-2 w-2" />
-                                    {request.car_id}
+                                    {carDetails[request.car_id]?.lot_number || request.car_id}
                                   </Button>
                                 )}
                               

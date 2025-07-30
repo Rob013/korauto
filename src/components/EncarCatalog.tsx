@@ -208,11 +208,16 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     loadInitialCounts();
   }, [manufacturers]);
 
-  // Effect to highlight and scroll to specific car
+  // Effect to highlight and scroll to specific car by lot number
   useEffect(() => {
     if (highlightCarId && cars.length > 0) {
       setTimeout(() => {
-        const carElement = document.getElementById(`car-${highlightCarId}`);
+        // Try to find car by lot number first, then by car ID
+        let carElement = document.getElementById(`car-lot-${highlightCarId}`);
+        if (!carElement) {
+          carElement = document.getElementById(`car-${highlightCarId}`);
+        }
+        
         if (carElement) {
           carElement.scrollIntoView({ 
             behavior: 'smooth', 
@@ -350,9 +355,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               const lot = car.lots?.[0];
               const usdPrice = lot?.buy_now || 25000;
               const price = convertUSDtoEUR(Math.round(usdPrice + 2200));
+              const lotNumber = car.lot_number || lot?.lot || '';
               
               return (
-                <div key={car.id} id={`car-${car.id}`}>
+                <div key={car.id} id={`car-${car.id}`} data-lot-id={`car-lot-${lotNumber}`}>
+                  <div id={`car-lot-${lotNumber}`}></div>
                   <CarCard
                     id={car.id}
                     make={car.manufacturer?.name || 'Unknown'}
