@@ -1789,11 +1789,10 @@ const CarDetails = memo(() => {
                           <div className="md:col-span-2 mt-4">
                             <Button
                               onClick={() => setShowDetailedInfo(!showDetailedInfo)}
-                              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2"
+                              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                               size="lg"
                             >
-                              <FileText className="h-5 w-5" />
-                              {showDetailedInfo ? 'Fshih Raportin' : 'Raporti i Inspektimit'}
+                              Raporti
                             </Button>
                           </div>
                         </div>
