@@ -47,6 +47,7 @@ interface FilterFormProps {
     manufacturer_id?: string;
     model_id?: string;
     generation_id?: string;
+    grade_iaai?: string;
     color?: string;
     fuel_type?: string;
     transmission?: string;
@@ -178,8 +179,8 @@ const FilterForm = memo<FilterFormProps>(({
       </div>
 
 
-      {/* Basic Filters - Always 3 columns beside each other */}
-      <div className="grid grid-cols-3 gap-1 sm:gap-2">
+      {/* Basic Filters - Always 4 columns beside each other */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 sm:gap-2">
         <div className="space-y-1">
           <Label htmlFor="manufacturer" className="text-xs font-medium truncate">Marka</Label>
           <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
@@ -262,6 +263,24 @@ const FilterForm = memo<FilterFormProps>(({
                   {generation.name} ({generation.from_year}–{generation.to_year})
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1">
+          <Label htmlFor="grade" className="text-xs font-medium truncate">Grada</Label>
+          <Select value={filters.grade_iaai || 'all'} onValueChange={(value) => updateFilter('grade_iaai', value)}>
+            <SelectTrigger className="h-7 text-xs">
+              <SelectValue placeholder="Të gjitha" />
+            </SelectTrigger>
+            <SelectContent className="max-h-60 overflow-y-auto">
+              <SelectItem value="all">Të gjitha Gradat</SelectItem>
+              <SelectItem value="A">Grada A</SelectItem>
+              <SelectItem value="B">Grada B</SelectItem>
+              <SelectItem value="C">Grada C</SelectItem>
+              <SelectItem value="D">Grada D</SelectItem>
+              <SelectItem value="R">Grada R</SelectItem>
+              <SelectItem value="S">Grada S</SelectItem>
             </SelectContent>
           </Select>
         </div>
