@@ -73,6 +73,36 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [sortBy, setSortBy] = useState<SortOption>("price_low");
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // First, let's extract all unique grades from the current cars to debug
+  const allGradesInData = new Set<string>();
+  cars.forEach(car => {
+    // Check lots array
+    if (car.lots && Array.isArray(car.lots)) {
+      car.lots.forEach(lot => {
+        if (lot.grade_iaai) allGradesInData.add(lot.grade_iaai);
+      });
+    }
+    
+    // Extract from title
+    if (car.title) {
+      const titleLower = car.title.toLowerCase();
+      const gradePatterns = [
+        /(\d+\.?\d*)\s*(tdi|tfsi|tsi|fsi|cdi|bluemotion|eco|hybrid)/gi,
+        /(\d+\.?\d*)\s*l(iter)?/gi,
+        /(\d+\.?\d*)\s*(d|i|t)\b/gi
+      ];
+      
+      gradePatterns.forEach(pattern => {
+        const matches = titleLower.match(pattern);
+        if (matches) {
+          matches.forEach(match => allGradesInData.add(match.trim()));
+        }
+      });
+    }
+  });
+  
+  console.log('🔍 All grades found in current car data:', Array.from(allGradesInData).sort());
+
   // Type conversion to match the sorting hook interface and apply frontend filtering
   const carsForSorting = cars
     .filter((car) => {
@@ -81,67 +111,74 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         const targetGrade = decodeURIComponent(filters.grade_iaai).toLowerCase().trim().replace(/\+/g, ' ');
         let hasMatchingGrade = false;
         
-        // Create multiple variations of the target grade for flexible matching
-        const gradeVariations = [
-          targetGrade,
-          targetGrade.replace(/\s+/g, ''), // Remove all spaces
-          targetGrade.replace(/\./g, ''), // Remove dots
-          targetGrade.replace(/\s+/g, '').replace(/\./g, ''), // Remove both
-          targetGrade.replace(/tdi/gi, 'TDI'),
-          targetGrade.replace(/tsi/gi, 'TSI'),
-          targetGrade.replace(/tfsi/gi, 'TFSI'),
-          targetGrade.replace(/fsi/gi, 'FSI')
-        ];
+        console.log(`🔍 Filtering for grade: "${targetGrade}" on car: ${car.id} - ${car.title}`);
         
-        // Check in lots array with comprehensive matching
+        // Check in lots array first
         if (car.lots && Array.isArray(car.lots)) {
-          car.lots.forEach((lot: any) => {
+          car.lots.forEach((lot: any, lotIndex: number) => {
             if (lot.grade_iaai) {
               const lotGrade = lot.grade_iaai.toLowerCase().trim();
-              gradeVariations.forEach(variation => {
-                if (lotGrade.includes(variation) || variation.includes(lotGrade)) {
-                  hasMatchingGrade = true;
-                }
-              });
+              console.log(`  📋 Lot ${lotIndex} grade_iaai: "${lotGrade}"`);
+              
+              // Exact match or contains match
+              if (lotGrade === targetGrade || 
+                  lotGrade.includes(targetGrade) || 
+                  targetGrade.includes(lotGrade)) {
+                hasMatchingGrade = true;
+                console.log(`  ✅ MATCH found in lot grade_iaai`);
+              }
             }
           });
         }
         
-        // Check in car title with pattern extraction
+        // Check in car title with comprehensive pattern matching
         if (!hasMatchingGrade && car.title) {
           const titleLower = car.title.toLowerCase();
+          console.log(`  📝 Car title: "${titleLower}"`);
           
-          // Extract all potential grades from title
-          const gradePatterns = [
-            /(\d+\.?\d*)\s*(tdi|tfsi|tsi|fsi|cdi|bluemotion|eco|hybrid)/gi,
-            /(\d+\.?\d*)\s*l(iter)?/gi,
-            /(\d+\.?\d*)\s*(d|i|t)\b/gi
-          ];
+          // Direct string search first
+          if (titleLower.includes(targetGrade)) {
+            hasMatchingGrade = true;
+            console.log(`  ✅ MATCH found via direct title search`);
+          }
           
-          let extractedGrades: string[] = [];
-          gradePatterns.forEach(pattern => {
-            const matches = titleLower.match(pattern);
-            if (matches) {
-              extractedGrades = extractedGrades.concat(matches.map(m => m.trim()));
-            }
-          });
-          
-          // Check if any extracted grade matches our target
-          extractedGrades.forEach(extractedGrade => {
-            gradeVariations.forEach(variation => {
-              if (extractedGrade.includes(variation) || variation.includes(extractedGrade)) {
-                hasMatchingGrade = true;
+          // Pattern extraction if direct search fails
+          if (!hasMatchingGrade) {
+            const extractedGrades: string[] = [];
+            
+            // More comprehensive patterns
+            const patterns = [
+              /(\d+\.?\d*)\s*(tdi|tfsi|tsi|fsi|cdi|bluemotion|eco|hybrid|d|i)/gi,
+              /(\d+\.?\d*)\s*l(iter)?/gi,
+              /\b(\d{3}[a-z]?[id]?)\b/gi, // BMW style: 320d, 330i
+              /([a-z]\d{3}[a-z]?)\b/gi // Mercedes style: E220d, C300
+            ];
+            
+            patterns.forEach((pattern, patternIndex) => {
+              const matches = titleLower.match(pattern);
+              if (matches) {
+                matches.forEach(match => {
+                  const cleanMatch = match.trim();
+                  extractedGrades.push(cleanMatch);
+                  console.log(`  📊 Pattern ${patternIndex} extracted: "${cleanMatch}"`);
+                  
+                  // Check if this extracted grade matches our target
+                  if (cleanMatch === targetGrade ||
+                      cleanMatch.includes(targetGrade) ||
+                      targetGrade.includes(cleanMatch) ||
+                      cleanMatch.replace(/\s+/g, '') === targetGrade.replace(/\s+/g, '')) {
+                    hasMatchingGrade = true;
+                    console.log(`  ✅ MATCH found via pattern extraction: "${cleanMatch}"`);
+                  }
+                });
               }
             });
-          });
-          
-          // Direct title search as fallback
-          gradeVariations.forEach(variation => {
-            if (titleLower.includes(variation)) {
-              hasMatchingGrade = true;
-            }
-          });
+            
+            console.log(`  📊 All extracted grades: [${extractedGrades.join(', ')}]`);
+          }
         }
+        
+        console.log(`  🎯 Final result for car ${car.id}: ${hasMatchingGrade ? '✅ KEEP' : '❌ FILTER OUT'}`);
         
         if (!hasMatchingGrade) {
           return false;
@@ -156,6 +193,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       cylinders: Number(car.cylinders || 0),
     }));
 
+  console.log(`🔍 Total cars after grade filtering: ${carsForSorting.length} out of ${cars.length}`);
+  
   const sortedCars = useSortedCars(carsForSorting, sortBy);
 
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
