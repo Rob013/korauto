@@ -1488,17 +1488,7 @@ const CarDetails = memo(() => {
                  
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Engine Displacement */}
-                    {(car.details?.engine_volume || car.engine) && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-primary rounded-full"></div>
-                        <span className="font-semibold text-foreground">Motori</span>
-                      </div>
-                      <span className="text-muted-foreground font-medium">
-                        {car.details?.engine_volume && `${car.details.engine_volume}cc`}
-                        {car.details?.engine_volume && car.engine && ' - '}
-                        {typeof car.engine === 'object' ? car.engine?.name : car.engine}
-                      </span>
-                    </div>}
+                    {car.details?.engine_volume || car.engine}
                   {car.cylinders && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="w-2 h-2 bg-primary rounded-full"></div>
