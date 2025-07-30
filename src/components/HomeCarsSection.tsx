@@ -247,15 +247,18 @@ const HomeCarsSection = memo(() => {
       
       // Clear any existing scroll restoration data
       sessionStorage.removeItem('encar-catalog-scroll');
+      console.log('🚀 Homepage: Cleared scroll data and navigating to catalog');
       
       // Navigate and ensure we're at the top
       navigate(`/catalog?${searchParams.toString()}`);
       
       // Force scroll to top immediately after navigation
       setTimeout(() => {
+        console.log('🚀 Homepage: Forcing scroll to top');
         window.scrollTo({ top: 0, behavior: 'auto' });
         // Then smooth scroll to ensure we're at the very top
         setTimeout(() => {
+          console.log('🚀 Homepage: Second scroll to top');
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }, 50);
       }, 0);

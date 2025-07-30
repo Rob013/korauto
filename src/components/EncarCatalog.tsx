@@ -243,6 +243,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       setIsRestoringState(true);
 
       // Always start at the top when loading catalog
+      console.log('📊 Catalog: Component mounting, forcing scroll to top');
       window.scrollTo({ top: 0, behavior: 'auto' });
 
       // Load manufacturers first
@@ -308,14 +309,19 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       const shouldRestoreScroll = savedData && 
         window.location.search === new URLSearchParams(savedData ? JSON.parse(savedData).filters || {} : {}).toString();
       
+      console.log('📊 Catalog: Scroll decision', { savedData: !!savedData, shouldRestoreScroll, currentURL: window.location.search });
+      
       if (shouldRestoreScroll) {
+        console.log('📊 Catalog: Restoring scroll position');
         setTimeout(() => {
           restoreScrollPosition();
         }, 300);
       } else {
         // Clear any old scroll data and ensure we stay at top
+        console.log('📊 Catalog: Clearing scroll data and staying at top');
         sessionStorage.removeItem(SCROLL_STORAGE_KEY);
         setTimeout(() => {
+          console.log('📊 Catalog: Final scroll to top');
           window.scrollTo({ top: 0, behavior: 'auto' });
         }, 300);
       }
