@@ -1336,7 +1336,7 @@ const CarDetails = memo(() => {
                 <div className="border-t border-border pt-6">
                   <InspectionRequestForm 
                     trigger={
-                      <Button className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground">
+                      <Button className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground" onClick={(e) => e.stopPropagation()}>
                         <FileText className="h-5 w-5 mr-2" />
                         Kërko Inspektim Professional
                       </Button>
