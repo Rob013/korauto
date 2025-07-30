@@ -106,112 +106,45 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Type conversion to match the sorting hook interface and apply frontend filtering
   const carsForSorting = cars
     .filter((car) => {
-      // Add debug info about what cars we have
-      console.log(`🚗 Processing car: ${car.id} - ${car.title}`);
-      console.log(`🚗 Car lots:`, car.lots?.map(lot => ({ grade: lot.grade_iaai, lot: lot.lot })));
-      
-      // Apply grade filter on frontend as fallback - TEMPORARILY DISABLED FOR DEBUGGING
-      if (false && filters.grade_iaai && filters.grade_iaai.trim()) {
+      // Apply grade filter efficiently
+      if (filters.grade_iaai && filters.grade_iaai.trim()) {
         const targetGrade = decodeURIComponent(filters.grade_iaai).toLowerCase().trim().replace(/\+/g, ' ');
-        let hasMatchingGrade = false;
         
-        console.log(`🔍 Filtering for grade: "${targetGrade}" on car: ${car.id} - ${car.title}`);
-        
-        // Check in lots array first
+        // Quick check in lots array first
         if (car.lots && Array.isArray(car.lots)) {
-          car.lots.forEach((lot: any, lotIndex: number) => {
+          for (const lot of car.lots) {
             if (lot.grade_iaai) {
               const lotGrade = lot.grade_iaai.toLowerCase().trim();
-              console.log(`  📋 Lot ${lotIndex} grade_iaai: "${lotGrade}"`);
-              
-              // Exact match or contains match
               if (lotGrade === targetGrade || 
                   lotGrade.includes(targetGrade) || 
                   targetGrade.includes(lotGrade)) {
-                hasMatchingGrade = true;
-                console.log(`  ✅ MATCH found in lot grade_iaai`);
+                return true; // Match found, keep car
               }
             }
-          });
+          }
         }
         
-        // Check in car title with comprehensive pattern matching - be more flexible
-        if (!hasMatchingGrade && car.title) {
+        // Check in car title
+        if (car.title) {
           const titleLower = car.title.toLowerCase();
-          console.log(`  📝 Car title: "${titleLower}"`);
           
-          // Direct string search first
+          // Direct string search
           if (titleLower.includes(targetGrade)) {
-            hasMatchingGrade = true;
-            console.log(`  ✅ MATCH found via direct title search`);
+            return true;
           }
           
-          // More flexible pattern matching for BMW models
-          if (!hasMatchingGrade && targetGrade.includes('tdi')) {
-            // Extract number from target grade (e.g., "30" from "30 tdi")
+          // Flexible number pattern matching for TDI/TFSI queries
+          if (targetGrade.includes('tdi') || targetGrade.includes('tfsi')) {
             const targetNumber = targetGrade.match(/(\d+)/)?.[1];
-            if (targetNumber) {
-              // Look for patterns like "M240I" (where 240 contains 30), "230i", etc.
-              const numberPatterns = [
-                new RegExp(`\\b\\w*${targetNumber}\\w*\\b`, 'gi'), // Any word containing the target number
-                new RegExp(`\\b${targetNumber}\\w+\\b`, 'gi'), // Words starting with target number
-                new RegExp(`\\w+${targetNumber}\\b`, 'gi') // Words ending with target number
-              ];
-              
-              numberPatterns.forEach((pattern, index) => {
-                const matches = titleLower.match(pattern);
-                if (matches) {
-                  console.log(`  📊 Number pattern ${index} found matches:`, matches);
-                  hasMatchingGrade = true;
-                  console.log(`  ✅ MATCH found via flexible number pattern: "${matches[0]}"`);
-                }
-              });
+            if (targetNumber && titleLower.includes(targetNumber)) {
+              return true;
             }
           }
-          
-          // Pattern extraction if other searches fail
-          if (!hasMatchingGrade) {
-            const extractedGrades: string[] = [];
-            
-            // More comprehensive patterns
-            const patterns = [
-              /(\d+\.?\d*)\s*(tdi|tfsi|tsi|fsi|cdi|bluemotion|eco|hybrid|d|i)/gi,
-              /(\d+\.?\d*)\s*l(iter)?/gi,
-              /\b(\d{3}[a-z]?[id]?)\b/gi, // BMW style: 320d, 330i
-              /([a-z]\d{3}[a-z]?)\b/gi // Mercedes style: E220d, C300
-            ];
-            
-            patterns.forEach((pattern, patternIndex) => {
-              const matches = titleLower.match(pattern);
-              if (matches) {
-                matches.forEach(match => {
-                  const cleanMatch = match.trim();
-                  extractedGrades.push(cleanMatch);
-                  console.log(`  📊 Pattern ${patternIndex} extracted: "${cleanMatch}"`);
-                  
-                  // Check if this extracted grade matches our target
-                  if (cleanMatch === targetGrade ||
-                      cleanMatch.includes(targetGrade) ||
-                      targetGrade.includes(cleanMatch) ||
-                      cleanMatch.replace(/\s+/g, '') === targetGrade.replace(/\s+/g, '')) {
-                    hasMatchingGrade = true;
-                    console.log(`  ✅ MATCH found via pattern extraction: "${cleanMatch}"`);
-                  }
-                });
-              }
-            });
-            
-            console.log(`  📊 All extracted grades: [${extractedGrades.join(', ')}]`);
-          }
         }
         
-        console.log(`  🎯 Final result for car ${car.id}: ${hasMatchingGrade ? '✅ KEEP' : '❌ FILTER OUT'}`);
-        
-        if (!hasMatchingGrade) {
-          return false;
-        }
+        return false; // No match found, filter out car
       }
-      return true;
+      return true; // No grade filter, keep car
     })
     .map((car) => ({
       ...car,
@@ -219,10 +152,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       lot_number: String(car.lot_number || ""),
       cylinders: Number(car.cylinders || 0),
     }));
-
-  console.log(`🔍 Total cars after grade filtering: ${carsForSorting.length} out of ${cars.length}`);
-  console.log(`🔍 Raw cars array length: ${cars.length}`);
-  console.log(`🔍 Current filters:`, filters);
 
   console.log(`🔍 Total cars after grade filtering: ${carsForSorting.length} out of ${cars.length}`);
   
@@ -317,13 +246,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setFilters(newFilters);
     setLoadedPages(1); // Reset pagination when filters change
     
-    // If a specific grade is selected, increase per_page to show more cars of that grade
-    const filtersWithPagination = {
-      ...newFilters,
-      per_page: newFilters.grade_iaai ? "50" : "12" // Reduce from 100 to 50 to prevent edge function errors
-    };
-    
-    fetchCars(1, filtersWithPagination, true);
+    // Use normal pagination without special grade handling to improve performance
+    fetchCars(1, newFilters, true);
 
     // Update URL with all non-empty filter values
     const nonEmpty = Object.entries(newFilters).filter(
