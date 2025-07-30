@@ -1065,15 +1065,15 @@ const CarDetails = memo(() => {
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
+        {/* Compact Main Content */}
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
           {/* Left Column - Images and Gallery */}
-          <div className="lg:col-span-2 space-y-4 lg:space-y-8">
-            {/* Main Image */}
-            <Card className="shadow-lg border-0 overflow-hidden">
+          <div className="xl:col-span-3 space-y-4">
+            {/* Compact Main Image */}
+            <Card className="shadow-md border overflow-hidden">
               <CardContent className="p-0">
                 <div
-                  className="relative h-[300px] sm:h-[400px] lg:h-[500px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer"
+                  className="relative h-[250px] sm:h-[350px] lg:h-[400px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer"
                   onClick={() => setIsImageZoomOpen(true)}
                 >
                   {images.length > 0 ? (
@@ -1087,32 +1087,32 @@ const CarDetails = memo(() => {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Car className="h-24 w-24 text-muted-foreground" />
+                      <Car className="h-16 w-16 text-muted-foreground" />
                     </div>
                   )}
                   {car.lot && (
-                    <Badge className="absolute top-6 right-6 bg-primary/90 backdrop-blur-sm text-primary-foreground px-3 py-2 text-sm font-medium shadow-lg">
+                    <Badge className="absolute top-3 right-3 bg-primary/90 backdrop-blur-sm text-primary-foreground px-2 py-1 text-xs font-medium shadow-lg">
                       Lot #{car.lot}
                     </Badge>
                   )}
                   {/* Zoom icon */}
-                  <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Expand className="h-5 w-5 text-white" />
+                  <div className="absolute bottom-3 right-3 bg-black/50 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Expand className="h-4 w-4 text-white" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Image Thumbnails */}
+            {/* Compact Image Thumbnails */}
             {images.length > 1 && (
-              <div className="grid grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3">
-                {images.slice(0, 20).map((image, index) => (
+              <div className="grid grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2">
+                {images.slice(0, 24).map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImageIndex(index)}
-                    className={`relative h-20 bg-muted rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
+                    className={`relative h-16 bg-muted rounded overflow-hidden border transition-all duration-200 hover:scale-105 ${
                       selectedImageIndex === index
-                        ? "border-primary shadow-lg"
+                        ? "border-primary shadow-md"
                         : "border-transparent hover:border-primary/50"
                     }`}
                   >
@@ -1129,22 +1129,22 @@ const CarDetails = memo(() => {
               </div>
             )}
 
-            {/* Enhanced Vehicle Specifications */}
-            <Card className="shadow-lg border-0">
-              <CardContent className="p-4 lg:p-8">
-                <div className="flex flex-col gap-4 mb-6">
-                  <h3 className="text-xl lg:text-2xl font-bold flex items-center text-foreground">
-                    <Settings className="h-5 w-5 lg:h-6 lg:w-6 mr-2 lg:mr-3 text-primary" />
+            {/* Compact Vehicle Specifications */}
+            <Card className="shadow-md border">
+              <CardContent className="p-4">
+                <div className="flex flex-col gap-3 mb-4">
+                  <h3 className="text-lg font-bold flex items-center text-foreground">
+                    <Settings className="h-5 w-5 mr-2 text-primary" />
                     Specifikimet Teknike
                   </h3>
 
-                  {/* Price and action buttons */}
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  {/* Compact Price and action buttons */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div className="text-left">
-                      <div className="text-xl lg:text-2xl font-bold text-primary">
+                      <div className="text-xl font-bold text-primary">
                         €{car.price.toLocaleString()}
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-xs text-muted-foreground">
                         +350€ deri në Prishtinë
                       </div>
                     </div>
@@ -1155,7 +1155,7 @@ const CarDetails = memo(() => {
                           variant="outline"
                           className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto"
                         >
-                          <FileText className="h-4 w-4 mr-1" />
+                          <FileText className="h-3 w-3 mr-1" />
                           Kërko Inspektim
                         </Button>
                       }
@@ -1167,29 +1167,29 @@ const CarDetails = memo(() => {
                   </div>
                 </div>
 
-                {/* Main Specifications Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4 mb-6">
+                {/* Compact Specifications Grid */}
+                <div className="grid grid-cols-2 gap-2 mb-4">
                   {/* Basic Info */}
-                  <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <Car className="h-5 w-5 text-primary" />
-                      <span className="font-semibold text-foreground">
-                        Marka & Modeli
+                  <div className="flex items-center justify-between p-3 bg-card border border-border rounded hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <Car className="h-4 w-4 text-primary" />
+                      <span className="font-medium text-xs text-foreground">
+                        Marka
                       </span>
                     </div>
-                    <span className="text-muted-foreground font-medium text-right">
+                    <span className="text-muted-foreground text-xs font-medium text-right">
                       {car.make} {car.model}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <Calendar className="h-5 w-5 text-primary" />
-                      <span className="font-semibold text-foreground">
+                  <div className="flex items-center justify-between p-3 bg-card border border-border rounded hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-primary" />
+                      <span className="font-medium text-xs text-foreground">
                         Viti
                       </span>
                     </div>
-                    <span className="text-muted-foreground font-medium">
+                    <span className="text-muted-foreground text-xs font-medium">
                       {car.year}
                     </span>
                   </div>
@@ -1788,53 +1788,53 @@ const CarDetails = memo(() => {
             </Card>
           </div>
 
-          {/* Right Column - Car Info and Contact */}
-          <div className="space-y-6">
-            {/* Contact & Inspection Card */}
-            <Card className="shadow-lg border-0">
-              <CardContent className="p-8">
-                <h3 className="text-2xl font-bold mb-6 text-center text-foreground">
-                  Kontaktoni dhe Kërkoni Inspektim
+          {/* Right Column - Compact Contact Card */}
+          <div className="xl:col-span-1 space-y-4">
+            {/* Compact Contact & Inspection Card */}
+            <Card className="shadow-md border sticky top-4">
+              <CardContent className="p-4">
+                <h3 className="text-lg font-bold mb-4 text-center text-foreground">
+                  Kontakt & Inspektim
                 </h3>
 
-                {/* Contact Buttons */}
-                <div className="space-y-4 mb-6">
+                {/* Compact Contact Buttons */}
+                <div className="space-y-2 mb-4">
                   <Button
                     onClick={handleContactWhatsApp}
-                    className="w-full h-12 text-base font-medium shadow-lg hover:shadow-xl transition-shadow bg-green-600 hover:bg-green-700 text-white"
+                    className="w-full h-10 text-sm font-medium shadow-md hover:shadow-lg transition-shadow bg-green-600 hover:bg-green-700 text-white"
                   >
-                    <MessageCircle className="h-5 w-5 mr-2" />
-                    Kontakto në WhatsApp
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    WhatsApp
                   </Button>
 
                   <Button
                     variant="outline"
-                    className="w-full h-12 text-base font-medium border-2 hover:bg-primary hover:text-primary-foreground transition-colors"
+                    className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
                     onClick={() => window.open("tel:+38348181116", "_self")}
                   >
-                    <Phone className="h-5 w-5 mr-2" />
-                    Telefono: +383 48 181 116
+                    <Phone className="h-4 w-4 mr-2" />
+                    +383 48 181 116
                   </Button>
 
                   <Button
                     variant="outline"
-                    className="w-full h-12 text-base font-medium border-2 hover:bg-primary hover:text-primary-foreground transition-colors"
+                    className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
                     onClick={() =>
                       window.open("mailto:info@korauto.com", "_self")
                     }
                   >
-                    <Mail className="h-5 w-5 mr-2" />
-                    Email: info@korauto.com
+                    <Mail className="h-4 w-4 mr-2" />
+                    info@korauto.com
                   </Button>
                 </div>
 
-                {/* Inspection Request Button */}
-                <div className="border-t border-border pt-6">
+                {/* Compact Inspection Request Button */}
+                <div className="border-t border-border pt-4">
                   <InspectionRequestForm
                     trigger={
-                      <Button className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground">
-                        <FileText className="h-5 w-5 mr-2" />
-                        Kërko Inspektim Professional
+                      <Button className="w-full h-10 text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Kërko Inspektim
                       </Button>
                     }
                     carId={car.id}
@@ -1844,17 +1844,17 @@ const CarDetails = memo(() => {
                   />
                 </div>
 
-                {/* Location */}
-                <div className="mt-6 pt-6 border-t border-border">
-                  <div className="flex items-center gap-3 text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
+                {/* Compact Location */}
+                <div className="mt-4 pt-4 border-t border-border">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="h-3 w-3" />
                     <a
                       href="https://maps.google.com/?q=KORAUTO,Rr.+Ilaz+Kodra+70,Prishtinë,Kosovo"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm hover:text-primary transition-colors cursor-pointer"
+                      className="text-xs hover:text-primary transition-colors cursor-pointer"
                     >
-                      Lokacioni: Rr. Ilaz Kodra 70, Prishtinë, Kosovë
+                      Rr. Ilaz Kodra 70, Prishtinë
                     </a>
                   </div>
                 </div>
