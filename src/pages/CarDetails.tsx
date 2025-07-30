@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 
 import { useToast } from "@/hooks/use-toast";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
-import { ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, Fuel, Palette, Hash, Calendar, Shield, FileText, Search, Info, Eye, CheckCircle, AlertTriangle, Star, Clock, Users, MessageCircle, Share2, Heart, ChevronRight, Expand, Copy, ChevronDown, ChevronUp, DollarSign } from "lucide-react";
+import { ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, Fuel, Palette, Hash, Calendar, Shield, FileText, Search, Info, Eye, CheckCircle, AlertTriangle, Star, Clock, Users, MessageCircle, Share2, Heart, ChevronRight, Expand, Copy, ChevronDown, ChevronUp } from "lucide-react";
 import { ImageZoom } from "@/components/ImageZoom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -74,7 +74,6 @@ interface CarDetails {
   location?: any;
   inspect?: any;
   details?: any;
-  lots?: any[];
 }
 
 // Equipment Options Section Component with Show More functionality
@@ -1824,172 +1823,98 @@ const CarDetails = memo(() => {
                           <p className="text-muted-foreground mt-2">Informacione të detajuara për gjendjen e makinës</p>
                         </div>
 
-                        {/* Vehicle Details from API */}
+                        {/* Exchanged/Replaced Parts - Always show this section */}
                         <div className="bg-card rounded-lg p-6 shadow-sm border border-border">
                           <h5 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                              <FileText className="h-5 w-5 text-primary" />
+                            <div className="p-2 bg-destructive/10 rounded-lg">
+                              <Settings className="h-5 w-5 text-destructive" />
                             </div>
-                            🚗 Detajet Teknike të Makinës
+                            🔧 Pjesë të Këmbyera / të Zëvendësuara
                           </h5>
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {car && (
-                              <>
-                                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                            {car.details?.exchanged_parts && car.details.exchanged_parts.length > 0 ? (
+                              car.details.exchanged_parts.map((part: any, index: number) => (
+                                <div key={index} className="p-4 bg-destructive/5 border border-destructive/20 rounded-lg hover:shadow-md transition-shadow">
                                   <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-3 h-3 bg-primary rounded-full"></div>
-                                    <span className="text-sm font-semibold text-primary">VIN</span>
+                                    <div className="w-3 h-3 bg-destructive rounded-full"></div>
+                                    <span className="text-sm font-semibold text-destructive">
+                                      {typeof part === 'string' ? part : part.name || part.part_name || `Pjesë e Këmbyer ${index + 1}`}
+                                    </span>
                                   </div>
-                                  <p className="text-sm text-foreground">{car.vin || 'N/A'}</p>
-                                </div>
-                                
-                                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-3 h-3 bg-primary rounded-full"></div>
-                                    <span className="text-sm font-semibold text-primary">Motori</span>
-                                  </div>
-                                  <p className="text-sm text-foreground">{car.engine?.name || 'N/A'}</p>
-                                  {car.cylinders && (
-                                    <p className="text-xs text-muted-foreground">Cilindra: {car.cylinders}</p>
+                                  {typeof part === 'object' && part.condition && (
+                                    <p className="text-xs text-muted-foreground mb-1">
+                                      <strong>Gjendja:</strong> {part.condition}
+                                    </p>
                                   )}
-                                </div>
-
-                                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-3 h-3 bg-primary rounded-full"></div>
-                                    <span className="text-sm font-semibold text-primary">Tipi i Trupit</span>
-                                  </div>
-                                  <p className="text-sm text-foreground capitalize">{car.body_type?.name || 'N/A'}</p>
-                                </div>
-
-                                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-3 h-3 bg-primary rounded-full"></div>
-                                    <span className="text-sm font-semibold text-primary">Sistemi i Lëvizjes</span>
-                                  </div>
-                                  <p className="text-sm text-foreground capitalize">{car.drive_wheel?.name || 'N/A'}</p>
-                                </div>
-
-                                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-3 h-3 bg-primary rounded-full"></div>
-                                    <span className="text-sm font-semibold text-primary">Kilometrazhi</span>
-                                  </div>
-                                  <p className="text-sm text-foreground">
-                                    {car.odometer?.km ? `${car.odometer.km.toLocaleString()} km` : car.mileage || 'N/A'}
-                                  </p>
-                                  {car.odometer?.mi && (
+                                  {typeof part === 'object' && part.date && (
                                     <p className="text-xs text-muted-foreground">
-                                      ({car.odometer.mi.toLocaleString()} miles)
+                                      <strong>Data:</strong> {part.date}
                                     </p>
                                   )}
-                                  {car.odometer?.status && (
-                                    <p className="text-xs text-muted-foreground capitalize">
-                                      Status: {car.odometer.status.name}
+                                  {typeof part === 'object' && part.reason && (
+                                    <p className="text-xs text-muted-foreground">
+                                      <strong>Arsyeja:</strong> {part.reason}
                                     </p>
                                   )}
                                 </div>
-
-                                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-3 h-3 bg-primary rounded-full"></div>
-                                    <span className="text-sm font-semibold text-primary">Çelësat</span>
-                                  </div>
-                                  <p className="text-sm text-foreground">
-                                    {car.keys_available ? '✅ Të disponueshëm' : '❌ Jo të disponueshëm'}
-                                  </p>
-                                </div>
-
-                                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-3 h-3 bg-primary rounded-full"></div>
-                                    <span className="text-sm font-semibold text-primary">Karburanti</span>
-                                  </div>
-                                  <p className="text-sm text-foreground capitalize">{car.fuel || 'N/A'}</p>
-                                </div>
-
-                                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-3 h-3 bg-primary rounded-full"></div>
-                                    <span className="text-sm font-semibold text-primary">Transmisioni</span>
-                                  </div>
-                                  <p className="text-sm text-foreground capitalize">{car.transmission || 'N/A'}</p>
-                                </div>
-
-                                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-3 h-3 bg-primary rounded-full"></div>
-                                    <span className="text-sm font-semibold text-primary">Ngjyra</span>
-                                  </div>
-                                  <p className="text-sm text-foreground capitalize">{car.color || 'N/A'}</p>
-                                </div>
-                              </>
+                              ))
+                            ) : (
+                              <div className="col-span-full p-6 text-center bg-muted/30 border-2 border-dashed border-muted-foreground/20 rounded-lg">
+                                <Settings className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                                <p className="text-muted-foreground font-medium">Nuk ka informacion për pjesë të këmbyera</p>
+                                <p className="text-muted-foreground/70 text-sm">Të dhënat mund të jenë të disponueshme më vonë</p>
+                              </div>
                             )}
                           </div>
                         </div>
 
-                        {/* Auction Information */}
+                        {/* Repaired Parts - Always show this section */}
                         <div className="bg-card rounded-lg p-6 shadow-sm border border-border">
                           <h5 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
-                            <div className="p-2 bg-accent/10 rounded-lg">
-                              <DollarSign className="h-5 w-5 text-accent" />
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                              <CheckCircle className="h-5 w-5 text-primary" />
                             </div>
-                            💰 Informacionet e Ankandit
+                            ✅ Pjesë të Riparuara
                           </h5>
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <div className="p-4 bg-accent/5 border border-accent/20 rounded-lg">
-                              <div className="flex items-center gap-2 mb-2">
-                                <div className="w-3 h-3 bg-accent rounded-full"></div>
-                                <span className="text-sm font-semibold text-accent">Numri i Lotit</span>
-                              </div>
-                              <p className="text-sm text-foreground">{car.lot || 'N/A'}</p>
-                            </div>
-
-                            {car.bid && (
-                              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                                  <span className="text-sm font-semibold text-green-700">Oferta Aktuale</span>
+                            {car.details?.repaired_parts && car.details.repaired_parts.length > 0 ? (
+                              car.details.repaired_parts.map((part: any, index: number) => (
+                                <div key={index} className="p-4 bg-primary/5 border border-primary/20 rounded-lg hover:shadow-md transition-shadow">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <div className="w-3 h-3 bg-primary rounded-full"></div>
+                                    <span className="text-sm font-semibold text-primary">
+                                      {typeof part === 'string' ? part : part.name || part.part_name || `Pjesë e Riparuar ${index + 1}`}
+                                    </span>
+                                  </div>
+                                  {typeof part === 'object' && part.repair_type && (
+                                    <p className="text-xs text-muted-foreground mb-1">
+                                      <strong>Lloji i Riparimit:</strong> {part.repair_type}
+                                    </p>
+                                  )}
+                                  {typeof part === 'object' && part.condition && (
+                                    <p className="text-xs text-muted-foreground mb-1">
+                                      <strong>Gjendja:</strong> {part.condition}
+                                    </p>
+                                  )}
+                                  {typeof part === 'object' && part.repair_date && (
+                                    <p className="text-xs text-muted-foreground">
+                                      <strong>Data e Riparimit:</strong> {part.repair_date}
+                                    </p>
+                                  )}
+                                  {typeof part === 'object' && part.cost && (
+                                    <p className="text-xs text-muted-foreground">
+                                      <strong>Kostoja:</strong> {part.cost}
+                                    </p>
+                                  )}
                                 </div>
-                                <p className="text-sm text-foreground">€{car.bid.toLocaleString()}</p>
+                              ))
+                            ) : (
+                              <div className="col-span-full p-6 text-center bg-muted/30 border-2 border-dashed border-muted-foreground/20 rounded-lg">
+                                <CheckCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                                <p className="text-muted-foreground font-medium">Nuk ka informacion për pjesë të riparuara</p>
+                                <p className="text-muted-foreground/70 text-sm">Të dhënat mund të jenë të disponueshme më vonë</p>
                               </div>
                             )}
-
-                            {car.buy_now && (
-                              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                                  <span className="text-sm font-semibold text-blue-700">Çmimi "Bli Tani"</span>
-                                </div>
-                                <p className="text-sm text-foreground">€{car.buy_now.toLocaleString()}</p>
-                              </div>
-                            )}
-
-                            {car.final_bid && (
-                              <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                                  <span className="text-sm font-semibold text-purple-700">Oferta Finale</span>
-                                </div>
-                                <p className="text-sm text-foreground">€{car.final_bid.toLocaleString()}</p>
-                              </div>
-                            )}
-
-                            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                              <div className="flex items-center gap-2 mb-2">
-                                <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
-                                <span className="text-sm font-semibold text-gray-700">Gjendja</span>
-                              </div>
-                              <p className="text-sm text-foreground capitalize">{car.condition || 'N/A'}</p>
-                            </div>
-
-                            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                              <div className="flex items-center gap-2 mb-2">
-                                <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
-                                <span className="text-sm font-semibold text-amber-700">Çmimi Shitjes</span>
-                              </div>
-                              <p className="text-sm text-foreground">€{car.price.toLocaleString()}</p>
-                            </div>
                           </div>
                         </div>
 
