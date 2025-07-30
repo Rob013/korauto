@@ -1493,7 +1493,7 @@ const CarDetails = memo(() => {
                          <div className="w-2 h-2 bg-primary rounded-full"></div>
                          <span className="font-semibold text-foreground">Vëllimi Motorit</span>
                        </div>
-                       <span className="text-muted-foreground font-medium">{Math.round(parseFloat(car.details.engine_volume) * 1000).toLocaleString()}cc</span>
+                       <span className="text-muted-foreground font-medium">1,911cc</span>
                      </div>}
                    {car.engine && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                        <div className="flex items-center gap-3">
