@@ -1,15 +1,32 @@
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Grid, List, ArrowLeft, ArrowUpDown } from 'lucide-react';
-import CarCard from '@/components/CarCard';
-import { useSecureAuctionAPI } from '@/hooks/useSecureAuctionAPI';
-import FilterForm from '@/components/FilterForm';
-import { useSearchParams } from 'react-router-dom';
-import { useSortedCars, getSortOptions, SortOption } from '@/hooks/useSortedCars';
-import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Loader2,
+  Search,
+  Grid,
+  List,
+  ArrowLeft,
+  ArrowUpDown,
+} from "lucide-react";
+import CarCard from "@/components/CarCard";
+import { useSecureAuctionAPI } from "@/hooks/useSecureAuctionAPI";
+import FilterForm from "@/components/FilterForm";
+import { useSearchParams } from "react-router-dom";
+import {
+  useSortedCars,
+  getSortOptions,
+  SortOption,
+} from "@/hooks/useSortedCars";
+import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 
 interface APIFilters {
   manufacturer_id?: string;
@@ -34,63 +51,86 @@ interface EncarCatalogProps {
 
 const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const { toast } = useToast();
-  const { cars, loading, error, totalCount, hasMorePages, fetchCars,filters,setFilters, fetchManufacturers, fetchModels, fetchGenerations, fetchFilterCounts, loadMore } = useSecureAuctionAPI();
+  const {
+    cars,
+    loading,
+    error,
+    totalCount,
+    hasMorePages,
+    fetchCars,
+    filters,
+    setFilters,
+    fetchManufacturers,
+    fetchModels,
+    fetchGenerations,
+    fetchFilterCounts,
+    loadMore,
+  } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [sortBy, setSortBy] = useState<SortOption>('price_low');
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [sortBy, setSortBy] = useState<SortOption>("price_low");
   const [searchParams, setSearchParams] = useSearchParams();
-  
+
   // Type conversion to match the sorting hook interface
-  const carsForSorting = cars.map(car => ({
+  const carsForSorting = cars.map((car) => ({
     ...car,
-    status: String(car.status || ''),
-    lot_number: String(car.lot_number || ''),
-    cylinders: Number(car.cylinders || 0)
+    status: String(car.status || ""),
+    lot_number: String(car.lot_number || ""),
+    cylinders: Number(car.cylinders || 0),
   }));
-  
+
   const sortedCars = useSortedCars(carsForSorting, sortBy);
 
-
-  const [searchTerm, setSearchTerm] = useState(filters.search || '');
+  const [searchTerm, setSearchTerm] = useState(filters.search || "");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [manufacturers, setManufacturers] = useState<{
-    id: number;
-    name: string;
-    car_count?: number;
-    cars_qty?: number;
-    image?: string;
-  }[]>([]);
+  const [manufacturers, setManufacturers] = useState<
+    {
+      id: number;
+      name: string;
+      car_count?: number;
+      cars_qty?: number;
+      image?: string;
+    }[]
+  >([]);
 
-  const [models, setModels] = useState<{
-    id: number;
-    name: string;
-    car_count?: number;
-    cars_qty?: number;
-  }[]>([]);
+  const [models, setModels] = useState<
+    {
+      id: number;
+      name: string;
+      car_count?: number;
+      cars_qty?: number;
+    }[]
+  >([]);
 
-  const [generations, setGenerations] = useState<{
-    id: number;
-    name: string;
-    manufacturer_id?: number;
-    model_id?: number;
-    from_year?: number;
-    to_year?: number;
-    cars_qty?: number;
-  }[]>([]);
+  const [generations, setGenerations] = useState<
+    {
+      id: number;
+      name: string;
+      manufacturer_id?: number;
+      model_id?: number;
+      from_year?: number;
+      to_year?: number;
+      cars_qty?: number;
+    }[]
+  >([]);
   const [filterCounts, setFilterCounts] = useState<any>(null);
   const [loadingCounts, setLoadingCounts] = useState(false);
+  const [highlightedCarId, setHighlightedCarId] = useState<string | null>(null);
 
   const handleFiltersChange = (newFilters: APIFilters) => {
     setFilters(newFilters);
     fetchCars(1, newFilters, true);
 
-    const nonEmpty = Object.entries(newFilters).filter(([_, v]) => v !== undefined && v !== '');
+    // Update URL with all non-empty filter values
+    const nonEmpty = Object.entries(newFilters).filter(
+      ([_, v]) => v !== undefined && v !== "" && v !== null
+    );
     setSearchParams(Object.fromEntries(nonEmpty));
   };
 
   const handleClearFilters = () => {
     setFilters({});
-    setSearchTerm('');
+    setSearchTerm("");
     setModels([]);
     setGenerations([]);
     fetchCars(1, {}, true);
@@ -100,7 +140,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const handleSearch = () => {
     const newFilters = {
       ...filters,
-      search: searchTerm.trim() || undefined
+      search: searchTerm.trim() || undefined,
     };
     handleFiltersChange(newFilters);
   };
@@ -117,11 +157,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       ...filters,
       manufacturer_id: manufacturerId || undefined,
       model_id: undefined,
-      generation_id: undefined
+      generation_id: undefined,
     };
-    setFilters(newFilters);
-    setSearchParams(Object.fromEntries(Object.entries(newFilters).filter(([_, v]) => v)));
     setGenerations([]);
+    handleFiltersChange(newFilters);
   };
 
   const handleModelChange = async (modelId: string) => {
@@ -131,43 +170,58 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     const newFilters: APIFilters = {
       ...filters,
       model_id: modelId || undefined,
-      generation_id: undefined
+      generation_id: undefined,
     };
-    setFilters(newFilters);
-    setSearchParams(Object.fromEntries(Object.entries(newFilters).filter(([_, v]) => v)));
+    handleFiltersChange(newFilters);
   };
 
+  // Initialize filters from URL params on component mount
   useEffect(() => {
-    const loadManufacturers = async () => {
+    const loadInitialData = async () => {
+      // Load manufacturers first
       const manufacturerData = await fetchManufacturers();
       setManufacturers(manufacturerData);
-    };
 
-    const init = async () => {
-      await loadManufacturers();
+      // Get filters from URL parameters
+      const urlFilters: APIFilters = {};
+      for (const [key, value] of searchParams.entries()) {
+        if (value) {
+          urlFilters[key as keyof APIFilters] = value;
+        }
+      }
 
-      if (filters.manufacturer_id) {
-        const models = await fetchModels(filters.manufacturer_id);
+      // Set search term from URL
+      if (urlFilters.search) {
+        setSearchTerm(urlFilters.search);
+      }
+
+      // Load dependent data based on URL filters
+      if (urlFilters.manufacturer_id) {
+        const models = await fetchModels(urlFilters.manufacturer_id);
         setModels(models);
       }
 
-      if (filters.model_id) {
-        const generations = await fetchGenerations(filters.model_id);
+      if (urlFilters.model_id) {
+        const generations = await fetchGenerations(urlFilters.model_id);
         setGenerations(generations);
       }
 
-      fetchCars(1, filters, true);
+      // Set filters and fetch cars with URL filters
+      if (Object.keys(urlFilters).length > 0) {
+        setFilters(urlFilters);
+        fetchCars(1, urlFilters, true);
+      } else {
+        // No URL filters, fetch with empty filters
+        fetchCars(1, {}, true);
+      }
     };
 
-    init();
-  }, []);
+    loadInitialData();
+  }, []); // Only run on mount
 
+  // Load filter counts when filters or manufacturers change
   useEffect(() => {
-    const loadData = async () => {
-      if (Object.keys(filters).length > 0) {
-        fetchCars(1, filters, true);
-      }
-
+    const loadFilterCounts = async () => {
       if (manufacturers.length > 0) {
         setLoadingCounts(true);
         try {
@@ -179,7 +233,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       }
     };
 
-    loadData();
+    loadFilterCounts();
   }, [filters, manufacturers]);
 
   useEffect(() => {
@@ -202,28 +256,32 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   useEffect(() => {
     if (highlightCarId && cars.length > 0) {
       setTimeout(() => {
-        // Try to find car by lot number first, then by car ID
-        let carElement = document.getElementById(`car-lot-${highlightCarId}`);
-        if (!carElement) {
-          carElement = document.getElementById(`car-${highlightCarId}`);
-        }
-        
-        if (carElement) {
-          carElement.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center' 
-          });
-          // Add highlight effect
-          carElement.style.border = '3px solid #3b82f6';
-          carElement.style.boxShadow = '0 0 20px rgba(59, 130, 246, 0.5)';
-          
+        // Find the car by lot number or ID and scroll to it
+        const targetCar = cars.find(
+          (car) =>
+            car.lot_number === highlightCarId || car.id === highlightCarId
+        );
+
+        if (targetCar) {
+          const lotNumber =
+            targetCar.lot_number || targetCar.lots?.[0]?.lot || "";
+          setHighlightedCarId(lotNumber || targetCar.id);
+
+          // Scroll to the car
+          const carElement = document.getElementById(`car-${targetCar.id}`);
+          if (carElement) {
+            carElement.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+          }
+
           // Remove highlight after 3 seconds
           setTimeout(() => {
-            carElement.style.border = '';
-            carElement.style.boxShadow = '';
+            setHighlightedCarId(null);
           }, 3000);
         }
-      }, 500); // Small delay to ensure cars are rendered
+      }, 1000);
     }
   }, [highlightCarId, cars]);
 
@@ -232,9 +290,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       {/* Header with Back Button */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
-          <Button 
-            variant="outline" 
-            onClick={() => window.location.href = '/'} 
+          <Button
+            variant="outline"
+            onClick={() => (window.location.href = "/")}
             className="flex items-center gap-2 hover:bg-primary hover:text-primary-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -249,26 +307,25 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             </p>
           </div>
         </div>
-        
+
         {/* View Mode Toggle */}
         <div className="flex gap-2">
           <Button
-            variant={viewMode === 'grid' ? 'default' : 'outline'}
+            variant={viewMode === "grid" ? "default" : "outline"}
             size="sm"
-            onClick={() => setViewMode('grid')}
+            onClick={() => setViewMode("grid")}
           >
             <Grid className="h-4 w-4" />
           </Button>
           <Button
-            variant={viewMode === 'list' ? 'default' : 'outline'}
+            variant={viewMode === "list" ? "default" : "outline"}
             size="sm"
-            onClick={() => setViewMode('list')}
+            onClick={() => setViewMode("list")}
           >
             <List className="h-4 w-4" />
           </Button>
         </div>
       </div>
-
 
       {/* Filter Form with Sort */}
       <div className="mb-6 space-y-4">
@@ -286,10 +343,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           showAdvanced={showAdvancedFilters}
           onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
         />
-        
+
         {/* Sort Control - positioned under filters, right side */}
         <div className="flex justify-end">
-          <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+          <Select
+            value={sortBy}
+            onValueChange={(value: SortOption) => setSortBy(value)}
+          >
             <SelectTrigger className="w-48">
               <ArrowUpDown className="h-3 w-3 mr-2" />
               <SelectValue placeholder="Rreshtoni sipas..." />
@@ -323,7 +383,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       {/* No Results State */}
       {!loading && cars.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">No cars found matching your filters.</p>
+          <p className="text-muted-foreground">
+            No cars found matching your filters.
+          </p>
           <Button
             variant="outline"
             onClick={handleClearFilters}
@@ -337,34 +399,50 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       {/* Cars Grid/List */}
       {cars.length > 0 && (
         <>
-          <div className={viewMode === 'grid' 
-            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-            : "space-y-4"
-          }>
+          <div
+            className={
+              viewMode === "grid"
+                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                : "space-y-4"
+            }
+          >
             {sortedCars.map((car) => {
               const lot = car.lots?.[0];
               const usdPrice = lot?.buy_now || 25000;
               const price = convertUSDtoEUR(Math.round(usdPrice + 2200));
-              const lotNumber = car.lot_number || lot?.lot || '';
-              
+              const lotNumber = car.lot_number || lot?.lot || "";
+
               return (
-                <div key={car.id} id={`car-${car.id}`} data-lot-id={`car-lot-${lotNumber}`}>
-                  <div id={`car-lot-${lotNumber}`}></div>
+                <div
+                  key={car.id}
+                  id={`car-${car.id}`}
+                  data-lot-id={`car-lot-${lotNumber}`}
+                  className={
+                    highlightedCarId === lotNumber ||
+                    highlightedCarId === car.id
+                      ? "car-highlight"
+                      : ""
+                  }
+                >
                   <CarCard
                     id={car.id}
-                    make={car.manufacturer?.name || 'Unknown'}
-                    model={car.model?.name || 'Unknown'}
+                    make={car.manufacturer?.name || "Unknown"}
+                    model={car.model?.name || "Unknown"}
                     year={car.year}
                     price={price}
                     image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]}
                     vin={car.vin}
-                    mileage={lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined}
+                    mileage={
+                      lot?.odometer?.km
+                        ? `${lot.odometer.km.toLocaleString()} km`
+                        : undefined
+                    }
                     transmission={car.transmission?.name}
                     fuel={car.fuel?.name}
                     color={car.color?.name}
-                    condition={car.condition?.replace('run_and_drives', 'Good')}
-                    lot={car.lot_number || lot?.lot || ''}
-                    title={car.title || ''}
+                    condition={car.condition?.replace("run_and_drives", "Good")}
+                    lot={car.lot_number || lot?.lot || ""}
+                    title={car.title || ""}
                     status={Number(car.status || lot?.status || 1)}
                     sale_status={car.sale_status || lot?.sale_status}
                     final_price={car.final_price || lot?.final_price}

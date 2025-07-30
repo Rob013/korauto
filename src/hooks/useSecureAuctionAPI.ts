@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Lot {
   buy_now?: number;
@@ -152,7 +152,12 @@ interface Car {
   id: string;
   manufacturer: { id: number; name: string };
   model: { id: number; name: string };
-  generation?: { id: number; name: string; manufacturer_id: number; model_id: number };
+  generation?: {
+    id: number;
+    name: string;
+    manufacturer_id: number;
+    model_id: number;
+  };
   year: number;
   price?: string;
   mileage?: string;
@@ -231,46 +236,58 @@ export const useSecureAuctionAPI = () => {
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   const [filters, setFilters] = useState<APIFilters>({});
 
+  const delay = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
 
-  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-  const makeSecureAPICall = async (endpoint: string, filters: any = {}, carId?: string): Promise<any> => {
+  const makeSecureAPICall = async (
+    endpoint: string,
+    filters: any = {},
+    carId?: string
+  ): Promise<any> => {
     try {
-      console.log('🔐 Making secure API call:', { endpoint, filters, carId });
-      
+      console.log("🔐 Making secure API call:", { endpoint, filters, carId });
+
       // Add a small delay to prevent rapid successive calls
       const now = Date.now();
-      if (now - lastFetchTime < 500) { // 500ms minimum between calls
+      if (now - lastFetchTime < 500) {
+        // 500ms minimum between calls
         await delay(500 - (now - lastFetchTime));
       }
       setLastFetchTime(Date.now());
-      
-      const { data, error: functionError } = await supabase.functions.invoke('secure-cars-api', {
-        body: { endpoint, filters, carId }
-      });
+
+      const { data, error: functionError } = await supabase.functions.invoke(
+        "secure-cars-api",
+        {
+          body: { endpoint, filters, carId },
+        }
+      );
 
       if (functionError) {
-        console.error('❌ Edge function error:', functionError);
-        throw new Error(functionError.message || 'API call failed');
+        console.error("❌ Edge function error:", functionError);
+        throw new Error(functionError.message || "API call failed");
       }
 
       if (data?.error) {
         if (data.retryAfter) {
-          console.log('⏳ Rate limited, waiting...');
+          console.log("⏳ Rate limited, waiting...");
           await delay(data.retryAfter);
-          throw new Error('RATE_LIMITED');
+          throw new Error("RATE_LIMITED");
         }
         throw new Error(data.error);
       }
 
       return data;
     } catch (err) {
-      console.error('❌ Secure API call error:', err);
+      console.error("❌ Secure API call error:", err);
       throw err;
     }
   };
 
-  const fetchCars = async (page: number = 1,   newFilters: APIFilters = filters, resetList: boolean = true): Promise<void> => {
+  const fetchCars = async (
+    page: number = 1,
+    newFilters: APIFilters = filters,
+    resetList: boolean = true
+  ): Promise<void> => {
     if (resetList) {
       setFilters(newFilters);
       setLoading(true);
@@ -279,67 +296,44 @@ export const useSecureAuctionAPI = () => {
     setError(null);
 
     try {
-      // For homepage, fetch single page for faster refresh
-      const isHomepage = Object.keys(filters).length === 0;
-      const pagesToFetch = 1; // Single page for faster refresh
-      
-      let allCars: Car[] = [];
-      
-      for (let currentPage = 1; currentPage <= pagesToFetch; currentPage++) {
-        const apiFilters = {
-          ...newFilters,
-          page: currentPage.toString(),
-          per_page: '12',
-          simple_paginate: '0'
-        };
+      const apiFilters = {
+        ...newFilters,
+        page: page.toString(),
+        per_page: "12",
+        simple_paginate: "0",
+      };
 
-        console.log(`🔄 Fetching page ${currentPage}/${pagesToFetch}`);
-        const data: APIResponse = await makeSecureAPICall('cars', apiFilters);
-        
-        if (data.data && data.data.length > 0) {
-          allCars = [...allCars, ...data.data];
-        }
-        
-        // Set metadata from first page
-        if (currentPage === 1) {
-          setTotalCount(data.meta?.total || 0);
-          setHasMorePages(currentPage < (data.meta?.last_page || 1));
-        }
-        
-        // Break if no more data
-        if (!data.data || data.data.length === 0) {
-          break;
-        }
-        
-        // Small delay between requests to avoid rate limiting
-        if (currentPage < pagesToFetch) {
-          await delay(100);
-        }
-      }
-      
-      console.log(`✅ Fetched ${allCars.length} total cars from ${pagesToFetch} pages`);
-      
+      console.log(`🔄 Fetching page ${page} with filters:`, apiFilters);
+      const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
+
+      // Set metadata from response
+      setTotalCount(data.meta?.total || 0);
+      setHasMorePages(page < (data.meta?.last_page || 1));
+
+      console.log(
+        `✅ Fetched ${data.data?.length || 0} cars from page ${page}`
+      );
+
       if (resetList || page === 1) {
-        setCars(allCars);
+        setCars(data.data || []);
         setCurrentPage(1);
       } else {
-        setCars(prev => [...prev, ...allCars]);
+        setCars((prev) => [...prev, ...(data.data || [])]);
         setCurrentPage(page);
       }
-
     } catch (err: any) {
-      if (err.message === 'RATE_LIMITED') {
+      if (err.message === "RATE_LIMITED") {
         // Retry once after rate limit
         try {
           await delay(2000);
           return fetchCars(page, filters, resetList);
         } catch (retryErr) {
-          console.error('❌ Retry failed:', retryErr);
-          setError('Rate limited - please try again later');
+          console.error("❌ Retry failed:", retryErr);
+          setError("Rate limited - please try again later");
         }
       } else {
-        console.error('❌ Fetch cars error:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch cars');
+        console.error("❌ Fetch cars error:", err);
+        setError(err instanceof Error ? err.message : "Failed to fetch cars");
       }
     } finally {
       setLoading(false);
@@ -348,10 +342,10 @@ export const useSecureAuctionAPI = () => {
 
   const fetchManufacturers = async (): Promise<Manufacturer[]> => {
     try {
-      const data = await makeSecureAPICall('manufacturers/cars');
+      const data = await makeSecureAPICall("manufacturers/cars");
       return data.data || [];
     } catch (err) {
-      console.error('❌ Error fetching manufacturers:', err);
+      console.error("❌ Error fetching manufacturers:", err);
       return [];
     }
   };
@@ -361,7 +355,7 @@ export const useSecureAuctionAPI = () => {
       const data = await makeSecureAPICall(`models/${manufacturerId}/cars`);
       return data.data || [];
     } catch (err) {
-      console.error('❌ Error fetching models:', err);
+      console.error("❌ Error fetching models:", err);
       return [];
     }
   };
@@ -371,14 +365,17 @@ export const useSecureAuctionAPI = () => {
       const data = await makeSecureAPICall(`generations/${modelId}/cars`);
       return data.data || [];
     } catch (err) {
-      console.error('❌ Error fetching generations:', err);
+      console.error("❌ Error fetching generations:", err);
       return [];
     }
   };
 
-  const fetchFilterCounts = async (currentFilters: APIFilters = {}, manufacturersList: any[] = []) => {
+  const fetchFilterCounts = async (
+    currentFilters: APIFilters = {},
+    manufacturersList: any[] = []
+  ) => {
     // Mock implementation for backward compatibility
-    console.log('📊 fetchFilterCounts called with filters:', currentFilters);
+    console.log("📊 fetchFilterCounts called with filters:", currentFilters);
     return {
       manufacturers: {},
       models: {},
@@ -386,54 +383,68 @@ export const useSecureAuctionAPI = () => {
       colors: {},
       fuelTypes: {},
       transmissions: {},
-      years: {}
+      years: {},
     };
   };
 
-  const fetchCarCounts = async (filters: APIFilters = {}): Promise<{ [key: string]: number }> => {
+  const fetchCarCounts = async (
+    filters: APIFilters = {}
+  ): Promise<{ [key: string]: number }> => {
     try {
       const apiFilters = {
         ...filters,
-        per_page: '1',
-        simple_paginate: '1'
+        per_page: "1",
+        simple_paginate: "1",
       };
 
-      const data: APIResponse = await makeSecureAPICall('cars', apiFilters);
+      const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
       return { total: data.meta?.total || 0 };
     } catch (err) {
-      console.error('❌ Error fetching car counts:', err);
+      console.error("❌ Error fetching car counts:", err);
       return { total: 0 };
     }
   };
 
   const fetchCarById = async (carId: string): Promise<Car | null> => {
     try {
-      const data = await makeSecureAPICall('cars', {}, carId);
+      const data = await makeSecureAPICall("cars", {}, carId);
       return data.data || null;
     } catch (err) {
-      console.error('❌ Error fetching car by ID:', err);
+      console.error("❌ Error fetching car by ID:", err);
       return null;
     }
   };
 
-  const fetchKoreaDuplicates = async (minutes: number = 10, perPage: number = 1000): Promise<any[]> => {
+  const fetchKoreaDuplicates = async (
+    minutes: number = 10,
+    perPage: number = 1000
+  ): Promise<any[]> => {
     try {
       const filters = {
         minutes: minutes.toString(),
-        per_page: perPage.toString()
+        per_page: perPage.toString(),
       };
-      const data = await makeSecureAPICall('korea-duplicates', filters);
+      const data = await makeSecureAPICall("korea-duplicates", filters);
       return data.data || [];
     } catch (err) {
-      console.error('❌ Error fetching Korea duplicates:', err);
+      console.error("❌ Error fetching Korea duplicates:", err);
       return [];
     }
   };
 
- const loadMore = async () => {
-  if (!hasMorePages || loading) return;
-  await fetchCars(currentPage + 1, filters, false); // ✅ uses internal state
-};
+  const loadMore = async () => {
+    if (!hasMorePages || loading) return;
+
+    setLoading(true);
+    try {
+      await fetchCars(currentPage + 1, filters, false);
+    } catch (err) {
+      console.error("❌ Load more error:", err);
+      setError(err instanceof Error ? err.message : "Failed to load more cars");
+    } finally {
+      setLoading(false);
+    }
+  };
   return {
     cars,
     loading,
@@ -442,8 +453,8 @@ export const useSecureAuctionAPI = () => {
     totalCount,
     hasMorePages,
     fetchCars,
-    filters,         // ✅ add this
-    setFilters, 
+    filters, // ✅ add this
+    setFilters,
     fetchManufacturers,
     fetchModels,
     fetchGenerations,
@@ -451,6 +462,6 @@ export const useSecureAuctionAPI = () => {
     fetchCarCounts,
     fetchFilterCounts,
     fetchKoreaDuplicates,
-    loadMore
+    loadMore,
   };
 };
