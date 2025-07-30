@@ -94,17 +94,46 @@ const EquipmentOptionsSection = memo(({ options, features, safetyFeatures, comfo
   const [showAllFeatures, setShowAllFeatures] = useState(false);
   const [showAllSafety, setShowAllSafety] = useState(false);
   const [showAllComfort, setShowAllComfort] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
 
   const INITIAL_SHOW_COUNT = 5;
 
   return (
     <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-      <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
-        <Settings className="h-5 w-5" />
+      <Button
+        onClick={() => setShowOptions(!showOptions)}
+        variant="ghost"
+        className="w-full justify-start text-lg font-semibold text-foreground hover:bg-muted/80 p-2 h-auto"
+      >
+        <Settings className="h-5 w-5 mr-2" />
         Pajisjet dhe Opsionet
-      </h4>
+        <ChevronDown className={`h-4 w-4 ml-auto transition-transform ${showOptions ? 'rotate-180' : ''}`} />
+      </Button>
       
-      {/* Standard Equipment */}
+      {showOptions && (
+        <div className="space-y-4">
+          {/* All the existing options content will go here */}
+        </div>
+      )}
+    </div>
+  );
+});
+
+  return (
+    <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+      <Button
+        onClick={() => setShowOptions(!showOptions)}
+        variant="ghost"
+        className="w-full justify-start text-lg font-semibold text-foreground hover:bg-muted/80 p-2 h-auto"
+      >
+        <Settings className="h-5 w-5 mr-2" />
+        Pajisjet dhe Opsionet
+        <ChevronDown className={`h-4 w-4 ml-auto transition-transform ${showOptions ? 'rotate-180' : ''}`} />
+      </Button>
+      
+      {showOptions && (
+        <div className="space-y-4">
+          {/* Standard Equipment */}
       {options.standard && options.standard.length > 0 && (
         <div>
           <h5 className="font-medium mb-2 text-foreground">Pajisje Standarde:</h5>
@@ -238,9 +267,10 @@ const EquipmentOptionsSection = memo(({ options, features, safetyFeatures, comfo
               </Button>
             )}
           </div>
-        </div>
-      )}
-    </div>
+          </div>
+        )}
+      </div>
+    )
   );
 });
 
