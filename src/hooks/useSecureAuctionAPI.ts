@@ -298,10 +298,14 @@ export const useSecureAuctionAPI = () => {
     setError(null);
 
     try {
+      // Increase page size when filters are applied to show more relevant results
+      const hasSpecificFilters = newFilters.grade_iaai || newFilters.model_id || newFilters.generation_id;
+      const pageSize = hasSpecificFilters ? "50" : (newFilters.per_page || "12");
+      
       const apiFilters = {
         ...newFilters,
         page: page.toString(),
-        per_page: newFilters.per_page || "12", // Default to 12, but allow override
+        per_page: pageSize,
         simple_paginate: "0",
       };
 

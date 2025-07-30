@@ -103,79 +103,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   
   console.log('🔍 All grades found in current car data:', Array.from(allGradesInData).sort());
 
-  // Type conversion to match the sorting hook interface and apply frontend filtering
-  const carsForSorting = cars
-    .filter((car) => {
-      // Apply grade filter on frontend as fallback
-      if (filters.grade_iaai && filters.grade_iaai.trim()) {
-        const targetGrade = decodeURIComponent(filters.grade_iaai).toLowerCase().trim().replace(/\+/g, ' ');
-        let hasMatchingGrade = false;
-        
-        console.log(`🔍 Filtering for grade: "${targetGrade}" on car: ${car.id} - ${car.title}`);
-        
-        // Check in lots array first
-        if (car.lots && Array.isArray(car.lots)) {
-          for (const lot of car.lots) {
-            if (lot.grade_iaai) {
-              const lotGrade = lot.grade_iaai.toLowerCase().trim();
-              console.log(`  📋 Lot grade_iaai: "${lotGrade}"`);
-              
-              // Exact match for lot grades
-              if (lotGrade === targetGrade) {
-                hasMatchingGrade = true;
-                console.log(`  ✅ EXACT MATCH found in lot grade_iaai`);
-                break;
-              }
-            }
-          }
-        }
-        
-        // Check in car title with strict pattern matching
-        if (!hasMatchingGrade && car.title) {
-          const titleLower = car.title.toLowerCase();
-          console.log(`  📝 Car title: "${titleLower}"`);
-          
-          // Check for exact matches first
-          const exactMatches = [
-            targetGrade,
-            targetGrade.replace(/\s+/g, ''),
-            targetGrade.replace(/i$/, '').trim() + 'i',
-            targetGrade.replace(/d$/, '').trim() + 'd'
-          ];
-          
-          for (const exactMatch of exactMatches) {
-            if (titleLower.includes(exactMatch)) {
-              hasMatchingGrade = true;
-              console.log(`  ✅ EXACT MATCH found in title: "${exactMatch}"`);
-              break;
-            }
-          }
-          
-          // If no exact match, try BMW-style pattern matching (more restrictive)
-          if (!hasMatchingGrade) {
-            // Only match BMW-style patterns that are 3+ characters and end with i/d
-            const bmwPattern = new RegExp(`\\b(${targetGrade.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'gi');
-            if (bmwPattern.test(titleLower) && targetGrade.length >= 3) {
-              hasMatchingGrade = true;
-              console.log(`  ✅ BMW PATTERN MATCH found: "${targetGrade}"`);
-            }
-          }
-        }
-        
-        console.log(`  🎯 Final result for car ${car.id}: ${hasMatchingGrade ? '✅ KEEP' : '❌ FILTER OUT'}`);
-        
-        if (!hasMatchingGrade) {
-          return false;
-        }
-      }
-      return true;
-    })
-    .map((car) => ({
-      ...car,
-      status: String(car.status || ""),
-      lot_number: String(car.lot_number || ""),
-      cylinders: Number(car.cylinders || 0),
-    }));
+  // Type conversion to match the sorting hook interface
+  // If we have a grade filter, the API should handle it, so we don't need frontend filtering
+  const carsForSorting = cars.map((car) => ({
+    ...car,
+    status: String(car.status || ""),
+    lot_number: String(car.lot_number || ""),
+    cylinders: Number(car.cylinders || 0),
+  }));
 
   console.log(`🔍 Total cars after grade filtering: ${carsForSorting.length} out of ${cars.length}`);
   
