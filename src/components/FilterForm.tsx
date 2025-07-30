@@ -268,19 +268,37 @@ const FilterForm = memo<FilterFormProps>(({
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="grade" className="text-xs font-medium truncate">Grada</Label>
+          <Label htmlFor="grade" className="text-xs font-medium truncate">Grada/Motorr</Label>
           <Select value={filters.grade_iaai || 'all'} onValueChange={(value) => updateFilter('grade_iaai', value)}>
             <SelectTrigger className="h-7 text-xs">
               <SelectValue placeholder="Të gjitha" />
             </SelectTrigger>
             <SelectContent className="max-h-60 overflow-y-auto">
               <SelectItem value="all">Të gjitha Gradat</SelectItem>
-              <SelectItem value="A">Grada A</SelectItem>
-              <SelectItem value="B">Grada B</SelectItem>
-              <SelectItem value="C">Grada C</SelectItem>
-              <SelectItem value="D">Grada D</SelectItem>
-              <SelectItem value="R">Grada R</SelectItem>
-              <SelectItem value="S">Grada S</SelectItem>
+              <SelectItem value="1.0">1.0L</SelectItem>
+              <SelectItem value="1.2">1.2L</SelectItem>
+              <SelectItem value="1.4">1.4L</SelectItem>
+              <SelectItem value="1.6">1.6L</SelectItem>
+              <SelectItem value="1.8">1.8L</SelectItem>
+              <SelectItem value="2.0">2.0L</SelectItem>
+              <SelectItem value="2.5">2.5L</SelectItem>
+              <SelectItem value="3.0">3.0L</SelectItem>
+              <SelectItem value="3.5">3.5L</SelectItem>
+              <SelectItem value="4.0">4.0L</SelectItem>
+              <SelectItem value="20 TDI">20 TDI</SelectItem>
+              <SelectItem value="25 TDI">25 TDI</SelectItem>
+              <SelectItem value="30 TDI">30 TDI</SelectItem>
+              <SelectItem value="35 TDI">35 TDI</SelectItem>
+              <SelectItem value="40 TDI">40 TDI</SelectItem>
+              <SelectItem value="45 TDI">45 TDI</SelectItem>
+              <SelectItem value="50 TDI">50 TDI</SelectItem>
+              <SelectItem value="55 TDI">55 TDI</SelectItem>
+              <SelectItem value="TFSI">TFSI</SelectItem>
+              <SelectItem value="TSI">TSI</SelectItem>
+              <SelectItem value="TDI">TDI</SelectItem>
+              <SelectItem value="Hybrid">Hybrid</SelectItem>
+              <SelectItem value="e-tron">e-tron</SelectItem>
+              <SelectItem value="Quattro">Quattro</SelectItem>
             </SelectContent>
           </Select>
         </div>
