@@ -259,6 +259,7 @@ const CarDetails = memo(() => {
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showDetailedInfo, setShowDetailedInfo] = useState(false);
+  const [showInspectionReport, setShowInspectionReport] = useState(false);
   
   const API_BASE_URL = 'https://auctionsapi.com/api';
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
@@ -1789,16 +1790,199 @@ const CarDetails = memo(() => {
                           <div className="md:col-span-2 mt-4">
                             <Button
                               onClick={() => {
-                                console.log('Current showDetailedInfo:', showDetailedInfo);
-                                setShowDetailedInfo(true);
+                                setShowInspectionReport(!showInspectionReport);
                               }}
                               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                               size="lg"
                             >
-                              Raporti
+                              {showInspectionReport ? 'Fshih Raportin' : 'Raporti'}
                             </Button>
                           </div>
                         </div>
+                      </div>
+                      )}
+
+                    {/* Inspection Report Section - Triggered by Raporti Button */}
+                    {showInspectionReport && (
+                      <div className="space-y-6 p-4 bg-muted/50 rounded-lg">
+                        <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                          <FileText className="h-5 w-5" />
+                          Raporti i Inspektimit të Plotë
+                        </h4>
+
+                        {/* Exchanged/Replaced Parts */}
+                        {(car.details?.exchanged_parts || car.details?.replaced_parts) && (
+                          <div>
+                            <h5 className="font-medium mb-3 text-foreground flex items-center gap-2">
+                              <Settings className="h-4 w-4 text-orange-600" />
+                              🔧 Pjesë të Këmbyera / të Zëvendësuara
+                            </h5>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {(car.details.exchanged_parts || car.details.replaced_parts || []).map((part: any, index: number) => (
+                                <div key={index} className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                                    <span className="text-sm font-medium text-orange-800">
+                                      {typeof part === 'string' ? part : part.name || part.part_name || `Pjesë ${index + 1}`}
+                                    </span>
+                                  </div>
+                                  {typeof part === 'object' && part.condition && (
+                                    <span className="text-xs text-orange-600">Gjendja: {part.condition}</span>
+                                  )}
+                                  {typeof part === 'object' && part.date && (
+                                    <span className="text-xs text-orange-600 block">Data: {part.date}</span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Repaired Parts */}
+                        {car.details?.repaired_parts && car.details.repaired_parts.length > 0 && (
+                          <div>
+                            <h5 className="font-medium mb-3 text-foreground flex items-center gap-2">
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                              ✅ Pjesë të Riparuara
+                            </h5>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {car.details.repaired_parts.map((part: any, index: number) => (
+                                <div key={index} className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    <span className="text-sm font-medium text-green-800">
+                                      {typeof part === 'string' ? part : part.name || part.part_name || `Pjesë ${index + 1}`}
+                                    </span>
+                                  </div>
+                                  {typeof part === 'object' && part.repair_type && (
+                                    <span className="text-xs text-green-600">Lloji: {part.repair_type}</span>
+                                  )}
+                                  {typeof part === 'object' && part.condition && (
+                                    <span className="text-xs text-green-600 block">Gjendja: {part.condition}</span>
+                                  )}
+                                  {typeof part === 'object' && part.repair_date && (
+                                    <span className="text-xs text-green-600 block">Data e Riparimit: {part.repair_date}</span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Damage Assessment */}
+                        {car.damage && (
+                          <div>
+                            <h5 className="font-medium mb-3 text-foreground flex items-center gap-2">
+                              <AlertTriangle className="h-4 w-4 text-amber-600" />
+                              📋 Vlerësimi i Dëmtimeve
+                            </h5>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {car.damage.main && (
+                                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <AlertTriangle className="h-4 w-4 text-amber-600" />
+                                    <span className="text-sm font-medium">Dëmtimi Kryesor:</span>
+                                  </div>
+                                  <span className="text-sm capitalize">{car.damage.main}</span>
+                                </div>
+                              )}
+                              {car.damage.second && (
+                                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <AlertTriangle className="h-4 w-4 text-amber-600" />
+                                    <span className="text-sm font-medium">Dëmtimi Dytësor:</span>
+                                  </div>
+                                  <span className="text-sm capitalize">{car.damage.second}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Safety Information */}
+                        <div>
+                          <h5 className="font-medium mb-3 text-foreground flex items-center gap-2">
+                            <Shield className="h-4 w-4 text-blue-600" />
+                            🛡️ Informacione Sigurie
+                          </h5>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {car.keys_available !== undefined && (
+                              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Settings className="h-4 w-4 text-blue-600" />
+                                  <span className="text-sm font-medium">Çelësat:</span>
+                                </div>
+                                <Badge variant={car.keys_available ? "secondary" : "destructive"}>
+                                  {car.keys_available ? 'Të Disponueshëm' : 'Jo të Disponueshëm'}
+                                </Badge>
+                              </div>
+                            )}
+                            {car.airbags && (
+                              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Shield className="h-4 w-4 text-blue-600" />
+                                  <span className="text-sm font-medium">Airbag:</span>
+                                </div>
+                                <span className="text-sm">{car.airbags}</span>
+                              </div>
+                            )}
+                            {car.condition && (
+                              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <CheckCircle className="h-4 w-4 text-blue-600" />
+                                  <span className="text-sm font-medium">Gjendja:</span>
+                                </div>
+                                <span className="text-sm capitalize">{car.condition}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Visual Inspection Diagram */}
+                        {car.details?.inspect_outer && car.details.inspect_outer.length > 0 && (
+                          <div>
+                            <h5 className="font-medium mb-3 text-foreground flex items-center gap-2">
+                              <Car className="h-4 w-4 text-purple-600" />
+                              🔍 Diagrami i Inspektimit
+                            </h5>
+                            <CarInspectionDiagram 
+                              inspectionData={car.details.inspect_outer}
+                              className="mt-4"
+                            />
+                          </div>
+                        )}
+
+                        {/* Maintenance History */}
+                        {car.details?.maintenance_history && car.details.maintenance_history.length > 0 && (
+                          <div>
+                            <h5 className="font-medium mb-3 text-foreground flex items-center gap-2">
+                              <Clock className="h-4 w-4 text-indigo-600" />
+                              📅 Historia e Mirëmbajtjes
+                            </h5>
+                            <div className="space-y-2">
+                              {car.details.maintenance_history.map((record: any, index: number) => (
+                                <div key={index} className="p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+                                  <div className="flex justify-between items-start">
+                                    <div>
+                                      <span className="text-sm font-medium text-indigo-800">
+                                        {record.service_type || record.type || 'Shërbim i Përgjithshëm'}
+                                      </span>
+                                      {record.description && (
+                                        <p className="text-xs text-indigo-600 mt-1">{record.description}</p>
+                                      )}
+                                    </div>
+                                    {record.date && (
+                                      <span className="text-xs text-indigo-600">{record.date}</span>
+                                    )}
+                                  </div>
+                                  {record.mileage && (
+                                    <span className="text-xs text-indigo-600 block mt-1">Kilometrazh: {record.mileage}</span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 
