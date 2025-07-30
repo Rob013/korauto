@@ -298,14 +298,15 @@ export const useSecureAuctionAPI = () => {
     setError(null);
 
     try {
+      // Pass ALL filters to the API including grade_iaai
       const apiFilters = {
         ...newFilters,
         page: page.toString(),
-        per_page: newFilters.per_page || "12", // Default to 12, but allow override
+        per_page: newFilters.per_page || "12",
         simple_paginate: "0",
       };
 
-      console.log(`🔄 Fetching page ${page} with filters:`, apiFilters);
+      console.log(`🔄 API Call - Page ${page} with filters:`, apiFilters);
       const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
 
       // Set metadata from response
@@ -313,7 +314,7 @@ export const useSecureAuctionAPI = () => {
       setHasMorePages(page < (data.meta?.last_page || 1));
 
       console.log(
-        `✅ Fetched ${data.data?.length || 0} cars from page ${page}`
+        `✅ API Success - Fetched ${data.data?.length || 0} cars from page ${page}, total: ${data.meta?.total || 0}`
       );
 
       if (resetList || page === 1) {
@@ -324,11 +325,12 @@ export const useSecureAuctionAPI = () => {
         setCurrentPage(page);
       }
     } catch (err: any) {
+      console.error("❌ API Error:", err);
       if (err.message === "RATE_LIMITED") {
         // Retry once after rate limit
         try {
           await delay(2000);
-          return fetchCars(page, filters, resetList);
+          return fetchCars(page, newFilters, resetList);
         } catch (retryErr) {
           console.error("❌ Retry failed:", retryErr);
           setError("Rate limited - please try again later");
@@ -436,12 +438,12 @@ export const useSecureAuctionAPI = () => {
 
   const fetchGrades = async (manufacturerId?: string, modelId?: string, generationId?: string): Promise<{ value: string; label: string; count?: number }[]> => {
     try {
-      // Instead of calling a grades endpoint, fetch cars with the given filters and extract unique grades
+      // Fetch a reasonable sample to extract grades without overloading the API
       const filters = {
         manufacturer_id: manufacturerId,
         model_id: modelId, 
         generation_id: generationId,
-        per_page: '200' // Reduce to prevent large responses that cause edge function timeouts
+        per_page: '100' // Balanced approach - enough for accurate grade counts
       };
 
       console.log('🔍 Fetching cars for grades with filters:', filters);
@@ -634,13 +636,14 @@ export const useSecureAuctionAPI = () => {
   };
   return {
     cars,
+    setCars, // ✅ Export setCars so it can be used in components
     loading,
     error,
     currentPage,
     totalCount,
     hasMorePages,
     fetchCars,
-    filters, // ✅ add this
+    filters,
     setFilters,
     fetchManufacturers,
     fetchModels,

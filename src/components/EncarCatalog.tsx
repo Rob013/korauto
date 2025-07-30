@@ -54,6 +54,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const { toast } = useToast();
   const {
     cars,
+    setCars, // ✅ Import setCars
     loading,
     error,
     totalCount,
@@ -73,87 +74,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [sortBy, setSortBy] = useState<SortOption>("price_low");
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // First, let's extract all unique grades from the current cars to debug
-  const allGradesInData = new Set<string>();
-  cars.forEach(car => {
-    // Check lots array
-    if (car.lots && Array.isArray(car.lots)) {
-      car.lots.forEach(lot => {
-        if (lot.grade_iaai) allGradesInData.add(lot.grade_iaai);
-      });
-    }
-    
-    // Extract from title
-    if (car.title) {
-      const titleLower = car.title.toLowerCase();
-      const gradePatterns = [
-        /(\d+\.?\d*)\s*(tdi|tfsi|tsi|fsi|cdi|bluemotion|eco|hybrid)/gi,
-        /(\d+\.?\d*)\s*l(iter)?/gi,
-        /(\d+\.?\d*)\s*(d|i|t)\b/gi
-      ];
-      
-      gradePatterns.forEach(pattern => {
-        const matches = titleLower.match(pattern);
-        if (matches) {
-          matches.forEach(match => allGradesInData.add(match.trim()));
-        }
-      });
-    }
-  });
-  
-  console.log('🔍 All grades found in current car data:', Array.from(allGradesInData).sort());
-
-  // Type conversion to match the sorting hook interface and apply frontend filtering
-  const carsForSorting = cars
-    .filter((car) => {
-      // Apply grade filter efficiently
-      if (filters.grade_iaai && filters.grade_iaai.trim()) {
-        const targetGrade = decodeURIComponent(filters.grade_iaai).toLowerCase().trim().replace(/\+/g, ' ');
-        
-        // Quick check in lots array first
-        if (car.lots && Array.isArray(car.lots)) {
-          for (const lot of car.lots) {
-            if (lot.grade_iaai) {
-              const lotGrade = lot.grade_iaai.toLowerCase().trim();
-              if (lotGrade === targetGrade || 
-                  lotGrade.includes(targetGrade) || 
-                  targetGrade.includes(lotGrade)) {
-                return true; // Match found, keep car
-              }
-            }
-          }
-        }
-        
-        // Check in car title
-        if (car.title) {
-          const titleLower = car.title.toLowerCase();
-          
-          // Direct string search
-          if (titleLower.includes(targetGrade)) {
-            return true;
-          }
-          
-          // Flexible number pattern matching for TDI/TFSI queries
-          if (targetGrade.includes('tdi') || targetGrade.includes('tfsi')) {
-            const targetNumber = targetGrade.match(/(\d+)/)?.[1];
-            if (targetNumber && titleLower.includes(targetNumber)) {
-              return true;
-            }
-          }
-        }
-        
-        return false; // No match found, filter out car
-      }
-      return true; // No grade filter, keep car
-    })
-    .map((car) => ({
-      ...car,
-      status: String(car.status || ""),
-      lot_number: String(car.lot_number || ""),
-      cylinders: Number(car.cylinders || 0),
-    }));
-
-  console.log(`🔍 Total cars after grade filtering: ${carsForSorting.length} out of ${cars.length}`);
+  // Simple cars processing without complex frontend filtering
+  const carsForSorting = cars.map((car) => ({
+    ...car,
+    status: String(car.status || ""),
+    lot_number: String(car.lot_number || ""),
+    cylinders: Number(car.cylinders || 0),
+  }));
   
   const sortedCars = useSortedCars(carsForSorting, sortBy);
 
@@ -243,17 +170,21 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   };
 
   const handleFiltersChange = (newFilters: APIFilters) => {
-    setFilters(newFilters);
-    setLoadedPages(1); // Reset pagination when filters change
+    console.log('🔧 Filter change requested:', newFilters);
     
-    // Use normal pagination without special grade handling to improve performance
+    setFilters(newFilters);
+    setLoadedPages(1);
+    
+    // Clear previous data immediately to show loading state
+    setCars([]);
+    
+    // Fetch with all filters - let the API handle the filtering
     fetchCars(1, newFilters, true);
 
     // Update URL with all non-empty filter values
     const nonEmpty = Object.entries(newFilters).filter(
       ([_, v]) => v !== undefined && v !== "" && v !== null
     );
-    // Add pagination state to URL
     nonEmpty.push(["loadedPages", "1"]);
     setSearchParams(Object.fromEntries(nonEmpty));
   };
