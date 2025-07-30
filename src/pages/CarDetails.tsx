@@ -76,6 +76,176 @@ interface CarDetails {
   details?: any;
 }
 
+// Equipment Options Section Component with Show More functionality
+interface EquipmentOptionsProps {
+  options: {
+    standard?: string[];
+    choice?: string[];
+    tuning?: string[];
+  };
+  features?: string[];
+  safetyFeatures?: string[];
+  comfortFeatures?: string[];
+}
+
+const EquipmentOptionsSection = memo(({ options, features, safetyFeatures, comfortFeatures }: EquipmentOptionsProps) => {
+  const [showAllStandard, setShowAllStandard] = useState(false);
+  const [showAllChoice, setShowAllChoice] = useState(false);
+  const [showAllFeatures, setShowAllFeatures] = useState(false);
+  const [showAllSafety, setShowAllSafety] = useState(false);
+  const [showAllComfort, setShowAllComfort] = useState(false);
+
+  const INITIAL_SHOW_COUNT = 5;
+
+  return (
+    <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+      <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
+        <Settings className="h-5 w-5" />
+        Pajisjet dhe Opsionet
+      </h4>
+      
+      {/* Standard Equipment */}
+      {options.standard && options.standard.length > 0 && (
+        <div>
+          <h5 className="font-medium mb-2 text-foreground">Pajisje Standarde:</h5>
+          <div className="flex flex-wrap gap-2">
+            {(showAllStandard ? options.standard : options.standard.slice(0, INITIAL_SHOW_COUNT)).map((option, index) => (
+              <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100">{option}</Badge>
+            ))}
+            {options.standard.length > INITIAL_SHOW_COUNT && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAllStandard(!showAllStandard)}
+                className="h-6 px-2 text-xs text-primary hover:bg-primary/10"
+              >
+                {showAllStandard 
+                  ? `- Trego Më Pak` 
+                  : `+ ${options.standard.length - INITIAL_SHOW_COUNT} Më Shumë`
+                }
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Optional Equipment */}
+      {options.choice && options.choice.length > 0 && (
+        <div>
+          <h5 className="font-medium mb-2 text-foreground">Pajisje Opsionale:</h5>
+          <div className="flex flex-wrap gap-2">
+            {(showAllChoice ? options.choice : options.choice.slice(0, INITIAL_SHOW_COUNT)).map((option, index) => (
+              <Badge key={index} variant="secondary" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100">{option}</Badge>
+            ))}
+            {options.choice.length > INITIAL_SHOW_COUNT && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAllChoice(!showAllChoice)}
+                className="h-6 px-2 text-xs text-primary hover:bg-primary/10"
+              >
+                {showAllChoice 
+                  ? `- Trego Më Pak` 
+                  : `+ ${options.choice.length - INITIAL_SHOW_COUNT} Më Shumë`
+                }
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Tuning Modifications */}
+      {options.tuning && options.tuning.length > 0 && (
+        <div>
+          <h5 className="font-medium mb-2 text-foreground">Modifikimet:</h5>
+          <div className="flex flex-wrap gap-2">
+            {options.tuning.map((option, index) => (
+              <Badge key={index} variant="destructive" className="bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100">{option}</Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* General Features */}
+      {features && features.length > 0 && (
+        <div>
+          <h5 className="font-medium mb-2 text-foreground">Karakteristika të Përgjithshme:</h5>
+          <div className="flex flex-wrap gap-2">
+            {(showAllFeatures ? features : features.slice(0, INITIAL_SHOW_COUNT)).map((feature, index) => (
+              <Badge key={index} variant="outline" className="bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100">{feature}</Badge>
+            ))}
+            {features.length > INITIAL_SHOW_COUNT && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAllFeatures(!showAllFeatures)}
+                className="h-6 px-2 text-xs text-primary hover:bg-primary/10"
+              >
+                {showAllFeatures 
+                  ? `- Trego Më Pak` 
+                  : `+ ${features.length - INITIAL_SHOW_COUNT} Më Shumë`
+                }
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Safety Features */}
+      {safetyFeatures && safetyFeatures.length > 0 && (
+        <div>
+          <h5 className="font-medium mb-2 text-foreground">Karakteristika të Sigurisë:</h5>
+          <div className="flex flex-wrap gap-2">
+            {(showAllSafety ? safetyFeatures : safetyFeatures.slice(0, INITIAL_SHOW_COUNT)).map((feature, index) => (
+              <Badge key={index} variant="outline" className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100">{feature}</Badge>
+            ))}
+            {safetyFeatures.length > INITIAL_SHOW_COUNT && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAllSafety(!showAllSafety)}
+                className="h-6 px-2 text-xs text-primary hover:bg-primary/10"
+              >
+                {showAllSafety 
+                  ? `- Trego Më Pak` 
+                  : `+ ${safetyFeatures.length - INITIAL_SHOW_COUNT} Më Shumë`
+                }
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Comfort Features */}
+      {comfortFeatures && comfortFeatures.length > 0 && (
+        <div>
+          <h5 className="font-medium mb-2 text-foreground">Karakteristika të Rehatisë:</h5>
+          <div className="flex flex-wrap gap-2">
+            {(showAllComfort ? comfortFeatures : comfortFeatures.slice(0, INITIAL_SHOW_COUNT)).map((feature, index) => (
+              <Badge key={index} variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100">{feature}</Badge>
+            ))}
+            {comfortFeatures.length > INITIAL_SHOW_COUNT && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAllComfort(!showAllComfort)}
+                className="h-6 px-2 text-xs text-primary hover:bg-primary/10"
+              >
+                {showAllComfort 
+                  ? `- Trego Më Pak` 
+                  : `+ ${comfortFeatures.length - INITIAL_SHOW_COUNT} Më Shumë`
+                }
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+});
+
+EquipmentOptionsSection.displayName = 'EquipmentOptionsSection';
+
 const CarDetails = memo(() => {
   const { id: lot } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -1508,32 +1678,12 @@ const CarDetails = memo(() => {
 
                     {/* Equipment & Options */}
                     {car.details?.options && (
-                      <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                        <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                          <Settings className="h-5 w-5" />
-                          Pajisjet dhe Opsionet
-                        </h4>
-                        {car.details.options.standard && car.details.options.standard.length > 0 && (
-                          <div>
-                            <h5 className="font-medium mb-2">Pajisje Standarde:</h5>
-                            <div className="flex flex-wrap gap-2">
-                              {car.details.options.standard.map((option, index) => (
-                                <Badge key={index} variant="outline">{option}</Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {car.details.options.choice && car.details.options.choice.length > 0 && (
-                          <div>
-                            <h5 className="font-medium mb-2">Pajisje Opsionale:</h5>
-                            <div className="flex flex-wrap gap-2">
-                              {car.details.options.choice.map((option, index) => (
-                                <Badge key={index} variant="secondary">{option}</Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                      <EquipmentOptionsSection 
+                        options={car.details.options} 
+                        features={car.features}
+                        safetyFeatures={car.safety_features}
+                        comfortFeatures={car.comfort_features}
+                      />
                     )}
 
                     {/* Inspection Report with Car Diagram */}
