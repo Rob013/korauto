@@ -1298,16 +1298,29 @@ const AdminDashboard = () => {
                                 >
                                   <Phone className="h-3 w-3" />
                                 </Button>
-                                {request.car_id && carDetails[request.car_id] && (
+                                {request.car_id ? (
                                   <Button
                                     size="sm"
                                     variant="default"
-                                    onClick={() => window.open(`/car/${carDetails[request.car_id]?.lot_number || request.car_id}`, "_blank")}
+                                    onClick={() => {
+                                      if (carDetails[request.car_id]) {
+                                        window.open(`/car/${carDetails[request.car_id]?.lot_number || request.car_id}`, "_blank");
+                                      } else {
+                                        findCarByLotNumber(request.id, request.car_id);
+                                      }
+                                    }}
                                     className="h-7 px-2 text-xs"
+                                    disabled={searchingCars[request.id]}
                                   >
-                                    <Car className="h-3 w-3 mr-1" />
-                                    View
+                                    {searchingCars[request.id] ? (
+                                      <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                                    ) : (
+                                      <Car className="h-3 w-3 mr-1" />
+                                    )}
+                                    {carDetails[request.car_id] ? "View" : "Find"}
                                   </Button>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">No car ID</span>
                                 )}
                               </div>
                             </td>
@@ -1411,16 +1424,29 @@ const AdminDashboard = () => {
                                 >
                                   <Mail className="h-3 w-3" />
                                 </Button>
-                                {car && (
+                                {request.car_id ? (
                                   <Button
                                     size="sm"
                                     variant="default"
-                                    onClick={() => window.open(`/car/${car.lot_number || request.car_id}`, "_blank")}
+                                    onClick={() => {
+                                      if (car) {
+                                        window.open(`/car/${car.lot_number || request.car_id}`, "_blank");
+                                      } else {
+                                        findCarByLotNumber(request.id, request.car_id);
+                                      }
+                                    }}
                                     className="h-6 px-2 text-xs"
+                                    disabled={searchingCars[request.id]}
                                   >
-                                    <Car className="h-3 w-3 mr-1" />
-                                    View
+                                    {searchingCars[request.id] ? (
+                                      <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                                    ) : (
+                                      <Car className="h-3 w-3 mr-1" />
+                                    )}
+                                    {car ? "View" : "Find"}
                                   </Button>
+                                ) : (
+                                  <span className="text-[10px] text-muted-foreground">No car ID</span>
                                 )}
                               </div>
                             </div>
