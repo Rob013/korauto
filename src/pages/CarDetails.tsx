@@ -453,269 +453,364 @@ const CarDetails = memo(() => {
   const generateDetailedInfoHTML = (car: CarDetails) => {
     return `
       <!DOCTYPE html>
-      <html lang="en" class="light">
+      <html lang="sq" class="light">
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${car.year} ${car.make} ${car.model} - Detailed Information</title>
+        <title>${car.year} ${car.make} ${car.model} - Raporti i Detajuar</title>
         <style>
-          @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap');
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
           
           :root {
-            --background: 0 0% 100%;
-            --foreground: 0 0% 3.9%;
+            --background: 210 40% 98%;
+            --foreground: 222.2 84% 4.9%;
             --card: 0 0% 100%;
-            --card-foreground: 0 0% 3.9%;
-            --primary: 0 0% 9%;
-            --primary-foreground: 0 0% 98%;
-            --secondary: 0 0% 96.1%;
-            --secondary-foreground: 0 0% 9%;
-            --muted: 0 0% 96.1%;
-            --muted-foreground: 0 0% 45.1%;
-            --accent: 0 0% 96.1%;
-            --accent-foreground: 0 0% 9%;
-            --border: 0 0% 89.8%;
-            --ring: 0 0% 3.9%;
+            --card-foreground: 222.2 84% 4.9%;
+            --primary: 220.9 39.3% 11%;
+            --primary-foreground: 210 40% 98%;
+            --secondary: 210 40% 96%;
+            --secondary-foreground: 222.2 84% 4.9%;
+            --muted: 210 40% 94%;
+            --muted-foreground: 215.4 16.3% 46.9%;
+            --accent: 210 40% 90%;
+            --accent-foreground: 222.2 84% 4.9%;
+            --border: 214.3 31.8% 91.4%;
+            --ring: 220.9 39.3% 11%;
+            --gradient-primary: linear-gradient(135deg, hsl(220.9, 39.3%, 11%), hsl(220.9, 39.3%, 16%));
+            --gradient-secondary: linear-gradient(135deg, hsl(210, 40%, 96%), hsl(210, 40%, 98%));
+            --shadow-elegant: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
           }
           
           .dark {
-            --background: 0 0% 3.9%;
-            --foreground: 0 0% 98%;
-            --card: 0 0% 3.9%;
-            --card-foreground: 0 0% 98%;
-            --primary: 0 0% 98%;
-            --primary-foreground: 0 0% 9%;
-            --secondary: 0 0% 14.9%;
-            --secondary-foreground: 0 0% 98%;
-            --muted: 0 0% 14.9%;
-            --muted-foreground: 0 0% 63.9%;
-            --accent: 0 0% 14.9%;
-            --accent-foreground: 0 0% 98%;
-            --border: 0 0% 14.9%;
-            --ring: 0 0% 83.1%;
+            --background: 222.2 84% 4.9%;
+            --foreground: 210 40% 98%;
+            --card: 222.2 84% 6%;
+            --card-foreground: 210 40% 98%;
+            --primary: 210 40% 98%;
+            --primary-foreground: 222.2 84% 4.9%;
+            --secondary: 217.2 32.6% 17.5%;
+            --secondary-foreground: 210 40% 98%;
+            --muted: 217.2 32.6% 17.5%;
+            --muted-foreground: 215 20.2% 65.1%;
+            --accent: 217.2 32.6% 17.5%;
+            --accent-foreground: 210 40% 98%;
+            --border: 217.2 32.6% 17.5%;
+            --ring: 212.7 26.8% 83.9%;
+            --gradient-primary: linear-gradient(135deg, hsl(210, 40%, 98%), hsl(210, 40%, 96%));
+            --gradient-secondary: linear-gradient(135deg, hsl(217.2, 32.6%, 17.5%), hsl(222.2, 84%, 6%));
           }
           
           * { 
             margin: 0; 
             padding: 0; 
             box-sizing: border-box; 
-            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           }
           
           body { 
-            font-family: 'Noto Sans', sans-serif; 
-            line-height: 1.6; 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+            line-height: 1.7; 
             background: hsl(var(--background));
             color: hsl(var(--foreground));
             min-height: 100vh;
+            font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
           }
           
-          .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+          .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            padding: 24px; 
+          }
           
           .controls {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            gap: 10px;
-            flex-wrap: wrap;
+            margin-bottom: 32px;
+            padding: 20px 0;
+            border-bottom: 1px solid hsl(var(--border));
           }
           
           .theme-toggle {
             background: hsl(var(--secondary));
             color: hsl(var(--secondary-foreground));
             border: 1px solid hsl(var(--border));
-            padding: 10px;
-            border-radius: 8px;
+            padding: 12px;
+            border-radius: 12px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 40px;
-            height: 40px;
+            width: 48px;
+            height: 48px;
+            box-shadow: var(--shadow-card);
           }
           .theme-toggle:hover {
             background: hsl(var(--accent));
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-elegant);
           }
           
           .print-btn { 
-            background: hsl(var(--primary)); 
+            background: var(--gradient-primary);
             color: hsl(var(--primary-foreground)); 
             border: none; 
-            padding: 10px 16px; 
-            border-radius: 8px; 
+            padding: 12px 24px; 
+            border-radius: 12px; 
             cursor: pointer; 
-            font-weight: 500;
-            transition: all 0.2s ease;
+            font-weight: 600;
             font-size: 14px;
+            letter-spacing: 0.025em;
+            box-shadow: var(--shadow-card);
+            transition: all 0.3s ease;
           }
           .print-btn:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-elegant);
           }
           
           .header { 
-            background: hsl(var(--primary));
+            background: var(--gradient-primary);
             color: hsl(var(--primary-foreground)); 
-            padding: 30px; 
-            border-radius: 12px; 
-            margin-bottom: 30px; 
+            padding: 48px; 
+            border-radius: 24px; 
+            margin-bottom: 40px; 
             text-align: center;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--shadow-elegant);
+            position: relative;
+            overflow: hidden;
           }
-          .title { font-size: 2.5rem; font-weight: bold; margin-bottom: 10px; }
-          .subtitle { font-size: 1.2rem; opacity: 0.9; }
+          .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            pointer-events: none;
+          }
+          .title { 
+            font-size: 3rem; 
+            font-weight: 800; 
+            margin-bottom: 12px; 
+            letter-spacing: -0.025em;
+            position: relative;
+          }
+          .subtitle { 
+            font-size: 1.25rem; 
+            opacity: 0.9; 
+            font-weight: 500;
+            position: relative;
+          }
           
           .section { 
             background: hsl(var(--card)); 
             color: hsl(var(--card-foreground));
-            margin-bottom: 25px; 
-            border-radius: 12px; 
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); 
+            margin-bottom: 32px; 
+            border-radius: 20px; 
+            box-shadow: var(--shadow-card);
             overflow: hidden;
             border: 1px solid hsl(var(--border));
+            backdrop-filter: blur(10px);
           }
           .section-header { 
-            background: hsl(var(--primary));
-            color: hsl(var(--primary-foreground)); 
-            padding: 20px; 
-            font-size: 1.3rem; 
-            font-weight: 600;
+            background: var(--gradient-secondary);
+            color: hsl(var(--foreground)); 
+            padding: 24px 32px; 
+            font-size: 1.5rem; 
+            font-weight: 700;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            letter-spacing: -0.025em;
+            border-bottom: 1px solid hsl(var(--border));
           }
-          .section-content { padding: 25px; }
+          .section-content { padding: 32px; }
           
           .info-grid { 
             display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
-            gap: 15px; 
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
+            gap: 20px; 
           }
           .info-item { 
             background: hsl(var(--muted)); 
-            padding: 15px; 
-            border-radius: 8px; 
+            padding: 20px; 
+            border-radius: 16px; 
             border-left: 4px solid hsl(var(--primary));
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+          }
+          .info-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
           }
           .info-item:hover {
             background: hsl(var(--accent));
-            transform: translateY(-1px);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-elegant);
+          }
+          .info-item:hover::before {
+            opacity: 1;
           }
           .info-label { 
             font-weight: 600; 
             color: hsl(var(--muted-foreground)); 
-            margin-bottom: 5px; 
-            font-size: 0.9rem;
+            margin-bottom: 8px; 
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
           }
           .info-value { 
             color: hsl(var(--foreground)); 
-            font-size: 1.1rem; 
-            font-weight: 500;
+            font-size: 1.125rem; 
+            font-weight: 600;
           }
           
           .badge { 
             display: inline-block; 
-            padding: 6px 12px; 
-            border-radius: 20px; 
-            font-size: 0.85rem; 
-            font-weight: 500; 
-            margin: 2px;
+            padding: 8px 16px; 
+            border-radius: 24px; 
+            font-size: 0.875rem; 
+            font-weight: 600; 
+            margin: 3px;
             border: 1px solid transparent;
+            letter-spacing: 0.025em;
+            transition: all 0.3s ease;
+          }
+          .badge:hover {
+            transform: translateY(-1px);
           }
           .badge-success { 
-            background: hsl(142.1, 76.2%, 36.3%); 
+            background: linear-gradient(135deg, hsl(142.1, 76.2%, 36.3%), hsl(142.1, 76.2%, 40%));
             color: white; 
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
           }
           .badge-warning { 
-            background: hsl(47.9, 95.8%, 53.1%); 
+            background: linear-gradient(135deg, hsl(47.9, 95.8%, 53.1%), hsl(47.9, 95.8%, 56%));
             color: hsl(var(--foreground)); 
+            box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
           }
           .badge-danger { 
-            background: hsl(0, 84.2%, 60.2%); 
+            background: linear-gradient(135deg, hsl(0, 84.2%, 60.2%), hsl(0, 84.2%, 64%));
             color: white; 
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
           }
           .badge-info { 
-            background: hsl(var(--primary)); 
+            background: var(--gradient-primary);
             color: hsl(var(--primary-foreground)); 
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
           }
           .badge-outline { 
             background: transparent; 
             color: hsl(var(--foreground)); 
-            border: 1px solid hsl(var(--border));
+            border: 2px solid hsl(var(--border));
           }
           
           .options-grid { 
             display: flex; 
             flex-wrap: wrap; 
-            gap: 8px; 
-            margin-top: 10px; 
+            gap: 12px; 
+            margin-top: 16px; 
           }
           
           .car-diagram {
             background: hsl(var(--card));
-            border: 1px solid hsl(var(--border));
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
+            border: 2px solid hsl(var(--border));
+            border-radius: 20px;
+            padding: 32px;
+            margin: 24px 0;
+            box-shadow: var(--shadow-card);
           }
           
           .legend {
             display: flex;
             justify-content: center;
-            gap: 20px;
-            margin-top: 15px;
+            gap: 32px;
+            margin-top: 24px;
             flex-wrap: wrap;
           }
           .legend-item {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
+            gap: 12px;
+            font-size: 0.95rem;
             color: hsl(var(--foreground));
+            font-weight: 500;
           }
           .legend-color {
-            width: 16px;
-            height: 16px;
-            border-radius: 4px;
+            width: 20px;
+            height: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
           }
           
           .contact-info {
-            background: hsl(142.1, 76.2%, 36.3%);
+            background: linear-gradient(135deg, hsl(142.1, 76.2%, 36.3%), hsl(142.1, 76.2%, 40%));
             color: white;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 20px;
+            padding: 32px;
+            border-radius: 20px;
+            margin-top: 32px;
+            box-shadow: var(--shadow-elegant);
+            position: relative;
+            overflow: hidden;
+          }
+          .contact-info::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            pointer-events: none;
+          }
+          .contact-info h3 {
+            position: relative;
+          }
+          .contact-info .info-grid {
+            position: relative;
           }
           
           @media (max-width: 768px) {
-            .container { padding: 15px; }
-            .title { font-size: 2rem; }
-            .subtitle { font-size: 1rem; }
+            .container { padding: 16px; }
+            .title { font-size: 2.5rem; }
+            .subtitle { font-size: 1.125rem; }
             .info-grid { grid-template-columns: 1fr; }
-            .section-content { padding: 20px; }
-            .controls { justify-content: center; }
+            .section-content { padding: 24px; }
+            .controls { flex-direction: column; gap: 16px; }
+            .header { padding: 32px 24px; }
           }
           
           @media print { 
             .controls, .theme-toggle, .print-btn { display: none; }
             .section { break-inside: avoid; }
+            body { background: white; color: black; }
           }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="controls">
-            <h1 style="font-size: 1.5rem; font-weight: 600;">Car Details Report</h1>
-            <div style="display: flex; gap: 10px; align-items: center;">
-              <button onclick="toggleTheme()" class="theme-toggle" id="themeToggle" title="Toggle theme">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <h1 style="font-size: 1.75rem; font-weight: 800; letter-spacing: -0.025em;">Raporti i Detajuar i Makinës</h1>
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <button onclick="toggleTheme()" class="theme-toggle" id="themeToggle" title="Ndrysho temën">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
                 </svg>
               </button>
-              <button onclick="window.print()" class="print-btn">🖨️ Print</button>
+              <button onclick="window.print()" class="print-btn">🖨️ Printo</button>
             </div>
           </div>
           
@@ -736,9 +831,9 @@ const CarDetails = memo(() => {
               // Update toggle icon
               const toggle = document.getElementById('themeToggle');
               if (newTheme === 'dark') {
-                toggle.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>';
+                toggle.innerHTML = '<svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>';
               } else {
-                toggle.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>';
+                toggle.innerHTML = '<svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>';
               }
             }
           </script>
@@ -746,46 +841,46 @@ const CarDetails = memo(() => {
           ${car.insurance_v2 || car.insurance || car.inspect ? `
           <div class="section">
             <div class="section-header">
-              🛡️ Insurance & Safety Report
+              🛡️ Raporti i Sigurisë & Sigurimit
             </div>
             <div class="section-content">
               <div class="info-grid">
                 ${car.insurance_v2?.accidentCnt !== undefined ? `
                 <div class="info-item">
-                  <div class="info-label">Accident History</div>
+                  <div class="info-label">Historiku i Aksidenteve</div>
                   <div class="info-value">
                     <span class="badge ${car.insurance_v2.accidentCnt === 0 ? 'badge-success' : 'badge-danger'}">
-                      ${car.insurance_v2.accidentCnt === 0 ? '✅ Clean Record' : `⚠️ ${car.insurance_v2.accidentCnt} accidents`}
+                      ${car.insurance_v2.accidentCnt === 0 ? '✅ Pa Aksidente' : `⚠️ ${car.insurance_v2.accidentCnt} aksidente`}
                     </span>
                   </div>
                 </div>` : ''}
                 ${car.insurance_v2?.ownerChangeCnt !== undefined ? `
                 <div class="info-item">
-                  <div class="info-label">Previous Owners</div>
-                  <div class="info-value">${car.insurance_v2.ownerChangeCnt} owners</div>
+                  <div class="info-label">Pronarë të Mëparshëm</div>
+                  <div class="info-value">${car.insurance_v2.ownerChangeCnt} pronarë</div>
                 </div>` : ''}
                 ${car.insurance_v2?.totalLossCnt > 0 ? `
                 <div class="info-item">
-                  <div class="info-label">Total Loss Claims</div>
-                  <div class="info-value"><span class="badge badge-danger">🚨 ${car.insurance_v2.totalLossCnt} claims</span></div>
+                  <div class="info-label">Dëme të Plota</div>
+                  <div class="info-value"><span class="badge badge-danger">🚨 ${car.insurance_v2.totalLossCnt} raste</span></div>
                 </div>` : ''}
                 ${car.insurance_v2?.floodTotalLossCnt > 0 ? `
                 <div class="info-item">
-                  <div class="info-label">Flood Damage</div>
-                  <div class="info-value"><span class="badge badge-danger">🌊 ${car.insurance_v2.floodTotalLossCnt} incidents</span></div>
+                  <div class="info-label">Dëme nga Përmbytja</div>
+                  <div class="info-value"><span class="badge badge-danger">🌊 ${car.insurance_v2.floodTotalLossCnt} raste</span></div>
                 </div>` : ''}
                 ${car.keys_available !== undefined ? `
                 <div class="info-item">
-                  <div class="info-label">Keys Availability</div>
+                  <div class="info-label">Disponueshmëria e Çelësave</div>
                   <div class="info-value">
                     <span class="badge ${car.keys_available ? 'badge-success' : 'badge-danger'}">
-                      ${car.keys_available ? '🔑 Available' : '❌ Not Available'}
+                      ${car.keys_available ? '🔑 Të Disponueshëm' : '❌ Jo të Disponueshëm'}
                     </span>
                   </div>
                 </div>` : ''}
                 ${car.inspect?.accident_summary?.accident && car.inspect.accident_summary.accident !== "doesn't exist" ? `
                 <div class="info-item">
-                  <div class="info-label">Inspection Summary</div>
+                  <div class="info-label">Përmbledhja e Inspektimit</div>
                   <div class="info-value">
                     <span class="badge badge-warning">⚠️ ${car.inspect.accident_summary.accident}</span>
                   </div>
@@ -797,33 +892,33 @@ const CarDetails = memo(() => {
           ${car.details ? `
           <div class="section">
             <div class="section-header">
-              🚗 Vehicle Details
+              🚗 Detajet e Mjetit
             </div>
             <div class="section-content">
               <div class="info-grid">
                 ${car.details.engine_volume ? `
                 <div class="info-item">
-                  <div class="info-label">Engine Volume</div>
+                  <div class="info-label">Vëllimi i Motorit</div>
                   <div class="info-value">🔧 ${car.details.engine_volume}cc</div>
                 </div>` : ''}
                 ${car.details.first_registration ? `
                 <div class="info-item">
-                  <div class="info-label">First Registration</div>
+                  <div class="info-label">Regjistrimi i Parë</div>
                   <div class="info-value">📅 ${car.details.first_registration.year}-${String(car.details.first_registration.month).padStart(2, '0')}-${String(car.details.first_registration.day).padStart(2, '0')}</div>
                 </div>` : ''}
                 ${car.details.badge ? `
                 <div class="info-item">
-                  <div class="info-label">Vehicle Badge/Trim</div>
+                  <div class="info-label">Modeli/Versioni</div>
                   <div class="info-value">🏷️ ${car.details.badge}</div>
                 </div>` : ''}
                 ${car.details.seats_count ? `
                 <div class="info-item">
-                  <div class="info-label">Number of Seats</div>
-                  <div class="info-value">👥 ${car.details.seats_count} seats</div>
+                  <div class="info-label">Numri i Vendeve</div>
+                  <div class="info-value">👥 ${car.details.seats_count} vende</div>
                 </div>` : ''}
                 ${car.details.sell_type ? `
                 <div class="info-item">
-                  <div class="info-label">Sale Type</div>
+                  <div class="info-label">Lloji i Shitjes</div>
                   <div class="info-value">🏪 ${car.details.sell_type.charAt(0).toUpperCase() + car.details.sell_type.slice(1)}</div>
                 </div>` : ''}
               </div>
@@ -833,27 +928,27 @@ const CarDetails = memo(() => {
           ${car.details?.options ? `
           <div class="section">
             <div class="section-header">
-              ⚙️ Equipment & Options
+              ⚙️ Pajisjet & Opsionet
             </div>
             <div class="section-content">
               ${car.details.options.standard?.length ? `
               <div class="info-item">
-                <div class="info-label">Standard Equipment</div>
+                <div class="info-label">Pajisjet Standarde</div>
                 <div class="options-grid">
                   ${car.details.options.standard.slice(0, 5).map(option => `<span class="badge badge-info">${option}</span>`).join('')}
-                  ${car.details.options.standard.length > 5 ? `<span class="badge badge-outline">+${car.details.options.standard.length - 5} more</span>` : ''}
+                  ${car.details.options.standard.length > 5 ? `<span class="badge badge-outline">+${car.details.options.standard.length - 5} më shumë</span>` : ''}
                 </div>
               </div>` : ''}
               ${car.details.options.choice?.length ? `
               <div class="info-item">
-                <div class="info-label">Optional Equipment</div>
+                <div class="info-label">Pajisjet Opsionale</div>
                 <div class="options-grid">
                   ${car.details.options.choice.map(option => `<span class="badge badge-success">${option}</span>`).join('')}
                 </div>
               </div>` : ''}
               ${car.details.options.tuning?.length ? `
               <div class="info-item">
-                <div class="info-label">Tuning Modifications</div>
+                <div class="info-label">Modifikimet</div>
                 <div class="options-grid">
                   ${car.details.options.tuning.map(option => `<span class="badge badge-warning">${option}</span>`).join('')}
                 </div>
@@ -864,11 +959,11 @@ const CarDetails = memo(() => {
           ${car.details?.inspect_outer?.length ? `
           <div class="section">
             <div class="section-header">
-              🔍 Detailed Inspection Report
+              🔍 Raporti i Detajuar i Inspektimit
             </div>
             <div class="section-content">
               <div class="car-diagram">
-                <h4 style="text-align: center; margin-bottom: 15px; color: hsl(215.4, 16.3%, 46.9%);">Vehicle Inspection Overview</h4>
+                <h4 style="text-align: center; margin-bottom: 20px; color: hsl(215.4, 16.3%, 46.9%); font-size: 1.25rem; font-weight: 600;">Përshkrimi i Inspektimit të Mjetit</h4>
                 <div class="legend">
                   <div class="legend-item">
                     <div class="legend-color" style="background: hsl(142.1, 76.2%, 36.3%);"></div>
@@ -876,11 +971,11 @@ const CarDetails = memo(() => {
                   </div>
                   <div class="legend-item">
                     <div class="legend-color" style="background: hsl(47.9, 95.8%, 53.1%);"></div>
-                    <span>Repair/Welding</span>
+                    <span>Riparim/Saldim</span>
                   </div>
                   <div class="legend-item">
                     <div class="legend-color" style="background: hsl(0, 84.2%, 60.2%);"></div>
-                    <span>Exchange/Replace</span>
+                    <span>Këmbim/Zëvendësim</span>
                   </div>
                 </div>
               </div>
@@ -899,47 +994,46 @@ const CarDetails = memo(() => {
             </div>
           </div>` : ''}
 
-
           <div class="section">
             <div class="section-header">
-              📋 Source Information
+              📋 Informacionet e Burimit
             </div>
             <div class="section-content">
               <div class="info-grid">
                 ${car.lot ? `
                 <div class="info-item">
-                  <div class="info-label">Lot Number</div>
+                  <div class="info-label">Numri i Lot-it</div>
                   <div class="info-value">🏷️ ${car.lot}</div>
                 </div>` : ''}
                 ${car.vin ? `
                 <div class="info-item">
-                  <div class="info-label">VIN Number</div>
+                  <div class="info-label">Numri VIN</div>
                   <div class="info-value">🔍 ${car.vin}</div>
                 </div>` : ''}
                 ${car.seller ? `
                 <div class="info-item">
-                  <div class="info-label">Seller</div>
+                  <div class="info-label">Shitësi</div>
                   <div class="info-value">🏪 ${car.seller}</div>
                 </div>` : ''}
                 ${car.sale_date ? `
                 <div class="info-item">
-                  <div class="info-label">Sale Date</div>
-                  <div class="info-value">📅 ${new Date(car.sale_date).toLocaleDateString()}</div>
+                  <div class="info-label">Data e Shitjes</div>
+                  <div class="info-value">📅 ${new Date(car.sale_date).toLocaleDateString('sq-AL')}</div>
                 </div>` : ''}
               </div>
             </div>
           </div>
 
           <div class="contact-info">
-            <h3 style="margin-bottom: 15px; font-size: 1.5rem;">📞 Contact KORAUTO</h3>
-            <div class="info-grid" style="gap: 20px;">
+            <h3 style="margin-bottom: 20px; font-size: 1.75rem; font-weight: 800;">📞 Kontaktoni KORAUTO</h3>
+            <div class="info-grid" style="gap: 24px;">
               <div>
-                <div style="font-weight: 600; margin-bottom: 5px;">WhatsApp</div>
-                <div style="font-size: 1.2rem;">+383 48 181 116</div>
+                <div style="font-weight: 700; margin-bottom: 8px; font-size: 1.125rem;">WhatsApp</div>
+                <div style="font-size: 1.5rem; font-weight: 600;">+383 48 181 116</div>
               </div>
               <div>
-                <div style="font-weight: 600; margin-bottom: 5px;">Service</div>
-                <div>Professional Import Service</div>
+                <div style="font-weight: 700; margin-bottom: 8px; font-size: 1.125rem;">Shërbimi</div>
+                <div style="font-size: 1.125rem;">Shërbim Profesional Importi</div>
               </div>
             </div>
           </div>
@@ -1000,8 +1094,8 @@ const CarDetails = memo(() => {
           </Button>
           <div className="text-center py-12">
             <AlertTriangle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-foreground mb-2">Car Not Found</h1>
-            <p className="text-muted-foreground">The car you're looking for could not be found.</p>
+            <h1 className="text-2xl font-bold text-foreground mb-2">Makina Nuk u Gjet</h1>
+            <p className="text-muted-foreground">Makina që po kërkoni nuk mund të gjindet në bazën tonë të të dhënave.</p>
           </div>
         </div>
       </div>
