@@ -1703,16 +1703,12 @@ const CarDetails = memo(() => {
                    </h3>
                    <Button
                      variant="outline"
-                     onClick={() => {
-                       const detailsWindow = window.open('', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
-                       if (detailsWindow) {
-                         detailsWindow.document.write(generateDetailedInfoHTML(car));
-                         detailsWindow.document.title = `${car.year} ${car.make} ${car.model} - Informacione të Detajuara`;
-                       }
-                     }}
+                      onClick={() => {
+                        setShowDetailedInfo(!showDetailedInfo);
+                      }}
                      className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto"
                    >
-                     Shiko Detajet
+                     {showDetailedInfo ? 'Fshih Detajet' : 'Shiko Detajet'}
                    </Button>
                 </div>
 
