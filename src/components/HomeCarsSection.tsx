@@ -71,9 +71,10 @@ const HomeCarsSection = memo(() => {
 
   useEffect(() => {
     // Load initial data
+    console.log('HomeCarsSection: Component mounted, loading initial data');
     fetchCars(1, {}, true);
     fetchManufacturers().then(setManufacturers);
-  }, []);
+  }, [fetchCars, fetchManufacturers]);
 
   const handleFiltersChange = (newFilters: APIFilters) => {
     setFilters(newFilters);
