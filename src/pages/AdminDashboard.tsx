@@ -44,8 +44,6 @@ interface InspectionRequest {
   status: string;
   created_at: string;
   updated_at: string;
-  archived: boolean;
-  archived_at?: string;
 }
 
 interface CarData {
@@ -78,8 +76,6 @@ interface AdminStats {
 
 const AdminDashboard = () => {
   const [requests, setRequests] = useState<InspectionRequest[]>([]);
-  const [archivedRequests, setArchivedRequests] = useState<InspectionRequest[]>([]);
-  const [showArchived, setShowArchived] = useState(false);
   const [carDetails, setCarDetails] = useState<{ [key: string]: CarData }>({});
   const [searchingCars, setSearchingCars] = useState<{
     [key: string]: boolean;
@@ -234,15 +230,10 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Auto-archive completed requests first
-      await autoArchiveCompletedRequests();
-
-      // Fetch active inspection requests (non-archived and non-completed)
+      // Fetch inspection requests with real data
       const { data: requestsData, error: requestsError } = await supabase
         .from("inspection_requests")
         .select("*")
-        .eq("archived", false)
-        .neq("status", "completed")
         .order("created_at", { ascending: false });
 
       if (requestsError) throw requestsError;
@@ -479,27 +470,19 @@ const AdminDashboard = () => {
 
   const updateRequestStatus = async (requestId: string, newStatus: string) => {
     try {
-      // If status is being changed to "completed", also archive the request
-      const updateData: any = {
-        status: newStatus,
-        updated_at: new Date().toISOString(),
-      };
-
-      if (newStatus === "completed") {
-        updateData.archived = true;
-        updateData.archived_at = new Date().toISOString();
-      }
-
       const { error } = await supabase
         .from("inspection_requests")
-        .update(updateData)
+        .update({
+          status: newStatus,
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", requestId);
 
       if (error) throw error;
 
       toast({
         title: "Status Updated",
-        description: `Request status changed to ${newStatus}${newStatus === "completed" ? " and archived" : ""}`,
+        description: `Request status changed to ${newStatus}`,
       });
 
       // Refresh data
@@ -508,78 +491,6 @@ const AdminDashboard = () => {
       toast({
         title: "Error",
         description: "Failed to update request status",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const autoArchiveCompletedRequests = async () => {
-    try {
-      // Auto-archive completed requests
-      await supabase
-        .from("inspection_requests")
-        .update({
-          archived: true,
-          archived_at: new Date().toISOString(),
-        })
-        .eq("status", "completed")
-        .eq("archived", false);
-    } catch (error) {
-      console.error("Error auto-archiving completed requests:", error);
-    }
-  };
-
-  const fetchArchivedRequests = async () => {
-    try {
-      const { data: archivedData, error } = await supabase
-        .from("inspection_requests")
-        .select("*")
-        .eq("archived", true)
-        .eq("status", "completed")
-        .order("archived_at", { ascending: false });
-
-      if (error) throw error;
-      setArchivedRequests(archivedData || []);
-
-      // Fetch car details for archived requests
-      const carIds = archivedData?.map((r) => r.car_id).filter(Boolean) || [];
-      if (carIds.length > 0) {
-        await fetchCarDetails(carIds);
-      }
-    } catch (error) {
-      console.error("Error fetching archived requests:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load archived requests",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const archiveCompletedRequests = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("inspection_requests")
-        .update({
-          archived: true,
-          archived_at: new Date().toISOString(),
-        })
-        .eq("status", "completed")
-        .eq("archived", false);
-
-      if (error) throw error;
-
-      toast({
-        title: "Requests Archived",
-        description: "All completed inspection requests have been archived successfully",
-      });
-
-      // Refresh data to remove archived requests from view
-      fetchData();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to archive completed requests",
         variant: "destructive",
       });
     }
@@ -1088,158 +999,111 @@ const AdminDashboard = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="inspections" className="space-y-4">
-            {/* Stats Cards - Properly aligned */}
-            <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
-              <Card className="p-4">
+          <TabsContent value="inspections" className="space-y-3 sm:space-y-4">
+            <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-3 mb-4">
+              <Card className="p-3">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Pending</CardTitle>
-                  <Clock className="h-4 w-4 text-yellow-500" />
+                  <CardTitle className="text-xs sm:text-sm font-medium">Pending</CardTitle>
+                  <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-500" />
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="text-2xl font-bold">
+                  <div className="text-lg sm:text-xl font-bold">
                     {stats.pendingRequests}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Awaiting inspection
-                  </p>
                 </CardContent>
               </Card>
 
-              <Card className="p-4">
+              <Card className="p-3">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
+                  <CardTitle className="text-xs sm:text-sm font-medium">
                     Completed
                   </CardTitle>
-                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="text-2xl font-bold">
+                  <div className="text-lg sm:text-xl font-bold">
                     {stats.completedRequests}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Inspections done
-                  </p>
                 </CardContent>
               </Card>
 
-              <Card className="p-4">
+              <Card className="p-3">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
+                  <CardTitle className="text-xs sm:text-sm font-medium">
                     This Week
                   </CardTitle>
-                  <Calendar className="h-4 w-4 text-blue-500" />
+                  <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="text-2xl font-bold">
+                  <div className="text-lg sm:text-xl font-bold">
                     {stats.requestsThisWeek}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    New requests
-                  </p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Archive Controls - Better aligned */}
-            <Card className="p-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div className="flex-1">
-                  <h3 className="font-medium text-base">Archive Management</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {showArchived 
-                      ? "Viewing archived completed requests" 
-                      : "Completed requests are automatically archived"}
-                  </p>
-                </div>
-                <Button
-                  onClick={() => {
-                    if (showArchived) {
-                      setShowArchived(false);
-                    } else {
-                      setShowArchived(true);
-                      fetchArchivedRequests();
-                    }
-                  }}
-                  variant={showArchived ? "default" : "outline"}
-                  size="sm"
-                  className="shrink-0"
-                  disabled={loading}
-                >
-                  <Database className="h-4 w-4 mr-2" />
-                  {showArchived ? "Show Active" : "Show Archived"}
-                </Button>
-              </div>
-            </Card>
-
-            {/* Inspection Requests Table - Better layout */}
-            <Card className="p-6">
-              <CardHeader className="p-0 pb-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div className="flex-1">
-                    <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                      <Database className="h-5 w-5" />
-                      {showArchived ? "Archived" : "Active"} Inspection Requests
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {showArchived 
-                        ? "View all completed and archived inspection requests"
-                        : "Manage active customer inspection requests (completed requests are auto-archived)"
-                      }
-                    </p>
-                  </div>
-                  <Badge variant="secondary" className="text-sm shrink-0">
-                    {showArchived ? archivedRequests.length : requests.length} {showArchived ? "archived" : "active"}
+            {/* Modern Inspection Requests Layout */}
+            <Card className="p-4 sm:p-6">
+              <CardHeader className="p-0 pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-semibold">
+                    <Database className="h-5 w-5" />
+                    Inspection Requests
+                  </CardTitle>
+                  <Badge variant="secondary" className="text-xs">
+                    {requests.length} records
                   </Badge>
                 </div>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                  Manage all customer inspection requests
+                </p>
               </CardHeader>
               <CardContent className="p-0">
-                {/* Desktop Table View - Better spacing */}
+                {/* Desktop Table View */}
                 <div className="hidden lg:block">
-                  <div className="rounded-lg border border-border overflow-hidden">
-                    <table className="w-full border-collapse">
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse border border-border text-sm">
                       <thead>
-                        <tr className="bg-muted/50 border-b border-border">
-                          <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Customer</th>
-                          <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Contact</th>
-                          <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Car Details</th>
-                          <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Status</th>
-                          <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Date</th>
-                          <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Actions</th>
+                        <tr className="bg-muted/50">
+                          <th className="border border-border px-3 py-2 text-left text-xs font-medium">Customer</th>
+                          <th className="border border-border px-3 py-2 text-left text-xs font-medium">Contact</th>
+                          <th className="border border-border px-3 py-2 text-left text-xs font-medium">Car Details</th>
+                          <th className="border border-border px-3 py-2 text-left text-xs font-medium">Status</th>
+                          <th className="border border-border px-3 py-2 text-left text-xs font-medium">Date</th>
+                          <th className="border border-border px-3 py-2 text-left text-xs font-medium">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {(showArchived ? archivedRequests : requests).map((request) => (
-                          <tr key={request.id} className="border-b border-border hover:bg-muted/30 transition-colors">
-                            <td className="px-4 py-4">
-                              <div className="flex flex-col">
+                        {requests.map((request) => (
+                          <tr key={request.id} className="hover:bg-muted/30 transition-colors">
+                            <td className="border border-border px-3 py-2">
+                              <div>
                                 <div className="font-medium text-foreground">{request.customer_name}</div>
-                                <div className="text-sm text-muted-foreground truncate">{request.customer_email}</div>
+                                <div className="text-xs text-muted-foreground truncate">{request.customer_email}</div>
                               </div>
                             </td>
-                            <td className="px-4 py-4">
+                            <td className="border border-border px-3 py-2">
                               <a
                                 href={`https://wa.me/${request.customer_phone.replace(/[^0-9]/g, "")}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 text-green-600 hover:text-green-700 font-medium transition-colors"
+                                className="text-green-600 hover:text-green-700 text-sm font-medium"
                               >
-                                <Phone className="h-4 w-4" />
                                 {request.customer_phone}
                               </a>
                             </td>
-                            <td className="px-4 py-4">
+                            <td className="border border-border px-3 py-2">
                               {request.car_id && carDetails[request.car_id] ? (
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2">
                                   {carDetails[request.car_id].image && (
                                     <img
                                       src={carDetails[request.car_id].image}
                                       alt="Car"
-                                      className="w-12 h-9 object-cover rounded-md"
+                                      className="w-10 h-8 object-cover rounded"
                                     />
                                   )}
-                                  <div className="flex flex-col">
-                                    <div className="font-medium text-sm">
+                                  <div>
+                                    <div className="text-sm font-medium">
                                       {carDetails[request.car_id].year} {carDetails[request.car_id].make} {carDetails[request.car_id].model}
                                     </div>
                                     <div className="text-xs text-muted-foreground">ID: {request.car_id}</div>
@@ -1251,37 +1115,24 @@ const AdminDashboard = () => {
                                 <div className="text-sm text-muted-foreground">General request</div>
                               )}
                             </td>
-                            <td className="px-4 py-4">
-                              {!showArchived ? (
-                                <select
-                                  value={request.status}
-                                  onChange={(e) => updateRequestStatus(request.id, e.target.value)}
-                                  className="px-3 py-2 border border-border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                >
-                                  <option value="pending">Pending</option>
-                                  <option value="in_progress">In Progress</option>
-                                  <option value="completed">Completed</option>
-                                  <option value="cancelled">Cancelled</option>
-                                </select>
-                              ) : (
-                                <Badge className="bg-green-100 text-green-800">
-                                  Completed
-                                </Badge>
-                              )}
+                            <td className="border border-border px-3 py-2">
+                              <select
+                                value={request.status}
+                                onChange={(e) => updateRequestStatus(request.id, e.target.value)}
+                                className="text-xs border border-border rounded px-2 py-1 bg-background"
+                              >
+                                <option value="pending">Pending</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                              </select>
                             </td>
-                            <td className="px-4 py-4">
-                              <div className="flex flex-col gap-1">
-                                <div className="text-sm font-medium">{new Date(request.created_at).toLocaleDateString()}</div>
-                                <div className="text-xs text-muted-foreground">{new Date(request.created_at).toLocaleTimeString()}</div>
-                                {showArchived && request.archived_at && (
-                                  <div className="text-xs text-muted-foreground">
-                                    Archived: {new Date(request.archived_at).toLocaleDateString()}
-                                  </div>
-                                )}
-                              </div>
+                            <td className="border border-border px-3 py-2">
+                              <div className="text-sm">{new Date(request.created_at).toLocaleDateString()}</div>
+                              <div className="text-xs text-muted-foreground">{new Date(request.created_at).toLocaleTimeString()}</div>
                             </td>
-                            <td className="px-4 py-4">
-                              <div className="flex items-center gap-2">
+                            <td className="border border-border px-3 py-2">
+                              <div className="flex gap-1">
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -1298,29 +1149,16 @@ const AdminDashboard = () => {
                                 >
                                   <Phone className="h-3 w-3" />
                                 </Button>
-                                {request.car_id ? (
+                                {request.car_id && carDetails[request.car_id] && (
                                   <Button
                                     size="sm"
                                     variant="default"
-                                    onClick={() => {
-                                      if (carDetails[request.car_id]) {
-                                        window.open(`/car/${carDetails[request.car_id]?.lot_number || request.car_id}`, "_blank");
-                                      } else {
-                                        findCarByLotNumber(request.id, request.car_id);
-                                      }
-                                    }}
+                                    onClick={() => window.open(`/car/${carDetails[request.car_id]?.lot_number || request.car_id}`, "_blank")}
                                     className="h-7 px-2 text-xs"
-                                    disabled={searchingCars[request.id]}
                                   >
-                                    {searchingCars[request.id] ? (
-                                      <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-                                    ) : (
-                                      <Car className="h-3 w-3 mr-1" />
-                                    )}
-                                    {carDetails[request.car_id] ? "View" : "Find"}
+                                    <Car className="h-3 w-3 mr-1" />
+                                    View
                                   </Button>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground">No car ID</span>
                                 )}
                               </div>
                             </td>
@@ -1333,7 +1171,7 @@ const AdminDashboard = () => {
 
                 {/* Mobile Card View */}
                 <div className="lg:hidden space-y-3">
-                  {(showArchived ? archivedRequests : requests).map((request) => {
+                  {requests.map((request) => {
                     const car = request.car_id ? carDetails[request.car_id] : null;
                     return (
                       <div
@@ -1365,22 +1203,16 @@ const AdminDashboard = () => {
                                   {request.customer_email}
                                 </p>
                               </div>
-                              {!showArchived ? (
-                                <select
-                                  value={request.status}
-                                  onChange={(e) => updateRequestStatus(request.id, e.target.value)}
-                                  className={`text-xs border border-border rounded px-2 py-1 bg-background ${getStatusColor(request.status)}`}
-                                >
-                                  <option value="pending">Pending</option>
-                                  <option value="in_progress">In Progress</option>
-                                  <option value="completed">Completed</option>
-                                  <option value="cancelled">Cancelled</option>
-                                </select>
-                              ) : (
-                                <Badge className="bg-green-100 text-green-800 text-xs">
-                                  Completed
-                                </Badge>
-                              )}
+                              <select
+                                value={request.status}
+                                onChange={(e) => updateRequestStatus(request.id, e.target.value)}
+                                className={`text-xs border border-border rounded px-2 py-1 bg-background ${getStatusColor(request.status)}`}
+                              >
+                                <option value="pending">Pending</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                              </select>
                             </div>
 
                             {/* Car Info */}
@@ -1407,14 +1239,7 @@ const AdminDashboard = () => {
 
                             {/* Footer */}
                             <div className="flex items-center justify-between text-xs text-muted-foreground">
-                              <div>
-                                <span>{formatDate(request.created_at)}</span>
-                                {showArchived && request.archived_at && (
-                                  <div className="text-[10px] text-muted-foreground/70 mt-1">
-                                    Archived: {new Date(request.archived_at).toLocaleDateString()}
-                                  </div>
-                                )}
-                              </div>
+                              <span>{formatDate(request.created_at)}</span>
                               <div className="flex items-center gap-2">
                                 <Button
                                   size="sm"
@@ -1424,29 +1249,16 @@ const AdminDashboard = () => {
                                 >
                                   <Mail className="h-3 w-3" />
                                 </Button>
-                                {request.car_id ? (
+                                {car && (
                                   <Button
                                     size="sm"
                                     variant="default"
-                                    onClick={() => {
-                                      if (car) {
-                                        window.open(`/car/${car.lot_number || request.car_id}`, "_blank");
-                                      } else {
-                                        findCarByLotNumber(request.id, request.car_id);
-                                      }
-                                    }}
+                                    onClick={() => window.open(`/car/${car.lot_number || request.car_id}`, "_blank")}
                                     className="h-6 px-2 text-xs"
-                                    disabled={searchingCars[request.id]}
                                   >
-                                    {searchingCars[request.id] ? (
-                                      <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-                                    ) : (
-                                      <Car className="h-3 w-3 mr-1" />
-                                    )}
-                                    {car ? "View" : "Find"}
+                                    <Car className="h-3 w-3 mr-1" />
+                                    View
                                   </Button>
-                                ) : (
-                                  <span className="text-[10px] text-muted-foreground">No car ID</span>
                                 )}
                               </div>
                             </div>
@@ -1460,23 +1272,11 @@ const AdminDashboard = () => {
                   })}
                 </div>
 
-                {(showArchived ? archivedRequests : requests).length === 0 && (
+                {requests.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
                     <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <h3 className="text-lg font-medium mb-2">
-                      {showArchived ? "No archived requests" : "No active inspection requests"}
-                    </h3>
-                    <p className="text-sm">
-                      {showArchived 
-                        ? "No completed requests have been archived yet"
-                        : "All inspection requests are either completed (and auto-archived) or none exist yet"
-                      }
-                    </p>
-                    {!showArchived && (
-                      <p className="text-xs mt-2 text-muted-foreground/70">
-                        Completed requests are automatically moved to archive
-                      </p>
-                    )}
+                    <h3 className="text-lg font-medium mb-2">No inspection requests</h3>
+                    <p className="text-sm">No inspection requests found in the database</p>
                   </div>
                 )}
               </CardContent>

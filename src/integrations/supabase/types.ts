@@ -135,8 +135,6 @@ export type Database = {
       }
       inspection_requests: {
         Row: {
-          archived: boolean
-          archived_at: string | null
           car_id: string | null
           created_at: string
           customer_email: string
@@ -148,8 +146,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          archived?: boolean
-          archived_at?: string | null
           car_id?: string | null
           created_at?: string
           customer_email: string
@@ -161,8 +157,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          archived?: boolean
-          archived_at?: string | null
           car_id?: string | null
           created_at?: string
           customer_email?: string
