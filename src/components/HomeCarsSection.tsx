@@ -18,6 +18,25 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowUpDown } from "lucide-react";
+import FilterForm from "@/components/FilterForm";
+
+interface APIFilters {
+  manufacturer_id?: string;
+  model_id?: string;
+  generation_id?: string;
+  color?: string;
+  fuel_type?: string;
+  transmission?: string;
+  odometer_from_km?: string;
+  odometer_to_km?: string;
+  from_year?: string;
+  to_year?: string;
+  buy_now_price_from?: string;
+  buy_now_price_to?: string;
+  search?: string;
+  seats_count?: string;
+  per_page?: string;
+}
 
 const HomeCarsSection = memo(() => {
   const navigate = useNavigate();
@@ -34,7 +53,158 @@ const HomeCarsSection = memo(() => {
   const { convertUSDtoEUR } = useCurrencyAPI();
   const [sortBy, setSortBy] = useState<SortOption>("popular");
   const [showAllCars, setShowAllCars] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
 
+  const [filters, setFilters] = useState<APIFilters>({});
+  const [manufacturers, setManufacturers] = useState<
+    {
+      id: number;
+      name: string;
+      car_count?: number;
+      cars_qty?: number;
+    }[]
+  >([]);
+  const [models, setModels] = useState<
+    {
+      id: number;
+      name: string;
+      car_count?: number;
+      cars_qty?: number;
+    }[]
+  >([]);
+  const [generations, setGenerations] = useState<
+    {
+      id: number;
+      name: string;
+      manufacturer_id?: number;
+      model_id?: number;
+      from_year?: number;
+      to_year?: number;
+      cars_qty?: number;
+    }[]
+  >([]);
+  const [filterCounts, setFilterCounts] = useState<any>(null);
+
+  // Frontend filtering function
+  const applyFrontendFilters = (cars: any[], filters: APIFilters) => {
+    return cars.filter((car) => {
+      // Manufacturer filter
+      if (
+        filters.manufacturer_id &&
+        car.manufacturer?.id !== parseInt(filters.manufacturer_id)
+      ) {
+        return false;
+      }
+
+      // Model filter
+      if (filters.model_id && car.model?.id !== parseInt(filters.model_id)) {
+        return false;
+      }
+
+      // Generation filter
+      if (
+        filters.generation_id &&
+        car.generation?.id !== parseInt(filters.generation_id)
+      ) {
+        return false;
+      }
+
+      // Color filter
+      if (
+        filters.color &&
+        car.color?.name?.toLowerCase() !== filters.color.toLowerCase()
+      ) {
+        return false;
+      }
+
+      // Fuel type filter
+      if (
+        filters.fuel_type &&
+        car.fuel?.name?.toLowerCase() !== filters.fuel_type.toLowerCase()
+      ) {
+        return false;
+      }
+
+      // Transmission filter
+      if (
+        filters.transmission &&
+        car.transmission?.name?.toLowerCase() !==
+          filters.transmission.toLowerCase()
+      ) {
+        return false;
+      }
+
+      // Year range filters
+      if (filters.from_year && car.year < parseInt(filters.from_year)) {
+        return false;
+      }
+      if (filters.to_year && car.year > parseInt(filters.to_year)) {
+        return false;
+      }
+
+      // Price filter (using lot buy_now price)
+      const carPrice = car.lots?.[0]?.buy_now;
+      if (
+        filters.buy_now_price_from &&
+        carPrice &&
+        carPrice < parseInt(filters.buy_now_price_from)
+      ) {
+        return false;
+      }
+      if (
+        filters.buy_now_price_to &&
+        carPrice &&
+        carPrice > parseInt(filters.buy_now_price_to)
+      ) {
+        return false;
+      }
+
+      // Mileage filter
+      const carMileage = car.lots?.[0]?.odometer?.km;
+      if (
+        filters.odometer_from_km &&
+        carMileage &&
+        carMileage < parseInt(filters.odometer_from_km)
+      ) {
+        return false;
+      }
+      if (
+        filters.odometer_to_km &&
+        carMileage &&
+        carMileage > parseInt(filters.odometer_to_km)
+      ) {
+        return false;
+      }
+
+      // Search filter (search in make, model, title, VIN)
+      if (filters.search && filters.search.trim()) {
+        const searchTerm = filters.search.toLowerCase();
+        const searchFields = [
+          car.manufacturer?.name,
+          car.model?.name,
+          car.title,
+          car.vin,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        if (!searchFields.includes(searchTerm)) {
+          return false;
+        }
+      }
+
+      // Seats count filter
+      if (
+        filters.seats_count &&
+        car.details?.seats_count !== parseInt(filters.seats_count)
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+  };
 
   // Type conversion to match the sorting hook interface
   const carsForSorting = cars.map((car) => ({
@@ -44,13 +214,24 @@ const HomeCarsSection = memo(() => {
     cylinders: Number(car.cylinders || 0),
   }));
 
-  // Use normal sorting on cars
-  const sortedCars = useSortedCars(carsForSorting, sortBy);
+  // Check if any filters are applied
+  const hasActiveFilters =
+    Object.keys(filters).length > 0 &&
+    Object.values(filters).some((value) => value && value !== "");
 
-  // Show 50 cars (daily rotation)
+  // Apply frontend filters to the cars
+  const filteredCars = hasActiveFilters
+    ? applyFrontendFilters(carsForSorting, filters)
+    : carsForSorting;
+
+  // Use normal sorting on filtered cars
+  const sortedCars = useSortedCars(filteredCars, sortBy);
+
+  // Show all cars when filters are applied, or 50 when no filters (daily rotation)
+  const defaultDisplayCount = hasActiveFilters ? sortedCars.length : 50;
   const displayedCars = showAllCars
     ? sortedCars
-    : sortedCars.slice(0, 50);
+    : sortedCars.slice(0, defaultDisplayCount);
 
   useEffect(() => {
     // Calculate daily page based on day of month (1-31)
@@ -60,45 +241,83 @@ const HomeCarsSection = memo(() => {
 
     // Load initial data with 50 cars from daily page
     fetchCars(dailyPage, { per_page: "50" }, true);
+    fetchManufacturers().then(setManufacturers);
   }, []);
 
+  const handleFiltersChange = (newFilters: APIFilters) => {
+    // Frontend-only filters - no API calls needed
+    setFilters(newFilters);
+  };
+
+  const handleClearFilters = () => {
+    // Frontend-only filter clearing - no API calls needed
+    setFilters({});
+  };
 
   return (
-    <section id="cars" className="py-3 sm:py-4 lg:py-6 bg-secondary/30">
+    <section id="cars" className="py-4 sm:py-6 lg:py-8 bg-secondary/30">
       <div className="container-responsive">
-        <div className="text-center mb-3 sm:mb-4">
-          <div className="flex justify-center mb-3">
-            <Button 
-              size="lg" 
-              className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2.5 text-base" 
-              onClick={() => window.location.href = '/catalog'}
-            >
-              Kërko makinën tënde
-            </Button>
-          </div>
-          
-          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2 sm:mb-3 text-foreground">
+        <div className="text-center mb-4 sm:mb-6">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground">
             Makinat e Disponueshme
           </h2>
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium mb-2">
-            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-            Zgjedhja e Ditës - {new Date().getDate()}{" "}
-            {new Date().toLocaleDateString("sq-AL", { month: "long" })}
+          {!hasActiveFilters && (
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium mb-2">
+              <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+              Zgjedhja e Ditës - {new Date().getDate()}{" "}
+              {new Date().toLocaleDateString("sq-AL", { month: "long" })}
+            </div>
+          )}
+
+          <div className="flex justify-center mt-4 sm:mt-6">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFilters(!showFilters)}
+              className="w-full sm:w-auto border-primary text-primary hover:bg-primary hover:text-primary-foreground min-h-[44px]"
+            >
+              {showFilters ? "Fshih Filtrat" : "Shfaq Filtrat"}
+            </Button>
           </div>
         </div>
 
         {error && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-center gap-2 mb-4 sm:mb-6 p-3 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg mx-2 sm:mx-0">
-            <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5 sm:mt-0" />
-            <span className="text-yellow-800 dark:text-yellow-200 text-sm text-left sm:text-center">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-center gap-2 mb-6 sm:mb-8 p-4 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg mx-2 sm:mx-0">
+            <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5 sm:mt-0" />
+            <span className="text-yellow-800 dark:text-yellow-200 text-sm sm:text-base text-left sm:text-center">
               Problem me lidhjen API: {error}
             </span>
           </div>
         )}
 
+        {/* Filter Form */}
+        {showFilters && (
+          <div className="mb-6 sm:mb-8">
+            <FilterForm
+              filters={filters}
+              manufacturers={manufacturers}
+              models={models}
+              generations={generations}
+              filterCounts={filterCounts}
+              onFiltersChange={handleFiltersChange}
+              onClearFilters={handleClearFilters}
+              onManufacturerChange={(manufacturerId) => {
+                if (manufacturerId) {
+                  fetchModels(manufacturerId).then(setModels);
+                  setGenerations([]);
+                }
+              }}
+              onModelChange={(modelId) => {
+                if (modelId) {
+                  fetchGenerations(modelId).then(setGenerations);
+                }
+              }}
+            />
+          </div>
+        )}
 
         {/* Sort Control */}
-        <div className="mb-4 sm:mb-5 mx-2 sm:mx-0">
+        <div className="mb-6 sm:mb-8 mx-2 sm:mx-0">
           <div className="flex justify-end">
             <Select
               value={sortBy}
@@ -121,7 +340,7 @@ const HomeCarsSection = memo(() => {
 
         {/* Car Cards */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6 px-2 sm:px-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="bg-card rounded-lg p-4 animate-pulse">
                 <div className="h-48 bg-muted rounded mb-4"></div>
@@ -131,14 +350,21 @@ const HomeCarsSection = memo(() => {
             ))}
           </div>
         ) : sortedCars.length === 0 ? (
-          <div className="text-center py-6 sm:py-8 px-4">
+          <div className="text-center py-8 sm:py-12 px-4">
             <p className="text-base sm:text-lg text-muted-foreground mb-4">
-              Nuk u gjetën makina.
+              Nuk u gjetën makina me këto filtra. Provoni të ndryshoni filtrat.
             </p>
+            <Button
+              onClick={handleClearFilters}
+              variant="outline"
+              className="min-h-[44px]"
+            >
+              Hiq Filtrat
+            </Button>
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6 px-2 sm:px-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0">
               {displayedCars.map((car) => {
                 const lot = car.lots?.[0];
                 const usdPrice = lot?.buy_now || 25000;
@@ -175,13 +401,13 @@ const HomeCarsSection = memo(() => {
             </div>
 
             {/* Show More Button and Browse All Cars Button */}
-            <div className="text-center mt-6 space-y-4">
-              {sortedCars.length > 50 && !showAllCars && (
+            <div className="text-center mt-8 space-y-6">
+              {!hasActiveFilters && sortedCars.length > 50 && !showAllCars && (
                 <Button
                   onClick={() => setShowAllCars(true)}
                   variant="outline"
                   size="lg"
-                  className="bg-card border-primary text-primary hover:bg-primary hover:text-primary-foreground px-6 py-2.5"
+                  className="bg-card border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3"
                 >
                   Shiko të gjitha ({sortedCars.length} makina)
                 </Button>
@@ -190,7 +416,7 @@ const HomeCarsSection = memo(() => {
               <Button
                 onClick={() => navigate("/catalog")}
                 size="lg"
-                className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-2.5"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3"
               >
                 Shfleto të gjitha makinat
               </Button>
