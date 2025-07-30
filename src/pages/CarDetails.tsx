@@ -1913,7 +1913,12 @@ const CarDetails = memo(() => {
                                 <MapPin className="h-4 w-4 text-red-600" />
                                 <span className="text-sm font-medium">Lokacioni:</span>
                               </div>
-                              <span className="text-sm">{car.location}</span>
+                              <span className="text-sm">
+                                {typeof car.location === 'string' 
+                                  ? car.location 
+                                  : `${car.location.city || ''} ${car.location.state || ''} ${car.location.country || ''}`.trim() || 'N/A'
+                                }
+                              </span>
                             </div>
                           )}
                           {car.seller && (
