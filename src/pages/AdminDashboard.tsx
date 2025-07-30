@@ -44,6 +44,8 @@ interface InspectionRequest {
   status: string;
   created_at: string;
   updated_at: string;
+  archived: boolean;
+  archived_at?: string;
 }
 
 interface CarData {
@@ -76,6 +78,8 @@ interface AdminStats {
 
 const AdminDashboard = () => {
   const [requests, setRequests] = useState<InspectionRequest[]>([]);
+  const [archivedRequests, setArchivedRequests] = useState<InspectionRequest[]>([]);
+  const [showArchived, setShowArchived] = useState(false);
   const [carDetails, setCarDetails] = useState<{ [key: string]: CarData }>({});
   const [searchingCars, setSearchingCars] = useState<{
     [key: string]: boolean;
@@ -230,11 +234,15 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch inspection requests with real data (exclude archived by default)
+      // Auto-archive completed requests first
+      await autoArchiveCompletedRequests();
+
+      // Fetch active inspection requests (non-archived and non-completed)
       const { data: requestsData, error: requestsError } = await supabase
         .from("inspection_requests")
         .select("*")
         .eq("archived", false)
+        .neq("status", "completed")
         .order("created_at", { ascending: false });
 
       if (requestsError) throw requestsError;
@@ -492,6 +500,49 @@ const AdminDashboard = () => {
       toast({
         title: "Error",
         description: "Failed to update request status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const autoArchiveCompletedRequests = async () => {
+    try {
+      // Auto-archive completed requests
+      await supabase
+        .from("inspection_requests")
+        .update({
+          archived: true,
+          archived_at: new Date().toISOString(),
+        })
+        .eq("status", "completed")
+        .eq("archived", false);
+    } catch (error) {
+      console.error("Error auto-archiving completed requests:", error);
+    }
+  };
+
+  const fetchArchivedRequests = async () => {
+    try {
+      const { data: archivedData, error } = await supabase
+        .from("inspection_requests")
+        .select("*")
+        .eq("archived", true)
+        .eq("status", "completed")
+        .order("archived_at", { ascending: false });
+
+      if (error) throw error;
+      setArchivedRequests(archivedData || []);
+
+      // Fetch car details for archived requests
+      const carIds = archivedData?.map((r) => r.car_id).filter(Boolean) || [];
+      if (carIds.length > 0) {
+        await fetchCarDetails(carIds);
+      }
+    } catch (error) {
+      console.error("Error fetching archived requests:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load archived requests",
         variant: "destructive",
       });
     }
@@ -1048,19 +1099,30 @@ const AdminDashboard = () => {
                   <div>
                     <h3 className="font-medium text-sm sm:text-base">Archive Management</h3>
                     <p className="text-xs sm:text-sm text-muted-foreground">
-                      Archive all completed inspection requests to keep your active list clean
+                      {showArchived 
+                        ? "Viewing archived completed requests" 
+                        : "Completed requests are automatically archived"}
                     </p>
                   </div>
-                  <Button
-                    onClick={archiveCompletedRequests}
-                    variant="outline"
-                    size="sm"
-                    className="shrink-0"
-                    disabled={loading}
-                  >
-                    <Database className="h-4 w-4 mr-2" />
-                    Archive Completed
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => {
+                        if (showArchived) {
+                          setShowArchived(false);
+                        } else {
+                          setShowArchived(true);
+                          fetchArchivedRequests();
+                        }
+                      }}
+                      variant={showArchived ? "default" : "outline"}
+                      size="sm"
+                      className="shrink-0"
+                      disabled={loading}
+                    >
+                      <Database className="h-4 w-4 mr-2" />
+                      {showArchived ? "Show Active" : "Show Archived"}
+                    </Button>
+                  </div>
                 </div>
               </Card>
             </div>
@@ -1102,16 +1164,19 @@ const AdminDashboard = () => {
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-semibold">
                     <Database className="h-5 w-5" />
-                    Active Inspection Requests
+                    {showArchived ? "Archived" : "Active"} Inspection Requests
                   </CardTitle>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="text-xs">
-                      {requests.length} active
+                      {showArchived ? archivedRequests.length : requests.length} {showArchived ? "archived" : "active"}
                     </Badge>
                   </div>
                 </div>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                  Manage active customer inspection requests (archived requests are hidden)
+                  {showArchived 
+                    ? "View all completed and archived inspection requests"
+                    : "Manage active customer inspection requests (completed requests are auto-archived)"
+                  }
                 </p>
               </CardHeader>
               <CardContent className="p-0">
@@ -1130,7 +1195,7 @@ const AdminDashboard = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {requests.map((request) => (
+                        {(showArchived ? archivedRequests : requests).map((request) => (
                           <tr key={request.id} className="hover:bg-muted/30 transition-colors">
                             <td className="border border-border px-3 py-2">
                               <div>
@@ -1172,20 +1237,31 @@ const AdminDashboard = () => {
                               )}
                             </td>
                             <td className="border border-border px-3 py-2">
-                              <select
-                                value={request.status}
-                                onChange={(e) => updateRequestStatus(request.id, e.target.value)}
-                                className="text-xs border border-border rounded px-2 py-1 bg-background"
-                              >
-                                <option value="pending">Pending</option>
-                                <option value="in_progress">In Progress</option>
-                                <option value="completed">Completed</option>
-                                <option value="cancelled">Cancelled</option>
-                              </select>
+                              {!showArchived ? (
+                                <select
+                                  value={request.status}
+                                  onChange={(e) => updateRequestStatus(request.id, e.target.value)}
+                                  className="text-xs border border-border rounded px-2 py-1 bg-background"
+                                >
+                                  <option value="pending">Pending</option>
+                                  <option value="in_progress">In Progress</option>
+                                  <option value="completed">Completed</option>
+                                  <option value="cancelled">Cancelled</option>
+                                </select>
+                              ) : (
+                                <Badge className="bg-green-100 text-green-800 text-xs">
+                                  Completed
+                                </Badge>
+                              )}
                             </td>
                             <td className="border border-border px-3 py-2">
                               <div className="text-sm">{new Date(request.created_at).toLocaleDateString()}</div>
                               <div className="text-xs text-muted-foreground">{new Date(request.created_at).toLocaleTimeString()}</div>
+                              {showArchived && request.archived_at && (
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  Archived: {new Date(request.archived_at).toLocaleDateString()}
+                                </div>
+                              )}
                             </td>
                             <td className="border border-border px-3 py-2">
                               <div className="flex gap-1">
@@ -1227,7 +1303,7 @@ const AdminDashboard = () => {
 
                 {/* Mobile Card View */}
                 <div className="lg:hidden space-y-3">
-                  {requests.map((request) => {
+                  {(showArchived ? archivedRequests : requests).map((request) => {
                     const car = request.car_id ? carDetails[request.car_id] : null;
                     return (
                       <div
@@ -1259,16 +1335,22 @@ const AdminDashboard = () => {
                                   {request.customer_email}
                                 </p>
                               </div>
-                              <select
-                                value={request.status}
-                                onChange={(e) => updateRequestStatus(request.id, e.target.value)}
-                                className={`text-xs border border-border rounded px-2 py-1 bg-background ${getStatusColor(request.status)}`}
-                              >
-                                <option value="pending">Pending</option>
-                                <option value="in_progress">In Progress</option>
-                                <option value="completed">Completed</option>
-                                <option value="cancelled">Cancelled</option>
-                              </select>
+                              {!showArchived ? (
+                                <select
+                                  value={request.status}
+                                  onChange={(e) => updateRequestStatus(request.id, e.target.value)}
+                                  className={`text-xs border border-border rounded px-2 py-1 bg-background ${getStatusColor(request.status)}`}
+                                >
+                                  <option value="pending">Pending</option>
+                                  <option value="in_progress">In Progress</option>
+                                  <option value="completed">Completed</option>
+                                  <option value="cancelled">Cancelled</option>
+                                </select>
+                              ) : (
+                                <Badge className="bg-green-100 text-green-800 text-xs">
+                                  Completed
+                                </Badge>
+                              )}
                             </div>
 
                             {/* Car Info */}
@@ -1295,7 +1377,14 @@ const AdminDashboard = () => {
 
                             {/* Footer */}
                             <div className="flex items-center justify-between text-xs text-muted-foreground">
-                              <span>{formatDate(request.created_at)}</span>
+                              <div>
+                                <span>{formatDate(request.created_at)}</span>
+                                {showArchived && request.archived_at && (
+                                  <div className="text-[10px] text-muted-foreground/70 mt-1">
+                                    Archived: {new Date(request.archived_at).toLocaleDateString()}
+                                  </div>
+                                )}
+                              </div>
                               <div className="flex items-center gap-2">
                                 <Button
                                   size="sm"
@@ -1328,14 +1417,23 @@ const AdminDashboard = () => {
                   })}
                 </div>
 
-                {requests.length === 0 && (
+                {(showArchived ? archivedRequests : requests).length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
                     <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <h3 className="text-lg font-medium mb-2">No active inspection requests</h3>
-                    <p className="text-sm">All inspection requests are either completed and archived, or none exist yet</p>
-                    <p className="text-xs mt-2 text-muted-foreground/70">
-                      Completed requests are automatically hidden from this view
+                    <h3 className="text-lg font-medium mb-2">
+                      {showArchived ? "No archived requests" : "No active inspection requests"}
+                    </h3>
+                    <p className="text-sm">
+                      {showArchived 
+                        ? "No completed requests have been archived yet"
+                        : "All inspection requests are either completed (and auto-archived) or none exist yet"
+                      }
                     </p>
+                    {!showArchived && (
+                      <p className="text-xs mt-2 text-muted-foreground/70">
+                        Completed requests are automatically moved to archive
+                      </p>
+                    )}
                   </div>
                 )}
               </CardContent>
