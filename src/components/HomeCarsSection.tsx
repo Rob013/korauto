@@ -265,12 +265,12 @@ const HomeCarsSection = memo(() => {
       return;
     }
     
-    // Check if any other filters are being applied (not generation)
-    const hasNonGenerationFilters = Object.entries(newFilters).some(([key, value]) => 
-      key !== 'generation_id' && value && value !== ''
+    // Check if advanced filters are being applied (not manufacturer, model, or generation)
+    const hasAdvancedFilters = Object.entries(newFilters).some(([key, value]) => 
+      !['manufacturer_id', 'model_id', 'generation_id'].includes(key) && value && value !== ''
     );
     
-    if (hasNonGenerationFilters) {
+    if (hasAdvancedFilters) {
       // Redirect to catalog with filters as URL params
       const searchParams = new URLSearchParams();
       Object.entries(newFilters).forEach(([key, value]) => {
