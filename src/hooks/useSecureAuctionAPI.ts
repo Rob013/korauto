@@ -429,6 +429,7 @@ export const useSecureAuctionAPI = () => {
 
   const loadMore = async (filters: APIFilters = {}) => {
     if (!hasMorePages || loading) return;
+    console.log("filters",filters)
     await fetchCars(currentPage + 1, filters, false);
   };
 
