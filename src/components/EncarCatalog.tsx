@@ -285,7 +285,21 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const handleFiltersChange = (newFilters: APIFilters) => {
     setFilters(newFilters);
     setLoadedPages(1); // Reset pagination when filters change
-    fetchCars(1, newFilters, true);
+    
+    // Check if specific filters are applied (grade, model, generation)
+    const hasSpecificFilters = newFilters.grade_iaai || 
+                              (newFilters.model_id && newFilters.generation_id);
+    
+    if (hasSpecificFilters) {
+      // For specific filters, fetch all cars at once with higher page size
+      const enhancedFilters = {
+        ...newFilters,
+        per_page: "100" // Increase page size for specific searches
+      };
+      fetchCars(1, enhancedFilters, true);
+    } else {
+      fetchCars(1, newFilters, true);
+    }
 
     // Update URL with all non-empty filter values
     const nonEmpty = Object.entries(newFilters).filter(
@@ -403,18 +417,31 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       setFilters(urlFilters);
       setLoadedPages(urlLoadedPages);
 
-      // Restore multiple pages if needed
-      if (urlLoadedPages > 1) {
-        // First load page 1
-        await fetchCars(1, urlFilters, true);
-
-        // Then load additional pages
-        for (let page = 2; page <= urlLoadedPages; page++) {
-          await fetchCars(page, urlFilters, false);
-        }
+      // Check if specific filters are applied for enhanced loading
+      const hasSpecificFilters = urlFilters.grade_iaai || 
+                                (urlFilters.model_id && urlFilters.generation_id);
+      
+      if (hasSpecificFilters) {
+        // For specific filters, use higher page size
+        const enhancedFilters = {
+          ...urlFilters,
+          per_page: "100"
+        };
+        await fetchCars(1, enhancedFilters, true);
       } else {
-        // Just load page 1
-        await fetchCars(1, urlFilters, true);
+        // Restore multiple pages if needed
+        if (urlLoadedPages > 1) {
+          // First load page 1
+          await fetchCars(1, urlFilters, true);
+
+          // Then load additional pages
+          for (let page = 2; page <= urlLoadedPages; page++) {
+            await fetchCars(page, urlFilters, false);
+          }
+        } else {
+          // Just load page 1
+          await fetchCars(1, urlFilters, true);
+        }
       }
 
       setIsRestoringState(false);
