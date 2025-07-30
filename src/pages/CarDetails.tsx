@@ -1004,8 +1004,27 @@ const CarDetails = memo(() => {
                   return;
                 }
 
-                // Final fallbacks
+                // Final fallbacks - try to preserve state
                 console.log("🔙 Using fallback to catalog");
+
+                // Try to get saved scroll and filter state from sessionStorage
+                const savedScrollData = sessionStorage.getItem(
+                  "encar-catalog-scroll"
+                );
+                if (savedScrollData) {
+                  try {
+                    const { url } = JSON.parse(savedScrollData);
+                    if (url && url.includes("/catalog")) {
+                      console.log("🔙 Using saved catalog URL:", url);
+                      navigate(url);
+                      return;
+                    }
+                  } catch (error) {
+                    console.warn("Failed to parse saved scroll data:", error);
+                  }
+                }
+
+                // Last resort - clean catalog
                 navigate("/catalog");
               }}
               className="shadow-sm border-2 hover:shadow-md transition-all"

@@ -346,8 +346,21 @@ const CarCard = ({
       });
     }
   };
+
   const handleCardClick = () => {
-    // Save current page and any filter state before navigating
+    // Save current page and scroll position before navigating
+    const scrollData = {
+      scrollTop: window.scrollY,
+      timestamp: Date.now(),
+      url: window.location.pathname + window.location.search,
+    };
+    sessionStorage.setItem("encar-catalog-scroll", JSON.stringify(scrollData));
+
+    console.log(
+      `🚗 Clicked car with ID: ${id}, lot: ${lot}, saved scroll: ${window.scrollY}px`
+    );
+
+    // Save current page for back navigation
     setPreviousPage(window.location.pathname + window.location.search);
     // Navigate in same tab
     navigate(`/car/${lot}`);

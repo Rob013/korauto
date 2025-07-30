@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -116,21 +116,62 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [filterCounts, setFilterCounts] = useState<any>(null);
   const [loadingCounts, setLoadingCounts] = useState(false);
   const [highlightedCarId, setHighlightedCarId] = useState<string | null>(null);
+  const [loadedPages, setLoadedPages] = useState(1);
+  const [isRestoringState, setIsRestoringState] = useState(false);
+
+  // Ref for the main container to handle scroll restoration
+  const containerRef = useRef<HTMLDivElement>(null);
+  const SCROLL_STORAGE_KEY = "encar-catalog-scroll";
+
+  // Save current scroll position
+  const saveScrollPosition = () => {
+    if (containerRef.current) {
+      const scrollData = {
+        scrollTop: window.scrollY,
+        timestamp: Date.now(),
+        filters: filters,
+        loadedPages: loadedPages,
+      };
+      sessionStorage.setItem(SCROLL_STORAGE_KEY, JSON.stringify(scrollData));
+    }
+  };
+
+  // Restore scroll position
+  const restoreScrollPosition = () => {
+    const savedData = sessionStorage.getItem(SCROLL_STORAGE_KEY);
+    if (savedData) {
+      try {
+        const { scrollTop } = JSON.parse(savedData);
+        // Smooth scroll to saved position
+        window.scrollTo({
+          top: scrollTop,
+          behavior: "smooth",
+        });
+        console.log(`📍 Restored scroll position to ${scrollTop}px`);
+      } catch (error) {
+        console.error("Failed to restore scroll position:", error);
+      }
+    }
+  };
 
   const handleFiltersChange = (newFilters: APIFilters) => {
     setFilters(newFilters);
+    setLoadedPages(1); // Reset pagination when filters change
     fetchCars(1, newFilters, true);
 
     // Update URL with all non-empty filter values
     const nonEmpty = Object.entries(newFilters).filter(
       ([_, v]) => v !== undefined && v !== "" && v !== null
     );
+    // Add pagination state to URL
+    nonEmpty.push(["loadedPages", "1"]);
     setSearchParams(Object.fromEntries(nonEmpty));
   };
 
   const handleClearFilters = () => {
     setFilters({});
     setSearchTerm("");
+    setLoadedPages(1);
     setModels([]);
     setGenerations([]);
     fetchCars(1, {}, true);
@@ -147,6 +188,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
   const handleLoadMore = () => {
     loadMore();
+    const newLoadedPages = loadedPages + 1;
+    setLoadedPages(newLoadedPages);
+
+    // Update URL with new pagination state
+    const currentParams = Object.fromEntries(searchParams.entries());
+    currentParams.loadedPages = newLoadedPages.toString();
+    setSearchParams(currentParams);
   };
 
   const handleManufacturerChange = async (manufacturerId: string) => {
@@ -160,6 +208,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       generation_id: undefined,
     };
     setGenerations([]);
+    setLoadedPages(1); // Reset pagination when manufacturer changes
     handleFiltersChange(newFilters);
   };
 
@@ -172,20 +221,27 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       model_id: modelId || undefined,
       generation_id: undefined,
     };
+    setLoadedPages(1); // Reset pagination when model changes
     handleFiltersChange(newFilters);
   };
 
   // Initialize filters from URL params on component mount
   useEffect(() => {
     const loadInitialData = async () => {
+      setIsRestoringState(true);
+
       // Load manufacturers first
       const manufacturerData = await fetchManufacturers();
       setManufacturers(manufacturerData);
 
-      // Get filters from URL parameters
+      // Get filters and pagination state from URL parameters
       const urlFilters: APIFilters = {};
+      let urlLoadedPages = 1;
+
       for (const [key, value] of searchParams.entries()) {
-        if (value) {
+        if (key === "loadedPages") {
+          urlLoadedPages = parseInt(value) || 1;
+        } else if (value && key !== "loadedPages") {
           urlFilters[key as keyof APIFilters] = value;
         }
       }
@@ -206,18 +262,61 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         setGenerations(generations);
       }
 
-      // Set filters and fetch cars with URL filters
-      if (Object.keys(urlFilters).length > 0) {
-        setFilters(urlFilters);
-        fetchCars(1, urlFilters, true);
+      // Set filters and pagination state
+      setFilters(urlFilters);
+      setLoadedPages(urlLoadedPages);
+
+      // Restore multiple pages if needed
+      if (urlLoadedPages > 1) {
+        // First load page 1
+        await fetchCars(1, urlFilters, true);
+
+        // Then load additional pages
+        for (let page = 2; page <= urlLoadedPages; page++) {
+          await fetchCars(page, urlFilters, false);
+        }
       } else {
-        // No URL filters, fetch with empty filters
-        fetchCars(1, {}, true);
+        // Just load page 1
+        await fetchCars(1, urlFilters, true);
       }
+
+      setIsRestoringState(false);
+
+      // Restore scroll position after content is loaded
+      setTimeout(() => {
+        restoreScrollPosition();
+      }, 300);
     };
 
     loadInitialData();
   }, []); // Only run on mount
+
+  // Save scroll position when navigating away
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      saveScrollPosition();
+    };
+
+    // Save scroll position on navigation
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    // Save scroll position periodically while scrolling
+    let scrollTimeout: NodeJS.Timeout;
+    const handleScroll = () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        saveScrollPosition();
+      }, 150); // Debounce scroll saving
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("scroll", handleScroll);
+      clearTimeout(scrollTimeout);
+    };
+  }, [filters, loadedPages]); // Re-run when filters or pages change
 
   // Load filter counts when filters or manufacturers change
   useEffect(() => {
@@ -373,15 +472,17 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       )}
 
       {/* Loading State */}
-      {loading && cars.length === 0 && (
+      {(loading && cars.length === 0) || isRestoringState ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin mr-2" />
-          <span>Loading cars...</span>
+          <span>
+            {isRestoringState ? "Restoring your view..." : "Loading cars..."}
+          </span>
         </div>
-      )}
+      ) : null}
 
       {/* No Results State */}
-      {!loading && cars.length === 0 && (
+      {!loading && !isRestoringState && cars.length === 0 && (
         <div className="text-center py-12">
           <p className="text-muted-foreground">
             No cars found matching your filters.
@@ -400,6 +501,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       {cars.length > 0 && (
         <>
           <div
+            ref={containerRef}
             className={
               viewMode === "grid"
                 ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
