@@ -441,22 +441,65 @@ export const useSecureAuctionAPI = () => {
         manufacturer_id: manufacturerId,
         model_id: modelId, 
         generation_id: generationId,
-        per_page: '1000' // Get more cars to extract grades from
+        per_page: '100' // Reduced to avoid too much data
       };
 
       const data = await makeSecureAPICall('cars', filters);
       const cars = data.data || [];
       
+      console.log('🔍 Raw API response structure:', {
+        totalCars: cars.length,
+        firstCar: cars[0] ? {
+          id: cars[0].id,
+          lots: cars[0].lots,
+          lot: cars[0].lot,
+          grade_iaai: cars[0].grade_iaai,
+          grade: cars[0].grade,
+          trim: cars[0].trim,
+          engine: cars[0].engine,
+          badges: cars[0].badges,
+          keys: Object.keys(cars[0])
+        } : null
+      });
+      
       // Extract unique grades from the car data
       const gradesMap = new Map<string, number>();
       
-      cars.forEach((car: any) => {
+      cars.forEach((car: any, index: number) => {
         const lot = car.lots?.[0] || car.lot || {};
-        const grade = lot.grade_iaai || car.grade_iaai;
-        if (grade && typeof grade === 'string' && grade.trim()) {
-          const cleanGrade = grade.trim();
-          gradesMap.set(cleanGrade, (gradesMap.get(cleanGrade) || 0) + 1);
+        
+        // Try multiple possible grade fields
+        const possibleGrades = [
+          lot.grade_iaai,
+          car.grade_iaai,
+          lot.grade,
+          car.grade,
+          car.trim,
+          car.badges,
+          car.engine,
+          lot.trim,
+          lot.badges,
+          lot.engine
+        ];
+
+        if (index < 3) { // Log first 3 cars for debugging
+          console.log(`🚗 Car ${index} grade fields:`, {
+            'lot.grade_iaai': lot.grade_iaai,
+            'car.grade_iaai': car.grade_iaai,
+            'lot.grade': lot.grade,
+            'car.grade': car.grade,
+            'car.trim': car.trim,
+            'car.badges': car.badges,
+            'car.engine': car.engine
+          });
         }
+
+        possibleGrades.forEach(grade => {
+          if (grade && typeof grade === 'string' && grade.trim()) {
+            const cleanGrade = grade.trim();
+            gradesMap.set(cleanGrade, (gradesMap.get(cleanGrade) || 0) + 1);
+          }
+        });
       });
 
       // Convert to array and sort
