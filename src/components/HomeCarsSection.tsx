@@ -50,6 +50,7 @@ const HomeCarsSection = memo(() => {
     fetchModels,
     fetchGenerations,
     fetchFilterCounts,
+    fetchGrades,
   } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
   const [sortBy, setSortBy] = useState<SortOption>("popular");
@@ -343,6 +344,7 @@ const HomeCarsSection = memo(() => {
                   fetchGenerations(modelId).then(setGenerations);
                 }
               }}
+              onFetchGrades={fetchGrades}
             />
           </div>
         )}

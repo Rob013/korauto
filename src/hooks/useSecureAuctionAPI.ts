@@ -434,6 +434,23 @@ export const useSecureAuctionAPI = () => {
     }
   };
 
+  const fetchGrades = async (manufacturerId?: string, modelId?: string, generationId?: string): Promise<{ value: string; label: string; count?: number }[]> => {
+    try {
+      const filters = {
+        manufacturer_id: manufacturerId,
+        model_id: modelId, 
+        generation_id: generationId,
+        endpoint: 'grades'
+      };
+
+      const data = await makeSecureAPICall('grades', filters);
+      return data.data || [];
+    } catch (err) {
+      console.error("❌ Error fetching grades:", err);
+      return [];
+    }
+  };
+
   const loadMore = async () => {
     if (!hasMorePages || loading) return;
 
@@ -464,6 +481,7 @@ export const useSecureAuctionAPI = () => {
     fetchCarCounts,
     fetchFilterCounts,
     fetchKoreaDuplicates,
+    fetchGrades,
     loadMore,
   };
 };

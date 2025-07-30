@@ -65,6 +65,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     fetchModels,
     fetchGenerations,
     fetchFilterCounts,
+    fetchGrades,
     loadMore,
   } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
@@ -482,6 +483,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           onModelChange={handleModelChange}
           showAdvanced={showAdvancedFilters}
           onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
+          onFetchGrades={fetchGrades}
         />
 
         {/* Sort Control - positioned under filters, right side */}

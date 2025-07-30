@@ -11,6 +11,7 @@ interface CarFilters {
   manufacturer_id?: string;
   model_id?: string;
   generation_id?: string;
+  grade_iaai?: string;
   color?: string;
   fuel_type?: string;
   transmission?: string;
@@ -25,6 +26,7 @@ interface CarFilters {
   page?: string;
   per_page?: string;
   simple_paginate?: string;
+  endpoint?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -55,6 +57,7 @@ const handler = async (req: Request): Promise<Response> => {
       'manufacturers/cars',
       'models',
       'generations',
+      'grades',
       'korea-duplicates'
     ];
     
