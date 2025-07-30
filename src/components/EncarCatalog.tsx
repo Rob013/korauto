@@ -83,15 +83,19 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         
         console.log(`🔍 Filtering for grade: "${targetGrade}" on car: ${car.id}`);
         
+        // Log all available grades for this car to debug
+        let availableGrades: string[] = [];
+        
         // Check in lots array
         if (car.lots && Array.isArray(car.lots)) {
           car.lots.forEach((lot: any, lotIndex: number) => {
             if (lot.grade_iaai) {
               const lotGrade = lot.grade_iaai.toLowerCase().trim();
-              console.log(`  Lot ${lotIndex} grade: "${lotGrade}"`);
-              if (lotGrade.includes(targetGrade) || targetGrade.includes(lotGrade)) {
+              availableGrades.push(`lot[${lotIndex}]: "${lotGrade}"`);
+              if (lotGrade.includes(targetGrade) || targetGrade.includes(lotGrade) || 
+                  lotGrade.replace(/[\s\.]/g, '') === targetGrade.replace(/[\s\.]/g, '')) {
                 hasMatchingGrade = true;
-                console.log(`  ✅ Match found in lot ${lotIndex}`);
+                console.log(`  ✅ Match found in lot ${lotIndex}: "${lotGrade}"`);
               }
             }
           });
@@ -100,25 +104,36 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         // Check in car title for grade patterns (more flexible)
         if (!hasMatchingGrade && car.title) {
           const titleLower = car.title.toLowerCase();
-          console.log(`  Car title: "${titleLower}"`);
+          availableGrades.push(`title: "${titleLower}"`);
           
-          // Try exact match
-          if (titleLower.includes(targetGrade)) {
-            hasMatchingGrade = true;
-            console.log(`  ✅ Exact match found in title`);
-          }
+          // Extract common grade patterns from title
+          const gradePatterns = [
+            /(\d+\.?\d*)\s*(tdi|tfsi|tsi|fsi|cdi|d|i)\b/gi,
+            /\b(\d+\.?\d*)\s*l?\s*(turbo|diesel|petrol|hybrid)?\b/gi
+          ];
           
-          // Try normalized match (remove spaces, dots, etc.)
-          if (!hasMatchingGrade) {
-            const normalizedTarget = targetGrade.replace(/[\s\.]/g, '');
-            const normalizedTitle = titleLower.replace(/[\s\.]/g, '');
-            if (normalizedTitle.includes(normalizedTarget) || normalizedTarget.includes(normalizedTitle)) {
-              hasMatchingGrade = true;
-              console.log(`  ✅ Normalized match found in title`);
+          let foundInTitle = false;
+          gradePatterns.forEach(pattern => {
+            const matches = titleLower.match(pattern);
+            if (matches) {
+              matches.forEach(match => {
+                const cleanMatch = match.trim();
+                if (cleanMatch.includes(targetGrade) || targetGrade.includes(cleanMatch)) {
+                  hasMatchingGrade = true;
+                  foundInTitle = true;
+                  console.log(`  ✅ Pattern match found in title: "${cleanMatch}"`);
+                }
+              });
             }
+          });
+          
+          if (!foundInTitle && titleLower.includes(targetGrade)) {
+            hasMatchingGrade = true;
+            console.log(`  ✅ Direct match found in title`);
           }
         }
         
+        console.log(`  Available grades: [${availableGrades.join(', ')}]`);
         console.log(`  Final result: ${hasMatchingGrade ? 'KEEP' : 'FILTER OUT'}`);
         
         if (!hasMatchingGrade) {
