@@ -748,32 +748,32 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                  <CardTitle className="text-xs font-medium">
-                    Cars Available
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
+                  <CardTitle className="text-xs font-medium truncate">
+                    Cars
                   </CardTitle>
-                  <Car className="h-3 w-3 text-muted-foreground" />
+                  <Car className="h-3 w-3 text-muted-foreground shrink-0" />
                 </CardHeader>
-                <CardContent className="pt-1">
-                  <div className="text-lg font-bold">
+                <CardContent className="p-0">
+                  <div className="text-lg sm:text-xl font-bold">
                     {stats.totalCachedCars}
                   </div>
                   <p className="text-[10px] text-muted-foreground">
-                    +{stats.recentCarSyncs} synced this week
+                    +{stats.recentCarSyncs} synced
                   </p>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                  <CardTitle className="text-xs font-medium">
-                    Inspection Requests
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
+                  <CardTitle className="text-xs font-medium truncate">
+                    Requests
                   </CardTitle>
-                  <Activity className="h-3 w-3 text-muted-foreground" />
+                  <Activity className="h-3 w-3 text-muted-foreground shrink-0" />
                 </CardHeader>
-                <CardContent className="pt-1">
-                  <div className="text-lg font-bold">
+                <CardContent className="p-0">
+                  <div className="text-lg sm:text-xl font-bold">
                     {stats.totalInspectionRequests}
                   </div>
                   <p className="text-[10px] text-muted-foreground">
@@ -782,32 +782,32 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                  <CardTitle className="text-xs font-medium">
-                    User Favorites
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
+                  <CardTitle className="text-xs font-medium truncate">
+                    Favorites
                   </CardTitle>
-                  <Heart className="h-3 w-3 text-muted-foreground" />
+                  <Heart className="h-3 w-3 text-muted-foreground shrink-0" />
                 </CardHeader>
-                <CardContent className="pt-1">
-                  <div className="text-lg font-bold">
+                <CardContent className="p-0">
+                  <div className="text-lg sm:text-xl font-bold">
                     {stats.totalFavorites}
                   </div>
                   <p className="text-[10px] text-muted-foreground">
-                    Cars saved by users
+                    User saves
                   </p>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                  <CardTitle className="text-xs font-medium">
-                    This Week
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
+                  <CardTitle className="text-xs font-medium truncate">
+                    Week
                   </CardTitle>
-                  <TrendingUp className="h-3 w-3 text-muted-foreground" />
+                  <TrendingUp className="h-3 w-3 text-muted-foreground shrink-0" />
                 </CardHeader>
-                <CardContent className="pt-1">
-                  <div className="text-lg font-bold">
+                <CardContent className="p-0">
+                  <div className="text-lg sm:text-xl font-bold">
                     {stats.requestsThisWeek}
                   </div>
                   <p className="text-[10px] text-muted-foreground">
@@ -816,32 +816,32 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                  <CardTitle className="text-xs font-medium">
-                    This Month
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
+                  <CardTitle className="text-xs font-medium truncate">
+                    Month
                   </CardTitle>
-                  <Database className="h-3 w-3 text-muted-foreground" />
+                  <Database className="h-3 w-3 text-muted-foreground shrink-0" />
                 </CardHeader>
-                <CardContent className="pt-1">
-                  <div className="text-lg font-bold">
+                <CardContent className="p-0">
+                  <div className="text-lg sm:text-xl font-bold">
                     {stats.requestsThisMonth}
                   </div>
                   <p className="text-[10px] text-muted-foreground">
-                    Inspection requests
+                    This month
                   </p>
                 </CardContent>
               </Card>
             </div>
 
             {/* Recent Activity */}
-            <div className="grid gap-4 md:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Inspection Requests</CardTitle>
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-2">
+              <Card className="p-3">
+                <CardHeader className="p-0 pb-3">
+                  <CardTitle className="text-sm sm:text-base">Recent Requests</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
+                <CardContent className="p-0">
+                  <div className="space-y-2">
                     {requests.slice(0, 5).map((request) => {
                       const car = request.car_id
                         ? carDetails[request.car_id]
@@ -849,7 +849,7 @@ const AdminDashboard = () => {
                       return (
                         <div
                           key={request.id}
-                          className="flex items-center justify-between p-2 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors"
+                          className="flex items-center justify-between p-2 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors text-xs sm:text-sm"
                         >
                           <div className="flex items-center space-x-3">
                             {car ? (
@@ -921,11 +921,11 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>System Status</CardTitle>
+              <Card className="p-3">
+                <CardHeader className="p-0 pb-3">
+                  <CardTitle className="text-sm sm:text-base">System Status</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
@@ -971,61 +971,61 @@ const AdminDashboard = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="inspections" className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-3 mb-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Pending</CardTitle>
-                  <Clock className="h-4 w-4 text-yellow-500" />
+          <TabsContent value="inspections" className="space-y-3 sm:space-y-4">
+            <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-3 mb-4">
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Pending</CardTitle>
+                  <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-500" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
+                <CardContent className="p-0">
+                  <div className="text-lg sm:text-xl font-bold">
                     {stats.pendingRequests}
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">
                     Completed
                   </CardTitle>
-                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
+                <CardContent className="p-0">
+                  <div className="text-lg sm:text-xl font-bold">
                     {stats.completedRequests}
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">
                     This Week
                   </CardTitle>
-                  <Calendar className="h-4 w-4 text-blue-500" />
+                  <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
+                <CardContent className="p-0">
+                  <div className="text-lg sm:text-xl font-bold">
                     {stats.requestsThisWeek}
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Database Table View - Exactly like Supabase */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Database className="h-5 w-5" />
-                  inspection_requests Table (Database View)
+            {/* Database Table View - Mobile Responsive */}
+            <Card className="p-2 sm:p-4">
+              <CardHeader className="p-0 pb-3">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                  <Database className="h-4 w-4 sm:h-5 sm:w-5" />
+                  inspection_requests Table
                 </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Displaying data exactly as stored in Supabase database
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Database view ({requests.length} records)
                 </p>
               </CardHeader>
-              <CardContent className="p-2">
+              <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse border border-border text-xs">
                     <thead>
@@ -1297,87 +1297,86 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="traffic" className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Page Views
+          <TabsContent value="traffic" className="space-y-3 sm:space-y-4">
+            <div className="grid gap-2 sm:gap-3 grid-cols-2 lg:grid-cols-4">
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Views
                   </CardTitle>
-                  <Eye className="h-4 w-4 text-muted-foreground" />
+                  <Eye className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
+                <CardContent className="p-0">
+                  <div className="text-lg sm:text-xl font-bold">
                     {analytics.totalPageViews}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Last 24h: {analytics.viewsLast24h}
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">
+                    24h: {analytics.viewsLast24h}
                   </p>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Unique Visitors
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Visitors
                   </CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
+                <CardContent className="p-0">
+                  <div className="text-lg sm:text-xl font-bold">
                     {analytics.uniqueVisitors}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Last 7 days: {analytics.viewsLast7Days}
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">
+                    7d: {analytics.viewsLast7Days}
                   </p>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Contact Rate
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Contact
                   </CardTitle>
-                  <Activity className="h-4 w-4 text-muted-foreground" />
+                  <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
+                <CardContent className="p-0">
+                  <div className="text-lg sm:text-xl font-bold">
                     {analytics.bounceRate}%
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Contact conversion rate
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">
+                    Rate
                   </p>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Avg. Session
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Session
                   </CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
+                <CardContent className="p-0">
+                  <div className="text-lg sm:text-xl font-bold">
                     {analytics.avgSessionTime}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Average time on site
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">
+                    Avg time
                   </p>
                 </CardContent>
               </Card>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Real Website Analytics</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Live data from website_analytics table (
-                    {analytics.totalPageViews} total records)
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-2">
+              <Card className="p-3">
+                <CardHeader className="p-0 pb-3">
+                  <CardTitle className="text-sm sm:text-base">Website Analytics</CardTitle>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Live data ({analytics.totalPageViews} records)
                   </p>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0">
                   <div className="space-y-4">
                     <div>
                       <h4 className="font-medium mb-2">
@@ -1437,14 +1436,14 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Traffic Sources & Browsers</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Real traffic analysis from referrer data
+              <Card className="p-3">
+                <CardHeader className="p-0 pb-3">
+                  <CardTitle className="text-sm sm:text-base">Traffic Sources</CardTitle>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Traffic analysis from referrer data
                   </p>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0">
                   <div className="space-y-4">
                     <div>
                       <h4 className="font-medium mb-2">Traffic Sources</h4>
@@ -1507,9 +1506,9 @@ const AdminDashboard = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="system" className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="md:col-span-2">
+          <TabsContent value="system" className="space-y-3 sm:space-y-4">
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-3">
+              <div className="lg:col-span-2">
                 <AdminSyncDashboard />
               </div>
               <div>
