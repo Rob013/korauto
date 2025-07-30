@@ -1042,287 +1042,241 @@ const AdminDashboard = () => {
               </Card>
             </div>
 
-            {/* Database Table View - Mobile Responsive */}
-            <Card className="p-2 sm:p-4">
-              <CardHeader className="p-0 pb-3">
-                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-                  <Database className="h-4 w-4 sm:h-5 sm:w-5" />
-                  inspection_requests Table
-                </CardTitle>
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  Database view ({requests.length} records)
+            {/* Modern Inspection Requests Layout */}
+            <Card className="p-4 sm:p-6">
+              <CardHeader className="p-0 pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-semibold">
+                    <Database className="h-5 w-5" />
+                    Inspection Requests
+                  </CardTitle>
+                  <Badge variant="secondary" className="text-xs">
+                    {requests.length} records
+                  </Badge>
+                </div>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                  Manage all customer inspection requests
                 </p>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="overflow-x-auto -mx-2 sm:mx-0">
-                  <table className="w-full border-collapse border border-border text-[10px] sm:text-xs">
-                    <thead>
-                      <tr className="bg-muted">
-                        <th className="border border-border px-1 py-1 text-left text-[8px] sm:text-[10px] font-medium w-[60px] sm:w-[80px]">
-                          ID
-                        </th>
-                        <th className="border border-border px-1 py-1 text-left text-[8px] sm:text-[10px] font-medium w-[70px] sm:w-[90px]">
-                          Date
-                        </th>
-                        <th className="border border-border px-1 py-1 text-left text-[8px] sm:text-[10px] font-medium w-[80px] sm:w-[120px]">
-                          Customer
-                        </th>
-                        <th className="border border-border px-1 py-1 text-left text-[8px] sm:text-[10px] font-medium w-[90px] sm:w-[140px] hidden sm:table-cell">
-                          Email
-                        </th>
-                        <th className="border border-border px-1 py-1 text-left text-[8px] sm:text-[10px] font-medium w-[70px] sm:w-[100px]">
-                          Phone
-                        </th>
-                        <th className="border border-border px-1 py-1 text-left text-[8px] sm:text-[10px] font-medium w-[120px] sm:w-[200px]">
-                          Car
-                        </th>
-                        <th className="border border-border px-1 py-1 text-left text-[8px] sm:text-[10px] font-medium w-[50px] sm:w-[60px]">
-                          Status
-                        </th>
-                        <th className="border border-border px-1 py-1 text-left text-[8px] sm:text-[10px] font-medium w-[80px] sm:w-[120px] hidden lg:table-cell">
-                          Notes
-                        </th>
-                        <th className="border border-border px-1 py-1 text-left text-[8px] sm:text-[10px] font-medium w-[90px] sm:w-[120px]">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {requests.map((request) => (
-                        <tr key={request.id} className="hover:bg-muted/50">
-                          <td className="border border-border px-0.5 py-0.5 text-[8px] sm:text-[10px] font-mono">
-                            <div
-                              className="max-w-[60px] sm:max-w-[80px] truncate"
-                              title={request.id}
-                            >
-                              {request.id.split("-")[0]}...
-                            </div>
-                          </td>
-                          <td className="border border-border px-0.5 py-0.5 text-[8px] sm:text-[10px]">
-                            <div className="font-mono">
-                              {new Date(
-                                request.created_at
-                              ).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                            </div>
-                            <div className="text-[6px] sm:text-[8px] text-muted-foreground">
-                              {new Date(
-                                request.created_at
-                              ).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                            </div>
-                          </td>
-                          <td className="border border-border px-0.5 py-0.5 text-[8px] sm:text-[10px]">
-                            <div
-                              className="font-medium text-primary truncate max-w-[80px] sm:max-w-[120px]"
-                              title={request.customer_name}
-                            >
-                              {request.customer_name}
-                            </div>
-                            {/* Show email on mobile under name */}
-                            <div className="sm:hidden text-[6px] text-muted-foreground truncate max-w-[80px]" title={request.customer_email}>
-                              {request.customer_email}
-                            </div>
-                          </td>
-                          <td className="border border-border px-0.5 py-0.5 text-[8px] sm:text-[10px] hidden sm:table-cell">
-                            <div
-                              className="font-medium truncate max-w-[140px]"
-                              title={request.customer_email}
-                            >
-                              {request.customer_email}
-                            </div>
-                          </td>
-                          <td className="border border-border px-0.5 py-0.5 text-[8px] sm:text-[10px]">
-                            <a
-                              href={`https://wa.me/${request.customer_phone.replace(
-                                /[^0-9]/g,
-                                ""
-                              )}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="font-medium text-green-600 hover:text-green-800 hover:underline cursor-pointer truncate max-w-[70px] sm:max-w-[100px] block"
-                              title={`WhatsApp ${request.customer_phone}`}
-                            >
-                              {request.customer_phone.replace(/^\+/, '').slice(-8)}
-                            </a>
-                          </td>
-                          <td className="border border-border px-0.5 py-0.5 text-[8px] sm:text-[10px]">
-                            {request.car_id ? (
-                              <div className="space-y-0.5 sm:space-y-1">
-                                <div
-                                  className="font-mono text-[7px] sm:text-[9px] bg-muted px-0.5 sm:px-1 rounded max-w-[60px] sm:max-w-[80px] truncate"
-                                  title={request.car_id}
-                                >
-                                  {request.car_id}
-                                </div>
-                                {carDetails[request.car_id] && (
-                                  <div
-                                    className="flex items-center space-x-0.5 sm:space-x-1 cursor-pointer hover:bg-muted/50 rounded p-0.5 transition-colors"
-                                    onClick={() => {
-                                      const lotNumber =
-                                        carDetails[request.car_id]?.lot_number;
-                                      const carId = lotNumber || request.car_id;
-                                      window.open(`/car/${carId}`, "_blank");
-                                    }}
-                                    title={`Click to view car details for ${
-                                      carDetails[request.car_id].year
-                                    } ${carDetails[request.car_id].make} ${
-                                      carDetails[request.car_id].model
-                                    }`}
-                                  >
-                                    {carDetails[request.car_id].image && (
-                                      <img
-                                        src={carDetails[request.car_id].image}
-                                        alt="Car"
-                                        className="w-6 h-4 sm:w-8 sm:h-6 object-cover rounded border"
-                                      />
-                                    )}
-                                    <div className="flex-1 min-w-0">
-                                      <div
-                                        className="text-[7px] sm:text-[9px] font-medium truncate max-w-[60px] sm:max-w-[100px] text-primary hover:underline"
-                                        title={`${
-                                          carDetails[request.car_id].year
-                                        } ${carDetails[request.car_id].make} ${
-                                          carDetails[request.car_id].model
-                                        }`}
-                                      >
-                                        {carDetails[request.car_id].year}{" "}
-                                        {carDetails[request.car_id].make}
-                                      </div>
-                                      <div className="text-[6px] sm:text-[8px] text-muted-foreground">
-                                        {carDetails[request.car_id].price && (
-                                          <div>
-                                            €
-                                            {carDetails[
-                                              request.car_id
-                                            ].price?.toLocaleString()}
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
+                {/* Desktop Table View */}
+                <div className="hidden lg:block">
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse border border-border text-sm">
+                      <thead>
+                        <tr className="bg-muted/50">
+                          <th className="border border-border px-3 py-2 text-left text-xs font-medium">Customer</th>
+                          <th className="border border-border px-3 py-2 text-left text-xs font-medium">Contact</th>
+                          <th className="border border-border px-3 py-2 text-left text-xs font-medium">Car Details</th>
+                          <th className="border border-border px-3 py-2 text-left text-xs font-medium">Status</th>
+                          <th className="border border-border px-3 py-2 text-left text-xs font-medium">Date</th>
+                          <th className="border border-border px-3 py-2 text-left text-xs font-medium">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {requests.map((request) => (
+                          <tr key={request.id} className="hover:bg-muted/30 transition-colors">
+                            <td className="border border-border px-3 py-2">
+                              <div>
+                                <div className="font-medium text-foreground">{request.customer_name}</div>
+                                <div className="text-xs text-muted-foreground truncate">{request.customer_email}</div>
                               </div>
-                            ) : (
-                              <span className="text-muted-foreground italic text-[9px]">
-                                NULL
-                              </span>
-                            )}
-                          </td>
-                          <td className="border border-border px-1 py-1 text-[10px]">
-                            <Badge
-                              className={`${getStatusColor(
-                                request.status
-                              )} text-[9px] px-1 py-0`}
-                              variant="outline"
-                            >
-                              {request.status}
-                            </Badge>
-                          </td>
-                          <td className="border border-border px-1 py-1 text-[10px]">
-                            <div
-                              className="max-w-[120px] truncate text-[9px]"
-                              title={request.notes || ""}
-                            >
-                              {request.notes || (
-                                <span className="text-muted-foreground italic">
-                                  NULL
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="border border-border px-0.5 py-0.5 text-[8px] sm:text-[10px]">
-                            <div className="space-y-0.5 sm:space-y-1">
-                              {/* Contact buttons - more compact */}
-                              <div className="flex gap-0.5 justify-start">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() =>
-                                    window.open(
-                                      `mailto:${request.customer_email}?subject=Car Inspection Request&body=Dear ${request.customer_name},%0D%0A%0D%0AThank you for your inspection request.%0D%0A%0D%0ABest regards,%0D%0AKORAUTO Team`,
-                                      "_blank"
-                                    )
-                                  }
-                                  className="h-4 w-4 sm:h-5 sm:w-5 p-0"
-                                  title="Send Email"
-                                >
-                                  <Mail className="h-2 w-2 sm:h-2.5 sm:w-2.5" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    const message = `Hello ${request.customer_name}! Thank you for your car inspection request. We will contact you within 24 hours. - KORAUTO Team`;
-                                    window.open(
-                                      `https://wa.me/${request.customer_phone.replace(
-                                        /[^0-9]/g,
-                                        ""
-                                      )}?text=${encodeURIComponent(message)}`,
-                                      "_blank"
-                                    );
-                                  }}
-                                  className="h-4 w-4 sm:h-5 sm:w-5 p-0"
-                                  title="WhatsApp"
-                                >
-                                  <Phone className="h-2 w-2 sm:h-2.5 sm:w-2.5" />
-                                </Button>
-
-                                {/* View Car Button - smaller on mobile */}
-                                {request.car_id &&
-                                  carDetails[request.car_id] && (
-                                    <Button
-                                      size="sm"
-                                      variant="default"
-                                      onClick={() => {
-                                        const lotNumber =
-                                          carDetails[request.car_id]
-                                            ?.lot_number;
-                                        const carId =
-                                          lotNumber || request.car_id;
-                                        window.open(`/car/${carId}`, "_blank");
-                                      }}
-                                      className="h-4 px-1 sm:h-5 sm:px-1.5 text-[6px] sm:text-[8px] text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
-                                      title={`View car details for ${
-                                        carDetails[request.car_id]?.year
-                                      } ${carDetails[request.car_id]?.make} ${
-                                        carDetails[request.car_id]?.model
-                                      }`}
-                                    >
-                                      <Car className="h-2 w-2 sm:h-2.5 sm:w-2.5 mr-0.5" />
-                                      <span className="hidden sm:inline">View</span>
-                                    </Button>
+                            </td>
+                            <td className="border border-border px-3 py-2">
+                              <a
+                                href={`https://wa.me/${request.customer_phone.replace(/[^0-9]/g, "")}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-green-600 hover:text-green-700 text-sm font-medium"
+                              >
+                                {request.customer_phone}
+                              </a>
+                            </td>
+                            <td className="border border-border px-3 py-2">
+                              {request.car_id && carDetails[request.car_id] ? (
+                                <div className="flex items-center gap-2">
+                                  {carDetails[request.car_id].image && (
+                                    <img
+                                      src={carDetails[request.car_id].image}
+                                      alt="Car"
+                                      className="w-10 h-8 object-cover rounded"
+                                    />
                                   )}
-                              </div>
-
-                              {/* Status selector - smaller */}
+                                  <div>
+                                    <div className="text-sm font-medium">
+                                      {carDetails[request.car_id].year} {carDetails[request.car_id].make} {carDetails[request.car_id].model}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">ID: {request.car_id}</div>
+                                  </div>
+                                </div>
+                              ) : request.car_id ? (
+                                <div className="text-sm text-muted-foreground">Car ID: {request.car_id}</div>
+                              ) : (
+                                <div className="text-sm text-muted-foreground">General request</div>
+                              )}
+                            </td>
+                            <td className="border border-border px-3 py-2">
                               <select
                                 value={request.status}
-                                onChange={(e) =>
-                                  updateRequestStatus(
-                                    request.id,
-                                    e.target.value
-                                  )
-                                }
-                                className="text-[6px] sm:text-[8px] border border-border rounded px-0.5 py-0.5 bg-background h-4 sm:h-5 w-full max-w-[70px] sm:max-w-[80px]"
+                                onChange={(e) => updateRequestStatus(request.id, e.target.value)}
+                                className="text-xs border border-border rounded px-2 py-1 bg-background"
                               >
-                                <option value="pending">pending</option>
-                                <option value="in_progress">in_progress</option>
-                                <option value="completed">completed</option>
-                                <option value="cancelled">cancelled</option>
+                                <option value="pending">Pending</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                              </select>
+                            </td>
+                            <td className="border border-border px-3 py-2">
+                              <div className="text-sm">{new Date(request.created_at).toLocaleDateString()}</div>
+                              <div className="text-xs text-muted-foreground">{new Date(request.created_at).toLocaleTimeString()}</div>
+                            </td>
+                            <td className="border border-border px-3 py-2">
+                              <div className="flex gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => window.open(`mailto:${request.customer_email}`, "_blank")}
+                                  className="h-7 w-7 p-0"
+                                >
+                                  <Mail className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => window.open(`https://wa.me/${request.customer_phone.replace(/[^0-9]/g, "")}`, "_blank")}
+                                  className="h-7 w-7 p-0"
+                                >
+                                  <Phone className="h-3 w-3" />
+                                </Button>
+                                {request.car_id && carDetails[request.car_id] && (
+                                  <Button
+                                    size="sm"
+                                    variant="default"
+                                    onClick={() => window.open(`/car/${carDetails[request.car_id]?.lot_number || request.car_id}`, "_blank")}
+                                    className="h-7 px-2 text-xs"
+                                  >
+                                    <Car className="h-3 w-3 mr-1" />
+                                    View
+                                  </Button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="lg:hidden space-y-3">
+                  {requests.map((request) => {
+                    const car = request.car_id ? carDetails[request.car_id] : null;
+                    return (
+                      <div
+                        key={request.id}
+                        className="group relative p-4 rounded-lg border border-border/50 hover:border-primary/30 hover:shadow-sm transition-all duration-200 bg-card/50 hover:bg-card"
+                      >
+                        <div className="flex items-start gap-3">
+                          {/* Car Image or Fallback */}
+                          <div className="shrink-0 w-12 h-9 rounded-md overflow-hidden bg-muted flex items-center justify-center">
+                            {car?.image ? (
+                              <img
+                                src={car.image}
+                                alt={`${car.year} ${car.make} ${car.model}`}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Car className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </div>
+
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-medium text-sm text-foreground truncate">
+                                  {request.customer_name}
+                                </h4>
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {request.customer_email}
+                                </p>
+                              </div>
+                              <select
+                                value={request.status}
+                                onChange={(e) => updateRequestStatus(request.id, e.target.value)}
+                                className={`text-xs border border-border rounded px-2 py-1 bg-background ${getStatusColor(request.status)}`}
+                              >
+                                <option value="pending">Pending</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
                               </select>
                             </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+
+                            {/* Car Info */}
+                            {car && (
+                              <div className="mb-2">
+                                <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
+                                  <span>{car.year} {car.make} {car.model}</span>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Phone */}
+                            <div className="mb-3">
+                              <a
+                                href={`https://wa.me/${request.customer_phone.replace(/[^0-9]/g, "")}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-green-600 hover:text-green-700 text-xs font-medium"
+                              >
+                                <Phone className="h-3 w-3" />
+                                {request.customer_phone}
+                              </a>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                              <span>{formatDate(request.created_at)}</span>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => window.open(`mailto:${request.customer_email}`, "_blank")}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  <Mail className="h-3 w-3" />
+                                </Button>
+                                {car && (
+                                  <Button
+                                    size="sm"
+                                    variant="default"
+                                    onClick={() => window.open(`/car/${car.lot_number || request.car_id}`, "_blank")}
+                                    className="h-6 px-2 text-xs"
+                                  >
+                                    <Car className="h-3 w-3 mr-1" />
+                                    View
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Hover overlay */}
+                        <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {requests.length === 0 && (
-                  <div className="text-center py-4 text-muted-foreground">
-                    <Database className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-xs">
-                      No inspection requests found in database
-                    </p>
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <h3 className="text-lg font-medium mb-2">No inspection requests</h3>
+                    <p className="text-sm">No inspection requests found in the database</p>
                   </div>
                 )}
               </CardContent>
