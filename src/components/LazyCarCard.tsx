@@ -308,6 +308,17 @@ const LazyCarCard = memo(({
           </span>
         </div>
 
+        {/* Action Button */}
+        <Button 
+          className="w-full mb-4 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleCardClick();
+          }}
+        >
+          Shiko Detajet
+        </Button>
+
         <div className="text-center">
           <p className="text-xs text-muted-foreground">
             KORAUTO
