@@ -436,15 +436,48 @@ export const useSecureAuctionAPI = () => {
 
   const fetchGrades = async (manufacturerId?: string, modelId?: string, generationId?: string): Promise<{ value: string; label: string; count?: number }[]> => {
     try {
+      // Instead of calling a grades endpoint, fetch cars with the given filters and extract unique grades
       const filters = {
         manufacturer_id: manufacturerId,
         model_id: modelId, 
         generation_id: generationId,
-        endpoint: 'grades'
+        per_page: '1000' // Get more cars to extract grades from
       };
 
-      const data = await makeSecureAPICall('grades', filters);
-      return data.data || [];
+      const data = await makeSecureAPICall('cars', filters);
+      const cars = data.data || [];
+      
+      // Extract unique grades from the car data
+      const gradesMap = new Map<string, number>();
+      
+      cars.forEach((car: any) => {
+        const lot = car.lots?.[0] || car.lot || {};
+        const grade = lot.grade_iaai || car.grade_iaai;
+        if (grade && typeof grade === 'string' && grade.trim()) {
+          const cleanGrade = grade.trim();
+          gradesMap.set(cleanGrade, (gradesMap.get(cleanGrade) || 0) + 1);
+        }
+      });
+
+      // Convert to array and sort
+      const grades = Array.from(gradesMap.entries())
+        .map(([value, count]) => ({
+          value,
+          label: value,
+          count
+        }))
+        .sort((a, b) => {
+          // Sort numerically if possible, otherwise alphabetically
+          const aNum = parseFloat(a.value);
+          const bNum = parseFloat(b.value);
+          if (!isNaN(aNum) && !isNaN(bNum)) {
+            return aNum - bNum;
+          }
+          return a.value.localeCompare(b.value);
+        });
+
+      console.log('📊 Extracted grades:', grades);
+      return grades;
     } catch (err) {
       console.error("❌ Error fetching grades:", err);
       return [];
