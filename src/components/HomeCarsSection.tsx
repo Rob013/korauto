@@ -33,7 +33,6 @@ const HomeCarsSection = memo(() => {
   const { convertUSDtoEUR } = useCurrencyAPI();
   const [sortBy, setSortBy] = useState<SortOption>('popular');
   const [showAllCars, setShowAllCars] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
   
   const [filters, setFilters] = useState<APIFilters>({});
   const [manufacturers, setManufacturers] = useState<{
@@ -99,7 +98,7 @@ const HomeCarsSection = memo(() => {
             Makinat e Disponueshme
           </h2>
           
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 mt-4 sm:mt-6">
+          <div className="flex justify-center items-center mt-4 sm:mt-6">
             <Button 
               variant="outline" 
               size="sm" 
@@ -109,14 +108,6 @@ const HomeCarsSection = memo(() => {
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               {loading ? 'Duke u ngarkuar...' : 'Rifresko'}
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setShowFilters(!showFilters)} 
-              className="w-full sm:w-auto border-primary text-primary hover:bg-primary hover:text-primary-foreground min-h-[44px]"
-            >
-              {showFilters ? 'Fshih Filtrat' : 'Shfaq Filtrat'}
             </Button>
           </div>
         </div>
@@ -131,30 +122,28 @@ const HomeCarsSection = memo(() => {
         )}
 
         {/* Filter Form */}
-        {showFilters && (
-          <div className="mb-6 sm:mb-8">
-            <FilterForm
-              filters={filters}
-              manufacturers={manufacturers}
-              models={models}
-              generations={generations}
-              filterCounts={filterCounts}
-              onFiltersChange={handleFiltersChange}
-              onClearFilters={handleClearFilters}
-              onManufacturerChange={(manufacturerId) => {
-                if (manufacturerId) {
-                  fetchModels(manufacturerId).then(setModels);
-                  setGenerations([]);
-                }
-              }}
-              onModelChange={(modelId) => {
-                if (modelId) {
-                  fetchGenerations(modelId).then(setGenerations);
-                }
-              }}
-            />
-          </div>
-        )}
+        <div className="mb-6 sm:mb-8">
+          <FilterForm
+            filters={filters}
+            manufacturers={manufacturers}
+            models={models}
+            generations={generations}
+            filterCounts={filterCounts}
+            onFiltersChange={handleFiltersChange}
+            onClearFilters={handleClearFilters}
+            onManufacturerChange={(manufacturerId) => {
+              if (manufacturerId) {
+                fetchModels(manufacturerId).then(setModels);
+                setGenerations([]);
+              }
+            }}
+            onModelChange={(modelId) => {
+              if (modelId) {
+                fetchGenerations(modelId).then(setGenerations);
+              }
+            }}
+          />
+        </div>
 
         {/* Sort Control */}
         <div className="mb-6 sm:mb-8 mx-2 sm:mx-0">
