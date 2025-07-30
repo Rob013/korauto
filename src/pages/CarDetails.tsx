@@ -1487,9 +1487,9 @@ const CarDetails = memo(() => {
 
                         {/* Technical Inspection Details */}
                         {car.details?.inspect?.inner && (
-                          <div className="space-y-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                          <div className="space-y-4 p-4 bg-muted/50 border border-border rounded-lg">
                             <h5 className="font-medium mb-3 text-foreground flex items-center gap-2">
-                              <Cog className="h-4 w-4 text-green-600" />
+                              <Cog className="h-4 w-4 text-primary" />
                               🔧 Inspektimi Teknik i Detajuar
                             </h5>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1506,9 +1506,9 @@ const CarDetails = memo(() => {
                                   return (
                                     <div
                                       key={key}
-                                      className="flex items-center justify-between p-2 bg-white border border-green-100 rounded"
+                                      className="flex items-center justify-between p-2 bg-card border border-border rounded"
                                     >
-                                      <span className="text-xs text-green-800 font-medium">
+                                      <span className="text-xs text-foreground font-medium">
                                         {label}:
                                       </span>
                                       <Badge
@@ -1537,52 +1537,52 @@ const CarDetails = memo(() => {
 
                         {/* Insurance History Details */}
                         {car.details?.insurance && (
-                          <div className="space-y-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                          <div className="space-y-4 p-4 bg-muted/50 border border-border rounded-lg">
                             <h5 className="font-medium mb-3 text-foreground flex items-center gap-2">
-                              <Shield className="h-4 w-4 text-blue-600" />
+                              <Shield className="h-4 w-4 text-primary" />
                               📋 Historia e Sigurimit
                             </h5>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               {car.details.insurance.car_info && (
                                 <>
-                                  <div className="p-3 bg-white border border-blue-100 rounded">
-                                    <span className="text-sm font-medium text-blue-800">
+                                  <div className="p-3 bg-card border border-border rounded">
+                                    <span className="text-sm font-medium text-foreground">
                                       Historia e Aksidenteve:
                                     </span>
-                                    <p className="text-sm text-blue-600 mt-1">
+                                    <p className="text-sm text-muted-foreground mt-1">
                                       {
                                         car.details.insurance.car_info
                                           .accident_history
                                       }
                                     </p>
                                   </div>
-                                  <div className="p-3 bg-white border border-blue-100 rounded">
-                                    <span className="text-sm font-medium text-blue-800">
+                                  <div className="p-3 bg-card border border-border rounded">
+                                    <span className="text-sm font-medium text-foreground">
                                       Numri i Riparimeve:
                                     </span>
-                                    <p className="text-sm text-blue-600 mt-1">
+                                    <p className="text-sm text-muted-foreground mt-1">
                                       {
                                         car.details.insurance.car_info
                                           .repair_count
                                       }
                                     </p>
                                   </div>
-                                  <div className="p-3 bg-white border border-blue-100 rounded">
-                                    <span className="text-sm font-medium text-blue-800">
+                                  <div className="p-3 bg-card border border-border rounded">
+                                    <span className="text-sm font-medium text-foreground">
                                       Humbje Totale:
                                     </span>
-                                    <p className="text-sm text-blue-600 mt-1">
+                                    <p className="text-sm text-muted-foreground mt-1">
                                       {
                                         car.details.insurance.car_info
                                           .total_loss
                                       }
                                     </p>
                                   </div>
-                                  <div className="p-3 bg-white border border-blue-100 rounded">
-                                    <span className="text-sm font-medium text-blue-800">
+                                  <div className="p-3 bg-card border border-border rounded">
+                                    <span className="text-sm font-medium text-foreground">
                                       Dëmtime nga Uji:
                                     </span>
-                                    <p className="text-sm text-blue-600 mt-1">
+                                    <p className="text-sm text-muted-foreground mt-1">
                                       {
                                         car.details.insurance.car_info
                                           .flood_damage
@@ -1598,9 +1598,9 @@ const CarDetails = memo(() => {
                         {/* Owner Changes History */}
                         {car.details?.insurance?.owner_changes &&
                           car.details.insurance.owner_changes.length > 0 && (
-                            <div className="space-y-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div className="space-y-4 p-4 bg-muted/50 border border-border rounded-lg">
                               <h5 className="font-medium mb-3 text-foreground flex items-center gap-2">
-                                <Users className="h-4 w-4 text-yellow-600" />
+                                <Users className="h-4 w-4 text-primary" />
                                 👥 Historia e Ndryshimit të Pronarëve
                               </h5>
                               <div className="space-y-2">
@@ -1608,20 +1608,20 @@ const CarDetails = memo(() => {
                                   (change: any, index: number) => (
                                     <div
                                       key={index}
-                                      className="p-3 bg-white border border-yellow-100 rounded"
+                                      className="p-3 bg-card border border-border rounded"
                                     >
                                       <div className="flex justify-between items-start">
                                         <div>
-                                          <span className="text-sm font-medium text-yellow-800">
+                                          <span className="text-sm font-medium text-foreground">
                                             {change.change_type}
                                           </span>
                                           {change.usage_type && (
-                                            <p className="text-xs text-yellow-600 mt-1">
+                                            <p className="text-xs text-muted-foreground mt-1">
                                               Lloji: {change.usage_type}
                                             </p>
                                           )}
                                         </div>
-                                        <span className="text-xs text-yellow-600">
+                                        <span className="text-xs text-muted-foreground">
                                           {change.date}
                                         </span>
                                       </div>
@@ -1636,30 +1636,34 @@ const CarDetails = memo(() => {
 
                         {/* Damage Assessment */}
                         {car.damage && (
-                          <div>
+                          <div className="space-y-4 p-4 bg-muted/50 border border-border rounded-lg">
+                            <h5 className="font-medium mb-3 text-foreground flex items-center gap-2">
+                              <AlertTriangle className="h-4 w-4 text-destructive" />
+                              ⚠️ Vlerësimi i Dëmtimeve
+                            </h5>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               {car.damage.main && (
-                                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
                                   <div className="flex items-center gap-2 mb-2">
-                                    <AlertTriangle className="h-4 w-4 text-amber-600" />
-                                    <span className="text-sm font-medium">
+                                    <AlertTriangle className="h-4 w-4 text-destructive" />
+                                    <span className="text-sm font-medium text-foreground">
                                       Dëmtimi Kryesor:
                                     </span>
                                   </div>
-                                  <span className="text-sm capitalize">
+                                  <span className="text-sm text-muted-foreground capitalize">
                                     {car.damage.main}
                                   </span>
                                 </div>
                               )}
                               {car.damage.second && (
-                                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
                                   <div className="flex items-center gap-2 mb-2">
-                                    <AlertTriangle className="h-4 w-4 text-amber-600" />
-                                    <span className="text-sm font-medium">
+                                    <AlertTriangle className="h-4 w-4 text-destructive" />
+                                    <span className="text-sm font-medium text-foreground">
                                       Dëmtimi Dytësor:
                                     </span>
                                   </div>
-                                  <span className="text-sm capitalize">
+                                  <span className="text-sm text-muted-foreground capitalize">
                                     {car.damage.second}
                                   </span>
                                 </div>
@@ -1688,9 +1692,9 @@ const CarDetails = memo(() => {
                         {/* Maintenance History */}
                         {car.details?.maintenance_history &&
                           car.details.maintenance_history.length > 0 && (
-                            <div>
+                            <div className="space-y-4 p-4 bg-muted/50 border border-border rounded-lg">
                               <h5 className="font-medium mb-3 text-foreground flex items-center gap-2">
-                                <Clock className="h-4 w-4 text-indigo-600" />
+                                <Clock className="h-4 w-4 text-primary" />
                                 📅 Historia e Mirëmbajtjes
                               </h5>
                               <div className="space-y-2">
@@ -1698,29 +1702,29 @@ const CarDetails = memo(() => {
                                   (record: any, index: number) => (
                                     <div
                                       key={index}
-                                      className="p-3 bg-indigo-50 border border-indigo-200 rounded-lg"
+                                      className="p-3 bg-card border border-border rounded-lg"
                                     >
                                       <div className="flex justify-between items-start">
                                         <div>
-                                          <span className="text-sm font-medium text-indigo-800">
+                                          <span className="text-sm font-medium text-foreground">
                                             {record.service_type ||
                                               record.type ||
                                               "Shërbim i Përgjithshëm"}
                                           </span>
                                           {record.description && (
-                                            <p className="text-xs text-indigo-600 mt-1">
+                                            <p className="text-xs text-muted-foreground mt-1">
                                               {record.description}
                                             </p>
                                           )}
                                         </div>
                                         {record.date && (
-                                          <span className="text-xs text-indigo-600">
+                                          <span className="text-xs text-muted-foreground">
                                             {record.date}
                                           </span>
                                         )}
                                       </div>
                                       {record.mileage && (
-                                        <span className="text-xs text-indigo-600 block mt-1">
+                                        <span className="text-xs text-muted-foreground block mt-1">
                                           Kilometrazh: {record.mileage}
                                         </span>
                                       )}
