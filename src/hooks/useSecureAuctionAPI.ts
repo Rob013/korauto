@@ -229,6 +229,8 @@ export const useSecureAuctionAPI = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [hasMorePages, setHasMorePages] = useState(false);
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
+  const [filters, setFilters] = useState<APIFilters>({});
+
 
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -268,8 +270,9 @@ export const useSecureAuctionAPI = () => {
     }
   };
 
-  const fetchCars = async (page: number = 1, filters: APIFilters = {}, resetList: boolean = true): Promise<void> => {
+  const fetchCars = async (page: number = 1,   newFilters: APIFilters = filters, resetList: boolean = true): Promise<void> => {
     if (resetList) {
+      setFilters(newFilters);
       setLoading(true);
       setCurrentPage(1);
     }
@@ -284,7 +287,7 @@ export const useSecureAuctionAPI = () => {
       
       for (let currentPage = 1; currentPage <= pagesToFetch; currentPage++) {
         const apiFilters = {
-          ...filters,
+          ...newFilters,
           page: currentPage.toString(),
           per_page: '12',
           simple_paginate: '0'
@@ -427,12 +430,10 @@ export const useSecureAuctionAPI = () => {
     }
   };
 
-  const loadMore = async (filters: APIFilters = {}) => {
-    if (!hasMorePages || loading) return;
-    console.log("filters",filters)
-    await fetchCars(currentPage + 1, filters, false);
-  };
-
+ const loadMore = async () => {
+  if (!hasMorePages || loading) return;
+  await fetchCars(currentPage + 1, filters, false); // ✅ uses internal state
+};
   return {
     cars,
     loading,
@@ -441,6 +442,8 @@ export const useSecureAuctionAPI = () => {
     totalCount,
     hasMorePages,
     fetchCars,
+    filters,         // ✅ add this
+    setFilters, 
     fetchManufacturers,
     fetchModels,
     fetchGenerations,
