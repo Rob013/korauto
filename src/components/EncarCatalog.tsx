@@ -106,7 +106,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   };
 
   const handleLoadMore = () => {
-    loadMore(filters);
+    loadMore();
   };
 
   const handleManufacturerChange = async (manufacturerId: string) => {
