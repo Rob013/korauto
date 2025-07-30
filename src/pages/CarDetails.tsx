@@ -1704,9 +1704,9 @@ const CarDetails = memo(() => {
                    </h3>
                    <Button
                      variant="outline"
-                      onClick={() => {
-                        setShowDetailedInfo(!showDetailedInfo);
-                      }}
+                       onClick={() => {
+                         setShowDetailedInfo(!showDetailedInfo);
+                       }}
                      className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto"
                    >
                      {showDetailedInfo ? 'Fshih Detajet' : 'Shiko Detajet'}
