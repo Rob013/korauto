@@ -1514,7 +1514,7 @@ const CarDetails = memo(() => {
                               <Cog className="h-4 w-4 text-primary" />
                               🔧 Inspektimi Teknik i Detajuar
                             </h5>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               {Object.entries(car.details.inspect.inner).map(
                                 ([key, value]: [string, any]) => {
                                   const isGood =
@@ -1528,16 +1528,16 @@ const CarDetails = memo(() => {
                                   return (
                                     <div
                                       key={key}
-                                      className="flex items-center justify-between p-2 bg-card border border-border rounded"
+                                      className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors"
                                     >
-                                      <span className="text-xs text-foreground font-medium">
+                                      <span className="text-xs text-foreground font-medium truncate flex-1 mr-2">
                                         {label}:
                                       </span>
                                       <Badge
                                         variant={
                                           isGood ? "secondary" : "destructive"
                                         }
-                                        className="text-xs"
+                                        className="text-xs shrink-0"
                                       >
                                         {value === "goodness" && "✅ Mirë"}
                                         {value === "proper" && "✅ Normal"}
