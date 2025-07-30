@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from "@/hooks/use-toast";
 import { MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { trackInspectionRequest } from "@/utils/analytics";
 
 interface InspectionRequestFormProps {
   trigger: React.ReactNode;
@@ -224,6 +225,14 @@ const InspectionRequestForm = ({ trigger, carId, carMake, carModel, carYear }: I
         whatsappPhone: ""
       });
       setIsOpen(false);
+      
+      // Track inspection request analytics
+      trackInspectionRequest(carId || undefined, {
+        customer_name: `${sanitizedData.firstName} ${sanitizedData.lastName}`,
+        customer_email: sanitizedData.email,
+        has_car_id: !!carId,
+        form_type: carId ? 'specific_car' : 'general_inquiry'
+      });
       
       toast({
         title: "Request Submitted Successfully",

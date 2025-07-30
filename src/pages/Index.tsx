@@ -1,4 +1,6 @@
 import { lazy, Suspense } from "react";
+import { useEffect } from "react";
+import { initializeAnalytics, trackPageView } from "@/utils/analytics";
 import Header from "@/components/Header";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -60,6 +62,12 @@ const SectionSkeleton = () => (
 );
 
 const Index = () => {
+  useEffect(() => {
+    // Initialize analytics tracking for homepage
+    initializeAnalytics();
+    trackPageView(undefined, { page_type: 'homepage' });
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header loads immediately for navigation */}

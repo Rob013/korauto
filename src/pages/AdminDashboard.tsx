@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import AuthLogin from "@/components/AuthLogin";
 import { CarsSyncButton } from "@/components/CarsSyncButton";
 import { AdminSyncDashboard } from "@/components/AdminSyncDashboard";
+import { AnalyticsDemo } from "@/components/AnalyticsDemo";
 
 interface InspectionRequest {
   id: string;
@@ -1035,7 +1036,14 @@ const AdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="system" className="space-y-6">
-            <AdminSyncDashboard />
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="md:col-span-2">
+                <AdminSyncDashboard />
+              </div>
+              <div>
+                <AnalyticsDemo />
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

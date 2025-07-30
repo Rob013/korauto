@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, memo, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
+import { trackPageView, trackCarView, trackFavorite } from "@/utils/analytics";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -154,12 +155,40 @@ const CarDetails = memo(() => {
       if (!lot) return;
 
       try {
-        // First, try to fetch from local cache
-        const { data: cachedCar, error: cacheError } = await supabase
+        // First, try to fetch from local cache by ID
+        let { data: cachedCar, error: cacheError } = await supabase
           .from('cars_cache')
           .select('*')
           .eq('id', lot)
-          .single();
+          .maybeSingle();
+
+        // If not found by ID, try by API ID (for inspection requests)
+        if (!cachedCar) {
+          const { data: cachedCarByApi, error: apiError } = await supabase
+            .from('cars_cache')
+            .select('*')
+            .eq('api_id', lot)
+            .maybeSingle();
+          
+          if (!apiError && cachedCarByApi) {
+            cachedCar = cachedCarByApi;
+            cacheError = null;
+          }
+        }
+
+        // If still not found, try by lot number
+        if (!cachedCar) {
+          const { data: cachedCarByLot, error: lotError } = await supabase
+            .from('cars_cache')
+            .select('*')
+            .eq('lot_number', lot)
+            .maybeSingle();
+          
+          if (!lotError && cachedCarByLot) {
+            cachedCar = cachedCarByLot;
+            cacheError = null;
+          }
+        }
 
         if (!cacheError && cachedCar && isMounted) {
           console.log('Found car in cache:', cachedCar);
@@ -218,20 +247,37 @@ const CarDetails = memo(() => {
 
           setCar(transformedCar);
           setLoading(false);
+          
+          // Track car view analytics
+          trackCarView(cachedCar.id || cachedCar.api_id, transformedCar);
           return;
         }
 
-        // If not found in cache, try external API
+        // If not found in cache, try external API with both lot ID and as lot number
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-        const response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
-          headers: {
-            accept: '*/*',
-            'x-api-key': API_KEY,
-          },
-          signal: controller.signal,
-        });
+        // Try to fetch by lot ID first, then by lot number if that fails
+        let response;
+        try {
+          response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
+            headers: {
+              accept: '*/*',
+              'x-api-key': API_KEY,
+            },
+            signal: controller.signal,
+          });
+        } catch (firstAttemptError) {
+          // If first attempt fails, try searching by lot number
+          console.log('First API attempt failed, trying as lot number...');
+          response = await fetch(`${API_BASE_URL}/search?lot_number=${lot}`, {
+            headers: {
+              accept: '*/*',
+              'x-api-key': API_KEY,
+            },
+            signal: controller.signal,
+          });
+        }
 
         clearTimeout(timeoutId);
 
@@ -297,6 +343,9 @@ const CarDetails = memo(() => {
 
         setCar(transformedCar);
         setLoading(false);
+        
+        // Track car view analytics
+        trackCarView(lot, transformedCar);
       } catch (apiError) {
         console.error('❌ Failed to fetch car data:', apiError);
         if (isMounted) {

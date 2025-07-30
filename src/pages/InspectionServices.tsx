@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { trackPageView } from "@/utils/analytics";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -5,6 +7,11 @@ import { CheckCircle, Shield, Wrench, FileText, Camera, Clock, ArrowLeft, Star, 
 import { useNavigate } from "react-router-dom";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
 const InspectionServices = () => {
+  useEffect(() => {
+    // Track inspection services page view
+    trackPageView(undefined, { page_type: 'inspection_services' });
+  }, []);
+
   const navigate = useNavigate();
   const inspectionSteps = [{
     icon: Search,
