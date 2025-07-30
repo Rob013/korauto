@@ -659,9 +659,11 @@ const AdminDashboard = () => {
                           <td className="border border-border px-3 py-2 text-xs">
                             <div className="space-y-1">
                               <a 
-                                href={`tel:${request.customer_phone}`}
-                                className="font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
-                                title={`Call ${request.customer_phone}`}
+                                href={`https://wa.me/${request.customer_phone.replace(/[^0-9]/g, '')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-medium text-green-600 hover:text-green-800 hover:underline cursor-pointer"
+                                title={`WhatsApp ${request.customer_phone}`}
                               >
                                 {request.customer_phone}
                               </a>
