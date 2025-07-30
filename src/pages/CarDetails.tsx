@@ -1628,110 +1628,14 @@ const CarDetails = memo(() => {
                         </div>
 
                         {/* Vehicle Details from API */}
-                        <div className="bg-card rounded-lg p-6 shadow-sm border border-border">
-                          <h5 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                              <FileText className="h-5 w-5 text-primary" />
-                            </div>
-                            🚗 Detajet Teknike të Makinës
-                          </h5>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {car && <>
-                                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-3 h-3 bg-primary rounded-full"></div>
-                                    <span className="text-sm font-semibold text-primary">VIN</span>
-                                  </div>
-                                  <p className="text-sm text-foreground">{car.vin || 'N/A'}</p>
-                                </div>
-                                
-                                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-3 h-3 bg-primary rounded-full"></div>
-                                    <span className="text-sm font-semibold text-primary">Motori</span>
-                                  </div>
-                                  <p className="text-sm text-foreground">{car.engine?.name || 'N/A'}</p>
-                                  {car.cylinders && <p className="text-xs text-muted-foreground">Cilindra: {car.cylinders}</p>}
-                                </div>
-
-                                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-3 h-3 bg-primary rounded-full"></div>
-                                    <span className="text-sm font-semibold text-primary">Tipi i Trupit</span>
-                                  </div>
-                                  <p className="text-sm text-foreground capitalize">{car.body_type?.name || 'N/A'}</p>
-                                </div>
-
-                                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-3 h-3 bg-primary rounded-full"></div>
-                                    <span className="text-sm font-semibold text-primary">Sistemi i Lëvizjes</span>
-                                  </div>
-                                  <p className="text-sm text-foreground capitalize">{car.drive_wheel?.name || 'N/A'}</p>
-                                </div>
-
-                                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-3 h-3 bg-primary rounded-full"></div>
-                                    <span className="text-sm font-semibold text-primary">Kilometrazhi</span>
-                                  </div>
-                                  <p className="text-sm text-foreground">
-                                    {car.odometer?.km ? `${car.odometer.km.toLocaleString()} km` : car.mileage || 'N/A'}
-                                  </p>
-                                  {car.odometer?.mi && <p className="text-xs text-muted-foreground">
-                                      ({car.odometer.mi.toLocaleString()} miles)
-                                    </p>}
-                                  {car.odometer?.status && <p className="text-xs text-muted-foreground capitalize">
-                                      Status: {car.odometer.status.name}
-                                    </p>}
-                                </div>
-
-                                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-3 h-3 bg-primary rounded-full"></div>
-                                    <span className="text-sm font-semibold text-primary">Çelësat</span>
-                                  </div>
-                                  <p className="text-sm text-foreground">
-                                    {car.keys_available ? '✅ Të disponueshëm' : '❌ Jo të disponueshëm'}
-                                  </p>
-                                </div>
-
-                                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-3 h-3 bg-primary rounded-full"></div>
-                                    <span className="text-sm font-semibold text-primary">Karburanti</span>
-                                  </div>
-                                  <p className="text-sm text-foreground capitalize">{car.fuel || 'N/A'}</p>
-                                </div>
-
-                                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-3 h-3 bg-primary rounded-full"></div>
-                                    <span className="text-sm font-semibold text-primary">Transmisioni</span>
-                                  </div>
-                                  <p className="text-sm text-foreground capitalize">{car.transmission || 'N/A'}</p>
-                                </div>
-
-                                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-3 h-3 bg-primary rounded-full"></div>
-                                    <span className="text-sm font-semibold text-primary">Ngjyra</span>
-                                  </div>
-                                  <p className="text-sm text-foreground capitalize">{car.color || 'N/A'}</p>
-                                </div>
-                              </>}
-                          </div>
-                        </div>
+                        
 
                         {/* Auction Information */}
                         
 
                         {/* Damage Assessment */}
                         {car.damage && <div>
-                            <h5 className="font-medium mb-3 text-foreground flex items-center gap-2">
-                              <AlertTriangle className="h-4 w-4 text-amber-600" />
-                              📋 Vlerësimi i Dëmtimeve
-                            </h5>
+                            
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               {car.damage.main && <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
                                   <div className="flex items-center gap-2 mb-2">
@@ -1751,39 +1655,7 @@ const CarDetails = memo(() => {
                           </div>}
 
                         {/* Safety Information */}
-                        <div className="bg-card rounded-lg p-6 shadow-sm border border-border">
-                          <h5 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
-                            <div className="p-2 bg-secondary/10 rounded-lg">
-                              <Shield className="h-5 w-5 text-secondary-foreground" />
-                            </div>
-                            🛡️ Informacione Sigurie
-                          </h5>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {car.keys_available !== undefined && <div className="p-4 bg-secondary/5 border border-secondary/20 rounded-lg hover:shadow-md transition-shadow">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <Settings className="h-4 w-4 text-secondary-foreground" />
-                                  <span className="text-sm font-medium text-foreground">Çelësat:</span>
-                                </div>
-                                <Badge variant={car.keys_available ? "secondary" : "destructive"}>
-                                  {car.keys_available ? 'Të Disponueshëm' : 'Jo të Disponueshëm'}
-                                </Badge>
-                              </div>}
-                            {car.airbags && <div className="p-4 bg-secondary/5 border border-secondary/20 rounded-lg hover:shadow-md transition-shadow">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <Shield className="h-4 w-4 text-secondary-foreground" />
-                                  <span className="text-sm font-medium text-foreground">Airbag:</span>
-                                </div>
-                                <span className="text-sm text-muted-foreground">{car.airbags}</span>
-                              </div>}
-                            {car.condition && <div className="p-4 bg-secondary/5 border border-secondary/20 rounded-lg hover:shadow-md transition-shadow">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <CheckCircle className="h-4 w-4 text-secondary-foreground" />
-                                  <span className="text-sm font-medium text-foreground">Gjendja:</span>
-                                </div>
-                                <span className="text-sm text-muted-foreground capitalize">{car.condition}</span>
-                              </div>}
-                          </div>
-                        </div>
+                        
 
                         {/* Visual Inspection Diagram */}
                         {car.details?.inspect_outer && car.details.inspect_outer.length > 0 && <div>
