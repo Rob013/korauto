@@ -2301,35 +2301,6 @@ const CarDetails = memo(() => {
                     </div>
 
 
-                    {/* Admin Only Pricing Details */}
-                    {isAdmin && (
-                      <div className="space-y-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
-                        <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                          <FileText className="h-5 w-5" />
-                          Detaje Çmimi (Vetëm Admin)
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {car.bid && (
-                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
-                              <span className="text-sm">Oferta Aktuale:</span>
-                              <span className="font-medium">€{car.bid.toLocaleString()}</span>
-                            </div>
-                          )}
-                          {car.buy_now && (
-                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
-                              <span className="text-sm">Çmimi Blerje Tani:</span>
-                              <span className="font-medium">€{car.buy_now.toLocaleString()}</span>
-                            </div>
-                          )}
-                          {car.final_bid && (
-                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
-                              <span className="text-sm">Oferta Finale:</span>
-                              <span className="font-medium">€{car.final_bid.toLocaleString()}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
               </CardContent>
