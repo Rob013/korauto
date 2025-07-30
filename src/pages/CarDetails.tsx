@@ -1783,6 +1783,17 @@ const CarDetails = memo(() => {
                     )}
 
                     {/* Equipment & Options */}
+                    {(() => {
+                      // Debug info
+                      if (car.details?.options) {
+                        console.log('🔍 Car details options:', car.details.options);
+                        console.log('🔍 Converted options:', convertOptionsToNames(car.details.options));
+                      } else {
+                        console.log('🔍 No options found. Car details:', car.details);
+                      }
+                      return null;
+                    })()}
+                    
                     {car.details?.options && (
                       <EquipmentOptionsSection 
                         options={convertOptionsToNames(car.details.options)} 
@@ -1790,6 +1801,17 @@ const CarDetails = memo(() => {
                         safetyFeatures={car.safety_features}
                         comfortFeatures={car.comfort_features}
                       />
+                    )}
+                    
+                    {/* Fallback if no options found */}
+                    {!car.details?.options && (
+                      <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                        <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                          <Settings className="h-5 w-5" />
+                          Pajisjet dhe Opsionet
+                        </h4>
+                        <p className="text-muted-foreground">Nuk ka informacion për pajisjet dhe opsionet e kësaj makine.</p>
+                      </div>
                     )}
 
                     {/* Inspection Report with Car Diagram */}
