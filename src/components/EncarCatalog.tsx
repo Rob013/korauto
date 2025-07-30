@@ -115,66 +115,84 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         
         // Check in lots array first
         if (car.lots && Array.isArray(car.lots)) {
-          car.lots.forEach((lot: any, lotIndex: number) => {
+          for (const lot of car.lots) {
             if (lot.grade_iaai) {
               const lotGrade = lot.grade_iaai.toLowerCase().trim();
-              console.log(`  📋 Lot ${lotIndex} grade_iaai: "${lotGrade}"`);
+              console.log(`  📋 Lot grade_iaai: "${lotGrade}"`);
               
-              // Exact match or contains match
+              // More flexible matching for lot grades
               if (lotGrade === targetGrade || 
                   lotGrade.includes(targetGrade) || 
-                  targetGrade.includes(lotGrade)) {
+                  targetGrade.includes(lotGrade) ||
+                  lotGrade.replace(/\s+/g, '') === targetGrade.replace(/\s+/g, '')) {
                 hasMatchingGrade = true;
                 console.log(`  ✅ MATCH found in lot grade_iaai`);
+                break;
               }
             }
-          });
+          }
         }
         
-        // Check in car title with comprehensive pattern matching
+        // Check in car title - make this more lenient
         if (!hasMatchingGrade && car.title) {
           const titleLower = car.title.toLowerCase();
           console.log(`  📝 Car title: "${titleLower}"`);
           
-          // Direct string search first
-          if (titleLower.includes(targetGrade)) {
+          // Direct string search first - more lenient
+          if (titleLower.includes(targetGrade) || titleLower.includes(targetGrade.replace(/\s+/g, ''))) {
             hasMatchingGrade = true;
             console.log(`  ✅ MATCH found via direct title search`);
           }
           
-          // Pattern extraction if direct search fails
+          // If still no match, try extracting all possible grade patterns
           if (!hasMatchingGrade) {
-            const extractedGrades: string[] = [];
+            // Extract all potential grades from the title
+            const allPossibleGrades = new Set<string>();
             
-            // More comprehensive patterns
-            const patterns = [
-              /(\d+\.?\d*)\s*(tdi|tfsi|tsi|fsi|cdi|bluemotion|eco|hybrid|d|i)/gi,
-              /(\d+\.?\d*)\s*l(iter)?/gi,
-              /\b(\d{3}[a-z]?[id]?)\b/gi, // BMW style: 320d, 330i
-              /([a-z]\d{3}[a-z]?)\b/gi // Mercedes style: E220d, C300
-            ];
+            // BMW/Audi style patterns (320i, 330d, etc.)
+            const bmwMatches = titleLower.match(/\b(\d{3}[a-z]*[id]?[a-z]*)\b/gi);
+            if (bmwMatches) {
+              bmwMatches.forEach(match => allPossibleGrades.add(match.trim()));
+            }
             
-            patterns.forEach((pattern, patternIndex) => {
-              const matches = titleLower.match(pattern);
-              if (matches) {
-                matches.forEach(match => {
-                  const cleanMatch = match.trim();
-                  extractedGrades.push(cleanMatch);
-                  console.log(`  📊 Pattern ${patternIndex} extracted: "${cleanMatch}"`);
-                  
-                  // Check if this extracted grade matches our target
-                  if (cleanMatch === targetGrade ||
-                      cleanMatch.includes(targetGrade) ||
-                      targetGrade.includes(cleanMatch) ||
-                      cleanMatch.replace(/\s+/g, '') === targetGrade.replace(/\s+/g, '')) {
-                    hasMatchingGrade = true;
-                    console.log(`  ✅ MATCH found via pattern extraction: "${cleanMatch}"`);
-                  }
-                });
+            // Engine displacement patterns (2.0, 1.8, etc.)
+            const engineMatches = titleLower.match(/\b(\d+\.?\d*)\s*(tdi|tfsi|tsi|fsi|cdi|d|i|turbo|hybrid|eco)\b/gi);
+            if (engineMatches) {
+              engineMatches.forEach(match => {
+                const cleaned = match.trim().replace(/\s+/g, '');
+                allPossibleGrades.add(cleaned);
+                // Also add without the suffix for broader matching
+                const withoutSuffix = match.replace(/(tdi|tfsi|tsi|fsi|cdi|d|i|turbo|hybrid|eco)$/gi, '').trim();
+                if (withoutSuffix) {
+                  allPossibleGrades.add(withoutSuffix);
+                }
+              });
+            }
+            
+            // Simple engine patterns (1.6, 2.0, etc.)
+            const simpleMatches = titleLower.match(/\b(\d+\.?\d*)\s*l?i?t?e?r?\b/gi);
+            if (simpleMatches) {
+              simpleMatches.forEach(match => {
+                const cleaned = match.replace(/l?i?t?e?r?$/gi, '').trim();
+                if (cleaned && /^\d+\.?\d*$/.test(cleaned)) {
+                  allPossibleGrades.add(cleaned);
+                }
+              });
+            }
+            
+            console.log(`  📊 All extracted grades: [${Array.from(allPossibleGrades).join(', ')}]`);
+            
+            // Check if any extracted grade matches our target
+            for (const grade of allPossibleGrades) {
+              if (grade === targetGrade ||
+                  grade.includes(targetGrade) ||
+                  targetGrade.includes(grade) ||
+                  grade.replace(/\s+/g, '') === targetGrade.replace(/\s+/g, '')) {
+                hasMatchingGrade = true;
+                console.log(`  ✅ MATCH found via extracted grade: "${grade}"`);
+                break;
               }
-            });
-            
-            console.log(`  📊 All extracted grades: [${extractedGrades.join(', ')}]`);
+            }
           }
         }
         
