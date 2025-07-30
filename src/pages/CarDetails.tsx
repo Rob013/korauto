@@ -1171,9 +1171,9 @@ const CarDetails = memo(() => {
                 </div>
 
                 {/* Compact Specifications Grid */}
-                <div className="grid grid-cols-2 gap-2 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                   {/* Basic Info */}
-                  <div className="flex items-center justify-between p-3 bg-card border border-border rounded hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-2">
                       <Car className="h-4 w-4 text-primary" />
                       <span className="font-medium text-xs text-foreground">
@@ -1185,7 +1185,7 @@ const CarDetails = memo(() => {
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between p-3 bg-card border border-border rounded hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-primary" />
                       <span className="font-medium text-xs text-foreground">
@@ -1199,84 +1199,84 @@ const CarDetails = memo(() => {
 
                   {/* Add Production Year */}
                   {car.details?.first_registration && (
-                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <Calendar className="h-5 w-5 text-primary" />
-                        <span className="font-semibold text-foreground">
+                    <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-primary" />
+                        <span className="font-medium text-xs text-foreground">
                           Viti i Prodhimit
                         </span>
                       </div>
-                      <span className="text-muted-foreground font-medium">
+                      <span className="text-muted-foreground text-xs font-medium">
                         {car.details.first_registration.year}
                       </span>
                     </div>
                   )}
 
                   {car.mileage && (
-                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <Gauge className="h-5 w-5 text-primary" />
-                        <span className="font-semibold text-foreground">
+                    <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <Gauge className="h-4 w-4 text-primary" />
+                        <span className="font-medium text-xs text-foreground">
                           Kilometrat
                         </span>
                       </div>
-                      <span className="text-muted-foreground font-medium">
+                      <span className="text-muted-foreground text-xs font-medium">
                         {car.mileage}
                       </span>
                     </div>
                   )}
 
                   {car.transmission && (
-                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <Settings className="h-5 w-5 text-primary" />
-                        <span className="font-semibold text-foreground">
+                    <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <Settings className="h-4 w-4 text-primary" />
+                        <span className="font-medium text-xs text-foreground">
                           Transmisioni
                         </span>
                       </div>
-                      <span className="text-muted-foreground font-medium capitalize">
+                      <span className="text-muted-foreground text-xs font-medium capitalize">
                         {car.transmission}
                       </span>
                     </div>
                   )}
 
                   {car.fuel && (
-                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <Fuel className="h-5 w-5 text-primary" />
-                        <span className="font-semibold text-foreground">
+                    <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <Fuel className="h-4 w-4 text-primary" />
+                        <span className="font-medium text-xs text-foreground">
                           Karburanti
                         </span>
                       </div>
-                      <span className="text-muted-foreground font-medium capitalize">
+                      <span className="text-muted-foreground text-xs font-medium capitalize">
                         {car.fuel}
                       </span>
                     </div>
                   )}
 
                   {car.color && (
-                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <Palette className="h-5 w-5 text-primary" />
-                        <span className="font-semibold text-foreground">
+                    <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <Palette className="h-4 w-4 text-primary" />
+                        <span className="font-medium text-xs text-foreground">
                           Ngjyra
                         </span>
                       </div>
-                      <span className="text-muted-foreground font-medium capitalize">
+                      <span className="text-muted-foreground text-xs font-medium capitalize">
                         {car.color}
                       </span>
                     </div>
                   )}
 
                   {car.details?.seats_count && (
-                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <Users className="h-5 w-5 text-primary" />
-                        <span className="font-semibold text-foreground">
+                    <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-primary" />
+                        <span className="font-medium text-xs text-foreground">
                           Numri i Vendeve
                         </span>
                       </div>
-                      <span className="text-muted-foreground font-medium">
+                      <span className="text-muted-foreground text-xs font-medium">
                         {car.details.seats_count} Vende
                       </span>
                     </div>
