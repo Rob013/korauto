@@ -420,56 +420,104 @@ const AdminDashboard = () => {
     setSearchingCars(prev => ({ ...prev, [requestId]: true }));
     
     try {
-      // Extract lot number from car info if it exists in carDetails
-      const carId = requests.find(r => r.id === requestId)?.car_id;
-      let lotNumber = carId;
+      // Extract car ID from the request
+      const request = requests.find(r => r.id === requestId);
+      const carId = request?.car_id;
       
-      // If we have car details, use the lot number from there
-      if (carId && carDetails[carId]?.lot_number) {
-        lotNumber = carDetails[carId].lot_number;
+      console.log(`🔍 Searching for car with ID/Lot: ${carId}`);
+      
+      // Try multiple search approaches
+      const searchMethods = [
+        // 1. Search by car ID directly
+        {
+          method: 'Car ID',
+          payload: {
+            endpoint: 'cars',
+            carId: carId
+          }
+        },
+        // 2. Search by lot number in IAAI
+        {
+          method: 'Lot Number (IAAI)',
+          payload: {
+            endpoint: 'search-lot',
+            lotNumber: carId
+          }
+        },
+        // 3. Search with general search
+        {
+          method: 'General Search',
+          payload: {
+            endpoint: 'cars',
+            filters: {
+              search: carId
+            }
+          }
+        }
+      ];
+
+      for (const searchMethod of searchMethods) {
+        console.log(`🔍 Trying ${searchMethod.method}...`);
+        
+        const response = await fetch(`https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/secure-cars-api`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0eXlpcWlta3lzbWpuYW9jc3dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0MzkxMzQsImV4cCI6MjA2OTAxNTEzNH0.lyRCHiShhW4wrGHL3G7pK5JBUHNAtgSUQACVOBGRpL8`,
+          },
+          body: JSON.stringify(searchMethod.payload)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log(`✅ Found with ${searchMethod.method}:`, result);
+          
+          // Handle different response formats
+          let carData = null;
+          
+          if (result.data && Array.isArray(result.data) && result.data.length > 0) {
+            // If it's a search result with data array
+            carData = result.data[0];
+          } else if (result.lots && result.lots.length > 0) {
+            // If it's a direct car result
+            carData = result;
+          } else if (Array.isArray(result) && result.length > 0) {
+            // If it's an array of cars
+            carData = result[0];
+          } else if (result.id || result.year) {
+            // If it's a single car object
+            carData = result;
+          }
+
+          if (carData) {
+            setFoundCars(prev => ({ ...prev, [requestId]: carData }));
+            
+            // Create detailed car info for the toast
+            const lot = carData.lots?.[0];
+            const carInfoText = `${carData.year} ${carData.manufacturer?.name} ${carData.model?.name}`;
+            const lotInfo = `Lot: ${lot?.lot} | Price: $${lot?.buy_now?.toLocaleString() || 'N/A'}`;
+            const mileageInfo = lot?.odometer?.km ? `| ${lot.odometer.km.toLocaleString()} km` : '';
+            
+            toast({
+              title: `✅ Car Found via ${searchMethod.method}!`,
+              description: `${carInfoText}\n${lotInfo} ${mileageInfo}\nVIN: ${carData.vin || 'N/A'}`,
+              duration: 8000,
+            });
+            return; // Exit the function if we found the car
+          }
+        }
       }
 
-      console.log(`🔍 Searching for car with lot number: ${lotNumber}`);
+      // If we get here, none of the search methods worked
+      console.log('❌ Car not found with any method');
       
-      const response = await fetch(`https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/secure-cars-api`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0eXlpcWlta3lzbWpuYW9jc3dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0MzkxMzQsImV4cCI6MjA2OTAxNTEzNH0.lyRCHiShhW4wrGHL3G7pK5JBUHNAtgSUQACVOBGRpL8`,
-        },
-        body: JSON.stringify({
-          endpoint: 'search-lot',
-          lotNumber: lotNumber
-        })
+      toast({
+        title: "Car Not Found",
+        description: `Car with ID/Lot ${carId} not found in any auction database (tried car ID, lot number, and general search)`,
+        variant: "destructive",
+        duration: 6000,
       });
 
-      if (response.ok) {
-        const carData = await response.json();
-        console.log('✅ Found car data:', carData);
-        
-        setFoundCars(prev => ({ ...prev, [requestId]: carData }));
-        
-        // Create detailed car info for the toast
-        const lot = carData.lots?.[0];
-        const carInfo = `${carData.year} ${carData.manufacturer?.name} ${carData.model?.name}`;
-        const lotInfo = `Lot: ${lot?.lot} | Price: $${lot?.buy_now?.toLocaleString() || 'N/A'}`;
-        const mileageInfo = lot?.odometer?.km ? `| ${lot.odometer.km.toLocaleString()} km` : '';
-        
-        toast({
-          title: "✅ Car Found!",
-          description: `${carInfo}\n${lotInfo} ${mileageInfo}\nVIN: ${carData.vin || 'N/A'}`,
-          duration: 8000,
-        });
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.log('❌ Car not found:', response.status, errorData);
-        
-        toast({
-          title: "Car Not Found",
-          description: `Car with lot number ${lotNumber} not found in auction databases`,
-          variant: "destructive",
-        });
-      }
     } catch (error) {
       console.error('Error searching for car:', error);
       toast({
