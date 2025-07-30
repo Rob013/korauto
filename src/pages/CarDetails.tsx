@@ -1784,6 +1784,18 @@ const CarDetails = memo(() => {
                               <span className="font-medium capitalize">{car.details.sell_type}</span>
                             </div>
                           )}
+                          
+                          {/* Inspection Report Button */}
+                          <div className="md:col-span-2 mt-4">
+                            <Button
+                              onClick={() => setShowDetailedInfo(!showDetailedInfo)}
+                              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2"
+                              size="lg"
+                            >
+                              <FileText className="h-5 w-5" />
+                              {showDetailedInfo ? 'Fshih Raportin' : 'Raporti i Inspektimit'}
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     )}
