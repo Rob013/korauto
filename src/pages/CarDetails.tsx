@@ -132,13 +132,13 @@ const EquipmentOptionsSection = memo(
     const [showOptions, setShowOptions] = useState(false);
     const INITIAL_SHOW_COUNT = 5;
     return (
-      <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+      <div className="space-y-3 p-3 bg-muted/30 rounded-lg border">
         <Button
           onClick={() => setShowOptions(!showOptions)}
           variant="ghost"
-          className="w-full justify-start text-lg font-semibold text-foreground hover:bg-muted/80 p-2 h-auto"
+          className="w-full justify-start text-base font-semibold text-foreground hover:bg-muted/50 p-2 h-auto"
         >
-          <Settings className="h-5 w-5 mr-2" />
+          <Settings className="h-4 w-4 mr-2 text-primary" />
           Pajisjet dhe Opsionet
           <ChevronDown
             className={`h-4 w-4 ml-auto transition-transform ${
@@ -148,22 +148,22 @@ const EquipmentOptionsSection = memo(
         </Button>
 
         {showOptions && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {/* Standard Equipment */}
             {options.standard && options.standard.length > 0 && (
               <div>
-                <h5 className="font-medium mb-2 text-foreground">
+                <h5 className="font-medium mb-2 text-sm text-foreground">
                   Pajisje Standarde:
                 </h5>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1">
                   {(showAllStandard
                     ? options.standard
                     : options.standard.slice(0, INITIAL_SHOW_COUNT)
                   ).map((option, index) => (
                     <Badge
                       key={index}
-                      variant="outline"
-                      className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                      variant="secondary"
+                      className="text-xs px-2 py-1 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
                     >
                       {option}
                     </Badge>
@@ -176,10 +176,10 @@ const EquipmentOptionsSection = memo(
                       className="h-6 px-2 text-xs text-primary hover:bg-primary/10"
                     >
                       {showAllStandard
-                        ? `- Trego Më Pak`
+                        ? `- Më Pak`
                         : `+ ${
                             options.standard.length - INITIAL_SHOW_COUNT
-                          } Më Shumë`}
+                          }`}
                     </Button>
                   )}
                 </div>
@@ -189,18 +189,18 @@ const EquipmentOptionsSection = memo(
             {/* Optional Equipment */}
             {options.choice && options.choice.length > 0 && (
               <div>
-                <h5 className="font-medium mb-2 text-foreground">
+                <h5 className="font-medium mb-2 text-sm text-foreground">
                   Pajisje Opsionale:
                 </h5>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1">
                   {(showAllChoice
                     ? options.choice
                     : options.choice.slice(0, INITIAL_SHOW_COUNT)
                   ).map((option, index) => (
                     <Badge
                       key={index}
-                      variant="secondary"
-                      className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                      variant="outline"
+                      className="text-xs px-2 py-1 bg-accent/10 text-accent-foreground border-accent/20 hover:bg-accent/20"
                     >
                       {option}
                     </Badge>
@@ -213,10 +213,10 @@ const EquipmentOptionsSection = memo(
                       className="h-6 px-2 text-xs text-primary hover:bg-primary/10"
                     >
                       {showAllChoice
-                        ? `- Trego Më Pak`
+                        ? `- Më Pak`
                         : `+ ${
                             options.choice.length - INITIAL_SHOW_COUNT
-                          } Më Shumë`}
+                          }`}
                     </Button>
                   )}
                 </div>
@@ -226,15 +226,15 @@ const EquipmentOptionsSection = memo(
             {/* Tuning Modifications */}
             {options.tuning && options.tuning.length > 0 && (
               <div>
-                <h5 className="font-medium mb-2 text-foreground">
+                <h5 className="font-medium mb-2 text-sm text-foreground">
                   Modifikimet:
                 </h5>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1">
                   {options.tuning.map((option, index) => (
                     <Badge
                       key={index}
                       variant="destructive"
-                      className="bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100"
+                      className="text-xs px-2 py-1 bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
                     >
                       {option}
                     </Badge>
@@ -246,10 +246,10 @@ const EquipmentOptionsSection = memo(
             {/* General Features */}
             {features && features.length > 0 && (
               <div>
-                <h5 className="font-medium mb-2 text-foreground">
+                <h5 className="font-medium mb-2 text-sm text-foreground">
                   Karakteristika të Përgjithshme:
                 </h5>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1">
                   {(showAllFeatures
                     ? features
                     : features.slice(0, INITIAL_SHOW_COUNT)
@@ -257,7 +257,7 @@ const EquipmentOptionsSection = memo(
                     <Badge
                       key={index}
                       variant="outline"
-                      className="bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
+                      className="text-xs px-2 py-1 bg-muted/10 text-muted-foreground border-muted/30 hover:bg-muted/20"
                     >
                       {feature}
                     </Badge>
@@ -270,8 +270,8 @@ const EquipmentOptionsSection = memo(
                       className="h-6 px-2 text-xs text-primary hover:bg-primary/10"
                     >
                       {showAllFeatures
-                        ? `- Trego Më Pak`
-                        : `+ ${features.length - INITIAL_SHOW_COUNT} Më Shumë`}
+                        ? `- Më Pak`
+                        : `+ ${features.length - INITIAL_SHOW_COUNT}`}
                     </Button>
                   )}
                 </div>
@@ -281,10 +281,10 @@ const EquipmentOptionsSection = memo(
             {/* Safety Features */}
             {safetyFeatures && safetyFeatures.length > 0 && (
               <div>
-                <h5 className="font-medium mb-2 text-foreground">
+                <h5 className="font-medium mb-2 text-sm text-foreground">
                   Karakteristika të Sigurisë:
                 </h5>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1">
                   {(showAllSafety
                     ? safetyFeatures
                     : safetyFeatures.slice(0, INITIAL_SHOW_COUNT)
@@ -292,7 +292,7 @@ const EquipmentOptionsSection = memo(
                     <Badge
                       key={index}
                       variant="outline"
-                      className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                      className="text-xs px-2 py-1 bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
                     >
                       {feature}
                     </Badge>
@@ -305,10 +305,10 @@ const EquipmentOptionsSection = memo(
                       className="h-6 px-2 text-xs text-primary hover:bg-primary/10"
                     >
                       {showAllSafety
-                        ? `- Trego Më Pak`
+                        ? `- Më Pak`
                         : `+ ${
                             safetyFeatures.length - INITIAL_SHOW_COUNT
-                          } Më Shumë`}
+                          }`}
                     </Button>
                   )}
                 </div>
@@ -318,18 +318,18 @@ const EquipmentOptionsSection = memo(
             {/* Comfort Features */}
             {comfortFeatures && comfortFeatures.length > 0 && (
               <div>
-                <h5 className="font-medium mb-2 text-foreground">
+                <h5 className="font-medium mb-2 text-sm text-foreground">
                   Karakteristika të Rehatisë:
                 </h5>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1">
                   {(showAllComfort
                     ? comfortFeatures
                     : comfortFeatures.slice(0, INITIAL_SHOW_COUNT)
                   ).map((feature, index) => (
                     <Badge
                       key={index}
-                      variant="outline"
-                      className="bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100"
+                      variant="secondary"
+                      className="text-xs px-2 py-1 bg-secondary/10 text-secondary-foreground border-secondary/20 hover:bg-secondary/20"
                     >
                       {feature}
                     </Badge>
@@ -342,10 +342,10 @@ const EquipmentOptionsSection = memo(
                       className="h-6 px-2 text-xs text-primary hover:bg-primary/10"
                     >
                       {showAllComfort
-                        ? `- Trego Më Pak`
+                        ? `- Më Pak`
                         : `+ ${
                             comfortFeatures.length - INITIAL_SHOW_COUNT
-                          } Më Shumë`}
+                          }`}
                     </Button>
                   )}
                 </div>
