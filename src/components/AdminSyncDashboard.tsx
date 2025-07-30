@@ -177,25 +177,25 @@ export function AdminSyncDashboard() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">Sync Dashboard</h2>
-        <Button variant="outline" onClick={getSyncStatus}>
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh Status
+    <div className="space-y-3 sm:space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Sync Dashboard</h2>
+        <Button variant="outline" size="sm" onClick={getSyncStatus}>
+          <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+          <span className="hidden sm:inline">Refresh</span>
         </Button>
       </div>
 
       {/* System Status Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Database Status</CardTitle>
-            <Database className="h-4 w-4 text-muted-foreground" />
+      <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <Card className="p-3">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">Database</CardTitle>
+            <Database className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalCount.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Total cars in database</p>
+          <CardContent className="p-0">
+            <div className="text-lg sm:text-xl font-bold">{totalCount.toLocaleString()}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Total cars</p>
           </CardContent>
         </Card>
 
@@ -260,24 +260,28 @@ export function AdminSyncDashboard() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col gap-2 sm:gap-3">
             <Button 
               onClick={handleTestSync}
               disabled={testInProgress || syncStatus?.status === 'running'}
-              className="flex-1"
+              size="sm"
+              className="w-full justify-start"
             >
-              <Zap className="h-4 w-4 mr-2" />
-              {testInProgress ? 'Starting...' : '🔄 Incremental Sync (Real API)'}
+              <Zap className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+              <span className="text-xs sm:text-sm">
+                {testInProgress ? 'Starting...' : '🔄 Incremental Sync'}
+              </span>
             </Button>
             
             <Button 
               variant="outline"
               onClick={handleFullSync}
               disabled={syncStatus?.status === 'running'}
-              className="flex-1"
+              size="sm"
+              className="w-full justify-start"
             >
-              <Database className="h-4 w-4 mr-2" />
-              🚀 Full Sync (All Real Cars)
+              <Database className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+              <span className="text-xs sm:text-sm">🚀 Full Sync</span>
             </Button>
           </div>
           

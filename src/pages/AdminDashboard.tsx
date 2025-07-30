@@ -690,27 +690,30 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container-responsive p-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-            <CarsSyncButton />
-            <p className="text-muted-foreground">Logged in as: {user.email}</p>
+      <div className="container max-w-7xl mx-auto p-3 sm:p-4 lg:p-6">
+        {/* Compact Header */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold truncate">Admin Dashboard</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground truncate">{user.email}</p>
+            <div className="mt-2">
+              <CarsSyncButton />
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate("/")}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Return Home
+          <div className="flex flex-wrap gap-2 shrink-0">
+            <Button variant="outline" size="sm" onClick={() => navigate("/")}>
+              <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Home</span>
             </Button>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
+            <Button variant="outline" size="sm" onClick={handleLogout}>
+              <LogOut className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Logout</span>
             </Button>
-            <Button onClick={fetchData} disabled={loading}>
+            <Button size="sm" onClick={fetchData} disabled={loading}>
               <RefreshCw
-                className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+                className={`h-3 w-3 sm:h-4 sm:w-4 ${loading ? "animate-spin" : ""} sm:mr-1`}
               />
-              Refresh
+              <span className="hidden sm:inline">Refresh</span>
             </Button>
           </div>
         </div>
@@ -718,27 +721,27 @@ const AdminDashboard = () => {
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
-          className="space-y-6"
+          className="space-y-3 sm:space-y-4"
         >
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="inspections">Inspections</TabsTrigger>
-            <TabsTrigger value="traffic">Traffic & Analytics</TabsTrigger>
-            <TabsTrigger value="system">System Management</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+            <TabsTrigger value="overview" className="text-xs sm:text-sm p-2 sm:p-3">Overview</TabsTrigger>
+            <TabsTrigger value="inspections" className="text-xs sm:text-sm p-2 sm:p-3">Inspections</TabsTrigger>
+            <TabsTrigger value="traffic" className="text-xs sm:text-sm p-2 sm:p-3">Analytics</TabsTrigger>
+            <TabsTrigger value="system" className="text-xs sm:text-sm p-2 sm:p-3">System</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-6">
+          <TabsContent value="overview" className="space-y-3 sm:space-y-4">
             {/* Key Metrics */}
-            <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                  <CardTitle className="text-xs font-medium">
-                    Total Users
+            <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
+                  <CardTitle className="text-xs font-medium truncate">
+                    Users
                   </CardTitle>
-                  <Users className="h-3 w-3 text-muted-foreground" />
+                  <Users className="h-3 w-3 text-muted-foreground shrink-0" />
                 </CardHeader>
-                <CardContent className="pt-1">
-                  <div className="text-lg font-bold">{stats.totalUsers}</div>
+                <CardContent className="p-0">
+                  <div className="text-lg sm:text-xl font-bold">{stats.totalUsers}</div>
                   <p className="text-[10px] text-muted-foreground">
                     +{stats.recentSignups} this week
                   </p>
