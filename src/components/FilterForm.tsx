@@ -165,21 +165,21 @@ const FilterForm = memo<FilterFormProps>(({
   }, [manufacturers]);
 
   return (
-    <div className="bg-card border border-border rounded-lg p-3 sm:p-4 space-y-4">
+    <div className="bg-card border border-border rounded-lg p-3 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4" />
-          <h3 className="text-base sm:text-lg font-semibold">Filtrat</h3>
+          <Filter className="h-4 w-4 text-primary" />
+          <h3 className="text-sm sm:text-base font-semibold">Filtrat</h3>
         </div>
-        <Button variant="outline" size="sm" onClick={onClearFilters} className="text-xs sm:text-sm">
-          <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+        <Button variant="outline" size="sm" onClick={onClearFilters} className="text-xs px-2 py-1 h-7">
+          <X className="h-3 w-3 mr-1" />
           Pastro
         </Button>
       </div>
 
 
       {/* Basic Filters - Always 3 columns beside each other */}
-      <div className="grid grid-cols-3 gap-2">{/* Always 3 columns, smaller gap */}
+      <div className="grid grid-cols-3 gap-1 sm:gap-2">
         <div className="space-y-1">
           <Label htmlFor="manufacturer" className="text-xs font-medium truncate">Marka</Label>
           <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
@@ -269,14 +269,14 @@ const FilterForm = memo<FilterFormProps>(({
 
       {/* Toggle Advanced Filters */}
       {onToggleAdvanced && (
-        <Button variant="ghost" size="sm" onClick={onToggleAdvanced} className="w-full sm:w-auto text-sm">
+        <Button variant="ghost" size="sm" onClick={onToggleAdvanced} className="w-full sm:w-auto text-xs h-7">
           {showAdvanced ? 'Fshih' : 'Shfaq'} Filtrat e Avancuara
         </Button>
       )}
 
       {/* Advanced Filters */}
       {showAdvanced && (
-        <div className="border-t pt-4 space-y-4">
+        <div className="border-t pt-3 space-y-3">
           <div className="space-y-3">{/* Changed advanced filters to vertical too */}
             <div className="space-y-1">
               <Label htmlFor="color" className="text-xs font-medium">Ngjyra</Label>

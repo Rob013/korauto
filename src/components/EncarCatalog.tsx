@@ -390,23 +390,24 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   }, [highlightCarId, cars]);
 
   return (
-    <div className="container-responsive py-6 sm:py-8">
-      {/* Header with Back Button */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
-        <div className="flex items-center gap-4">
+    <div className="container-responsive py-4 sm:py-6">
+      {/* Header Section - More compact */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-3">
           <Button
-            variant="outline"
-            onClick={() => (window.location.href = "/")}
+            variant="ghost"
+            size="sm"
+            onClick={() => window.history.back()}
             className="flex items-center gap-2 hover:bg-primary hover:text-primary-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             <span className="hidden sm:inline">Back</span>
           </Button>
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
               Car Catalog
             </h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-muted-foreground text-sm">
               {totalCount.toLocaleString()} cars available
             </p>
           </div>
@@ -431,8 +432,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         </div>
       </div>
 
-      {/* Filter Form with Sort */}
-      <div className="mb-6 space-y-4">
+      {/* Filter Form with Sort - More compact */}
+      <div className="mb-4 space-y-3">
         <FilterForm
           filters={filters}
           manufacturers={manufacturers}
@@ -454,7 +455,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             value={sortBy}
             onValueChange={(value: SortOption) => setSortBy(value)}
           >
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-40 h-8 text-sm">
               <ArrowUpDown className="h-3 w-3 mr-2" />
               <SelectValue placeholder="Rreshtoni sipas..." />
             </SelectTrigger>
@@ -502,15 +503,15 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         </div>
       )}
 
-      {/* Cars Grid/List */}
+      {/* Cars Grid/List - More compact grid */}
       {cars.length > 0 && (
         <>
           <div
             ref={containerRef}
             className={
               viewMode === "grid"
-                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-                : "space-y-4"
+                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4"
+                : "space-y-3"
             }
           >
             {sortedCars.map((car) => {
@@ -586,14 +587,15 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             })}
           </div>
 
-          {/* Load More */}
+          {/* Load More - More compact */}
           {hasMorePages && (
-            <div className="flex justify-center mt-8">
+            <div className="flex justify-center mt-6">
               <Button
                 onClick={handleLoadMore}
                 disabled={loading}
                 variant="outline"
-                size="lg"
+                size="default"
+                className="px-6"
               >
                 {loading ? (
                   <>

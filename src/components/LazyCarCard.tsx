@@ -194,14 +194,14 @@ const LazyCarCard = memo(({
     return (
       <div 
         ref={cardRef}
-        className="bg-card rounded-lg overflow-hidden shadow-lg border border-border h-96"
+        className="bg-card rounded-lg overflow-hidden shadow-md border border-border h-80"
       >
         <div className="animate-pulse">
-          <div className="h-48 bg-muted" />
-          <div className="p-4 space-y-3">
-            <div className="h-6 bg-muted rounded w-3/4" />
-            <div className="h-4 bg-muted rounded w-1/2" />
-            <div className="h-8 bg-muted rounded" />
+          <div className="h-40 bg-muted" />
+          <div className="p-3 space-y-2">
+            <div className="h-5 bg-muted rounded w-3/4" />
+            <div className="h-3 bg-muted rounded w-1/2" />
+            <div className="h-6 bg-muted rounded w-2/3" />
           </div>
         </div>
       </div>
@@ -211,10 +211,10 @@ const LazyCarCard = memo(({
   return (
     <div 
       ref={cardRef}
-      className="bg-card rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-border cursor-pointer group touch-manipulation"
+      className="bg-card rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border border-border cursor-pointer group touch-manipulation"
       onClick={handleCardClick}
     >
-      <div className="relative h-48 sm:h-52 bg-muted overflow-hidden">
+      <div className="relative h-40 sm:h-44 bg-muted overflow-hidden">
         {image ? (
           <img 
             src={image} 
@@ -259,70 +259,69 @@ const LazyCarCard = memo(({
         )}
       </div>
       
-      <div className="p-4 sm:p-5">
-        <div className="mb-3">
-          <h3 className="text-lg sm:text-xl font-semibold text-foreground line-clamp-2">
+      <div className="p-3 sm:p-4">
+        <div className="mb-2">
+          <h3 className="text-base sm:text-lg font-semibold text-foreground line-clamp-2">
             {year} {make} {model}
           </h3>
           {title && title !== `${make} ${model}` && (
-            <p className="text-sm text-muted-foreground mb-1 line-clamp-1">{title}</p>
+            <p className="text-xs text-muted-foreground mb-1 line-clamp-1">{title}</p>
           )}
         </div>
 
-        {/* Vehicle Info */}
-        <div className="space-y-2 mb-4 text-sm">
+        {/* Vehicle Info - More compact */}
+        <div className="space-y-1 mb-3 text-xs">
           {mileage && (
-            <div className="flex items-center gap-2">
-              <Gauge className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <div className="flex items-center gap-1">
+              <Gauge className="h-3 w-3 text-muted-foreground flex-shrink-0" />
               <span className="truncate">{mileage}</span>
             </div>
           )}
           {transmission && (
-            <div className="flex items-center gap-2">
-              <Settings className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <div className="flex items-center gap-1">
+              <Settings className="h-3 w-3 text-muted-foreground flex-shrink-0" />
               <span className="capitalize truncate">{transmission}</span>
             </div>
           )}
           {fuel && (
-            <div className="flex items-center gap-2">
-              <Fuel className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <div className="flex items-center gap-1">
+              <Fuel className="h-3 w-3 text-muted-foreground flex-shrink-0" />
               <span className="capitalize truncate">{fuel}</span>
             </div>
           )}
           {color && (
-            <div className="flex items-center gap-2">
-              <Palette className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <div className="flex items-center gap-1">
+              <Palette className="h-3 w-3 text-muted-foreground flex-shrink-0" />
               <span className="capitalize truncate">{color}</span>
             </div>
           )}
         </div>
 
-        {/* Status Indicators */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {insurance_v2?.accidentCnt === 0 && (
-            <Badge variant="secondary" className="text-xs">
-              <Shield className="h-3 w-3 mr-1" />
+        {/* Status Indicators - More compact */}
+        {insurance_v2?.accidentCnt === 0 && (
+          <div className="mb-2">
+            <Badge variant="secondary" className="text-xs px-2 py-0">
+              <Shield className="h-2 w-2 mr-1" />
               Clean Record
             </Badge>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Pricing */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-          <span className="text-xl sm:text-2xl font-bold text-primary">
+        {/* Pricing - More compact */}
+        <div className="flex flex-col gap-1 mb-2">
+          <span className="text-lg sm:text-xl font-bold text-primary">
             €{price.toLocaleString()}
           </span>
           <span className="text-xs text-muted-foreground">
             Deri ne portin e Durresit
           </span>
-         </div>
+        </div>
 
-
-         <div className="text-center mt-2">
-           <p className="text-xs text-muted-foreground">
-             KORAUTO
-           </p>
-         </div>
+        <div className="text-center">
+          <p className="text-xs text-muted-foreground">
+            KORAUTO
+          </p>
+        </div>
       </div>
     </div>
   );
