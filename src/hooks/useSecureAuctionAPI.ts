@@ -441,62 +441,60 @@ export const useSecureAuctionAPI = () => {
         manufacturer_id: manufacturerId,
         model_id: modelId, 
         generation_id: generationId,
-        per_page: '100' // Reduced to avoid too much data
+        per_page: '50' // Reduced to avoid too much data
       };
 
+      console.log('🔍 Fetching cars for grades with filters:', filters);
       const data = await makeSecureAPICall('cars', filters);
       const cars = data.data || [];
       
-      console.log('🔍 Raw API response structure:', {
+      console.log('🔍 Raw API response:', {
         totalCars: cars.length,
-        firstCar: cars[0] ? {
-          id: cars[0].id,
-          lots: cars[0].lots,
-          lot: cars[0].lot,
-          grade_iaai: cars[0].grade_iaai,
-          grade: cars[0].grade,
-          trim: cars[0].trim,
-          engine: cars[0].engine,
-          badges: cars[0].badges,
-          keys: Object.keys(cars[0])
-        } : null
+        sampleData: cars.slice(0, 2) // Show first 2 complete cars
       });
       
-      // Extract unique grades from the car data
+      // Extract unique grades from the car data - try multiple approaches
       const gradesMap = new Map<string, number>();
       
       cars.forEach((car: any, index: number) => {
-        const lot = car.lots?.[0] || car.lot || {};
-        
-        // Try multiple possible grade fields
-        const possibleGrades = [
-          lot.grade_iaai,
-          car.grade_iaai,
-          lot.grade,
-          car.grade,
-          car.trim,
-          car.badges,
-          car.engine,
-          lot.trim,
-          lot.badges,
-          lot.engine
-        ];
-
-        if (index < 3) { // Log first 3 cars for debugging
-          console.log(`🚗 Car ${index} grade fields:`, {
-            'lot.grade_iaai': lot.grade_iaai,
-            'car.grade_iaai': car.grade_iaai,
-            'lot.grade': lot.grade,
-            'car.grade': car.grade,
-            'car.trim': car.trim,
-            'car.badges': car.badges,
-            'car.engine': car.engine
-          });
+        if (index < 5) { // Log first 5 cars completely
+          console.log(`🚗 Complete Car ${index}:`, JSON.stringify(car, null, 2));
         }
 
-        possibleGrades.forEach(grade => {
-          if (grade && typeof grade === 'string' && grade.trim()) {
-            const cleanGrade = grade.trim();
+        // Try to extract grades from various possible locations
+        const lot = car.lots?.[0] || car.lot || {};
+        
+        // All possible grade/trim fields to check
+        const gradeFields = [
+          car.grade_iaai,
+          car.grade,
+          car.trim,
+          car.model_grade,
+          car.engine_grade,
+          car.badge,
+          car.version,
+          car.variant,
+          lot.grade_iaai,
+          lot.grade,
+          lot.trim,
+          lot.model_grade,
+          lot.engine_grade,
+          lot.badge,
+          lot.version,
+          lot.variant,
+          car.details?.badge,
+          car.details?.trim,
+          car.details?.grade,
+          car.details?.version,
+          car.model?.grade,
+          car.model?.trim,
+          car.model?.variant
+        ];
+
+        gradeFields.forEach((field, fieldIndex) => {
+          if (field && typeof field === 'string' && field.trim()) {
+            const cleanGrade = field.trim();
+            console.log(`✅ Found grade "${cleanGrade}" in field ${fieldIndex} for car ${index}`);
             gradesMap.set(cleanGrade, (gradesMap.get(cleanGrade) || 0) + 1);
           }
         });
@@ -519,7 +517,7 @@ export const useSecureAuctionAPI = () => {
           return a.value.localeCompare(b.value);
         });
 
-      console.log('📊 Extracted grades:', grades);
+      console.log('📊 Final extracted grades:', grades);
       return grades;
     } catch (err) {
       console.error("❌ Error fetching grades:", err);
