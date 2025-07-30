@@ -54,7 +54,8 @@ const handler = async (req: Request): Promise<Response> => {
       'search-lot',
       'manufacturers/cars',
       'models',
-      'generations'
+      'generations',
+      'korea-duplicates'
     ];
     
     const isValidEndpoint = allowedEndpoints.some(allowed => 

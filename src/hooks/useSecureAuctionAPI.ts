@@ -232,7 +232,7 @@ export const useSecureAuctionAPI = () => {
 
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-  const makeSecureAPICall = async (endpoint: string, filters: APIFilters = {}, carId?: string): Promise<any> => {
+  const makeSecureAPICall = async (endpoint: string, filters: any = {}, carId?: string): Promise<any> => {
     try {
       console.log('🔐 Making secure API call:', { endpoint, filters, carId });
       
@@ -413,6 +413,20 @@ export const useSecureAuctionAPI = () => {
     }
   };
 
+  const fetchKoreaDuplicates = async (minutes: number = 10, perPage: number = 1000): Promise<any[]> => {
+    try {
+      const filters = {
+        minutes: minutes.toString(),
+        per_page: perPage.toString()
+      };
+      const data = await makeSecureAPICall('korea-duplicates', filters);
+      return data.data || [];
+    } catch (err) {
+      console.error('❌ Error fetching Korea duplicates:', err);
+      return [];
+    }
+  };
+
   const loadMore = async (filters: APIFilters = {}) => {
     if (!hasMorePages || loading) return;
     await fetchCars(currentPage + 1, filters, false);
@@ -432,6 +446,7 @@ export const useSecureAuctionAPI = () => {
     fetchCarById,
     fetchCarCounts,
     fetchFilterCounts,
+    fetchKoreaDuplicates,
     loadMore
   };
 };
