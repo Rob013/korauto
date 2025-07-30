@@ -175,7 +175,16 @@ const LazyCarCard = memo(({
     }
   }, [user, isFavorite, id, make, model, year, price, image, toast, navigate]);
 
-  const handleCardClick = useCallback(() => {
+  const handleCardClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setPreviousPage(window.location.pathname + window.location.search);
+    window.open(`/car/${lot}`, '_blank');
+  }, [setPreviousPage, lot]);
+
+  const handleDetailsClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setPreviousPage(window.location.pathname + window.location.search);
     window.open(`/car/${lot}`, '_blank');
   }, [setPreviousPage, lot]);
@@ -306,13 +315,22 @@ const LazyCarCard = memo(({
           <span className="text-xs text-muted-foreground">
             Deri ne portin e Durresit
           </span>
-        </div>
+         </div>
 
-        <div className="text-center">
-          <p className="text-xs text-muted-foreground">
-            KORAUTO
-          </p>
-        </div>
+         {/* Details Button */}
+         <Button 
+           onClick={handleDetailsClick}
+           className="w-full mt-3 bg-primary hover:bg-primary/90 text-primary-foreground"
+           size="sm"
+         >
+           Shiko Detajet
+         </Button>
+
+         <div className="text-center mt-2">
+           <p className="text-xs text-muted-foreground">
+             KORAUTO
+           </p>
+         </div>
       </div>
     </div>
   );
