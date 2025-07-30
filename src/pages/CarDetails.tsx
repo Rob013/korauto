@@ -156,11 +156,14 @@ const CarDetails = memo(() => {
 
       try {
         // Try to fetch from cache using OR condition for all possible matches
+        console.log('Searching for car with lot:', lot);
         const { data: cachedCar, error: cacheError } = await supabase
           .from('cars_cache')
           .select('*')
           .or(`id.eq.${lot},api_id.eq.${lot},lot_number.eq.${lot}`)
           .maybeSingle();
+        
+        console.log('Cache query result:', { cachedCar, cacheError });
 
         if (!cacheError && cachedCar && isMounted) {
           console.log('Found car in cache:', cachedCar);
