@@ -229,7 +229,8 @@ const CarDetails = memo(() => {
         }
 
         // If not found in cache, try Supabase edge function with lot number search
-        console.log('Trying Supabase edge function for lot number:', lot);
+        console.log('🔍 Searching for lot number:', lot);
+        console.log('📋 Cache search failed, trying external API...');
         try {
           const secureResponse = await fetch(`https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/secure-cars-api`, {
             method: 'POST',
@@ -242,6 +243,16 @@ const CarDetails = memo(() => {
               lotNumber: lot
             })
           });
+
+          console.log('📡 Edge function response status:', secureResponse.status);
+          
+          if (secureResponse.ok) {
+            const carData = await secureResponse.json();
+            console.log('✅ Found car via edge function:', carData);
+          } else {
+            const errorText = await secureResponse.text();
+            console.log('❌ Edge function error:', secureResponse.status, errorText);
+          }
 
           if (secureResponse.ok) {
             const carData = await secureResponse.json();
