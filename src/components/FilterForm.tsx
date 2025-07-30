@@ -103,14 +103,22 @@ const FilterForm = memo<FilterFormProps>(({
         ...filters,
         [key]: actualValue,
         model_id: undefined,
-        generation_id: undefined
+        generation_id: undefined,
+        grade_iaai: undefined // Clear grade when manufacturer changes
       });
     } else if (key === 'model_id') {
       onModelChange?.(actualValue || '');
       onFiltersChange({
         ...filters,
         [key]: actualValue,
-        generation_id: undefined
+        generation_id: undefined,
+        grade_iaai: undefined // Clear grade when model changes
+      });
+    } else if (key === 'generation_id') {
+      onFiltersChange({
+        ...filters,
+        [key]: actualValue,
+        grade_iaai: undefined // Clear grade when generation changes
       });
     } else {
       onFiltersChange({
