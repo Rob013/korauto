@@ -834,136 +834,164 @@ const AdminDashboard = () => {
               </Card>
             </div>
 
-            {/* Recent Activity */}
+            {/* Recent Activity - Modern Layout */}
             <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-2">
-              <Card className="p-3">
-                <CardHeader className="p-0 pb-3">
-                  <CardTitle className="text-sm sm:text-base">Recent Requests</CardTitle>
+              <Card className="p-4 sm:p-6">
+                <CardHeader className="p-0 pb-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base sm:text-lg font-semibold">Recent Requests</CardTitle>
+                    <Badge variant="secondary" className="text-xs">
+                      {requests.length} total
+                    </Badge>
+                  </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {requests.slice(0, 5).map((request) => {
-                      const car = request.car_id
-                        ? carDetails[request.car_id]
-                        : null;
+                      const car = request.car_id ? carDetails[request.car_id] : null;
                       return (
                         <div
                           key={request.id}
-                          className="flex items-center justify-between p-2 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors text-xs sm:text-sm"
+                          className="group relative p-3 rounded-lg border border-border/50 hover:border-primary/30 hover:shadow-sm transition-all duration-200 bg-card/50 hover:bg-card"
                         >
-                          <div className="flex items-center space-x-3">
-                            {car ? (
-                              <div className="flex items-center space-x-3">
-                                {car.image && (
-                                  <img
-                                    src={car.image}
-                                    alt={`${car.year} ${car.make} ${car.model}`}
-                                    className="w-10 h-7 object-cover rounded"
-                                  />
-                                )}
-                                <div>
-                                  <p className="text-sm font-medium">
+                          <div className="flex items-start gap-3">
+                            {/* Car Image or Fallback */}
+                            <div className="shrink-0 w-12 h-9 sm:w-16 sm:h-12 rounded-md overflow-hidden bg-muted flex items-center justify-center">
+                              {car?.image ? (
+                                <img
+                                  src={car.image}
+                                  alt={`${car.year} ${car.make} ${car.model}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <Car className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+                              )}
+                            </div>
+
+                            {/* Content */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <div className="min-w-0 flex-1">
+                                  <h4 className="font-medium text-sm sm:text-base text-foreground truncate">
                                     {request.customer_name}
+                                  </h4>
+                                  <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                                    {request.customer_email}
                                   </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {formatDate(request.created_at)}
-                                  </p>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
-                                      {car.year} {car.make} {car.model}
-                                    </span>
-                                    {request.car_id &&
-                                      carDetails[request.car_id] && (
-                                        <button
-                                          onClick={() => {
-                                            // Navigate to catalog and highlight the specific car
-                                            window.location.href = `/catalog?highlight=${request.car_id}`;
-                                          }}
-                                          className="text-xs text-blue-600 hover:text-blue-800 underline"
-                                          title={`View car ${request.car_id} in catalog`}
-                                        >
-                                          View Car {request.car_id} →
-                                        </button>
-                                      )}
-                                    {request.car_id &&
-                                      !carDetails[request.car_id] && (
-                                        <span className="text-xs text-muted-foreground">
-                                          Car {request.car_id} (Not Available)
-                                        </span>
-                                      )}
+                                </div>
+                                <Badge 
+                                  className={`${getStatusColor(request.status)} text-[10px] sm:text-xs shrink-0`}
+                                >
+                                  {request.status}
+                                </Badge>
+                              </div>
+
+                              {/* Car Info */}
+                              {car && (
+                                <div className="mb-2">
+                                  <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
+                                    <span>{car.year} {car.make} {car.model}</span>
                                   </div>
                                 </div>
-                              </div>
-                            ) : (
-                              <div className="flex items-center space-x-3">
-                                <Car className="h-4 w-4 text-muted-foreground" />
-                                <div>
-                                  <p className="text-sm font-medium">
-                                    {request.customer_name}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {formatDate(request.created_at)}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    General inspection request
-                                  </p>
+                              )}
+
+                              {/* Footer */}
+                              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                <span>{formatDate(request.created_at)}</span>
+                                <div className="flex items-center gap-2">
+                                  {request.car_id && car && (
+                                    <button
+                                      onClick={() => {
+                                        window.location.href = `/catalog?highlight=${request.car_id}`;
+                                      }}
+                                      className="text-primary hover:text-primary/80 font-medium transition-colors"
+                                    >
+                                      View Car →
+                                    </button>
+                                  )}
+                                  {request.customer_phone && (
+                                    <a
+                                      href={`https://wa.me/${request.customer_phone.replace(/[^0-9]/g, "")}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-green-600 hover:text-green-700 transition-colors"
+                                      title="Contact via WhatsApp"
+                                    >
+                                      <Phone className="h-3 w-3" />
+                                    </a>
+                                  )}
                                 </div>
                               </div>
-                            )}
+                            </div>
                           </div>
-                          <Badge className={getStatusColor(request.status)}>
-                            {request.status}
-                          </Badge>
+
+                          {/* Hover overlay */}
+                          <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
                         </div>
                       );
                     })}
+
+                    {requests.length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">No recent inspection requests</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="p-3">
-                <CardHeader className="p-0 pb-3">
-                  <CardTitle className="text-sm sm:text-base">System Status</CardTitle>
+              <Card className="p-4 sm:p-6">
+                <CardHeader className="p-0 pb-4">
+                  <CardTitle className="text-base sm:text-lg font-semibold">System Health</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span className="text-sm">Database Connection</span>
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <div>
+                          <span className="text-sm font-medium text-green-900 dark:text-green-100">Database</span>
+                          <p className="text-xs text-green-700 dark:text-green-300">Connected & Active</p>
+                        </div>
                       </div>
-                      <Badge
-                        variant="outline"
-                        className="text-green-700 border-green-300"
-                      >
-                        Active
-                      </Badge>
+                      <CheckCircle className="h-5 w-5 text-green-600" />
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span className="text-sm">API Sync</span>
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                        <div>
+                          <span className="text-sm font-medium text-blue-900 dark:text-blue-100">API Sync</span>
+                          <p className="text-xs text-blue-700 dark:text-blue-300">Real-time updates</p>
+                        </div>
                       </div>
-                      <Badge
-                        variant="outline"
-                        className="text-green-700 border-green-300"
-                      >
-                        Running
-                      </Badge>
+                      <Activity className="h-5 w-5 text-blue-600" />
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <UserCheck className="h-4 w-4 text-green-500" />
-                        <span className="text-sm">Authentication</span>
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <div>
+                          <span className="text-sm font-medium text-green-900 dark:text-green-100">Authentication</span>
+                          <p className="text-xs text-green-700 dark:text-green-300">All systems operational</p>
+                        </div>
                       </div>
-                      <Badge
-                        variant="outline"
-                        className="text-green-700 border-green-300"
-                      >
-                        Healthy
-                      </Badge>
+                      <UserCheck className="h-5 w-5 text-green-600" />
+                    </div>
+
+                    {/* Quick Stats */}
+                    <div className="pt-4 border-t border-border">
+                      <div className="grid grid-cols-2 gap-4 text-center">
+                        <div>
+                          <div className="text-lg font-bold text-foreground">{stats.totalCachedCars.toLocaleString()}</div>
+                          <div className="text-xs text-muted-foreground">Cars in DB</div>
+                        </div>
+                        <div>
+                          <div className="text-lg font-bold text-foreground">{stats.totalUsers}</div>
+                          <div className="text-xs text-muted-foreground">Active Users</div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
