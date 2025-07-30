@@ -441,7 +441,7 @@ export const useSecureAuctionAPI = () => {
         manufacturer_id: manufacturerId,
         model_id: modelId, 
         generation_id: generationId,
-        per_page: '1000' // Fetch more cars to get accurate grade counts
+        per_page: '50'
       };
 
       console.log('🔍 Fetching cars for grades with filters:', filters);
