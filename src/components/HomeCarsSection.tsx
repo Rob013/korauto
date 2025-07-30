@@ -47,10 +47,10 @@ const HomeCarsSection = memo(() => {
   // Use normal sorting on cars
   const sortedCars = useSortedCars(carsForSorting, sortBy);
 
-  // Show 10 cars initially, then all when showAllCars is true
+  // Show 50 cars (daily rotation)
   const displayedCars = showAllCars
     ? sortedCars
-    : sortedCars.slice(0, 10);
+    : sortedCars.slice(0, 50);
 
   useEffect(() => {
     // Calculate daily page based on day of month (1-31)
@@ -58,7 +58,7 @@ const HomeCarsSection = memo(() => {
     const dayOfMonth = today.getDate(); // 1-31
     const dailyPage = ((dayOfMonth - 1) % 10) + 1; // Cycle through pages 1-10
 
-    // Load initial data with 50 cars from daily page (we'll show only 10)
+    // Load initial data with 50 cars from daily page
     fetchCars(dailyPage, { per_page: "50" }, true);
   }, []);
 
@@ -176,7 +176,7 @@ const HomeCarsSection = memo(() => {
 
             {/* Show More Button and Browse All Cars Button */}
             <div className="text-center mt-6 space-y-4">
-              {sortedCars.length > 10 && !showAllCars && (
+              {sortedCars.length > 50 && !showAllCars && (
                 <Button
                   onClick={() => setShowAllCars(true)}
                   variant="outline"
