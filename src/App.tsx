@@ -14,6 +14,7 @@ import MyAccount from "./pages/MyAccount";
 import NotFound from "./pages/NotFound";
 import Contacts from "./pages/Contacts";
 import { AdminSyncDashboard } from "./components/AdminSyncDashboard";
+import { InstallPrompt } from "./components/InstallPrompt";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
+      <InstallPrompt />
     </TooltipProvider>
   </QueryClientProvider>
 );
