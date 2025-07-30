@@ -214,21 +214,11 @@ const HomeCarsSection = memo(() => {
     cylinders: Number(car.cylinders || 0),
   }));
 
-  // Check if any filters are applied
-  const hasActiveFilters =
-    Object.keys(filters).length > 0 &&
-    Object.values(filters).some((value) => value && value !== "");
+  // Don't filter homepage cars - always show original cars
+  const sortedCars = useSortedCars(carsForSorting, sortBy);
 
-  // Apply frontend filters to the cars
-  const filteredCars = hasActiveFilters
-    ? applyFrontendFilters(carsForSorting, filters)
-    : carsForSorting;
-
-  // Use normal sorting on filtered cars
-  const sortedCars = useSortedCars(filteredCars, sortBy);
-
-  // Show all cars when filters are applied, or 50 when no filters (daily rotation)
-  const defaultDisplayCount = hasActiveFilters ? sortedCars.length : 50;
+  // Show 50 cars by default (daily rotation)
+  const defaultDisplayCount = 50;
   const displayedCars = showAllCars
     ? sortedCars
     : sortedCars.slice(0, defaultDisplayCount);
@@ -302,13 +292,11 @@ const HomeCarsSection = memo(() => {
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground">
             Makinat e Disponueshme
           </h2>
-          {!hasActiveFilters && (
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium mb-2">
-              <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-              Zgjedhja e Ditës - {new Date().getDate()}{" "}
-              {new Date().toLocaleDateString("sq-AL", { month: "long" })}
-            </div>
-          )}
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium mb-2">
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+            Zgjedhja e Ditës - {new Date().getDate()}{" "}
+            {new Date().toLocaleDateString("sq-AL", { month: "long" })}
+          </div>
 
           <div className="flex justify-center mt-4 sm:mt-6">
             <Button
@@ -443,7 +431,7 @@ const HomeCarsSection = memo(() => {
 
             {/* Show More Button and Browse All Cars Button */}
             <div className="text-center mt-8 space-y-6">
-              {!hasActiveFilters && sortedCars.length > 50 && !showAllCars && (
+              {sortedCars.length > 50 && !showAllCars && (
                 <Button
                   onClick={() => setShowAllCars(true)}
                   variant="outline"
