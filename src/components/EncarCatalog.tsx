@@ -141,15 +141,27 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     const savedData = sessionStorage.getItem(SCROLL_STORAGE_KEY);
     if (savedData) {
       try {
-        const { scrollTop } = JSON.parse(savedData);
-        // Smooth scroll to saved position
-        window.scrollTo({
-          top: scrollTop,
-          behavior: "smooth",
-        });
-        console.log(`📍 Restored scroll position to ${scrollTop}px`);
+        const { scrollTop, timestamp } = JSON.parse(savedData);
+        
+        // Only restore if the saved data is recent (within 30 seconds)
+        // This prevents restoring old scroll positions from previous sessions
+        const isRecent = Date.now() - timestamp < 30000;
+        
+        if (isRecent && scrollTop > 0) {
+          // Smooth scroll to saved position
+          window.scrollTo({
+            top: scrollTop,
+            behavior: "smooth",
+          });
+          console.log(`📍 Restored scroll position to ${scrollTop}px`);
+        } else {
+          // Stay at top if data is old or position is 0
+          window.scrollTo({ top: 0, behavior: 'auto' });
+          console.log(`📍 Starting at top - data too old or position was 0`);
+        }
       } catch (error) {
         console.error("Failed to restore scroll position:", error);
+        window.scrollTo({ top: 0, behavior: 'auto' });
       }
     }
   };
@@ -287,10 +299,16 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
       setIsRestoringState(false);
 
-      // Restore scroll position after content is loaded
-      setTimeout(() => {
-        restoreScrollPosition();
-      }, 300);
+      // Only restore scroll position if we have saved data and not clearing storage
+      const savedData = sessionStorage.getItem(SCROLL_STORAGE_KEY);
+      if (savedData) {
+        setTimeout(() => {
+          restoreScrollPosition();
+        }, 300);
+      } else {
+        // Ensure we start at the top when no scroll data exists
+        window.scrollTo({ top: 0, behavior: 'auto' });
+      }
     };
 
     loadInitialData();
