@@ -81,60 +81,67 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         const targetGrade = decodeURIComponent(filters.grade_iaai).toLowerCase().trim().replace(/\+/g, ' ');
         let hasMatchingGrade = false;
         
-        console.log(`🔍 Filtering for grade: "${targetGrade}" on car: ${car.id}`);
+        // Create multiple variations of the target grade for flexible matching
+        const gradeVariations = [
+          targetGrade,
+          targetGrade.replace(/\s+/g, ''), // Remove all spaces
+          targetGrade.replace(/\./g, ''), // Remove dots
+          targetGrade.replace(/\s+/g, '').replace(/\./g, ''), // Remove both
+          targetGrade.replace(/tdi/gi, 'TDI'),
+          targetGrade.replace(/tsi/gi, 'TSI'),
+          targetGrade.replace(/tfsi/gi, 'TFSI'),
+          targetGrade.replace(/fsi/gi, 'FSI')
+        ];
         
-        // Log all available grades for this car to debug
-        let availableGrades: string[] = [];
-        
-        // Check in lots array
+        // Check in lots array with comprehensive matching
         if (car.lots && Array.isArray(car.lots)) {
-          car.lots.forEach((lot: any, lotIndex: number) => {
+          car.lots.forEach((lot: any) => {
             if (lot.grade_iaai) {
               const lotGrade = lot.grade_iaai.toLowerCase().trim();
-              availableGrades.push(`lot[${lotIndex}]: "${lotGrade}"`);
-              if (lotGrade.includes(targetGrade) || targetGrade.includes(lotGrade) || 
-                  lotGrade.replace(/[\s\.]/g, '') === targetGrade.replace(/[\s\.]/g, '')) {
-                hasMatchingGrade = true;
-                console.log(`  ✅ Match found in lot ${lotIndex}: "${lotGrade}"`);
-              }
-            }
-          });
-        }
-        
-        // Check in car title for grade patterns (more flexible)
-        if (!hasMatchingGrade && car.title) {
-          const titleLower = car.title.toLowerCase();
-          availableGrades.push(`title: "${titleLower}"`);
-          
-          // Extract common grade patterns from title
-          const gradePatterns = [
-            /(\d+\.?\d*)\s*(tdi|tfsi|tsi|fsi|cdi|d|i)\b/gi,
-            /\b(\d+\.?\d*)\s*l?\s*(turbo|diesel|petrol|hybrid)?\b/gi
-          ];
-          
-          let foundInTitle = false;
-          gradePatterns.forEach(pattern => {
-            const matches = titleLower.match(pattern);
-            if (matches) {
-              matches.forEach(match => {
-                const cleanMatch = match.trim();
-                if (cleanMatch.includes(targetGrade) || targetGrade.includes(cleanMatch)) {
+              gradeVariations.forEach(variation => {
+                if (lotGrade.includes(variation) || variation.includes(lotGrade)) {
                   hasMatchingGrade = true;
-                  foundInTitle = true;
-                  console.log(`  ✅ Pattern match found in title: "${cleanMatch}"`);
                 }
               });
             }
           });
-          
-          if (!foundInTitle && titleLower.includes(targetGrade)) {
-            hasMatchingGrade = true;
-            console.log(`  ✅ Direct match found in title`);
-          }
         }
         
-        console.log(`  Available grades: [${availableGrades.join(', ')}]`);
-        console.log(`  Final result: ${hasMatchingGrade ? 'KEEP' : 'FILTER OUT'}`);
+        // Check in car title with pattern extraction
+        if (!hasMatchingGrade && car.title) {
+          const titleLower = car.title.toLowerCase();
+          
+          // Extract all potential grades from title
+          const gradePatterns = [
+            /(\d+\.?\d*)\s*(tdi|tfsi|tsi|fsi|cdi|bluemotion|eco|hybrid)/gi,
+            /(\d+\.?\d*)\s*l(iter)?/gi,
+            /(\d+\.?\d*)\s*(d|i|t)\b/gi
+          ];
+          
+          let extractedGrades: string[] = [];
+          gradePatterns.forEach(pattern => {
+            const matches = titleLower.match(pattern);
+            if (matches) {
+              extractedGrades = extractedGrades.concat(matches.map(m => m.trim()));
+            }
+          });
+          
+          // Check if any extracted grade matches our target
+          extractedGrades.forEach(extractedGrade => {
+            gradeVariations.forEach(variation => {
+              if (extractedGrade.includes(variation) || variation.includes(extractedGrade)) {
+                hasMatchingGrade = true;
+              }
+            });
+          });
+          
+          // Direct title search as fallback
+          gradeVariations.forEach(variation => {
+            if (titleLower.includes(variation)) {
+              hasMatchingGrade = true;
+            }
+          });
+        }
         
         if (!hasMatchingGrade) {
           return false;

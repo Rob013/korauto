@@ -286,7 +286,7 @@ const FilterForm = memo<FilterFormProps>(({
                   key={generation.id} 
                   value={generation.id.toString()}
                 >
-                  {generation.name} ({generation.from_year}–{generation.to_year})
+                  {generation.name} ({generation.from_year}–{generation.to_year}) {generation.cars_qty ? `(${generation.cars_qty})` : ''}
                 </SelectItem>
               ))}
             </SelectContent>
