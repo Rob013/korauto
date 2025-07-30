@@ -73,13 +73,38 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [sortBy, setSortBy] = useState<SortOption>("price_low");
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Type conversion to match the sorting hook interface
-  const carsForSorting = cars.map((car) => ({
-    ...car,
-    status: String(car.status || ""),
-    lot_number: String(car.lot_number || ""),
-    cylinders: Number(car.cylinders || 0),
-  }));
+  // Type conversion to match the sorting hook interface and apply frontend filtering
+  const carsForSorting = cars
+    .filter((car) => {
+      // Apply grade filter on frontend as fallback
+      if (filters.grade_iaai && filters.grade_iaai.trim()) {
+        const targetGrade = filters.grade_iaai.toLowerCase().trim();
+        let hasMatchingGrade = false;
+        
+        // Check in lots array
+        if (car.lots && Array.isArray(car.lots)) {
+          hasMatchingGrade = car.lots.some((lot: any) => 
+            lot.grade_iaai && lot.grade_iaai.toLowerCase().includes(targetGrade)
+          );
+        }
+        
+        // Check in car title for grade patterns
+        if (!hasMatchingGrade && car.title) {
+          hasMatchingGrade = car.title.toLowerCase().includes(targetGrade);
+        }
+        
+        if (!hasMatchingGrade) {
+          return false;
+        }
+      }
+      return true;
+    })
+    .map((car) => ({
+      ...car,
+      status: String(car.status || ""),
+      lot_number: String(car.lot_number || ""),
+      cylinders: Number(car.cylinders || 0),
+    }));
 
   const sortedCars = useSortedCars(carsForSorting, sortBy);
 

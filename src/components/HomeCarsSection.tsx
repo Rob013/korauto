@@ -178,6 +178,33 @@ const HomeCarsSection = memo(() => {
         return false;
       }
 
+      // Grade filter (check lots array for grade_iaai)
+      if (filters.grade_iaai && filters.grade_iaai.trim()) {
+        const targetGrade = filters.grade_iaai.toLowerCase().trim();
+        let hasMatchingGrade = false;
+        
+        // Check in lots array
+        if (car.lots && Array.isArray(car.lots)) {
+          hasMatchingGrade = car.lots.some((lot: any) => 
+            lot.grade_iaai && lot.grade_iaai.toLowerCase().includes(targetGrade)
+          );
+        }
+        
+        // Check in single lot object
+        if (!hasMatchingGrade && car.lot && car.lot.grade_iaai) {
+          hasMatchingGrade = car.lot.grade_iaai.toLowerCase().includes(targetGrade);
+        }
+        
+        // Check in car title for grade patterns
+        if (!hasMatchingGrade && car.title) {
+          hasMatchingGrade = car.title.toLowerCase().includes(targetGrade);
+        }
+        
+        if (!hasMatchingGrade) {
+          return false;
+        }
+      }
+
       // Search filter (search in make, model, title, VIN)
       if (filters.search && filters.search.trim()) {
         const searchTerm = filters.search.toLowerCase();
