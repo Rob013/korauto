@@ -245,8 +245,22 @@ const HomeCarsSection = memo(() => {
   }, []);
 
   const handleFiltersChange = (newFilters: APIFilters) => {
-    // Frontend-only filters - no API calls needed
-    setFilters(newFilters);
+    // Check if any filters are being applied
+    const hasFilters = Object.values(newFilters).some(value => value && value !== '');
+    
+    if (hasFilters) {
+      // Redirect to catalog with filters as URL params
+      const searchParams = new URLSearchParams();
+      Object.entries(newFilters).forEach(([key, value]) => {
+        if (value && value !== '') {
+          searchParams.set(key, value);
+        }
+      });
+      navigate(`/catalog?${searchParams.toString()}`);
+    } else {
+      // Frontend-only filters - no API calls needed
+      setFilters(newFilters);
+    }
   };
 
   const handleClearFilters = () => {
