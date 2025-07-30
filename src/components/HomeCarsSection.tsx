@@ -284,8 +284,9 @@ const HomeCarsSection = memo(() => {
       });
       navigate(`/catalog?${searchParams.toString()}`);
     } else {
-      // Frontend-only filters - no API calls needed
+      // Apply filters locally for manufacturer and model selection
       setFilters(newFilters);
+      console.log('Applied filters:', newFilters);
     }
   };
 
