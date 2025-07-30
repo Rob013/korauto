@@ -6,17 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-
 import { useToast } from "@/hooks/use-toast";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
 import { ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, Fuel, Palette, Hash, Calendar, Shield, FileText, Search, Info, Eye, CheckCircle, AlertTriangle, Star, Clock, Users, MessageCircle, Share2, Heart, ChevronRight, Expand, Copy, ChevronDown, ChevronUp, DollarSign } from "lucide-react";
 import { ImageZoom } from "@/components/ImageZoom";
 import { supabase } from "@/integrations/supabase/client";
-
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
-
 interface CarDetails {
   id: string;
   make: string;
@@ -88,181 +85,111 @@ interface EquipmentOptionsProps {
   safetyFeatures?: string[];
   comfortFeatures?: string[];
 }
-
-const EquipmentOptionsSection = memo(({ options, features, safetyFeatures, comfortFeatures }: EquipmentOptionsProps) => {
+const EquipmentOptionsSection = memo(({
+  options,
+  features,
+  safetyFeatures,
+  comfortFeatures
+}: EquipmentOptionsProps) => {
   const [showAllStandard, setShowAllStandard] = useState(false);
   const [showAllChoice, setShowAllChoice] = useState(false);
   const [showAllFeatures, setShowAllFeatures] = useState(false);
   const [showAllSafety, setShowAllSafety] = useState(false);
   const [showAllComfort, setShowAllComfort] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
-
   const INITIAL_SHOW_COUNT = 5;
-
-  return (
-    <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-      <Button
-        onClick={() => setShowOptions(!showOptions)}
-        variant="ghost"
-        className="w-full justify-start text-lg font-semibold text-foreground hover:bg-muted/80 p-2 h-auto"
-      >
+  return <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+      <Button onClick={() => setShowOptions(!showOptions)} variant="ghost" className="w-full justify-start text-lg font-semibold text-foreground hover:bg-muted/80 p-2 h-auto">
         <Settings className="h-5 w-5 mr-2" />
         Pajisjet dhe Opsionet
         <ChevronDown className={`h-4 w-4 ml-auto transition-transform ${showOptions ? 'rotate-180' : ''}`} />
       </Button>
       
-      {showOptions && (
-        <div className="space-y-4">
+      {showOptions && <div className="space-y-4">
           {/* Standard Equipment */}
-          {options.standard && options.standard.length > 0 && (
-            <div>
+          {options.standard && options.standard.length > 0 && <div>
               <h5 className="font-medium mb-2 text-foreground">Pajisje Standarde:</h5>
               <div className="flex flex-wrap gap-2">
-                {(showAllStandard ? options.standard : options.standard.slice(0, INITIAL_SHOW_COUNT)).map((option, index) => (
-                  <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100">{option}</Badge>
-                ))}
-                {options.standard.length > INITIAL_SHOW_COUNT && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowAllStandard(!showAllStandard)}
-                    className="h-6 px-2 text-xs text-primary hover:bg-primary/10"
-                  >
-                    {showAllStandard 
-                      ? `- Trego Më Pak` 
-                      : `+ ${options.standard.length - INITIAL_SHOW_COUNT} Më Shumë`
-                    }
-                  </Button>
-                )}
+                {(showAllStandard ? options.standard : options.standard.slice(0, INITIAL_SHOW_COUNT)).map((option, index) => <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100">{option}</Badge>)}
+                {options.standard.length > INITIAL_SHOW_COUNT && <Button variant="ghost" size="sm" onClick={() => setShowAllStandard(!showAllStandard)} className="h-6 px-2 text-xs text-primary hover:bg-primary/10">
+                    {showAllStandard ? `- Trego Më Pak` : `+ ${options.standard.length - INITIAL_SHOW_COUNT} Më Shumë`}
+                  </Button>}
               </div>
-            </div>
-          )}
+            </div>}
 
           {/* Optional Equipment */}
-          {options.choice && options.choice.length > 0 && (
-            <div>
+          {options.choice && options.choice.length > 0 && <div>
               <h5 className="font-medium mb-2 text-foreground">Pajisje Opsionale:</h5>
               <div className="flex flex-wrap gap-2">
-                {(showAllChoice ? options.choice : options.choice.slice(0, INITIAL_SHOW_COUNT)).map((option, index) => (
-                  <Badge key={index} variant="secondary" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100">{option}</Badge>
-                ))}
-                {options.choice.length > INITIAL_SHOW_COUNT && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowAllChoice(!showAllChoice)}
-                    className="h-6 px-2 text-xs text-primary hover:bg-primary/10"
-                  >
-                    {showAllChoice 
-                      ? `- Trego Më Pak` 
-                      : `+ ${options.choice.length - INITIAL_SHOW_COUNT} Më Shumë`
-                    }
-                  </Button>
-                )}
+                {(showAllChoice ? options.choice : options.choice.slice(0, INITIAL_SHOW_COUNT)).map((option, index) => <Badge key={index} variant="secondary" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100">{option}</Badge>)}
+                {options.choice.length > INITIAL_SHOW_COUNT && <Button variant="ghost" size="sm" onClick={() => setShowAllChoice(!showAllChoice)} className="h-6 px-2 text-xs text-primary hover:bg-primary/10">
+                    {showAllChoice ? `- Trego Më Pak` : `+ ${options.choice.length - INITIAL_SHOW_COUNT} Më Shumë`}
+                  </Button>}
               </div>
-            </div>
-          )}
+            </div>}
 
           {/* Tuning Modifications */}
-          {options.tuning && options.tuning.length > 0 && (
-            <div>
+          {options.tuning && options.tuning.length > 0 && <div>
               <h5 className="font-medium mb-2 text-foreground">Modifikimet:</h5>
               <div className="flex flex-wrap gap-2">
-                {options.tuning.map((option, index) => (
-                  <Badge key={index} variant="destructive" className="bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100">{option}</Badge>
-                ))}
+                {options.tuning.map((option, index) => <Badge key={index} variant="destructive" className="bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100">{option}</Badge>)}
               </div>
-            </div>
-          )}
+            </div>}
 
           {/* General Features */}
-          {features && features.length > 0 && (
-            <div>
+          {features && features.length > 0 && <div>
               <h5 className="font-medium mb-2 text-foreground">Karakteristika të Përgjithshme:</h5>
               <div className="flex flex-wrap gap-2">
-                {(showAllFeatures ? features : features.slice(0, INITIAL_SHOW_COUNT)).map((feature, index) => (
-                  <Badge key={index} variant="outline" className="bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100">{feature}</Badge>
-                ))}
-                {features.length > INITIAL_SHOW_COUNT && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowAllFeatures(!showAllFeatures)}
-                    className="h-6 px-2 text-xs text-primary hover:bg-primary/10"
-                  >
-                    {showAllFeatures 
-                      ? `- Trego Më Pak` 
-                      : `+ ${features.length - INITIAL_SHOW_COUNT} Më Shumë`
-                    }
-                  </Button>
-                )}
+                {(showAllFeatures ? features : features.slice(0, INITIAL_SHOW_COUNT)).map((feature, index) => <Badge key={index} variant="outline" className="bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100">{feature}</Badge>)}
+                {features.length > INITIAL_SHOW_COUNT && <Button variant="ghost" size="sm" onClick={() => setShowAllFeatures(!showAllFeatures)} className="h-6 px-2 text-xs text-primary hover:bg-primary/10">
+                    {showAllFeatures ? `- Trego Më Pak` : `+ ${features.length - INITIAL_SHOW_COUNT} Më Shumë`}
+                  </Button>}
               </div>
-            </div>
-          )}
+            </div>}
 
           {/* Safety Features */}
-          {safetyFeatures && safetyFeatures.length > 0 && (
-            <div>
+          {safetyFeatures && safetyFeatures.length > 0 && <div>
               <h5 className="font-medium mb-2 text-foreground">Karakteristika të Sigurisë:</h5>
               <div className="flex flex-wrap gap-2">
-                {(showAllSafety ? safetyFeatures : safetyFeatures.slice(0, INITIAL_SHOW_COUNT)).map((feature, index) => (
-                  <Badge key={index} variant="outline" className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100">{feature}</Badge>
-                ))}
-                {safetyFeatures.length > INITIAL_SHOW_COUNT && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowAllSafety(!showAllSafety)}
-                    className="h-6 px-2 text-xs text-primary hover:bg-primary/10"
-                  >
-                    {showAllSafety 
-                      ? `- Trego Më Pak` 
-                      : `+ ${safetyFeatures.length - INITIAL_SHOW_COUNT} Më Shumë`
-                    }
-                  </Button>
-                )}
+                {(showAllSafety ? safetyFeatures : safetyFeatures.slice(0, INITIAL_SHOW_COUNT)).map((feature, index) => <Badge key={index} variant="outline" className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100">{feature}</Badge>)}
+                {safetyFeatures.length > INITIAL_SHOW_COUNT && <Button variant="ghost" size="sm" onClick={() => setShowAllSafety(!showAllSafety)} className="h-6 px-2 text-xs text-primary hover:bg-primary/10">
+                    {showAllSafety ? `- Trego Më Pak` : `+ ${safetyFeatures.length - INITIAL_SHOW_COUNT} Më Shumë`}
+                  </Button>}
               </div>
-            </div>
-          )}
+            </div>}
 
           {/* Comfort Features */}
-          {comfortFeatures && comfortFeatures.length > 0 && (
-            <div>
+          {comfortFeatures && comfortFeatures.length > 0 && <div>
               <h5 className="font-medium mb-2 text-foreground">Karakteristika të Rehatisë:</h5>
               <div className="flex flex-wrap gap-2">
-                {(showAllComfort ? comfortFeatures : comfortFeatures.slice(0, INITIAL_SHOW_COUNT)).map((feature, index) => (
-                  <Badge key={index} variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100">{feature}</Badge>
-                ))}
-                {comfortFeatures.length > INITIAL_SHOW_COUNT && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowAllComfort(!showAllComfort)}
-                    className="h-6 px-2 text-xs text-primary hover:bg-primary/10"
-                  >
-                    {showAllComfort 
-                      ? `- Trego Më Pak` 
-                      : `+ ${comfortFeatures.length - INITIAL_SHOW_COUNT} Më Shumë`
-                    }
-                  </Button>
-                )}
+                {(showAllComfort ? comfortFeatures : comfortFeatures.slice(0, INITIAL_SHOW_COUNT)).map((feature, index) => <Badge key={index} variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100">{feature}</Badge>)}
+                {comfortFeatures.length > INITIAL_SHOW_COUNT && <Button variant="ghost" size="sm" onClick={() => setShowAllComfort(!showAllComfort)} className="h-6 px-2 text-xs text-primary hover:bg-primary/10">
+                    {showAllComfort ? `- Trego Më Pak` : `+ ${comfortFeatures.length - INITIAL_SHOW_COUNT} Më Shumë`}
+                  </Button>}
               </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
+            </div>}
+        </div>}
+    </div>;
 });
-
 EquipmentOptionsSection.displayName = 'EquipmentOptionsSection';
-
 const CarDetails = memo(() => {
-  const { id: lot } = useParams<{ id: string }>();
+  const {
+    id: lot
+  } = useParams<{
+    id: string;
+  }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const { goBack, previousPage, filterState } = useNavigation();
-  const { convertUSDtoEUR } = useCurrencyAPI();
+  const {
+    toast
+  } = useToast();
+  const {
+    goBack,
+    previousPage,
+    filterState
+  } = useNavigation();
+  const {
+    convertUSDtoEUR
+  } = useCurrencyAPI();
   const [car, setCar] = useState<CarDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -271,12 +198,13 @@ const CarDetails = memo(() => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showDetailedInfo, setShowDetailedInfo] = useState(false);
   const [showInspectionReport, setShowInspectionReport] = useState(false);
-  
   const API_BASE_URL = 'https://auctionsapi.com/api';
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
 
   // Enhanced Feature mapping for equipment/options - supporting both string and numeric formats
-  const FEATURE_MAPPING: { [key: string]: string } = {
+  const FEATURE_MAPPING: {
+    [key: string]: string;
+  } = {
     // String format (with leading zeros)
     '001': 'Klimatizimi',
     '002': 'Dritaret Elektrike',
@@ -354,11 +282,17 @@ const CarDetails = memo(() => {
   // Convert option numbers to feature names
   const convertOptionsToNames = (options: any): any => {
     console.log('🔧 Converting options:', options);
-    
-    if (!options) return { standard: [], choice: [], tuning: [] };
-    
-    const result: any = { standard: [], choice: [], tuning: [] };
-    
+    if (!options) return {
+      standard: [],
+      choice: [],
+      tuning: []
+    };
+    const result: any = {
+      standard: [],
+      choice: [],
+      tuning: []
+    };
+
     // Process standard equipment
     if (options.standard && Array.isArray(options.standard)) {
       result.standard = options.standard.map((option: any) => {
@@ -368,7 +302,7 @@ const CarDetails = memo(() => {
         return mapped;
       });
     }
-    
+
     // Process optional equipment
     if (options.choice && Array.isArray(options.choice)) {
       result.choice = options.choice.map((option: any) => {
@@ -377,7 +311,7 @@ const CarDetails = memo(() => {
         return mapped;
       });
     }
-    
+
     // Process tuning/modifications
     if (options.tuning && Array.isArray(options.tuning)) {
       result.tuning = options.tuning.map((option: any) => {
@@ -386,7 +320,6 @@ const CarDetails = memo(() => {
         return mapped;
       });
     }
-    
     console.log('✅ Converted result:', result);
     return result;
   };
@@ -401,32 +334,29 @@ const CarDetails = memo(() => {
     if (carData.cylinders) features.push(`${carData.cylinders} Cilindra`);
     if (carData.drive_wheel?.name) features.push(`Tërheqje: ${carData.drive_wheel.name}`);
     if (lot?.keys_available) features.push('Çelësat të Disponueshëm');
-    
+
     // Add basic features if list is empty
     if (features.length === 0) {
       return ['Klimatizimi', 'Dritaret Elektrike', 'Mbyllja Qendrore', 'Frena ABS'];
     }
     return features;
   };
-
   const getSafetyFeatures = (carData: any, lot: any): string[] => {
     const safety = [];
     if (lot?.airbags) safety.push(`Sistemi i Airbag-ëve: ${lot.airbags}`);
     if (carData.transmission?.name === 'automatic') safety.push('ABS Sistemi i Frënimit');
     safety.push('Sistemi i Stabilitetit Elektronik');
     if (lot?.keys_available) safety.push('Sistemi i Sigurisë');
-    
+
     // Add default safety features
     return safety.length > 0 ? safety : ['ABS Sistemi i Frënimit', 'Airbag Sistemi', 'Mbyllja Qendrore'];
   };
-
   const getComfortFeatures = (carData: any, lot: any): string[] => {
     const comfort = [];
     if (carData.transmission?.name === 'automatic') comfort.push('Transmisioni Automatik');
     comfort.push('Klimatizimi');
     comfort.push('Dritaret Elektrike');
     comfort.push('Pasqyrat Elektrike');
-    
     return comfort;
   };
 
@@ -434,9 +364,15 @@ const CarDetails = memo(() => {
   useEffect(() => {
     const checkAdminStatus = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: {
+            session
+          }
+        } = await supabase.auth.getSession();
         if (session?.user) {
-          const { data: adminCheck } = await supabase.rpc('is_admin');
+          const {
+            data: adminCheck
+          } = await supabase.rpc('is_admin');
           setIsAdmin(adminCheck || false);
         }
       } catch (error) {
@@ -445,35 +381,30 @@ const CarDetails = memo(() => {
     };
     checkAdminStatus();
   }, []);
-
   useEffect(() => {
     let isMounted = true;
-    
     const fetchCarDetails = async () => {
       if (!lot) return;
-
       try {
         // Try to fetch from cache using OR condition for all possible matches
         console.log('Searching for car with lot:', lot);
-        const { data: cachedCar, error: cacheError } = await supabase
-          .from('cars_cache')
-          .select('*')
-          .or(`id.eq.${lot},api_id.eq.${lot},lot_number.eq.${lot}`)
-          .maybeSingle();
-        
-        console.log('Cache query result:', { cachedCar, cacheError });
-
+        const {
+          data: cachedCar,
+          error: cacheError
+        } = await supabase.from('cars_cache').select('*').or(`id.eq.${lot},api_id.eq.${lot},lot_number.eq.${lot}`).maybeSingle();
+        console.log('Cache query result:', {
+          cachedCar,
+          cacheError
+        });
         if (!cacheError && cachedCar && isMounted) {
           console.log('Found car in cache:', cachedCar);
-          
+
           // Transform cached car data to CarDetails format
           const carData = typeof cachedCar.car_data === 'string' ? JSON.parse(cachedCar.car_data) : cachedCar.car_data;
-          const lotData = typeof cachedCar.lot_data === 'string' ? JSON.parse(cachedCar.lot_data || '{}') : (cachedCar.lot_data || {});
-          const images = typeof cachedCar.images === 'string' ? JSON.parse(cachedCar.images || '[]') : (cachedCar.images || []);
-
+          const lotData = typeof cachedCar.lot_data === 'string' ? JSON.parse(cachedCar.lot_data || '{}') : cachedCar.lot_data || {};
+          const images = typeof cachedCar.images === 'string' ? JSON.parse(cachedCar.images || '[]') : cachedCar.images || [];
           const basePrice = cachedCar.price || lotData.buy_now || lotData.final_bid || 25000;
           const price = convertUSDtoEUR(Math.round(basePrice + 2200));
-
           const transformedCar: CarDetails = {
             id: cachedCar.id,
             make: cachedCar.make || 'Unknown',
@@ -515,12 +446,11 @@ const CarDetails = memo(() => {
             insurance_v2: lotData.insurance_v2,
             location: lotData.location,
             inspect: lotData.inspect,
-            details: lotData.details,
+            details: lotData.details
           };
-
           setCar(transformedCar);
           setLoading(false);
-          
+
           // Track car view analytics
           trackCarView(cachedCar.id || cachedCar.api_id, transformedCar);
           return;
@@ -534,16 +464,14 @@ const CarDetails = memo(() => {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0eXlpcWlta3lzbWpuYW9jc3dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0MzkxMzQsImV4cCI6MjA2OTAxNTEzNH0.lyRCHiShhW4wrGHL3G7pK5JBUHNAtgSUQACVOBGRpL8`,
+              'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0eXlpcWlta3lzbWpuYW9jc3dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0MzkxMzQsImV4cCI6MjA2OTAxNTEzNH0.lyRCHiShhW4wrGHL3G7pK5JBUHNAtgSUQACVOBGRpL8`
             },
             body: JSON.stringify({
               endpoint: 'search-lot',
               lotNumber: lot
             })
           });
-
           console.log('📡 Edge function response status:', secureResponse.status);
-          
           if (secureResponse.ok) {
             const carData = await secureResponse.json();
             console.log('✅ Found car via edge function:', carData);
@@ -551,16 +479,13 @@ const CarDetails = memo(() => {
             const errorText = await secureResponse.text();
             console.log('❌ Edge function error:', secureResponse.status, errorText);
           }
-
           if (secureResponse.ok) {
             const carData = await secureResponse.json();
             console.log('Found car via edge function:', carData);
-            
             if (carData && carData.lots && carData.lots[0] && isMounted) {
               const lotData = carData.lots[0];
               const basePrice = lotData.buy_now ?? lotData.final_bid ?? lotData.price ?? 25000;
               const price = convertUSDtoEUR(Math.round(basePrice + 2200));
-
               const transformedCar: CarDetails = {
                 id: carData.id?.toString() || lotData.lot,
                 make: carData.manufacturer?.name || 'Unknown',
@@ -601,9 +526,8 @@ const CarDetails = memo(() => {
                 insurance_v2: lotData.insurance_v2,
                 location: lotData.location,
                 inspect: lotData.inspect,
-                details: lotData.details,
+                details: lotData.details
               };
-
               setCar(transformedCar);
               setLoading(false);
               trackCarView(carData.id || lot, transformedCar);
@@ -632,9 +556,9 @@ const CarDetails = memo(() => {
           response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
             headers: {
               accept: '*/*',
-              'x-api-key': API_KEY,
+              'x-api-key': API_KEY
             },
-            signal: controller.signal,
+            signal: controller.signal
           });
         } catch (firstAttemptError) {
           // If first attempt fails, try searching by lot number
@@ -642,30 +566,22 @@ const CarDetails = memo(() => {
           response = await fetch(`${API_BASE_URL}/search?lot_number=${lot}`, {
             headers: {
               accept: '*/*',
-              'x-api-key': API_KEY,
+              'x-api-key': API_KEY
             },
-            signal: controller.signal,
+            signal: controller.signal
           });
         }
-
         clearTimeout(timeoutId);
-
         if (!response.ok) {
           throw new Error(`API returned ${response.status}: ${response.statusText}`);
         }
-
         const data = await response.json();
-        
         if (!isMounted) return;
-        
         const carData = data.data;
         const lotData = carData.lots?.[0];
-
         if (!lotData) throw new Error("Missing lot data");
-
         const basePrice = lotData.buy_now ?? lotData.final_bid ?? lotData.price ?? 25000;
         const price = convertUSDtoEUR(Math.round(basePrice + 2200));
-
         const transformedCar: CarDetails = {
           id: carData.id?.toString() || lotData.lot,
           make: carData.manufacturer?.name || 'Unknown',
@@ -707,12 +623,11 @@ const CarDetails = memo(() => {
           insurance_v2: lotData.insurance_v2,
           location: lotData.location,
           inspect: lotData.inspect,
-          details: lotData.details,
+          details: lotData.details
         };
-
         setCar(transformedCar);
         setLoading(false);
-        
+
         // Track car view analytics
         trackCarView(lot, transformedCar);
       } catch (apiError) {
@@ -723,21 +638,16 @@ const CarDetails = memo(() => {
         }
       }
     };
-
     fetchCarDetails();
-    
     return () => {
       isMounted = false;
     };
   }, [lot, convertUSDtoEUR]);
-
-
   const handleContactWhatsApp = useCallback(() => {
     const message = `Përshëndetje! Jam i interesuar për ${car?.year} ${car?.make} ${car?.model} (€${car?.price.toLocaleString()}). A mund të më jepni më shumë informacion?`;
     const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   }, [car]);
-
   const handleShare = useCallback(() => {
     navigator.clipboard.writeText(window.location.href);
     toast({
@@ -1343,9 +1253,7 @@ const CarDetails = memo(() => {
 
   // Memoize images array for performance
   const carImages = useMemo(() => car?.images || [], [car?.images]);
-  
   const [isLiked, setIsLiked] = useState(false);
-  
   const handleLike = useCallback(() => {
     setIsLiked(!isLiked);
     toast({
@@ -1357,10 +1265,8 @@ const CarDetails = memo(() => {
 
   // Preload important images
   useImagePreload(car?.image);
-
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
+    return <div className="min-h-screen bg-background">
         <div className="container-responsive py-8">
           <div className="animate-pulse space-y-6">
             <div className="h-8 bg-muted rounded w-32"></div>
@@ -1378,13 +1284,10 @@ const CarDetails = memo(() => {
             </div>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   if (error || !car) {
-    return (
-      <div className="min-h-screen bg-background">
+    return <div className="min-h-screen bg-background">
         <div className="container-responsive py-8">
           <Button variant="outline" onClick={() => navigate('/')} className="mb-6">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -1396,60 +1299,48 @@ const CarDetails = memo(() => {
             <p className="text-muted-foreground">Makina që po kërkoni nuk mund të gjindet në bazën tonë të të dhënave.</p>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   const images = car.images || [car.image].filter(Boolean);
-
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+  return <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       <div className="container-responsive py-6 max-w-7xl">
         {/* Header with Actions */}
         <div className="flex flex-wrap gap-3 justify-between items-center mb-8">
           <div className="flex gap-3">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                // Smart back navigation with multiple fallbacks
-                console.log('🔙 Attempting to go back...');
-                console.log('Previous page from context:', previousPage);
-                console.log('Document referrer:', document.referrer);
-                console.log('History length:', window.history.length);
-                
-                // Try multiple methods in order of preference
-                if (previousPage && previousPage !== window.location.href) {
-                  console.log('🔙 Using saved previous page:', previousPage);
-                  navigate(previousPage);
-                } else if (document.referrer && document.referrer !== window.location.href) {
-                  // If the referrer is from our domain, use it
-                  const referrerUrl = new URL(document.referrer);
-                  const currentUrl = new URL(window.location.href);
-                  if (referrerUrl.origin === currentUrl.origin) {
-                    console.log('🔙 Using document referrer:', document.referrer);
-                    window.location.href = document.referrer;
-                    return;
-                  }
-                } else if (window.history.length > 1) {
-                  console.log('🔙 Using browser back');
-                  window.history.back();
-                  return;
-                }
-                
-                // Final fallbacks
-                console.log('🔙 Using fallback to catalog');
-                navigate('/catalog');
-              }} 
-              className="shadow-sm border-2 hover:shadow-md transition-all"
-            >
+            <Button variant="outline" onClick={() => {
+            // Smart back navigation with multiple fallbacks
+            console.log('🔙 Attempting to go back...');
+            console.log('Previous page from context:', previousPage);
+            console.log('Document referrer:', document.referrer);
+            console.log('History length:', window.history.length);
+
+            // Try multiple methods in order of preference
+            if (previousPage && previousPage !== window.location.href) {
+              console.log('🔙 Using saved previous page:', previousPage);
+              navigate(previousPage);
+            } else if (document.referrer && document.referrer !== window.location.href) {
+              // If the referrer is from our domain, use it
+              const referrerUrl = new URL(document.referrer);
+              const currentUrl = new URL(window.location.href);
+              if (referrerUrl.origin === currentUrl.origin) {
+                console.log('🔙 Using document referrer:', document.referrer);
+                window.location.href = document.referrer;
+                return;
+              }
+            } else if (window.history.length > 1) {
+              console.log('🔙 Using browser back');
+              window.history.back();
+              return;
+            }
+
+            // Final fallbacks
+            console.log('🔙 Using fallback to catalog');
+            navigate('/catalog');
+          }} className="shadow-sm border-2 hover:shadow-md transition-all">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Kthehu te Makinat
             </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/')} 
-              className="shadow-sm border-2 hover:shadow-md transition-all"
-            >
+            <Button variant="outline" onClick={() => navigate('/')} className="shadow-sm border-2 hover:shadow-md transition-all">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Kryefaqja
             </Button>
@@ -1472,25 +1363,14 @@ const CarDetails = memo(() => {
             <Card className="shadow-lg border-0 overflow-hidden">
               <CardContent className="p-0">
                 <div className="relative h-[300px] sm:h-[400px] lg:h-[500px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer" onClick={() => setIsImageZoomOpen(true)}>
-                  {images.length > 0 ? (
-                    <img 
-                      src={images[selectedImageIndex]} 
-                      alt={`${car.year} ${car.make} ${car.model}`} 
-                      className="w-full h-full object-cover transition-transform duration-300 hover:scale-105" 
-                      onError={(e) => {
-                        e.currentTarget.src = "/placeholder.svg";
-                      }} 
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
+                  {images.length > 0 ? <img src={images[selectedImageIndex]} alt={`${car.year} ${car.make} ${car.model}`} className="w-full h-full object-cover transition-transform duration-300 hover:scale-105" onError={e => {
+                  e.currentTarget.src = "/placeholder.svg";
+                }} /> : <div className="w-full h-full flex items-center justify-center">
                       <Car className="h-24 w-24 text-muted-foreground" />
-                    </div>
-                  )}
-                  {car.lot && (
-                    <Badge className="absolute top-6 right-6 bg-primary/90 backdrop-blur-sm text-primary-foreground px-3 py-2 text-sm font-medium shadow-lg">
+                    </div>}
+                  {car.lot && <Badge className="absolute top-6 right-6 bg-primary/90 backdrop-blur-sm text-primary-foreground px-3 py-2 text-sm font-medium shadow-lg">
                       Lot #{car.lot}
-                    </Badge>
-                  )}
+                    </Badge>}
                   {/* Zoom icon */}
                   <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Expand className="h-5 w-5 text-white" />
@@ -1500,28 +1380,13 @@ const CarDetails = memo(() => {
             </Card>
 
             {/* Image Thumbnails */}
-            {images.length > 1 && (
-              <div className="grid grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3">
-                {images.slice(0, 20).map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedImageIndex(index)}
-                    className={`relative h-20 bg-muted rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
-                      selectedImageIndex === index ? 'border-primary shadow-lg' : 'border-transparent hover:border-primary/50'
-                    }`}
-                  >
-                    <img 
-                      src={image} 
-                      alt={`View ${index + 1}`} 
-                      className="w-full h-full object-cover" 
-                      onError={(e) => {
-                        e.currentTarget.src = "/placeholder.svg";
-                      }} 
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
+            {images.length > 1 && <div className="grid grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3">
+                {images.slice(0, 20).map((image, index) => <button key={index} onClick={() => setSelectedImageIndex(index)} className={`relative h-20 bg-muted rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${selectedImageIndex === index ? 'border-primary shadow-lg' : 'border-transparent hover:border-primary/50'}`}>
+                    <img src={image} alt={`View ${index + 1}`} className="w-full h-full object-cover" onError={e => {
+                e.currentTarget.src = "/placeholder.svg";
+              }} />
+                  </button>)}
+              </div>}
 
             {/* Enhanced Vehicle Specifications */}
             <Card className="shadow-lg border-0">
@@ -1542,18 +1407,10 @@ const CarDetails = memo(() => {
                          +350€ deri në Prishtinë
                        </div>
                      </div>
-                     <InspectionRequestForm 
-                       trigger={
-                         <Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto">
+                     <InspectionRequestForm trigger={<Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto">
                            <FileText className="h-4 w-4 mr-1" />
                            Kërko Inspektim
-                         </Button>
-                       }
-                       carId={car.id}
-                       carMake={car.make}
-                       carModel={car.model}
-                       carYear={car.year}
-                     />
+                         </Button>} carId={car.id} carMake={car.make} carModel={car.model} carYear={car.year} />
                    </div>
                 </div>
                 
@@ -1577,65 +1434,53 @@ const CarDetails = memo(() => {
                    </div>
                    
                    {/* Add Production Year */}
-                   {car.details?.first_registration && (
-                     <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                   {car.details?.first_registration && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                        <div className="flex items-center gap-3">
                          <Calendar className="h-5 w-5 text-primary" />
                          <span className="font-semibold text-foreground">Viti i Prodhimit</span>
                        </div>
                        <span className="text-muted-foreground font-medium">{car.details.first_registration.year}</span>
-                     </div>
-                   )}
+                     </div>}
                   
-                  {car.mileage && (
-                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                  {car.mileage && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">
                         <Gauge className="h-5 w-5 text-primary" />
                         <span className="font-semibold text-foreground">Kilometrat</span>
                       </div>
                       <span className="text-muted-foreground font-medium">{car.mileage}</span>
-                    </div>
-                  )}
+                    </div>}
                   
-                  {car.transmission && (
-                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                  {car.transmission && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">
                         <Settings className="h-5 w-5 text-primary" />
                         <span className="font-semibold text-foreground">Transmisioni</span>
                       </div>
                       <span className="text-muted-foreground font-medium capitalize">{car.transmission}</span>
-                    </div>
-                  )}
+                    </div>}
                   
-                  {car.fuel && (
-                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                  {car.fuel && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">
                         <Fuel className="h-5 w-5 text-primary" />
                         <span className="font-semibold text-foreground">Karburanti</span>
                       </div>
                       <span className="text-muted-foreground font-medium capitalize">{car.fuel}</span>
-                    </div>
-                  )}
+                    </div>}
                   
-                  {car.color && (
-                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                  {car.color && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">
                         <Palette className="h-5 w-5 text-primary" />
                         <span className="font-semibold text-foreground">Ngjyra</span>
                       </div>
                       <span className="text-muted-foreground font-medium capitalize">{car.color}</span>
-                    </div>
-                  )}
+                    </div>}
 
-                  {car.details?.seats_count && (
-                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                  {car.details?.seats_count && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">
                         <Users className="h-5 w-5 text-primary" />
                         <span className="font-semibold text-foreground">Numri i Vendeve</span>
                       </div>
                       <span className="text-muted-foreground font-medium">{car.details.seats_count} Vende</span>
-                    </div>
-                  )}
+                    </div>}
                 </div>
 
                  {/* Technical Details */}
@@ -1643,53 +1488,42 @@ const CarDetails = memo(() => {
                  <h4 className="text-lg font-semibold mb-4 text-foreground">Detaje Teknike</h4>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                    {/* Engine Displacement */}
-                   {car.details?.engine_volume && (
-                     <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                   {car.details?.engine_volume && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                        <div className="flex items-center gap-3">
                          <div className="w-2 h-2 bg-primary rounded-full"></div>
                          <span className="font-semibold text-foreground">Vëllimi Motorit</span>
                        </div>
                        <span className="text-muted-foreground font-medium">{car.details.engine_volume}L</span>
-                     </div>
-                   )}
-                   {car.engine && (
-                     <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                     </div>}
+                   {car.engine && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                        <div className="flex items-center gap-3">
                          <div className="w-2 h-2 bg-primary rounded-full"></div>
                          <span className="font-semibold text-foreground">Motori</span>
                        </div>
                        <span className="text-muted-foreground font-medium">{car.engine.name}</span>
-                     </div>
-                   )}
-                  {car.cylinders && (
-                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                     </div>}
+                  {car.cylinders && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="w-2 h-2 bg-primary rounded-full"></div>
                         <span className="font-semibold text-foreground">Cilindrat</span>
                       </div>
                       <span className="text-muted-foreground font-medium">{car.cylinders}</span>
-                    </div>
-                  )}
-                  {car.drive_wheel && (
-                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                    </div>}
+                  {car.drive_wheel && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="w-2 h-2 bg-primary rounded-full"></div>
                         <span className="font-semibold text-foreground">Drejtimi</span>
                       </div>
                       <span className="text-muted-foreground font-medium capitalize">{car.drive_wheel.name}</span>
-                    </div>
-                  )}
-                  {car.body_type && (
-                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                    </div>}
+                  {car.body_type && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="w-2 h-2 bg-primary rounded-full"></div>
                         <span className="font-semibold text-foreground">Lloji i Trupit</span>
                       </div>
                       <span className="text-muted-foreground font-medium capitalize">{car.body_type.name}</span>
-                    </div>
-                  )}
-                  {car.damage && (car.damage.main || car.damage.second) && (
-                    <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                    </div>}
+                  {car.damage && (car.damage.main || car.damage.second) && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="w-2 h-2 bg-destructive rounded-full"></div>
                         <span className="font-semibold text-foreground">Dëmtimet</span>
@@ -1699,8 +1533,7 @@ const CarDetails = memo(() => {
                         {car.damage.main && car.damage.second && <span>, </span>}
                         {car.damage.second && <span>{car.damage.second}</span>}
                       </span>
-                    </div>
-                  )}
+                    </div>}
                 </div>
               </CardContent>
             </Card>
@@ -1713,109 +1546,79 @@ const CarDetails = memo(() => {
                      <Info className="h-5 w-5 lg:h-6 lg:w-6 mr-2 lg:mr-3 text-primary" />
                      Informacione të Detajuara
                    </h3>
-                   <Button
-                     variant="outline"
-                       onClick={() => {
-                         setShowDetailedInfo(!showDetailedInfo);
-                       }}
-                     className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto"
-                   >
+                   <Button variant="outline" onClick={() => {
+                  setShowDetailedInfo(!showDetailedInfo);
+                }} className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto">
                      {showDetailedInfo ? 'Fshih Detajet' : 'Shiko Detajet'}
                    </Button>
                 </div>
 
-                {showDetailedInfo && (
-                  <div className="space-y-6">
+                {showDetailedInfo && <div className="space-y-6">
                     {/* Insurance & Safety Report */}
-                    {(car.insurance_v2 || car.inspect || car.insurance) && (
-                      <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                    {(car.insurance_v2 || car.inspect || car.insurance) && <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
                         <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
                           <Shield className="h-5 w-5" />
                           Raporti i Sigurisë dhe Sigurimit
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {car.insurance_v2?.accidentCnt !== undefined && (
-                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                          {car.insurance_v2?.accidentCnt !== undefined && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
                               <span className="text-sm">Historia e Aksidenteve:</span>
                               <Badge variant={car.insurance_v2.accidentCnt === 0 ? "secondary" : "destructive"}>
                                 {car.insurance_v2.accidentCnt === 0 ? 'E Pastër' : `${car.insurance_v2.accidentCnt} aksidente`}
                               </Badge>
-                            </div>
-                          )}
-                          {car.insurance_v2?.ownerChangeCnt !== undefined && (
-                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                            </div>}
+                          {car.insurance_v2?.ownerChangeCnt !== undefined && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
                               <span className="text-sm">Ndryshime Pronësie:</span>
                               <span className="font-medium">{car.insurance_v2.ownerChangeCnt}</span>
-                            </div>
-                          )}
-                          {car.insurance_v2?.totalLossCnt !== undefined && car.insurance_v2.totalLossCnt > 0 && (
-                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                            </div>}
+                          {car.insurance_v2?.totalLossCnt !== undefined && car.insurance_v2.totalLossCnt > 0 && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
                               <span className="text-sm">Humbje Totale:</span>
                               <Badge variant="destructive">{car.insurance_v2.totalLossCnt}</Badge>
-                            </div>
-                          )}
-                          {car.insurance_v2?.floodTotalLossCnt !== undefined && car.insurance_v2.floodTotalLossCnt > 0 && (
-                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                            </div>}
+                          {car.insurance_v2?.floodTotalLossCnt !== undefined && car.insurance_v2.floodTotalLossCnt > 0 && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
                               <span className="text-sm">Dëmtime nga Përmbytjet:</span>
                               <Badge variant="destructive">{car.insurance_v2.floodTotalLossCnt}</Badge>
-                            </div>
-                          )}
+                            </div>}
                         </div>
-                      </div>
-                    )}
+                      </div>}
 
                     {/* Vehicle Details */}
-                    {car.details && (
-                      <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                    {car.details && <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
                         <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
                           <Car className="h-5 w-5" />
                           Detaje të Veturës
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {car.details.engine_volume && (
-                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                          {car.details.engine_volume && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
                               <span className="text-sm">Vëllimi i Motorit:</span>
                               <span className="font-medium">{car.details.engine_volume}cc</span>
-                            </div>
-                          )}
-                          {car.details.seats_count && (
-                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                            </div>}
+                          {car.details.seats_count && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
                               <span className="text-sm">Numri i Vendeve:</span>
                               <span className="font-medium">{car.details.seats_count}</span>
-                            </div>
-                          )}
-                          {car.details.badge && (
-                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                            </div>}
+                          {car.details.badge && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
                               <span className="text-sm">Versioni:</span>
                               <span className="font-medium">{car.details.badge}</span>
-                            </div>
-                          )}
-                          {car.details.sell_type && (
-                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                            </div>}
+                          {car.details.sell_type && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
                               <span className="text-sm">Lloji i Shitjes:</span>
                               <span className="font-medium capitalize">{car.details.sell_type}</span>
-                            </div>
-                          )}
+                            </div>}
                           
                           {/* Inspection Report Button */}
                           <div className="md:col-span-2 mt-4">
-                            <Button
-                              onClick={() => {
-                                setShowInspectionReport(!showInspectionReport);
-                              }}
-                              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                              size="lg"
-                            >
+                            <Button onClick={() => {
+                        setShowInspectionReport(!showInspectionReport);
+                      }} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" size="lg">
                               {showInspectionReport ? 'Fshih Raportin' : 'Raporti'}
                             </Button>
                           </div>
                         </div>
-                      </div>
-                      )}
+                      </div>}
 
                     {/* Inspection Report Section - Triggered by Raporti Button */}
-                    {showInspectionReport && (
-                      <div className="space-y-6 p-6 bg-gradient-to-br from-background to-muted/50 rounded-xl border border-border">
+                    {showInspectionReport && <div className="space-y-6 p-6 bg-gradient-to-br from-background to-muted/50 rounded-xl border border-border">
                         <div className="text-center mb-6">
                           <h4 className="text-2xl font-bold text-foreground flex items-center justify-center gap-3">
                             <FileText className="h-6 w-6 text-primary" />
@@ -1833,8 +1636,7 @@ const CarDetails = memo(() => {
                             🚗 Detajet Teknike të Makinës
                           </h5>
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {car && (
-                              <>
+                            {car && <>
                                 <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
                                   <div className="flex items-center gap-2 mb-2">
                                     <div className="w-3 h-3 bg-primary rounded-full"></div>
@@ -1849,9 +1651,7 @@ const CarDetails = memo(() => {
                                     <span className="text-sm font-semibold text-primary">Motori</span>
                                   </div>
                                   <p className="text-sm text-foreground">{car.engine?.name || 'N/A'}</p>
-                                  {car.cylinders && (
-                                    <p className="text-xs text-muted-foreground">Cilindra: {car.cylinders}</p>
-                                  )}
+                                  {car.cylinders && <p className="text-xs text-muted-foreground">Cilindra: {car.cylinders}</p>}
                                 </div>
 
                                 <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
@@ -1878,16 +1678,12 @@ const CarDetails = memo(() => {
                                   <p className="text-sm text-foreground">
                                     {car.odometer?.km ? `${car.odometer.km.toLocaleString()} km` : car.mileage || 'N/A'}
                                   </p>
-                                  {car.odometer?.mi && (
-                                    <p className="text-xs text-muted-foreground">
+                                  {car.odometer?.mi && <p className="text-xs text-muted-foreground">
                                       ({car.odometer.mi.toLocaleString()} miles)
-                                    </p>
-                                  )}
-                                  {car.odometer?.status && (
-                                    <p className="text-xs text-muted-foreground capitalize">
+                                    </p>}
+                                  {car.odometer?.status && <p className="text-xs text-muted-foreground capitalize">
                                       Status: {car.odometer.status.name}
-                                    </p>
-                                  )}
+                                    </p>}
                                 </div>
 
                                 <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
@@ -1923,105 +1719,36 @@ const CarDetails = memo(() => {
                                   </div>
                                   <p className="text-sm text-foreground capitalize">{car.color || 'N/A'}</p>
                                 </div>
-                              </>
-                            )}
+                              </>}
                           </div>
                         </div>
 
                         {/* Auction Information */}
-                        <div className="bg-card rounded-lg p-6 shadow-sm border border-border">
-                          <h5 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
-                            <div className="p-2 bg-accent/10 rounded-lg">
-                              <DollarSign className="h-5 w-5 text-accent" />
-                            </div>
-                            💰 Informacionet e Ankandit
-                          </h5>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <div className="p-4 bg-accent/5 border border-accent/20 rounded-lg">
-                              <div className="flex items-center gap-2 mb-2">
-                                <div className="w-3 h-3 bg-accent rounded-full"></div>
-                                <span className="text-sm font-semibold text-accent">Numri i Lotit</span>
-                              </div>
-                              <p className="text-sm text-foreground">{car.lot || 'N/A'}</p>
-                            </div>
-
-                            {car.bid && (
-                              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                                  <span className="text-sm font-semibold text-green-700">Oferta Aktuale</span>
-                                </div>
-                                <p className="text-sm text-foreground">€{car.bid.toLocaleString()}</p>
-                              </div>
-                            )}
-
-                            {car.buy_now && (
-                              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                                  <span className="text-sm font-semibold text-blue-700">Çmimi "Bli Tani"</span>
-                                </div>
-                                <p className="text-sm text-foreground">€{car.buy_now.toLocaleString()}</p>
-                              </div>
-                            )}
-
-                            {car.final_bid && (
-                              <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                                  <span className="text-sm font-semibold text-purple-700">Oferta Finale</span>
-                                </div>
-                                <p className="text-sm text-foreground">€{car.final_bid.toLocaleString()}</p>
-                              </div>
-                            )}
-
-                            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                              <div className="flex items-center gap-2 mb-2">
-                                <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
-                                <span className="text-sm font-semibold text-gray-700">Gjendja</span>
-                              </div>
-                              <p className="text-sm text-foreground capitalize">{car.condition || 'N/A'}</p>
-                            </div>
-
-                            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                              <div className="flex items-center gap-2 mb-2">
-                                <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
-                                <span className="text-sm font-semibold text-amber-700">Çmimi Shitjes</span>
-                              </div>
-                              <p className="text-sm text-foreground">€{car.price.toLocaleString()}</p>
-                            </div>
-                          </div>
-                        </div>
+                        
 
                         {/* Damage Assessment */}
-                        {car.damage && (
-                          <div>
+                        {car.damage && <div>
                             <h5 className="font-medium mb-3 text-foreground flex items-center gap-2">
                               <AlertTriangle className="h-4 w-4 text-amber-600" />
                               📋 Vlerësimi i Dëmtimeve
                             </h5>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              {car.damage.main && (
-                                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                              {car.damage.main && <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
                                   <div className="flex items-center gap-2 mb-2">
                                     <AlertTriangle className="h-4 w-4 text-amber-600" />
                                     <span className="text-sm font-medium">Dëmtimi Kryesor:</span>
                                   </div>
                                   <span className="text-sm capitalize">{car.damage.main}</span>
-                                </div>
-                              )}
-                              {car.damage.second && (
-                                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                </div>}
+                              {car.damage.second && <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
                                   <div className="flex items-center gap-2 mb-2">
                                     <AlertTriangle className="h-4 w-4 text-amber-600" />
                                     <span className="text-sm font-medium">Dëmtimi Dytësor:</span>
                                   </div>
                                   <span className="text-sm capitalize">{car.damage.second}</span>
-                                </div>
-                              )}
+                                </div>}
                             </div>
-                          </div>
-                        )}
+                          </div>}
 
                         {/* Safety Information */}
                         <div className="bg-card rounded-lg p-6 shadow-sm border border-border">
@@ -2032,8 +1759,7 @@ const CarDetails = memo(() => {
                             🛡️ Informacione Sigurie
                           </h5>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {car.keys_available !== undefined && (
-                              <div className="p-4 bg-secondary/5 border border-secondary/20 rounded-lg hover:shadow-md transition-shadow">
+                            {car.keys_available !== undefined && <div className="p-4 bg-secondary/5 border border-secondary/20 rounded-lg hover:shadow-md transition-shadow">
                                 <div className="flex items-center gap-2 mb-2">
                                   <Settings className="h-4 w-4 text-secondary-foreground" />
                                   <span className="text-sm font-medium text-foreground">Çelësat:</span>
@@ -2041,343 +1767,84 @@ const CarDetails = memo(() => {
                                 <Badge variant={car.keys_available ? "secondary" : "destructive"}>
                                   {car.keys_available ? 'Të Disponueshëm' : 'Jo të Disponueshëm'}
                                 </Badge>
-                              </div>
-                            )}
-                            {car.airbags && (
-                              <div className="p-4 bg-secondary/5 border border-secondary/20 rounded-lg hover:shadow-md transition-shadow">
+                              </div>}
+                            {car.airbags && <div className="p-4 bg-secondary/5 border border-secondary/20 rounded-lg hover:shadow-md transition-shadow">
                                 <div className="flex items-center gap-2 mb-2">
                                   <Shield className="h-4 w-4 text-secondary-foreground" />
                                   <span className="text-sm font-medium text-foreground">Airbag:</span>
                                 </div>
                                 <span className="text-sm text-muted-foreground">{car.airbags}</span>
-                              </div>
-                            )}
-                            {car.condition && (
-                              <div className="p-4 bg-secondary/5 border border-secondary/20 rounded-lg hover:shadow-md transition-shadow">
+                              </div>}
+                            {car.condition && <div className="p-4 bg-secondary/5 border border-secondary/20 rounded-lg hover:shadow-md transition-shadow">
                                 <div className="flex items-center gap-2 mb-2">
                                   <CheckCircle className="h-4 w-4 text-secondary-foreground" />
                                   <span className="text-sm font-medium text-foreground">Gjendja:</span>
                                 </div>
                                 <span className="text-sm text-muted-foreground capitalize">{car.condition}</span>
-                              </div>
-                            )}
+                              </div>}
                           </div>
                         </div>
 
                         {/* Visual Inspection Diagram */}
-                        {car.details?.inspect_outer && car.details.inspect_outer.length > 0 && (
-                          <div>
+                        {car.details?.inspect_outer && car.details.inspect_outer.length > 0 && <div>
                             <h5 className="font-medium mb-3 text-foreground flex items-center gap-2">
                               <Car className="h-4 w-4 text-purple-600" />
                               🔍 Diagrami i Inspektimit
                             </h5>
-                            <CarInspectionDiagram 
-                              inspectionData={car.details.inspect_outer}
-                              className="mt-4"
-                            />
-                          </div>
-                        )}
+                            <CarInspectionDiagram inspectionData={car.details.inspect_outer} className="mt-4" />
+                          </div>}
 
                         {/* Maintenance History */}
-                        {car.details?.maintenance_history && car.details.maintenance_history.length > 0 && (
-                          <div>
+                        {car.details?.maintenance_history && car.details.maintenance_history.length > 0 && <div>
                             <h5 className="font-medium mb-3 text-foreground flex items-center gap-2">
                               <Clock className="h-4 w-4 text-indigo-600" />
                               📅 Historia e Mirëmbajtjes
                             </h5>
                             <div className="space-y-2">
-                              {car.details.maintenance_history.map((record: any, index: number) => (
-                                <div key={index} className="p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+                              {car.details.maintenance_history.map((record: any, index: number) => <div key={index} className="p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
                                   <div className="flex justify-between items-start">
                                     <div>
                                       <span className="text-sm font-medium text-indigo-800">
                                         {record.service_type || record.type || 'Shërbim i Përgjithshëm'}
                                       </span>
-                                      {record.description && (
-                                        <p className="text-xs text-indigo-600 mt-1">{record.description}</p>
-                                      )}
+                                      {record.description && <p className="text-xs text-indigo-600 mt-1">{record.description}</p>}
                                     </div>
-                                    {record.date && (
-                                      <span className="text-xs text-indigo-600">{record.date}</span>
-                                    )}
+                                    {record.date && <span className="text-xs text-indigo-600">{record.date}</span>}
                                   </div>
-                                  {record.mileage && (
-                                    <span className="text-xs text-indigo-600 block mt-1">Kilometrazh: {record.mileage}</span>
-                                  )}
-                                </div>
-                              ))}
+                                  {record.mileage && <span className="text-xs text-indigo-600 block mt-1">Kilometrazh: {record.mileage}</span>}
+                                </div>)}
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                          </div>}
+                      </div>}
 
                     {/* Equipment & Options */}
                     {(() => {
-                      // Debug info
-                      if (car.details?.options) {
-                        console.log('🔍 Car details options:', car.details.options);
-                        console.log('🔍 Converted options:', convertOptionsToNames(car.details.options));
-                      } else {
-                        console.log('🔍 No options found. Car details:', car.details);
-                      }
-                      return null;
-                    })()}
+                  // Debug info
+                  if (car.details?.options) {
+                    console.log('🔍 Car details options:', car.details.options);
+                    console.log('🔍 Converted options:', convertOptionsToNames(car.details.options));
+                  } else {
+                    console.log('🔍 No options found. Car details:', car.details);
+                  }
+                  return null;
+                })()}
                     
-                    {car.details?.options && (
-                      <EquipmentOptionsSection 
-                        options={convertOptionsToNames(car.details.options)} 
-                        features={car.features}
-                        safetyFeatures={car.safety_features}
-                        comfortFeatures={car.comfort_features}
-                      />
-                    )}
+                    {car.details?.options && <EquipmentOptionsSection options={convertOptionsToNames(car.details.options)} features={car.features} safetyFeatures={car.safety_features} comfortFeatures={car.comfort_features} />}
                     
                     {/* Fallback if no options found */}
-                    {!car.details?.options && (
-                      <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                    {!car.details?.options && <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
                         <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
                           <Settings className="h-5 w-5" />
                           Pajisjet dhe Opsionet
                         </h4>
                         <p className="text-muted-foreground">Nuk ka informacion për pajisjet dhe opsionet e kësaj makine.</p>
-                      </div>
-                    )}
+                      </div>}
 
                     {/* Comprehensive Inspection Report */}
-                    <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                      <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                        <FileText className="h-5 w-5" />
-                        Raporti i Inspektimit të Detajuar
-                      </h4>
-
-                      {/* Car Inspection Diagram */}
-                      {car.details?.inspect_outer && car.details.inspect_outer.length > 0 && (
-                        <div className="mb-6">
-                          <h5 className="font-medium mb-3 text-foreground">Diagrami i Inspektimit të Jashtëm:</h5>
-                          <CarInspectionDiagram 
-                            inspectionData={car.details.inspect_outer}
-                            className="mt-4"
-                          />
-                        </div>
-                      )}
-
-                      {/* Damage Assessment */}
-                      {car.damage && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                          {car.damage.main && (
-                            <div className="p-3 bg-card border border-border rounded-lg">
-                              <div className="flex items-center gap-2 mb-2">
-                                <AlertTriangle className="h-4 w-4 text-amber-600" />
-                                <span className="text-sm font-medium">Dëmtimi Kryesor:</span>
-                              </div>
-                              <span className="text-sm capitalize">{car.damage.main}</span>
-                            </div>
-                          )}
-                          {car.damage.second && (
-                            <div className="p-3 bg-card border border-border rounded-lg">
-                              <div className="flex items-center gap-2 mb-2">
-                                <AlertTriangle className="h-4 w-4 text-amber-600" />
-                                <span className="text-sm font-medium">Dëmtimi Dytësor:</span>
-                              </div>
-                              <span className="text-sm capitalize">{car.damage.second}</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Condition & Safety Information */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        {car.condition && (
-                          <div className="p-3 bg-card border border-border rounded-lg">
-                            <div className="flex items-center gap-2 mb-2">
-                              <CheckCircle className="h-4 w-4 text-green-600" />
-                              <span className="text-sm font-medium">Gjendja e Përgjithshme:</span>
-                            </div>
-                            <span className="text-sm capitalize">{car.condition}</span>
-                          </div>
-                        )}
-                        {car.keys_available !== undefined && (
-                          <div className="p-3 bg-card border border-border rounded-lg">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Settings className="h-4 w-4 text-blue-600" />
-                              <span className="text-sm font-medium">Çelësat:</span>
-                            </div>
-                            <Badge variant={car.keys_available ? "secondary" : "destructive"}>
-                              {car.keys_available ? 'Të Disponueshëm' : 'Jo të Disponueshëm'}
-                            </Badge>
-                          </div>
-                        )}
-                        {car.airbags && (
-                          <div className="p-3 bg-card border border-border rounded-lg">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Shield className="h-4 w-4 text-blue-600" />
-                              <span className="text-sm font-medium">Airbag Sistemi:</span>
-                            </div>
-                            <span className="text-sm">{car.airbags}</span>
-                          </div>
-                        )}
-                        {car.grade_iaai && (
-                          <div className="p-3 bg-card border border-border rounded-lg">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Star className="h-4 w-4 text-yellow-600" />
-                              <span className="text-sm font-medium">Vlerësimi IAAI:</span>
-                            </div>
-                            <span className="text-sm">{car.grade_iaai}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Location & Sale Information */}
-                      {(car.location || car.seller || car.sale_date) && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {car.location && (
-                            <div className="p-3 bg-card border border-border rounded-lg">
-                              <div className="flex items-center gap-2 mb-2">
-                                <MapPin className="h-4 w-4 text-red-600" />
-                                <span className="text-sm font-medium">Lokacioni:</span>
-                              </div>
-                              <span className="text-sm">
-                                {typeof car.location === 'string' 
-                                  ? car.location 
-                                  : `${car.location.city || ''} ${car.location.state || ''} ${car.location.country || ''}`.trim() || 'N/A'
-                                }
-                              </span>
-                            </div>
-                          )}
-                          {car.seller && (
-                            <div className="p-3 bg-card border border-border rounded-lg">
-                              <div className="flex items-center gap-2 mb-2">
-                                <Users className="h-4 w-4 text-purple-600" />
-                                <span className="text-sm font-medium">Shitësi:</span>
-                              </div>
-                              <span className="text-sm capitalize">{car.seller}</span>
-                            </div>
-                          )}
-                          {car.sale_date && (
-                            <div className="p-3 bg-card border border-border rounded-lg">
-                              <div className="flex items-center gap-2 mb-2">
-                                <Calendar className="h-4 w-4 text-blue-600" />
-                                <span className="text-sm font-medium">Data e Shitjes:</span>
-                              </div>
-                              <span className="text-sm">{new Date(car.sale_date).toLocaleDateString('sq-AL')}</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Exchanged/Replaced Parts */}
-                      {(car.details?.exchanged_parts || car.details?.replaced_parts) && (
-                        <div className="mt-6">
-                          <h5 className="font-medium mb-3 text-foreground flex items-center gap-2">
-                            <Settings className="h-4 w-4 text-orange-600" />
-                            Pjesë të Këmbyera / të Zëvendësuara
-                          </h5>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {(car.details.exchanged_parts || car.details.replaced_parts || []).map((part: any, index: number) => (
-                              <div key={index} className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                                  <span className="text-sm font-medium text-orange-800">
-                                    {typeof part === 'string' ? part : part.name || part.part_name || `Pjesë ${index + 1}`}
-                                  </span>
-                                </div>
-                                {typeof part === 'object' && part.condition && (
-                                  <span className="text-xs text-orange-600">Gjendja: {part.condition}</span>
-                                )}
-                                {typeof part === 'object' && part.date && (
-                                  <span className="text-xs text-orange-600 block">Data: {part.date}</span>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Repaired Parts */}
-                      {car.details?.repaired_parts && car.details.repaired_parts.length > 0 && (
-                        <div className="mt-6">
-                          <h5 className="font-medium mb-3 text-foreground flex items-center gap-2">
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                            Pjesë të Riparuara
-                          </h5>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {car.details.repaired_parts.map((part: any, index: number) => (
-                              <div key={index} className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                  <span className="text-sm font-medium text-green-800">
-                                    {typeof part === 'string' ? part : part.name || part.part_name || `Pjesë ${index + 1}`}
-                                  </span>
-                                </div>
-                                {typeof part === 'object' && part.repair_type && (
-                                  <span className="text-xs text-green-600">Lloji: {part.repair_type}</span>
-                                )}
-                                {typeof part === 'object' && part.condition && (
-                                  <span className="text-xs text-green-600 block">Gjendja: {part.condition}</span>
-                                )}
-                                {typeof part === 'object' && part.repair_date && (
-                                  <span className="text-xs text-green-600 block">Data e Riparimit: {part.repair_date}</span>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Maintenance History if available */}
-                      {car.details?.maintenance_history && car.details.maintenance_history.length > 0 && (
-                        <div className="mt-6">
-                          <h5 className="font-medium mb-3 text-foreground flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-blue-600" />
-                            Historia e Mirëmbajtjes
-                          </h5>
-                          <div className="space-y-2">
-                            {car.details.maintenance_history.map((record: any, index: number) => (
-                              <div key={index} className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                <div className="flex justify-between items-start">
-                                  <div>
-                                    <span className="text-sm font-medium text-blue-800">
-                                      {record.service_type || record.type || 'Shërbim i Përgjithshëm'}
-                                    </span>
-                                    {record.description && (
-                                      <p className="text-xs text-blue-600 mt-1">{record.description}</p>
-                                    )}
-                                  </div>
-                                  {record.date && (
-                                    <span className="text-xs text-blue-600">{record.date}</span>
-                                  )}
-                                </div>
-                                {record.mileage && (
-                                  <span className="text-xs text-blue-600 block mt-1">Kilometrazh: {record.mileage}</span>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Interior/Engine Inspection if available */}
-                      {car.details?.inspect_inner && car.details.inspect_inner.length > 0 && (
-                        <div className="mt-6">
-                          <h5 className="font-medium mb-3 text-foreground">Inspektimi i Brendshëm:</h5>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                            {car.details.inspect_inner.map((item: any, index: number) => (
-                              <div key={index} className="p-2 bg-card border border-border rounded text-xs">
-                                <div className="font-medium">{item.name || `Element ${index + 1}`}</div>
-                                <div className={`text-xs ${item.condition === 'good' ? 'text-green-600' : 'text-amber-600'}`}>
-                                  {item.condition || 'N/A'}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    
 
 
-                  </div>
-                )}
+                  </div>}
               </CardContent>
             </Card>
 
@@ -2412,30 +1879,17 @@ const CarDetails = memo(() => {
 
                 {/* Inspection Request Button */}
                 <div className="border-t border-border pt-6">
-                  <InspectionRequestForm 
-                    trigger={
-                      <Button className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground">
+                  <InspectionRequestForm trigger={<Button className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground">
                         <FileText className="h-5 w-5 mr-2" />
                         Kërko Inspektim Professional
-                      </Button>
-                    }
-                    carId={car.id}
-                    carMake={car.make}
-                    carModel={car.model}
-                    carYear={car.year}
-                  />
+                      </Button>} carId={car.id} carMake={car.make} carModel={car.model} carYear={car.year} />
                 </div>
 
                 {/* Location */}
                 <div className="mt-6 pt-6 border-t border-border">
                   <div className="flex items-center gap-3 text-muted-foreground">
                     <MapPin className="h-4 w-4" />
-                    <a 
-                      href="https://maps.google.com/?q=KORAUTO,Rr.+Ilaz+Kodra+70,Prishtinë,Kosovo" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-sm hover:text-primary transition-colors cursor-pointer"
-                    >
+                    <a href="https://maps.google.com/?q=KORAUTO,Rr.+Ilaz+Kodra+70,Prishtinë,Kosovo" target="_blank" rel="noopener noreferrer" className="text-sm hover:text-primary transition-colors cursor-pointer">
                       Lokacioni: Rr. Ilaz Kodra 70, Prishtinë, Kosovë
                     </a>
                   </div>
@@ -2446,20 +1900,8 @@ const CarDetails = memo(() => {
         </div>
 
         {/* Image Zoom Modal */}
-        {isImageZoomOpen && (
-          <ImageZoom
-            src={images[selectedImageIndex] || ''}
-            alt={`Car image ${selectedImageIndex + 1}`}
-            isOpen={isImageZoomOpen}
-            onClose={() => setIsImageZoomOpen(false)}
-            images={images}
-            currentIndex={selectedImageIndex}
-            onImageChange={setSelectedImageIndex}
-          />
-        )}
+        {isImageZoomOpen && <ImageZoom src={images[selectedImageIndex] || ''} alt={`Car image ${selectedImageIndex + 1}`} isOpen={isImageZoomOpen} onClose={() => setIsImageZoomOpen(false)} images={images} currentIndex={selectedImageIndex} onImageChange={setSelectedImageIndex} />}
       </div>
-    </div>
-  );
+    </div>;
 });
-
 export default CarDetails;
