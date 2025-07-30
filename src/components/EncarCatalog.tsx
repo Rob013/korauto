@@ -285,7 +285,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const handleFiltersChange = (newFilters: APIFilters) => {
     setFilters(newFilters);
     setLoadedPages(1); // Reset pagination when filters change
-    fetchCars(1, newFilters, true);
+    
+    // If a specific grade is selected, increase per_page to show all cars of that grade
+    const filtersWithPagination = {
+      ...newFilters,
+      per_page: newFilters.grade_iaai ? "100" : "12" // Show more cars for specific grades
+    };
+    
+    fetchCars(1, filtersWithPagination, true);
 
     // Update URL with all non-empty filter values
     const nonEmpty = Object.entries(newFilters).filter(
