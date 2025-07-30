@@ -971,8 +971,8 @@ const CarDetails = memo(() => {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       <div className="container-responsive py-6 max-w-7xl">
         {/* Header with Actions */}
-        <div className="flex flex-wrap gap-3 justify-between items-center mb-8">
-          <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <Button
               variant="outline"
               onClick={() => {
@@ -1044,7 +1044,7 @@ const CarDetails = memo(() => {
               Kryefaqja
             </Button>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 w-full sm:w-auto justify-end">
             <Button
               variant="outline"
               size="sm"
@@ -1416,44 +1416,44 @@ const CarDetails = memo(() => {
                           <Car className="h-5 w-5" />
                           Detaje të Veturës
                         </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {car.details.engine_volume && (
-                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
-                              <span className="text-sm">
+                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                              <span className="text-sm text-foreground font-medium">
                                 Vëllimi i Motorit:
                               </span>
-                              <span className="font-medium">
+                              <span className="text-sm font-medium text-muted-foreground">
                                 {car.details.engine_volume}cc
                               </span>
                             </div>
                           )}
                           {car.details.seats_count && (
-                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
-                              <span className="text-sm">Numri i Vendeve:</span>
-                              <span className="font-medium">
+                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                              <span className="text-sm text-foreground font-medium">Numri i Vendeve:</span>
+                              <span className="text-sm font-medium text-muted-foreground">
                                 {car.details.seats_count}
                               </span>
                             </div>
                           )}
                           {car.details.badge && (
-                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
-                              <span className="text-sm">Versioni:</span>
-                              <span className="font-medium">
+                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                              <span className="text-sm text-foreground font-medium">Versioni:</span>
+                              <span className="text-sm font-medium text-muted-foreground">
                                 {car.details.badge}
                               </span>
                             </div>
                           )}
                           {car.details.sell_type && (
-                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
-                              <span className="text-sm">Lloji i Shitjes:</span>
-                              <span className="font-medium capitalize">
+                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                              <span className="text-sm text-foreground font-medium">Lloji i Shitjes:</span>
+                              <span className="text-sm font-medium text-muted-foreground capitalize">
                                 {car.details.sell_type}
                               </span>
                             </div>
                           )}
 
                           {/* Inspection Report Button */}
-                          <div className="md:col-span-2 mt-4">
+                          <div className="sm:col-span-2 mt-4">
                             <Button
                               onClick={() => {
                                 setShowInspectionReport(!showInspectionReport);
@@ -1564,10 +1564,10 @@ const CarDetails = memo(() => {
                               <Shield className="h-4 w-4 text-primary" />
                               📋 Historia e Sigurimit
                             </h5>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               {car.details.insurance.car_info && (
                                 <>
-                                  <div className="p-3 bg-card border border-border rounded">
+                                  <div className="p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                                     <span className="text-sm font-medium text-foreground">
                                       Historia e Aksidenteve:
                                     </span>
@@ -1578,7 +1578,7 @@ const CarDetails = memo(() => {
                                       }
                                     </p>
                                   </div>
-                                  <div className="p-3 bg-card border border-border rounded">
+                                  <div className="p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                                     <span className="text-sm font-medium text-foreground">
                                       Numri i Riparimeve:
                                     </span>
@@ -1589,7 +1589,7 @@ const CarDetails = memo(() => {
                                       }
                                     </p>
                                   </div>
-                                  <div className="p-3 bg-card border border-border rounded">
+                                  <div className="p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                                     <span className="text-sm font-medium text-foreground">
                                       Humbje Totale:
                                     </span>
@@ -1600,7 +1600,7 @@ const CarDetails = memo(() => {
                                       }
                                     </p>
                                   </div>
-                                  <div className="p-3 bg-card border border-border rounded">
+                                  <div className="p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                                     <span className="text-sm font-medium text-foreground">
                                       Dëmtime nga Uji:
                                     </span>
