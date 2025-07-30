@@ -242,6 +242,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     const loadInitialData = async () => {
       setIsRestoringState(true);
 
+      // Always start at the top when loading catalog
+      window.scrollTo({ top: 0, behavior: 'auto' });
+
       // Load manufacturers first
       const manufacturerData = await fetchManufacturers();
       setManufacturers(manufacturerData);
@@ -299,15 +302,22 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
       setIsRestoringState(false);
 
-      // Only restore scroll position if we have saved data and not clearing storage
+      // Only restore scroll if this is a returning visit to the same page
+      // and not coming from homepage generation selection
       const savedData = sessionStorage.getItem(SCROLL_STORAGE_KEY);
-      if (savedData) {
+      const shouldRestoreScroll = savedData && 
+        window.location.search === new URLSearchParams(savedData ? JSON.parse(savedData).filters || {} : {}).toString();
+      
+      if (shouldRestoreScroll) {
         setTimeout(() => {
           restoreScrollPosition();
         }, 300);
       } else {
-        // Ensure we start at the top when no scroll data exists
-        window.scrollTo({ top: 0, behavior: 'auto' });
+        // Clear any old scroll data and ensure we stay at top
+        sessionStorage.removeItem(SCROLL_STORAGE_KEY);
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: 'auto' });
+        }, 300);
       }
     };
 
