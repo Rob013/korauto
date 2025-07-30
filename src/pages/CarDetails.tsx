@@ -1820,19 +1820,140 @@ const CarDetails = memo(() => {
                       </div>
                     )}
 
-                    {/* Inspection Report with Car Diagram */}
-                    {car.details?.inspect_outer && car.details.inspect_outer.length > 0 && (
-                      <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                        <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                          <FileText className="h-5 w-5" />
-                          Raporti i Inspektimit të Detajuar
-                        </h4>
-                        <CarInspectionDiagram 
-                          inspectionData={car.details.inspect_outer}
-                          className="mt-4"
-                        />
+                    {/* Comprehensive Inspection Report */}
+                    <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                      <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                        <FileText className="h-5 w-5" />
+                        Raporti i Inspektimit të Detajuar
+                      </h4>
+
+                      {/* Car Inspection Diagram */}
+                      {car.details?.inspect_outer && car.details.inspect_outer.length > 0 && (
+                        <div className="mb-6">
+                          <h5 className="font-medium mb-3 text-foreground">Diagrami i Inspektimit të Jashtëm:</h5>
+                          <CarInspectionDiagram 
+                            inspectionData={car.details.inspect_outer}
+                            className="mt-4"
+                          />
+                        </div>
+                      )}
+
+                      {/* Damage Assessment */}
+                      {car.damage && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                          {car.damage.main && (
+                            <div className="p-3 bg-card border border-border rounded-lg">
+                              <div className="flex items-center gap-2 mb-2">
+                                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                                <span className="text-sm font-medium">Dëmtimi Kryesor:</span>
+                              </div>
+                              <span className="text-sm capitalize">{car.damage.main}</span>
+                            </div>
+                          )}
+                          {car.damage.second && (
+                            <div className="p-3 bg-card border border-border rounded-lg">
+                              <div className="flex items-center gap-2 mb-2">
+                                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                                <span className="text-sm font-medium">Dëmtimi Dytësor:</span>
+                              </div>
+                              <span className="text-sm capitalize">{car.damage.second}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Condition & Safety Information */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        {car.condition && (
+                          <div className="p-3 bg-card border border-border rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                              <span className="text-sm font-medium">Gjendja e Përgjithshme:</span>
+                            </div>
+                            <span className="text-sm capitalize">{car.condition}</span>
+                          </div>
+                        )}
+                        {car.keys_available !== undefined && (
+                          <div className="p-3 bg-card border border-border rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Settings className="h-4 w-4 text-blue-600" />
+                              <span className="text-sm font-medium">Çelësat:</span>
+                            </div>
+                            <Badge variant={car.keys_available ? "secondary" : "destructive"}>
+                              {car.keys_available ? 'Të Disponueshëm' : 'Jo të Disponueshëm'}
+                            </Badge>
+                          </div>
+                        )}
+                        {car.airbags && (
+                          <div className="p-3 bg-card border border-border rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Shield className="h-4 w-4 text-blue-600" />
+                              <span className="text-sm font-medium">Airbag Sistemi:</span>
+                            </div>
+                            <span className="text-sm">{car.airbags}</span>
+                          </div>
+                        )}
+                        {car.grade_iaai && (
+                          <div className="p-3 bg-card border border-border rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Star className="h-4 w-4 text-yellow-600" />
+                              <span className="text-sm font-medium">Vlerësimi IAAI:</span>
+                            </div>
+                            <span className="text-sm">{car.grade_iaai}</span>
+                          </div>
+                        )}
                       </div>
-                    )}
+
+                      {/* Location & Sale Information */}
+                      {(car.location || car.seller || car.sale_date) && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {car.location && (
+                            <div className="p-3 bg-card border border-border rounded-lg">
+                              <div className="flex items-center gap-2 mb-2">
+                                <MapPin className="h-4 w-4 text-red-600" />
+                                <span className="text-sm font-medium">Lokacioni:</span>
+                              </div>
+                              <span className="text-sm">{car.location}</span>
+                            </div>
+                          )}
+                          {car.seller && (
+                            <div className="p-3 bg-card border border-border rounded-lg">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Users className="h-4 w-4 text-purple-600" />
+                                <span className="text-sm font-medium">Shitësi:</span>
+                              </div>
+                              <span className="text-sm capitalize">{car.seller}</span>
+                            </div>
+                          )}
+                          {car.sale_date && (
+                            <div className="p-3 bg-card border border-border rounded-lg">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Calendar className="h-4 w-4 text-blue-600" />
+                                <span className="text-sm font-medium">Data e Shitjes:</span>
+                              </div>
+                              <span className="text-sm">{new Date(car.sale_date).toLocaleDateString('sq-AL')}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Interior/Engine Inspection if available */}
+                      {car.details?.inspect_inner && car.details.inspect_inner.length > 0 && (
+                        <div className="mt-6">
+                          <h5 className="font-medium mb-3 text-foreground">Inspektimi i Brendshëm:</h5>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                            {car.details.inspect_inner.map((item: any, index: number) => (
+                              <div key={index} className="p-2 bg-card border border-border rounded text-xs">
+                                <div className="font-medium">{item.name || `Element ${index + 1}`}</div>
+                                <div className={`text-xs ${item.condition === 'good' ? 'text-green-600' : 'text-amber-600'}`}>
+                                  {item.condition || 'N/A'}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
 
                     {/* Admin Only Pricing Details */}
