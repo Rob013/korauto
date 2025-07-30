@@ -322,6 +322,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       }
 
       // Set filters and pagination state
+      console.log('🔍 Setting filters from URL:', urlFilters);
       setFilters(urlFilters);
       setLoadedPages(urlLoadedPages);
 
