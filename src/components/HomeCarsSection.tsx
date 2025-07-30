@@ -292,11 +292,6 @@ const HomeCarsSection = memo(() => {
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground">
             Makinat e Disponueshme
           </h2>
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium mb-2">
-            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-            Zgjedhja e Ditës - {new Date().getDate()}{" "}
-            {new Date().toLocaleDateString("sq-AL", { month: "long" })}
-          </div>
 
           <div className="flex justify-center mt-4 sm:mt-6">
             <Button
@@ -344,6 +339,15 @@ const HomeCarsSection = memo(() => {
             />
           </div>
         )}
+
+        {/* Daily Selection Badge */}
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+            Zgjedhja e Ditës - {new Date().getDate()}{" "}
+            {new Date().toLocaleDateString("sq-AL", { month: "long" })}
+          </div>
+        </div>
 
         {/* Sort Control */}
         <div className="mb-6 sm:mb-8 mx-2 sm:mx-0">
