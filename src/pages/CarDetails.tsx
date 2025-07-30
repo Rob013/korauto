@@ -1485,23 +1485,11 @@ const CarDetails = memo(() => {
 
                  {/* Technical Details */}
                  <Separator className="my-6" />
-                 <h4 className="text-lg font-semibold mb-4 text-foreground">Detaje Teknike</h4>
+                 
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                    {/* Engine Displacement */}
-                   {car.details?.engine_volume && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                       <div className="flex items-center gap-3">
-                         <div className="w-2 h-2 bg-primary rounded-full"></div>
-                         <span className="font-semibold text-foreground">Vëllimi Motorit</span>
-                       </div>
-                       <span className="text-muted-foreground font-medium">{car.details.engine_volume}L</span>
-                     </div>}
-                   {car.engine && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                       <div className="flex items-center gap-3">
-                         <div className="w-2 h-2 bg-primary rounded-full"></div>
-                         <span className="font-semibold text-foreground">Motori</span>
-                       </div>
-                       <span className="text-muted-foreground font-medium">{car.engine.name}</span>
-                     </div>}
+                   {car.details?.engine_volume}
+                   {car.engine}
                   {car.cylinders && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="w-2 h-2 bg-primary rounded-full"></div>
