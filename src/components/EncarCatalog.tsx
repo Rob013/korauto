@@ -246,6 +246,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         }
       }
 
+      // Set default manufacturer_id=9 if no filters in URL
+      if (Object.keys(urlFilters).length === 0) {
+        urlFilters.manufacturer_id = "9";
+      }
+
       // Set search term from URL
       if (urlFilters.search) {
         setSearchTerm(urlFilters.search);
