@@ -1486,42 +1486,7 @@ const CarDetails = memo(() => {
                  {/* Technical Details */}
                  <Separator className="my-6" />
                  
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Engine Displacement */}
-                    {car.details?.engine_volume || car.engine}
-                  {car.cylinders && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-primary rounded-full"></div>
-                        <span className="font-semibold text-foreground">Cilindrat</span>
-                      </div>
-                      <span className="text-muted-foreground font-medium">{car.cylinders}</span>
-                    </div>}
-                  {car.drive_wheel && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-primary rounded-full"></div>
-                        <span className="font-semibold text-foreground">Drejtimi</span>
-                      </div>
-                      <span className="text-muted-foreground font-medium capitalize">{typeof car.drive_wheel === 'object' ? car.drive_wheel?.name : car.drive_wheel}</span>
-                    </div>}
-                  {car.body_type && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-primary rounded-full"></div>
-                        <span className="font-semibold text-foreground">Lloji i Trupit</span>
-                      </div>
-                      <span className="text-muted-foreground font-medium capitalize">{typeof car.body_type === 'object' ? car.body_type?.name : car.body_type}</span>
-                    </div>}
-                  {car.damage && (car.damage.main || car.damage.second) && <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-destructive rounded-full"></div>
-                        <span className="font-semibold text-foreground">Dëmtimet</span>
-                      </div>
-                      <span className="text-muted-foreground font-medium text-right">
-                        {car.damage.main && <span>{car.damage.main}</span>}
-                        {car.damage.main && car.damage.second && <span>, </span>}
-                        {car.damage.second && <span>{car.damage.second}</span>}
-                      </span>
-                    </div>}
-                </div>
+                 
               </CardContent>
             </Card>
 
