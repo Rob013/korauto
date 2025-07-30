@@ -97,7 +97,7 @@ const SimilarCarsTab = ({ carMake, carModel, currentCarId }: SimilarCarsTabProps
                   onClick={() => navigate(`/car/${lot?.lot || car.id}`)}
                 >
                   <div className="font-medium text-foreground">
-                    {car.year} {car.manufacturer?.name} {car.model?.name}
+                    {car.year} {car.manufacturer?.name || car.manufacturer} {car.model?.name || car.model}
                   </div>
                   <div className="text-primary font-semibold">€{price.toLocaleString()}</div>
                   <div className="text-xs text-muted-foreground">
