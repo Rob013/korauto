@@ -317,6 +317,14 @@ const LazyCarCard = memo(({
           </span>
          </div>
 
+         {/* Details Button */}
+         <Button 
+           onClick={handleDetailsClick}
+           className="w-full mt-3 bg-primary hover:bg-primary/90 text-primary-foreground"
+           size="sm"
+         >
+           Shiko Detajet
+         </Button>
 
          <div className="text-center mt-2">
            <p className="text-xs text-muted-foreground">
