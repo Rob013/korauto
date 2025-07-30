@@ -263,6 +263,77 @@ const CarDetails = memo(() => {
   const API_BASE_URL = 'https://auctionsapi.com/api';
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
 
+  // Feature mapping for equipment/options
+  const FEATURE_MAPPING: { [key: number]: string } = {
+    1: 'Klimatizimi',
+    2: 'Dritaret Elektrike', 
+    3: 'Mbyllja Qendrore',
+    4: 'Frena ABS',
+    5: 'Airbag Sistemi',
+    6: 'Radio/Sistemi Audio',
+    7: 'CD Player',
+    8: 'Bluetooth',
+    9: 'Navigacioni GPS',
+    10: 'Kamera e Prapme',
+    11: 'Sensorët e Parkimit',
+    12: 'Kontrolli i Kursimit',
+    13: 'Sistemi Start/Stop',
+    14: 'Dritat LED',
+    15: 'Dritat Xenon',
+    16: 'Pasqyrat Elektrike',
+    17: 'Pasqyrat e Ngrohura',
+    18: 'Kontrolli Elektronik i Stabilitetit',
+    19: 'Sistemi Kundër Bllokimit',
+    20: 'Kontrolli i Traksionit',
+    21: 'Distribimi Elektronik i Forcës së Frënimit',
+    22: 'Sistemi i Monitorimit të Presionit të Gomas',
+    23: 'Sistemi i Paralajmërimit të Largimit nga Korsia',
+    24: 'Kontrolli Adaptiv i Kursimit',
+    25: 'Sistemi i Paralajmërimit të Kolizionit',
+    26: 'Frënimi Emergjent Automatik',
+    27: 'Kontrolli i Bordit Elektronik',
+    28: 'Sistemi Keyless',
+    29: 'Filteri i Grimcave',
+    30: 'Sistemi i Kontrollit të Stabilitetit',
+    31: 'Rrota e Rezervës',
+    32: 'Kompleti i Riparimit të Gomas',
+    33: 'Kapaku i Motorit',
+    34: 'Spoiler i Prapëm',
+    35: 'Rrota Alumini',
+    36: 'Rrota Çeliku',
+    37: 'Sistemi i Ngrohjes së Ulëseve',
+    38: 'Ulëset e Lëkurës',
+    39: 'Ulëset e Tekstilit',
+    40: 'Kontrolli Elektrik i Ulëseve'
+  };
+
+  // Convert option numbers to feature names
+  const convertOptionsToNames = (options: any): any => {
+    if (!options) return { standard: [], choice: [], tuning: [] };
+    
+    const result: any = { standard: [], choice: [], tuning: [] };
+    
+    if (options.standard && Array.isArray(options.standard)) {
+      result.standard = options.standard.map((option: any) => 
+        typeof option === 'number' ? (FEATURE_MAPPING[option] || `Pajisje ${option}`) : option
+      );
+    }
+    
+    if (options.choice && Array.isArray(options.choice)) {
+      result.choice = options.choice.map((option: any) => 
+        typeof option === 'number' ? (FEATURE_MAPPING[option] || `Opsion ${option}`) : option
+      );
+    }
+    
+    if (options.tuning && Array.isArray(options.tuning)) {
+      result.tuning = options.tuning.map((option: any) => 
+        typeof option === 'number' ? (FEATURE_MAPPING[option] || `Modifikim ${option}`) : option
+      );
+    }
+    
+    return result;
+  };
+
   // Extract features from car data
   const getCarFeatures = (carData: any, lot: any): string[] => {
     const features = [];
@@ -1679,7 +1750,7 @@ const CarDetails = memo(() => {
                     {/* Equipment & Options */}
                     {car.details?.options && (
                       <EquipmentOptionsSection 
-                        options={car.details.options} 
+                        options={convertOptionsToNames(car.details.options)} 
                         features={car.features}
                         safetyFeatures={car.safety_features}
                         comfortFeatures={car.comfort_features}
