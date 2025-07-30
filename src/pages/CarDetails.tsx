@@ -154,8 +154,76 @@ const CarDetails = memo(() => {
       if (!lot) return;
 
       try {
+        // First, try to fetch from local cache
+        const { data: cachedCar, error: cacheError } = await supabase
+          .from('cars_cache')
+          .select('*')
+          .eq('id', lot)
+          .single();
+
+        if (!cacheError && cachedCar && isMounted) {
+          console.log('Found car in cache:', cachedCar);
+          
+          // Transform cached car data to CarDetails format
+          const carData = typeof cachedCar.car_data === 'string' ? JSON.parse(cachedCar.car_data) : cachedCar.car_data;
+          const lotData = typeof cachedCar.lot_data === 'string' ? JSON.parse(cachedCar.lot_data || '{}') : (cachedCar.lot_data || {});
+          const images = typeof cachedCar.images === 'string' ? JSON.parse(cachedCar.images || '[]') : (cachedCar.images || []);
+
+          const basePrice = cachedCar.price || lotData.buy_now || lotData.final_bid || 25000;
+          const price = convertUSDtoEUR(Math.round(basePrice + 2200));
+
+          const transformedCar: CarDetails = {
+            id: cachedCar.id,
+            make: cachedCar.make || 'Unknown',
+            model: cachedCar.model || 'Unknown',
+            year: cachedCar.year || 2020,
+            price,
+            image: images[0] || '/placeholder.svg',
+            images: images || [],
+            vin: cachedCar.vin || carData.vin,
+            mileage: cachedCar.mileage || (lotData.odometer?.km ? `${lotData.odometer.km.toLocaleString()} km` : undefined),
+            transmission: cachedCar.transmission || carData.transmission?.name,
+            fuel: cachedCar.fuel || carData.fuel?.name,
+            color: cachedCar.color || carData.color?.name,
+            condition: cachedCar.condition || lotData.condition?.name?.replace('run_and_drives', 'Good Condition'),
+            lot: cachedCar.lot_number || lotData.lot,
+            title: `${cachedCar.year} ${cachedCar.make} ${cachedCar.model}`,
+            odometer: lotData.odometer,
+            engine: carData.engine,
+            cylinders: carData.cylinders,
+            drive_wheel: carData.drive_wheel,
+            body_type: carData.body_type,
+            damage: lotData.damage,
+            keys_available: lotData.keys_available,
+            airbags: lotData.airbags,
+            grade_iaai: lotData.grade_iaai,
+            seller: lotData.seller,
+            seller_type: lotData.seller_type,
+            sale_date: lotData.sale_date,
+            bid: lotData.bid,
+            buy_now: lotData.buy_now,
+            final_bid: lotData.final_bid,
+            features: getCarFeatures(carData, lotData),
+            safety_features: getSafetyFeatures(carData, lotData),
+            comfort_features: getComfortFeatures(carData, lotData),
+            performance_rating: 4.5,
+            popularity_score: 85,
+            // Enhanced API data
+            insurance: lotData.insurance,
+            insurance_v2: lotData.insurance_v2,
+            location: lotData.location,
+            inspect: lotData.inspect,
+            details: lotData.details,
+          };
+
+          setCar(transformedCar);
+          setLoading(false);
+          return;
+        }
+
+        // If not found in cache, try external API
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // Increased timeout
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
 
         const response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
           headers: {
@@ -230,9 +298,9 @@ const CarDetails = memo(() => {
         setCar(transformedCar);
         setLoading(false);
       } catch (apiError) {
-        console.error('❌ Failed to fetch from lot endpoint:', apiError);
+        console.error('❌ Failed to fetch car data:', apiError);
         if (isMounted) {
-          setError('Failed to load car data');
+          setError('Car not found');
           setLoading(false);
         }
       }
