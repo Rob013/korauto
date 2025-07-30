@@ -34,7 +34,7 @@ interface EncarCatalogProps {
 
 const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const { toast } = useToast();
-  const { cars, loading, error, totalCount, hasMorePages, fetchCars, fetchManufacturers, fetchModels, fetchGenerations, fetchFilterCounts, loadMore } = useSecureAuctionAPI();
+  const { cars, loading, error, totalCount, hasMorePages, fetchCars,filters,setFilters, fetchManufacturers, fetchModels, fetchGenerations, fetchFilterCounts, loadMore } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<SortOption>('price_low');
@@ -50,16 +50,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   
   const sortedCars = useSortedCars(carsForSorting, sortBy);
 
-  const [filters, setFilters] = useState<APIFilters>(() => {
-    const params = Object.fromEntries(searchParams.entries());
-    return {
-      ...params,
-      manufacturer_id: params.manufacturer_id || undefined,
-      model_id: params.model_id || undefined,
-      generation_id: params.generation_id || undefined,
-      search: params.search || undefined,
-    };
-  });
 
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -116,7 +106,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   };
 
   const handleLoadMore = () => {
-    loadMore();
+    loadMore(filters);
   };
 
   const handleManufacturerChange = async (manufacturerId: string) => {
