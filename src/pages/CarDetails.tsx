@@ -1804,70 +1804,109 @@ const CarDetails = memo(() => {
 
                     {/* Inspection Report Section - Triggered by Raporti Button */}
                     {showInspectionReport && (
-                      <div className="space-y-6 p-4 bg-muted/50 rounded-lg">
-                        <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                          <FileText className="h-5 w-5" />
-                          Raporti i Inspektimit të Plotë
-                        </h4>
+                      <div className="space-y-6 p-6 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200">
+                        <div className="text-center mb-6">
+                          <h4 className="text-2xl font-bold text-foreground flex items-center justify-center gap-3">
+                            <FileText className="h-6 w-6 text-primary" />
+                            Raporti i Inspektimit të Plotë
+                          </h4>
+                          <p className="text-muted-foreground mt-2">Informacione të detajuara për gjendjen e makinës</p>
+                        </div>
 
-                        {/* Exchanged/Replaced Parts */}
-                        {(car.details?.exchanged_parts || car.details?.replaced_parts) && (
-                          <div>
-                            <h5 className="font-medium mb-3 text-foreground flex items-center gap-2">
-                              <Settings className="h-4 w-4 text-orange-600" />
-                              🔧 Pjesë të Këmbyera / të Zëvendësuara
-                            </h5>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                              {(car.details.exchanged_parts || car.details.replaced_parts || []).map((part: any, index: number) => (
-                                <div key={index} className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                                    <span className="text-sm font-medium text-orange-800">
-                                      {typeof part === 'string' ? part : part.name || part.part_name || `Pjesë ${index + 1}`}
+                        {/* Exchanged/Replaced Parts - Always show this section */}
+                        <div className="bg-white rounded-lg p-6 shadow-sm border border-orange-100">
+                          <h5 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
+                            <div className="p-2 bg-orange-100 rounded-lg">
+                              <Settings className="h-5 w-5 text-orange-600" />
+                            </div>
+                            🔧 Pjesë të Këmbyera / të Zëvendësuara
+                          </h5>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {car.details?.exchanged_parts && car.details.exchanged_parts.length > 0 ? (
+                              car.details.exchanged_parts.map((part: any, index: number) => (
+                                <div key={index} className="p-4 bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-lg hover:shadow-md transition-shadow">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                                    <span className="text-sm font-semibold text-orange-800">
+                                      {typeof part === 'string' ? part : part.name || part.part_name || `Pjesë e Këmbyer ${index + 1}`}
                                     </span>
                                   </div>
                                   {typeof part === 'object' && part.condition && (
-                                    <span className="text-xs text-orange-600">Gjendja: {part.condition}</span>
+                                    <p className="text-xs text-orange-600 mb-1">
+                                      <strong>Gjendja:</strong> {part.condition}
+                                    </p>
                                   )}
                                   {typeof part === 'object' && part.date && (
-                                    <span className="text-xs text-orange-600 block">Data: {part.date}</span>
+                                    <p className="text-xs text-orange-600">
+                                      <strong>Data:</strong> {part.date}
+                                    </p>
+                                  )}
+                                  {typeof part === 'object' && part.reason && (
+                                    <p className="text-xs text-orange-600">
+                                      <strong>Arsyeja:</strong> {part.reason}
+                                    </p>
                                   )}
                                 </div>
-                              ))}
-                            </div>
+                              ))
+                            ) : (
+                              <div className="col-span-full p-6 text-center bg-orange-50 border-2 border-dashed border-orange-200 rounded-lg">
+                                <Settings className="h-8 w-8 text-orange-400 mx-auto mb-2" />
+                                <p className="text-orange-600 font-medium">Nuk ka informacion për pjesë të këmbyera</p>
+                                <p className="text-orange-500 text-sm">Të dhënat mund të jenë të disponueshme më vonë</p>
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
 
-                        {/* Repaired Parts */}
-                        {car.details?.repaired_parts && car.details.repaired_parts.length > 0 && (
-                          <div>
-                            <h5 className="font-medium mb-3 text-foreground flex items-center gap-2">
-                              <CheckCircle className="h-4 w-4 text-green-600" />
-                              ✅ Pjesë të Riparuara
-                            </h5>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                              {car.details.repaired_parts.map((part: any, index: number) => (
-                                <div key={index} className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                    <span className="text-sm font-medium text-green-800">
-                                      {typeof part === 'string' ? part : part.name || part.part_name || `Pjesë ${index + 1}`}
+                        {/* Repaired Parts - Always show this section */}
+                        <div className="bg-white rounded-lg p-6 shadow-sm border border-green-100">
+                          <h5 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
+                            <div className="p-2 bg-green-100 rounded-lg">
+                              <CheckCircle className="h-5 w-5 text-green-600" />
+                            </div>
+                            ✅ Pjesë të Riparuara
+                          </h5>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {car.details?.repaired_parts && car.details.repaired_parts.length > 0 ? (
+                              car.details.repaired_parts.map((part: any, index: number) => (
+                                <div key={index} className="p-4 bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg hover:shadow-md transition-shadow">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                                    <span className="text-sm font-semibold text-green-800">
+                                      {typeof part === 'string' ? part : part.name || part.part_name || `Pjesë e Riparuar ${index + 1}`}
                                     </span>
                                   </div>
                                   {typeof part === 'object' && part.repair_type && (
-                                    <span className="text-xs text-green-600">Lloji: {part.repair_type}</span>
+                                    <p className="text-xs text-green-600 mb-1">
+                                      <strong>Lloji i Riparimit:</strong> {part.repair_type}
+                                    </p>
                                   )}
                                   {typeof part === 'object' && part.condition && (
-                                    <span className="text-xs text-green-600 block">Gjendja: {part.condition}</span>
+                                    <p className="text-xs text-green-600 mb-1">
+                                      <strong>Gjendja:</strong> {part.condition}
+                                    </p>
                                   )}
                                   {typeof part === 'object' && part.repair_date && (
-                                    <span className="text-xs text-green-600 block">Data e Riparimit: {part.repair_date}</span>
+                                    <p className="text-xs text-green-600">
+                                      <strong>Data e Riparimit:</strong> {part.repair_date}
+                                    </p>
+                                  )}
+                                  {typeof part === 'object' && part.cost && (
+                                    <p className="text-xs text-green-600">
+                                      <strong>Kostoja:</strong> {part.cost}
+                                    </p>
                                   )}
                                 </div>
-                              ))}
-                            </div>
+                              ))
+                            ) : (
+                              <div className="col-span-full p-6 text-center bg-green-50 border-2 border-dashed border-green-200 rounded-lg">
+                                <CheckCircle className="h-8 w-8 text-green-400 mx-auto mb-2" />
+                                <p className="text-green-600 font-medium">Nuk ka informacion për pjesë të riparuara</p>
+                                <p className="text-green-500 text-sm">Të dhënat mund të jenë të disponueshme më vonë</p>
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
 
                         {/* Damage Assessment */}
                         {car.damage && (
