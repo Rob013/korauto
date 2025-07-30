@@ -565,12 +565,54 @@ export const useSecureAuctionAPI = () => {
     return grades;
   };
 
-  // Fallback grades based on manufacturer
+  // Fallback grades based on manufacturer - but only show grades that actually exist in the data
   const getFallbackGrades = (manufacturerId?: string): { value: string; label: string; count?: number }[] => {
+    // First, try to extract grades from current cars
+    const currentGrades = new Set<string>();
+    
+    cars.forEach(car => {
+      // Check lots array
+      if (car.lots && Array.isArray(car.lots)) {
+        car.lots.forEach(lot => {
+          if (lot.grade_iaai) currentGrades.add(lot.grade_iaai);
+        });
+      }
+      
+      // Extract from title
+      if (car.title) {
+        const titleLower = car.title.toLowerCase();
+        const gradePatterns = [
+          /(\d+\.?\d*)\s*(tdi|tfsi|tsi|fsi|cdi|bluemotion|eco|hybrid)/gi,
+          /(\d+\.?\d*)\s*l(iter)?/gi,
+          /(\d+\.?\d*)\s*(d|i|t)\b/gi,
+          /\b(\d{3}[a-z]?[id]?)\b/gi, // BMW style
+          /([a-z]\d{3}[a-z]?)\b/gi // Mercedes style
+        ];
+        
+        gradePatterns.forEach(pattern => {
+          const matches = titleLower.match(pattern);
+          if (matches) {
+            matches.forEach(match => currentGrades.add(match.trim()));
+          }
+        });
+      }
+    });
+    
+    console.log('🔍 Actual grades found in current car data:', Array.from(currentGrades).sort());
+    
+    if (currentGrades.size > 0) {
+      // Use actual grades from data
+      return Array.from(currentGrades)
+        .sort()
+        .map(grade => ({ value: grade, label: grade }));
+    }
+    
+    // Only use fallback if no grades found
     const fallbacks: { [key: string]: string[] } = {
       '9': ['320d', '320i', '325d', '330d', '330i', '335d', '335i'], // BMW
       '16': ['220d', '250', '300', '350', '400', '450', '500'], // Mercedes-Benz
       '1': ['35 TDI', '40 TDI', '45 TDI', '50 TDI', '55 TFSI', '30 TFSI', '35 TFSI', '40 TFSI', '45 TFSI'], // Audi
+      '147': ['1.4 TSI', '1.6 TDI', '1.8 TSI', '2.0 TDI', '2.0 TSI'], // Volkswagen
     };
     
     const grades = fallbacks[manufacturerId || ''] || [];

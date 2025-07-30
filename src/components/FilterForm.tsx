@@ -281,12 +281,14 @@ const FilterForm = memo<FilterFormProps>(({
             </SelectTrigger>
             <SelectContent className="max-h-60 overflow-y-auto">
               <SelectItem value="all">Të gjitha Gjeneratat</SelectItem>
-            {generations.map((generation) => (
+            {generations
+              .filter((generation) => generation.cars_qty && generation.cars_qty > 0) // Only show generations with cars
+              .map((generation) => (
                 <SelectItem 
                   key={generation.id} 
                   value={generation.id.toString()}
                 >
-                  {generation.name} ({generation.from_year}–{generation.to_year}) {generation.cars_qty ? `(${generation.cars_qty})` : ''}
+                  {generation.name} ({generation.from_year}–{generation.to_year}) ({generation.cars_qty})
                 </SelectItem>
               ))}
             </SelectContent>
