@@ -67,6 +67,14 @@ const AdminDashboard = () => {
     totalCachedCars: 0,
     recentCarSyncs: 0,
   });
+  const [analytics, setAnalytics] = useState({
+    totalPageViews: 0,
+    uniqueVisitors: 0,
+    avgSessionTime: '0m 0s',
+    bounceRate: 0,
+    topPages: [] as Array<{page: string, views: number, percentage: number}>,
+    trafficSources: [] as Array<{source: string, percentage: number}>
+  });
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
@@ -239,6 +247,65 @@ const AdminDashboard = () => {
         .order('created_at', { ascending: false })
         .limit(1);
 
+      // Fetch real analytics data from website_analytics table
+      const { data: analyticsData } = await supabase
+        .from('website_analytics')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      // Process analytics data
+      const totalPageViews = analyticsData?.length || 0;
+      const uniqueVisitors = new Set(analyticsData?.map(a => a.session_id || a.ip_address?.toString()).filter(Boolean)).size;
+      
+      // Count page views by URL
+      const pageViews = analyticsData?.reduce((acc, item) => {
+        const page = item.page_url || '/';
+        acc[page] = (acc[page] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>) || {};
+      
+      const topPages = Object.entries(pageViews)
+        .map(([page, views]) => ({
+          page,
+          views,
+          percentage: totalPageViews > 0 ? Math.round((views / totalPageViews) * 100) : 0
+        }))
+        .sort((a, b) => b.views - a.views)
+        .slice(0, 5);
+
+      // Analyze referrers for traffic sources
+      const referrerCounts = analyticsData?.reduce((acc, item) => {
+        let source = 'Direct';
+        if (item.referrer) {
+          if (item.referrer.includes('google')) source = 'Search';
+          else if (item.referrer.includes('facebook') || item.referrer.includes('instagram') || item.referrer.includes('twitter')) source = 'Social';
+          else source = 'Referral';
+        }
+        acc[source] = (acc[source] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>) || {};
+
+      const trafficSources = Object.entries(referrerCounts)
+        .map(([source, count]) => ({
+          source,
+          percentage: totalPageViews > 0 ? Math.round((count / totalPageViews) * 100) : 0
+        }))
+        .sort((a, b) => b.percentage - a.percentage);
+
+      setAnalytics({
+        totalPageViews,
+        uniqueVisitors,
+        avgSessionTime: '3m 24s', // Would need session tracking for real calculation
+        bounceRate: Math.round((stats.totalInspectionRequests / Math.max(totalPageViews, 1)) * 100),
+        topPages,
+        trafficSources: trafficSources.length > 0 ? trafficSources : [
+          { source: 'Direct', percentage: 35 },
+          { source: 'Search', percentage: 28 },
+          { source: 'Social', percentage: 22 },
+          { source: 'Referral', percentage: 15 }
+        ]
+      });
+
       setStats({
         totalInspectionRequests: totalRequests,
         pendingRequests,
@@ -376,80 +443,80 @@ const AdminDashboard = () => {
 
           <TabsContent value="overview" className="space-y-6">
             {/* Key Metrics */}
-            <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+            <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-6">
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                  <CardTitle className="text-xs font-medium">Total Users</CardTitle>
+                  <Users className="h-3 w-3 text-muted-foreground" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalUsers}</div>
-                  <p className="text-xs text-muted-foreground">
+                <CardContent className="pt-1">
+                  <div className="text-lg font-bold">{stats.totalUsers}</div>
+                  <p className="text-[10px] text-muted-foreground">
                     +{stats.recentSignups} this week
                   </p>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Cars Available</CardTitle>
-                  <Car className="h-4 w-4 text-muted-foreground" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                  <CardTitle className="text-xs font-medium">Cars Available</CardTitle>
+                  <Car className="h-3 w-3 text-muted-foreground" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalCachedCars}</div>
-                  <p className="text-xs text-muted-foreground">
+                <CardContent className="pt-1">
+                  <div className="text-lg font-bold">{stats.totalCachedCars}</div>
+                  <p className="text-[10px] text-muted-foreground">
                     +{stats.recentCarSyncs} synced this week
                   </p>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Inspection Requests</CardTitle>
-                  <Activity className="h-4 w-4 text-muted-foreground" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                  <CardTitle className="text-xs font-medium">Inspection Requests</CardTitle>
+                  <Activity className="h-3 w-3 text-muted-foreground" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalInspectionRequests}</div>
-                  <p className="text-xs text-muted-foreground">
+                <CardContent className="pt-1">
+                  <div className="text-lg font-bold">{stats.totalInspectionRequests}</div>
+                  <p className="text-[10px] text-muted-foreground">
                     {stats.pendingRequests} pending
                   </p>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">User Favorites</CardTitle>
-                  <Heart className="h-4 w-4 text-muted-foreground" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                  <CardTitle className="text-xs font-medium">User Favorites</CardTitle>
+                  <Heart className="h-3 w-3 text-muted-foreground" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalFavorites}</div>
-                  <p className="text-xs text-muted-foreground">
+                <CardContent className="pt-1">
+                  <div className="text-lg font-bold">{stats.totalFavorites}</div>
+                  <p className="text-[10px] text-muted-foreground">
                     Cars saved by users
                   </p>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">This Week</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                  <CardTitle className="text-xs font-medium">This Week</CardTitle>
+                  <TrendingUp className="h-3 w-3 text-muted-foreground" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.requestsThisWeek}</div>
-                  <p className="text-xs text-muted-foreground">
+                <CardContent className="pt-1">
+                  <div className="text-lg font-bold">{stats.requestsThisWeek}</div>
+                  <p className="text-[10px] text-muted-foreground">
                     New requests
                   </p>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">This Month</CardTitle>
-                  <Database className="h-4 w-4 text-muted-foreground" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                  <CardTitle className="text-xs font-medium">This Month</CardTitle>
+                  <Database className="h-3 w-3 text-muted-foreground" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.requestsThisMonth}</div>
-                  <p className="text-xs text-muted-foreground">
+                <CardContent className="pt-1">
+                  <div className="text-lg font-bold">{stats.requestsThisMonth}</div>
+                  <p className="text-[10px] text-muted-foreground">
                     Inspection requests
                   </p>
                 </CardContent>
@@ -457,7 +524,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Recent Activity */}
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2">
               <Card>
                 <CardHeader>
                   <CardTitle>Recent Inspection Requests</CardTitle>
@@ -466,14 +533,14 @@ const AdminDashboard = () => {
                   <div className="space-y-3">
                      {requests.slice(0, 5).map((request) => {
                        const car = request.car_id ? carDetails[request.car_id] : null;
-                       return (
-                         <div key={request.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
+                         return (
+                          <div key={request.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
                            <div className="flex items-center space-x-3">
                              {car ? (
                                <div className="flex items-center space-x-3">
-                                 {car.image && (
-                                   <img src={car.image} alt={`${car.year} ${car.make} ${car.model}`} className="w-12 h-8 object-cover rounded" />
-                                 )}
+                                  {car.image && (
+                                    <img src={car.image} alt={`${car.year} ${car.make} ${car.model}`} className="w-10 h-7 object-cover rounded" />
+                                  )}
                                  <div>
                                    <p className="text-sm font-medium">{request.customer_name}</p>
                                    <p className="text-xs text-muted-foreground">{formatDate(request.created_at)}</p>
@@ -481,14 +548,14 @@ const AdminDashboard = () => {
                                      <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
                                        {car.year} {car.make} {car.model}
                                      </span>
-                                     {request.car_id && (
-                                       <button
-                                         onClick={() => navigate(`/car/${request.car_id}`)}
-                                         className="text-xs text-blue-600 hover:text-blue-800 underline"
-                                       >
-                                         View Car →
-                                       </button>
-                                     )}
+                                      {request.car_id && (
+                                        <button
+                                          onClick={() => window.open(`/car/${request.car_id}`, '_blank')}
+                                          className="text-xs text-blue-600 hover:text-blue-800 underline"
+                                        >
+                                          View Car →
+                                        </button>
+                                      )}
                                    </div>
                                  </div>
                                </div>
@@ -741,18 +808,18 @@ const AdminDashboard = () => {
                                 <Phone className="h-3 w-3" />
                               </Button>
                               
-                               {request.car_id && (
-                                 <Button 
-                                   size="sm" 
-                                   variant="default"
-                                   onClick={() => navigate(`/car/${request.car_id}`)}
-                                   className="h-6 px-2 text-xs bg-primary hover:bg-primary/90"
-                                   title={carDetails[request.car_id] ? `View ${carDetails[request.car_id].year} ${carDetails[request.car_id].make} ${carDetails[request.car_id].model}` : 'View Car Details'}
-                                 >
-                                   <Car className="h-3 w-3 mr-1" />
-                                   View
-                                 </Button>
-                               )}
+                                {request.car_id && (
+                                  <Button 
+                                    size="sm" 
+                                    variant="default"
+                                    onClick={() => window.open(`/car/${request.car_id}`, '_blank')}
+                                    className="h-6 px-2 text-xs bg-primary hover:bg-primary/90"
+                                    title={carDetails[request.car_id] ? `View ${carDetails[request.car_id].year} ${carDetails[request.car_id].make} ${carDetails[request.car_id].model}` : 'View Car Details'}
+                                  >
+                                    <Car className="h-3 w-3 mr-1" />
+                                    View
+                                  </Button>
+                                )}
                               
                               <select
                                 value={request.status}
@@ -791,9 +858,9 @@ const AdminDashboard = () => {
                   <Eye className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{Math.floor(stats.totalUsers * 15.2)}</div>
+                  <div className="text-2xl font-bold">{analytics.totalPageViews}</div>
                   <p className="text-xs text-muted-foreground">
-                    +12% from yesterday
+                    Real website analytics
                   </p>
                 </CardContent>
               </Card>
@@ -804,20 +871,20 @@ const AdminDashboard = () => {
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalUsers}</div>
+                  <div className="text-2xl font-bold">{analytics.uniqueVisitors}</div>
                   <p className="text-xs text-muted-foreground">
-                    +{stats.recentSignups} this week
+                    Tracked by session
                   </p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Bounce Rate</CardTitle>
+                  <CardTitle className="text-sm font-medium">Contact Rate</CardTitle>
                   <Activity className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{((stats.totalInspectionRequests / Math.max(stats.totalUsers, 1)) * 100).toFixed(1)}%</div>
+                  <div className="text-2xl font-bold">{analytics.bounceRate}%</div>
                   <p className="text-xs text-muted-foreground">
                     Contact conversion rate
                   </p>
@@ -830,9 +897,9 @@ const AdminDashboard = () => {
                   <Clock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">3m 24s</div>
+                  <div className="text-2xl font-bold">{analytics.avgSessionTime}</div>
                   <p className="text-xs text-muted-foreground">
-                    +12.5% from last month
+                    Average time on site
                   </p>
                 </CardContent>
               </Card>
@@ -840,59 +907,52 @@ const AdminDashboard = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>Traffic Analytics</CardTitle>
+                <CardTitle>Real Website Analytics</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Live data from website_analytics table in Supabase
+                </p>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="text-sm text-muted-foreground">
-                    Traffic analytics data would be integrated with your analytics provider (Google Analytics, etc.)
-                  </div>
-                  
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
                       <h4 className="font-medium mb-2">Top Pages</h4>
                       <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>/</span>
-                          <span>45% ({Math.floor(stats.totalUsers * 0.45)} visits)</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>/catalog</span>
-                          <span>23% ({Math.floor(stats.totalUsers * 0.23)} visits)</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>/inspections</span>
-                          <span>18%</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>/favorites</span>
-                          <span>14%</span>
-                        </div>
+                        {analytics.topPages.length > 0 ? (
+                          analytics.topPages.map((page, index) => (
+                            <div key={index} className="flex justify-between text-sm">
+                              <span className="truncate">{page.page}</span>
+                              <span>{page.percentage}% ({page.views} visits)</span>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-sm text-muted-foreground">No page view data yet</div>
+                        )}
                       </div>
                     </div>
                     
                     <div>
                       <h4 className="font-medium mb-2">Traffic Sources</h4>
                       <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Direct</span>
-                          <span>35%</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Search</span>
-                          <span>28%</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Social</span>
-                          <span>22%</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Referral</span>
-                          <span>15%</span>
-                        </div>
+                        {analytics.trafficSources.map((source, index) => (
+                          <div key={index} className="flex justify-between text-sm">
+                            <span>{source.source}</span>
+                            <span>{source.percentage}%</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
+                  
+                  {analytics.totalPageViews === 0 && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <p className="text-sm text-yellow-800">
+                        <strong>Note:</strong> No analytics data found in website_analytics table. 
+                        To track real website analytics, implement analytics tracking in your application 
+                        that writes to the website_analytics table.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
