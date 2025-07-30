@@ -64,23 +64,23 @@ const HomeCarsSection = memo(() => {
 
 
   return (
-    <section id="cars" className="py-4 sm:py-6 lg:py-8 bg-secondary/30">
+    <section id="cars" className="py-3 sm:py-4 lg:py-6 bg-secondary/30">
       <div className="container-responsive">
-        <div className="text-center mb-4 sm:mb-6">
-          <div className="flex justify-center mb-4">
+        <div className="text-center mb-3 sm:mb-4">
+          <div className="flex justify-center mb-3">
             <Button 
               size="lg" 
-              className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 text-lg" 
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2.5 text-base" 
               onClick={() => window.location.href = '/catalog'}
             >
               Kërko makinën tënde
             </Button>
           </div>
           
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2 sm:mb-3 text-foreground">
             Makinat e Disponueshme
           </h2>
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium mb-2">
             <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
             Zgjedhja e Ditës - {new Date().getDate()}{" "}
             {new Date().toLocaleDateString("sq-AL", { month: "long" })}
@@ -88,9 +88,9 @@ const HomeCarsSection = memo(() => {
         </div>
 
         {error && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-center gap-2 mb-6 sm:mb-8 p-4 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg mx-2 sm:mx-0">
-            <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5 sm:mt-0" />
-            <span className="text-yellow-800 dark:text-yellow-200 text-sm sm:text-base text-left sm:text-center">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-center gap-2 mb-4 sm:mb-6 p-3 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg mx-2 sm:mx-0">
+            <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5 sm:mt-0" />
+            <span className="text-yellow-800 dark:text-yellow-200 text-sm text-left sm:text-center">
               Problem me lidhjen API: {error}
             </span>
           </div>
@@ -98,7 +98,7 @@ const HomeCarsSection = memo(() => {
 
 
         {/* Sort Control */}
-        <div className="mb-6 sm:mb-8 mx-2 sm:mx-0">
+        <div className="mb-4 sm:mb-5 mx-2 sm:mx-0">
           <div className="flex justify-end">
             <Select
               value={sortBy}
@@ -121,7 +121,7 @@ const HomeCarsSection = memo(() => {
 
         {/* Car Cards */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6 px-2 sm:px-0">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="bg-card rounded-lg p-4 animate-pulse">
                 <div className="h-48 bg-muted rounded mb-4"></div>
@@ -131,14 +131,14 @@ const HomeCarsSection = memo(() => {
             ))}
           </div>
         ) : sortedCars.length === 0 ? (
-          <div className="text-center py-8 sm:py-12 px-4">
+          <div className="text-center py-6 sm:py-8 px-4">
             <p className="text-base sm:text-lg text-muted-foreground mb-4">
               Nuk u gjetën makina.
             </p>
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6 px-2 sm:px-0">
               {displayedCars.map((car) => {
                 const lot = car.lots?.[0];
                 const usdPrice = lot?.buy_now || 25000;
@@ -175,13 +175,13 @@ const HomeCarsSection = memo(() => {
             </div>
 
             {/* Show More Button and Browse All Cars Button */}
-            <div className="text-center mt-8 space-y-6">
+            <div className="text-center mt-6 space-y-4">
               {sortedCars.length > 50 && !showAllCars && (
                 <Button
                   onClick={() => setShowAllCars(true)}
                   variant="outline"
                   size="lg"
-                  className="bg-card border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3"
+                  className="bg-card border-primary text-primary hover:bg-primary hover:text-primary-foreground px-6 py-2.5"
                 >
                   Shiko të gjitha ({sortedCars.length} makina)
                 </Button>
@@ -190,7 +190,7 @@ const HomeCarsSection = memo(() => {
               <Button
                 onClick={() => navigate("/catalog")}
                 size="lg"
-                className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-2.5"
               >
                 Shfleto të gjitha makinat
               </Button>
