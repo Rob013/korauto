@@ -155,40 +155,12 @@ const CarDetails = memo(() => {
       if (!lot) return;
 
       try {
-        // First, try to fetch from local cache by ID
-        let { data: cachedCar, error: cacheError } = await supabase
+        // Try to fetch from cache using OR condition for all possible matches
+        const { data: cachedCar, error: cacheError } = await supabase
           .from('cars_cache')
           .select('*')
-          .eq('id', lot)
+          .or(`id.eq.${lot},api_id.eq.${lot},lot_number.eq.${lot}`)
           .maybeSingle();
-
-        // If not found by ID, try by API ID (for inspection requests)
-        if (!cachedCar) {
-          const { data: cachedCarByApi, error: apiError } = await supabase
-            .from('cars_cache')
-            .select('*')
-            .eq('api_id', lot)
-            .maybeSingle();
-          
-          if (!apiError && cachedCarByApi) {
-            cachedCar = cachedCarByApi;
-            cacheError = null;
-          }
-        }
-
-        // If still not found, try by lot number
-        if (!cachedCar) {
-          const { data: cachedCarByLot, error: lotError } = await supabase
-            .from('cars_cache')
-            .select('*')
-            .eq('lot_number', lot)
-            .maybeSingle();
-          
-          if (!lotError && cachedCarByLot) {
-            cachedCar = cachedCarByLot;
-            cacheError = null;
-          }
-        }
 
         if (!cacheError && cachedCar && isMounted) {
           console.log('Found car in cache:', cachedCar);
