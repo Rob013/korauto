@@ -245,10 +245,32 @@ const HomeCarsSection = memo(() => {
   }, []);
 
   const handleFiltersChange = (newFilters: APIFilters) => {
-    // Check if any filters are being applied
-    const hasFilters = Object.values(newFilters).some(value => value && value !== '');
+    // Check if generation is being selected
+    if (newFilters.generation_id && newFilters.generation_id !== filters.generation_id) {
+      // Smooth redirect to catalog with all current filters
+      const searchParams = new URLSearchParams();
+      Object.entries(newFilters).forEach(([key, value]) => {
+        if (value && value !== '') {
+          searchParams.set(key, value);
+        }
+      });
+      
+      // Add smooth transition effect
+      document.body.style.transition = 'opacity 0.3s ease-in-out';
+      document.body.style.opacity = '0.7';
+      
+      setTimeout(() => {
+        navigate(`/catalog?${searchParams.toString()}`);
+      }, 150);
+      return;
+    }
     
-    if (hasFilters) {
+    // Check if any other filters are being applied (not generation)
+    const hasNonGenerationFilters = Object.entries(newFilters).some(([key, value]) => 
+      key !== 'generation_id' && value && value !== ''
+    );
+    
+    if (hasNonGenerationFilters) {
       // Redirect to catalog with filters as URL params
       const searchParams = new URLSearchParams();
       Object.entries(newFilters).forEach(([key, value]) => {
