@@ -50,6 +50,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Validate endpoint to prevent injection
     const allowedEndpoints = [
       'cars',
+      'car',
       'manufacturers/cars',
       'models',
       'generations'
@@ -69,7 +70,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Build URL
     let url: string;
-    if (carId && endpoint === 'cars') {
+    if (carId && (endpoint === 'cars' || endpoint === 'car')) {
       // Individual car lookup
       url = `${API_BASE_URL}/cars/${encodeURIComponent(carId)}`;
     } else if (endpoint.includes('/')) {
