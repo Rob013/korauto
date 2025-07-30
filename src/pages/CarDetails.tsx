@@ -263,9 +263,9 @@ const CarDetails = memo(() => {
   const API_BASE_URL = 'https://auctionsapi.com/api';
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
 
-  // Feature mapping for equipment/options
+  // Enhanced Feature mapping for equipment/options - supporting both string and numeric formats
   const FEATURE_MAPPING: { [key: string]: string } = {
-    // Basic Equipment
+    // String format (with leading zeros)
     '001': 'Klimatizimi',
     '002': 'Dritaret Elektrike',
     '003': 'Mbyllja Qendrore',
@@ -316,7 +316,7 @@ const CarDetails = memo(() => {
     '048': 'Sistemi i Ujit të Xhamit',
     '049': 'Defogger i Prapëm',
     '050': 'Sistemi i Ndriçimit të Brendshëm',
-    // Add numeric fallbacks for compatibility
+    // Numeric format fallback
     '1': 'Klimatizimi',
     '2': 'Dritaret Elektrike',
     '3': 'Mbyllja Qendrore',
@@ -341,31 +341,41 @@ const CarDetails = memo(() => {
 
   // Convert option numbers to feature names
   const convertOptionsToNames = (options: any): any => {
+    console.log('🔧 Converting options:', options);
+    
     if (!options) return { standard: [], choice: [], tuning: [] };
     
     const result: any = { standard: [], choice: [], tuning: [] };
     
+    // Process standard equipment
     if (options.standard && Array.isArray(options.standard)) {
       result.standard = options.standard.map((option: any) => {
-        const optionStr = option.toString();
-        return FEATURE_MAPPING[optionStr] || `Pajisje ${optionStr}`;
+        const optionStr = option.toString().trim();
+        const mapped = FEATURE_MAPPING[optionStr] || `Pajisje ${optionStr}`;
+        console.log(`📝 Mapping: ${optionStr} → ${mapped}`);
+        return mapped;
       });
     }
     
+    // Process optional equipment
     if (options.choice && Array.isArray(options.choice)) {
       result.choice = options.choice.map((option: any) => {
-        const optionStr = option.toString();
-        return FEATURE_MAPPING[optionStr] || `Opsion ${optionStr}`;
+        const optionStr = option.toString().trim();
+        const mapped = FEATURE_MAPPING[optionStr] || `Opsion ${optionStr}`;
+        return mapped;
       });
     }
     
+    // Process tuning/modifications
     if (options.tuning && Array.isArray(options.tuning)) {
       result.tuning = options.tuning.map((option: any) => {
-        const optionStr = option.toString();
-        return FEATURE_MAPPING[optionStr] || `Modifikim ${optionStr}`;
+        const optionStr = option.toString().trim();
+        const mapped = FEATURE_MAPPING[optionStr] || `Modifikim ${optionStr}`;
+        return mapped;
       });
     }
     
+    console.log('✅ Converted result:', result);
     return result;
   };
 
