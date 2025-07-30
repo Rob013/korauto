@@ -278,28 +278,30 @@ export const useSecureAuctionAPI = () => {
     try {
       // For homepage, fetch multiple pages to get ~36 cars total (reduced from 60)
       const isHomepage = Object.keys(filters).length === 0;
-      const pagesToFetch = isHomepage && resetList ? 3 : 1; // Only fetch multiple pages on homepage initial load
+      const pagesToFetch = isHomepage ? 3 : 1; // 3 pages × 12 cars = 36 cars for homepage
       
       let allCars: Car[] = [];
       
-      for (let currentPageLoop = resetList ? 1 : page; currentPageLoop <= (resetList && isHomepage ? pagesToFetch : page); currentPageLoop++) {
+      for (let currentPage = 1; currentPage <= pagesToFetch; currentPage++) {
         const apiFilters = {
           ...filters,
-          page: currentPageLoop.toString(),
+          page: currentPage.toString(),
           per_page: '12',
           simple_paginate: '0'
         };
 
-        console.log(`🔄 Fetching page ${currentPageLoop}/${resetList && isHomepage ? pagesToFetch : page}`);
+        console.log(`🔄 Fetching page ${currentPage}/${pagesToFetch}`);
         const data: APIResponse = await makeSecureAPICall('cars', apiFilters);
         
         if (data.data && data.data.length > 0) {
           allCars = [...allCars, ...data.data];
         }
         
-        // Set metadata
-        setTotalCount(data.meta?.total || 0);
-        setHasMorePages(currentPageLoop < (data.meta?.last_page || 1));
+        // Set metadata from first page
+        if (currentPage === 1) {
+          setTotalCount(data.meta?.total || 0);
+          setHasMorePages(currentPage < (data.meta?.last_page || 1));
+        }
         
         // Break if no more data
         if (!data.data || data.data.length === 0) {
@@ -307,16 +309,16 @@ export const useSecureAuctionAPI = () => {
         }
         
         // Small delay between requests to avoid rate limiting
-        if (currentPageLoop < (resetList && isHomepage ? pagesToFetch : page)) {
+        if (currentPage < pagesToFetch) {
           await delay(100);
         }
       }
       
-      console.log(`✅ Fetched ${allCars.length} total cars from ${resetList && isHomepage ? pagesToFetch : 1} pages`);
+      console.log(`✅ Fetched ${allCars.length} total cars from ${pagesToFetch} pages`);
       
       if (resetList || page === 1) {
         setCars(allCars);
-        setCurrentPage(resetList && isHomepage ? pagesToFetch : page);
+        setCurrentPage(1);
       } else {
         setCars(prev => [...prev, ...allCars]);
         setCurrentPage(page);
