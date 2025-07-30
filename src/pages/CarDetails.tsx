@@ -130,32 +130,38 @@ const EquipmentOptionsSection = memo(
     const [showAllSafety, setShowAllSafety] = useState(false);
     const [showAllComfort, setShowAllComfort] = useState(false);
     const [showOptions, setShowOptions] = useState(false);
-    const INITIAL_SHOW_COUNT = 5;
+    const INITIAL_SHOW_COUNT = 6;
+    
     return (
-      <div className="space-y-3 p-3 bg-muted/30 rounded-lg border">
+      <div className="overflow-hidden bg-gradient-to-br from-background to-muted/20 rounded-xl border border-border/40 backdrop-blur-sm shadow-lg">
         <Button
           onClick={() => setShowOptions(!showOptions)}
           variant="ghost"
-          className="w-full justify-start text-base font-semibold text-foreground hover:bg-muted/50 p-2 h-auto"
+          className="w-full justify-between p-4 h-auto group hover:bg-gradient-to-r hover:from-muted/20 hover:to-muted/10 transition-all duration-300"
         >
-          <Settings className="h-4 w-4 mr-2 text-primary" />
-          Pajisjet dhe Opsionet
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+              <Cog className="h-4 w-4 text-primary" />
+            </div>
+            <span className="font-semibold text-foreground">Pajisjet dhe Opsionet</span>
+          </div>
           <ChevronDown
-            className={`h-4 w-4 ml-auto transition-transform ${
-              showOptions ? "rotate-180" : ""
+            className={`h-5 w-5 text-muted-foreground transition-all duration-300 ${
+              showOptions ? "rotate-180 text-primary" : ""
             }`}
           />
         </Button>
 
         {showOptions && (
-          <div className="space-y-3">
+          <div className="px-4 pb-4 space-y-4 animate-fade-in">
             {/* Standard Equipment */}
             {options.standard && options.standard.length > 0 && (
-              <div>
-                <h5 className="font-medium mb-2 text-sm text-foreground">
-                  Pajisje Standarde:
-                </h5>
-                <div className="flex flex-wrap gap-1">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-primary"></div>
+                  <h5 className="text-sm font-medium text-foreground">Pajisje Standarde</h5>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                   {(showAllStandard
                     ? options.standard
                     : options.standard.slice(0, INITIAL_SHOW_COUNT)
@@ -163,36 +169,35 @@ const EquipmentOptionsSection = memo(
                     <Badge
                       key={index}
                       variant="secondary"
-                      className="text-xs px-2 py-1 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                      className="justify-center py-1.5 px-3 text-xs font-medium bg-primary/10 text-primary border-0 hover:bg-primary/20 transition-colors"
                     >
                       {option}
                     </Badge>
                   ))}
-                  {options.standard.length > INITIAL_SHOW_COUNT && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowAllStandard(!showAllStandard)}
-                      className="h-6 px-2 text-xs text-primary hover:bg-primary/10"
-                    >
-                      {showAllStandard
-                        ? `- Më Pak`
-                        : `+ ${
-                            options.standard.length - INITIAL_SHOW_COUNT
-                          }`}
-                    </Button>
-                  )}
                 </div>
+                {options.standard.length > INITIAL_SHOW_COUNT && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAllStandard(!showAllStandard)}
+                    className="h-8 px-3 text-xs text-primary hover:bg-primary/10 font-medium"
+                  >
+                    {showAllStandard
+                      ? `Më pak`
+                      : `Shiko të gjitha (${options.standard.length - INITIAL_SHOW_COUNT} më shumë)`}
+                  </Button>
+                )}
               </div>
             )}
 
             {/* Optional Equipment */}
             {options.choice && options.choice.length > 0 && (
-              <div>
-                <h5 className="font-medium mb-2 text-sm text-foreground">
-                  Pajisje Opsionale:
-                </h5>
-                <div className="flex flex-wrap gap-1">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-accent"></div>
+                  <h5 className="text-sm font-medium text-foreground">Pajisje Opsionale</h5>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                   {(showAllChoice
                     ? options.choice
                     : options.choice.slice(0, INITIAL_SHOW_COUNT)
@@ -200,41 +205,40 @@ const EquipmentOptionsSection = memo(
                     <Badge
                       key={index}
                       variant="outline"
-                      className="text-xs px-2 py-1 bg-accent/10 text-accent-foreground border-accent/20 hover:bg-accent/20"
+                      className="justify-center py-1.5 px-3 text-xs font-medium bg-accent/10 text-accent-foreground border-accent/30 hover:bg-accent/20 transition-colors"
                     >
                       {option}
                     </Badge>
                   ))}
-                  {options.choice.length > INITIAL_SHOW_COUNT && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowAllChoice(!showAllChoice)}
-                      className="h-6 px-2 text-xs text-primary hover:bg-primary/10"
-                    >
-                      {showAllChoice
-                        ? `- Më Pak`
-                        : `+ ${
-                            options.choice.length - INITIAL_SHOW_COUNT
-                          }`}
-                    </Button>
-                  )}
                 </div>
+                {options.choice.length > INITIAL_SHOW_COUNT && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAllChoice(!showAllChoice)}
+                    className="h-8 px-3 text-xs text-primary hover:bg-primary/10 font-medium"
+                  >
+                    {showAllChoice
+                      ? `Më pak`
+                      : `Shiko të gjitha (${options.choice.length - INITIAL_SHOW_COUNT} më shumë)`}
+                  </Button>
+                )}
               </div>
             )}
 
             {/* Tuning Modifications */}
             {options.tuning && options.tuning.length > 0 && (
-              <div>
-                <h5 className="font-medium mb-2 text-sm text-foreground">
-                  Modifikimet:
-                </h5>
-                <div className="flex flex-wrap gap-1">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-destructive"></div>
+                  <h5 className="text-sm font-medium text-foreground">Modifikimet</h5>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                   {options.tuning.map((option, index) => (
                     <Badge
                       key={index}
                       variant="destructive"
-                      className="text-xs px-2 py-1 bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
+                      className="justify-center py-1.5 px-3 text-xs font-medium bg-destructive/10 text-destructive border-0 hover:bg-destructive/20 transition-colors"
                     >
                       {option}
                     </Badge>
@@ -245,11 +249,12 @@ const EquipmentOptionsSection = memo(
 
             {/* General Features */}
             {features && features.length > 0 && (
-              <div>
-                <h5 className="font-medium mb-2 text-sm text-foreground">
-                  Karakteristika të Përgjithshme:
-                </h5>
-                <div className="flex flex-wrap gap-1">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-muted-foreground"></div>
+                  <h5 className="text-sm font-medium text-foreground">Karakteristika të Përgjithshme</h5>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                   {(showAllFeatures
                     ? features
                     : features.slice(0, INITIAL_SHOW_COUNT)
@@ -257,34 +262,35 @@ const EquipmentOptionsSection = memo(
                     <Badge
                       key={index}
                       variant="outline"
-                      className="text-xs px-2 py-1 bg-muted/10 text-muted-foreground border-muted/30 hover:bg-muted/20"
+                      className="justify-center py-1.5 px-3 text-xs font-medium bg-muted/10 text-muted-foreground border-muted/40 hover:bg-muted/20 transition-colors"
                     >
                       {feature}
                     </Badge>
                   ))}
-                  {features.length > INITIAL_SHOW_COUNT && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowAllFeatures(!showAllFeatures)}
-                      className="h-6 px-2 text-xs text-primary hover:bg-primary/10"
-                    >
-                      {showAllFeatures
-                        ? `- Më Pak`
-                        : `+ ${features.length - INITIAL_SHOW_COUNT}`}
-                    </Button>
-                  )}
                 </div>
+                {features.length > INITIAL_SHOW_COUNT && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAllFeatures(!showAllFeatures)}
+                    className="h-8 px-3 text-xs text-primary hover:bg-primary/10 font-medium"
+                  >
+                    {showAllFeatures
+                      ? `Më pak`
+                      : `Shiko të gjitha (${features.length - INITIAL_SHOW_COUNT} më shumë)`}
+                  </Button>
+                )}
               </div>
             )}
 
             {/* Safety Features */}
             {safetyFeatures && safetyFeatures.length > 0 && (
-              <div>
-                <h5 className="font-medium mb-2 text-sm text-foreground">
-                  Karakteristika të Sigurisë:
-                </h5>
-                <div className="flex flex-wrap gap-1">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-destructive"></div>
+                  <h5 className="text-sm font-medium text-foreground">Karakteristika të Sigurisë</h5>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                   {(showAllSafety
                     ? safetyFeatures
                     : safetyFeatures.slice(0, INITIAL_SHOW_COUNT)
@@ -292,36 +298,35 @@ const EquipmentOptionsSection = memo(
                     <Badge
                       key={index}
                       variant="outline"
-                      className="text-xs px-2 py-1 bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
+                      className="justify-center py-1.5 px-3 text-xs font-medium bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20 transition-colors"
                     >
                       {feature}
                     </Badge>
                   ))}
-                  {safetyFeatures.length > INITIAL_SHOW_COUNT && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowAllSafety(!showAllSafety)}
-                      className="h-6 px-2 text-xs text-primary hover:bg-primary/10"
-                    >
-                      {showAllSafety
-                        ? `- Më Pak`
-                        : `+ ${
-                            safetyFeatures.length - INITIAL_SHOW_COUNT
-                          }`}
-                    </Button>
-                  )}
                 </div>
+                {safetyFeatures.length > INITIAL_SHOW_COUNT && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAllSafety(!showAllSafety)}
+                    className="h-8 px-3 text-xs text-primary hover:bg-primary/10 font-medium"
+                  >
+                    {showAllSafety
+                      ? `Më pak`
+                      : `Shiko të gjitha (${safetyFeatures.length - INITIAL_SHOW_COUNT} më shumë)`}
+                  </Button>
+                )}
               </div>
             )}
 
             {/* Comfort Features */}
             {comfortFeatures && comfortFeatures.length > 0 && (
-              <div>
-                <h5 className="font-medium mb-2 text-sm text-foreground">
-                  Karakteristika të Rehatisë:
-                </h5>
-                <div className="flex flex-wrap gap-1">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-secondary"></div>
+                  <h5 className="text-sm font-medium text-foreground">Karakteristika të Rehatisë</h5>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                   {(showAllComfort
                     ? comfortFeatures
                     : comfortFeatures.slice(0, INITIAL_SHOW_COUNT)
@@ -329,26 +334,24 @@ const EquipmentOptionsSection = memo(
                     <Badge
                       key={index}
                       variant="secondary"
-                      className="text-xs px-2 py-1 bg-secondary/10 text-secondary-foreground border-secondary/20 hover:bg-secondary/20"
+                      className="justify-center py-1.5 px-3 text-xs font-medium bg-secondary/10 text-secondary-foreground border-0 hover:bg-secondary/20 transition-colors"
                     >
                       {feature}
                     </Badge>
                   ))}
-                  {comfortFeatures.length > INITIAL_SHOW_COUNT && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowAllComfort(!showAllComfort)}
-                      className="h-6 px-2 text-xs text-primary hover:bg-primary/10"
-                    >
-                      {showAllComfort
-                        ? `- Më Pak`
-                        : `+ ${
-                            comfortFeatures.length - INITIAL_SHOW_COUNT
-                          }`}
-                    </Button>
-                  )}
                 </div>
+                {comfortFeatures.length > INITIAL_SHOW_COUNT && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAllComfort(!showAllComfort)}
+                    className="h-8 px-3 text-xs text-primary hover:bg-primary/10 font-medium"
+                  >
+                    {showAllComfort
+                      ? `Më pak`
+                      : `Shiko të gjitha (${comfortFeatures.length - INITIAL_SHOW_COUNT} më shumë)`}
+                  </Button>
+                )}
               </div>
             )}
           </div>
