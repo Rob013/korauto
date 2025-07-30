@@ -230,10 +230,11 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch inspection requests with real data
+      // Fetch inspection requests with real data (exclude archived by default)
       const { data: requestsData, error: requestsError } = await supabase
         .from("inspection_requests")
         .select("*")
+        .eq("archived", false)
         .order("created_at", { ascending: false });
 
       if (requestsError) throw requestsError;
@@ -491,6 +492,35 @@ const AdminDashboard = () => {
       toast({
         title: "Error",
         description: "Failed to update request status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const archiveCompletedRequests = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("inspection_requests")
+        .update({
+          archived: true,
+          archived_at: new Date().toISOString(),
+        })
+        .eq("status", "completed")
+        .eq("archived", false);
+
+      if (error) throw error;
+
+      toast({
+        title: "Requests Archived",
+        description: "All completed inspection requests have been archived successfully",
+      });
+
+      // Refresh data to remove archived requests from view
+      fetchData();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to archive completed requests",
         variant: "destructive",
       });
     }
@@ -1009,7 +1039,31 @@ const AdminDashboard = () => {
                 <CardContent className="p-0">
                   <div className="text-lg sm:text-xl font-bold">
                     {stats.pendingRequests}
+            </div>
+
+            {/* Archive Controls */}
+            <div className="mb-4">
+              <Card className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium text-sm sm:text-base">Archive Management</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      Archive all completed inspection requests to keep your active list clean
+                    </p>
                   </div>
+                  <Button
+                    onClick={archiveCompletedRequests}
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0"
+                    disabled={loading}
+                  >
+                    <Database className="h-4 w-4 mr-2" />
+                    Archive Completed
+                  </Button>
+                </div>
+              </Card>
+            </div>
                 </CardContent>
               </Card>
 
@@ -1048,14 +1102,16 @@ const AdminDashboard = () => {
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-semibold">
                     <Database className="h-5 w-5" />
-                    Inspection Requests
+                    Active Inspection Requests
                   </CardTitle>
-                  <Badge variant="secondary" className="text-xs">
-                    {requests.length} records
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {requests.length} active
+                    </Badge>
+                  </div>
                 </div>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                  Manage all customer inspection requests
+                  Manage active customer inspection requests (archived requests are hidden)
                 </p>
               </CardHeader>
               <CardContent className="p-0">
@@ -1275,8 +1331,11 @@ const AdminDashboard = () => {
                 {requests.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
                     <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <h3 className="text-lg font-medium mb-2">No inspection requests</h3>
-                    <p className="text-sm">No inspection requests found in the database</p>
+                    <h3 className="text-lg font-medium mb-2">No active inspection requests</h3>
+                    <p className="text-sm">All inspection requests are either completed and archived, or none exist yet</p>
+                    <p className="text-xs mt-2 text-muted-foreground/70">
+                      Completed requests are automatically hidden from this view
+                    </p>
                   </div>
                 )}
               </CardContent>
