@@ -300,9 +300,18 @@ const CarDetails = memo(() => {
               trackCarView(carData.id || lot, transformedCar);
               return;
             }
+          } else {
+            // Handle specific error cases from edge function
+            const errorData = await secureResponse.json().catch(() => ({}));
+            if (secureResponse.status === 404 || errorData.error?.includes('404')) {
+              setError(`Car with ID ${lot} is not available in our database. This car may have been sold or removed from the auction.`);
+              setLoading(false);
+              return;
+            }
           }
         } catch (edgeFunctionError) {
           console.log('Edge function failed:', edgeFunctionError);
+        }
         }
 
         // If edge function fails, try external API with both lot ID and as lot number
