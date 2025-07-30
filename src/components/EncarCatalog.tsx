@@ -294,8 +294,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           urlLoadedPages = parseInt(value) || 1;
         } else if (value && key !== "loadedPages") {
           urlFilters[key as keyof APIFilters] = value;
+          console.log(`🔍 Loading URL filter: ${key} = ${value}`);
         }
       }
+      
+      console.log('🔍 Final URL filters:', urlFilters);
 
       // Set default manufacturer_id=9 if no filters in URL
       if (Object.keys(urlFilters).length === 0) {

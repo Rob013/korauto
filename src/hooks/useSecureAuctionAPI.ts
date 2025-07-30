@@ -310,6 +310,7 @@ export const useSecureAuctionAPI = () => {
       };
 
       console.log(`🔄 Fetching page ${page} with filters:`, apiFilters);
+      console.log(`🔍 Grade filter in API call:`, apiFilters.grade_iaai);
       const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
 
       // Set metadata from response
