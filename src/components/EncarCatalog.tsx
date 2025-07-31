@@ -141,6 +141,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     return true;
   });
 
+  console.log(`📊 Filter Results: ${filteredCars.length} cars match (total loaded: ${cars.length})`);
+
   const carsForSorting = filteredCars.map((car) => ({
     ...car,
     status: String(car.status || ""),

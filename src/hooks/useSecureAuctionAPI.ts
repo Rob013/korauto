@@ -302,11 +302,12 @@ export const useSecureAuctionAPI = () => {
       const apiFilters = {
         ...newFilters,
         page: page.toString(),
-        per_page: newFilters.per_page || "12",
+        // Increase per_page when filtering by grade to get more relevant results
+        per_page: newFilters.grade_iaai ? "50" : (newFilters.per_page || "12"),
         simple_paginate: "0",
       };
 
-      console.log(`🔄 API Call - Page ${page} with filters:`, apiFilters);
+      console.log(`🔄 Fetching cars - Page ${page} with filters:`, apiFilters);
       const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
 
       // Set metadata from response
