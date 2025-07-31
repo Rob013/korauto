@@ -215,6 +215,8 @@ interface APIFilters {
   seats_count?: string;
   search?: string;
   per_page?: string;
+  sort_by?: string;
+  sort_direction?: string;
 }
 
 interface APIResponse {
@@ -285,10 +287,37 @@ export const useSecureAuctionAPI = () => {
     }
   };
 
+  // Helper function to map frontend sort options to API parameters
+  const mapSortToAPI = (sortBy: string): { sort_by?: string; sort_direction?: string } => {
+    switch (sortBy) {
+      case 'price_low':
+        return { sort_by: 'price', sort_direction: 'asc' };
+      case 'price_high':
+        return { sort_by: 'price', sort_direction: 'desc' };
+      case 'year_new':
+        return { sort_by: 'year', sort_direction: 'desc' };
+      case 'year_old':
+        return { sort_by: 'year', sort_direction: 'asc' };
+      case 'mileage_low':
+        return { sort_by: 'mileage', sort_direction: 'asc' };
+      case 'mileage_high':
+        return { sort_by: 'mileage', sort_direction: 'desc' };
+      case 'make_az':
+        return { sort_by: 'manufacturer', sort_direction: 'asc' };
+      case 'make_za':
+        return { sort_by: 'manufacturer', sort_direction: 'desc' };
+      case 'popular':
+        return { sort_by: 'popularity', sort_direction: 'desc' };
+      default:
+        return {};
+    }
+  };
+
   const fetchCars = async (
     page: number = 1,
     newFilters: APIFilters = filters,
-    resetList: boolean = true
+    resetList: boolean = true,
+    sortBy?: string
   ): Promise<void> => {
     if (resetList) {
       setFilters(newFilters);
@@ -298,9 +327,13 @@ export const useSecureAuctionAPI = () => {
     setError(null);
 
     try {
-      // Pass ALL filters to the API including grade_iaai
+      // Add sort parameters to filters if provided
+      const sortParams = sortBy ? mapSortToAPI(sortBy) : {};
+      
+      // Pass ALL filters to the API including grade_iaai and sorting
       const apiFilters = {
         ...newFilters,
+        ...sortParams,
         page: page.toString(),
         // Increase per_page when filtering by grade to get more relevant results
         per_page: newFilters.grade_iaai ? "50" : (newFilters.per_page || "12"),
@@ -590,12 +623,12 @@ export const useSecureAuctionAPI = () => {
     return grades.map(grade => ({ value: grade, label: grade }));
   };
 
-  const loadMore = async () => {
+  const loadMore = async (sortBy?: string) => {
     if (!hasMorePages || loading) return;
 
     setLoading(true);
     try {
-      await fetchCars(currentPage + 1, filters, false);
+      await fetchCars(currentPage + 1, filters, false, sortBy);
     } catch (err) {
       console.error("❌ Load more error:", err);
       setError(err instanceof Error ? err.message : "Failed to load more cars");
