@@ -222,9 +222,9 @@ const FilterForm = memo<FilterFormProps>(({
         </Button>
       </div>
 
-      {/* Search Bar for Plate Numbers, VIN, Lot Numbers */}
+      {/* Search Bar for Available Fields */}
       <div className="border border-primary/20 bg-primary/5 rounded-md p-3 space-y-2">
-        <Label className="text-xs font-medium text-primary">Kërko sipas Numrit të Targave, VIN, Lot Number</Label>
+        <Label className="text-xs font-medium text-primary">Kërko sipas VIN, Lot Number, ose fjalëve kyçe</Label>
         <div className="flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -233,7 +233,7 @@ const FilterForm = memo<FilterFormProps>(({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              placeholder="Shtyp numrin e targave, VIN, ose lot number..."
+              placeholder="Shtyp VIN, lot number, ose fjalë kyçe..."
               className="pl-8 h-8 text-sm"
             />
           </div>
