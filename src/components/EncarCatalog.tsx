@@ -267,7 +267,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         if (key === "loadedPages") {
           urlLoadedPages = parseInt(value) || 1;
         } else if (value && key !== "loadedPages") {
-          urlFilters[key as keyof APIFilters] = value;
+          // Fix URL encoding issues - replace + with spaces for grade filter
+          const decodedValue = key === 'grade_iaai' ? decodeURIComponent(value.replace(/\+/g, ' ')) : value;
+          urlFilters[key as keyof APIFilters] = decodedValue;
         }
       }
 

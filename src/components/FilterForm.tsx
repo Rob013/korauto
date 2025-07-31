@@ -168,7 +168,7 @@ const FilterForm = memo<FilterFormProps>(({
       .filter((m) => m.cars_qty && m.cars_qty > 0);
   }, [manufacturers]);
 
-  // Fetch grades when manufacturer, model, or generation changes
+  // Fetch grades when manufacturer, model, or generation changes - with debouncing
   useEffect(() => {
     const fetchGradesData = async () => {
       if (onFetchGrades && filters.manufacturer_id) {
@@ -188,7 +188,9 @@ const FilterForm = memo<FilterFormProps>(({
       }
     };
 
-    fetchGradesData();
+    // Debounce grade fetching to prevent rapid API calls
+    const timeoutId = setTimeout(fetchGradesData, 300);
+    return () => clearTimeout(timeoutId);
   }, [filters.manufacturer_id, filters.model_id, filters.generation_id, onFetchGrades]);
 
   return (

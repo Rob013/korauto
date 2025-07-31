@@ -443,42 +443,18 @@ export const useSecureAuctionAPI = () => {
         manufacturer_id: manufacturerId,
         model_id: modelId, 
         generation_id: generationId,
-        per_page: '100' // Balanced approach - enough for accurate grade counts
+        per_page: '50' // Reduced to prevent multiple rapid calls
       };
 
-      console.log('🔍 Fetching cars for grades with filters:', filters);
+      console.log('🔍 Fetching grades for filters:', filters);
       const data = await makeSecureAPICall('cars', filters);
-      console.log('🔍 API Response:', data);
       
       const cars = data.data || [];
-      console.log('🔍 Total cars found:', cars.length);
+      console.log('🔍 Found', cars.length, 'cars for grade extraction');
       
       if (cars.length === 0) {
-        console.log('❌ No cars found for this manufacturer/model/generation combination');
-        // Return some fallback grades based on the manufacturer
         return getFallbackGrades(manufacturerId);
       }
-      
-      // Log the first few complete cars to understand structure
-      cars.slice(0, 3).forEach((car: any, index: number) => {
-        console.log(`🚗 Car ${index} structure:`, {
-          id: car.id,
-          title: car.title,
-          model: car.model,
-          manufacturer: car.manufacturer,
-          lots: car.lots?.length || 0,
-          lot: car.lot,
-          allKeys: Object.keys(car)
-        });
-        
-        if (car.lots && car.lots.length > 0) {
-          console.log(`  Lot data:`, {
-            grade_iaai: car.lots[0].grade_iaai,
-            grade: car.lots[0].grade,
-            allLotKeys: Object.keys(car.lots[0])
-          });
-        }
-      });
       
       // Extract unique grades from the car data
       const gradesMap = new Map<string, number>();
@@ -494,14 +470,6 @@ export const useSecureAuctionAPI = () => {
               }
             }
           });
-        }
-        
-        // Check single lot object
-        if (car.lot && car.lot.grade_iaai && typeof car.lot.grade_iaai === 'string') {
-          const cleanGrade = car.lot.grade_iaai.trim();
-          if (cleanGrade) {
-            gradesMap.set(cleanGrade, (gradesMap.get(cleanGrade) || 0) + 1);
-          }
         }
         
         // Extract from title (common pattern: "BMW 320d", "Audi A6 35 TDI", "Mercedes E220d")
@@ -522,7 +490,7 @@ export const useSecureAuctionAPI = () => {
         }))
         .sort((a, b) => a.value.localeCompare(b.value));
 
-      console.log('📊 Final extracted grades:', grades);
+      console.log('📊 Extracted grades:', grades.length, 'unique grades');
       
       // If still no grades found, return fallback based on manufacturer
       if (grades.length === 0) {
