@@ -74,8 +74,38 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [sortBy, setSortBy] = useState<SortOption>("price_low");
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Simple cars processing without complex frontend filtering
-  const carsForSorting = cars.map((car) => ({
+  // Apply filtering with proper grade filtering as backup
+  const filteredCars = cars.filter((car) => {
+    // If grade filter is applied, filter by grade
+    if (filters.grade_iaai) {
+      const carGrades: string[] = [];
+      
+      // Extract grades from lots
+      if (car.lots && Array.isArray(car.lots)) {
+        car.lots.forEach((lot: any) => {
+          if (lot.grade_iaai) carGrades.push(lot.grade_iaai.trim());
+        });
+      }
+      
+      // Extract grades from title
+      if (car.title) {
+        const titleGrades = extractGradesFromTitle(car.title);
+        carGrades.push(...titleGrades);
+      }
+      
+      // Check if any car grade matches the filter
+      const hasMatchingGrade = carGrades.some(grade => 
+        grade.toLowerCase().includes(filters.grade_iaai!.toLowerCase()) ||
+        filters.grade_iaai!.toLowerCase().includes(grade.toLowerCase())
+      );
+      
+      if (!hasMatchingGrade) return false;
+    }
+    
+    return true;
+  });
+
+  const carsForSorting = filteredCars.map((car) => ({
     ...car,
     status: String(car.status || ""),
     lot_number: String(car.lot_number || ""),
@@ -83,6 +113,29 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   }));
   
   const sortedCars = useSortedCars(carsForSorting, sortBy);
+
+  // Helper function to extract grades from title
+  const extractGradesFromTitle = (title: string): string[] => {
+    const grades: string[] = [];
+    const patterns = [
+      /\b(\d{2,3}\s?(?:TDI|TFSI|FSI|TSI|CDI))\b/gi,
+      /\b(\d+\.?\d*\s?[TD])\b/gi,
+    ];
+    
+    patterns.forEach(pattern => {
+      const matches = title.match(pattern);
+      if (matches) {
+        matches.forEach(match => {
+          const cleaned = match.trim();
+          if (cleaned && !grades.includes(cleaned)) {
+            grades.push(cleaned);
+          }
+        });
+      }
+    });
+    
+    return grades;
+  };
 
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -178,15 +231,20 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Clear previous data immediately to show loading state
     setCars([]);
     
-    // Fetch with all filters - let the API handle the filtering
+    // Ensure all filters including grade_iaai are passed to API
+    console.log('🔧 Sending filters to API:', newFilters);
     fetchCars(1, newFilters, true);
 
-    // Update URL with all non-empty filter values
-    const nonEmpty = Object.entries(newFilters).filter(
-      ([_, v]) => v !== undefined && v !== "" && v !== null
-    );
-    nonEmpty.push(["loadedPages", "1"]);
-    setSearchParams(Object.fromEntries(nonEmpty));
+    // Update URL with all non-empty filter values - properly encode grade filter
+    const paramsToSet: any = {};
+    Object.entries(newFilters).forEach(([key, value]) => {
+      if (value !== undefined && value !== "" && value !== null) {
+        // Properly encode grade filter for URL
+        paramsToSet[key] = key === 'grade_iaai' ? encodeURIComponent(value) : value;
+      }
+    });
+    paramsToSet.loadedPages = "1";
+    setSearchParams(paramsToSet);
   };
 
   const handleClearFilters = () => {
@@ -453,7 +511,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               Car Catalog
             </h1>
             <p className="text-muted-foreground text-sm">
-              {totalCount.toLocaleString()} cars available
+              {sortedCars.length.toLocaleString()} cars {filters.grade_iaai ? `filtered by ${filters.grade_iaai}` : 'total'}
             </p>
           </div>
         </div>
