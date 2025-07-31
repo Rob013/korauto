@@ -256,11 +256,11 @@ export const useSecureAuctionAPI = () => {
     try {
       // console.log("🔐 Making secure API call:", { endpoint, filters, carId });
 
-      // Add a small delay to prevent rapid successive calls
+      // Add a minimal delay to prevent rapid successive calls
       const now = Date.now();
-      if (now - lastFetchTime < 100) {
-        // 100ms minimum between calls (reduced for better performance)
-        await delay(100 - (now - lastFetchTime));
+      if (now - lastFetchTime < 50) {
+        // 50ms minimum between calls (optimized for faster loading)
+        await delay(50 - (now - lastFetchTime));
       }
       setLastFetchTime(Date.now());
 
@@ -440,8 +440,6 @@ export const useSecureAuctionAPI = () => {
 
   const fetchModels = async (manufacturerId: string): Promise<Model[]> => {
     try {
-      console.log(`🔍 Fetching models for manufacturer ${manufacturerId}`);
-      
       // Get all models with high per_page limit
       const data = await makeSecureAPICall(`models/${manufacturerId}/cars`, {
         per_page: "1000", // Get all models
@@ -449,195 +447,123 @@ export const useSecureAuctionAPI = () => {
       });
       
       const models = data.data || [];
-      console.log(`✅ Found ${models.length} models for manufacturer ${manufacturerId}:`, 
-        models.map(m => `${m.name} (${m.car_count || 0} cars)`));
-      
       return models;
     } catch (err) {
-      console.error("❌ Error fetching models:", err);
+      console.error("Error fetching models:", err);
       return [];
     }
   };
 
-  const fetchGenerations = async (modelId: string): Promise<Generation[]> => {
+        const fetchGenerations = async (modelId: string): Promise<Generation[]> => {
     try {
-      console.log(`🔍 Fetching generations for model ${modelId}...`);
+      // Try to get generations from API first
+      let generations: any[] = [];
       
-      // Try multiple approaches to get generations
-      let allGenerations: any[] = [];
-      
-      // Approach 1: Try the direct generations endpoint
       try {
-        console.log(`🔄 Approach 1: Direct generations endpoint...`);
-        const data = await makeSecureAPICall(`models/${modelId}/generations`);
-        console.log(`📊 Direct generations API response:`, data);
-        const directGenerations = data.data || [];
-        console.log(`📋 Found ${directGenerations.length} generations via direct API`);
-        allGenerations.push(...directGenerations);
-      } catch (err) {
-        console.log(`❌ Direct generations API failed:`, err);
-      }
-      
-      // Approach 2: Try alternative generations endpoint
-      try {
-        console.log(`🔄 Approach 2: Alternative generations endpoint...`);
-        const altData = await makeSecureAPICall(`generations`);
-        const allGenerationsFromAPI = altData.data || [];
-        // Filter generations for this specific model
-        const filteredGenerations = allGenerationsFromAPI.filter((g: any) => g.model_id?.toString() === modelId);
-        console.log(`📋 Found ${filteredGenerations.length} generations via alternative endpoint`);
-        allGenerations.push(...filteredGenerations);
-      } catch (err) {
-        console.log(`❌ Alternative endpoint failed:`, err);
-      }
-      
-      // Approach 3: Extract from car data
-      try {
-        console.log(`🔄 Approach 3: Extracting from car data...`);
-        const carData = await makeSecureAPICall("cars", {
-          model_id: modelId,
-          per_page: "1000" // Get more cars to extract generations
-        });
-        
-        if (carData.data && carData.data.length > 0) {
-          const extractedGenerations = extractGenerationsFromCars(carData.data);
-          console.log(`📋 Extracted ${extractedGenerations.length} generations from car data`);
-          allGenerations.push(...extractedGenerations);
+        const response = await makeSecureAPICall(`models/${modelId}/generations`);
+        if (response.data && Array.isArray(response.data)) {
+          generations = response.data;
         }
       } catch (err) {
-        console.log(`❌ Car data extraction failed:`, err);
-      }
-      
-      // If still no generations, create some common ones based on model
-      if (allGenerations.length === 0) {
-        console.log(`🔄 Creating fallback generations for model ${modelId}...`);
-        allGenerations = [
-          { id: 1, name: "I", from_year: 2000, to_year: 2010, car_count: 0, cars_qty: 0 },
-          { id: 2, name: "II", from_year: 2010, to_year: 2020, car_count: 0, cars_qty: 0 },
-          { id: 3, name: "III", from_year: 2020, to_year: 2030, car_count: 0, cars_qty: 0 }
-        ];
-      }
-      
-      console.log(`📋 Total generations collected from all approaches: ${allGenerations.length}`);
-      console.log(`📋 All generations:`, allGenerations);
-      
-      // Now deduplicate and get real counts
-      const uniqueGenerationsMap = new Map<string, any>();
-      
-      allGenerations.forEach(gen => {
-        const normalizedName = gen.name.trim().toLowerCase();
-        const existing = uniqueGenerationsMap.get(normalizedName);
-        
-        if (existing) {
-          // Merge with existing generation
-          existing.car_count = (existing.car_count || 0) + (gen.car_count || 0);
-          if (gen.from_year && (!existing.from_year || gen.from_year < existing.from_year)) {
-            existing.from_year = gen.from_year;
+        // Fallback: Extract generations from car data
+        try {
+          const carResponse = await makeSecureAPICall("cars", {
+            model_id: modelId,
+            per_page: "1000"
+          });
+          
+          if (carResponse.data && carResponse.data.length > 0) {
+            generations = extractGenerationsFromCars(carResponse.data);
           }
-          if (gen.to_year && (!existing.to_year || gen.to_year > existing.to_year)) {
-            existing.to_year = gen.to_year;
-          }
-          // Keep the better ID (prefer the one with more data)
-          if (gen.id && (!existing.id || gen.car_count > existing.car_count)) {
-            existing.id = gen.id;
-          }
-        } else {
-          // Add new generation
-          uniqueGenerationsMap.set(normalizedName, { ...gen });
+        } catch (carErr) {
+          return [];
         }
-      });
+      }
       
-      const uniqueGenerations = Array.from(uniqueGenerationsMap.values());
-      console.log(`🔍 Processing ${uniqueGenerations.length} unique generations (removed ${allGenerations.length - uniqueGenerations.length} duplicates)`);
-      console.log(`📋 Unique generations:`, uniqueGenerations);
+      if (generations.length === 0) {
+        return [];
+      }
       
-      // Get real counts for each unique generation
-      const generationsWithRealCounts = await Promise.all(
-        uniqueGenerations.map(async (g) => {
-          console.log(`🔍 Processing generation: ${g.name} (ID: ${g.id})`);
-          
-          // First try to get count from existing car_count if it's reasonable
-          if (g.car_count && g.car_count > 0) {
-            console.log(`✅ Using existing count for ${g.name}: ${g.car_count}`);
-            return {
-              ...g,
-              cars_qty: g.car_count
-            };
-          }
-          
+      // Get real counts for each generation
+      const generationsWithCounts = await Promise.all(
+        generations.map(async (gen) => {
           try {
-            console.log(`🔍 Fetching car count for generation ${g.name}...`);
-            const carData = await makeSecureAPICall("cars", {
+            const countResponse = await makeSecureAPICall("cars", {
               model_id: modelId,
-              generation_id: g.id.toString(),
+              generation_id: gen.id.toString(),
               per_page: "1",
               simple_paginate: "1"
             });
             
-            const realCount = carData.meta?.total || 0;
-            console.log(`✅ Real count for ${g.name}: ${realCount}`);
+            const realCount = countResponse.meta?.total || 0;
             
             return {
-              ...g,
+              ...gen,
               car_count: realCount,
               cars_qty: realCount
             };
           } catch (err) {
-            console.error(`❌ Error getting count for ${g.name}:`, err);
-            
-            // Try alternative count method - fetch all cars and count manually
-            try {
-              console.log(`🔄 Trying alternative count method for ${g.name}...`);
-              const altCarData = await makeSecureAPICall("cars", {
-                model_id: modelId,
-                per_page: "1000"
-              });
-              
-              if (altCarData.data && altCarData.data.length > 0) {
-                // Count cars that match this generation
-                const matchingCars = altCarData.data.filter((car: any) => {
-                  const carGeneration = car.generation?.name || car.generation?.id;
-                  const genName = g.name.toLowerCase();
-                  const genId = g.id.toString();
-                  
-                  return carGeneration?.toLowerCase().includes(genName) || 
-                         carGeneration === genId ||
-                         car.generation_id?.toString() === genId ||
-                         (car.title && car.title.toLowerCase().includes(genName));
-                });
-                
-                const realCount = matchingCars.length;
-                console.log(`✅ Alternative count for ${g.name}: ${realCount} (from ${altCarData.data.length} total cars)`);
-                
-                return {
-                  ...g,
-                  car_count: realCount,
-                  cars_qty: realCount
-                };
-              }
-            } catch (altErr) {
-              console.log(`❌ Alternative count method failed for ${g.name}:`, altErr);
-            }
-            
-            // Final fallback: use existing count or estimate
-            const fallbackCount = g.car_count || Math.floor(Math.random() * 50) + 5;
-            console.log(`🔄 Using fallback count for ${g.name}: ${fallbackCount}`);
             return {
-              ...g,
-              cars_qty: fallbackCount
+              ...gen,
+              car_count: 0,
+              cars_qty: 0
             };
           }
         })
       );
       
-      console.log(`✅ Final generations with counts:`, generationsWithRealCounts);
-      return generationsWithRealCounts.sort((a, b) => a.name.localeCompare(b.name));
+      // Add "All Generations" option to show total cars for the model
+      try {
+        const totalModelResponse = await makeSecureAPICall("cars", {
+          model_id: modelId,
+          per_page: "1",
+          simple_paginate: "1"
+        });
+        
+        const totalModelCount = totalModelResponse.meta?.total || 0;
+        const generationTotalCount = generationsWithCounts.reduce((sum, gen) => sum + (gen.cars_qty || 0), 0);
+        const missingCars = totalModelCount - generationTotalCount;
+        
+        // Always add "All Generations" option to show total cars
+        const allGenerationsOption = {
+          id: 0,
+          name: "All Generations",
+          car_count: totalModelCount,
+          cars_qty: totalModelCount,
+          from_year: undefined,
+          to_year: undefined,
+          manufacturer_id: undefined,
+          model_id: parseInt(modelId)
+        };
+        
+        generationsWithCounts.unshift(allGenerationsOption);
+        
+        // If there are cars without generations, add "Other" category
+        if (missingCars > 0) {
+          const otherGenerationsOption = {
+            id: -1,
+            name: "Other",
+            car_count: missingCars,
+            cars_qty: missingCars,
+            from_year: undefined,
+            to_year: undefined,
+            manufacturer_id: undefined,
+            model_id: parseInt(modelId)
+          };
+          
+          generationsWithCounts.push(otherGenerationsOption);
+        }
+      } catch (err) {
+        // Continue without total count if it fails
+      }
       
-    } catch (err) {
-      console.error("❌ Error in fetchGenerations:", err);
-      return [];
-    }
-  };
+      return generationsWithCounts.sort((a, b) => a.name.localeCompare(b.name));
+
+  } catch (err) {
+    console.error("Error in fetchGenerations:", err);
+    return [];
+  }
+};
 
   const fetchFilterCounts = async (
     currentFilters: APIFilters = {},
@@ -848,108 +774,49 @@ export const useSecureAuctionAPI = () => {
   // Helper function to extract generations from car data
   const extractGenerationsFromCars = (cars: Car[]): Generation[] => {
     const generationsMap = new Map<string, { id: number; name: string; car_count: number; from_year?: number; to_year?: number }>();
+    let carsWithGenerations = 0;
+    let carsWithoutGenerations = 0;
     
     cars.forEach(car => {
-      let generationName = '';
-      let generationId = 0;
-      
-      // Try to get generation from car.generation
-      if (car.generation) {
-        generationName = car.generation.name;
-        generationId = car.generation.id;
-      }
-      
-      // If no generation, try to extract from title
-      if (!generationName && car.title) {
-        const title = car.title.toLowerCase();
+      // Only use generation if it exists in car data
+      if (car.generation && car.generation.name && car.generation.id) {
+        const generationName = car.generation.name.trim();
+        const generationId = car.generation.id;
         
-        // Common generation patterns
-        const patterns = [
-          // BMW patterns
-          /\b(e\d{2,3})\b/gi, // E90, E91, E92, E93, F30, F31, G20, etc.
-          /\b(f\d{2,3})\b/gi, // F30, F31, F32, etc.
-          /\b(g\d{2,3})\b/gi, // G20, G21, G22, etc.
+        if (generationName) {
+          carsWithGenerations++;
+          const key = generationName.toLowerCase();
+          const existing = generationsMap.get(key);
           
-          // Audi patterns
-          /\b(b\d{1,2})\b/gi, // B8, B9, B10, etc.
-          
-          // Mercedes patterns
-          /\b(w\d{3})\b/gi, // W204, W205, W206, etc.
-          /\b(c\d{3})\b/gi, // C204, C205, etc.
-          
-          // Volkswagen patterns
-          /\b(mk\d{1,2})\b/gi, // MK5, MK6, MK7, etc.
-          
-          // Generic patterns
-          /\b(generation\s+[ivx]+)\b/gi, // Generation I, II, III, etc.
-          /\b(gen\s+[ivx]+)\b/gi, // Gen I, Gen II, etc.
-          /\b([ivx]+)\s+generation\b/gi, // I Generation, II Generation, etc.
-        ];
-        
-        for (const pattern of patterns) {
-          const match = title.match(pattern);
-          if (match) {
-            generationName = match[0].toUpperCase();
-            // Use a consistent ID based on the generation name
-            generationId = generationName.charCodeAt(0) * 1000 + (generationName.match(/\d+/)?.[0] || '0').charCodeAt(0);
-            break;
+          if (existing) {
+            existing.car_count++;
+            if (car.year) {
+              if (!existing.from_year || car.year < existing.from_year) {
+                existing.from_year = car.year;
+              }
+              if (!existing.to_year || car.year > existing.to_year) {
+                existing.to_year = car.year;
+              }
+            }
+          } else {
+            generationsMap.set(key, {
+              id: generationId,
+              name: generationName,
+              car_count: 1,
+              from_year: car.year,
+              to_year: car.year
+            });
           }
         }
-      }
-      
-      // If still no generation, try to extract from year ranges
-      if (!generationName && car.year) {
-        const year = car.year;
-        if (year >= 2020) {
-          generationName = "III";
-          generationId = 3;
-        } else if (year >= 2010) {
-          generationName = "II";
-          generationId = 2;
-        } else if (year >= 2000) {
-          generationName = "I";
-          generationId = 1;
-        }
-      }
-      
-      if (generationName) {
-        // Use generation name as key to prevent duplicates
-        const key = generationName.toLowerCase();
-        const existing = generationsMap.get(key);
-        
-        if (existing) {
-          existing.car_count++;
-          // Update year range
-          if (car.year) {
-            if (!existing.from_year || car.year < existing.from_year) {
-              existing.from_year = car.year;
-            }
-            if (!existing.to_year || car.year > existing.to_year) {
-              existing.to_year = car.year;
-            }
-          }
-        } else {
-          generationsMap.set(key, {
-            id: generationId,
-            name: generationName,
-            car_count: 1,
-            from_year: car.year,
-            to_year: car.year
-          });
-        }
+      } else {
+        carsWithoutGenerations++;
       }
     });
     
-    // Convert to array and sort
     const generations = Array.from(generationsMap.values())
-      .sort((a, b) => {
-        // Sort by name first, then by year
-        const nameCompare = a.name.localeCompare(b.name);
-        if (nameCompare !== 0) return nameCompare;
-        return (a.from_year || 0) - (b.from_year || 0);
-      });
+      .sort((a, b) => a.name.localeCompare(b.name));
     
-    console.log(`🔍 Extracted generations from cars:`, generations);
+    console.log(`📊 Cars with generations: ${carsWithGenerations}, Cars without generations: ${carsWithoutGenerations}`);
     
     return generations.map(g => ({
       ...g,

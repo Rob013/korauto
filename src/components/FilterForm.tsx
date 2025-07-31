@@ -6,6 +6,18 @@ import { Label } from "@/components/ui/label";
 import { Filter, X, Loader2, Search } from "lucide-react";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS } from '@/hooks/useAuctionAPI';
 
+// Debounce utility function
+const debounce = <T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): ((...args: Parameters<T>) => void) => {
+  let timeout: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+};
+
 interface Manufacturer {
   id: number;
   name: string;
@@ -89,14 +101,15 @@ const FilterForm = memo<FilterFormProps>(({
   onToggleAdvanced,
   onFetchGrades
 }) => {
-  const [searchTerm, setSearchTerm] = useState(filters.search || '');
   const [grades, setGrades] = useState<{ value: string; label: string; count?: number }[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const updateFilter = useCallback((key: string, value: string) => {
     // Handle special "all" values by converting them to undefined
     const actualValue = value === 'all' || value === 'any' ? undefined : value;
     
-    console.log(`🔧 FilterForm: Updating ${key} to "${actualValue}"`);
+    // Set loading state for better UX
+    setIsLoading(true);
     
     // Handle cascading filters
     if (key === 'manufacturer_id') {
@@ -105,14 +118,16 @@ const FilterForm = memo<FilterFormProps>(({
         ...filters,
         [key]: actualValue,
         model_id: undefined,
-        generation_id: undefined
+        generation_id: undefined,
+        grade_iaai: undefined // Clear grade when manufacturer changes
       });
     } else if (key === 'model_id') {
       onModelChange?.(actualValue || '');
       onFiltersChange({
         ...filters,
         [key]: actualValue,
-        generation_id: undefined
+        generation_id: undefined,
+        grade_iaai: undefined // Clear grade when model changes
       });
     } else {
       // For other filters, preserve existing values but update the changed one
@@ -123,19 +138,16 @@ const FilterForm = memo<FilterFormProps>(({
         updatedFilters.grade_iaai = undefined;
       }
       
-      console.log(`🔧 FilterForm: Final filters update:`, updatedFilters);
       onFiltersChange(updatedFilters);
     }
+    
+    // Clear loading state after a short delay
+    setTimeout(() => setIsLoading(false), 50);
   }, [filters, onFiltersChange, onManufacturerChange, onModelChange]);
 
-  const handleSearch = useCallback(() => {
-    updateFilter('search', searchTerm.trim());
-  }, [updateFilter, searchTerm]);
 
-  const handleClearSearch = useCallback(() => {
-    setSearchTerm('');
-    updateFilter('search', '');
-  }, [updateFilter]);
+
+
 
   const currentYear = useMemo(() => new Date().getFullYear(), []);
   const years = useMemo(() => Array.from({ length: 25 }, (_, i) => currentYear - i), [currentYear]);
@@ -176,32 +188,27 @@ const FilterForm = memo<FilterFormProps>(({
       .filter((m) => m.cars_qty && m.cars_qty > 0);
   }, [manufacturers]);
 
-  // Fetch grades when manufacturer, model, or generation changes - with debouncing
+  // Fetch grades when manufacturer, model, or generation changes
   useEffect(() => {
     const fetchGradesData = async () => {
       if (onFetchGrades && filters.manufacturer_id) {
         try {
-          console.log(`🔍 Fetching grades for manufacturer: ${filters.manufacturer_id}, model: ${filters.model_id}, generation: ${filters.generation_id}`);
           const gradesData = await onFetchGrades(
             filters.manufacturer_id,
             filters.model_id,
             filters.generation_id
           );
-          console.log(`📊 Fetched ${gradesData.length} grades:`, gradesData.map(g => g.value));
           setGrades(gradesData);
         } catch (err) {
           console.error("Error fetching grades:", err);
           setGrades([]);
         }
       } else {
-        console.log('🔍 No manufacturer selected, clearing grades');
         setGrades([]);
       }
     };
 
-    // Debounce grade fetching to prevent rapid API calls
-    const timeoutId = setTimeout(fetchGradesData, 300);
-    return () => clearTimeout(timeoutId);
+    fetchGradesData();
   }, [filters.manufacturer_id, filters.model_id, filters.generation_id, onFetchGrades]);
 
   return (
@@ -211,31 +218,43 @@ const FilterForm = memo<FilterFormProps>(({
           <Filter className="h-4 w-4 text-primary" />
           <h3 className="text-sm sm:text-base font-semibold">Filtrat</h3>
         </div>
-        <Button variant="outline" size="sm" onClick={onClearFilters} className="text-xs px-2 py-1 h-7">
-          <X className="h-3 w-3 mr-1" />
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={onClearFilters} 
+          disabled={isLoading}
+          className="text-xs px-2 py-1 h-7"
+        >
+          {isLoading ? (
+            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+          ) : (
+            <X className="h-3 w-3 mr-1" />
+          )}
           Pastro
         </Button>
       </div>
+
+
 
 
       {/* Basic Filters - Always 4 columns beside each other */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 sm:gap-2">
         <div className="space-y-1">
           <Label htmlFor="manufacturer" className="text-xs font-medium truncate">Marka</Label>
-          <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
+          <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)} disabled={isLoading}>
             <SelectTrigger className="h-7 text-xs">
-              <SelectValue placeholder="Markat" />
+              <SelectValue placeholder={isLoading ? "Duke ngarkuar..." : "Markat"} />
             </SelectTrigger>
             <SelectContent className="max-h-60 overflow-y-auto">
               <SelectItem value="all">Të gjitha Markat</SelectItem>
-               {sortedManufacturers.map((manufacturer) => {
-                     const count = filterCounts?.manufacturers[manufacturer.id.toString()];
-                     return (
-                       <SelectItem 
-                         key={manufacturer.id} 
-                         value={manufacturer.id.toString()}
-                       >
-                         
+               {sortedManufacturers.length > 0 ? (
+                 sortedManufacturers.map((manufacturer) => {
+                   const count = filterCounts?.manufacturers[manufacturer.id.toString()];
+                   return (
+                     <SelectItem 
+                       key={manufacturer.id} 
+                       value={manufacturer.id.toString()}
+                     >
                        <div className="flex items-center gap-2">
                          {manufacturer?.image && (
                            <img
@@ -244,11 +263,16 @@ const FilterForm = memo<FilterFormProps>(({
                              className="w-5 h-5 object-contain"
                            />
                          )}
-                     <span>{manufacturer.name} ({manufacturer.cars_qty})</span>
-                   </div>
-                       </SelectItem>
-                     );
-                  })}
+                         <span>{manufacturer.name} ({manufacturer.cars_qty})</span>
+                       </div>
+                     </SelectItem>
+                   );
+                 })
+               ) : (
+                 <SelectItem value="loading" disabled>
+                   {isLoading ? "Duke ngarkuar..." : "Nuk u gjetën marka"}
+                 </SelectItem>
+               )}
 
             </SelectContent>
           </Select>
@@ -259,23 +283,29 @@ const FilterForm = memo<FilterFormProps>(({
           <Select 
             value={filters.model_id || 'all'} 
             onValueChange={(value) => updateFilter('model_id', value)}
-            disabled={!filters.manufacturer_id}
+            disabled={!filters.manufacturer_id || isLoading}
           >
             <SelectTrigger className="h-7 text-xs">
-              <SelectValue placeholder={filters.manufacturer_id ? "Modelet" : "Marka së pari"} />
+              <SelectValue placeholder={isLoading ? "Duke ngarkuar..." : (filters.manufacturer_id ? "Modelet" : "Marka së pari")} />
             </SelectTrigger>
             <SelectContent className="max-h-60 overflow-y-auto">
               <SelectItem value="all">Të gjithë Modelet</SelectItem>
-           {models
-              .filter((model) => model.cars_qty && model.cars_qty > 0)
-              .map((model) => (
-                <SelectItem 
-                  key={model.id} 
-                  value={model.id.toString()}
-                >
-                  {model.name} ({model.cars_qty})
-                </SelectItem>
-              ))}
+           {models && models.length > 0 ? (
+             models
+               .filter((model) => model.cars_qty && model.cars_qty > 0)
+               .map((model) => (
+                 <SelectItem 
+                   key={model.id} 
+                   value={model.id.toString()}
+                 >
+                   {model.name} ({model.cars_qty})
+                 </SelectItem>
+               ))
+           ) : (
+             <SelectItem value="loading" disabled>
+               {isLoading ? "Duke ngarkuar..." : (filters.manufacturer_id ? "Nuk u gjetën modele" : "Zgjidh markën së pari")}
+             </SelectItem>
+           )}
 
 
             </SelectContent>
@@ -298,11 +328,7 @@ const FilterForm = memo<FilterFormProps>(({
               </SelectItem>
             {generations && generations.length > 0 ? (
               generations.map((generation) => {
-                // Use cars_qty directly - it should contain the real count from API
                 const displayCount = generation.cars_qty || 0;
-                
-                // Debug logging
-                console.log(`🔍 FilterForm: Generation ${generation.name} - cars_qty: ${generation.cars_qty}, displayCount: ${displayCount}`);
                 
                 return (
                   <SelectItem 
@@ -317,7 +343,7 @@ const FilterForm = memo<FilterFormProps>(({
               })
             ) : (
               <SelectItem value="no-generations" disabled>
-                {filters.model_id ? "No generations found" : "Select a model first"}
+                {filters.model_id ? "Nuk u gjetën gjenerata" : "Zgjidh modelin së pari"}
               </SelectItem>
             )}
             </SelectContent>
@@ -328,10 +354,7 @@ const FilterForm = memo<FilterFormProps>(({
           <Label htmlFor="grade" className="text-xs font-medium truncate">Grada/Motorr</Label>
           <Select 
             value={filters.grade_iaai || 'all'} 
-            onValueChange={(value) => {
-              console.log(`🔍 Grade selected: "${value}"`);
-              updateFilter('grade_iaai', value);
-            }}
+            onValueChange={(value) => updateFilter('grade_iaai', value)}
             disabled={!filters.manufacturer_id}
           >
             <SelectTrigger className="h-7 text-xs">
@@ -345,14 +368,12 @@ const FilterForm = memo<FilterFormProps>(({
                 </SelectItem>
               ))}
               {grades.length === 0 && filters.manufacturer_id && (
-                <SelectItem value="loading" disabled>
-                  Loading grades...
+                <SelectItem value="no-grades" disabled>
+                  Nuk u gjetën grada
                 </SelectItem>
               )}
             </SelectContent>
           </Select>
-
-
         </div>
       </div>
 

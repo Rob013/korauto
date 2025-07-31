@@ -179,7 +179,7 @@ const HomeCarsSection = memo(() => {
       }
 
       // Grade filter (check lots array for grade_iaai)
-      if (filters.grade_iaai && filters.grade_iaai.trim()) {
+      if (filters.grade_iaai && filters.grade_iaai !== 'all') {
         const targetGrade = filters.grade_iaai.toLowerCase().trim();
         let hasMatchingGrade = false;
         
