@@ -126,18 +126,7 @@ const FilterForm = memo<FilterFormProps>(({
   }, [filters, onFiltersChange, onManufacturerChange, onModelChange]);
 
   const handleSearch = useCallback(() => {
-    const trimmedSearch = searchTerm.trim();
-    
-    // Check if search term looks like plate number digits (numeric, 3-8 characters)
-    if (/^\d{3,8}$/.test(trimmedSearch)) {
-      // Extract last 4 digits for plate number matching
-      const last4Digits = trimmedSearch.slice(-4);
-      // Search for cars with plate numbers ending in these digits
-      updateFilter('search', `*${last4Digits}`);
-    } else {
-      // Regular search for VIN, lot numbers, or other text
-      updateFilter('search', trimmedSearch);
-    }
+    updateFilter('search', searchTerm.trim());
   }, [updateFilter, searchTerm]);
 
   const handleClearSearch = useCallback(() => {
@@ -220,47 +209,6 @@ const FilterForm = memo<FilterFormProps>(({
           <X className="h-3 w-3 mr-1" />
           Pastro
         </Button>
-      </div>
-
-      {/* Search Bar for Available Fields */}
-      <div className="border border-primary/20 bg-primary/5 rounded-md p-3 space-y-2">
-        <Label className="text-xs font-medium text-primary">Kërko sipas VIN, Lot Number, ose fjalëve kyçe</Label>
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              placeholder="Shtyp VIN, lot number, ose fjalë kyçe..."
-              className="pl-8 h-8 text-sm"
-            />
-          </div>
-          <Button 
-            onClick={handleSearch} 
-            size="sm" 
-            className="h-8 px-3 text-xs"
-            disabled={!searchTerm.trim()}
-          >
-            Kërko
-          </Button>
-          {filters.search && (
-            <Button 
-              variant="outline" 
-              onClick={handleClearSearch} 
-              size="sm" 
-              className="h-8 px-2 text-xs"
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
-        {filters.search && (
-          <div className="text-xs text-muted-foreground">
-            Duke kërkuar për: <span className="font-medium text-foreground">"{filters.search}"</span>
-          </div>
-        )}
       </div>
 
 
