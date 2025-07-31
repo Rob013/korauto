@@ -5,77 +5,65 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useEncarAPI } from '@/hooks/useEncarAPI';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Activity, 
-  CheckCircle, 
-  AlertCircle, 
-  Clock, 
-  Pause,
-  Database,
-  TrendingUp,
-  RefreshCw,
-  Zap,
-  AlertTriangle,
-  StopCircle,
-  Shield
-} from 'lucide-react';
-
+import { Activity, CheckCircle, AlertCircle, Clock, Pause, Database, TrendingUp, RefreshCw, Zap, AlertTriangle, StopCircle, Shield } from 'lucide-react';
 export function AdminSyncDashboard() {
-  const { syncStatus, totalCount, triggerSync, getSyncStatus } = useEncarAPI();
-  const { toast } = useToast();
+  const {
+    syncStatus,
+    totalCount,
+    triggerSync,
+    getSyncStatus
+  } = useEncarAPI();
+  const {
+    toast
+  } = useToast();
   const [testInProgress, setTestInProgress] = useState(false);
   const [emergencyInProgress, setEmergencyInProgress] = useState(false);
-
   const handleFullSync = async () => {
     try {
       await triggerSync('full');
       toast({
         title: "🚀 Real API Full Sync Started!",
-        description: "Fetching ALL real car data from live API - auto-syncing every minute!",
+        description: "Fetching ALL real car data from live API - auto-syncing every minute!"
       });
     } catch (error) {
       toast({
         title: "Sync Failed",
         description: error instanceof Error ? error.message : "Failed to start sync",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
-
   const handleTestSync = async () => {
     setTestInProgress(true);
     try {
       await triggerSync('incremental');
       toast({
         title: "🔄 Real API Incremental Sync Started",
-        description: "Fetching recent real car updates from live API.",
+        description: "Fetching recent real car updates from live API."
       });
     } catch (error) {
       toast({
         title: "Sync Failed",
         description: error instanceof Error ? error.message : "Failed to start sync",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setTestInProgress(false);
     }
   };
-
   const handleSeedData = async () => {
     try {
       const response = await fetch(`https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/encar-sync?seed=true`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         }
       });
-
       const result = await response.json();
-      
       if (result.success) {
         toast({
           title: "Sample data added",
-          description: `Successfully added ${result.cars_added} sample cars to the database.`,
+          description: `Successfully added ${result.cars_added} sample cars to the database.`
         });
         // Refresh data
         getSyncStatus();
@@ -86,27 +74,24 @@ export function AdminSyncDashboard() {
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to seed sample data",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
-
   const handleEmergencyMassData = async () => {
     setEmergencyInProgress(true);
     try {
       const response = await fetch(`https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/encar-sync?emergency=true&count=50000`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         }
       });
-
       const result = await response.json();
-      
       if (result.success) {
         toast({
           title: "🚨 Emergency Data Generated",
-          description: `Successfully generated ${result.cars_added} sample cars`,
+          description: `Successfully generated ${result.cars_added} sample cars`
         });
         // Refresh data
         getSyncStatus();
@@ -117,42 +102,38 @@ export function AdminSyncDashboard() {
       toast({
         title: "Error",
         description: "Failed to generate emergency sample data",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setEmergencyInProgress(false);
     }
   };
-
   const handleForceStopSync = async () => {
     try {
-      const { supabase } = await import('@/integrations/supabase/client');
-      const { error } = await supabase
-        .from('sync_status')
-        .update({
-          status: 'failed',
-          completed_at: new Date().toISOString(),
-          error_message: 'Manually stopped by admin'
-        })
-        .eq('status', 'running');
-      
+      const {
+        supabase
+      } = await import('@/integrations/supabase/client');
+      const {
+        error
+      } = await supabase.from('sync_status').update({
+        status: 'failed',
+        completed_at: new Date().toISOString(),
+        error_message: 'Manually stopped by admin'
+      }).eq('status', 'running');
       if (error) throw error;
-      
       toast({
         title: "🛑 Sync Stopped",
-        description: "All running syncs have been stopped",
+        description: "All running syncs have been stopped"
       });
-      
       getSyncStatus();
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to stop running syncs",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
-
   const getStatusIcon = (status?: string) => {
     switch (status) {
       case 'completed':
@@ -167,17 +148,14 @@ export function AdminSyncDashboard() {
         return <Clock className="h-4 w-4 text-gray-500" />;
     }
   };
-
   const getSyncProgress = () => {
     if (!syncStatus || !syncStatus.total_records || syncStatus.total_records === 0) {
       return 0;
     }
     const processed = syncStatus.records_processed || 0;
-    return Math.min((processed / syncStatus.total_records) * 100, 100);
+    return Math.min(processed / syncStatus.total_records * 100, 100);
   };
-
-  return (
-    <div className="space-y-3 sm:space-y-4">
+  return <div className="space-y-3 sm:space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Sync Dashboard</h2>
         <Button variant="outline" size="sm" onClick={getSyncStatus}>
@@ -188,44 +166,9 @@ export function AdminSyncDashboard() {
 
       {/* System Status Cards */}
       <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        <Card className="p-3">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
-            <CardTitle className="text-xs sm:text-sm font-medium">Database</CardTitle>
-            <Database className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="text-lg sm:text-xl font-bold">{totalCount.toLocaleString()}</div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground">Total cars</p>
-          </CardContent>
-        </Card>
+        
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Current Sync</CardTitle>
-            {getStatusIcon(syncStatus?.status)}
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {syncStatus?.status ? (
-                <Badge variant={syncStatus.status === 'running' ? 'default' : 
-                              syncStatus.status === 'completed' ? 'default' : 
-                              syncStatus.status === 'failed' ? 'destructive' : 'secondary'}>
-                  {syncStatus.status}
-                </Badge>
-              ) : (
-                <Badge variant="secondary">No active sync</Badge>
-              )}
-            </div>
-            {syncStatus?.status === 'running' && (
-              <div className="mt-2">
-                <Progress value={getSyncProgress()} className="w-full" />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {syncStatus.records_processed || 0} / {syncStatus.total_records || 0} cars processed
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -234,18 +177,10 @@ export function AdminSyncDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {syncStatus?.last_activity_at ? (
-                new Date(syncStatus.last_activity_at).toLocaleTimeString()
-              ) : (
-                'Never'
-              )}
+              {syncStatus?.last_activity_at ? new Date(syncStatus.last_activity_at).toLocaleTimeString() : 'Never'}
             </div>
             <p className="text-xs text-muted-foreground">
-              {syncStatus?.last_activity_at ? (
-                `${Math.round((Date.now() - new Date(syncStatus.last_activity_at).getTime()) / 60000)} min ago`
-              ) : (
-                'No recent activity'
-              )}
+              {syncStatus?.last_activity_at ? `${Math.round((Date.now() - new Date(syncStatus.last_activity_at).getTime()) / 60000)} min ago` : 'No recent activity'}
             </p>
           </CardContent>
         </Card>
@@ -253,139 +188,14 @@ export function AdminSyncDashboard() {
 
       {/* Control Panel */}
       <Card>
-        <CardHeader>
-          <CardTitle>🔄 Live API Sync Control</CardTitle>
-          <CardDescription>
-            Real-time synchronization with live car API. Auto-syncing every minute for fresh data. Only real cars, no sample data.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col gap-2 sm:gap-3">
-            <Button 
-              onClick={handleTestSync}
-              disabled={testInProgress || syncStatus?.status === 'running'}
-              size="sm"
-              className="w-full justify-start"
-            >
-              <Zap className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-              <span className="text-xs sm:text-sm">
-                {testInProgress ? 'Starting...' : '🔄 Incremental Sync'}
-              </span>
-            </Button>
-            
-            <Button 
-              variant="outline"
-              onClick={handleFullSync}
-              disabled={syncStatus?.status === 'running'}
-              size="sm"
-              className="w-full justify-start"
-            >
-              <Database className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-              <span className="text-xs sm:text-sm">🚀 Full Sync</span>
-            </Button>
-          </div>
-          
-          <div className="pt-4 border-t">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-medium flex items-center">
-                <Shield className="h-4 w-4 mr-2 text-green-500" />
-                ⚡ Auto-Sync Status
-              </h4>
-              <Badge variant="default" className="bg-green-600">
-                ACTIVE - Every Minute
-              </Badge>
-            </div>
-            <p className="text-xs text-muted-foreground mb-3">
-              🔄 Auto-sync is running every minute to fetch fresh car data from live API.
-              <br />
-              ✅ Real cars only - no sample/emergency data
-              <br />
-              📡 Next sync: {new Date(Date.now() + 60000).toLocaleTimeString()}
-            </p>
-            
-            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center text-green-700">
-                <CheckCircle className="h-4 w-4 mr-2" />
-                <span className="text-sm font-medium">Live API Connected</span>
-              </div>
-              <p className="text-xs text-green-600 mt-1">
-                Real-time car data synchronization is active
-              </p>
-            </div>
-          </div>
-
-          {syncStatus?.error_message && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">
-                <strong>Error:</strong> {syncStatus.error_message}
-              </p>
-            </div>
-          )}
-        </CardContent>
+        
+        
       </Card>
 
       {/* System Improvements */}
       <Card>
-        <CardHeader>
-          <CardTitle>System Improvements</CardTitle>
-          <CardDescription>
-            Recent enhancements to the sync system for better reliability and performance.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-start space-x-3">
-              <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium">Simplified Database Architecture</p>
-                <p className="text-xs text-muted-foreground">
-                  Rebuilt database from scratch with cleaner, more efficient structure
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-start space-x-3">
-              <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium">⚡ Auto-Sync Every Minute</p>
-                <p className="text-xs text-muted-foreground">
-                  Continuous real-time synchronization with live car API data
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-start space-x-3">
-              <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium">🚀 Real API Data Only</p>
-                <p className="text-xs text-muted-foreground">
-                  No sample data - fetching 130,000+ real cars from live auction API
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-start space-x-3">
-              <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium">📈 Large Batch Processing</p>
-                <p className="text-xs text-muted-foreground">
-                  1000 cars per request with smart pagination and retry logic
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-start space-x-3">
-              <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium">🔄 Auto-Recovery & Continuation</p>
-                <p className="text-xs text-muted-foreground">
-                  Intelligent retry mechanisms and automatic sync continuation
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
+        
+        
       </Card>
-    </div>
-  );
+    </div>;
 }
