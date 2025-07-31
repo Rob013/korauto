@@ -80,6 +80,7 @@ interface FilterFormProps {
   onClearFilters: () => void;
   onManufacturerChange?: (manufacturerId: string) => void;
   onModelChange?: (modelId: string) => void;
+  onGenerationChange?: (generationId: string) => void;
   showAdvanced?: boolean;
   onToggleAdvanced?: () => void;
   loadingCounts?: boolean;
@@ -97,12 +98,15 @@ const FilterForm = memo<FilterFormProps>(({
   onClearFilters,
   onManufacturerChange,
   onModelChange,
+  onGenerationChange,
   showAdvanced = false,
   onToggleAdvanced,
   onFetchGrades
 }) => {
   const [grades, setGrades] = useState<{ value: string; label: string; count?: number }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [modelLoading, setModelLoading] = useState(false);
+  const [modelError, setModelError] = useState<string | null>(null);
 
   const updateFilter = useCallback((key: string, value: string) => {
     // Handle special "all" values by converting them to undefined
@@ -145,8 +149,27 @@ const FilterForm = memo<FilterFormProps>(({
     setTimeout(() => setIsLoading(false), 50);
   }, [filters, onFiltersChange, onManufacturerChange, onModelChange]);
 
-
-
+  const handleBrandChange = async (value: string) => {
+    setModelLoading(true);
+    setModelError(null);
+    updateFilter('manufacturer_id', value);
+    // Clear models immediately
+    if (onModelChange) onModelChange('');
+    // Set a timeout for error
+    const timeout = setTimeout(() => {
+      setModelError('Model loading timed out. Please try again.');
+      setModelLoading(false);
+    }, 5000);
+    try {
+      await onManufacturerChange?.(value);
+      clearTimeout(timeout);
+      setModelLoading(false);
+    } catch (e) {
+      setModelError('Failed to load models.');
+      setModelLoading(false);
+      clearTimeout(timeout);
+    }
+  };
 
 
   const currentYear = useMemo(() => new Date().getFullYear(), []);
@@ -211,6 +234,10 @@ const FilterForm = memo<FilterFormProps>(({
     fetchGradesData();
   }, [filters.manufacturer_id, filters.model_id, filters.generation_id, onFetchGrades]);
 
+  useEffect(() => {
+    console.log(`[FilterForm] Rendering model dropdown. Models available: ${models.length}, disabled: ${!filters.manufacturer_id || isLoading}`);
+  }, [models, filters.manufacturer_id, isLoading]);
+
   return (
     <div className="bg-card border border-border rounded-lg p-3 space-y-3">
       <div className="flex items-center justify-between">
@@ -241,7 +268,7 @@ const FilterForm = memo<FilterFormProps>(({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 sm:gap-2">
         <div className="space-y-1">
           <Label htmlFor="manufacturer" className="text-xs font-medium truncate">Marka</Label>
-          <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)} disabled={isLoading}>
+          <Select value={filters.manufacturer_id || 'all'} onValueChange={handleBrandChange} disabled={isLoading}>
             <SelectTrigger className="h-7 text-xs">
               <SelectValue placeholder={isLoading ? "Duke ngarkuar..." : "Markat"} />
             </SelectTrigger>
@@ -290,24 +317,22 @@ const FilterForm = memo<FilterFormProps>(({
             </SelectTrigger>
             <SelectContent className="max-h-60 overflow-y-auto">
               <SelectItem value="all">Të gjithë Modelet</SelectItem>
-           {models && models.length > 0 ? (
-             models
-               .filter((model) => model.cars_qty && model.cars_qty > 0)
-               .map((model) => (
-                 <SelectItem 
-                   key={model.id} 
-                   value={model.id.toString()}
-                 >
-                   {model.name} ({model.cars_qty})
-                 </SelectItem>
-               ))
-           ) : (
-             <SelectItem value="loading" disabled>
-               {isLoading ? "Duke ngarkuar..." : (filters.manufacturer_id ? "Nuk u gjetën modele" : "Zgjidh markën së pari")}
-             </SelectItem>
-           )}
-
-
+              {models && models.length > 0 ? (
+                models
+                  .filter((model) => model.cars_qty && model.cars_qty > 0)
+                  .map((model) => (
+                    <SelectItem 
+                      key={model.id} 
+                      value={model.id.toString()}
+                    >
+                      {model.name} ({model.cars_qty})
+                    </SelectItem>
+                  ))
+              ) : (
+                <SelectItem value="loading" disabled>
+                  {isLoading ? "Duke ngarkuar..." : (filters.manufacturer_id ? "Nuk u gjetën modele" : "Zgjidh markën së pari")}
+                </SelectItem>
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -316,8 +341,15 @@ const FilterForm = memo<FilterFormProps>(({
           <Label htmlFor="generation" className="text-xs font-medium truncate">Gjeneratat</Label>
           <Select
             value={filters.generation_id || 'all'} 
-            onValueChange={(value) => updateFilter('generation_id', value)}
-            disabled={!filters.manufacturer_id}
+            onValueChange={(value) => {
+              console.log(`🎯 ULTRA PRECISE: Generation select changed to ${value}`);
+              if (onGenerationChange) {
+                onGenerationChange(value);
+              } else {
+                updateFilter('generation_id', value);
+              }
+            }}
+            disabled={!filters.manufacturer_id || !filters.model_id}
           >
             <SelectTrigger className="h-7 text-xs">
               <SelectValue placeholder={filters.manufacturer_id ? "Gjeneratat" : "Marka së pari"} />

@@ -254,7 +254,7 @@ export const useSecureAuctionAPI = () => {
     carId?: string
   ): Promise<any> => {
     try {
-      // console.log("🔐 Making secure API call:", { endpoint, filters, carId });
+      console.log("🔐 Making secure API call:", { endpoint, filters, carId });
 
       // Add a minimal delay to prevent rapid successive calls
       const now = Date.now();
@@ -264,12 +264,15 @@ export const useSecureAuctionAPI = () => {
       }
       setLastFetchTime(Date.now());
 
+      console.log("🔐 Calling Supabase function with body:", { endpoint, filters, carId });
       const { data, error: functionError } = await supabase.functions.invoke(
         "secure-cars-api",
         {
           body: { endpoint, filters, carId },
         }
       );
+      
+      console.log("🔐 Supabase function response:", { data, error: functionError });
 
       if (functionError) {
         console.error("❌ Edge function error:", functionError);
@@ -440,130 +443,58 @@ export const useSecureAuctionAPI = () => {
 
   const fetchModels = async (manufacturerId: string): Promise<Model[]> => {
     try {
-      // Get all models with high per_page limit
-      const data = await makeSecureAPICall(`models/${manufacturerId}/cars`, {
-        per_page: "1000", // Get all models
+      // Always use the direct endpoint for reliability
+      const fallbackData = await makeSecureAPICall(`models/${manufacturerId}/cars`, {
+        per_page: "1000",
         simple_paginate: "0"
       });
-      
-      const models = data.data || [];
-      return models;
+      let fallbackModels = (fallbackData.data || []).filter((m: any) => m && m.id && m.name);
+
+      // Filter models by manufacturer_id (in case API returns extra)
+      fallbackModels = fallbackModels.filter((m: any) =>
+        m.manufacturer_id?.toString() === manufacturerId ||
+        m.manufacturer?.id?.toString() === manufacturerId
+      );
+
+      fallbackModels.sort((a: any, b: any) => a.name.localeCompare(b.name));
+      return fallbackModels;
     } catch (err) {
-      console.error("Error fetching models:", err);
+      console.error("[fetchModels] Error:", err);
       return [];
     }
   };
 
-        const fetchGenerations = async (modelId: string): Promise<Generation[]> => {
+  const fetchGenerations = async (modelId: string): Promise<Generation[]> => {
     try {
-      // Try to get generations from API first
-      let generations: any[] = [];
-      
+      // Try direct endpoint first for reliability
       try {
         const response = await makeSecureAPICall(`models/${modelId}/generations`);
-        if (response.data && Array.isArray(response.data)) {
-          generations = response.data;
-        }
-      } catch (err) {
-        // Fallback: Extract generations from car data
-        try {
-          const carResponse = await makeSecureAPICall("cars", {
-            model_id: modelId,
-            per_page: "1000"
-          });
-          
-          if (carResponse.data && carResponse.data.length > 0) {
-            generations = extractGenerationsFromCars(carResponse.data);
-          }
-        } catch (carErr) {
-          return [];
-        }
+        let generations = (response.data || []).filter((g: any) => g && g.id && g.name);
+        generations.sort((a: any, b: any) => a.name.localeCompare(b.name));
+        return generations;
+      } catch (directError) {
+        console.error(`[fetchGenerations] Direct endpoint failed:`, directError);
       }
-      
-      if (generations.length === 0) {
-        return [];
-      }
-      
-      // Get real counts for each generation
-      const generationsWithCounts = await Promise.all(
-        generations.map(async (gen) => {
-          try {
-            const countResponse = await makeSecureAPICall("cars", {
-              model_id: modelId,
-              generation_id: gen.id.toString(),
-              per_page: "1",
-              simple_paginate: "1"
-            });
-            
-            const realCount = countResponse.meta?.total || 0;
-            
-            return {
-              ...gen,
-              car_count: realCount,
-              cars_qty: realCount
-            };
-          } catch (err) {
-            return {
-              ...gen,
-              car_count: 0,
-              cars_qty: 0
-            };
-          }
-        })
-      );
-      
-      // Add "All Generations" option to show total cars for the model
+      // If direct fails, try extracting from cars
       try {
-        const totalModelResponse = await makeSecureAPICall("cars", {
+        const carResponse = await makeSecureAPICall("cars", {
           model_id: modelId,
-          per_page: "1",
-          simple_paginate: "1"
+          per_page: "200",
+          simple_paginate: "0"
         });
-        
-        const totalModelCount = totalModelResponse.meta?.total || 0;
-        const generationTotalCount = generationsWithCounts.reduce((sum, gen) => sum + (gen.cars_qty || 0), 0);
-        const missingCars = totalModelCount - generationTotalCount;
-        
-        // Always add "All Generations" option to show total cars
-        const allGenerationsOption = {
-          id: 0,
-          name: "All Generations",
-          car_count: totalModelCount,
-          cars_qty: totalModelCount,
-          from_year: undefined,
-          to_year: undefined,
-          manufacturer_id: undefined,
-          model_id: parseInt(modelId)
-        };
-        
-        generationsWithCounts.unshift(allGenerationsOption);
-        
-        // If there are cars without generations, add "Other" category
-        if (missingCars > 0) {
-          const otherGenerationsOption = {
-            id: -1,
-            name: "Other",
-            car_count: missingCars,
-            cars_qty: missingCars,
-            from_year: undefined,
-            to_year: undefined,
-            manufacturer_id: undefined,
-            model_id: parseInt(modelId)
-          };
-          
-          generationsWithCounts.push(otherGenerationsOption);
-        }
+        const cars = carResponse.data || [];
+        const generations = extractGenerationsFromCars(cars).filter(g => g && g.id && g.name);
+        generations.sort((a, b) => a.name.localeCompare(b.name));
+        return generations;
       } catch (err) {
-        // Continue without total count if it fails
+        console.error("[fetchGenerations] Car-based approach failed:", err);
       }
-      
-      return generationsWithCounts.sort((a, b) => a.name.localeCompare(b.name));
-
-  } catch (err) {
-    console.error("Error in fetchGenerations:", err);
-    return [];
-  }
-};
+      return [];
+    } catch (err) {
+      console.error("[fetchGenerations] Error:", err);
+      return [];
+    }
+  };
 
   const fetchFilterCounts = async (
     currentFilters: APIFilters = {},

@@ -77,8 +77,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [allCarsForSorting, setAllCarsForSorting] = useState<Car[]>([]);
+  const [allCarsForSorting, setAllCarsForSorting] = useState<any[]>([]);
   const [isSortingGlobal, setIsSortingGlobal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Memoized helper function to extract grades from title
   const extractGradesFromTitle = useCallback((title: string): string[] => {
@@ -374,7 +375,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       const allCars = data.data || [];
       
       // Apply the same filtering as current cars
-      const filteredAllCars = allCars.filter((car: Car) => {
+      const filteredAllCars = allCars.filter((car: any) => {
         if (filters.grade_iaai && filters.grade_iaai !== 'all') {
           const lot = car.lots?.[0];
           const grade = lot?.grade_iaai;
@@ -394,51 +395,24 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
   };
 
-  const handleManufacturerChange = useCallback(async (manufacturerId: string) => {
-    setLoading(true);
-    
+  const handleManufacturerChange = async (manufacturerId: string) => {
+    console.log(`[handleManufacturerChange] Called with manufacturerId: ${manufacturerId}`);
+    setIsLoading(true);
+    setModels([]);
+    setGenerations([]);
     try {
-      // Clear dependent data immediately
-      setModels([]);
-      setGenerations([]);
-      
-      if (!manufacturerId) {
-        const newFilters: APIFilters = {
-          manufacturer_id: undefined,
-          model_id: undefined,
-          generation_id: undefined,
-          grade_iaai: undefined,
-          color: filters.color,
-          fuel_type: filters.fuel_type,
-          transmission: filters.transmission,
-          odometer_from_km: filters.odometer_from_km,
-          odometer_to_km: filters.odometer_to_km,
-          from_year: filters.from_year,
-          to_year: filters.to_year,
-          buy_now_price_from: filters.buy_now_price_from,
-          buy_now_price_to: filters.buy_now_price_to,
-          seats_count: filters.seats_count,
-          search: filters.search,
-        };
-        setLoadedPages(1);
-        handleFiltersChange(newFilters);
-        return;
+      if (manufacturerId) {
+        console.log(`[handleManufacturerChange] Fetching models...`);
+        const modelData = await fetchModels(manufacturerId);
+        console.log(`[handleManufacturerChange] Received modelData:`, modelData);
+        console.log(`[handleManufacturerChange] Setting models to:`, modelData);
+        setModels(modelData);
       }
-      
-      // Fetch models and generations in parallel
-      const [modelData, generationData] = await Promise.all([
-        fetchModels(manufacturerId),
-        fetchAllGenerationsForManufacturer(manufacturerId)
-      ]);
-      
-      setModels(modelData);
-      setGenerations(generationData);
-
       const newFilters: APIFilters = {
         manufacturer_id: manufacturerId,
         model_id: undefined,
         generation_id: undefined,
-        grade_iaai: undefined, // Clear grade when manufacturer changes
+        grade_iaai: undefined,
         color: filters.color,
         fuel_type: filters.fuel_type,
         transmission: filters.transmission,
@@ -451,56 +425,82 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         seats_count: filters.seats_count,
         search: filters.search,
       };
-      
       setLoadedPages(1);
       handleFiltersChange(newFilters);
     } catch (error) {
-      console.error('Error in handleManufacturerChange:', error);
+      console.error('[handleManufacturerChange] Error:', error);
       setModels([]);
       setGenerations([]);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }, [filters, fetchModels, fetchAllGenerationsForManufacturer, handleFiltersChange]);
+  };
 
-  const handleModelChange = useCallback(async (modelId: string) => {
-    setLoading(true);
-    
+  // Add useEffect to log models change
+  useEffect(() => {
+    console.log(`[EncarCatalog] Models state updated:`, models);
+  }, [models]);
+
+  const handleModelChange = async (modelId: string) => {
+    setIsLoading(true);
+    setGenerations([]);
     try {
-      // Clear generations immediately
-      setGenerations([]);
-      
       if (!modelId) {
         const newFilters: APIFilters = {
           ...filters,
           model_id: undefined,
           generation_id: undefined,
-          grade_iaai: undefined, // Clear grade when model changes
+          grade_iaai: undefined,
         };
         setLoadedPages(1);
         handleFiltersChange(newFilters);
+        setIsLoading(false);
         return;
       }
-      
       const generationData = await fetchGenerations(modelId);
       setGenerations(generationData);
-
       const newFilters: APIFilters = {
         ...filters,
         model_id: modelId,
         generation_id: undefined,
-        grade_iaai: undefined, // Clear grade when model changes
+        grade_iaai: undefined,
       };
-      
       setLoadedPages(1);
       handleFiltersChange(newFilters);
     } catch (error) {
-      console.error('Error in handleModelChange:', error);
       setGenerations([]);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }, [filters, fetchGenerations, handleFiltersChange]);
+  };
+
+  const handleGenerationChange = async (generationId: string) => {
+    setIsLoading(true);
+    try {
+      if (!generationId) {
+        const newFilters: APIFilters = {
+          ...filters,
+          generation_id: undefined,
+          grade_iaai: undefined,
+        };
+        setLoadedPages(1);
+        handleFiltersChange(newFilters);
+        setIsLoading(false);
+        return;
+      }
+      const newFilters: APIFilters = {
+        ...filters,
+        generation_id: generationId,
+        grade_iaai: undefined,
+      };
+      setLoadedPages(1);
+      handleFiltersChange(newFilters);
+    } catch (error) {
+      // nothing
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Initialize filters from URL params on component mount
   useEffect(() => {
@@ -760,6 +760,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           onClearFilters={handleClearFilters}
           onManufacturerChange={handleManufacturerChange}
           onModelChange={handleModelChange}
+          onGenerationChange={handleGenerationChange}
           showAdvanced={showAdvancedFilters}
           onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
           onFetchGrades={fetchGrades}
