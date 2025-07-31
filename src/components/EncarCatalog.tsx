@@ -145,18 +145,15 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
    console.log(`📊 Filter Results: ${filteredCars.length} cars match (total loaded: ${cars.length})`);
 
-  // Remove client-side sorting since we're now sorting via API
-  // const carsForSorting = filteredCars.map((car) => ({
-  //   ...car,
-  //   status: String(car.status || ""),
-  //   lot_number: String(car.lot_number || ""),
-  //   cylinders: Number(car.cylinders || 0),
-  // }));
-  // 
-  // const sortedCars = useSortedCars(carsForSorting, sortBy);
-
-  // Use filtered cars directly since sorting is now handled by API
-  const sortedCars = filteredCars;
+  // Since API doesn't support sorting, use client-side sorting
+  const carsForSorting = filteredCars.map((car) => ({
+    ...car,
+    status: String(car.status || ""),
+    lot_number: String(car.lot_number || ""),
+    cylinders: Number(car.cylinders || 0),
+  }));
+  
+  const sortedCars = useSortedCars(carsForSorting, sortBy);
 
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -252,9 +249,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Clear previous data immediately to show loading state
     setCars([]);
     
-    // Ensure all filters including grade_iaai are passed to API with sorting
+    // Ensure all filters including grade_iaai are passed to API
     console.log('🔧 Sending ALL filters to API:', newFilters);
-    fetchCars(1, newFilters, true, sortBy);
+    fetchCars(1, newFilters, true);
 
     // Update URL with all non-empty filter values - properly encode grade filter
     const paramsToSet: any = {};
@@ -274,7 +271,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setLoadedPages(1);
     setModels([]);
     setGenerations([]);
-    fetchCars(1, {}, true, sortBy);
+    fetchCars(1, {}, true);
     setSearchParams({});
   };
 
@@ -287,7 +284,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   };
 
   const handleLoadMore = () => {
-    loadMore(sortBy);
+    loadMore();
     const newLoadedPages = loadedPages + 1;
     setLoadedPages(newLoadedPages);
 
@@ -603,8 +600,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             value={sortBy}
             onValueChange={(value: SortOption) => {
               setSortBy(value);
-              // Re-fetch data with new sort order
-              fetchCars(1, filters, true, value);
+              // No need to re-fetch since we're using client-side sorting
             }}
           >
             <SelectTrigger className="w-40 h-8 text-sm">
