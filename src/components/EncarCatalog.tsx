@@ -74,6 +74,29 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [sortBy, setSortBy] = useState<SortOption>("price_low");
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // Helper function to extract grades from title - moved before use
+  const extractGradesFromTitle = (title: string): string[] => {
+    const grades: string[] = [];
+    const patterns = [
+      /\b(\d{2,3}\s?(?:TDI|TFSI|FSI|TSI|CDI))\b/gi,
+      /\b(\d+\.?\d*\s?[TD])\b/gi,
+    ];
+    
+    patterns.forEach(pattern => {
+      const matches = title.match(pattern);
+      if (matches) {
+        matches.forEach(match => {
+          const cleaned = match.trim();
+          if (cleaned && !grades.includes(cleaned)) {
+            grades.push(cleaned);
+          }
+        });
+      }
+    });
+    
+    return grades;
+  };
+
   // Apply filtering with proper grade filtering as backup
   const filteredCars = cars.filter((car) => {
     // If grade filter is applied, filter by grade
@@ -113,29 +136,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   }));
   
   const sortedCars = useSortedCars(carsForSorting, sortBy);
-
-  // Helper function to extract grades from title
-  const extractGradesFromTitle = (title: string): string[] => {
-    const grades: string[] = [];
-    const patterns = [
-      /\b(\d{2,3}\s?(?:TDI|TFSI|FSI|TSI|CDI))\b/gi,
-      /\b(\d+\.?\d*\s?[TD])\b/gi,
-    ];
-    
-    patterns.forEach(pattern => {
-      const matches = title.match(pattern);
-      if (matches) {
-        matches.forEach(match => {
-          const cleaned = match.trim();
-          if (cleaned && !grades.includes(cleaned)) {
-            grades.push(cleaned);
-          }
-        });
-      }
-    });
-    
-    return grades;
-  };
 
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
