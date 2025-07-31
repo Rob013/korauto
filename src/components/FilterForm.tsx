@@ -211,6 +211,47 @@ const FilterForm = memo<FilterFormProps>(({
         </Button>
       </div>
 
+      {/* Search Bar for Plate Numbers, VIN, Lot Numbers */}
+      <div className="border border-primary/20 bg-primary/5 rounded-md p-3 space-y-2">
+        <Label className="text-xs font-medium text-primary">Kërko sipas Numrit të Targave, VIN, Lot Number</Label>
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              placeholder="Shtyp numrin e targave, VIN, ose lot number..."
+              className="pl-8 h-8 text-sm"
+            />
+          </div>
+          <Button 
+            onClick={handleSearch} 
+            size="sm" 
+            className="h-8 px-3 text-xs"
+            disabled={!searchTerm.trim()}
+          >
+            Kërko
+          </Button>
+          {filters.search && (
+            <Button 
+              variant="outline" 
+              onClick={handleClearSearch} 
+              size="sm" 
+              className="h-8 px-2 text-xs"
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+        {filters.search && (
+          <div className="text-xs text-muted-foreground">
+            Duke kërkuar për: <span className="font-medium text-foreground">"{filters.search}"</span>
+          </div>
+        )}
+      </div>
+
 
       {/* Basic Filters - Always 4 columns beside each other */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 sm:gap-2">
