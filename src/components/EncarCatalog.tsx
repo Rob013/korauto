@@ -549,7 +549,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               Car Catalog
             </h1>
             <p className="text-muted-foreground text-sm">
-              {sortedCars.length.toLocaleString()} cars {filters.grade_iaai ? `filtered by ${filters.grade_iaai}` : 'total'}
+              {totalCount.toLocaleString()} cars {filters.grade_iaai ? `filtered by ${filters.grade_iaai}` : 'total'} • Showing {sortedCars.length}
             </p>
           </div>
         </div>
