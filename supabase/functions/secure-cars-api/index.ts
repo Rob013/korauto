@@ -48,6 +48,11 @@ const handler = async (req: Request): Promise<Response> => {
     const { endpoint, filters = {}, carId, lotNumber } = await req.json();
     
     console.log('📋 Request params:', { endpoint, filters, carId, lotNumber });
+    
+    // Add specific logging for grade filter
+    if (filters.grade_iaai) {
+      console.log('🔍 Grade filter detected:', filters.grade_iaai);
+    }
 
     // Validate endpoint to prevent injection
     const allowedEndpoints = [
@@ -64,13 +69,22 @@ const handler = async (req: Request): Promise<Response> => {
     const isValidEndpoint = allowedEndpoints.some(allowed => 
       endpoint === allowed || 
       endpoint.startsWith('models/') && endpoint.endsWith('/cars') ||
+      endpoint.startsWith('models/') && endpoint.endsWith('/generations') ||
       endpoint.startsWith('generations/') && endpoint.endsWith('/cars') ||
       endpoint.startsWith('cars/')
     );
 
     if (!isValidEndpoint) {
       console.error('❌ Invalid endpoint:', endpoint);
-      throw new Error('Invalid endpoint');
+      console.error('❌ Allowed endpoints:', allowedEndpoints);
+      console.error('❌ Endpoint patterns:', [
+        'endpoint === allowed',
+        'endpoint.startsWith("models/") && endpoint.endsWith("/cars")',
+        'endpoint.startsWith("models/") && endpoint.endsWith("/generations")',
+        'endpoint.startsWith("generations/") && endpoint.endsWith("/cars")',
+        'endpoint.startsWith("cars/")'
+      ]);
+      throw new Error(`Invalid endpoint: ${endpoint}`);
     }
 
     // Build URL
@@ -91,8 +105,17 @@ const handler = async (req: Request): Promise<Response> => {
       // Add filters to params with validation
       Object.entries(filters).forEach(([key, value]) => {
         if (value && typeof value === 'string' && value.trim()) {
-          // Sanitize parameter values
-          const sanitizedValue = value.trim().replace(/[^\w\-_.@]/g, '');
+          let sanitizedValue = value.trim();
+          
+          // Special handling for grade_iaai to preserve spaces and special characters
+          if (key === 'grade_iaai') {
+            // Allow spaces, dots, and common grade characters
+            sanitizedValue = value.trim().replace(/[^\w\-_.@\s]/g, '');
+          } else {
+            // Sanitize other parameter values
+            sanitizedValue = value.trim().replace(/[^\w\-_.@]/g, '');
+          }
+          
           if (sanitizedValue) {
             params.append(key, sanitizedValue);
           }
@@ -103,6 +126,11 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log('🌐 Making API request to:', url);
+    
+    // Log the constructed URL parameters for debugging
+    if (filters.grade_iaai) {
+      console.log('🔍 URL parameters for grade filter:', params.toString());
+    }
 
     // Make the API request with rate limiting
     const response = await fetch(url, {
@@ -130,6 +158,9 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!response.ok) {
       console.error('❌ API error:', response.status, response.statusText);
+      console.error('❌ Request URL:', url);
+      console.error('❌ Endpoint:', endpoint);
+      console.error('❌ Filters:', filters);
       
       // If searching lot number in IAAI failed, try Copart
       if (lotNumber && endpoint === 'search-lot' && response.status === 404) {
@@ -155,7 +186,19 @@ const handler = async (req: Request): Promise<Response> => {
         }
       }
       
-      throw new Error(`API returned ${response.status}: ${response.statusText}`);
+      // Return a more detailed error response
+      return new Response(
+        JSON.stringify({ 
+          error: `API returned ${response.status}: ${response.statusText}`,
+          endpoint,
+          url,
+          filters
+        }), 
+        {
+          status: response.status,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        }
+      );
     }
 
     const data = await response.json();
