@@ -78,8 +78,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const extractGradesFromTitle = (title: string): string[] => {
     const grades: string[] = [];
     const patterns = [
-      /\b(\d{2,3}\s?(?:TDI|TFSI|FSI|TSI|CDI))\b/gi,
-      /\b(\d+\.?\d*\s?[TD])\b/gi,
+      /\b(\d+\.?\d*\s?(?:TDI|TFSI|FSI|TSI|CDI|T|D))\b/gi, // More inclusive pattern
+      /\b(\d+\.?\d*)\s*l?i?t?e?r?\s*(?:TDI|TFSI|FSI|TSI|CDI|T|D)\b/gi,
     ];
     
     patterns.forEach(pattern => {
@@ -101,26 +101,39 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const filteredCars = cars.filter((car) => {
     // If grade filter is applied, filter by grade
     if (filters.grade_iaai) {
+      const filterGrade = filters.grade_iaai.toLowerCase().trim();
       const carGrades: string[] = [];
       
       // Extract grades from lots
       if (car.lots && Array.isArray(car.lots)) {
         car.lots.forEach((lot: any) => {
-          if (lot.grade_iaai) carGrades.push(lot.grade_iaai.trim());
+          if (lot.grade_iaai) carGrades.push(lot.grade_iaai.trim().toLowerCase());
         });
       }
       
       // Extract grades from title
       if (car.title) {
         const titleGrades = extractGradesFromTitle(car.title);
-        carGrades.push(...titleGrades);
+        carGrades.push(...titleGrades.map(g => g.toLowerCase()));
       }
       
-      // Check if any car grade matches the filter
-      const hasMatchingGrade = carGrades.some(grade => 
-        grade.toLowerCase().includes(filters.grade_iaai!.toLowerCase()) ||
-        filters.grade_iaai!.toLowerCase().includes(grade.toLowerCase())
-      );
+      // More flexible matching for grades like "2.0 TDI"
+      const hasMatchingGrade = carGrades.some(grade => {
+        // Exact match
+        if (grade === filterGrade) return true;
+        
+        // Partial match - both directions
+        if (grade.includes(filterGrade) || filterGrade.includes(grade)) return true;
+        
+        // Remove spaces and try again
+        const gradeNoSpaces = grade.replace(/\s+/g, '');
+        const filterNoSpaces = filterGrade.replace(/\s+/g, '');
+        if (gradeNoSpaces === filterNoSpaces) return true;
+        
+        return false;
+      });
+      
+      console.log(`🔍 Car ${car.id}: grades=[${carGrades.join(', ')}], filter="${filterGrade}", match=${hasMatchingGrade}`);
       
       if (!hasMatchingGrade) return false;
     }
@@ -325,8 +338,17 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         if (key === "loadedPages") {
           urlLoadedPages = parseInt(value) || 1;
         } else if (value && key !== "loadedPages") {
-          // Fix URL encoding issues - replace + with spaces for grade filter
-          const decodedValue = key === 'grade_iaai' ? decodeURIComponent(value.replace(/\+/g, ' ')) : value;
+          // Fix double URL encoding issues
+          let decodedValue = value;
+          try {
+            // Handle double encoding by decoding twice if needed
+            decodedValue = decodeURIComponent(value);
+            if (decodedValue.includes('%')) {
+              decodedValue = decodeURIComponent(decodedValue);
+            }
+          } catch (e) {
+            decodedValue = value; // fallback to original if decoding fails
+          }
           urlFilters[key as keyof APIFilters] = decodedValue;
         }
       }
