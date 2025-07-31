@@ -78,9 +78,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const extractGradesFromTitle = (title: string): string[] => {
     const grades: string[] = [];
     const patterns = [
-      /\b(\d+\.?\d*\s?(?:TDI|TFSI|FSI|TSI|CDI|T|D|I))\b/gi, // Include I for petrol engines
-      /\b(\d+\.?\d*)\s*l?i?t?e?r?\s*(?:TDI|TFSI|FSI|TSI|CDI|T|D|I)\b/gi,
-      /\b(\d+\.?\d*[iI])\b/gi, // Specific pattern for engines like 520i, 320i
+      /\b(\d+\.?\d*\s?(?:TDI|TFSI|FSI|TSI|CDI|T|D|I|E|H))\b/gi, // Include all engine types
+      /\b(\d+\.?\d*)\s*l?i?t?e?r?\s*(?:TDI|TFSI|FSI|TSI|CDI|T|D|I|E|H)\b/gi,
+      /\b(\d+\.?\d*[iIdDeEhH])\b/gi, // Specific patterns for all engine types: 520i, 530d, 530e, etc.
+      /\b(\d+\.?\d*)\s*(?:hybrid|electric|diesel|petrol|gasoline)\b/gi, // Full word variants
     ];
     
     patterns.forEach(pattern => {
