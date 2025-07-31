@@ -113,10 +113,15 @@ const FilterForm = memo<FilterFormProps>(({
         generation_id: undefined
       });
     } else {
-      onFiltersChange({
-        ...filters,
-        [key]: actualValue
-      });
+      // For other filters, preserve existing values but update the changed one
+      const updatedFilters = { ...filters, [key]: actualValue };
+      
+      // If generation changes, clear grade filter
+      if (key === 'generation_id') {
+        updatedFilters.grade_iaai = undefined;
+      }
+      
+      onFiltersChange(updatedFilters);
     }
   }, [filters, onFiltersChange, onManufacturerChange, onModelChange]);
 

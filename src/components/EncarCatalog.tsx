@@ -247,7 +247,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setCars([]);
     
     // Ensure all filters including grade_iaai are passed to API
-    console.log('🔧 Sending filters to API:', newFilters);
+    console.log('🔧 Sending ALL filters to API:', newFilters);
     fetchCars(1, newFilters, true);
 
     // Update URL with all non-empty filter values - properly encode grade filter
@@ -296,13 +296,26 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setModels(modelData);
 
     const newFilters: APIFilters = {
-      ...filters,
       manufacturer_id: manufacturerId || undefined,
+      // Clear dependent filters when manufacturer changes
       model_id: undefined,
       generation_id: undefined,
+      grade_iaai: undefined,
+      // Keep independent filters
+      color: filters.color,
+      fuel_type: filters.fuel_type,
+      transmission: filters.transmission,
+      odometer_from_km: filters.odometer_from_km,
+      odometer_to_km: filters.odometer_to_km,
+      from_year: filters.from_year,
+      to_year: filters.to_year,
+      buy_now_price_from: filters.buy_now_price_from,
+      buy_now_price_to: filters.buy_now_price_to,
+      seats_count: filters.seats_count,
+      search: filters.search,
     };
     setGenerations([]);
-    setLoadedPages(1); // Reset pagination when manufacturer changes
+    setLoadedPages(1);
     handleFiltersChange(newFilters);
   };
 
@@ -314,8 +327,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       ...filters,
       model_id: modelId || undefined,
       generation_id: undefined,
+      grade_iaai: undefined, // Clear grade when model changes
     };
-    setLoadedPages(1); // Reset pagination when model changes
+    setLoadedPages(1);
     handleFiltersChange(newFilters);
   };
 
