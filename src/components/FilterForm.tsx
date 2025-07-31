@@ -126,7 +126,18 @@ const FilterForm = memo<FilterFormProps>(({
   }, [filters, onFiltersChange, onManufacturerChange, onModelChange]);
 
   const handleSearch = useCallback(() => {
-    updateFilter('search', searchTerm.trim());
+    const trimmedSearch = searchTerm.trim();
+    
+    // Check if search term looks like plate number digits (numeric, 3-8 characters)
+    if (/^\d{3,8}$/.test(trimmedSearch)) {
+      // Extract last 4 digits for plate number matching
+      const last4Digits = trimmedSearch.slice(-4);
+      // Search for cars with plate numbers ending in these digits
+      updateFilter('search', `*${last4Digits}`);
+    } else {
+      // Regular search for VIN, lot numbers, or other text
+      updateFilter('search', trimmedSearch);
+    }
   }, [updateFilter, searchTerm]);
 
   const handleClearSearch = useCallback(() => {
