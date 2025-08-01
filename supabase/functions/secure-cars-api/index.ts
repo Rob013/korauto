@@ -42,10 +42,19 @@ const handler = async (req: Request): Promise<Response> => {
     const apiKey = Deno.env.get('AUCTIONS_API_KEY');
     if (!apiKey) {
       console.error('❌ AUCTIONS_API_KEY not found in environment');
-      throw new Error('API key not configured');
+      return new Response(
+        JSON.stringify({ error: 'API key not configured' }),
+        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
     }
 
     const { endpoint, filters = {}, carId, lotNumber } = await req.json();
+    if (!endpoint) {
+      return new Response(
+        JSON.stringify({ error: 'Missing endpoint parameter' }),
+        { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
     
     console.log('📋 Request params:', { endpoint, filters, carId, lotNumber });
     
@@ -76,15 +85,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!isValidEndpoint) {
       console.error('❌ Invalid endpoint:', endpoint);
-      console.error('❌ Allowed endpoints:', allowedEndpoints);
-      console.error('❌ Endpoint patterns:', [
-        'endpoint === allowed',
-        'endpoint.startsWith("models/") && endpoint.endsWith("/cars")',
-        'endpoint.startsWith("models/") && endpoint.endsWith("/generations")',
-        'endpoint.startsWith("generations/") && endpoint.endsWith("/cars")',
-        'endpoint.startsWith("cars/")'
-      ]);
-      throw new Error(`Invalid endpoint: ${endpoint}`);
+      return new Response(
+        JSON.stringify({ error: `Invalid endpoint: ${endpoint}` }),
+        { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
     }
 
     // Build URL
@@ -158,44 +162,15 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!response.ok) {
       console.error('❌ API error:', response.status, response.statusText);
-      console.error('❌ Request URL:', url);
-      console.error('❌ Endpoint:', endpoint);
-      console.error('❌ Filters:', filters);
-      
-      // If searching lot number in IAAI failed, try Copart
-      if (lotNumber && endpoint === 'search-lot' && response.status === 404) {
-        console.log('⚠️ Lot not found in IAAI, trying Copart...');
-        const copartUrl = `${API_BASE_URL}/search-lot/${encodeURIComponent(lotNumber)}/copart`;
-        console.log('🌐 Making API request to Copart:', copartUrl);
-        
-        const copartResponse = await fetch(copartUrl, {
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'KORAUTO-WebApp/1.0',
-            'X-API-Key': apiKey
-          },
-          signal: AbortSignal.timeout(30000)
-        });
-        
-        if (copartResponse.ok) {
-          const copartData = await copartResponse.json();
-          console.log('✅ Found in Copart, data length:', JSON.stringify(copartData).length);
-          return new Response(JSON.stringify(copartData), {
-            headers: { 'Content-Type': 'application/json', ...corsHeaders }
-          });
-        }
-      }
-      
-      // Return a more detailed error response
       return new Response(
         JSON.stringify({ 
-          error: `API returned ${response.status}: ${response.statusText}`,
+          error: `Upstream API returned ${response.status}: ${response.statusText}`,
           endpoint,
           url,
           filters
         }), 
         {
-          status: response.status,
+          status: 502,
           headers: { 'Content-Type': 'application/json', ...corsHeaders }
         }
       );
@@ -213,7 +188,8 @@ const handler = async (req: Request): Promise<Response> => {
     
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Internal server error'
+        error: error.message || 'Internal server error',
+        stack: error.stack || null
       }), 
       {
         status: 500,

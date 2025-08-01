@@ -652,24 +652,29 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     loadInitialCounts();
   }, [manufacturers]);
 
-  // Calculate total pages when totalCount changes
+  // Calculate total pages when totalCount or filteredCars changes
   useEffect(() => {
-    if (totalCount > 0) {
-      const pages = Math.ceil(totalCount / 50); // 50 cars per page
-      setTotalPages(pages);
+    let effectiveTotal = totalCount;
+    let effectivePages = Math.ceil(totalCount / 50);
+    
+    if (filters.grade_iaai && filters.grade_iaai !== 'all' && filteredCars.length > 0) {
+      effectiveTotal = filteredCars.length;
+      effectivePages = Math.ceil(filteredCars.length / 50);
     }
-  }, [totalCount]);
+    
+    setTotalPages(effectivePages);
+  }, [totalCount, filteredCars, filters.grade_iaai]);
 
   // Fetch all cars for sorting when sortBy changes and we have multiple pages
   useEffect(() => {
-    if (totalPages > 1 && totalCount > 50) {
+    if (totalPages > 1 && totalCount > 50 && (!filters.grade_iaai || filters.grade_iaai === 'all')) {
       fetchAllCarsForSorting();
     } else {
-      // Reset global sorting if not needed
+      // Reset global sorting if not needed or if grade filter is active
       setIsSortingGlobal(false);
       setAllCarsForSorting([]);
     }
-  }, [sortBy, totalPages, totalCount]);
+  }, [sortBy, totalPages, totalCount, filters.grade_iaai]);
 
   // Effect to highlight and scroll to specific car by lot number
   useEffect(() => {
@@ -723,7 +728,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               Car Catalog
             </h1>
             <p className="text-muted-foreground text-sm">
-                              {totalCount.toLocaleString()} cars {filters.grade_iaai && filters.grade_iaai !== 'all' ? `filtered by ${filters.grade_iaai}` : 'total'} • Page {currentPage} of {totalPages} • Showing {carsForCurrentPage.length} cars
+              {totalCount.toLocaleString()} cars {filters.grade_iaai && filters.grade_iaai !== 'all' ? `filtered by ${filters.grade_iaai}` : 'total'} • Page {currentPage} of {totalPages} • Showing {carsForCurrentPage.length} cars
             </p>
           </div>
         </div>

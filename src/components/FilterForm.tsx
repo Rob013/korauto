@@ -1,4 +1,4 @@
-import React, { useState, memo, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, memo, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -107,6 +107,9 @@ const FilterForm = memo<FilterFormProps>(({
   const [isLoading, setIsLoading] = useState(false);
   const [modelLoading, setModelLoading] = useState(false);
   const [modelError, setModelError] = useState<string | null>(null);
+  const [gradeLoading, setGradeLoading] = useState(false);
+  const [isLoadingGrades, setIsLoadingGrades] = useState(false);
+  const latestGradeRequest = useRef(0);
 
   const updateFilter = useCallback((key: string, value: string) => {
     // Handle special "all" values by converting them to undefined
@@ -211,27 +214,56 @@ const FilterForm = memo<FilterFormProps>(({
       .filter((m) => m.cars_qty && m.cars_qty > 0);
   }, [manufacturers]);
 
+  const getFallbackGrades = (manufacturerId: string) => {
+    const fallbacks = {
+      '9': ['320d', '320i', '325d', '330d', '330i', '335d', '335i', 'M3', 'M5', 'X3', 'X5'], // BMW
+      '16': ['220d', '250', '300', '350', '400', '450', '500', 'AMG'], // Mercedes-Benz
+      '1': ['30 TDI', '35 TDI', '40 TDI', '45 TDI', '50 TDI', '55 TFSI', '30 TFSI', '35 TFSI', '40 TFSI', '45 TFSI', '30', '35', '40', '45', '50', '55', 'RS', 'S'], // Audi
+      '147': ['1.4 TSI', '1.6 TDI', '1.8 TSI', '2.0 TDI', '2.0 TSI', 'GTI', 'R'], // Volkswagen
+      '2': ['Civic', 'Accord', 'CR-V', 'HR-V'], // Honda
+      '3': ['Corolla', 'Camry', 'RAV4', 'Highlander'], // Toyota
+      '4': ['Altima', 'Maxima', 'Rogue', 'Murano'], // Nissan
+      '5': ['Focus', 'Fiesta', 'Mondeo', 'Kuga'], // Ford
+      '6': ['Cruze', 'Malibu', 'Equinox', 'Tahoe'], // Chevrolet
+    };
+    return (fallbacks[manufacturerId] || []).map(grade => ({ value: grade, label: grade }));
+  };
+
   // Fetch grades when manufacturer, model, or generation changes
   useEffect(() => {
-    const fetchGradesData = async () => {
-      if (onFetchGrades && filters.manufacturer_id) {
-        try {
-          const gradesData = await onFetchGrades(
-            filters.manufacturer_id,
-            filters.model_id,
-            filters.generation_id
-          );
-          setGrades(gradesData);
-        } catch (err) {
-          console.error("Error fetching grades:", err);
-          setGrades([]);
-        }
-      } else {
-        setGrades([]);
-      }
-    };
-
-    fetchGradesData();
+    let cancelled = false;
+    if (filters.manufacturer_id && onFetchGrades) {
+      // Set fallback immediately for instant response
+      const fallback = getFallbackGrades(filters.manufacturer_id);
+      setGrades(fallback);
+      setIsLoadingGrades(true);
+      
+      const requestId = Date.now();
+      latestGradeRequest.current = requestId;
+      
+      onFetchGrades(filters.manufacturer_id, filters.model_id, filters.generation_id)
+        .then(gradesData => {
+          // Only update if this is the latest request and we have better data
+          if (!cancelled && latestGradeRequest.current === requestId && Array.isArray(gradesData)) {
+            // If we got real data with more variety than fallback, use it
+            if (gradesData.length > fallback.length || 
+                (gradesData.length > 0 && gradesData.some(g => g.count && g.count > 0))) {
+              setGrades(gradesData);
+            }
+            // If gradesData is empty or worse than fallback, keep fallback
+          }
+          setIsLoadingGrades(false);
+        })
+        .catch((err) => {
+          console.error('Grade fetch error:', err);
+          setIsLoadingGrades(false);
+          // Keep fallback on error
+        });
+    } else {
+      setGrades([]);
+      setIsLoadingGrades(false);
+    }
+    return () => { cancelled = true; };
   }, [filters.manufacturer_id, filters.model_id, filters.generation_id, onFetchGrades]);
 
   useEffect(() => {
@@ -387,22 +419,27 @@ const FilterForm = memo<FilterFormProps>(({
           <Select 
             value={filters.grade_iaai || 'all'} 
             onValueChange={(value) => updateFilter('grade_iaai', value)}
-            disabled={!filters.manufacturer_id}
+            disabled={!filters.manufacturer_id || isLoading}
           >
             <SelectTrigger className="h-7 text-xs">
               <SelectValue placeholder={filters.manufacturer_id ? "Gradat" : "Marka së pari"} />
             </SelectTrigger>
             <SelectContent className="max-h-60 overflow-y-auto">
               <SelectItem value="all">Të gjitha Gradat</SelectItem>
-              {grades.map((grade) => (
-                <SelectItem key={grade.value} value={grade.value}>
-                  {grade.label} {grade.count ? `(${grade.count})` : ''}
+              {grades.length === 0 && isLoadingGrades ? (
+                <SelectItem value="loading" disabled>
+                  Duke ngarkuar gradat...
                 </SelectItem>
-              ))}
-              {grades.length === 0 && filters.manufacturer_id && (
+              ) : grades.length === 0 && filters.manufacturer_id ? (
                 <SelectItem value="no-grades" disabled>
                   Nuk u gjetën grada
                 </SelectItem>
+              ) : (
+                grades.map((grade) => (
+                  <SelectItem key={grade.value} value={grade.value}>
+                    {grade.label} {grade.count ? `(${grade.count})` : ''}
+                  </SelectItem>
+                ))
               )}
             </SelectContent>
           </Select>

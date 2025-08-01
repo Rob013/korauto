@@ -244,6 +244,7 @@ export const useSecureAuctionAPI = () => {
   const [hasMorePages, setHasMorePages] = useState(false);
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   const [filters, setFilters] = useState<APIFilters>({});
+  const [gradesCache, setGradesCache] = useState<{ [key: string]: { value: string; label: string; count?: number }[] }>({});
 
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
@@ -353,19 +354,17 @@ export const useSecureAuctionAPI = () => {
     setError(null);
 
     try {
-      // Pass filters to the API (excluding grade_iaai since we handle it client-side)
+      // Pass filters to the API - DO NOT send grade_iaai to server for filtering
       const apiFilters = {
         ...newFilters,
         page: page.toString(),
         per_page: newFilters.per_page || "50", // Show 50 cars per page
         simple_paginate: "0",
       };
-
-      // Remove grade filter from API call since we handle it client-side
-      if (apiFilters.grade_iaai) {
-        console.log(`🔍 Grade filter "${apiFilters.grade_iaai}" will be handled client-side`);
-        delete apiFilters.grade_iaai;
-      }
+      
+      // IMPORTANT: Remove grade_iaai from server request - we'll do client-side filtering
+      // This prevents backend errors and ensures we get all cars for client-side filtering
+      delete apiFilters.grade_iaai;
 
       // console.log(`🔄 Fetching cars - Page ${page} with filters:`, apiFilters);
       const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
@@ -466,32 +465,17 @@ export const useSecureAuctionAPI = () => {
 
   const fetchGenerations = async (modelId: string): Promise<Generation[]> => {
     try {
-      // Try direct endpoint first for reliability
-      try {
-        const response = await makeSecureAPICall(`models/${modelId}/generations`);
-        let generations = (response.data || []).filter((g: any) => g && g.id && g.name);
-        generations.sort((a: any, b: any) => a.name.localeCompare(b.name));
-        return generations;
-      } catch (directError) {
-        console.error(`[fetchGenerations] Direct endpoint failed:`, directError);
-      }
-      // If direct fails, try extracting from cars
-      try {
-        const carResponse = await makeSecureAPICall("cars", {
-          model_id: modelId,
-          per_page: "200",
-          simple_paginate: "0"
-        });
-        const cars = carResponse.data || [];
-        const generations = extractGenerationsFromCars(cars).filter(g => g && g.id && g.name);
-        generations.sort((a, b) => a.name.localeCompare(b.name));
-        return generations;
-      } catch (err) {
-        console.error("[fetchGenerations] Car-based approach failed:", err);
-      }
-      return [];
+      const carResponse = await makeSecureAPICall('cars', {
+        model_id: modelId,
+        per_page: '20',
+        simple_paginate: '0'
+      });
+      const cars = carResponse.data || [];
+      const generations = extractGenerationsFromCars(cars).filter(g => g && g.id && g.name);
+      generations.sort((a, b) => a.name.localeCompare(b.name));
+      return generations;
     } catch (err) {
-      console.error("[fetchGenerations] Error:", err);
+      console.error('[fetchGenerations] Error:', err);
       return [];
     }
   };
@@ -559,102 +543,107 @@ export const useSecureAuctionAPI = () => {
   };
 
   const fetchGrades = async (manufacturerId?: string, modelId?: string, generationId?: string): Promise<{ value: string; label: string; count?: number }[]> => {
+    const cacheKey = `${manufacturerId || ''}-${modelId || ''}-${generationId || ''}`;
+    
+    // Always return fallback instantly for manufacturer-only filtering for speed
+    if (!modelId && !generationId && manufacturerId) {
+      const fallback = getFallbackGrades(manufacturerId);
+      // Start async fetch to update cache but don't wait
+      setTimeout(() => {
+        if (!gradesCache[cacheKey]) {
+          _fetchGradesAsync(manufacturerId, modelId, generationId, cacheKey);
+        }
+      }, 0);
+      return fallback;
+    }
+    
+    // Use cache if available
+    if (gradesCache[cacheKey]) {
+      return gradesCache[cacheKey];
+    }
+
+    // For specific model/generation, fetch directly
+    return _fetchGradesAsync(manufacturerId, modelId, generationId, cacheKey);
+  };
+
+  const _fetchGradesAsync = async (manufacturerId?: string, modelId?: string, generationId?: string, cacheKey?: string): Promise<{ value: string; label: string; count?: number }[]> => {
     try {
-      // First, get the total count to understand the full dataset
-      const countFilters = {
-        manufacturer_id: manufacturerId,
-        model_id: modelId, 
-        generation_id: generationId,
-        per_page: '1' // Just get metadata
-      };
-
-      console.log('🔍 Getting total count for grade extraction:', countFilters);
-      const countData = await makeSecureAPICall('cars', countFilters);
-      const totalCount = countData.meta?.total || 0;
+      const key = cacheKey || `${manufacturerId || ''}-${modelId || ''}-${generationId || ''}`;
       
-      console.log(`🔍 Total cars available: ${totalCount}`);
-      
-      if (totalCount === 0) {
-        return getFallbackGrades(manufacturerId);
-      }
+      // Build filters - only include valid values
+      const filters: any = { per_page: '50' }; // Increased for better grade coverage
+      if (manufacturerId) filters.manufacturer_id = manufacturerId;
+      if (modelId) filters.model_id = modelId;
+      if (generationId) filters.generation_id = generationId;
 
-      // Fetch a larger sample to get more comprehensive grade coverage
-      // Use a larger per_page to get more accurate grade distribution
-      const sampleSize = Math.min(totalCount, 1000); // Get up to 1000 cars for better sampling
-      const filters = {
-        manufacturer_id: manufacturerId,
-        model_id: modelId, 
-        generation_id: generationId,
-        per_page: sampleSize.toString()
-      };
-
-      console.log('🔍 Fetching grades sample with filters:', filters);
+      console.log('🔍 Fetching grades with filters:', filters);
       const data = await makeSecureAPICall('cars', filters);
       
       const cars = data.data || [];
       console.log('🔍 Found', cars.length, 'cars for grade extraction');
       
       if (cars.length === 0) {
-        return getFallbackGrades(manufacturerId);
+        const fallback = getFallbackGrades(manufacturerId);
+        setGradesCache(prev => ({ ...prev, [key]: fallback }));
+        return fallback;
       }
       
       // Extract unique grades from the car data
       const gradesMap = new Map<string, number>();
       
       cars.forEach((car: any) => {
-        // Check lots array first - this is the primary source
+        // Primary source: lots array grade_iaai
         if (car.lots && Array.isArray(car.lots)) {
           car.lots.forEach((lot: any) => {
-            if (lot.grade_iaai && typeof lot.grade_iaai === 'string') {
+            if (lot.grade_iaai && typeof lot.grade_iaai === 'string' && lot.grade_iaai.trim()) {
               const cleanGrade = lot.grade_iaai.trim();
-              if (cleanGrade) {
-                gradesMap.set(cleanGrade, (gradesMap.get(cleanGrade) || 0) + 1);
-              }
+              gradesMap.set(cleanGrade, (gradesMap.get(cleanGrade) || 0) + 1);
             }
           });
         }
         
-        // Extract from title as backup - common pattern: "BMW 320d", "Audi A6 35 TDI", "Mercedes E220d"
+        // Secondary source: extract from title
         if (car.title && typeof car.title === 'string') {
           const titleGrades = extractGradesFromTitle(car.title);
           titleGrades.forEach(grade => {
-            // Only add if not already found in lots
-            if (!gradesMap.has(grade)) {
+            if (grade && !gradesMap.has(grade)) {
               gradesMap.set(grade, 1);
             }
           });
         }
         
-        // Also check engine field if available
-        if (car.engine && car.engine.name) {
+        // Tertiary source: engine field
+        if (car.engine && car.engine.name && typeof car.engine.name === 'string' && car.engine.name.trim()) {
           const engineGrade = car.engine.name.trim();
-          if (engineGrade && !gradesMap.has(engineGrade)) {
-            gradesMap.set(engineGrade, (gradesMap.get(engineGrade) || 0) + 1);
+          if (!gradesMap.has(engineGrade)) {
+            gradesMap.set(engineGrade, 1);
           }
         }
       });
 
-      // Convert to array and sort
+      // Filter out common non-grade values and convert to array
+      const invalidGrades = new Set(['unknown', 'n/a', 'none', '', 'null', 'undefined']);
       const grades = Array.from(gradesMap.entries())
+        .filter(([value]) => !invalidGrades.has(value.toLowerCase()) && value.length > 0)
         .map(([value, count]) => ({
           value,
           label: value,
           count
         }))
-        .sort((a, b) => a.value.localeCompare(b.value));
+        .sort((a, b) => b.count - a.count); // Sort by popularity first
 
-      console.log('📊 Extracted grades:', grades.length, 'unique grades:', grades.map(g => `${g.value}(${g.count})`));
+      console.log('📊 Extracted grades:', grades.length, 'unique grades:', grades.slice(0, 10).map(g => `${g.value}(${g.count})`));
       
-      // If still no grades found, return fallback based on manufacturer
-      if (grades.length === 0) {
-        return getFallbackGrades(manufacturerId);
-      }
-      
-      // Return grades with sample counts - these are real counts from the sample data
-      return grades;
+      // Always return something - fallback if no grades found
+      const result = grades.length > 0 ? grades : getFallbackGrades(manufacturerId);
+      setGradesCache(prev => ({ ...prev, [key]: result }));
+      return result;
     } catch (err) {
       console.error("❌ Error fetching grades:", err);
-      return getFallbackGrades(manufacturerId);
+      const fallback = getFallbackGrades(manufacturerId);
+      const key = cacheKey || `${manufacturerId || ''}-${modelId || ''}-${generationId || ''}`;
+      setGradesCache(prev => ({ ...prev, [key]: fallback }));
+      return fallback;
     }
   };
 
