@@ -13,6 +13,7 @@ import InspectionServices from "./pages/InspectionServices";
 import MyAccount from "./pages/MyAccount";
 import NotFound from "./pages/NotFound";
 import Contacts from "./pages/Contacts";
+import ThemeTest from "./pages/ThemeTest";
 import { AdminSyncDashboard } from "./components/AdminSyncDashboard";
 import { InstallPrompt } from "./components/InstallPrompt";
 
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/inspections" element={<InspectionServices />} />
           <Route path="/contacts" element={<Contacts />} />
+          <Route path="/theme-test" element={<ThemeTest />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
