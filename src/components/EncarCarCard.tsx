@@ -278,7 +278,12 @@ const EncarCarCard = ({
         <div className="flex items-center justify-between mb-3">
           <div className="text-lg font-bold text-primary">
             {price ? (
-              <>€{price.toLocaleString()}</>
+              <>
+                €{(price + 2300).toLocaleString()}
+                <span className="text-xs text-muted-foreground block">
+                  (€{price.toLocaleString()} + €2,300)
+                </span>
+              </>
             ) : (
               <span className="text-muted-foreground">Çmimi në kërkesë</span>
             )}

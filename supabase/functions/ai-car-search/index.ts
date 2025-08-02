@@ -68,113 +68,78 @@ function parseNaturalLanguageQuery(query: string): CarFilter {
   const filters: CarFilter = {};
   const lowQuery = query.toLowerCase();
 
-  // Extract brand/manufacturer - Map to your actual API manufacturer IDs
-  const brandMap: Record<string, string> = {
-    'audi': '1',
-    'bmw': '9', 
-    'mercedes': '16',
-    'volkswagen': '147',
-    'toyota': '3',
-    'honda': '2',
-    'ford': '5',
-    'opel': '41',
-    'skoda': '72',
-    'seat': '63',
-    'nissan': '4',
-    'mazda': '28',
-    'peugeot': '46',
-    'renault': '52',
-    'citroen': '14',
-    'fiat': '21',
-    'volvo': '149',
-    'mitsubishi': '35',
-    'subaru': '74',
-    'lexus': '27'
-  };
-
-  // Check for brand names in the query
-  for (const [brand, id] of Object.entries(brandMap)) {
+  // Extract brand/manufacturer
+  const brands = ['audi', 'bmw', 'mercedes', 'volkswagen', 'toyota', 'honda', 'ford', 'opel', 'skoda', 'seat'];
+  for (const brand of brands) {
     if (lowQuery.includes(brand)) {
-      filters.manufacturer_id = id;
+      // Map brand names to manufacturer IDs (you'll need to adjust these based on your API)
+      const brandMap: Record<string, string> = {
+        'audi': '9',
+        'bmw': '8',
+        'mercedes': '7',
+        'volkswagen': '6',
+        'toyota': '5',
+        'honda': '4',
+        'ford': '3',
+        'opel': '2',
+        'skoda': '1',
+        'seat': '10'
+      };
+      filters.manufacturer_id = brandMap[brand];
       break;
     }
   }
 
-  // Extract model (improved pattern matching)
-  const modelPatterns = [
-    /(?:audi\s+)?([a-z]\d+)/i,  // A4, A6, Q7, etc.
-    /(?:bmw\s+)?([a-z]?\d+\s*series?)/i, // 3 Series, X5, etc.
-    /(?:mercedes\s+)?([a-z]-class)/i, // C-Class, E-Class, etc.
-    /golf|polo|passat|tiguan/i, // VW models
-    /corolla|camry|prius|rav4/i, // Toyota models
-    /civic|accord|cr-v/i, // Honda models
-    /focus|fiesta|mondeo|kuga/i, // Ford models
-  ];
+  // Extract model
+  const modelMatch = lowQuery.match(/(?:audi\s+)?([a-z]\d+|[a-z]+\s*\d*)/i);
+  if (modelMatch && modelMatch[1]) {
+    filters.model = modelMatch[1].trim();
+  }
 
-  for (const pattern of modelPatterns) {
-    const match = lowQuery.match(pattern);
-    if (match) {
-      filters.model = match[1] || match[0];
-      break;
+  // Extract year
+  const yearMatch = lowQuery.match(/(?:year\s+)?(\d{4})/);
+  if (yearMatch) {
+    const year = parseInt(yearMatch[1]);
+    if (year >= 1990 && year <= new Date().getFullYear()) {
+      filters.year_from = year;
+      filters.year_to = year;
     }
   }
 
-  // Extract year with better patterns
-  const yearPatterns = [
-    /(?:year\s+)?(\d{4})/,
-    /(?:nga|from)\s+(\d{4})/,
-    /(\d{4})\s*(?:model|year)?/
-  ];
-
-  for (const pattern of yearPatterns) {
-    const match = lowQuery.match(pattern);
-    if (match) {
-      const year = parseInt(match[1]);
-      if (year >= 1990 && year <= new Date().getFullYear()) {
-        filters.year_from = year;
-        filters.year_to = year;
-      }
-      break;
-    }
+  // Extract year range
+  const yearRangeMatch = lowQuery.match(/(\d{4})\s*-\s*(\d{4})/);
+  if (yearRangeMatch) {
+    filters.year_from = parseInt(yearRangeMatch[1]);
+    filters.year_to = parseInt(yearRangeMatch[2]);
   }
 
   // Extract mileage preferences
-  if (lowQuery.includes('low mileage') || lowQuery.includes('pak kilometra') || lowQuery.includes('kilometrazh i ulët')) {
+  if (lowQuery.includes('low mileage') || lowQuery.includes('few kilometers')) {
     filters.mileage_to = 100000;
   }
-  if (lowQuery.includes('high mileage') || lowQuery.includes('shumë kilometra')) {
-    filters.mileage_from = 150000;
+  if (lowQuery.includes('high mileage')) {
+    filters.mileage_from = 200000;
   }
 
-  // Extract price preferences with euro detection
-  const priceMatch = lowQuery.match(/(?:under|below|nën)\s*[€$]?(\d+(?:,\d{3})*)/);
-  if (priceMatch) {
-    filters.price_to = parseInt(priceMatch[1].replace(',', ''));
-  }
-
-  const minPriceMatch = lowQuery.match(/(?:over|above|mbi)\s*[€$]?(\d+(?:,\d{3})*)/);
-  if (minPriceMatch) {
-    filters.price_from = parseInt(minPriceMatch[1].replace(',', ''));
-  }
-
-  if (lowQuery.includes('cheap') || lowQuery.includes('lirë') || lowQuery.includes('budget')) {
+  // Extract price preferences
+  if (lowQuery.includes('cheap') || lowQuery.includes('budget')) {
     filters.price_to = 15000;
   }
-  if (lowQuery.includes('expensive') || lowQuery.includes('luksoz') || lowQuery.includes('luxury')) {
+  if (lowQuery.includes('expensive') || lowQuery.includes('luxury')) {
     filters.price_from = 30000;
   }
 
   // Extract fuel type
   if (lowQuery.includes('diesel')) filters.fuel_type = 'diesel';
-  if (lowQuery.includes('petrol') || lowQuery.includes('gasoline') || lowQuery.includes('benzinë')) filters.fuel_type = 'petrol';
-  if (lowQuery.includes('electric') || lowQuery.includes('elektrik')) filters.fuel_type = 'electric';
-  if (lowQuery.includes('hybrid') || lowQuery.includes('hibrid')) filters.fuel_type = 'hybrid';
+  if (lowQuery.includes('petrol') || lowQuery.includes('gasoline')) filters.fuel_type = 'petrol';
+  if (lowQuery.includes('electric') || lowQuery.includes('ev')) filters.fuel_type = 'electric';
+  if (lowQuery.includes('hybrid')) filters.fuel_type = 'hybrid';
 
   // Extract accident history
-  if (lowQuery.includes('no accident') || lowQuery.includes('pa aksidente') || lowQuery.includes('accident free')) {
+  if (lowQuery.includes('no accident') || lowQuery.includes('accident free')) {
     filters.max_accidents = 0;
   }
-  if (lowQuery.includes('few accident') || lowQuery.includes('pak aksidente') || lowQuery.includes('minor accident')) {
+  if (lowQuery.includes('few accident') || lowQuery.includes('minor accident')) {
     filters.max_accidents = 1;
   }
 
@@ -183,19 +148,19 @@ function parseNaturalLanguageQuery(query: string): CarFilter {
 
 function generateSuggestions(query: string, userBehavior?: any[]): string[] {
   const suggestions = [
-    "BMW Serie 3 diesel nën €25,000",
-    "Audi A4 2018 me kilometrazh të ulët", 
-    "Mercedes C-Class pa aksidente",
-    "Volkswagen Golf automatik",
-    "Toyota hybrid lirë"
+    "Audi A4 2018 with low mileage",
+    "BMW 3 Series diesel under €25,000",
+    "Mercedes C-Class 2019 automatic",
+    "Volkswagen Golf 2020 petrol",
+    "Toyota Corolla hybrid accident-free"
   ];
 
   // Add behavior-based suggestions if user behavior is provided
   if (userBehavior && userBehavior.length > 0) {
     suggestions.unshift(
-      "Të ngjashme me kërkesat e fundit",
-      "Popullore në gamën tuaj të çmimeve",
-      "Të rekomanduara për ju"
+      "Similar to your recent searches",
+      "Popular in your price range",
+      "Recommended based on your preferences"
     );
   }
 
