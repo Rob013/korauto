@@ -447,10 +447,7 @@ const CarCard = ({
         {/* Pricing Information */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
           <span className="text-xl sm:text-2xl font-bold text-primary">
-            €{(price + 2300).toLocaleString()}
-            <span className="text-sm text-muted-foreground block">
-              (€{price.toLocaleString()} + €2,300)
-            </span>
+            €{price.toLocaleString()}
           </span>
           <span className="text-xs text-muted-foreground">
             Deri ne portin e Durresit

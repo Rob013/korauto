@@ -244,13 +244,13 @@ const EncarCarCard = ({
           {fuel && (
             <div className="flex items-center gap-1">
               <Fuel className="h-3 w-3" />
-              <span className="capitalize">{fuel}</span>
+              <span className="capitalize">{typeof fuel === 'object' ? (fuel as any)?.name || '' : fuel || ''}</span>
             </div>
           )}
           {transmission && (
             <div className="flex items-center gap-1">
               <Settings className="h-3 w-3" />
-              <span className="capitalize">{transmission}</span>
+              <span className="capitalize">{typeof transmission === 'object' ? (transmission as any)?.name || '' : transmission || ''}</span>
             </div>
           )}
           <div className="flex items-center gap-1">
@@ -278,12 +278,7 @@ const EncarCarCard = ({
         <div className="flex items-center justify-between mb-3">
           <div className="text-lg font-bold text-primary">
             {price ? (
-              <>
-                €{(price + 2300).toLocaleString()}
-                <span className="text-xs text-muted-foreground block">
-                  (€{price.toLocaleString()} + €2,300)
-                </span>
-              </>
+              <>€{price.toLocaleString()}</>
             ) : (
               <span className="text-muted-foreground">Çmimi në kërkesë</span>
             )}
