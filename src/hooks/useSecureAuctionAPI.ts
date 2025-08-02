@@ -1,5 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+
+// Simple debounce utility (avoiding lodash dependency)
+const debounce = <T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): ((...args: Parameters<T>) => void) => {
+  let timeout: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+};
 
 interface Lot {
   buy_now?: number;
@@ -246,6 +258,65 @@ export const useSecureAuctionAPI = () => {
   const [filters, setFilters] = useState<APIFilters>({});
   const [gradesCache, setGradesCache] = useState<{ [key: string]: { value: string; label: string; count?: number }[] }>({});
 
+  // Enhanced caching and performance optimizations
+  const [apiCache, setApiCache] = useState<{ [key: string]: { data: any; timestamp: number } }>({});
+  const [requestQueue, setRequestQueue] = useState<{ [key: string]: Promise<any> }>({});
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+
+  // Debounced API call utility
+  const debouncedApiCall = useCallback(
+    debounce(async (endpoint: string, filters: any, carId?: string) => {
+      return makeSecureAPICall(endpoint, filters, carId);
+    }, 300),
+    []
+  );
+
+  // Enhanced API call with caching and deduplication
+  const makeOptimizedAPICall = async (
+    endpoint: string,
+    filters: any = {},
+    carId?: string
+  ): Promise<any> => {
+    const cacheKey = `${endpoint}-${JSON.stringify(filters)}-${carId || ''}`;
+    const now = Date.now();
+    
+    // Check cache first
+    const cached = apiCache[cacheKey];
+    if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+      console.log(`📦 Cache hit for ${endpoint}`);
+      return cached.data;
+    }
+    
+    // Check if request is already in progress
+    if (requestQueue[cacheKey]) {
+      console.log(`⏳ Request deduplication for ${endpoint}`);
+      return requestQueue[cacheKey];
+    }
+    
+    // Make new request
+    const requestPromise = makeSecureAPICall(endpoint, filters, carId);
+    setRequestQueue(prev => ({ ...prev, [cacheKey]: requestPromise }));
+    
+    try {
+      const result = await requestPromise;
+      
+      // Cache successful results
+      setApiCache(prev => ({
+        ...prev,
+        [cacheKey]: { data: result, timestamp: now }
+      }));
+      
+      return result;
+    } finally {
+      // Remove from queue
+      setRequestQueue(prev => {
+        const newQueue = { ...prev };
+        delete newQueue[cacheKey];
+        return newQueue;
+      });
+    }
+  };
+
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -341,6 +412,7 @@ export const useSecureAuctionAPI = () => {
     }
   };
 
+  // Enhanced fetchCars with performance optimizations
   const fetchCars = async (
     page: number = 1,
     newFilters: APIFilters = filters,
@@ -366,8 +438,8 @@ export const useSecureAuctionAPI = () => {
       // This prevents backend errors and ensures we get all cars for client-side filtering
       delete apiFilters.grade_iaai;
 
-      // console.log(`🔄 Fetching cars - Page ${page} with filters:`, apiFilters);
-      const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
+      // Use optimized API call with caching
+      const data: APIResponse = await makeOptimizedAPICall("cars", apiFilters);
 
       // Set metadata from response
       setTotalCount(data.meta?.total || 0);
@@ -419,12 +491,13 @@ export const useSecureAuctionAPI = () => {
     }
   };
 
+  // Enhanced fetchManufacturers with caching
   const fetchManufacturers = async (): Promise<Manufacturer[]> => {
     try {
       console.log(`🔍 Fetching all manufacturers`);
       
-      // Get all manufacturers with high per_page limit
-      const data = await makeSecureAPICall("manufacturers/cars", {
+      // Use optimized API call with caching
+      const data = await makeOptimizedAPICall("manufacturers/cars", {
         per_page: "1000", // Get all manufacturers
         simple_paginate: "0"
       });
@@ -440,10 +513,11 @@ export const useSecureAuctionAPI = () => {
     }
   };
 
+  // Enhanced fetchModels with caching
   const fetchModels = async (manufacturerId: string): Promise<Model[]> => {
     try {
-      // Always use the direct endpoint for reliability
-      const fallbackData = await makeSecureAPICall(`models/${manufacturerId}/cars`, {
+      // Use optimized API call with caching
+      const fallbackData = await makeOptimizedAPICall(`models/${manufacturerId}/cars`, {
         per_page: "1000",
         simple_paginate: "0"
       });
@@ -463,9 +537,10 @@ export const useSecureAuctionAPI = () => {
     }
   };
 
+  // Enhanced fetchGenerations with caching
   const fetchGenerations = async (modelId: string): Promise<Generation[]> => {
     try {
-      const carResponse = await makeSecureAPICall('cars', {
+      const carResponse = await makeOptimizedAPICall('cars', {
         model_id: modelId,
         per_page: '20',
         simple_paginate: '0'
@@ -931,6 +1006,63 @@ export const useSecureAuctionAPI = () => {
       setLoading(false);
     }
   };
+
+  // Comprehensive API categories fetcher
+  const fetchAllCategories = async (): Promise<{
+    manufacturers: Manufacturer[];
+    bodyTypes: any[];
+    fuelTypes: any[];
+    transmissions: any[];
+    colors: any[];
+    locations: any[];
+    domains: any[];
+  }> => {
+    try {
+      console.log('🔄 Fetching all API categories...');
+      
+      const [
+        manufacturersData,
+        bodyTypesData,
+        fuelTypesData,
+        transmissionsData,
+        colorsData,
+        locationsData,
+        domainsData
+      ] = await Promise.all([
+        makeOptimizedAPICall("manufacturers/cars", { per_page: "1000" }),
+        makeOptimizedAPICall("body-types", { per_page: "1000" }).catch(() => ({ data: [] })),
+        makeOptimizedAPICall("fuel-types", { per_page: "1000" }).catch(() => ({ data: [] })),
+        makeOptimizedAPICall("transmissions", { per_page: "1000" }).catch(() => ({ data: [] })),
+        makeOptimizedAPICall("colors", { per_page: "1000" }).catch(() => ({ data: [] })),
+        makeOptimizedAPICall("locations", { per_page: "1000" }).catch(() => ({ data: [] })),
+        makeOptimizedAPICall("domains", { per_page: "1000" }).catch(() => ({ data: [] }))
+      ]);
+      
+      console.log('✅ All categories fetched successfully');
+      
+      return {
+        manufacturers: manufacturersData?.data || [],
+        bodyTypes: bodyTypesData?.data || [],
+        fuelTypes: fuelTypesData?.data || [],
+        transmissions: transmissionsData?.data || [],
+        colors: colorsData?.data || [],
+        locations: locationsData?.data || [],
+        domains: domainsData?.data || []
+      };
+    } catch (err) {
+      console.error('❌ Error fetching categories:', err);
+      return {
+        manufacturers: [],
+        bodyTypes: [],
+        fuelTypes: [],
+        transmissions: [],
+        colors: [],
+        locations: [],
+        domains: []
+      };
+    }
+  };
+
   return {
     cars,
     setCars, // ✅ Export setCars so it can be used in components
@@ -953,5 +1085,6 @@ export const useSecureAuctionAPI = () => {
     fetchKoreaDuplicates,
     fetchGrades,
     loadMore,
+    fetchAllCategories, // ✅ Export new function for categories
   };
 };

@@ -3,11 +3,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Filter, X, Loader2, Search, Sparkles, Lightbulb } from "lucide-react";
+import { Filter, X, Loader2, Search, Sparkles, Lightbulb, ChevronDown, ChevronUp, Settings2, Car, DollarSign, Calendar, Palette } from "lucide-react";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS } from '@/hooks/useAuctionAPI';
-import { Card } from "@/components/ui/card";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAICarSearch } from "@/hooks/useAICarSearch";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Separator } from "@/components/ui/separator";
 
 // Debounce utility function
 const debounce = <T extends (...args: any[]) => any>(
@@ -115,6 +117,14 @@ const FilterForm = memo<FilterFormProps>(({
   const [isLoadingGrades, setIsLoadingGrades] = useState(false);
   const latestGradeRequest = useRef(0);
 
+  // Enhanced UI state management
+  const [expandedSections, setExpandedSections] = useState({
+    vehicle: true,
+    specifications: false,
+    price: false,
+    condition: false
+  });
+
   // AI Search state
   const [aiSearchQuery, setAiSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -184,6 +194,12 @@ const FilterForm = memo<FilterFormProps>(({
     }
   };
 
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
 
   const currentYear = useMemo(() => new Date().getFullYear(), []);
   const years = useMemo(() => Array.from({ length: 25 }, (_, i) => currentYear - i), [currentYear]);
@@ -299,433 +315,525 @@ const FilterForm = memo<FilterFormProps>(({
     setShowSuggestions(false);
   };
 
+  // Count active filters
+  const activeFiltersCount = useMemo(() => {
+    return Object.values(filters).filter(value => value && value !== 'all' && value !== 'any').length;
+  }, [filters]);
+
   useEffect(() => {
     console.log(`[FilterForm] Rendering model dropdown. Models available: ${models.length}, disabled: ${!filters.manufacturer_id || isLoading}`);
   }, [models, filters.manufacturer_id, isLoading]);
 
   return (
-    <div className="bg-card border border-border rounded-lg p-3 space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-primary" />
-          <h3 className="text-sm sm:text-base font-semibold">Kërkim i mençur</h3>
-        </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={onClearFilters} 
-          disabled={isLoading}
-          className="text-xs px-2 py-1 h-7"
-        >
-          {isLoading ? (
-            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-          ) : (
-            <X className="h-3 w-3 mr-1" />
-          )}
-          Pastro
-        </Button>
-      </div>
-
-      {/* AI-Powered Search Section */}
-      <Card className="p-3 bg-gradient-to-r from-primary/5 to-secondary/5 border-primary/20">
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <Label className="text-sm font-medium">Kërkim me AI</Label>
-          </div>
-          
-          <div className="flex gap-2">
-            <Input
-              placeholder="p.sh. 'Audi A6 2015 me kilometrazh të ulët' ose 'BMW diesel nën €25,000'"
-              value={aiSearchQuery}
-              onChange={(e) => setAiSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleAISearch()}
-              className="h-9 text-sm"
-            />
-            <Button 
-              onClick={handleAISearch}
-              disabled={isSearching || !aiSearchQuery.trim()}
-              size="sm"
-              className="h-9 px-3"
-            >
-              {isSearching ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Search className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-
-          {/* AI Suggestions */}
-          {suggestions.length > 0 && showSuggestions && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Lightbulb className="h-3 w-3 text-secondary" />
-                <span className="text-xs font-medium text-muted-foreground">Sugjerime</span>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {suggestions.map((suggestion, index) => (
-                  <Badge
-                    key={index}
-                    variant="outline"
-                    className="cursor-pointer hover:bg-primary/10 text-xs"
-                    onClick={() => applySuggestion(suggestion)}
-                  >
-                    {suggestion}
-                  </Badge>
-                ))}
-              </div>
+    <div className="bg-card border border-border rounded-xl shadow-lg overflow-hidden">
+      {/* Enhanced Header with Active Filter Count */}
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Settings2 className="h-5 w-5 text-primary" />
             </div>
-          )}
-        </div>
-      </Card>
-
-
-
-
-      {/* Basic Filters - Always 4 columns beside each other */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 sm:gap-2">
-        <div className="space-y-1">
-          <Label htmlFor="manufacturer" className="text-xs font-medium truncate">Marka</Label>
-          <Select value={filters.manufacturer_id || 'all'} onValueChange={handleBrandChange} disabled={isLoading}>
-            <SelectTrigger className="h-7 text-xs">
-              <SelectValue placeholder={isLoading ? "Duke ngarkuar..." : "Markat"} />
-            </SelectTrigger>
-            <SelectContent className="max-h-60 overflow-y-auto">
-              <SelectItem value="all">Të gjitha Markat</SelectItem>
-               {sortedManufacturers.length > 0 ? (
-                 sortedManufacturers.map((manufacturer) => {
-                   const count = filterCounts?.manufacturers[manufacturer.id.toString()];
-                   return (
-                     <SelectItem 
-                       key={manufacturer.id} 
-                       value={manufacturer.id.toString()}
-                     >
-                       <div className="flex items-center gap-2">
-                         {manufacturer?.image && (
-                           <img
-                             src={manufacturer?.image}
-                             alt={manufacturer.name}
-                             className="w-5 h-5 object-contain"
-                           />
-                         )}
-                         <span>{manufacturer.name} ({manufacturer.cars_qty})</span>
-                       </div>
-                     </SelectItem>
-                   );
-                 })
-               ) : (
-                 <SelectItem value="loading" disabled>
-                   {isLoading ? "Duke ngarkuar..." : "Nuk u gjetën marka"}
-                 </SelectItem>
-               )}
-
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-1">
-          <Label htmlFor="model" className="text-xs font-medium truncate">Modeli</Label>
-          <Select 
-            value={filters.model_id || 'all'} 
-            onValueChange={(value) => updateFilter('model_id', value)}
-            disabled={!filters.manufacturer_id || isLoading}
+            <div>
+              <h3 className="text-lg font-semibold">Smart Filter System</h3>
+              <p className="text-sm text-muted-foreground">
+                {activeFiltersCount > 0 ? `${activeFiltersCount} filters active` : 'Find your perfect car'}
+              </p>
+            </div>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onClearFilters} 
+            disabled={isLoading || activeFiltersCount === 0}
+            className="text-xs"
           >
-            <SelectTrigger className="h-7 text-xs">
-              <SelectValue placeholder={isLoading ? "Duke ngarkuar..." : (filters.manufacturer_id ? "Modelet" : "Marka së pari")} />
-            </SelectTrigger>
-            <SelectContent className="max-h-60 overflow-y-auto">
-              <SelectItem value="all">Të gjithë Modelet</SelectItem>
-              {models && models.length > 0 ? (
-                models
-                  .filter((model) => model.cars_qty && model.cars_qty > 0)
-                  .map((model) => (
-                    <SelectItem 
-                      key={model.id} 
-                      value={model.id.toString()}
-                    >
-                      {model.name} ({model.cars_qty})
-                    </SelectItem>
-                  ))
-              ) : (
-                <SelectItem value="loading" disabled>
-                  {isLoading ? "Duke ngarkuar..." : (filters.manufacturer_id ? "Nuk u gjetën modele" : "Zgjidh markën së pari")}
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-1">
-          <Label htmlFor="generation" className="text-xs font-medium truncate">Gjeneratat</Label>
-          <Select
-            value={filters.generation_id || 'all'} 
-            onValueChange={(value) => {
-              console.log(`🎯 ULTRA PRECISE: Generation select changed to ${value}`);
-              if (onGenerationChange) {
-                onGenerationChange(value);
-              } else {
-                updateFilter('generation_id', value);
-              }
-            }}
-            disabled={!filters.manufacturer_id || !filters.model_id}
-          >
-            <SelectTrigger className="h-7 text-xs">
-              <SelectValue placeholder={filters.manufacturer_id ? "Gjeneratat" : "Marka së pari"} />
-            </SelectTrigger>
-            <SelectContent className="max-h-60 overflow-y-auto">
-              <SelectItem value="all">
-                {filters.model_id ? "Të gjitha Gjeneratat" : "Të gjitha Gjeneratat (të gjitha modelet)"}
-              </SelectItem>
-            {generations && generations.length > 0 ? (
-              generations.map((generation) => {
-                const displayCount = generation.cars_qty || 0;
-                
-                return (
-                  <SelectItem 
-                    key={generation.id} 
-                    value={generation.id.toString()}
-                  >
-                    {generation.name} 
-                    {generation.from_year && generation.to_year ? ` (${generation.from_year}–${generation.to_year})` : ''}
-                    {displayCount > 0 ? ` (${displayCount})` : ''}
-                  </SelectItem>
-                );
-              })
+            {isLoading ? (
+              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
             ) : (
-              <SelectItem value="no-generations" disabled>
-                {filters.model_id ? "Nuk u gjetën gjenerata" : "Zgjidh modelin së pari"}
-              </SelectItem>
+              <X className="h-3 w-3 mr-1" />
             )}
-            </SelectContent>
-          </Select>
+            Clear All
+          </Button>
         </div>
+      </CardHeader>
 
-        <div className="space-y-1">
-          <Label htmlFor="grade" className="text-xs font-medium truncate">Grada/Motorr</Label>
-          <Select 
-            value={filters.grade_iaai || 'all'} 
-            onValueChange={(value) => updateFilter('grade_iaai', value)}
-            disabled={!filters.manufacturer_id || isLoading}
-          >
-            <SelectTrigger className="h-7 text-xs">
-              <SelectValue placeholder={filters.manufacturer_id ? "Gradat" : "Marka së pari"} />
-            </SelectTrigger>
-            <SelectContent className="max-h-60 overflow-y-auto">
-              <SelectItem value="all">Të gjitha Gradat</SelectItem>
-              {grades.length === 0 && isLoadingGrades ? (
-                <SelectItem value="loading" disabled>
-                  Duke ngarkuar gradat...
-                </SelectItem>
-              ) : grades.length === 0 && filters.manufacturer_id ? (
-                <SelectItem value="no-grades" disabled>
-                  Nuk u gjetën grada
-                </SelectItem>
-              ) : (
-                grades.map((grade) => (
-                  <SelectItem key={grade.value} value={grade.value}>
-                    {grade.label} {grade.count ? `(${grade.count})` : ''}
-                  </SelectItem>
-                ))
+      <CardContent className="space-y-4">
+        {/* AI-Powered Search Section */}
+        <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5">
+          <CardContent className="p-4">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <Label className="text-sm font-medium">AI-Powered Search</Label>
+              </div>
+              
+              <div className="flex gap-2">
+                <Input
+                  placeholder="e.g. 'Audi A6 2015 low mileage' or 'BMW diesel under €25,000'"
+                  value={aiSearchQuery}
+                  onChange={(e) => setAiSearchQuery(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAISearch()}
+                  className="h-9 text-sm"
+                />
+                <Button 
+                  onClick={handleAISearch}
+                  disabled={isSearching || !aiSearchQuery.trim()}
+                  size="sm"
+                  className="h-9 px-3 bg-primary hover:bg-primary/90"
+                >
+                  {isSearching ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Search className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+
+              {/* AI Suggestions */}
+              {suggestions.length > 0 && showSuggestions && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Lightbulb className="h-3 w-3 text-secondary" />
+                    <span className="text-xs font-medium text-muted-foreground">Suggestions</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {suggestions.map((suggestion, index) => (
+                      <Badge
+                        key={index}
+                        variant="outline"
+                        className="cursor-pointer hover:bg-primary/10 text-xs"
+                        onClick={() => applySuggestion(suggestion)}
+                      >
+                        {suggestion}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
               )}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Toggle Advanced Filters */}
-      {onToggleAdvanced && (
-        <Button variant="ghost" size="sm" onClick={onToggleAdvanced} className="w-full sm:w-auto text-xs h-7">
-          {showAdvanced ? 'Fshih' : 'Shfaq'} Filtrat e Avancuara
-        </Button>
-      )}
-
-      {/* Advanced Filters */}
-      {showAdvanced && (
-        <div className="border-t pt-3 space-y-3">
-          <div className="space-y-3">{/* Changed advanced filters to vertical too */}
-            <div className="space-y-1">
-              <Label htmlFor="color" className="text-xs font-medium">Ngjyra</Label>
-              <Select value={filters.color || 'all'} onValueChange={(value) => updateFilter('color', value)}>
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue placeholder="Të gjitha Ngjyrat" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Të gjitha Ngjyrat</SelectItem>
-                  {Object.entries(COLOR_OPTIONS).map(([name, id]) => {
-                    return (
-                      <SelectItem 
-                        key={id} 
-                        value={id.toString()}
-                      >
-                        {name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
             </div>
+          </CardContent>
+        </Card>
 
-            <div className="space-y-1">
-              <Label htmlFor="fuel_type" className="text-xs font-medium">Lloji i Karburantit</Label>
-              <Select value={filters.fuel_type || 'all'} onValueChange={(value) => updateFilter('fuel_type', value)}>
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue placeholder="Të gjithë Llojet" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Të gjithë Llojet</SelectItem>
-                  {Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => {
-                    return (
-                      <SelectItem 
-                        key={id} 
-                        value={id.toString()}
-                      >
-                        {name.charAt(0).toUpperCase() + name.slice(1)}
+        {/* Vehicle Selection Section */}
+        <Collapsible 
+          open={expandedSections.vehicle} 
+          onOpenChange={() => toggleSection('vehicle')}
+        >
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" className="w-full justify-between p-2 h-auto">
+              <div className="flex items-center gap-2">
+                <Car className="h-4 w-4 text-primary" />
+                <span className="font-medium">Vehicle Selection</span>
+              </div>
+              {expandedSections.vehicle ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-3 pt-2">
+            {/* Primary Vehicle Filters - 2x2 Grid for better hierarchy */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="manufacturer" className="text-sm font-medium flex items-center gap-2">
+                  <span>Brand</span>
+                  {filters.manufacturer_id && (
+                    <Badge variant="secondary" className="text-xs">Selected</Badge>
+                  )}
+                </Label>
+                <Select value={filters.manufacturer_id || 'all'} onValueChange={handleBrandChange} disabled={isLoading}>
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder={isLoading ? "Loading..." : "Select Brand"} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60 overflow-y-auto">
+                    <SelectItem value="all">All Brands</SelectItem>
+                     {sortedManufacturers.length > 0 ? (
+                       sortedManufacturers.map((manufacturer) => {
+                         const count = filterCounts?.manufacturers[manufacturer.id.toString()];
+                         return (
+                           <SelectItem 
+                             key={manufacturer.id} 
+                             value={manufacturer.id.toString()}
+                           >
+                             <div className="flex items-center gap-2">
+                               {manufacturer?.image && (
+                                 <img
+                                   src={manufacturer?.image}
+                                   alt={manufacturer.name}
+                                   className="w-5 h-5 object-contain"
+                                 />
+                               )}
+                               <span>{manufacturer.name} ({manufacturer.cars_qty})</span>
+                             </div>
+                           </SelectItem>
+                         );
+                       })
+                     ) : (
+                       <SelectItem value="loading" disabled>
+                         {isLoading ? "Loading..." : "No brands found"}
+                       </SelectItem>
+                     )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="model" className="text-sm font-medium flex items-center gap-2">
+                  <span>Model</span>
+                  {filters.model_id && (
+                    <Badge variant="secondary" className="text-xs">Selected</Badge>
+                  )}
+                </Label>
+                <Select 
+                  value={filters.model_id || 'all'} 
+                  onValueChange={(value) => updateFilter('model_id', value)}
+                  disabled={!filters.manufacturer_id || isLoading}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder={isLoading ? "Loading..." : (filters.manufacturer_id ? "Select Model" : "Select Brand First")} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60 overflow-y-auto">
+                    <SelectItem value="all">All Models</SelectItem>
+                    {models && models.length > 0 ? (
+                      models
+                        .filter((model) => model.cars_qty && model.cars_qty > 0)
+                        .map((model) => (
+                          <SelectItem 
+                            key={model.id} 
+                            value={model.id.toString()}
+                          >
+                            {model.name} ({model.cars_qty})
+                          </SelectItem>
+                        ))
+                    ) : (
+                      <SelectItem value="loading" disabled>
+                        {isLoading ? "Loading..." : (filters.manufacturer_id ? "No models found" : "Select brand first")}
                       </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="transmission" className="text-xs font-medium">Transmisioni</Label>
-              <Select value={filters.transmission || 'all'} onValueChange={(value) => updateFilter('transmission', value)}>
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue placeholder="Të gjithë" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Të gjithë</SelectItem>
-                  {Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => {
-                    return (
-                      <SelectItem 
-                        key={id} 
-                        value={id.toString()}
-                      >
-                        {name.charAt(0).toUpperCase() + name.slice(1)}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-3">{/* Continue vertical layout for remaining filters */}
-            <div className="space-y-1">
-              <Label htmlFor="from_year" className="text-xs font-medium">Nga Viti</Label>
-              <Select value={filters.from_year || 'any'} onValueChange={(value) => updateFilter('from_year', value)}>
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue placeholder="Çdo vit" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="any">Çdo vit</SelectItem>
-                  {years.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
+              <div className="space-y-2">
+                <Label htmlFor="generation" className="text-sm font-medium flex items-center gap-2">
+                  <span>Generation</span>
+                  {filters.generation_id && (
+                    <Badge variant="secondary" className="text-xs">Selected</Badge>
+                  )}
+                </Label>
+                <Select
+                  value={filters.generation_id || 'all'} 
+                  onValueChange={(value) => {
+                    if (onGenerationChange) {
+                      onGenerationChange(value);
+                    } else {
+                      updateFilter('generation_id', value);
+                    }
+                  }}
+                  disabled={!filters.manufacturer_id || !filters.model_id}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder={filters.manufacturer_id ? "Select Generation" : "Select Brand First"} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60 overflow-y-auto">
+                    <SelectItem value="all">
+                      {filters.model_id ? "All Generations" : "All Generations (all models)"}
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="to_year" className="text-xs font-medium">Deri në Vitin</Label>
-              <Select value={filters.to_year || 'any'} onValueChange={(value) => updateFilter('to_year', value)}>
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue placeholder="Çdo vit" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="any">Çdo vit</SelectItem>
-                  {years.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
+                  {generations && generations.length > 0 ? (
+                    generations.map((generation) => {
+                      const displayCount = generation.cars_qty || 0;
+                      
+                      return (
+                        <SelectItem 
+                          key={generation.id} 
+                          value={generation.id.toString()}
+                        >
+                          {generation.name} 
+                          {generation.from_year && generation.to_year ? ` (${generation.from_year}–${generation.to_year})` : ''}
+                          {displayCount > 0 ? ` (${displayCount})` : ''}
+                        </SelectItem>
+                      );
+                    })
+                  ) : (
+                    <SelectItem value="no-generations" disabled>
+                      {filters.model_id ? "No generations found" : "Select model first"}
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                  )}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="seats" className="text-xs font-medium">Numri i Vendeve</Label>
-              <Select value={filters.seats_count || 'all'} onValueChange={(value) => updateFilter('seats_count', value)}>
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue placeholder="Të gjitha" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Të gjitha</SelectItem>
-                  <SelectItem value="2">2 Vende</SelectItem>
-                  <SelectItem value="4">4 Vende</SelectItem>
-                  <SelectItem value="5">5 Vende</SelectItem>
-                  <SelectItem value="7">7 Vende</SelectItem>
-                  <SelectItem value="8">8 Vende</SelectItem>
-                  <SelectItem value="9">9+ Vende</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="max_accidents" className="text-xs font-medium">Aksidente (Maksimale)</Label>
-              <Select value={maxAccidents} onValueChange={(value) => {
-                setMaxAccidents(value);
-                updateFilter('max_accidents', value);
-              }}>
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue placeholder="Të gjitha" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Të gjitha</SelectItem>
-                  <SelectItem value="0">Pa aksidente</SelectItem>
-                  <SelectItem value="1">Maksimale 1 aksident</SelectItem>
-                  <SelectItem value="2">Maksimale 2 aksidente</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-4">{/* Make price and mileage vertical too */}
-            <div className="space-y-2">
-              <Label className="text-xs font-medium">Intervali i Çmimit (Blerje direkte)</Label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Minimum"
-                  type="number"
-                  className="h-8 text-sm"
-                  value={filters.buy_now_price_from || ''}
-                  onChange={(e) => updateFilter('buy_now_price_from', e.target.value)}
-                />
-                <Input
-                  placeholder="Maksimum"
-                  type="number"
-                  className="h-8 text-sm"
-                  value={filters.buy_now_price_to || ''}
-                  onChange={(e) => updateFilter('buy_now_price_to', e.target.value)}
-                />
+              <div className="space-y-2">
+                <Label htmlFor="grade" className="text-sm font-medium flex items-center gap-2">
+                  <span>Grade/Engine</span>
+                  {filters.grade_iaai && (
+                    <Badge variant="secondary" className="text-xs">Selected</Badge>
+                  )}
+                </Label>
+                <Select 
+                  value={filters.grade_iaai || 'all'} 
+                  onValueChange={(value) => updateFilter('grade_iaai', value)}
+                  disabled={!filters.manufacturer_id || isLoading}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder={filters.manufacturer_id ? "Select Grade" : "Select Brand First"} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60 overflow-y-auto">
+                    <SelectItem value="all">All Grades</SelectItem>
+                    {grades.length === 0 && isLoadingGrades ? (
+                      <SelectItem value="loading" disabled>
+                        Loading grades...
+                      </SelectItem>
+                    ) : grades.length === 0 && filters.manufacturer_id ? (
+                      <SelectItem value="no-grades" disabled>
+                        No grades found
+                      </SelectItem>
+                    ) : (
+                      grades.map((grade) => (
+                        <SelectItem key={grade.value} value={grade.value}>
+                          {grade.label} {grade.count ? `(${grade.count})` : ''}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
+          </CollapsibleContent>
+        </Collapsible>
 
-            <div className="space-y-2">
-              <Label className="text-xs font-medium">Intervali i Kilometrazhit (km)</Label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Minimum"
-                  type="number"
-                  className="h-8 text-sm"
-                  value={filters.odometer_from_km || ''}
-                  onChange={(e) => updateFilter('odometer_from_km', e.target.value)}
-                />
-                <Input
-                  placeholder="Maksimum"
-                  type="number"
-                  className="h-8 text-sm"
-                  value={filters.odometer_to_km || ''}
-                  onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
-                />
+        <Separator />
+
+        {/* Advanced Filters - Organized in Collapsible Sections */}
+        <div className="space-y-3">
+          {/* Specifications Section */}
+          <Collapsible 
+            open={expandedSections.specifications} 
+            onOpenChange={() => toggleSection('specifications')}
+          >
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full justify-between p-2 h-auto">
+                <div className="flex items-center gap-2">
+                  <Settings2 className="h-4 w-4 text-primary" />
+                  <span className="font-medium">Specifications</span>
+                </div>
+                {expandedSections.specifications ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-3 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="color" className="text-sm font-medium">Color</Label>
+                  <Select value={filters.color || 'all'} onValueChange={(value) => updateFilter('color', value)}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="All Colors" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Colors</SelectItem>
+                      {Object.entries(COLOR_OPTIONS).map(([name, id]) => {
+                        return (
+                          <SelectItem 
+                            key={id} 
+                            value={id.toString()}
+                          >
+                            {name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="fuel_type" className="text-sm font-medium">Fuel Type</Label>
+                  <Select value={filters.fuel_type || 'all'} onValueChange={(value) => updateFilter('fuel_type', value)}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="All Types" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      {Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => {
+                        return (
+                          <SelectItem 
+                            key={id} 
+                            value={id.toString()}
+                          >
+                            {name.charAt(0).toUpperCase() + name.slice(1)}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="transmission" className="text-sm font-medium">Transmission</Label>
+                  <Select value={filters.transmission || 'all'} onValueChange={(value) => updateFilter('transmission', value)}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="All Types" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      {Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => {
+                        return (
+                          <SelectItem 
+                            key={id} 
+                            value={id.toString()}
+                          >
+                            {name.charAt(0).toUpperCase() + name.slice(1)}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="seats" className="text-sm font-medium">Seats</Label>
+                  <Select value={filters.seats_count || 'all'} onValueChange={(value) => updateFilter('seats_count', value)}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="All" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="2">2 Seats</SelectItem>
+                      <SelectItem value="4">4 Seats</SelectItem>
+                      <SelectItem value="5">5 Seats</SelectItem>
+                      <SelectItem value="7">7 Seats</SelectItem>
+                      <SelectItem value="8">8 Seats</SelectItem>
+                      <SelectItem value="9">9+ Seats</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="from_year" className="text-sm font-medium">From Year</Label>
+                  <Select value={filters.from_year || 'any'} onValueChange={(value) => updateFilter('from_year', value)}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Any year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="any">Any year</SelectItem>
+                      {years.map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="to_year" className="text-sm font-medium">To Year</Label>
+                  <Select value={filters.to_year || 'any'} onValueChange={(value) => updateFilter('to_year', value)}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Any year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="any">Any year</SelectItem>
+                      {years.map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
-          </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Price Section */}
+          <Collapsible 
+            open={expandedSections.price} 
+            onOpenChange={() => toggleSection('price')}
+          >
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full justify-between p-2 h-auto">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-primary" />
+                  <span className="font-medium">Price & Mileage</span>
+                </div>
+                {expandedSections.price ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Price Range (Buy Now)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Min"
+                      type="number"
+                      className="h-10"
+                      value={filters.buy_now_price_from || ''}
+                      onChange={(e) => updateFilter('buy_now_price_from', e.target.value)}
+                    />
+                    <Input
+                      placeholder="Max"
+                      type="number"
+                      className="h-10"
+                      value={filters.buy_now_price_to || ''}
+                      onChange={(e) => updateFilter('buy_now_price_to', e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Mileage Range (km)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Min"
+                      type="number"
+                      className="h-10"
+                      value={filters.odometer_from_km || ''}
+                      onChange={(e) => updateFilter('odometer_from_km', e.target.value)}
+                    />
+                    <Input
+                      placeholder="Max"
+                      type="number"
+                      className="h-10"
+                      value={filters.odometer_to_km || ''}
+                      onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Condition Section */}
+          <Collapsible 
+            open={expandedSections.condition} 
+            onOpenChange={() => toggleSection('condition')}
+          >
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full justify-between p-2 h-auto">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">Condition</span>
+                </div>
+                {expandedSections.condition ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-3 pt-2">
+              <div className="space-y-2">
+                <Label htmlFor="max_accidents" className="text-sm font-medium">Maximum Accidents</Label>
+                <Select value={maxAccidents} onValueChange={(value) => {
+                  setMaxAccidents(value);
+                  updateFilter('max_accidents', value);
+                }}>
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="0">No accidents</SelectItem>
+                    <SelectItem value="1">Maximum 1 accident</SelectItem>
+                    <SelectItem value="2">Maximum 2 accidents</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
-      )}
+      </CardContent>
     </div>
   );
 });
