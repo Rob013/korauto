@@ -20,6 +20,7 @@ import {
 import CarCard from "@/components/CarCard";
 import { useSecureAuctionAPI } from "@/hooks/useSecureAuctionAPI";
 import FilterForm from "@/components/FilterForm";
+import AISuggestions from "@/components/AISuggestions";
 import { useSearchParams } from "react-router-dom";
 import {
   useSortedCars,
@@ -771,10 +772,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           onFetchGrades={fetchGrades}
         />
         
-
-        
-
-
+        {/* AI Suggestions Section */}
+        {!loading && cars.length > 0 && (
+          <AISuggestions 
+            cars={cars}
+            onApplyFilter={handleFiltersChange}
+          />
+        )}
 
         {/* Sort Control - positioned under filters, right side */}
         <div className="flex justify-end">

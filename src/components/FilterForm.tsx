@@ -3,8 +3,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Filter, X, Loader2, Search } from "lucide-react";
+import { Filter, X, Loader2, Search, Sparkles, Lightbulb } from "lucide-react";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS } from '@/hooks/useAuctionAPI';
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useAICarSearch } from "@/hooks/useAICarSearch";
 
 // Debounce utility function
 const debounce = <T extends (...args: any[]) => any>(
@@ -71,6 +74,7 @@ interface FilterFormProps {
     buy_now_price_to?: string;
     seats_count?: string;
     search?: string;
+    max_accidents?: string;
   };
   manufacturers: Manufacturer[];
   models?: Model[];
@@ -110,6 +114,12 @@ const FilterForm = memo<FilterFormProps>(({
   const [gradeLoading, setGradeLoading] = useState(false);
   const [isLoadingGrades, setIsLoadingGrades] = useState(false);
   const latestGradeRequest = useRef(0);
+
+  // AI Search state
+  const [aiSearchQuery, setAiSearchQuery] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [maxAccidents, setMaxAccidents] = useState<string>('all');
+  const { searchWithAI, isSearching, suggestions, clearSuggestions } = useAICarSearch();
 
   const updateFilter = useCallback((key: string, value: string) => {
     // Handle special "all" values by converting them to undefined
@@ -266,6 +276,29 @@ const FilterForm = memo<FilterFormProps>(({
     return () => { cancelled = true; };
   }, [filters.manufacturer_id, filters.model_id, filters.generation_id, onFetchGrades]);
 
+  // AI Search handlers
+  const handleAISearch = async () => {
+    if (!aiSearchQuery.trim()) return;
+    
+    const result = await searchWithAI(aiSearchQuery);
+    if (result) {
+      // Apply AI-generated filters
+      const aiFilters = { ...filters, ...result.filters };
+      onFiltersChange(aiFilters);
+      setShowSuggestions(true);
+    }
+  };
+
+  const applySuggestion = async (suggestion: string) => {
+    setAiSearchQuery(suggestion);
+    const result = await searchWithAI(suggestion);
+    if (result) {
+      const aiFilters = { ...filters, ...result.filters };
+      onFiltersChange(aiFilters);
+    }
+    setShowSuggestions(false);
+  };
+
   useEffect(() => {
     console.log(`[FilterForm] Rendering model dropdown. Models available: ${models.length}, disabled: ${!filters.manufacturer_id || isLoading}`);
   }, [models, filters.manufacturer_id, isLoading]);
@@ -275,7 +308,7 @@ const FilterForm = memo<FilterFormProps>(({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-primary" />
-          <h3 className="text-sm sm:text-base font-semibold">Filtrat</h3>
+          <h3 className="text-sm sm:text-base font-semibold">Kërkim i mençur</h3>
         </div>
         <Button 
           variant="outline" 
@@ -292,6 +325,60 @@ const FilterForm = memo<FilterFormProps>(({
           Pastro
         </Button>
       </div>
+
+      {/* AI-Powered Search Section */}
+      <Card className="p-3 bg-gradient-to-r from-primary/5 to-secondary/5 border-primary/20">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <Label className="text-sm font-medium">Kërkim me AI</Label>
+          </div>
+          
+          <div className="flex gap-2">
+            <Input
+              placeholder="p.sh. 'Audi A6 2015 me kilometrazh të ulët' ose 'BMW diesel nën €25,000'"
+              value={aiSearchQuery}
+              onChange={(e) => setAiSearchQuery(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleAISearch()}
+              className="h-9 text-sm"
+            />
+            <Button 
+              onClick={handleAISearch}
+              disabled={isSearching || !aiSearchQuery.trim()}
+              size="sm"
+              className="h-9 px-3"
+            >
+              {isSearching ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Search className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+
+          {/* AI Suggestions */}
+          {suggestions.length > 0 && showSuggestions && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Lightbulb className="h-3 w-3 text-secondary" />
+                <span className="text-xs font-medium text-muted-foreground">Sugjerime</span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {suggestions.map((suggestion, index) => (
+                  <Badge
+                    key={index}
+                    variant="outline"
+                    className="cursor-pointer hover:bg-primary/10 text-xs"
+                    onClick={() => applySuggestion(suggestion)}
+                  >
+                    {suggestion}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </Card>
 
 
 
@@ -573,6 +660,24 @@ const FilterForm = memo<FilterFormProps>(({
                   <SelectItem value="7">7 Vende</SelectItem>
                   <SelectItem value="8">8 Vende</SelectItem>
                   <SelectItem value="9">9+ Vende</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="max_accidents" className="text-xs font-medium">Aksidente (Maksimale)</Label>
+              <Select value={maxAccidents} onValueChange={(value) => {
+                setMaxAccidents(value);
+                updateFilter('max_accidents', value);
+              }}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder="Të gjitha" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Të gjitha</SelectItem>
+                  <SelectItem value="0">Pa aksidente</SelectItem>
+                  <SelectItem value="1">Maksimale 1 aksident</SelectItem>
+                  <SelectItem value="2">Maksimale 2 aksidente</SelectItem>
                 </SelectContent>
               </Select>
             </div>
