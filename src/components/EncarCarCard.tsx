@@ -223,7 +223,7 @@ const EncarCarCard = ({
         {/* Car Title */}
         <div className="mb-3">
           <h3 className="font-semibold text-gray-900 text-base leading-tight">
-            {year} {make} {model}
+            {year} {typeof make === 'object' ? (make as any)?.name || '' : make || ''} {typeof model === 'object' ? (model as any)?.name || '' : model || ''}
           </h3>
           {location && (
             <div className="flex items-center text-xs text-gray-500 mt-1">
