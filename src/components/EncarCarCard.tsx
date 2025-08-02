@@ -244,13 +244,13 @@ const EncarCarCard = ({
           {fuel && (
             <div className="flex items-center gap-1">
               <Fuel className="h-3 w-3" />
-              <span className="capitalize">{typeof fuel === 'object' ? (fuel as any)?.name || '' : fuel || ''}</span>
+              <span className="capitalize">{fuel}</span>
             </div>
           )}
           {transmission && (
             <div className="flex items-center gap-1">
               <Settings className="h-3 w-3" />
-              <span className="capitalize">{typeof transmission === 'object' ? (transmission as any)?.name || '' : transmission || ''}</span>
+              <span className="capitalize">{transmission}</span>
             </div>
           )}
           <div className="flex items-center gap-1">
