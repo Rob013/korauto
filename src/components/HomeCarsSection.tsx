@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowUpDown } from "lucide-react";
-import FilterForm from "@/components/FilterForm";
+import EncarStyleFilter from "@/components/EncarStyleFilter";
 
 interface APIFilters {
   manufacturer_id?: string;
@@ -352,7 +352,7 @@ const HomeCarsSection = memo(() => {
         {/* Filter Form */}
         {showFilters && (
           <div className="mb-6 sm:mb-8">
-            <FilterForm
+            <EncarStyleFilter
               filters={filters}
               manufacturers={manufacturers}
               models={models}
@@ -372,6 +372,7 @@ const HomeCarsSection = memo(() => {
                 }
               }}
               onFetchGrades={fetchGrades}
+              isHomepage={true}
             />
           </div>
         )}

@@ -16,10 +16,11 @@ import {
   List,
   ArrowLeft,
   ArrowUpDown,
+  Car,
 } from "lucide-react";
 import CarCard from "@/components/CarCard";
 import { useSecureAuctionAPI } from "@/hooks/useSecureAuctionAPI";
-import FilterForm from "@/components/FilterForm";
+import EncarStyleFilter from "@/components/EncarStyleFilter";
 import AISuggestions from "@/components/AISuggestions";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -677,6 +678,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
   }, [sortBy, totalPages, totalCount, filters.grade_iaai]);
 
+  // Don't show cars until brand, model, and generation are selected
+  const shouldShowCars = filters.manufacturer_id && filters.model_id && filters.generation_id;
+
   // Effect to highlight and scroll to specific car by lot number
   useEffect(() => {
     if (highlightCarId && cars.length > 0) {
@@ -755,7 +759,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
       {/* Filter Form with Sort - More compact */}
       <div className="mb-4 space-y-3">
-        <FilterForm
+        <EncarStyleFilter
           filters={filters}
           manufacturers={manufacturers}
           models={models}
@@ -823,8 +827,21 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         </div>
       ) : null}
 
+      {/* No Selection State */}
+      {!shouldShowCars && !loading && !isRestoringState && (
+        <div className="text-center py-16">
+          <div className="max-w-md mx-auto">
+            <Car className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Zgjidhni markën, modelin dhe gjeneratën</h3>
+            <p className="text-muted-foreground mb-6">
+              Për të parë makinat, ju duhet të zgjidhni së paku markën, modelin dhe gjeneratën e makinës.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* No Results State */}
-      {!loading && !isRestoringState && cars.length === 0 && (
+      {shouldShowCars && !loading && !isRestoringState && cars.length === 0 && (
         <div className="text-center py-12">
           <p className="text-muted-foreground">
             No cars found matching your filters.
@@ -839,8 +856,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         </div>
       )}
 
-      {/* Cars Grid/List - More compact grid */}
-      {cars.length > 0 && (
+      {/* Cars Grid/List - Only show if brand, model, and generation are selected */}
+      {shouldShowCars && cars.length > 0 && (
         <>
           <div
             ref={containerRef}
