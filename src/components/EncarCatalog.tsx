@@ -678,8 +678,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
   }, [sortBy, totalPages, totalCount, filters.grade_iaai]);
 
-  // Don't show cars until brand, model, and generation are selected
-  const shouldShowCars = filters.manufacturer_id && filters.model_id && filters.generation_id;
+  // Don't show cars until brand and model are selected
+  const shouldShowCars = filters.manufacturer_id && filters.model_id;
 
   // Effect to highlight and scroll to specific car by lot number
   useEffect(() => {
@@ -825,9 +825,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         <div className="text-center py-16">
           <div className="max-w-md mx-auto">
             <Car className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Zgjidhni markën, modelin dhe gjeneratën</h3>
+            <h3 className="text-lg font-semibold mb-2">Zgjidhni markën dhe modelin</h3>
             <p className="text-muted-foreground mb-6">
-              Për të parë makinat, ju duhet të zgjidhni së paku markën, modelin dhe gjeneratën e makinës.
+              Për të parë makinat, ju duhet të zgjidhni së paku markën dhe modelin e makinës.
             </p>
           </div>
         </div>
@@ -849,7 +849,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         </div>
       )}
 
-      {/* Cars Grid/List - Only show if brand, model, and generation are selected */}
+      {/* Cars Grid/List - Only show if brand and model are selected */}
       {shouldShowCars && cars.length > 0 && (
         <>
           <div
