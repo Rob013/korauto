@@ -757,49 +757,75 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         </div>
       </div>
 
-      {/* Filter Form with Sort - More compact */}
-      <div className="mb-4 space-y-3">
-        <EncarStyleFilter
-          filters={filters}
-          manufacturers={manufacturers}
-          models={models}
-          generations={generations}
-          filterCounts={filterCounts}
-          loadingCounts={loadingCounts}
-          onFiltersChange={handleFiltersChange}
-          onClearFilters={handleClearFilters}
-          onManufacturerChange={handleManufacturerChange}
-          onModelChange={handleModelChange}
-          onGenerationChange={handleGenerationChange}
-          showAdvanced={showAdvancedFilters}
-          onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
-          onFetchGrades={fetchGrades}
-        />
-        
-
-        {/* Sort Control - positioned under filters, right side */}
-        <div className="flex justify-end">
-          <Select
-            value={sortBy}
-            onValueChange={(value: SortOption) => {
-              setSortBy(value);
-              // No need to re-fetch since we're using client-side sorting
-            }}
-          >
-            <SelectTrigger className="w-40 h-8 text-sm">
-              <ArrowUpDown className="h-3 w-3 mr-2" />
-              <SelectValue placeholder="Rreshtoni sipas..." />
-            </SelectTrigger>
-            <SelectContent>
-              {getSortOptions().map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      {/* Main Content Layout - Vertical Left Filter */}
+      <div className="flex gap-6">
+        {/* Left Sidebar Filter */}
+        <div className="hidden lg:block w-80 flex-shrink-0">
+          <div className="sticky top-4">
+            <EncarStyleFilter
+              filters={filters}
+              manufacturers={manufacturers}
+              models={models}
+              generations={generations}
+              filterCounts={filterCounts}
+              loadingCounts={loadingCounts}
+              onFiltersChange={handleFiltersChange}
+              onClearFilters={handleClearFilters}
+              onManufacturerChange={handleManufacturerChange}
+              onModelChange={handleModelChange}
+              onGenerationChange={handleGenerationChange}
+              showAdvanced={showAdvancedFilters}
+              onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              onFetchGrades={fetchGrades}
+            />
+          </div>
         </div>
-      </div>
+
+        {/* Mobile Filter - Above content on smaller screens */}
+        <div className="lg:hidden w-full mb-4">
+          <EncarStyleFilter
+            filters={filters}
+            manufacturers={manufacturers}
+            models={models}
+            generations={generations}
+            filterCounts={filterCounts}
+            loadingCounts={loadingCounts}
+            onFiltersChange={handleFiltersChange}
+            onClearFilters={handleClearFilters}
+            onManufacturerChange={handleManufacturerChange}
+            onModelChange={handleModelChange}
+            onGenerationChange={handleGenerationChange}
+            showAdvanced={showAdvancedFilters}
+            onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            onFetchGrades={fetchGrades}
+            compact={true}
+          />
+        </div>
+
+        {/* Right Content Area */}
+        <div className="flex-1 min-w-0">
+          {/* Sort Control - positioned at top right of content */}
+          <div className="flex justify-end mb-4">
+            <Select
+              value={sortBy}
+              onValueChange={(value: SortOption) => {
+                setSortBy(value);
+                // No need to re-fetch since we're using client-side sorting
+              }}
+            >
+              <SelectTrigger className="w-40 h-8 text-sm">
+                <ArrowUpDown className="h-3 w-3 mr-2" />
+                <SelectValue placeholder="Rreshtoni sipas..." />
+              </SelectTrigger>
+              <SelectContent>
+                {getSortOptions().map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
       {/* Error State */}
       {error && (
@@ -820,22 +846,22 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         </div>
       ) : null}
 
-      {/* No Selection State - Encar Style */}
+      {/* No Selection State */}
       {!shouldShowCars && !loading && !isRestoringState && (
-        <div className="text-center py-20 px-4 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
+        <div className="text-center py-20 px-4 bg-muted/30 rounded-lg border-2 border-dashed border-border">
           <div className="max-w-lg mx-auto">
-            <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Car className="h-10 w-10 text-red-500" />
+            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Car className="h-10 w-10 text-primary" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">브랜드, 모델, 세대를 선택해주세요</h3>
-            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-              더 정확한 검색 결과를 위해 제조사, 모델, 세대를 선택한 후<br />
-              차량을 확인하실 수 있습니다.
+            <h3 className="text-xl font-bold text-foreground mb-3">Zgjidhni markën, modelin dhe gjeneratën</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              Për të parë makinat, ju duhet të zgjidhni së paku markën,<br />
+              modelin dhe gjeneratën e makinës që dëshironi.
             </p>
             <div className="mt-8 flex justify-center gap-2">
-              <div className="w-3 h-3 bg-red-200 rounded-full"></div>
-              <div className="w-3 h-3 bg-red-300 rounded-full"></div>
-              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+              <div className="w-3 h-3 bg-primary/20 rounded-full"></div>
+              <div className="w-3 h-3 bg-primary/40 rounded-full"></div>
+              <div className="w-3 h-3 bg-primary rounded-full"></div>
             </div>
           </div>
         </div>
@@ -995,6 +1021,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           )}
         </>
       )}
+        </div>
+      </div>
     </div>
   );
 };
