@@ -360,4 +360,215 @@ All colors MUST be HSL.
       @apply grid-cols-5;
     }
   }
+
+  /* Adaptive Select Component Styles */
+  .adaptive-select-container {
+    @apply w-full;
+  }
+
+  /* Native select optimizations for all devices */
+  .adaptive-select-native select {
+    background-color: hsl(var(--background));
+    border-color: hsl(var(--border));
+    color: hsl(var(--foreground));
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .adaptive-select-native select:focus {
+    outline: none;
+    border-color: hsl(var(--ring));
+    box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+  }
+
+  .adaptive-select-native select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: hsl(var(--muted));
+  }
+
+  /* iOS specific optimizations */
+  @supports (-webkit-touch-callout: none) {
+    .adaptive-select-ios select {
+      @apply text-base; /* Prevent zoom on focus in iOS */
+      min-height: 48px; /* iOS recommended touch target size */
+      -webkit-appearance: none;
+      border-radius: 8px;
+      padding: 12px 40px 12px 12px;
+    }
+  }
+
+  /* iPad specific optimizations */
+  .adaptive-select-ipad select {
+    @apply text-base;
+    min-height: 44px; /* iPadOS recommended touch target size */
+    border-radius: 8px;
+    padding: 10px 40px 10px 12px;
+  }
+
+  /* Touch device optimizations */
+  .adaptive-select-touch select {
+    @apply text-base;
+    min-height: 44px; /* Recommended touch target size */
+    border-radius: 6px;
+    padding: 10px 40px 10px 12px;
+  }
+
+  /* Desktop optimizations */
+  .adaptive-select-desktop select {
+    @apply text-sm;
+    min-height: 40px;
+    border-radius: 6px;
+    padding: 8px 32px 8px 12px;
+  }
+
+  /* Custom select trigger styling */
+  .adaptive-select-trigger {
+    @apply transition-all duration-200;
+    background-color: hsl(var(--background));
+    border-color: hsl(var(--border));
+  }
+
+  .adaptive-select-trigger:hover {
+    border-color: hsl(var(--ring));
+  }
+
+  .adaptive-select-trigger:focus {
+    border-color: hsl(var(--ring));
+    box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+  }
+
+  /* Custom select content styling */
+  .adaptive-select-content {
+    background-color: hsl(var(--background));
+    border-color: hsl(var(--border));
+    box-shadow: 0 4px 20px -4px hsl(0 0% 0% / 0.1);
+  }
+
+  .adaptive-select-item {
+    @apply transition-colors duration-150;
+  }
+
+  .adaptive-select-item:hover {
+    background-color: hsl(var(--accent));
+  }
+
+  .adaptive-select-item[data-highlighted] {
+    background-color: hsl(var(--accent));
+  }
+
+  /* Device-specific responsive breakpoints */
+  
+  /* Mobile phones (portrait) */
+  @media (max-width: 480px) {
+    .adaptive-select-container {
+      @apply space-y-2;
+    }
+    
+    .adaptive-select-native select {
+      @apply text-base h-12;
+      min-height: 48px;
+    }
+    
+    .adaptive-select-trigger {
+      @apply h-12 text-base;
+      min-height: 48px;
+    }
+    
+    .adaptive-select-item {
+      @apply py-4 text-base;
+      min-height: 48px;
+    }
+  }
+
+  /* Mobile phones (landscape) and small tablets */
+  @media (min-width: 481px) and (max-width: 768px) {
+    .adaptive-select-container {
+      @apply space-y-2;
+    }
+    
+    .adaptive-select-native select {
+      @apply text-base h-11;
+      min-height: 44px;
+    }
+    
+    .adaptive-select-trigger {
+      @apply h-11 text-base;
+      min-height: 44px;
+    }
+    
+    .adaptive-select-item {
+      @apply py-3 text-base;
+      min-height: 44px;
+    }
+  }
+
+  /* Tablets and small desktops */
+  @media (min-width: 769px) and (max-width: 1024px) {
+    .adaptive-select-native select {
+      @apply text-sm h-10;
+      min-height: 40px;
+    }
+    
+    .adaptive-select-trigger {
+      @apply h-10 text-sm;
+    }
+    
+    .adaptive-select-item {
+      @apply py-2 text-sm;
+    }
+  }
+
+  /* Desktop and larger screens */
+  @media (min-width: 1025px) {
+    .adaptive-select-native select {
+      @apply text-sm h-9;
+      min-height: 36px;
+    }
+    
+    .adaptive-select-trigger {
+      @apply h-9 text-sm;
+    }
+    
+    .adaptive-select-item {
+      @apply py-2 text-sm;
+    }
+  }
+
+  /* High DPI displays */
+  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .adaptive-select-native select {
+      border-width: 0.5px;
+    }
+  }
+
+  /* Landscape orientation optimizations */
+  @media (orientation: landscape) and (max-height: 500px) {
+    .adaptive-select-content {
+      max-height: 200px;
+    }
+  }
+
+  /* Print styles */
+  @media print {
+    .adaptive-select-container {
+      display: none;
+    }
+  }
+
+  /* Dark mode specific styles */
+  .dark .adaptive-select-native select {
+    background-color: hsl(var(--background));
+    border-color: hsl(var(--border));
+    color: hsl(var(--foreground));
+  }
+
+  .dark .adaptive-select-trigger {
+    background-color: hsl(var(--background));
+    border-color: hsl(var(--border));
+  }
+
+  .dark .adaptive-select-content {
+    background-color: hsl(var(--background));
+    border-color: hsl(var(--border));
+  }
 }
