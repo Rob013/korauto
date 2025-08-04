@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { enhanceManufacturerWithLogo, createFallbackManufacturers } from "@/utils/manufacturerLogos";
 
 interface Lot {
   buy_now?: number;
@@ -184,6 +185,8 @@ interface Manufacturer {
   id: number;
   name: string;
   car_count?: number;
+  cars_qty?: number;
+  image?: string;
 }
 
 interface Model {
@@ -452,20 +455,34 @@ export const useSecureAuctionAPI = () => {
     try {
       console.log(`🔍 Fetching all manufacturers`);
       
-      // Get all manufacturers with high per_page limit
+      // Try to get manufacturers from API first
       const data = await makeSecureAPICall("manufacturers/cars", {
         per_page: "1000", // Get all manufacturers
         simple_paginate: "0"
       });
       
-      const manufacturers = data.data || [];
-      console.log(`✅ Found ${manufacturers.length} manufacturers:`, 
-        manufacturers.map(m => `${m.name} (${m.car_count || 0} cars)`));
+      let manufacturers = data.data || [];
+      
+      // If we got manufacturers from API, enhance them with logos
+      if (manufacturers.length > 0) {
+        console.log(`✅ Found ${manufacturers.length} manufacturers from API`);
+        manufacturers = manufacturers.map(enhanceManufacturerWithLogo);
+      } else {
+        // No manufacturers from API, use fallback data
+        console.log(`⚠️ No manufacturers from API, using fallback data`);
+        manufacturers = createFallbackManufacturers();
+      }
+      
+      console.log(`🏷️ Enhanced manufacturers with logos:`, 
+        manufacturers.slice(0, 5).map(m => `${m.name} (${m.cars_qty || 0} cars) - Logo: ${m.image ? 'Yes' : 'No'}`));
       
       return manufacturers;
     } catch (err) {
       console.error("❌ Error fetching manufacturers:", err);
-      return [];
+      console.log(`🔄 Using fallback manufacturer data with logos`);
+      
+      // Return fallback data with logos when API fails
+      return createFallbackManufacturers();
     }
   };
 
