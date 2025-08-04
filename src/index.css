@@ -277,28 +277,74 @@ All colors MUST be HSL.
     }
   }
 
-  /* Adaptive Select Mobile Optimization for max-width: 768px */
-  @media (max-width: 768px) {
+  /* Enhanced Adaptive Select Optimizations for All Devices */
+  
+  /* Base responsive optimizations */
+  .adaptive-select-trigger {
+    min-height: 44px; /* iOS and Android friendly touch target */
+    transition: all 0.2s ease;
+  }
+
+  /* Mobile optimization for touch devices */
+  @media (max-width: 768px), (pointer: coarse) {
     .adaptive-select-trigger {
-      height: 44px; /* iOS-friendly touch target */
+      height: 48px; /* Larger touch target for mobile */
       font-size: 16px; /* Prevent zoom on iOS */
+      padding: 12px 16px;
     }
     
     .adaptive-select-content {
-      max-height: 50vh; /* Limit height on mobile */
+      max-height: 60vh; /* Limit height on mobile */
+      margin-top: 4px;
     }
     
     .adaptive-select-item {
-      padding: 12px 16px; /* Larger touch targets */
-      min-height: 44px;
+      padding: 16px 20px; /* Larger touch targets */
+      min-height: 48px;
+      font-size: 16px;
     }
   }
 
-  /* iPhone specific optimizations */
+  /* iPad specific optimizations */
+  @media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait),
+         (min-width: 1024px) and (max-width: 1366px) and (orientation: landscape) {
+    .adaptive-select-trigger {
+      height: 44px;
+      font-size: 16px;
+    }
+  }
+
+  /* iOS Safari specific optimizations */
   @supports (-webkit-touch-callout: none) {
     .adaptive-select select {
       font-size: 16px !important; /* Prevent zoom */
       border-radius: 8px; /* iOS-style corners */
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    
+    /* Fix for iOS select styling */
+    .adaptive-select select:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px hsl(var(--ring));
+    }
+  }
+
+  /* macOS Safari optimizations */
+  @media (hover: hover) and (pointer: fine) {
+    .adaptive-select-trigger:hover {
+      background-color: hsl(var(--accent));
+    }
+    
+    .adaptive-select-item:hover {
+      background-color: hsl(var(--accent));
+    }
+  }
+
+  /* High DPI display optimizations */
+  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .adaptive-select-trigger {
+      border-width: 0.5px;
     }
   }
 }
