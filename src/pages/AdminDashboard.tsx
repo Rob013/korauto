@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   RefreshCw,
   Mail,
@@ -31,8 +32,25 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import AuthLogin from "@/components/AuthLogin";
 import { CarsSyncButton } from "@/components/CarsSyncButton";
-import { AdminSyncDashboard } from "@/components/AdminSyncDashboard";
 import { AnalyticsDemo } from "@/components/AnalyticsDemo";
+
+// Lazy load heavy admin components
+const AdminSyncDashboard = lazy(() => 
+  import("@/components/AdminSyncDashboard").then(module => ({ 
+    default: module.AdminSyncDashboard 
+  }))
+);
+
+const AdminSyncSkeleton = () => (
+  <div className="space-y-4">
+    <Skeleton className="h-8 w-64" />
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {[...Array(6)].map((_, i) => (
+        <Skeleton key={i} className="h-32 w-full" />
+      ))}
+    </div>
+  </div>
+);
 
 interface InspectionRequest {
   id: string;
@@ -1495,7 +1513,9 @@ const AdminDashboard = () => {
           <TabsContent value="system" className="space-y-3 sm:space-y-4">
             <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-3">
               <div className="lg:col-span-2">
-                <AdminSyncDashboard />
+                <Suspense fallback={<AdminSyncSkeleton />}>
+                  <AdminSyncDashboard />
+                </Suspense>
               </div>
               <div>
                 <AnalyticsDemo />

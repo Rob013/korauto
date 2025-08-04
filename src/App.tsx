@@ -3,20 +3,89 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import Catalog from "./pages/Catalog";
-import CarDetails from "./pages/CarDetails";
-import AdminDashboard from "./pages/AdminDashboard";
-import AuthPage from "./pages/AuthPage";
-import FavoritesPage from "./pages/FavoritesPage";
-import InspectionServices from "./pages/InspectionServices";
-import MyAccount from "./pages/MyAccount";
-import NotFound from "./pages/NotFound";
-import Contacts from "./pages/Contacts";
-import { AdminSyncDashboard } from "./components/AdminSyncDashboard";
+import { lazy, Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { InstallPrompt } from "./components/InstallPrompt";
 
-const queryClient = new QueryClient();
+// Lazy load all pages for better code splitting
+const Index = lazy(() => import("./pages/Index"));
+const Catalog = lazy(() => import("./pages/Catalog"));
+const CarDetails = lazy(() => import("./pages/CarDetails"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AuthPage = lazy(() => import("./pages/AuthPage"));
+const FavoritesPage = lazy(() => import("./pages/FavoritesPage"));
+const InspectionServices = lazy(() => import("./pages/InspectionServices"));
+const MyAccount = lazy(() => import("./pages/MyAccount"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Contacts = lazy(() => import("./pages/Contacts"));
+
+// Lazy load admin components for better code splitting
+const AdminSyncDashboard = lazy(() => 
+  import("./components/AdminSyncDashboard").then(module => ({ 
+    default: module.AdminSyncDashboard 
+  }))
+);
+
+const PageSkeleton = () => (
+  <div className="min-h-screen bg-background">
+    <div className="animate-pulse">
+      {/* Header skeleton */}
+      <header className="border-b">
+        <div className="container-responsive py-4">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-8 w-32" />
+            <div className="flex items-center space-x-4">
+              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-8 w-20" />
+            </div>
+          </div>
+        </div>
+      </header>
+      
+      {/* Content skeleton */}
+      <main className="container-responsive py-8">
+        <div className="space-y-6">
+          <Skeleton className="h-12 w-3/4" />
+          <Skeleton className="h-6 w-1/2" />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {[...Array(6)].map((_, i) => (
+              <Skeleton key={i} className="h-48 w-full" />
+            ))}
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+);
+
+const AdminSyncSkeleton = () => (
+  <div className="space-y-4">
+    <Skeleton className="h-8 w-64" />
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {[...Array(6)].map((_, i) => (
+        <Skeleton key={i} className="h-32 w-full" />
+      ))}
+    </div>
+  </div>
+);
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Cache for 5 minutes by default
+      staleTime: 5 * 60 * 1000,
+      // Keep data for 10 minutes
+      cacheTime: 10 * 60 * 1000,
+      // Refetch on window focus for critical data only
+      refetchOnWindowFocus: false,
+      // Retry failed requests up to 2 times
+      retry: 2,
+      // Use network first strategy
+      refetchOnMount: 'always',
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -25,18 +94,62 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/catalog" element={<Catalog />} />
-          <Route path="/car/:id" element={<CarDetails />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/sync" element={<AdminSyncDashboard />} />
-          <Route path="/auth" element={<AuthPage />} />
-          <Route path="/account" element={<MyAccount />} />
-          <Route path="/favorites" element={<FavoritesPage />} />
-          <Route path="/inspections" element={<InspectionServices />} />
-          <Route path="/contacts" element={<Contacts />} />
+          <Route path="/" element={
+            <Suspense fallback={<PageSkeleton />}>
+              <Index />
+            </Suspense>
+          } />
+          <Route path="/catalog" element={
+            <Suspense fallback={<PageSkeleton />}>
+              <Catalog />
+            </Suspense>
+          } />
+          <Route path="/car/:id" element={
+            <Suspense fallback={<PageSkeleton />}>
+              <CarDetails />
+            </Suspense>
+          } />
+          <Route path="/admin" element={
+            <Suspense fallback={<PageSkeleton />}>
+              <AdminDashboard />
+            </Suspense>
+          } />
+          <Route path="/admin/sync" element={
+            <Suspense fallback={<AdminSyncSkeleton />}>
+              <AdminSyncDashboard />
+            </Suspense>
+          } />
+          <Route path="/auth" element={
+            <Suspense fallback={<PageSkeleton />}>
+              <AuthPage />
+            </Suspense>
+          } />
+          <Route path="/account" element={
+            <Suspense fallback={<PageSkeleton />}>
+              <MyAccount />
+            </Suspense>
+          } />
+          <Route path="/favorites" element={
+            <Suspense fallback={<PageSkeleton />}>
+              <FavoritesPage />
+            </Suspense>
+          } />
+          <Route path="/inspections" element={
+            <Suspense fallback={<PageSkeleton />}>
+              <InspectionServices />
+            </Suspense>
+          } />
+          <Route path="/contacts" element={
+            <Suspense fallback={<PageSkeleton />}>
+              <Contacts />
+            </Suspense>
+          } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={
+            <Suspense fallback={<PageSkeleton />}>
+              <NotFound />
+            </Suspense>
+          } />
         </Routes>
       </BrowserRouter>
       <InstallPrompt />
