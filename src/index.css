@@ -276,4 +276,52 @@ All colors MUST be HSL.
       @apply ring-0 ring-transparent;
     }
   }
+
+  /* Category Filter Mobile Optimizations */
+  .category-filter-mobile {
+    @apply w-full;
+  }
+
+  /* iPhone specific optimizations */
+  @supports (-webkit-touch-callout: none) {
+    .category-filter-ios select {
+      @apply text-base; /* Prevent zoom on focus in iOS */
+      min-height: 44px; /* iOS recommended touch target size */
+    }
+  }
+
+  /* Mobile-first responsive category filter */
+  @media (max-width: 768px) {
+    .category-filter-container {
+      @apply space-y-3;
+    }
+    
+    .category-filter-grid {
+      @apply grid-cols-1 gap-3;
+    }
+    
+    .category-filter-grid > div {
+      @apply w-full;
+    }
+    
+    /* Larger touch targets for mobile */
+    .category-filter-mobile .select-trigger {
+      @apply h-12 text-base;
+    }
+    
+    .category-filter-mobile .select-content {
+      @apply text-base;
+    }
+    
+    .category-filter-mobile .select-item {
+      @apply py-3 text-base;
+    }
+  }
+
+  /* Desktop optimizations */
+  @media (min-width: 769px) {
+    .category-filter-grid {
+      @apply grid-cols-5;
+    }
+  }
 }

@@ -21,6 +21,7 @@ import {
   DollarSign
 } from "lucide-react";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS } from '@/hooks/useAuctionAPI';
+import CategoryFilter, { CAR_BRAND_CATEGORIES } from "@/components/CategoryFilter";
 
 interface Manufacturer {
   id: number;
@@ -75,6 +76,7 @@ interface EncarStyleFilterProps {
     seats_count?: string;
     search?: string;
     max_accidents?: string;
+    category?: string;
   };
   manufacturers: Manufacturer[];
   models?: Model[];
@@ -121,7 +123,22 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     
     setIsLoading(true);
     
-    if (key === 'manufacturer_id') {
+    // Handle category filter specially
+    if (key === 'category') {
+      const categoryBrand = CAR_BRAND_CATEGORIES.find(cat => cat.value === value);
+      const manufacturerId = categoryBrand?.id || undefined;
+      
+      // When category changes, update manufacturer and reset dependent filters
+      onManufacturerChange?.(manufacturerId || '');
+      onFiltersChange({
+        ...filters,
+        category: actualValue,
+        manufacturer_id: manufacturerId,
+        model_id: undefined,
+        generation_id: undefined,
+        grade_iaai: undefined
+      });
+    } else if (key === 'manufacturer_id') {
       onManufacturerChange?.(actualValue || '');
       onFiltersChange({
         ...filters,
@@ -354,7 +371,19 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
         </Button>
 
         {expandedSections.includes('basic') && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-3 bg-muted/30 rounded-lg">
+          <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
+            {/* Category Filter - Full width first */}
+            <div className="w-full">
+              <CategoryFilter
+                value={filters.category || 'all'}
+                onValueChange={(value) => updateFilter('category', value)}
+                disabled={isLoading}
+                label="Kategoria"
+              />
+            </div>
+
+            {/* Traditional filters in grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="space-y-2">
               <Label className="text-sm font-medium">Marka</Label>
               <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
@@ -445,6 +474,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
             </div>
           </div>
         )}
