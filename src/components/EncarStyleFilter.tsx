@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Filter, 
   X, 
@@ -19,9 +20,18 @@ import {
   Settings,
   MapPin,
   DollarSign,
-  Sparkles
+  Sparkles,
+  Zap,
+  Shield
 } from "lucide-react";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS } from '@/hooks/useAuctionAPI';
+import { 
+  BODY_TYPE_OPTIONS, 
+  ACCIDENT_HISTORY_OPTIONS,
+  ENHANCED_COLOR_OPTIONS,
+  ENHANCED_FUEL_OPTIONS,
+  ENHANCED_TRANSMISSION_OPTIONS 
+} from '@/config/encarFilters';
 
 interface Manufacturer {
   id: number;
@@ -76,6 +86,8 @@ interface EncarStyleFilterProps {
     seats_count?: string;
     search?: string;
     max_accidents?: string;
+    body_type?: string;
+    accident_history?: string;
   };
   manufacturers: Manufacturer[];
   models?: Model[];
@@ -238,24 +250,28 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 <Car className="h-3 w-3" />
                 Marka
               </Label>
-              <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder="Zgjidhni markën" />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="all">Të gjitha Markat</SelectItem>
-                  {sortedManufacturers.map((manufacturer) => (
-                    <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
-                      <div className="flex items-center gap-2">
-                        {manufacturer.image && (
-                          <img src={manufacturer.image} alt={manufacturer.name} className="w-5 h-5 object-contain" />
-                        )}
-                        <span>{manufacturer.name} ({manufacturer.cars_qty})</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {manufacturers.length === 0 && loadingCounts ? (
+                <Skeleton className="h-11 w-full" />
+              ) : (
+                <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder="Zgjidhni markën" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60 overflow-y-auto">
+                    <SelectItem value="all">Të gjitha Markat</SelectItem>
+                    {sortedManufacturers.map((manufacturer) => (
+                      <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
+                        <div className="flex items-center gap-2">
+                          {manufacturer.image && (
+                            <img src={manufacturer.image} alt={manufacturer.name} className="w-5 h-5 object-contain" />
+                          )}
+                          <span>{manufacturer.name} ({manufacturer.cars_qty})</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -263,23 +279,27 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 <Settings className="h-3 w-3" />
                 Modeli
               </Label>
-              <Select 
-                value={filters.model_id || 'all'} 
-                onValueChange={(value) => updateFilter('model_id', value)}
-                disabled={!filters.manufacturer_id}
-              >
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"} />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="all">Të gjithë Modelet</SelectItem>
-                  {models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => (
-                    <SelectItem key={model.id} value={model.id.toString()}>
-                      {model.name} ({model.cars_qty})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {filters.manufacturer_id && models.length === 0 && isLoading ? (
+                <Skeleton className="h-11 w-full" />
+              ) : (
+                <Select 
+                  value={filters.model_id || 'all'} 
+                  onValueChange={(value) => updateFilter('model_id', value)}
+                  disabled={!filters.manufacturer_id}
+                >
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60 overflow-y-auto">
+                    <SelectItem value="all">Të gjithë Modelet</SelectItem>
+                    {models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => (
+                      <SelectItem key={model.id} value={model.id.toString()}>
+                        {model.name} ({model.cars_qty})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -287,30 +307,34 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 <Calendar className="h-3 w-3" />
                 Gjenerata
               </Label>
-              <Select 
-                value={filters.generation_id || 'all'} 
-                onValueChange={(value) => updateFilter('generation_id', value)}
-                disabled={!filters.model_id}
-              >
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder={filters.model_id ? "Gjeneratat" : "Zgjidhni modelin së pari"} />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="all">Të gjitha Gjeneratat</SelectItem>
-                  {generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => (
-                    <SelectItem key={generation.id} value={generation.id.toString()}>
-                      {generation.name}
-                      {generation.from_year ? (() => {
-                        const from = generation.from_year.toString().slice(-2);
-                        const currentYear = new Date().getFullYear();
-                        // Show 'present' if to_year is null, undefined, or equals current year
-                        const to = (!generation.to_year || generation.to_year >= currentYear) ? 'present' : generation.to_year.toString().slice(-2);
-                        return ` (${from}-${to})`;
-                      })() : ''}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {filters.model_id && generations.length === 0 && isLoading ? (
+                <Skeleton className="h-11 w-full" />
+              ) : (
+                <Select 
+                  value={filters.generation_id || 'all'} 
+                  onValueChange={(value) => updateFilter('generation_id', value)}
+                  disabled={!filters.model_id}
+                >
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder={filters.model_id ? "Gjeneratat" : "Zgjidhni modelin së pari"} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60 overflow-y-auto">
+                    <SelectItem value="all">Të gjitha Gjeneratat</SelectItem>
+                    {generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => (
+                      <SelectItem key={generation.id} value={generation.id.toString()}>
+                        {generation.name}
+                        {generation.from_year ? (() => {
+                          const from = generation.from_year.toString().slice(-2);
+                          const currentYear = new Date().getFullYear();
+                          // Show 'present' if to_year is null, undefined, or equals current year
+                          const to = (!generation.to_year || generation.to_year >= currentYear) ? 'present' : generation.to_year.toString().slice(-2);
+                          return ` (${from}-${to})`;
+                        })() : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
 
@@ -569,9 +593,26 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Çdo ngjyrë</SelectItem>
-                    {Object.entries(COLOR_OPTIONS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
-                    ))}
+                    {/* Popular colors first */}
+                    {Object.entries(ENHANCED_COLOR_OPTIONS)
+                      .filter(([_, option]) => option.popular)
+                      .map(([key, option]) => (
+                        <SelectItem key={key} value={key} className="font-medium">
+                          {option.label} (Popular)
+                        </SelectItem>
+                      ))}
+                    {/* Separator */}
+                    <SelectItem value="separator" disabled className="text-xs text-muted-foreground">
+                      ──────────
+                    </SelectItem>
+                    {/* Other colors */}
+                    {Object.entries(ENHANCED_COLOR_OPTIONS)
+                      .filter(([_, option]) => !option.popular)
+                      .map(([key, option]) => (
+                        <SelectItem key={key} value={key}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -587,9 +628,29 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Çdo tip</SelectItem>
-                    {Object.entries(FUEL_TYPE_OPTIONS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
-                    ))}
+                    {/* Eco-friendly options first */}
+                    {Object.entries(ENHANCED_FUEL_OPTIONS)
+                      .filter(([_, option]) => option.eco)
+                      .map(([key, option]) => (
+                        <SelectItem key={key} value={key} className="text-green-600">
+                          <span className="flex items-center gap-2">
+                            <Zap className="h-3 w-3" />
+                            <span>{option.label} (Eco)</span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    {/* Separator */}
+                    <SelectItem value="separator" disabled className="text-xs text-muted-foreground">
+                      ──────────
+                    </SelectItem>
+                    {/* Traditional options */}
+                    {Object.entries(ENHANCED_FUEL_OPTIONS)
+                      .filter(([_, option]) => !option.eco)
+                      .map(([key, option]) => (
+                        <SelectItem key={key} value={key}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -605,9 +666,26 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Çdo tip</SelectItem>
-                    {Object.entries(TRANSMISSION_OPTIONS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
-                    ))}
+                    {/* Popular transmissions first */}
+                    {Object.entries(ENHANCED_TRANSMISSION_OPTIONS)
+                      .filter(([_, option]) => option.popular)
+                      .map(([key, option]) => (
+                        <SelectItem key={key} value={key} className="font-medium">
+                          {option.label} (Popular)
+                        </SelectItem>
+                      ))}
+                    {/* Separator */}
+                    <SelectItem value="separator" disabled className="text-xs text-muted-foreground">
+                      ──────────
+                    </SelectItem>
+                    {/* Other options */}
+                    {Object.entries(ENHANCED_TRANSMISSION_OPTIONS)
+                      .filter(([_, option]) => !option.popular)
+                      .map(([key, option]) => (
+                        <SelectItem key={key} value={key}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -639,6 +717,60 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
                     className="h-11 border-border/50"
                   />
+                </div>
+              </div>
+            </div>
+
+            {/* Enhanced Encar-style Filters */}
+            <div className="space-y-4">
+              <Label className="text-sm font-semibold flex items-center gap-2 text-primary">
+                <Sparkles className="h-4 w-4" />
+                Encar Style Filters
+              </Label>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Body Type Filter */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold flex items-center gap-2">
+                    <Car className="h-4 w-4 text-primary" />
+                    Body Type
+                  </Label>
+                  <Select value={filters.body_type || 'all'} onValueChange={(value) => updateFilter('body_type', value)}>
+                    <SelectTrigger className="h-11 border-border/50">
+                      <SelectValue placeholder="Any body type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Any Body Type</SelectItem>
+                      {Object.entries(BODY_TYPE_OPTIONS).map(([key, option]) => (
+                        <SelectItem key={key} value={key}>
+                          <span className="flex items-center gap-2">
+                            <span>{option.icon}</span>
+                            <span>{option.label}</span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Accident History Filter */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-primary" />
+                    Accident History
+                  </Label>
+                  <Select value={filters.accident_history || 'any'} onValueChange={(value) => updateFilter('accident_history', value)}>
+                    <SelectTrigger className="h-11 border-border/50">
+                      <SelectValue placeholder="Any condition" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(ACCIDENT_HISTORY_OPTIONS).map(([key, option]) => (
+                        <SelectItem key={key} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>
