@@ -290,6 +290,42 @@ All colors MUST be HSL.
     }
   }
 
+  /* iPad specific optimizations */
+  .category-filter-ipad select {
+    @apply text-base;
+    min-height: 44px; /* iPadOS recommended touch target size */
+  }
+
+  /* Touch device optimizations */
+  .category-filter-touch select {
+    @apply text-base;
+    min-height: 44px; /* Recommended touch target size */
+  }
+
+  /* Desktop optimizations */
+  .category-filter-desktop select {
+    @apply text-sm;
+    min-height: 40px;
+  }
+
+  /* Native select styling for all devices */
+  .category-filter-native select {
+    background-color: hsl(var(--background));
+    border-color: hsl(var(--border));
+    color: hsl(var(--foreground));
+  }
+
+  .category-filter-native select:focus {
+    outline: none;
+    border-color: hsl(var(--ring));
+    box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+  }
+
+  .category-filter-native select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   /* Mobile-first responsive category filter */
   @media (max-width: 768px) {
     .category-filter-container {

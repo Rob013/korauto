@@ -50,6 +50,52 @@ export const isMobileDevice = (): boolean => {
 };
 
 /**
+ * Detects if the current device is an iPad
+ */
+export const isIPad = (): boolean => {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return false;
+  }
+
+  const userAgent = navigator.userAgent.toLowerCase();
+  
+  // Check for iPad in user agent
+  const isIPadUA = /ipad/.test(userAgent);
+  
+  // Check for iPadOS (iOS 13+ on iPad reports as desktop in some cases)
+  const isIPadOS = navigator.maxTouchPoints && 
+    navigator.maxTouchPoints > 2 && 
+    /macintosh/.test(userAgent);
+  
+  return isIPadUA || isIPadOS;
+};
+
+/**
+ * Detects if device should use native select dropdowns
+ * Returns true for mobile devices and touch-capable devices
+ */
+export const shouldUseNativeSelect = (): boolean => {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return false;
+  }
+
+  // Check if it's a mobile device
+  const mobile = isMobileDevice();
+  
+  // Check if it's an iPad
+  const iPad = isIPad();
+  
+  // Check if it's a touch device
+  const touch = isTouchDevice();
+  
+  // Check screen size (mobile-like dimensions)
+  const smallScreen = window.innerWidth <= 768;
+  
+  // Use native select for mobile devices, tablets, or small screens
+  return mobile || iPad || (touch && smallScreen);
+};
+
+/**
  * Detects if the current device supports touch
  */
 export const isTouchDevice = (): boolean => {
