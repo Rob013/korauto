@@ -245,6 +245,10 @@ export const useSecureAuctionAPI = () => {
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   const [filters, setFilters] = useState<APIFilters>({});
   const [gradesCache, setGradesCache] = useState<{ [key: string]: { value: string; label: string; count?: number }[] }>({});
+  
+  // Add request deduplication cache
+  const [requestCache, setRequestCache] = useState<Map<string, Promise<any>>>(new Map());
+  const [dataCache, setDataCache] = useState<Map<string, { data: any; timestamp: number }>>(new Map());
 
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
@@ -255,58 +259,89 @@ export const useSecureAuctionAPI = () => {
     carId?: string
   ): Promise<any> => {
     try {
+      // Create a unique cache key for request deduplication
+      const cacheKey = `${endpoint}-${JSON.stringify(filters)}-${carId || ''}`;
+      
+      // Check if we have cached data (valid for 30 seconds)
+      const cachedResult = dataCache.get(cacheKey);
+      if (cachedResult && Date.now() - cachedResult.timestamp < 30000) {
+        console.log("🚀 Using cached data for:", cacheKey);
+        return cachedResult.data;
+      }
+      
+      // Check if we have an ongoing request for the same data
+      const ongoingRequest = requestCache.get(cacheKey);
+      if (ongoingRequest) {
+        console.log("🔄 Reusing ongoing request for:", cacheKey);
+        return await ongoingRequest;
+      }
+
       console.log("🔐 Making secure API call:", { endpoint, filters, carId });
 
-      // Add a minimal delay to prevent rapid successive calls
+      // Add a longer delay to prevent rapid successive calls
       const now = Date.now();
-      if (now - lastFetchTime < 50) {
-        // 50ms minimum between calls (optimized for faster loading)
-        await delay(50 - (now - lastFetchTime));
+      if (now - lastFetchTime < 200) { // Increased from 50ms to 200ms
+        await delay(200 - (now - lastFetchTime));
       }
       setLastFetchTime(Date.now());
 
-      console.log("🔐 Calling Supabase function with body:", { endpoint, filters, carId });
-      const { data, error: functionError } = await supabase.functions.invoke(
-        "secure-cars-api",
-        {
-          body: { endpoint, filters, carId },
-        }
-      );
-      
-      console.log("🔐 Supabase function response:", { data, error: functionError });
-
-      if (functionError) {
-        console.error("❌ Edge function error:", functionError);
-        console.error("❌ Function error details:", {
-          message: functionError.message,
-          name: functionError.name,
-          stack: functionError.stack,
-          endpoint,
-          filters,
-          carId
-        });
-        throw new Error(functionError.message || "API call failed");
-      }
-
-      if (data?.error) {
-        console.error("❌ API returned error:", data.error);
-        console.error("❌ Error details:", {
-          error: data.error,
-          endpoint,
-          filters,
-          carId,
-          data
-        });
+      // Create the actual API call promise
+      const apiCallPromise = (async () => {
+        console.log("🔐 Calling Supabase function with body:", { endpoint, filters, carId });
+        const { data, error: functionError } = await supabase.functions.invoke(
+          "secure-cars-api",
+          {
+            body: { endpoint, filters, carId },
+          }
+        );
         
-        if (data.retryAfter) {
-          console.log("⏳ Rate limited, waiting...");
-          await delay(data.retryAfter);
-          throw new Error("RATE_LIMITED");
+        console.log("🔐 Supabase function response:", { data, error: functionError });
+
+        if (functionError) {
+          console.error("❌ Edge function error:", functionError);
+          throw new Error(functionError.message || "API call failed");
         }
-        throw new Error(data.error);
+
+        if (data?.error) {
+          console.error("❌ API returned error:", data.error);
+          
+          if (data.retryAfter) {
+            console.log("⏳ Rate limited, waiting...");
+            await delay(data.retryAfter);
+            throw new Error("RATE_LIMITED");
+          }
+          throw new Error(data.error);
+        }
+
+        // Cache the successful result
+        setDataCache(prev => {
+          const newCache = new Map(prev);
+          newCache.set(cacheKey, { data, timestamp: Date.now() });
+          return newCache;
+        });
+
+        return data;
+      })();
+
+      // Store the promise to prevent duplicate requests
+      setRequestCache(prev => {
+        const newCache = new Map(prev);
+        newCache.set(cacheKey, apiCallPromise);
+        return newCache;
+      });
+
+      try {
+        const result = await apiCallPromise;
+        return result;
+      } finally {
+        // Remove the request from cache when it completes
+        setRequestCache(prev => {
+          const newCache = new Map(prev);
+          newCache.delete(cacheKey);
+          return newCache;
+        });
       }
 
-      return data;
     } catch (err) {
       console.error("❌ Secure API call error:", err);
       throw err;

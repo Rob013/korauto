@@ -1,5 +1,5 @@
 import LazyCarCard from "./LazyCarCard";
-import { memo, useState, useEffect } from "react";
+import { memo, useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { AlertCircle } from "lucide-react";
@@ -252,7 +252,8 @@ const HomeCarsSection = memo(() => {
     ? sortedCars
     : sortedCars.slice(0, defaultDisplayCount);
 
-  useEffect(() => {
+  // Stabilize the initial load function with useCallback
+  const loadInitialData = useCallback(() => {
     // Calculate daily page based on day of month (1-31)
     const today = new Date();
     const dayOfMonth = today.getDate(); // 1-31
@@ -261,7 +262,11 @@ const HomeCarsSection = memo(() => {
     // Load initial data with 50 cars from daily page
     fetchCars(dailyPage, { per_page: "50" }, true);
     fetchManufacturers().then(setManufacturers);
-  }, []);
+  }, []); // Empty dependencies since we only want this to run once
+
+  useEffect(() => {
+    loadInitialData();
+  }, [loadInitialData]);
 
   const handleFiltersChange = (newFilters: APIFilters) => {
     // Check if generation is being selected
