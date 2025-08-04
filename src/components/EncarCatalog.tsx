@@ -218,6 +218,20 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       cars_qty?: number;
     }[]
   >([]);
+  
+  // Store all generations for a manufacturer to enable instant filtering
+  const [allGenerationsForManufacturer, setAllGenerationsForManufacturer] = useState<
+    {
+      id: number;
+      name: string;
+      manufacturer_id?: number;
+      model_id?: number;
+      from_year?: number;
+      to_year?: number;
+      cars_qty?: number;
+    }[]
+  >([]);
+  
   const [filterCounts, setFilterCounts] = useState<any>(null);
   const [loadingCounts, setLoadingCounts] = useState(false);
   const [highlightedCarId, setHighlightedCarId] = useState<string | null>(null);
@@ -308,6 +322,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setLoadedPages(1);
     setModels([]);
     setGenerations([]);
+    setAllGenerationsForManufacturer([]);
     fetchCars(1, {}, true);
     setSearchParams({});
   }, [fetchCars, setSearchParams]);
@@ -402,13 +417,25 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setIsLoading(true);
     setModels([]);
     setGenerations([]);
+    setAllGenerationsForManufacturer([]);
     try {
       if (manufacturerId) {
-        console.log(`[handleManufacturerChange] Fetching models...`);
-        const modelData = await fetchModels(manufacturerId);
+        console.log(`[handleManufacturerChange] Fetching models and all generations...`);
+        
+        // Fetch models and all generations for the manufacturer simultaneously
+        const [modelData, allGenerationsData] = await Promise.all([
+          fetchModels(manufacturerId),
+          fetchAllGenerationsForManufacturer(manufacturerId)
+        ]);
+        
         console.log(`[handleManufacturerChange] Received modelData:`, modelData);
+        console.log(`[handleManufacturerChange] Received all generations:`, allGenerationsData);
         console.log(`[handleManufacturerChange] Setting models to:`, modelData);
+        
+        // Set models and all generations immediately
         setModels(modelData);
+        // Store all generations for instant filtering when model is selected
+        setAllGenerationsForManufacturer(allGenerationsData);
       }
       const newFilters: APIFilters = {
         manufacturer_id: manufacturerId,
@@ -433,6 +460,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       console.error('[handleManufacturerChange] Error:', error);
       setModels([]);
       setGenerations([]);
+      setAllGenerationsForManufacturer([]);
     } finally {
       setIsLoading(false);
     }
@@ -444,10 +472,12 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   }, [models]);
 
   const handleModelChange = async (modelId: string) => {
-    setIsLoading(true);
-    setGenerations([]);
+    console.log(`[handleModelChange] Called with modelId: ${modelId}`);
+    
     try {
       if (!modelId) {
+        // Clear generations when no model is selected
+        setGenerations([]);
         const newFilters: APIFilters = {
           ...filters,
           model_id: undefined,
@@ -456,11 +486,21 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         };
         setLoadedPages(1);
         handleFiltersChange(newFilters);
-        setIsLoading(false);
         return;
       }
-      const generationData = await fetchGenerations(modelId);
-      setGenerations(generationData);
+      
+      // INSTANT FILTER: Use pre-loaded generations instead of API call
+      console.log(`[handleModelChange] Filtering generations for model ${modelId} from cached data`);
+      const modelGenerations = allGenerationsForManufacturer.filter(
+        gen => gen.model_id?.toString() === modelId
+      );
+      
+      console.log(`[handleModelChange] Found ${modelGenerations.length} generations for model ${modelId}`);
+      
+      // Set generations instantly without waiting for API
+      setGenerations(modelGenerations);
+      
+      // Update filters
       const newFilters: APIFilters = {
         ...filters,
         model_id: modelId,
@@ -469,10 +509,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       };
       setLoadedPages(1);
       handleFiltersChange(newFilters);
+      
     } catch (error) {
+      console.error('[handleModelChange] Error:', error);
       setGenerations([]);
-    } finally {
-      setIsLoading(false);
     }
   };
 

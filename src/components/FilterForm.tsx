@@ -388,7 +388,7 @@ const FilterForm = memo<FilterFormProps>(({
                 updateFilter('generation_id', value);
               }
             }}
-            disabled={!filters.manufacturer_id || !filters.model_id}
+            disabled={!filters.manufacturer_id}
           >
             <SelectTrigger className="h-7 text-xs">
               <SelectValue placeholder={filters.manufacturer_id ? "Gjeneratat" : "Marka së pari"} />
