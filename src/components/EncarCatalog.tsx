@@ -820,15 +820,23 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         </div>
       ) : null}
 
-      {/* No Selection State */}
+      {/* No Selection State - Encar Style */}
       {!shouldShowCars && !loading && !isRestoringState && (
-        <div className="text-center py-16">
-          <div className="max-w-md mx-auto">
-            <Car className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Zgjidhni markën, modelin dhe gjeneratën</h3>
-            <p className="text-muted-foreground mb-6">
-              Për të parë makinat, ju duhet të zgjidhni së paku markën, modelin dhe gjeneratën e makinës.
+        <div className="text-center py-20 px-4 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
+          <div className="max-w-lg mx-auto">
+            <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Car className="h-10 w-10 text-red-500" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">브랜드, 모델, 세대를 선택해주세요</h3>
+            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+              더 정확한 검색 결과를 위해 제조사, 모델, 세대를 선택한 후<br />
+              차량을 확인하실 수 있습니다.
             </p>
+            <div className="mt-8 flex justify-center gap-2">
+              <div className="w-3 h-3 bg-red-200 rounded-full"></div>
+              <div className="w-3 h-3 bg-red-300 rounded-full"></div>
+              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+            </div>
           </div>
         </div>
       )}

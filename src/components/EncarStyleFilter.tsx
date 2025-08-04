@@ -210,143 +210,173 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     );
   };
 
-  // Homepage style - compact single row
+  // Homepage style - Encar-like single search bar focus
   if (isHomepage) {
     return (
-      <Card className="p-4 bg-gradient-to-r from-card via-card/95 to-card border-border/50 shadow-sm">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Car className="h-5 w-5 text-primary" />
-              <h3 className="text-lg font-semibold">Kërko Makinën</h3>
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+        {/* Encar-style header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+              <Car className="h-4 w-4 text-white" />
             </div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">차량검색</h2>
+          </div>
+          {(filters.manufacturer_id || filters.model_id || filters.generation_id) && (
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={onClearFilters}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4 mr-1" />
+              초기화
+            </Button>
+          )}
+        </div>
+        
+        {/* Main search filters - Encar style horizontal layout */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Manufacturer Select */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">제조사</Label>
+            <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
+              <SelectTrigger className="h-12 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white hover:border-red-500 focus:border-red-500 transition-colors">
+                <SelectValue placeholder="제조사 선택" />
+              </SelectTrigger>
+              <SelectContent className="z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg">
+                <SelectItem value="all" className="hover:bg-gray-50 dark:hover:bg-gray-700">전체 제조사</SelectItem>
+                {sortedManufacturers.map((manufacturer) => (
+                  <SelectItem 
+                    key={manufacturer.id} 
+                    value={manufacturer.id.toString()}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <div className="flex items-center gap-2">
+                      {manufacturer.image && (
+                        <img src={manufacturer.image} alt={manufacturer.name} className="w-5 h-5 object-contain" />
+                      )}
+                      <span>{manufacturer.name}</span>
+                      <span className="text-xs text-gray-500 ml-auto">({manufacturer.cars_qty})</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Model Select */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">모델</Label>
+            <Select 
+              value={filters.model_id || 'all'} 
+              onValueChange={(value) => updateFilter('model_id', value)}
+              disabled={!filters.manufacturer_id}
+            >
+              <SelectTrigger className="h-12 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white hover:border-red-500 focus:border-red-500 transition-colors disabled:opacity-50">
+                <SelectValue placeholder={filters.manufacturer_id ? "모델 선택" : "제조사를 먼저 선택하세요"} />
+              </SelectTrigger>
+              <SelectContent className="z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg">
+                <SelectItem value="all" className="hover:bg-gray-50 dark:hover:bg-gray-700">전체 모델</SelectItem>
+                {models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => (
+                  <SelectItem 
+                    key={model.id} 
+                    value={model.id.toString()}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span>{model.name}</span>
+                      <span className="text-xs text-gray-500">({model.cars_qty})</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Generation Select */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">세대</Label>
+            <Select 
+              value={filters.generation_id || 'all'} 
+              onValueChange={(value) => updateFilter('generation_id', value)}
+              disabled={!filters.model_id}
+            >
+              <SelectTrigger className="h-12 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white hover:border-red-500 focus:border-red-500 transition-colors disabled:opacity-50">
+                <SelectValue placeholder={filters.model_id ? "세대 선택" : "모델을 먼저 선택하세요"} />
+              </SelectTrigger>
+              <SelectContent className="z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg">
+                <SelectItem value="all" className="hover:bg-gray-50 dark:hover:bg-gray-700">전체 세대</SelectItem>
+                {generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => (
+                  <SelectItem 
+                    key={generation.id} 
+                    value={generation.id.toString()}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span>{generation.name}</span>
+                      <span className="text-xs text-gray-500">({generation.cars_qty})</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Search Button */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 opacity-0">검색</Label>
+            <Button 
+              size="lg" 
+              className="h-12 w-full bg-red-500 hover:bg-red-600 text-white font-medium transition-colors"
+              onClick={() => {
+                if (filters.manufacturer_id || filters.model_id || filters.generation_id) {
+                  // Trigger navigation to catalog with current filters
+                  const searchParams = new URLSearchParams();
+                  Object.entries(filters).forEach(([key, value]) => {
+                    if (value && value !== '') {
+                      searchParams.set(key, value);
+                    }
+                  });
+                  window.location.href = `/catalog?${searchParams.toString()}`;
+                }
+              }}
+            >
+              <Search className="h-4 w-4 mr-2" />
+              검색하기
             </Button>
           </div>
-          
-          {/* Main filters in single row */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <Car className="h-3 w-3" />
-                Marka
-              </Label>
-              <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder="Zgjidhni markën" />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="all">Të gjitha Markat</SelectItem>
-                  {sortedManufacturers.map((manufacturer) => (
-                    <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
-                      <div className="flex items-center gap-2">
-                        {manufacturer.image && (
-                          <img src={manufacturer.image} alt={manufacturer.name} className="w-5 h-5 object-contain" />
-                        )}
-                        <span>{manufacturer.name} ({manufacturer.cars_qty})</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <Settings className="h-3 w-3" />
-                Modeli
-              </Label>
-              <Select 
-                value={filters.model_id || 'all'} 
-                onValueChange={(value) => updateFilter('model_id', value)}
-                disabled={!filters.manufacturer_id}
-              >
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"} />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="all">Të gjithë Modelet</SelectItem>
-                  {models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => (
-                    <SelectItem key={model.id} value={model.id.toString()}>
-                      {model.name} ({model.cars_qty})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <Calendar className="h-3 w-3" />
-                Gjenerata
-              </Label>
-              <Select 
-                value={filters.generation_id || 'all'} 
-                onValueChange={(value) => updateFilter('generation_id', value)}
-                disabled={!filters.model_id}
-              >
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder={filters.model_id ? "Zgjidhni gjeneratën" : "Zgjidhni modelin së pari"} />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="all">Të gjitha Gjeneratat</SelectItem>
-                  {generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => (
-                    <SelectItem key={generation.id} value={generation.id.toString()}>
-                      {generation.name} ({generation.cars_qty})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <Search className="h-3 w-3" />
-                Kërkim
-              </Label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Kërko..."
-                  value={filters.search || ''}
-                  onChange={(e) => updateFilter('search', e.target.value)}
-                  className="h-11"
-                />
-                <Button size="sm" className="h-11 px-4">
-                  <Search className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
         </div>
-      </Card>
+      </div>
     );
   }
 
-  // Catalog style - expanded with sections
+  // Catalog style - Encar-like comprehensive filter design
   return (
-    <Card className="p-4 space-y-4 bg-card border-border">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Filter className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-semibold">Filtrat e Kërkimit</h3>
+    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+      {/* Header with red accent */}
+      <div className="bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 p-4 rounded-t-lg border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+              <Filter className="h-4 w-4 text-white" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">상세검색</h3>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onClearFilters} 
+            disabled={isLoading}
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            {isLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <X className="h-3 w-3 mr-1" />}
+            전체해제
+          </Button>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={onClearFilters} 
-          disabled={isLoading}
-          className="text-xs"
-        >
-          {isLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <X className="h-3 w-3 mr-1" />}
-          Pastro të gjitha
-        </Button>
       </div>
+
+      <div className="p-6 space-y-6">
 
       {/* Basic Filters Section */}
       <div className="space-y-3">
@@ -604,7 +634,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           </div>
         )}
       </div>
-    </Card>
+      </div>
+    </div>
   );
 });
 
