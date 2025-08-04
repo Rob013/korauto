@@ -1,13 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { AdaptiveSelect } from "@/components/ui/adaptive-select";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2,
@@ -779,25 +773,22 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
         {/* Sort Control - positioned under filters, right side */}
         <div className="flex justify-end">
-          <Select
-            value={sortBy}
-            onValueChange={(value: SortOption) => {
-              setSortBy(value);
-              // No need to re-fetch since we're using client-side sorting
-            }}
-          >
-            <SelectTrigger className="w-40 h-8 text-sm">
-              <ArrowUpDown className="h-3 w-3 mr-2" />
-              <SelectValue placeholder="Rreshtoni sipas..." />
-            </SelectTrigger>
-            <SelectContent>
-              {getSortOptions().map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="relative">
+            <ArrowUpDown className="h-3 w-3 absolute left-3 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none" />
+            <AdaptiveSelect
+              value={sortBy}
+              onValueChange={(value: SortOption) => {
+                setSortBy(value);
+                // No need to re-fetch since we're using client-side sorting
+              }}
+              placeholder="Rreshtoni sipas..."
+              className="w-40 h-8 text-sm pl-8"
+              options={getSortOptions().map((option) => ({
+                value: option.value,
+                label: option.label
+              }))}
+            />
+          </div>
         </div>
       </div>
 

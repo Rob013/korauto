@@ -1,5 +1,5 @@
 import React, { useState, memo, useCallback, useMemo, useEffect } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AdaptiveSelect } from "@/components/ui/adaptive-select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -159,22 +159,28 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     return manufacturers
       .sort((a, b) => {
         const germanBrands = ['BMW', 'Mercedes-Benz', 'Audi', 'Volkswagen', 'Porsche', 'Opel'];
+        const luxuryBrands = ['Land Rover', 'Volvo', 'Aston Martin', 'Bentley'];
         const koreanBrands = ['Hyundai', 'Kia', 'Genesis'];
         const popularBrands = ['Toyota', 'Honda', 'Nissan', 'Ford', 'Chevrolet', 'Mazda', 'Subaru', 'Lexus'];
         
         const aIsGerman = germanBrands.includes(a.name);
         const bIsGerman = germanBrands.includes(b.name);
+        const aIsLuxury = luxuryBrands.includes(a.name);
+        const bIsLuxury = luxuryBrands.includes(b.name);
         const aIsKorean = koreanBrands.includes(a.name);
         const bIsKorean = koreanBrands.includes(b.name);
         const aIsPopular = popularBrands.includes(a.name);
         const bIsPopular = popularBrands.includes(b.name);
         
+        // Prioritize German brands first, then luxury brands, then Korean, then popular
         if (aIsGerman && !bIsGerman) return -1;
         if (!aIsGerman && bIsGerman) return 1;
-        if (aIsKorean && !bIsKorean && !bIsGerman) return -1;
-        if (!aIsKorean && bIsKorean && !aIsGerman) return 1;
-        if (aIsPopular && !bIsPopular && !bIsGerman && !bIsKorean) return -1;
-        if (!aIsPopular && bIsPopular && !aIsGerman && !aIsKorean) return 1;
+        if (aIsLuxury && !bIsLuxury && !bIsGerman) return -1;
+        if (!aIsLuxury && bIsLuxury && !aIsGerman) return 1;
+        if (aIsKorean && !bIsKorean && !bIsGerman && !bIsLuxury) return -1;
+        if (!aIsKorean && bIsKorean && !aIsGerman && !aIsLuxury) return 1;
+        if (aIsPopular && !bIsPopular && !bIsGerman && !bIsKorean && !bIsLuxury) return -1;
+        if (!aIsPopular && bIsPopular && !aIsGerman && !aIsKorean && !aIsLuxury) return 1;
         
         return a.name.localeCompare(b.name);
       })
@@ -237,24 +243,26 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 <Car className="h-3 w-3" />
                 Marka
               </Label>
-              <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder="Zgjidhni markën" />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="all">Të gjitha Markat</SelectItem>
-                  {sortedManufacturers.map((manufacturer) => (
-                    <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
+              <AdaptiveSelect 
+                value={filters.manufacturer_id || 'all'} 
+                onValueChange={(value) => updateFilter('manufacturer_id', value)}
+                placeholder="Zgjidhni markën"
+                className="h-11"
+                options={[
+                  { value: 'all', label: 'Të gjitha Markat' },
+                  ...sortedManufacturers.map((manufacturer) => ({
+                    value: manufacturer.id.toString(),
+                    label: (
                       <div className="flex items-center gap-2">
                         {manufacturer.image && (
                           <img src={manufacturer.image} alt={manufacturer.name} className="w-5 h-5 object-contain" />
                         )}
                         <span>{manufacturer.name} ({manufacturer.cars_qty})</span>
                       </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    )
+                  }))
+                ]}
+              />
             </div>
 
             <div className="space-y-2">
@@ -262,23 +270,20 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 <Settings className="h-3 w-3" />
                 Modeli
               </Label>
-              <Select 
+              <AdaptiveSelect 
                 value={filters.model_id || 'all'} 
                 onValueChange={(value) => updateFilter('model_id', value)}
                 disabled={!filters.manufacturer_id}
-              >
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"} />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="all">Të gjithë Modelet</SelectItem>
-                  {models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => (
-                    <SelectItem key={model.id} value={model.id.toString()}>
-                      {model.name} ({model.cars_qty})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"}
+                className="h-11"
+                options={[
+                  { value: 'all', label: 'Të gjithë Modelet' },
+                  ...models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => ({
+                    value: model.id.toString(),
+                    label: `${model.name} (${model.cars_qty})`
+                  }))
+                ]}
+              />
             </div>
 
             <div className="space-y-2">
@@ -286,30 +291,25 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 <Calendar className="h-3 w-3" />
                 Gjenerata
               </Label>
-              <Select 
+              <AdaptiveSelect 
                 value={filters.generation_id || 'all'} 
                 onValueChange={(value) => updateFilter('generation_id', value)}
                 disabled={!filters.model_id}
-              >
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder={filters.model_id ? "Gjeneratat" : "Zgjidhni modelin së pari"} />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="all">Të gjitha Gjeneratat</SelectItem>
-                  {generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => (
-                    <SelectItem key={generation.id} value={generation.id.toString()}>
-                      {generation.name}
-                      {generation.from_year ? (() => {
-                        const from = generation.from_year.toString().slice(-2);
-                        const currentYear = new Date().getFullYear();
-                        // Show 'present' if to_year is null, undefined, or equals current year
-                        const to = (!generation.to_year || generation.to_year >= currentYear) ? 'present' : generation.to_year.toString().slice(-2);
-                        return ` (${from}-${to})`;
-                      })() : ''}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={filters.model_id ? "Gjeneratat" : "Zgjidhni modelin së pari"}
+                className="h-11"
+                options={[
+                  { value: 'all', label: 'Të gjitha Gjeneratat' },
+                  ...generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => ({
+                    value: generation.id.toString(),
+                    label: `${generation.name}${generation.from_year ? (() => {
+                      const from = generation.from_year.toString().slice(-2);
+                      const currentYear = new Date().getFullYear();
+                      const to = (!generation.to_year || generation.to_year >= currentYear) ? 'present' : generation.to_year.toString().slice(-2);
+                      return ` (${from}-${to})`;
+                    })() : ''}`
+                  }))
+                ]}
+              />
             </div>
 
 
@@ -357,94 +357,81 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-3 bg-muted/30 rounded-lg">
             <div className="space-y-2">
               <Label className="text-sm font-medium">Marka</Label>
-              <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Zgjidhni markën" />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="all">Të gjitha Markat</SelectItem>
-                  {sortedManufacturers.map((manufacturer) => (
-                    <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
+              <AdaptiveSelect 
+                value={filters.manufacturer_id || 'all'} 
+                onValueChange={(value) => updateFilter('manufacturer_id', value)}
+                placeholder="Zgjidhni markën"
+                options={[
+                  { value: 'all', label: 'Të gjitha Markat' },
+                  ...sortedManufacturers.map((manufacturer) => ({
+                    value: manufacturer.id.toString(),
+                    label: (
                       <div className="flex items-center gap-2">
                         {manufacturer.image && (
                           <img src={manufacturer.image} alt={manufacturer.name} className="w-4 h-4 object-contain" />
                         )}
                         <span>{manufacturer.name} ({manufacturer.cars_qty})</span>
                       </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    )
+                  }))
+                ]}
+              />
             </div>
 
             <div className="space-y-2">
               <Label className="text-sm font-medium">Modeli</Label>
-              <Select 
+              <AdaptiveSelect 
                 value={filters.model_id || 'all'} 
                 onValueChange={(value) => updateFilter('model_id', value)}
                 disabled={!filters.manufacturer_id}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"} />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="all">Të gjithë Modelet</SelectItem>
-                  {models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => (
-                    <SelectItem key={model.id} value={model.id.toString()}>
-                      {model.name} ({model.cars_qty})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"}
+                options={[
+                  { value: 'all', label: 'Të gjithë Modelet' },
+                  ...models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => ({
+                    value: model.id.toString(),
+                    label: `${model.name} (${model.cars_qty})`
+                  }))
+                ]}
+              />
             </div>
 
             <div className="space-y-2">
               <Label className="text-sm font-medium">Gjenerata</Label>
-              <Select 
+              <AdaptiveSelect 
                 value={filters.generation_id || 'all'} 
                 onValueChange={(value) => updateFilter('generation_id', value)}
                 disabled={!filters.model_id}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={filters.model_id ? "Gjeneratat" : "Zgjidhni modelin së pari"} />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="all">Të gjitha Gjeneratat</SelectItem>
-                  {generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => (
-                    <SelectItem key={generation.id} value={generation.id.toString()}>
-                      {generation.name}
-                      {generation.from_year ? (() => {
-                        const from = generation.from_year.toString().slice(-2);
-                        const currentYear = new Date().getFullYear();
-                        // Show 'present' if to_year is null, undefined, or equals current year  
-                        const to = (!generation.to_year || generation.to_year >= currentYear) ? 'present' : generation.to_year.toString().slice(-2);
-                        return ` (${from}-${to})`;
-                      })() : ''}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={filters.model_id ? "Gjeneratat" : "Zgjidhni modelin së pari"}
+                options={[
+                  { value: 'all', label: 'Të gjitha Gjeneratat' },
+                  ...generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => ({
+                    value: generation.id.toString(),
+                    label: `${generation.name}${generation.from_year ? (() => {
+                      const from = generation.from_year.toString().slice(-2);
+                      const currentYear = new Date().getFullYear();
+                      const to = (!generation.to_year || generation.to_year >= currentYear) ? 'present' : generation.to_year.toString().slice(-2);
+                      return ` (${from}-${to})`;
+                    })() : ''}`
+                  }))
+                ]}
+              />
             </div>
 
             <div className="space-y-2">
               <Label className="text-sm font-medium">Variants</Label>
-              <Select 
+              <AdaptiveSelect 
                 value={filters.grade_iaai || 'all'} 
                 onValueChange={(value) => updateFilter('grade_iaai', value)}
                 disabled={!filters.generation_id || isLoadingGrades}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={isLoadingGrades ? "Loading..." : "Select variant"} />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="all">All Variants</SelectItem>
-                  {grades.map((grade) => (
-                    <SelectItem key={grade.value} value={grade.value}>
-                      {grade.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={isLoadingGrades ? "Loading..." : "Select variant"}
+                options={[
+                  { value: 'all', label: 'All Variants' },
+                  ...grades.map((grade) => ({
+                    value: grade.value,
+                    label: grade.label
+                  }))
+                ]}
+              />
             </div>
           </div>
         )}
@@ -474,28 +461,30 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   Viti
                 </Label>
                 <div className="grid grid-cols-2 gap-2">
-                  <Select value={filters.from_year || 'all'} onValueChange={(value) => updateFilter('from_year', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Nga" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60">
-                      <SelectItem value="all">Çdo vit</SelectItem>
-                      {years.map(year => (
-                        <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={filters.to_year || 'all'} onValueChange={(value) => updateFilter('to_year', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Deri" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60">
-                      <SelectItem value="all">Çdo vit</SelectItem>
-                      {years.map(year => (
-                        <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <AdaptiveSelect 
+                    value={filters.from_year || 'all'} 
+                    onValueChange={(value) => updateFilter('from_year', value)}
+                    placeholder="Nga"
+                    options={[
+                      { value: 'all', label: 'Çdo vit' },
+                      ...years.map(year => ({
+                        value: year.toString(),
+                        label: year.toString()
+                      }))
+                    ]}
+                  />
+                  <AdaptiveSelect 
+                    value={filters.to_year || 'all'} 
+                    onValueChange={(value) => updateFilter('to_year', value)}
+                    placeholder="Deri"
+                    options={[
+                      { value: 'all', label: 'Çdo vit' },
+                      ...years.map(year => ({
+                        value: year.toString(),
+                        label: year.toString()
+                      }))
+                    ]}
+                  />
                 </div>
               </div>
 
@@ -528,17 +517,18 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   <Palette className="h-3 w-3" />
                   Ngjyra
                 </Label>
-                <Select value={filters.color || 'all'} onValueChange={(value) => updateFilter('color', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Çdo ngjyrë" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Çdo ngjyrë</SelectItem>
-                    {Object.entries(COLOR_OPTIONS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <AdaptiveSelect 
+                  value={filters.color || 'all'} 
+                  onValueChange={(value) => updateFilter('color', value)}
+                  placeholder="Çdo ngjyrë"
+                  options={[
+                    { value: 'all', label: 'Çdo ngjyrë' },
+                    ...Object.entries(COLOR_OPTIONS).map(([value, label]) => ({
+                      value,
+                      label
+                    }))
+                  ]}
+                />
               </div>
 
               <div className="space-y-2">
@@ -546,17 +536,18 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   <Fuel className="h-3 w-3" />
                   Karburanti
                 </Label>
-                <Select value={filters.fuel_type || 'all'} onValueChange={(value) => updateFilter('fuel_type', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Çdo tip" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Çdo tip</SelectItem>
-                    {Object.entries(FUEL_TYPE_OPTIONS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <AdaptiveSelect 
+                  value={filters.fuel_type || 'all'} 
+                  onValueChange={(value) => updateFilter('fuel_type', value)}
+                  placeholder="Çdo tip"
+                  options={[
+                    { value: 'all', label: 'Çdo tip' },
+                    ...Object.entries(FUEL_TYPE_OPTIONS).map(([value, label]) => ({
+                      value,
+                      label
+                    }))
+                  ]}
+                />
               </div>
 
               <div className="space-y-2">
@@ -564,17 +555,18 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   <Settings className="h-3 w-3" />
                   Transmisioni
                 </Label>
-                <Select value={filters.transmission || 'all'} onValueChange={(value) => updateFilter('transmission', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Çdo tip" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Çdo tip</SelectItem>
-                    {Object.entries(TRANSMISSION_OPTIONS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <AdaptiveSelect 
+                  value={filters.transmission || 'all'} 
+                  onValueChange={(value) => updateFilter('transmission', value)}
+                  placeholder="Çdo tip"
+                  options={[
+                    { value: 'all', label: 'Çdo tip' },
+                    ...Object.entries(TRANSMISSION_OPTIONS).map(([value, label]) => ({
+                      value,
+                      label
+                    }))
+                  ]}
+                />
               </div>
             </div>
 
