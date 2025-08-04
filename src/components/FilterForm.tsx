@@ -391,7 +391,7 @@ const FilterForm = memo<FilterFormProps>(({
             disabled={!filters.manufacturer_id || !filters.model_id}
           >
             <SelectTrigger className="h-7 text-xs">
-              <SelectValue placeholder={filters.manufacturer_id ? "Gjeneratat" : "Marka së pari"} />
+              <SelectValue placeholder={filters.model_id ? "Gjeneratat" : "Zgjidh modelin së pari"} />
             </SelectTrigger>
             <SelectContent className="max-h-60 overflow-y-auto">
               <SelectItem value="all">
@@ -420,7 +420,7 @@ const FilterForm = memo<FilterFormProps>(({
               })
             ) : (
               <SelectItem value="no-generations" disabled>
-                {filters.model_id ? "Nuk u gjetën gjenerata" : "Zgjidh modelin së pari"}
+                {filters.model_id ? "Duke ngarkuar gjeneratat..." : "Zgjidh modelin së pari"}
               </SelectItem>
             )}
             </SelectContent>

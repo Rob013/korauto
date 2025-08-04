@@ -494,19 +494,91 @@ export const useSecureAuctionAPI = () => {
 
   const fetchGenerations = async (modelId: string): Promise<Generation[]> => {
     try {
+      // First try to fetch generations from a dedicated endpoint
+      let generationsFromAPI: Generation[] = [];
+      try {
+        const generationResponse = await makeSecureAPICall(`generations/${modelId}`, {});
+        if (generationResponse.data && Array.isArray(generationResponse.data)) {
+          generationsFromAPI = generationResponse.data.filter(g => g && g.id && g.name);
+          console.log(`🎯 Found ${generationsFromAPI.length} generations from dedicated API endpoint`);
+        }
+      } catch (err) {
+        console.log('📍 No dedicated generations endpoint, falling back to car data extraction');
+      }
+
+      // If we have API generations with proper year data, use them
+      if (generationsFromAPI.length > 0 && generationsFromAPI.some(g => g.from_year || g.to_year)) {
+        console.log('✅ Using generations with real API year data');
+        return generationsFromAPI.sort((a, b) => a.name.localeCompare(b.name));
+      }
+
+      // Fallback: extract generations from car data but prioritize API generation data
       const carResponse = await makeSecureAPICall('cars', {
         model_id: modelId,
         per_page: '20',
         simple_paginate: '0'
       });
       const cars = carResponse.data || [];
-      const generations = extractGenerationsFromCars(cars).filter(g => g && g.id && g.name);
-      generations.sort((a, b) => a.name.localeCompare(b.name));
-      return generations;
+      
+      // Use API generations if available, otherwise extract from cars
+      let generations: Generation[];
+      if (generationsFromAPI.length > 0) {
+        // We have API generations but no year data, so we'll enhance them with car year data
+        console.log('📊 Enhancing API generations with car year data');
+        generations = enhanceGenerationsWithCarYears(generationsFromAPI, cars);
+      } else {
+        // No API generations, extract everything from car data
+        console.log('🔄 Extracting generations from car data');
+        generations = extractGenerationsFromCars(cars);
+      }
+      
+      const filteredGenerations = generations.filter(g => g && g.id && g.name);
+      filteredGenerations.sort((a, b) => a.name.localeCompare(b.name));
+      return filteredGenerations;
     } catch (err) {
       console.error('[fetchGenerations] Error:', err);
       return [];
     }
+  };
+
+  // Helper function to enhance API generations with car year data
+  const enhanceGenerationsWithCarYears = (apiGenerations: Generation[], cars: Car[]): Generation[] => {
+    const yearDataMap = new Map<number, { from_year?: number; to_year?: number; car_count: number }>();
+    
+    // Extract year data from cars for each generation
+    cars.forEach(car => {
+      if (car.generation && car.generation.id && car.year) {
+        const genId = car.generation.id;
+        const existing = yearDataMap.get(genId);
+        
+        if (existing) {
+          existing.car_count++;
+          if (!existing.from_year || car.year < existing.from_year) {
+            existing.from_year = car.year;
+          }
+          if (!existing.to_year || car.year > existing.to_year) {
+            existing.to_year = car.year;
+          }
+        } else {
+          yearDataMap.set(genId, {
+            from_year: car.year,
+            to_year: car.year,
+            car_count: 1
+          });
+        }
+      }
+    });
+
+    // Enhance API generations with extracted year data
+    return apiGenerations.map(gen => {
+      const yearData = yearDataMap.get(gen.id);
+      return {
+        ...gen,
+        from_year: gen.from_year || yearData?.from_year,
+        to_year: gen.to_year || yearData?.to_year,
+        cars_qty: gen.cars_qty || yearData?.car_count || 0
+      };
+    });
   };
 
   const fetchFilterCounts = async (

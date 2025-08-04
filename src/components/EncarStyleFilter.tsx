@@ -292,7 +292,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 disabled={!filters.model_id}
               >
                 <SelectTrigger className="h-11">
-                  <SelectValue placeholder={filters.model_id ? "Zgjidhni gjeneratën" : "Zgjidhni modelin së pari"} />
+                  <SelectValue placeholder={filters.model_id ? "Gjeneratat" : "Zgjidhni modelin së pari"} />
                 </SelectTrigger>
                 <SelectContent className="max-h-60 overflow-y-auto">
                   <SelectItem value="all">Të gjitha Gjeneratat</SelectItem>
@@ -406,7 +406,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 disabled={!filters.model_id}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={filters.model_id ? "Zgjidhni gjeneratën" : "Zgjidhni modelin së pari"} />
+                  <SelectValue placeholder={filters.model_id ? "Gjeneratat" : "Zgjidhni modelin së pari"} />
                 </SelectTrigger>
                 <SelectContent className="max-h-60 overflow-y-auto">
                   <SelectItem value="all">Të gjitha Gjeneratat</SelectItem>
