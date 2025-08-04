@@ -18,7 +18,8 @@ import {
   Fuel,
   Settings,
   MapPin,
-  DollarSign
+  DollarSign,
+  Sparkles
 } from "lucide-react";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS } from '@/hooks/useAuctionAPI';
 
@@ -321,18 +322,23 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
   // Catalog style - expanded with sections
   return (
-    <Card className="p-4 space-y-4 bg-card border-border">
+    <Card className="p-6 space-y-6 bg-gradient-to-br from-card via-card/95 to-background border-border/50 shadow-lg">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Filter className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-semibold">Filtrat e Kërkimit</h3>
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <Filter className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold">Filtrat e Kërkimit</h3>
+            <p className="text-sm text-muted-foreground">Personalizoni kërkimin tuaj</p>
+          </div>
         </div>
         <Button 
           variant="outline" 
           size="sm" 
           onClick={onClearFilters} 
           disabled={isLoading}
-          className="text-xs"
+          className="text-xs hover:bg-destructive hover:text-destructive-foreground transition-colors"
         >
           {isLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <X className="h-3 w-3 mr-1" />}
           Pastro të gjitha
@@ -340,25 +346,30 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
       </div>
 
       {/* Basic Filters Section */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         <Button
           variant="ghost"
           onClick={() => toggleSection('basic')}
-          className="w-full justify-between p-2 h-auto"
+          className="w-full justify-between p-3 h-auto bg-primary/5 hover:bg-primary/10 rounded-lg border border-primary/20"
         >
-          <div className="flex items-center gap-2">
-            <Car className="h-4 w-4 text-primary" />
-            <span className="font-medium">Filtrat Bazë</span>
+          <div className="flex items-center gap-3">
+            <div className="p-1.5 bg-primary/15 rounded-md">
+              <Car className="h-4 w-4 text-primary" />
+            </div>
+            <span className="font-semibold text-base">Filtrat Bazë</span>
           </div>
           {expandedSections.includes('basic') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
 
         {expandedSections.includes('basic') && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-3 bg-muted/30 rounded-lg">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Marka</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-muted/20 rounded-xl border border-border/50">
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold flex items-center gap-2">
+                <Car className="h-3.5 w-3.5 text-primary" />
+                Marka
+              </Label>
               <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
-                <SelectTrigger>
+                <SelectTrigger className="h-11 border-border/50 hover:border-primary/50 transition-colors">
                   <SelectValue placeholder="Zgjidhni markën" />
                 </SelectTrigger>
                 <SelectContent className="max-h-60 overflow-y-auto">
@@ -377,14 +388,17 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Modeli</Label>
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold flex items-center gap-2">
+                <Settings className="h-3.5 w-3.5 text-primary" />
+                Modeli
+              </Label>
               <Select 
                 value={filters.model_id || 'all'} 
                 onValueChange={(value) => updateFilter('model_id', value)}
                 disabled={!filters.manufacturer_id}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-11 border-border/50 hover:border-primary/50 transition-colors">
                   <SelectValue placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"} />
                 </SelectTrigger>
                 <SelectContent className="max-h-60 overflow-y-auto">
@@ -398,14 +412,17 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Gjenerata</Label>
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold flex items-center gap-2">
+                <Calendar className="h-3.5 w-3.5 text-primary" />
+                Gjenerata
+              </Label>
               <Select 
                 value={filters.generation_id || 'all'} 
                 onValueChange={(value) => updateFilter('generation_id', value)}
                 disabled={!filters.model_id}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-11 border-border/50 hover:border-primary/50 transition-colors">
                   <SelectValue placeholder={filters.model_id ? "Gjeneratat" : "Zgjidhni modelin së pari"} />
                 </SelectTrigger>
                 <SelectContent className="max-h-60 overflow-y-auto">
@@ -416,7 +433,6 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                       {generation.from_year ? (() => {
                         const from = generation.from_year.toString().slice(-2);
                         const currentYear = new Date().getFullYear();
-                        // Show 'present' if to_year is null, undefined, or equals current year  
                         const to = (!generation.to_year || generation.to_year >= currentYear) ? 'present' : generation.to_year.toString().slice(-2);
                         return ` (${from}-${to})`;
                       })() : ''}
@@ -426,14 +442,17 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Variants</Label>
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold flex items-center gap-2">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                Variants
+              </Label>
               <Select 
                 value={filters.grade_iaai || 'all'} 
                 onValueChange={(value) => updateFilter('grade_iaai', value)}
                 disabled={!filters.generation_id || isLoadingGrades}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-11 border-border/50 hover:border-primary/50 transition-colors">
                   <SelectValue placeholder={isLoadingGrades ? "Loading..." : "Select variant"} />
                 </SelectTrigger>
                 <SelectContent className="max-h-60 overflow-y-auto">
@@ -451,85 +470,101 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
       </div>
 
       {/* Advanced Filters Section */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         <Button
           variant="ghost"
           onClick={() => toggleSection('advanced')}
-          className="w-full justify-between p-2 h-auto"
+          className="w-full justify-between p-3 h-auto bg-secondary/30 hover:bg-secondary/40 rounded-lg border border-secondary/50"
         >
-          <div className="flex items-center gap-2">
-            <Settings className="h-4 w-4 text-primary" />
-            <span className="font-medium">Filtrat e Avancuar</span>
+          <div className="flex items-center gap-3">
+            <div className="p-1.5 bg-secondary/50 rounded-md">
+              <Settings className="h-4 w-4 text-secondary-foreground" />
+            </div>
+            <span className="font-semibold text-base">Filtrat e Avancuar</span>
           </div>
           {expandedSections.includes('advanced') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
 
         {expandedSections.includes('advanced') && (
-          <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
+          <div className="space-y-6 p-4 bg-muted/20 rounded-xl border border-border/50">
             {/* Year and Price */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <Label className="text-sm font-medium flex items-center gap-2">
-                  <Calendar className="h-3 w-3" />
-                  Viti
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <Label className="text-sm font-semibold flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  Viti i Prodhimit
                 </Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Select value={filters.from_year || 'all'} onValueChange={(value) => updateFilter('from_year', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Nga" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60">
-                      <SelectItem value="all">Çdo vit</SelectItem>
-                      {years.map(year => (
-                        <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={filters.to_year || 'all'} onValueChange={(value) => updateFilter('to_year', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Deri" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60">
-                      <SelectItem value="all">Çdo vit</SelectItem>
-                      {years.map(year => (
-                        <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Nga viti</Label>
+                    <Select value={filters.from_year || 'all'} onValueChange={(value) => updateFilter('from_year', value)}>
+                      <SelectTrigger className="h-11 border-border/50">
+                        <SelectValue placeholder="Nga" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        <SelectItem value="all">Çdo vit</SelectItem>
+                        {years.map(year => (
+                          <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Deri në vitin</Label>
+                    <Select value={filters.to_year || 'all'} onValueChange={(value) => updateFilter('to_year', value)}>
+                      <SelectTrigger className="h-11 border-border/50">
+                        <SelectValue placeholder="Deri" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        <SelectItem value="all">Çdo vit</SelectItem>
+                        {years.map(year => (
+                          <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <Label className="text-sm font-medium flex items-center gap-2">
-                  <DollarSign className="h-3 w-3" />
+              <div className="space-y-4">
+                <Label className="text-sm font-semibold flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-primary" />
                   Çmimi (EUR)
                 </Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Nga"
-                    value={filters.buy_now_price_from || ''}
-                    onChange={(e) => updateFilter('buy_now_price_from', e.target.value)}
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Deri"
-                    value={filters.buy_now_price_to || ''}
-                    onChange={(e) => updateFilter('buy_now_price_to', e.target.value)}
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Çmimi minimum</Label>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={filters.buy_now_price_from || ''}
+                      onChange={(e) => updateFilter('buy_now_price_from', e.target.value)}
+                      className="h-11 border-border/50"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Çmimi maksimum</Label>
+                    <Input
+                      type="number"
+                      placeholder="999,999"
+                      value={filters.buy_now_price_to || ''}
+                      onChange={(e) => updateFilter('buy_now_price_to', e.target.value)}
+                      className="h-11 border-border/50"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Color, Fuel, Transmission */}
+            {/* Vehicle Characteristics */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center gap-2">
-                  <Palette className="h-3 w-3" />
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold flex items-center gap-2">
+                  <Palette className="h-4 w-4 text-primary" />
                   Ngjyra
                 </Label>
                 <Select value={filters.color || 'all'} onValueChange={(value) => updateFilter('color', value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-11 border-border/50">
                     <SelectValue placeholder="Çdo ngjyrë" />
                   </SelectTrigger>
                   <SelectContent>
@@ -541,13 +576,13 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center gap-2">
-                  <Fuel className="h-3 w-3" />
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold flex items-center gap-2">
+                  <Fuel className="h-4 w-4 text-primary" />
                   Karburanti
                 </Label>
                 <Select value={filters.fuel_type || 'all'} onValueChange={(value) => updateFilter('fuel_type', value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-11 border-border/50">
                     <SelectValue placeholder="Çdo tip" />
                   </SelectTrigger>
                   <SelectContent>
@@ -559,13 +594,13 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center gap-2">
-                  <Settings className="h-3 w-3" />
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold flex items-center gap-2">
+                  <Settings className="h-4 w-4 text-primary" />
                   Transmisioni
                 </Label>
                 <Select value={filters.transmission || 'all'} onValueChange={(value) => updateFilter('transmission', value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-11 border-border/50">
                     <SelectValue placeholder="Çdo tip" />
                   </SelectTrigger>
                   <SelectContent>
@@ -578,25 +613,33 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               </div>
             </div>
 
-            {/* Mileage */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <MapPin className="h-3 w-3" />
+            {/* Mileage Section */}
+            <div className="space-y-4">
+              <Label className="text-sm font-semibold flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-primary" />
                 Kilometrazhi
               </Label>
-              <div className="grid grid-cols-2 gap-2">
-                <Input
-                  type="number"
-                  placeholder="Nga (km)"
-                  value={filters.odometer_from_km || ''}
-                  onChange={(e) => updateFilter('odometer_from_km', e.target.value)}
-                />
-                <Input
-                  type="number"
-                  placeholder="Deri (km)"
-                  value={filters.odometer_to_km || ''}
-                  onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Kilometrat minimum</Label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={filters.odometer_from_km || ''}
+                    onChange={(e) => updateFilter('odometer_from_km', e.target.value)}
+                    className="h-11 border-border/50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Kilometrat maksimum</Label>
+                  <Input
+                    type="number"
+                    placeholder="500,000"
+                    value={filters.odometer_to_km || ''}
+                    onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
+                    className="h-11 border-border/50"
+                  />
+                </div>
               </div>
             </div>
           </div>
