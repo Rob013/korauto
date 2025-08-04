@@ -408,20 +408,11 @@ const FilterForm = memo<FilterFormProps>(({
                   >
                     {generation.name} 
                     {generation.from_year ? (() => {
+                      const from = generation.from_year.toString().slice(-2);
                       const currentYear = new Date().getFullYear();
-                      const fromYear = generation.from_year;
-                      const toYear = generation.to_year;
-                      
-                      // Show full year ranges with proper logic
-                      if (toYear && toYear !== currentYear && toYear !== fromYear) {
-                        return ` (${fromYear}-${toYear})`;
-                      } else if (toYear === currentYear || !toYear) {
-                        return ` (${fromYear}-present)`;
-                      } else if (toYear === fromYear) {
-                        return ` (${fromYear})`;
-                      } else {
-                        return ` (${fromYear}-${toYear})`;
-                      }
+                      const toYearRaw = generation.to_year || currentYear;
+                      const to = (generation.to_year && generation.to_year !== currentYear) ? toYearRaw.toString().slice(-2) : 'present';
+                      return ` (${from}-${to})`;
                     })() : ''}
                     {displayCount > 0 ? ` (${displayCount})` : ''}
                   </SelectItem>
