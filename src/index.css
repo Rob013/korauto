@@ -276,4 +276,29 @@ All colors MUST be HSL.
       @apply ring-0 ring-transparent;
     }
   }
+
+  /* Adaptive Select Mobile Optimization for max-width: 768px */
+  @media (max-width: 768px) {
+    .adaptive-select-trigger {
+      height: 44px; /* iOS-friendly touch target */
+      font-size: 16px; /* Prevent zoom on iOS */
+    }
+    
+    .adaptive-select-content {
+      max-height: 50vh; /* Limit height on mobile */
+    }
+    
+    .adaptive-select-item {
+      padding: 12px 16px; /* Larger touch targets */
+      min-height: 44px;
+    }
+  }
+
+  /* iPhone specific optimizations */
+  @supports (-webkit-touch-callout: none) {
+    .adaptive-select select {
+      font-size: 16px !important; /* Prevent zoom */
+      border-radius: 8px; /* iOS-style corners */
+    }
+  }
 }
