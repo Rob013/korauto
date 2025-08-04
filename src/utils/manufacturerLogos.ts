@@ -7,73 +7,217 @@ export interface ManufacturerWithLogo {
   car_count?: number;
 }
 
-// Car manufacturer logos from multiple reliable CDN sources with fallbacks
-export const MANUFACTURER_LOGOS: Record<string, string> = {
-  // German brands - Using alternative CDN sources that are more likely to work
-  'BMW': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/bmw.svg',
-  'Mercedes-Benz': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/mercedes.svg', 
-  'Audi': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/audi.svg',
-  'Volkswagen': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/volkswagen.svg',
-  'Porsche': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/porsche.svg',
-  'Opel': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/opel.svg',
+// Car manufacturer logos with local fallbacks and multiple CDN sources
+export const MANUFACTURER_LOGOS: Record<string, string[]> = {
+  // German brands - Local assets with multiple CDN fallbacks
+  'BMW': [
+    '/logos/bmw.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/4/44/BMW.svg',
+    'https://logoeps.com/wp-content/uploads/2013/03/bmw-vector-logo.png'
+  ],
+  'Mercedes-Benz': [
+    '/logos/mercedes.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/9/90/Mercedes-Logo.svg',
+    'https://logoeps.com/wp-content/uploads/2013/03/mercedes-benz-vector-logo.png'
+  ], 
+  'Audi': [
+    '/logos/audi.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/9/92/Audi-Logo_2016.svg',
+    'https://logoeps.com/wp-content/uploads/2013/03/audi-vector-logo.png'
+  ],
+  'Volkswagen': [
+    '/logos/volkswagen.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/6/6d/Volkswagen_logo_2019.svg',
+    'https://logoeps.com/wp-content/uploads/2013/03/volkswagen-vector-logo.png'
+  ],
+  'Porsche': [
+    '/logos/porsche.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/2/2e/Porsche_logo.svg',
+    'https://logoeps.com/wp-content/uploads/2013/03/porsche-vector-logo.png'
+  ],
+  'Opel': [
+    '/logos/opel.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/7/7b/Opel_logo_2017.svg'
+  ],
   
   // Korean brands
-  'Hyundai': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/hyundai.svg',
-  'Kia': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/kia.svg',
-  'Genesis': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/genesis.svg',
+  'Hyundai': [
+    '/logos/hyundai.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/0/00/Hyundai_logo.svg'
+  ],
+  'Kia': [
+    '/logos/kia.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/7/7d/Kia_logo2.svg'
+  ],
+  'Genesis': [
+    '/logos/genesis.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/1/1c/Genesis_Motor_logo.svg'
+  ],
   
   // Japanese brands
-  'Toyota': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/toyota.svg',
-  'Honda': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/honda.svg',
-  'Nissan': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/nissan.svg',
-  'Mazda': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/mazda.svg',
-  'Subaru': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/subaru.svg',
-  'Mitsubishi': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/mitsubishi.svg',
-  'Lexus': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/lexus.svg',
-  'Infiniti': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/infiniti.svg',
-  'Acura': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/acura.svg',
+  'Toyota': [
+    '/logos/toyota.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/5/5c/Toyota_logo.svg'
+  ],
+  'Honda': [
+    '/logos/honda.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/7/76/Honda_logo.svg'
+  ],
+  'Nissan': [
+    '/logos/nissan.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/2/23/Nissan_2020_logo.svg'
+  ],
+  'Mazda': [
+    '/logos/mazda.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/2/22/Mazda_logo.svg'
+  ],
+  'Subaru': [
+    '/logos/subaru.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/0/0c/Subaru_logo.svg'
+  ],
+  'Mitsubishi': [
+    '/logos/mitsubishi.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/5/5a/Mitsubishi_logo.svg'
+  ],
+  'Lexus': [
+    '/logos/lexus.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/c/ce/Lexus_logo.svg'
+  ],
+  'Infiniti': [
+    '/logos/infiniti.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/b/bb/Infiniti_logo_2013.svg'
+  ],
+  'Acura': [
+    '/logos/acura.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/6/6c/Acura_logo.svg'
+  ],
   
   // American brands  
-  'Ford': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/ford.svg',
-  'Chevrolet': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/chevrolet.svg',
-  'Cadillac': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/cadillac.svg',
-  'GMC': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/gmc.svg',
-  'Tesla': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/tesla.svg',
-  'Chrysler': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/chrysler.svg',
-  'Jeep': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/jeep.svg',
-  'Dodge': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/dodge.svg',
+  'Ford': [
+    '/logos/ford.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/3/3e/Ford_logo_flat.svg'
+  ],
+  'Chevrolet': [
+    '/logos/chevrolet.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Chevrolet_logo.svg/500px-Chevrolet_logo.svg.png'
+  ],
+  'Cadillac': [
+    '/logos/cadillac.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/e/e1/Cadillac_logo.svg'
+  ],
+  'GMC': [
+    '/logos/gmc.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/4/4c/GMC_logo.svg'
+  ],
+  'Tesla': [
+    '/logos/tesla.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/b/bb/Tesla_T_symbol.svg'
+  ],
+  'Chrysler': [
+    '/logos/chrysler.svg'
+  ],
+  'Jeep': [
+    '/logos/jeep.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/e/e8/Jeep_logo.svg'
+  ],
+  'Dodge': [
+    '/logos/dodge.svg'
+  ],
   
   // Luxury/European brands
-  'Land Rover': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/landrover.svg',
-  'Jaguar': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/jaguar.svg',
-  'Volvo': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/volvo.svg',
-  'Ferrari': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/ferrari.svg',
-  'Lamborghini': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/lamborghini.svg',
-  'Maserati': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/maserati.svg',
-  'Bentley': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/bentley.svg',
-  'Rolls-Royce': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/rollsroyce.svg',
-  'Aston Martin': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/astonmartin.svg',
-  'McLaren': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/mclaren.svg',
+  'Land Rover': [
+    '/logos/landrover.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/6/60/Land_Rover_logo.svg'
+  ],
+  'Jaguar': [
+    '/logos/jaguar.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/e/e8/Jaguar_logo_2012.svg'
+  ],
+  'Volvo': [
+    '/logos/volvo.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/c/c1/Volvo_logo_%282014%29.svg'
+  ],
+  'Ferrari': [
+    '/logos/ferrari.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/c/c0/Ferrari_Logo.svg'
+  ],
+  'Lamborghini': [
+    '/logos/lamborghini.svg'
+  ],
+  'Maserati': [
+    '/logos/maserati.svg'
+  ],
+  'Bentley': [
+    '/logos/bentley.svg'
+  ],
+  'Rolls-Royce': [
+    '/logos/rollsroyce.svg'
+  ],
+  'Aston Martin': [
+    '/logos/astonmartin.svg'
+  ],
+  'McLaren': [
+    '/logos/mclaren.svg'
+  ],
   
   // French brands
-  'Peugeot': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/peugeot.svg',
-  'Renault': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/renault.svg',
-  'Citroën': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/citroen.svg',
+  'Peugeot': [
+    '/logos/peugeot.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/2/20/Peugeot_logo.svg'
+  ],
+  'Renault': [
+    '/logos/renault.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/4/49/Renault_logo.svg'
+  ],
+  'Citroën': [
+    '/logos/citroen.svg'
+  ],
   
   // Italian brands
-  'Fiat': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/fiat.svg',
-  'Alfa Romeo': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/alfaromeo.svg',
+  'Fiat': [
+    '/logos/fiat.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/f/f4/Fiat_logo.svg'
+  ],
+  'Alfa Romeo': [
+    '/logos/alfaromeo.svg'
+  ],
   
   // Other brands
-  'Skoda': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/skoda.svg',
-  'Seat': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/seat.svg',
-  'Mini': 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/mini.svg'
+  'Skoda': [
+    '/logos/skoda.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/f/f7/Škoda_Auto_logo.svg'
+  ],
+  'Seat': [
+    '/logos/seat.svg'
+  ],
+  'Mini': [
+    '/logos/mini.svg',
+    'https://upload.wikimedia.org/wikipedia/commons/3/31/Mini_logo.svg'
+  ]
 };
 
 /**
- * Get manufacturer logo URL by name
+ * Get manufacturer logo URL by name with fallback support
  */
 export const getManufacturerLogo = (manufacturerName: string): string | undefined => {
+  // Try exact match first
+  if (MANUFACTURER_LOGOS[manufacturerName]) {
+    return MANUFACTURER_LOGOS[manufacturerName][0]; // Return the first (local) option
+  }
+  
+  // Try case-insensitive match
+  const normalizedName = manufacturerName.trim();
+  const foundKey = Object.keys(MANUFACTURER_LOGOS).find(
+    key => key.toLowerCase() === normalizedName.toLowerCase()
+  );
+  
+  return foundKey ? MANUFACTURER_LOGOS[foundKey][0] : undefined;
+};
+
+/**
+ * Get all fallback URLs for a manufacturer logo
+ */
+export const getManufacturerLogoFallbacks = (manufacturerName: string): string[] => {
   // Try exact match first
   if (MANUFACTURER_LOGOS[manufacturerName]) {
     return MANUFACTURER_LOGOS[manufacturerName];
@@ -85,7 +229,7 @@ export const getManufacturerLogo = (manufacturerName: string): string | undefine
     key => key.toLowerCase() === normalizedName.toLowerCase()
   );
   
-  return foundKey ? MANUFACTURER_LOGOS[foundKey] : undefined;
+  return foundKey ? MANUFACTURER_LOGOS[foundKey] : [];
 };
 
 /**
