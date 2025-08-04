@@ -210,55 +210,46 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     );
   };
 
-  // Homepage style - Encar-like with our theme and language
+  // Homepage style - compact single row
   if (isHomepage) {
     return (
-      <Card className="p-6 bg-gradient-to-r from-card via-card/95 to-card border-border/50 shadow-lg">
-        <div className="space-y-6">
-          {/* Header */}
+      <Card className="p-4 bg-gradient-to-r from-card via-card/95 to-card border-border/50 shadow-sm">
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                <Car className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <h2 className="text-xl font-bold text-foreground">Kërko Makinën</h2>
+            <div className="flex items-center gap-2">
+              <Car className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold">Kërko Makinën</h3>
             </div>
-            {(filters.manufacturer_id || filters.model_id || filters.generation_id) && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={onClearFilters}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4 mr-1" />
-                Pastro
-              </Button>
-            )}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onClearFilters}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
           
-          {/* Main search filters - horizontal layout */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Manufacturer Select */}
+          {/* Main filters in single row */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-foreground">Marka</Label>
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Car className="h-3 w-3" />
+                Marka
+              </Label>
               <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
-                <SelectTrigger className="h-12 bg-background border-border hover:border-primary focus:border-primary transition-colors">
+                <SelectTrigger className="h-11">
                   <SelectValue placeholder="Zgjidhni markën" />
                 </SelectTrigger>
-                <SelectContent className="z-50 bg-background border border-border shadow-lg">
-                  <SelectItem value="all" className="hover:bg-muted">Të gjitha Markat</SelectItem>
+                <SelectContent className="max-h-60 overflow-y-auto">
+                  <SelectItem value="all">Të gjitha Markat</SelectItem>
                   {sortedManufacturers.map((manufacturer) => (
-                    <SelectItem 
-                      key={manufacturer.id} 
-                      value={manufacturer.id.toString()}
-                      className="hover:bg-muted"
-                    >
+                    <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
                       <div className="flex items-center gap-2">
                         {manufacturer.image && (
                           <img src={manufacturer.image} alt={manufacturer.name} className="w-5 h-5 object-contain" />
                         )}
-                        <span>{manufacturer.name}</span>
-                        <span className="text-xs text-muted-foreground ml-auto">({manufacturer.cars_qty})</span>
+                        <span>{manufacturer.name} ({manufacturer.cars_qty})</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -266,86 +257,70 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               </Select>
             </div>
 
-            {/* Model Select */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-foreground">Modeli</Label>
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Settings className="h-3 w-3" />
+                Modeli
+              </Label>
               <Select 
                 value={filters.model_id || 'all'} 
                 onValueChange={(value) => updateFilter('model_id', value)}
                 disabled={!filters.manufacturer_id}
               >
-                <SelectTrigger className="h-12 bg-background border-border hover:border-primary focus:border-primary transition-colors disabled:opacity-50">
+                <SelectTrigger className="h-11">
                   <SelectValue placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"} />
                 </SelectTrigger>
-                <SelectContent className="z-50 bg-background border border-border shadow-lg">
-                  <SelectItem value="all" className="hover:bg-muted">Të gjithë Modelet</SelectItem>
+                <SelectContent className="max-h-60 overflow-y-auto">
+                  <SelectItem value="all">Të gjithë Modelet</SelectItem>
                   {models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => (
-                    <SelectItem 
-                      key={model.id} 
-                      value={model.id.toString()}
-                      className="hover:bg-muted"
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <span>{model.name}</span>
-                        <span className="text-xs text-muted-foreground">({model.cars_qty})</span>
-                      </div>
+                    <SelectItem key={model.id} value={model.id.toString()}>
+                      {model.name} ({model.cars_qty})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Generation Select */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-foreground">Gjenerata</Label>
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Calendar className="h-3 w-3" />
+                Gjenerata
+              </Label>
               <Select 
                 value={filters.generation_id || 'all'} 
                 onValueChange={(value) => updateFilter('generation_id', value)}
                 disabled={!filters.model_id}
               >
-                <SelectTrigger className="h-12 bg-background border-border hover:border-primary focus:border-primary transition-colors disabled:opacity-50">
+                <SelectTrigger className="h-11">
                   <SelectValue placeholder={filters.model_id ? "Zgjidhni gjeneratën" : "Zgjidhni modelin së pari"} />
                 </SelectTrigger>
-                <SelectContent className="z-50 bg-background border border-border shadow-lg">
-                  <SelectItem value="all" className="hover:bg-muted">Të gjitha Gjeneratat</SelectItem>
+                <SelectContent className="max-h-60 overflow-y-auto">
+                  <SelectItem value="all">Të gjitha Gjeneratat</SelectItem>
                   {generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => (
-                    <SelectItem 
-                      key={generation.id} 
-                      value={generation.id.toString()}
-                      className="hover:bg-muted"
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <span>{generation.name}</span>
-                        <span className="text-xs text-muted-foreground">({generation.cars_qty})</span>
-                      </div>
+                    <SelectItem key={generation.id} value={generation.id.toString()}>
+                      {generation.name} ({generation.cars_qty})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Search Button */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-foreground opacity-0">Kërko</Label>
-              <Button 
-                size="lg" 
-                className="h-12 w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-colors"
-                onClick={() => {
-                  if (filters.manufacturer_id || filters.model_id || filters.generation_id) {
-                    // Trigger navigation to catalog with current filters
-                    const searchParams = new URLSearchParams();
-                    Object.entries(filters).forEach(([key, value]) => {
-                      if (value && value !== '') {
-                        searchParams.set(key, value);
-                      }
-                    });
-                    window.location.href = `/catalog?${searchParams.toString()}`;
-                  }
-                }}
-              >
-                <Search className="h-4 w-4 mr-2" />
-                Kërko Makina
-              </Button>
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Search className="h-3 w-3" />
+                Kërkim
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Kërko..."
+                  value={filters.search || ''}
+                  onChange={(e) => updateFilter('search', e.target.value)}
+                  className="h-11"
+                />
+                <Button size="sm" className="h-11 px-4">
+                  <Search className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -353,290 +328,283 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     );
   }
 
-  // Catalog style - Vertical left sidebar layout like Encar
+  // Catalog style - expanded with sections
   return (
-    <div className="w-full max-w-xs bg-card border border-border rounded-lg shadow-sm">
-      {/* Header */}
-      <div className="p-4 border-b border-border bg-muted/30">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-primary" />
-            <h3 className="font-semibold text-foreground">Filtrat</h3>
-          </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={onClearFilters} 
-            disabled={isLoading}
-            className="text-xs h-7 px-2"
-          >
-            {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
-          </Button>
+    <Card className="p-4 space-y-4 bg-card border-border">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Filter className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-semibold">Filtrat e Kërkimit</h3>
         </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={onClearFilters} 
+          disabled={isLoading}
+          className="text-xs"
+        >
+          {isLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <X className="h-3 w-3 mr-1" />}
+          Pastro të gjitha
+        </Button>
       </div>
 
-      <div className="p-4 space-y-4">
-        {/* Basic Filters - Always visible */}
-        <div className="space-y-4">
-          {/* Manufacturer */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium flex items-center gap-2">
-              <Car className="h-3 w-3" />
-              Marka
-            </Label>
-            <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Zgjidhni markën" />
-              </SelectTrigger>
-              <SelectContent className="z-50">
-                <SelectItem value="all">Të gjitha</SelectItem>
-                {sortedManufacturers.map((manufacturer) => (
-                  <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
-                    <div className="flex items-center gap-2">
-                      {manufacturer.image && (
-                        <img src={manufacturer.image} alt={manufacturer.name} className="w-4 h-4 object-contain" />
-                      )}
-                      <span className="text-xs">{manufacturer.name} ({manufacturer.cars_qty})</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      {/* Basic Filters Section */}
+      <div className="space-y-3">
+        <Button
+          variant="ghost"
+          onClick={() => toggleSection('basic')}
+          className="w-full justify-between p-2 h-auto"
+        >
+          <div className="flex items-center gap-2">
+            <Car className="h-4 w-4 text-primary" />
+            <span className="font-medium">Filtrat Bazë</span>
           </div>
+          {expandedSections.includes('basic') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </Button>
 
-          {/* Model */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium flex items-center gap-2">
-              <Settings className="h-3 w-3" />
-              Modeli
-            </Label>
-            <Select 
-              value={filters.model_id || 'all'} 
-              onValueChange={(value) => updateFilter('model_id', value)}
-              disabled={!filters.manufacturer_id}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Marka së pari"} />
-              </SelectTrigger>
-              <SelectContent className="z-50">
-                <SelectItem value="all">Të gjithë</SelectItem>
-                {models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => (
-                  <SelectItem key={model.id} value={model.id.toString()}>
-                    <span className="text-xs">{model.name} ({model.cars_qty})</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        {expandedSections.includes('basic') && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-3 bg-muted/30 rounded-lg">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Marka</Label>
+              <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Zgjidhni markën" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60 overflow-y-auto">
+                  <SelectItem value="all">Të gjitha Markat</SelectItem>
+                  {sortedManufacturers.map((manufacturer) => (
+                    <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
+                      <div className="flex items-center gap-2">
+                        {manufacturer.image && (
+                          <img src={manufacturer.image} alt={manufacturer.name} className="w-4 h-4 object-contain" />
+                        )}
+                        <span>{manufacturer.name} ({manufacturer.cars_qty})</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Modeli</Label>
+              <Select 
+                value={filters.model_id || 'all'} 
+                onValueChange={(value) => updateFilter('model_id', value)}
+                disabled={!filters.manufacturer_id}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"} />
+                </SelectTrigger>
+                <SelectContent className="max-h-60 overflow-y-auto">
+                  <SelectItem value="all">Të gjithë Modelet</SelectItem>
+                  {models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => (
+                    <SelectItem key={model.id} value={model.id.toString()}>
+                      {model.name} ({model.cars_qty})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Gjenerata</Label>
+              <Select 
+                value={filters.generation_id || 'all'} 
+                onValueChange={(value) => updateFilter('generation_id', value)}
+                disabled={!filters.model_id}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={filters.model_id ? "Zgjidhni gjeneratën" : "Zgjidhni modelin së pari"} />
+                </SelectTrigger>
+                <SelectContent className="max-h-60 overflow-y-auto">
+                  <SelectItem value="all">Të gjitha Gjeneratat</SelectItem>
+                  {generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => (
+                    <SelectItem key={generation.id} value={generation.id.toString()}>
+                      {generation.name} ({generation.cars_qty})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Varianti</Label>
+              <Select 
+                value={filters.grade_iaai || 'all'} 
+                onValueChange={(value) => updateFilter('grade_iaai', value)}
+                disabled={!filters.generation_id || isLoadingGrades}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={isLoadingGrades ? "Duke ngarkuar..." : "Zgjidhni variatin"} />
+                </SelectTrigger>
+                <SelectContent className="max-h-60 overflow-y-auto">
+                  <SelectItem value="all">Të gjithë Variantet</SelectItem>
+                  {grades.map((grade) => (
+                    <SelectItem key={grade.value} value={grade.value}>
+                      {grade.label} {grade.count ? `(${grade.count})` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+        )}
+      </div>
 
-          {/* Generation */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium flex items-center gap-2">
-              <Calendar className="h-3 w-3" />
-              Gjenerata
-            </Label>
-            <Select 
-              value={filters.generation_id || 'all'} 
-              onValueChange={(value) => updateFilter('generation_id', value)}
-              disabled={!filters.model_id}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={filters.model_id ? "Zgjidhni gjeneratën" : "Modeli së pari"} />
-              </SelectTrigger>
-              <SelectContent className="z-50">
-                <SelectItem value="all">Të gjitha</SelectItem>
-                {generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => (
-                  <SelectItem key={generation.id} value={generation.id.toString()}>
-                    <span className="text-xs">{generation.name} ({generation.cars_qty})</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      {/* Advanced Filters Section */}
+      <div className="space-y-3">
+        <Button
+          variant="ghost"
+          onClick={() => toggleSection('advanced')}
+          className="w-full justify-between p-2 h-auto"
+        >
+          <div className="flex items-center gap-2">
+            <Settings className="h-4 w-4 text-primary" />
+            <span className="font-medium">Filtrat e Avancuar</span>
           </div>
+          {expandedSections.includes('advanced') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </Button>
 
-          {/* Grade/Variant */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Varianti</Label>
-            <Select 
-              value={filters.grade_iaai || 'all'} 
-              onValueChange={(value) => updateFilter('grade_iaai', value)}
-              disabled={!filters.generation_id || isLoadingGrades}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={isLoadingGrades ? "Duke ngarkuar..." : "Zgjidhni variatin"} />
-              </SelectTrigger>
-              <SelectContent className="z-50">
-                <SelectItem value="all">Të gjithë</SelectItem>
-                {grades.map((grade) => (
-                  <SelectItem key={grade.value} value={grade.value}>
-                    <span className="text-xs">{grade.label} {grade.count ? `(${grade.count})` : ''}</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        {expandedSections.includes('advanced') && (
+          <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
+            {/* Year and Price */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Calendar className="h-3 w-3" />
+                  Viti
+                </Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Select value={filters.from_year || 'all'} onValueChange={(value) => updateFilter('from_year', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Nga" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      <SelectItem value="all">Çdo vit</SelectItem>
+                      {years.map(year => (
+                        <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={filters.to_year || 'all'} onValueChange={(value) => updateFilter('to_year', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Deri" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      <SelectItem value="all">Çdo vit</SelectItem>
+                      {years.map(year => (
+                        <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-        {/* Advanced Filters Toggle */}
-        <div className="pt-2 border-t border-border">
-          <Button
-            variant="ghost"
-            onClick={() => toggleSection('advanced')}
-            className="w-full justify-between p-2 h-auto text-xs"
-          >
-            <span>Filtrat e avancuara</span>
-            {expandedSections.includes('advanced') ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-          </Button>
-
-          {expandedSections.includes('advanced') && (
-            <div className="mt-3 space-y-4">
-              {/* Price Range */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label className="text-sm font-medium flex items-center gap-2">
                   <DollarSign className="h-3 w-3" />
                   Çmimi (EUR)
                 </Label>
-                <div className="flex gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <Input
                     type="number"
-                    placeholder="Prej"
+                    placeholder="Nga"
                     value={filters.buy_now_price_from || ''}
                     onChange={(e) => updateFilter('buy_now_price_from', e.target.value)}
-                    className="text-xs"
                   />
                   <Input
                     type="number"
                     placeholder="Deri"
                     value={filters.buy_now_price_to || ''}
                     onChange={(e) => updateFilter('buy_now_price_to', e.target.value)}
-                    className="text-xs"
                   />
                 </div>
               </div>
+            </div>
 
-              {/* Year Range */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center gap-2">
-                  <Calendar className="h-3 w-3" />
-                  Viti
-                </Label>
-                <div className="flex gap-2">
-                  <Select value={filters.from_year || 'any'} onValueChange={(value) => updateFilter('from_year', value)}>
-                    <SelectTrigger className="w-full text-xs">
-                      <SelectValue placeholder="Prej" />
-                    </SelectTrigger>
-                    <SelectContent className="z-50">
-                      <SelectItem value="any">Çdo vit</SelectItem>
-                      {years.map((year) => (
-                        <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={filters.to_year || 'any'} onValueChange={(value) => updateFilter('to_year', value)}>
-                    <SelectTrigger className="w-full text-xs">
-                      <SelectValue placeholder="Deri" />
-                    </SelectTrigger>
-                    <SelectContent className="z-50">
-                      <SelectItem value="any">Çdo vit</SelectItem>
-                      {years.map((year) => (
-                        <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Color */}
+            {/* Color, Fuel, Transmission */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-medium flex items-center gap-2">
                   <Palette className="h-3 w-3" />
                   Ngjyra
                 </Label>
-                <Select value={filters.color || 'any'} onValueChange={(value) => updateFilter('color', value)}>
-                  <SelectTrigger className="w-full text-xs">
-                    <SelectValue placeholder="Zgjidhni ngjyrën" />
+                <Select value={filters.color || 'all'} onValueChange={(value) => updateFilter('color', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Çdo ngjyrë" />
                   </SelectTrigger>
-                  <SelectContent className="z-50">
-                    <SelectItem value="any">Çdo ngjyrë</SelectItem>
-                    {Object.entries(COLOR_OPTIONS).map(([key, value]) => (
-                      <SelectItem key={key} value={key}>
-                        <span className="text-xs capitalize">{key.replace('_', ' ')}</span>
-                      </SelectItem>
+                  <SelectContent>
+                    <SelectItem value="all">Çdo ngjyrë</SelectItem>
+                    {Object.entries(COLOR_OPTIONS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>{label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Fuel Type */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium flex items-center gap-2">
                   <Fuel className="h-3 w-3" />
                   Karburanti
                 </Label>
-                <Select value={filters.fuel_type || 'any'} onValueChange={(value) => updateFilter('fuel_type', value)}>
-                  <SelectTrigger className="w-full text-xs">
-                    <SelectValue placeholder="Zgjidhni karburantin" />
+                <Select value={filters.fuel_type || 'all'} onValueChange={(value) => updateFilter('fuel_type', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Çdo tip" />
                   </SelectTrigger>
-                  <SelectContent className="z-50">
-                    <SelectItem value="any">Çdo karburant</SelectItem>
-                    {Object.entries(FUEL_TYPE_OPTIONS).map(([key, value]) => (
-                      <SelectItem key={key} value={key}>
-                        <span className="text-xs capitalize">{key}</span>
-                      </SelectItem>
+                  <SelectContent>
+                    <SelectItem value="all">Çdo tip</SelectItem>
+                    {Object.entries(FUEL_TYPE_OPTIONS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>{label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Transmission */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium flex items-center gap-2">
                   <Settings className="h-3 w-3" />
                   Transmisioni
                 </Label>
-                <Select value={filters.transmission || 'any'} onValueChange={(value) => updateFilter('transmission', value)}>
-                  <SelectTrigger className="w-full text-xs">
-                    <SelectValue placeholder="Zgjidhni transmisionin" />
+                <Select value={filters.transmission || 'all'} onValueChange={(value) => updateFilter('transmission', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Çdo tip" />
                   </SelectTrigger>
-                  <SelectContent className="z-50">
-                    <SelectItem value="any">Çdo transmision</SelectItem>
-                    {Object.entries(TRANSMISSION_OPTIONS).map(([key, value]) => (
-                      <SelectItem key={key} value={key}>
-                        <span className="text-xs capitalize">{key}</span>
-                      </SelectItem>
+                  <SelectContent>
+                    <SelectItem value="all">Çdo tip</SelectItem>
+                    {Object.entries(TRANSMISSION_OPTIONS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>{label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+            </div>
 
-              {/* Mileage Range */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center gap-2">
-                  <MapPin className="h-3 w-3" />
-                  Kilometrazhi
-                </Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Prej (km)"
-                    value={filters.odometer_from_km || ''}
-                    onChange={(e) => updateFilter('odometer_from_km', e.target.value)}
-                    className="text-xs"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Deri (km)"
-                    value={filters.odometer_to_km || ''}
-                    onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
-                    className="text-xs"
-                  />
-                </div>
+            {/* Mileage */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <MapPin className="h-3 w-3" />
+                Kilometrazhi
+              </Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  type="number"
+                  placeholder="Nga (km)"
+                  value={filters.odometer_from_km || ''}
+                  onChange={(e) => updateFilter('odometer_from_km', e.target.value)}
+                />
+                <Input
+                  type="number"
+                  placeholder="Deri (km)"
+                  value={filters.odometer_to_km || ''}
+                  onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
+                />
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
-    </div>
+    </Card>
   );
 });
 
