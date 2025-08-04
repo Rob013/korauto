@@ -1,5 +1,5 @@
 import LazyCarCard from "./LazyCarCard";
-import { memo, useState, useEffect } from "react";
+import { memo, useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { AlertCircle } from "lucide-react";
@@ -56,6 +56,7 @@ const HomeCarsSection = memo(() => {
   const [sortBy, setSortBy] = useState<SortOption>("popular");
   const [showAllCars, setShowAllCars] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
+  const initialLoadRef = useRef(false);
 
   const [filters, setFilters] = useState<APIFilters>({});
   const [manufacturers, setManufacturers] = useState<
@@ -253,6 +254,10 @@ const HomeCarsSection = memo(() => {
     : sortedCars.slice(0, defaultDisplayCount);
 
   useEffect(() => {
+    // Prevent multiple calls on initial load
+    if (initialLoadRef.current) return;
+    initialLoadRef.current = true;
+
     // Calculate daily page based on day of month (1-31)
     const today = new Date();
     const dayOfMonth = today.getDate(); // 1-31
