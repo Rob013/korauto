@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { shouldUseNativeSelect, isIPhone, isIPad, isTouchDevice } from "@/utils/deviceDetection";
+import { isIPhone } from "@/utils/deviceDetection";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 // Car brand categories as specified in requirements
@@ -37,33 +37,18 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    // Use native select for mobile devices, tablets (including iPad), and touch devices
-    setShouldUseNative(shouldUseNativeSelect());
+    // Use native select for iPhone to trigger iOS picker
+    setShouldUseNative(isIPhone());
   }, []);
 
   const handleNativeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     onValueChange(event.target.value);
   };
 
-  // Get device-specific CSS classes
-  const getDeviceClasses = () => {
-    const baseClasses = 'w-full px-3 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none';
-    
-    if (isIPhone()) {
-      return `${baseClasses} h-12 text-base category-filter-ios`;
-    } else if (isIPad()) {
-      return `${baseClasses} h-11 text-base category-filter-ipad`;
-    } else if (isMobile || isTouchDevice()) {
-      return `${baseClasses} h-11 text-base category-filter-touch`;
-    } else {
-      return `${baseClasses} h-10 text-sm category-filter-desktop`;
-    }
-  };
-
-  // Native HTML select for mobile devices, tablets, and touch devices
+  // Native HTML select for iPhone
   if (shouldUseNative) {
     return (
-      <div className={`space-y-1 category-filter-mobile category-filter-native ${className}`}>
+      <div className={`space-y-1 category-filter-mobile category-filter-ios ${className}`}>
         <Label htmlFor="category-filter" className="text-xs font-medium">
           {label}
         </Label>
@@ -72,12 +57,17 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
           value={value}
           onChange={handleNativeChange}
           disabled={disabled}
-          className={getDeviceClasses()}
+          className={`
+            w-full px-3 py-2 text-sm
+            bg-background border border-input rounded-md
+            focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2
+            disabled:cursor-not-allowed disabled:opacity-50
+            appearance-none
+            ${isMobile ? 'h-12 text-base' : 'h-8 text-sm'}
+          `}
           style={{
-            // Ensure proper native styling across all devices
+            // Ensure proper iOS styling
             WebkitAppearance: 'none',
-            MozAppearance: 'none',
-            appearance: 'none',
             backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
             backgroundPosition: 'right 0.5rem center',
             backgroundRepeat: 'no-repeat',
