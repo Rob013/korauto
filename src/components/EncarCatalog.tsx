@@ -31,6 +31,23 @@ import {
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { supabase } from "@/integrations/supabase/client";
 
+// Add a debouncing utility
+const useDebounce = (value: any, delay: number) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
 interface APIFilters {
   manufacturer_id?: string;
   model_id?: string;
@@ -271,6 +288,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
   };
 
+  // Add debouncing for filters to prevent excessive API calls
+  const debouncedFilters = useDebounce(filters, 300);
+
   const handleFiltersChange = useCallback((newFilters: APIFilters) => {
     setFilters(newFilters);
     setCurrentPage(1); // Reset to first page when filters change
@@ -282,25 +302,32 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Clear previous data immediately to show loading state
     setCars([]);
     
-    // Use 50 cars per page for proper pagination
-    const filtersWithPagination = {
-      ...newFilters,
-      per_page: "50" // Show 50 cars per page
-    };
-    
-    fetchCars(1, filtersWithPagination, true);
+    // Don't make API call here - let the debounced effect handle it
+  }, [setCars]);
 
-    // Update URL with all non-empty filter values - properly encode grade filter
-    const paramsToSet: any = {};
-    Object.entries(newFilters).forEach(([key, value]) => {
-      if (value !== undefined && value !== "" && value !== null) {
-        // Properly encode grade filter for URL
-        paramsToSet[key] = key === 'grade_iaai' ? encodeURIComponent(value) : value;
-      }
-    });
-    paramsToSet.page = "1";
-    setSearchParams(paramsToSet);
-  }, [fetchCars, setSearchParams]);
+  // Effect to handle debounced filter changes
+  useEffect(() => {
+    if (Object.keys(debouncedFilters).length > 0) {
+      // Use 50 cars per page for proper pagination
+      const filtersWithPagination = {
+        ...debouncedFilters,
+        per_page: "50" // Show 50 cars per page
+      };
+      
+      fetchCars(1, filtersWithPagination, true);
+
+      // Update URL with all non-empty filter values - properly encode grade filter
+      const paramsToSet: any = {};
+      Object.entries(debouncedFilters).forEach(([key, value]) => {
+        if (value !== undefined && value !== "" && value !== null) {
+          // Properly encode grade filter for URL
+          paramsToSet[key] = key === 'grade_iaai' ? encodeURIComponent(value) : value;
+        }
+      });
+      paramsToSet.page = "1";
+      setSearchParams(paramsToSet);
+    }
+  }, [debouncedFilters, fetchCars, setSearchParams]);
 
   const handleClearFilters = useCallback(() => {
     setFilters({});
@@ -621,13 +648,16 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     };
   }, [filters, loadedPages]); // Re-run when filters or pages change
 
-  // Load filter counts when filters or manufacturers change
+  // Consolidate and optimize filter counts loading
   useEffect(() => {
     const loadFilterCounts = async () => {
       if (manufacturers.length > 0) {
         setLoadingCounts(true);
         try {
-          const counts = await fetchFilterCounts(filters, manufacturers);
+          // Only load counts if we don't have any filters applied yet
+          const counts = Object.keys(filters).length === 0 
+            ? await fetchFilterCounts({}, manufacturers)
+            : await fetchFilterCounts(filters, manufacturers);
           setFilterCounts(counts);
         } finally {
           setLoadingCounts(false);
@@ -636,23 +666,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     };
 
     loadFilterCounts();
-  }, [filters, manufacturers]);
-
-  useEffect(() => {
-    const loadInitialCounts = async () => {
-      if (manufacturers.length > 0) {
-        setLoadingCounts(true);
-        try {
-          const counts = await fetchFilterCounts({}, manufacturers);
-          setFilterCounts(counts);
-        } finally {
-          setLoadingCounts(false);
-        }
-      }
-    };
-
-    loadInitialCounts();
-  }, [manufacturers]);
+  }, [manufacturers]); // Only run when manufacturers change, not on every filter change
 
   // Calculate total pages when totalCount or filteredCars changes
   useEffect(() => {
