@@ -364,35 +364,64 @@ export const useSecureAuctionAPI = () => {
       
       // IMPORTANT: Remove grade_iaai from server request - we'll do client-side filtering
       // This prevents backend errors and ensures we get all cars for client-side filtering
+      const selectedVariant = newFilters.grade_iaai;
       delete apiFilters.grade_iaai;
 
-      // console.log(`🔄 Fetching cars - Page ${page} with filters:`, apiFilters);
+      console.log(`🔄 Fetching cars - Page ${page} with filters:`, apiFilters);
       const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
 
-      // Set metadata from response
-      setTotalCount(data.meta?.total || 0);
+      // Apply client-side variant filtering if a variant is selected
+      let filteredCars = data.data || [];
+      if (selectedVariant && selectedVariant !== 'all') {
+        console.log(`🔍 Applying client-side variant filter: "${selectedVariant}"`);
+        
+        filteredCars = filteredCars.filter(car => {
+          // Check if car has the selected variant in any of its lots
+          if (car.lots && Array.isArray(car.lots)) {
+            return car.lots.some(lot => {
+              // Check grade_iaai field
+              if (lot.grade_iaai && lot.grade_iaai.trim() === selectedVariant) {
+                return true;
+              }
+              
+              // Check badge field
+              if (lot.details && lot.details.badge && lot.details.badge.trim() === selectedVariant) {
+                return true;
+              }
+              
+              // Check engine name
+              if (car.engine && car.engine.name && car.engine.name.trim() === selectedVariant) {
+                return true;
+              }
+              
+              // Check title for variant
+              if (car.title && car.title.toLowerCase().includes(selectedVariant.toLowerCase())) {
+                return true;
+              }
+              
+              return false;
+            });
+          }
+          return false;
+        });
+        
+        console.log(`✅ Variant filter "${selectedVariant}": ${filteredCars.length} cars match out of ${data.data?.length || 0} total`);
+      }
+
+      // Set metadata from response (but adjust total count for client-side filtering)
+      const totalFiltered = selectedVariant && selectedVariant !== 'all' ? filteredCars.length : (data.meta?.total || 0);
+      setTotalCount(totalFiltered);
       setHasMorePages(page < (data.meta?.last_page || 1));
 
-      // console.log(
-      //   `✅ API Success - Fetched ${data.data?.length || 0} cars from page ${page}, total: ${data.meta?.total || 0}`
-      // );
-      
-              // Add debugging for grade filter results
-        // if (apiFilters.grade_iaai && data.data) {
-        //   const carsWithGrade = data.data.filter(car => {
-        //     if (car.lots && Array.isArray(car.lots)) {
-        //       return car.lots.some(lot => lot.grade_iaai === apiFilters.grade_iaai);
-        //     }
-        //     return false;
-        //   });
-        //   console.log(`🔍 Grade filter "${apiFilters.grade_iaai}": ${carsWithGrade.length} cars have matching grade in lots`);
-        // }
+      console.log(
+        `✅ API Success - Fetched ${filteredCars.length} cars from page ${page}, total: ${totalFiltered}`
+      );
 
       if (resetList || page === 1) {
-        setCars(data.data || []);
+        setCars(filteredCars);
         setCurrentPage(1);
       } else {
-        setCars((prev) => [...prev, ...(data.data || [])]);
+        setCars((prev) => [...prev, ...filteredCars]);
         setCurrentPage(page);
       }
     } catch (err: any) {
@@ -588,11 +617,11 @@ export const useSecureAuctionAPI = () => {
         return fallback;
       }
       
-      // Extract unique grades from the car data
+      // Extract unique grades from multiple sources (like encar.com approach)
       const gradesMap = new Map<string, number>();
       
       cars.forEach((car: any) => {
-        // Primary source: lots array grade_iaai
+        // Primary source: lots array grade_iaai from API
         if (car.lots && Array.isArray(car.lots)) {
           car.lots.forEach((lot: any) => {
             if (lot.grade_iaai && typeof lot.grade_iaai === 'string' && lot.grade_iaai.trim()) {
@@ -602,29 +631,100 @@ export const useSecureAuctionAPI = () => {
           });
         }
         
-        // Secondary source: extract from title
-        if (car.title && typeof car.title === 'string') {
-          const titleGrades = extractGradesFromTitle(car.title);
-          titleGrades.forEach(grade => {
-            if (grade && !gradesMap.has(grade)) {
-              gradesMap.set(grade, 1);
+        // Secondary source: badge from lots details (like encar.com trim levels)
+        if (car.lots && Array.isArray(car.lots)) {
+          car.lots.forEach((lot: any) => {
+            if (lot.details && lot.details.badge && typeof lot.details.badge === 'string' && lot.details.badge.trim()) {
+              const badge = lot.details.badge.trim();
+              gradesMap.set(badge, (gradesMap.get(badge) || 0) + 1);
             }
           });
         }
         
-        // Tertiary source: engine field
+        // Tertiary source: engine name (only meaningful engine variants)
         if (car.engine && car.engine.name && typeof car.engine.name === 'string' && car.engine.name.trim()) {
-          const engineGrade = car.engine.name.trim();
-          if (!gradesMap.has(engineGrade)) {
-            gradesMap.set(engineGrade, 1);
+          const engineName = car.engine.name.trim();
+          // Only include meaningful engine variants (like 45 TDI, 35 TDI)
+          // Exclude engine codes (like CSU, DBP) and pure numbers
+          if (engineName.length > 2 && 
+              !/^\d+\.?\d*$/.test(engineName) && // Not just numbers
+              !/^[A-Z]{2,4}$/.test(engineName) && // Not engine codes like CSU, DBP
+              /^(?:\d+\s*)?(?:TDI|TFSI|TSI|FSI|CDI|CGI|AMG|d|i|e|h|hybrid|electric|e-tron|phev)/i.test(engineName)) { // Must contain engine type
+            gradesMap.set(engineName, (gradesMap.get(engineName) || 0) + 1);
           }
+        }
+        
+        // Quaternary source: extract meaningful engine variants from title
+        if (car.title && typeof car.title === 'string') {
+          const title = car.title.toLowerCase();
+          
+          // Extract meaningful engine variants (like 45 TDI, 35 TDI)
+          const engineVariantPatterns = [
+            /\b(\d+\s*(?:tdi|tfsi|tsi|fsi|cdi|cgi))\b/gi, // 45 TDI, 35 TFSI, etc.
+            /\b(amg|m|rs|s|gt|gts|gti|r|n|st)\b/gi, // Performance variants
+            /\b(hybrid|electric|e-tron|phev|ev)\b/gi, // Electric/hybrid
+            /\b(premium|luxury|sport|exclusive|elite|prestige|comfort|deluxe)\b/gi // Trim levels
+          ];
+          
+          engineVariantPatterns.forEach(pattern => {
+            const matches = title.match(pattern);
+            if (matches) {
+              matches.forEach(match => {
+                const cleanMatch = match.trim();
+                if (cleanMatch && cleanMatch.length > 0) {
+                  gradesMap.set(cleanMatch, (gradesMap.get(cleanMatch) || 0) + 1);
+                }
+              });
+            }
+          });
         }
       });
 
-      // Filter out common non-grade values and convert to array
-      const invalidGrades = new Set(['unknown', 'n/a', 'none', '', 'null', 'undefined']);
+      // Debug: Log what we found
+      console.log('🔍 Raw variant values found:', Array.from(gradesMap.keys()));
+      console.log('🔍 Total cars processed:', cars.length);
+      console.log('🔍 Cars with lots:', cars.filter(car => car.lots && car.lots.length > 0).length);
+
+      // Filter out engine codes and non-meaningful variants
+      const invalidGrades = new Set(['unknown', 'n/a', 'none', '', 'null', 'undefined', 'basic', 'standard']);
+      
+      // Function to check if a variant is meaningful (not an engine code)
+      const isMeaningfulVariant = (variant: string): boolean => {
+        const lowerVariant = variant.toLowerCase();
+        
+        // Exclude if it's in invalid list
+        if (invalidGrades.has(lowerVariant)) return false;
+        
+        // Exclude engine codes (2-4 letter codes like DLH, DPA, CSU, etc.)
+        if (/^[A-Z]{2,4}$/i.test(variant)) return false;
+        
+        // Exclude combinations of engine codes (like "DLH DPA")
+        if (/^[A-Z]{2,4}\s+[A-Z]{2,4}$/i.test(variant)) return false;
+        
+        // Exclude pure numbers
+        if (/^\d+\.?\d*$/.test(variant)) return false;
+        
+        // Must contain meaningful content (engine types, trim levels, etc.)
+        const meaningfulPatterns = [
+          /tdi|tfsi|tsi|fsi|cdi|cgi/i, // Engine types
+          /amg|m|rs|s|gt|gts|gti|r|n|st/i, // Performance variants
+          /hybrid|electric|e-tron|phev|ev/i, // Electric/hybrid
+          /premium|luxury|sport|exclusive|elite|prestige|comfort|deluxe/i, // Trim levels
+          /\d+\s*(tdi|tfsi|tsi|fsi|cdi|cgi)/i // Number + engine type (like 45 TDI)
+        ];
+        
+        return meaningfulPatterns.some(pattern => pattern.test(variant));
+      };
+      
+      // Debug: Show what's being filtered out
+      const allVariants = Array.from(gradesMap.keys());
+      const filteredOut = allVariants.filter(variant => !isMeaningfulVariant(variant));
+      if (filteredOut.length > 0) {
+        console.log('🚫 Filtered out engine codes:', filteredOut);
+      }
+      
       const grades = Array.from(gradesMap.entries())
-        .filter(([value]) => !invalidGrades.has(value.toLowerCase()) && value.length > 0)
+        .filter(([value]) => isMeaningfulVariant(value))
         .map(([value, count]) => ({
           value,
           label: value,
@@ -632,10 +732,17 @@ export const useSecureAuctionAPI = () => {
         }))
         .sort((a, b) => b.count - a.count); // Sort by popularity first
 
-      console.log('📊 Extracted grades:', grades.length, 'unique grades:', grades.slice(0, 10).map(g => `${g.value}(${g.count})`));
+      console.log('📊 Extracted variants:', grades.length, 'unique variants:', grades.slice(0, 10).map(g => `${g.value}(${g.count})`));
       
-      // Always return something - fallback if no grades found
-      const result = grades.length > 0 ? grades : getFallbackGrades(manufacturerId);
+      // If no variants found from API, try fallback
+      if (grades.length === 0) {
+        console.log('⚠️ No variants found from API, trying fallback...');
+        const fallback = getFallbackGrades(manufacturerId);
+        console.log('🔄 Fallback variants:', fallback);
+        return fallback;
+      }
+      
+      const result = grades;
       setGradesCache(prev => ({ ...prev, [key]: result }));
       return result;
     } catch (err) {
@@ -647,48 +754,7 @@ export const useSecureAuctionAPI = () => {
     }
   };
 
-  // Helper function to extract grades from car titles
-  const extractGradesFromTitle = (title: string): string[] => {
-    const grades: string[] = [];
-    
-    // Common patterns for different manufacturers
-    const patterns = [
-      // BMW: 320d, 330i, M3, etc.
-      /\b(\d{3}[a-z]?[id]?)\b/gi,
-      // Audi: 30 TDI, 35 TDI, 40 TDI, 45 TDI, 50 TDI, 55 TFSI, etc.
-      /\b(\d{2,3}\s?(?:TDI|TFSI|FSI|TFSI\se-tron|quattro))\b/gi,
-      // Audi specific: 30, 35, 40, 45, 50, 55 (without engine type)
-      /\b(30|35|40|45|50|55)\b/gi,
-      // Mercedes: E220d, C300, etc.
-      /\b([A-Z]\d{3}[a-z]?)\b/gi,
-      // Volkswagen: 1.4 TSI, 2.0 TDI, etc.
-      /\b(\d+\.?\d*\s?(?:TDI|TFSI|TSI|CDI|CGI|AMG|d|i|e|h))\b/gi,
-      // Engine displacement patterns
-      /\b(\d+\.?\d*)\s*l?i?t?e?r?\s*(?:TDI|TFSI|TSI|CDI|CGI|AMG|d|i|e|h)\b/gi,
-      // Hybrid and electric patterns
-      /\b(\d+\.?\d*)\s*(?:hybrid|electric|e-tron|phev)\b/gi,
-      // Performance variants
-      /\b(AMG|M|RS|S|GT|GTS|GTI|R|N|ST|quattro)\b/gi,
-      // General engine patterns
-      /\b(\d+\.?\d*)\s*(?:L|Litre|Liter)\b/gi,
-      // Diesel/Petrol indicators
-      /\b(\d+\.?\d*)\s*(?:Diesel|Petrol|Gasoline)\b/gi
-    ];
-    
-    patterns.forEach(pattern => {
-      const matches = title.match(pattern);
-      if (matches) {
-        matches.forEach(match => {
-          const cleaned = match.trim();
-          if (cleaned && !grades.includes(cleaned)) {
-            grades.push(cleaned);
-          }
-        });
-      }
-    });
-    
-    return grades;
-  };
+
 
   // Fallback grades based on manufacturer - but only show grades that actually exist in the data
   // Helper function to extract generations from car data
@@ -745,61 +811,67 @@ export const useSecureAuctionAPI = () => {
   };
 
   const getFallbackGrades = (manufacturerId?: string): { value: string; label: string; count?: number }[] => {
-    // First, try to extract grades from current cars
+    // Extract variants from multiple sources (like encar.com approach)
     const currentGrades = new Set<string>();
     
     cars.forEach(car => {
-      // Check lots array
+      // Primary source: lots array grade_iaai from API
       if (car.lots && Array.isArray(car.lots)) {
         car.lots.forEach(lot => {
-          if (lot.grade_iaai) currentGrades.add(lot.grade_iaai);
-        });
-      }
-      
-      // Extract from title
-      if (car.title) {
-        const titleLower = car.title.toLowerCase();
-        const gradePatterns = [
-          /(\d+\.?\d*)\s*(tdi|tfsi|tsi|fsi|cdi|bluemotion|eco|hybrid)/gi,
-          /(\d+\.?\d*)\s*l(iter)?/gi,
-          /(\d+\.?\d*)\s*(d|i|t)\b/gi,
-          /\b(\d{3}[a-z]?[id]?)\b/gi, // BMW style
-          /([a-z]\d{3}[a-z]?)\b/gi // Mercedes style
-        ];
-        
-        gradePatterns.forEach(pattern => {
-          const matches = titleLower.match(pattern);
-          if (matches) {
-            matches.forEach(match => currentGrades.add(match.trim()));
+          if (lot.grade_iaai && typeof lot.grade_iaai === 'string' && lot.grade_iaai.trim()) {
+            currentGrades.add(lot.grade_iaai.trim());
           }
         });
       }
+      
+      // Secondary source: badge from lots details
+      if (car.lots && Array.isArray(car.lots)) {
+        car.lots.forEach((lot: any) => {
+          if (lot.details && lot.details.badge && typeof lot.details.badge === 'string' && lot.details.badge.trim()) {
+            currentGrades.add(lot.details.badge.trim());
+          }
+        });
+      }
+      
+      // Tertiary source: engine name (only meaningful engine variants)
+      if (car.engine && car.engine.name && typeof car.engine.name === 'string' && car.engine.name.trim()) {
+        const engineName = car.engine.name.trim();
+        // Only include meaningful engine variants (like 45 TDI, 35 TDI)
+        // Exclude engine codes (like CSU, DBP) and pure numbers
+        if (engineName.length > 2 && 
+            !/^\d+\.?\d*$/.test(engineName) && // Not just numbers
+            !/^[A-Z]{2,4}$/.test(engineName) && // Not engine codes like CSU, DBP
+            /^(?:\d+\s*)?(?:TDI|TFSI|TSI|FSI|CDI|CGI|AMG|d|i|e|h|hybrid|electric|e-tron|phev)/i.test(engineName)) { // Must contain engine type
+          currentGrades.add(engineName);
+        }
+      }
     });
     
-    console.log('🔍 Actual grades found in current car data:', Array.from(currentGrades).sort());
+    console.log('🔍 Actual variants found in current car data:', Array.from(currentGrades).sort());
     
     if (currentGrades.size > 0) {
-      // Use actual grades from data
+      // Use actual variants from API data
       return Array.from(currentGrades)
         .sort()
         .map(grade => ({ value: grade, label: grade }));
     }
     
-    // Only use fallback if no grades found
-    const fallbacks: { [key: string]: string[] } = {
-      '9': ['320d', '320i', '325d', '330d', '330i', '335d', '335i', 'M3', 'M5', 'X3', 'X5'], // BMW
-      '16': ['220d', '250', '300', '350', '400', '450', '500', 'AMG'], // Mercedes-Benz
-      '1': ['30 TDI', '35 TDI', '40 TDI', '45 TDI', '50 TDI', '55 TFSI', '30 TFSI', '35 TFSI', '40 TFSI', '45 TFSI', '30', '35', '40', '45', '50', '55', 'RS', 'S'], // Audi
-      '147': ['1.4 TSI', '1.6 TDI', '1.8 TSI', '2.0 TDI', '2.0 TSI', 'GTI', 'R'], // Volkswagen
-      '2': ['Civic', 'Accord', 'CR-V', 'HR-V'], // Honda
-      '3': ['Corolla', 'Camry', 'RAV4', 'Highlander'], // Toyota
-      '4': ['Altima', 'Maxima', 'Rogue', 'Murano'], // Nissan
-      '5': ['Focus', 'Fiesta', 'Mondeo', 'Kuga'], // Ford
-      '6': ['Cruze', 'Malibu', 'Equinox', 'Tahoe'], // Chevrolet
-    };
+    // If no API data, provide comprehensive Korean-style fallback variants
+    console.log('⚠️ No API variants found, providing Korean-style fallback variants');
+    const koreanVariants = [
+      { value: 'premium', label: 'Premium' },
+      { value: 'luxury', label: 'Luxury' },
+      { value: 'sport', label: 'Sport' },
+      { value: 'exclusive', label: 'Exclusive' },
+      { value: 'elite', label: 'Elite' },
+      { value: 'prestige', label: 'Prestige' },
+      { value: 'comfort', label: 'Comfort' },
+      { value: 'deluxe', label: 'Deluxe' },
+      { value: 'hybrid', label: 'Hybrid' },
+      { value: 'electric', label: 'Electric' }
+    ];
     
-    const grades = fallbacks[manufacturerId || ''] || [];
-    return grades.map(grade => ({ value: grade, label: grade }));
+    return koreanVariants;
   };
 
   // Function to get accurate car counts for a generation

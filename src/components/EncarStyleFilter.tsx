@@ -231,7 +231,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           </div>
           
           {/* Main filters in single row */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="space-y-2">
               <Label className="text-sm font-medium flex items-center gap-2">
                 <Car className="h-3 w-3" />
@@ -298,30 +298,21 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   <SelectItem value="all">Të gjitha Gjeneratat</SelectItem>
                   {generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => (
                     <SelectItem key={generation.id} value={generation.id.toString()}>
-                      {generation.name} ({generation.cars_qty})
+                      {generation.name}
+                      {generation.from_year ? (() => {
+                        const from = generation.from_year.toString().slice(-2);
+                        const currentYear = new Date().getFullYear();
+                        const toYearRaw = generation.to_year || currentYear;
+                        const to = (generation.to_year && generation.to_year !== currentYear) ? toYearRaw.toString().slice(-2) : 'present';
+                        return ` (${from}-${to})`;
+                      })() : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <Search className="h-3 w-3" />
-                Kërkim
-              </Label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Kërko..."
-                  value={filters.search || ''}
-                  onChange={(e) => updateFilter('search', e.target.value)}
-                  className="h-11"
-                />
-                <Button size="sm" className="h-11 px-4">
-                  <Search className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+
           </div>
         </div>
       </Card>
@@ -421,7 +412,14 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   <SelectItem value="all">Të gjitha Gjeneratat</SelectItem>
                   {generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => (
                     <SelectItem key={generation.id} value={generation.id.toString()}>
-                      {generation.name} ({generation.cars_qty})
+                      {generation.name}
+                      {generation.from_year ? (() => {
+                        const from = generation.from_year.toString().slice(-2);
+                        const currentYear = new Date().getFullYear();
+                        const toYearRaw = generation.to_year || currentYear;
+                        const to = (generation.to_year && generation.to_year !== currentYear) ? toYearRaw.toString().slice(-2) : 'present';
+                        return ` (${from}-${to})`;
+                      })() : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -429,20 +427,20 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Varianti</Label>
+              <Label className="text-sm font-medium">Variants</Label>
               <Select 
                 value={filters.grade_iaai || 'all'} 
                 onValueChange={(value) => updateFilter('grade_iaai', value)}
                 disabled={!filters.generation_id || isLoadingGrades}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={isLoadingGrades ? "Duke ngarkuar..." : "Zgjidhni variatin"} />
+                  <SelectValue placeholder={isLoadingGrades ? "Loading..." : "Select variant"} />
                 </SelectTrigger>
                 <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="all">Të gjithë Variantet</SelectItem>
+                  <SelectItem value="all">All Variants</SelectItem>
                   {grades.map((grade) => (
                     <SelectItem key={grade.value} value={grade.value}>
-                      {grade.label} {grade.count ? `(${grade.count})` : ''}
+                      {grade.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

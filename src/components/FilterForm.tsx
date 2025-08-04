@@ -407,7 +407,13 @@ const FilterForm = memo<FilterFormProps>(({
                     value={generation.id.toString()}
                   >
                     {generation.name} 
-                    {generation.from_year && generation.to_year ? ` (${generation.from_year}–${generation.to_year})` : ''}
+                    {generation.from_year ? (() => {
+                      const from = generation.from_year.toString().slice(-2);
+                      const currentYear = new Date().getFullYear();
+                      const toYearRaw = generation.to_year || currentYear;
+                      const to = (generation.to_year && generation.to_year !== currentYear) ? toYearRaw.toString().slice(-2) : 'present';
+                      return ` (${from}-${to})`;
+                    })() : ''}
                     {displayCount > 0 ? ` (${displayCount})` : ''}
                   </SelectItem>
                 );
