@@ -7,6 +7,7 @@ import { Filter, X, Loader2, Search } from "lucide-react";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS } from '@/hooks/useAuctionAPI';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import CategoryFilter, { CAR_BRAND_CATEGORIES } from "@/components/CategoryFilter";
 
 
 // Debounce utility function
@@ -75,6 +76,7 @@ interface FilterFormProps {
     seats_count?: string;
     search?: string;
     max_accidents?: string;
+    category?: string;
   };
   manufacturers: Manufacturer[];
   models?: Model[];
@@ -123,8 +125,22 @@ const FilterForm = memo<FilterFormProps>(({
     // Set loading state for better UX
     setIsLoading(true);
     
-    // Handle cascading filters
-    if (key === 'manufacturer_id') {
+    // Handle category filter specially
+    if (key === 'category') {
+      const categoryBrand = CAR_BRAND_CATEGORIES.find(cat => cat.value === value);
+      const manufacturerId = categoryBrand?.id || undefined;
+      
+      // When category changes, update manufacturer and reset dependent filters
+      onManufacturerChange?.(manufacturerId || '');
+      onFiltersChange({
+        ...filters,
+        category: actualValue,
+        manufacturer_id: manufacturerId,
+        model_id: undefined,
+        generation_id: undefined,
+        grade_iaai: undefined
+      });
+    } else if (key === 'manufacturer_id') {
       onManufacturerChange?.(actualValue || '');
       onFiltersChange({
         ...filters,
@@ -303,159 +319,171 @@ const FilterForm = memo<FilterFormProps>(({
 
 
 
-      {/* Basic Filters - Always 4 columns beside each other */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 sm:gap-2">
-        <div className="space-y-1">
-          <Label htmlFor="manufacturer" className="text-xs font-medium truncate">Marka</Label>
-          <Select value={filters.manufacturer_id || 'all'} onValueChange={handleBrandChange} disabled={isLoading}>
-            <SelectTrigger className="h-7 text-xs">
-              <SelectValue placeholder={isLoading ? "Duke ngarkuar..." : "Markat"} />
-            </SelectTrigger>
-            <SelectContent className="max-h-60 overflow-y-auto">
-              <SelectItem value="all">Të gjitha Markat</SelectItem>
-               {sortedManufacturers.length > 0 ? (
-                 sortedManufacturers.map((manufacturer) => {
-                   const count = filterCounts?.manufacturers[manufacturer.id.toString()];
-                   return (
-                     <SelectItem 
-                       key={manufacturer.id} 
-                       value={manufacturer.id.toString()}
-                     >
-                       <div className="flex items-center gap-2">
-                         {manufacturer?.image && (
-                           <img
-                             src={manufacturer?.image}
-                             alt={manufacturer.name}
-                             className="w-5 h-5 object-contain"
-                           />
-                         )}
-                         <span>{manufacturer.name} ({manufacturer.cars_qty})</span>
-                       </div>
-                     </SelectItem>
-                   );
-                 })
-               ) : (
-                 <SelectItem value="loading" disabled>
-                   {isLoading ? "Duke ngarkuar..." : "Nuk u gjetën marka"}
-                 </SelectItem>
-               )}
+      {/* Basic Filters - Category + 4 other filters in responsive grid */}
+      <div className="category-filter-container space-y-2">
+        {/* Category Filter - Full width on mobile, takes first position on larger screens */}
+        <div className="category-filter-grid grid gap-1 sm:gap-2">
+          <CategoryFilter
+            value={filters.category || 'all'}
+            onValueChange={(value) => updateFilter('category', value)}
+            disabled={isLoading}
+            label="Kategoria"
+            className="sm:col-span-1"
+          />
+          
+          {/* Traditional filters continue */}
+          <div className="space-y-1 sm:col-span-1">
+            <Label htmlFor="manufacturer" className="text-xs font-medium truncate">Marka</Label>
+            <Select value={filters.manufacturer_id || 'all'} onValueChange={handleBrandChange} disabled={isLoading}>
+              <SelectTrigger className="h-7 text-xs">
+                <SelectValue placeholder={isLoading ? "Duke ngarkuar..." : "Markat"} />
+              </SelectTrigger>
+              <SelectContent className="max-h-60 overflow-y-auto">
+                <SelectItem value="all">Të gjitha Markat</SelectItem>
+                 {sortedManufacturers.length > 0 ? (
+                   sortedManufacturers.map((manufacturer) => {
+                     const count = filterCounts?.manufacturers[manufacturer.id.toString()];
+                     return (
+                       <SelectItem 
+                         key={manufacturer.id} 
+                         value={manufacturer.id.toString()}
+                       >
+                         <div className="flex items-center gap-2">
+                           {manufacturer?.image && (
+                             <img
+                               src={manufacturer?.image}
+                               alt={manufacturer.name}
+                               className="w-5 h-5 object-contain"
+                             />
+                           )}
+                           <span>{manufacturer.name} ({manufacturer.cars_qty})</span>
+                         </div>
+                       </SelectItem>
+                     );
+                   })
+                 ) : (
+                   <SelectItem value="loading" disabled>
+                     {isLoading ? "Duke ngarkuar..." : "Nuk u gjetën marka"}
+                   </SelectItem>
+                 )}
 
-            </SelectContent>
-          </Select>
-        </div>
+              </SelectContent>
+            </Select>
+          </div>
 
-        <div className="space-y-1">
-          <Label htmlFor="model" className="text-xs font-medium truncate">Modeli</Label>
-          <Select 
-            value={filters.model_id || 'all'} 
-            onValueChange={(value) => updateFilter('model_id', value)}
-            disabled={!filters.manufacturer_id || isLoading}
-          >
-            <SelectTrigger className="h-7 text-xs">
-              <SelectValue placeholder={isLoading ? "Duke ngarkuar..." : (filters.manufacturer_id ? "Modelet" : "Marka së pari")} />
-            </SelectTrigger>
-            <SelectContent className="max-h-60 overflow-y-auto">
-              <SelectItem value="all">Të gjithë Modelet</SelectItem>
-              {models && models.length > 0 ? (
-                models
-                  .filter((model) => model.cars_qty && model.cars_qty > 0)
-                  .map((model) => (
+          <div className="space-y-1 sm:col-span-1">
+            <Label htmlFor="model" className="text-xs font-medium truncate">Modeli</Label>
+            <Select 
+              value={filters.model_id || 'all'} 
+              onValueChange={(value) => updateFilter('model_id', value)}
+              disabled={!filters.manufacturer_id || isLoading}
+            >
+              <SelectTrigger className="h-7 text-xs">
+                <SelectValue placeholder={isLoading ? "Duke ngarkuar..." : (filters.manufacturer_id ? "Modelet" : "Marka së pari")} />
+              </SelectTrigger>
+              <SelectContent className="max-h-60 overflow-y-auto">
+                <SelectItem value="all">Të gjithë Modelet</SelectItem>
+                {models && models.length > 0 ? (
+                  models
+                    .filter((model) => model.cars_qty && model.cars_qty > 0)
+                    .map((model) => (
+                      <SelectItem 
+                        key={model.id} 
+                        value={model.id.toString()}
+                      >
+                        {model.name} ({model.cars_qty})
+                      </SelectItem>
+                    ))
+                ) : (
+                  <SelectItem value="loading" disabled>
+                    {isLoading ? "Duke ngarkuar..." : (filters.manufacturer_id ? "Nuk u gjetën modele" : "Zgjidh markën së pari")}
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1 sm:col-span-1">
+            <Label htmlFor="generation" className="text-xs font-medium truncate">Gjeneratat</Label>
+            <Select
+              value={filters.generation_id || 'all'} 
+              onValueChange={(value) => {
+                console.log(`🎯 ULTRA PRECISE: Generation select changed to ${value}`);
+                if (onGenerationChange) {
+                  onGenerationChange(value);
+                } else {
+                  updateFilter('generation_id', value);
+                }
+              }}
+              disabled={!filters.manufacturer_id || !filters.model_id}
+            >
+              <SelectTrigger className="h-7 text-xs">
+                <SelectValue placeholder={filters.model_id ? "Gjeneratat" : "Zgjidh modelin së pari"} />
+              </SelectTrigger>
+              <SelectContent className="max-h-60 overflow-y-auto">
+                <SelectItem value="all">
+                  {filters.model_id ? "Të gjitha Gjeneratat" : "Të gjitha Gjeneratat (të gjitha modelet)"}
+                </SelectItem>
+              {generations && generations.length > 0 ? (
+                generations.map((generation) => {
+                  const displayCount = generation.cars_qty || 0;
+                  
+                  return (
                     <SelectItem 
-                      key={model.id} 
-                      value={model.id.toString()}
+                      key={generation.id} 
+                      value={generation.id.toString()}
                     >
-                      {model.name} ({model.cars_qty})
+                      {generation.name} 
+                      {generation.from_year ? (() => {
+                        const from = generation.from_year.toString().slice(-2);
+                        const currentYear = new Date().getFullYear();
+                        const toYearRaw = generation.to_year || currentYear;
+                        const to = (generation.to_year && generation.to_year !== currentYear) ? toYearRaw.toString().slice(-2) : 'present';
+                        return ` (${from}-${to})`;
+                      })() : ''}
+                      {displayCount > 0 ? ` (${displayCount})` : ''}
+                    </SelectItem>
+                  );
+                })
+              ) : (
+                <SelectItem value="no-generations" disabled>
+                  {filters.model_id ? "Duke ngarkuar gjeneratat..." : "Zgjidh modelin së pari"}
+                </SelectItem>
+              )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1 sm:col-span-1">
+            <Label htmlFor="grade" className="text-xs font-medium truncate">Grada/Motorr</Label>
+            <Select 
+              value={filters.grade_iaai || 'all'} 
+              onValueChange={(value) => updateFilter('grade_iaai', value)}
+              disabled={!filters.manufacturer_id || isLoading}
+            >
+              <SelectTrigger className="h-7 text-xs">
+                <SelectValue placeholder={filters.manufacturer_id ? "Gradat" : "Marka së pari"} />
+              </SelectTrigger>
+              <SelectContent className="max-h-60 overflow-y-auto">
+                <SelectItem value="all">Të gjitha Gradat</SelectItem>
+                {grades.length === 0 && isLoadingGrades ? (
+                  <SelectItem value="loading" disabled>
+                    Duke ngarkuar gradat...
+                  </SelectItem>
+                ) : grades.length === 0 && filters.manufacturer_id ? (
+                  <SelectItem value="no-grades" disabled>
+                    Nuk u gjetën grada
+                  </SelectItem>
+                ) : (
+                  grades.map((grade) => (
+                    <SelectItem key={grade.value} value={grade.value}>
+                      {grade.label} {grade.count ? `(${grade.count})` : ''}
                     </SelectItem>
                   ))
-              ) : (
-                <SelectItem value="loading" disabled>
-                  {isLoading ? "Duke ngarkuar..." : (filters.manufacturer_id ? "Nuk u gjetën modele" : "Zgjidh markën së pari")}
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-1">
-          <Label htmlFor="generation" className="text-xs font-medium truncate">Gjeneratat</Label>
-          <Select
-            value={filters.generation_id || 'all'} 
-            onValueChange={(value) => {
-              console.log(`🎯 ULTRA PRECISE: Generation select changed to ${value}`);
-              if (onGenerationChange) {
-                onGenerationChange(value);
-              } else {
-                updateFilter('generation_id', value);
-              }
-            }}
-            disabled={!filters.manufacturer_id || !filters.model_id}
-          >
-            <SelectTrigger className="h-7 text-xs">
-              <SelectValue placeholder={filters.model_id ? "Gjeneratat" : "Zgjidh modelin së pari"} />
-            </SelectTrigger>
-            <SelectContent className="max-h-60 overflow-y-auto">
-              <SelectItem value="all">
-                {filters.model_id ? "Të gjitha Gjeneratat" : "Të gjitha Gjeneratat (të gjitha modelet)"}
-              </SelectItem>
-            {generations && generations.length > 0 ? (
-              generations.map((generation) => {
-                const displayCount = generation.cars_qty || 0;
-                
-                return (
-                  <SelectItem 
-                    key={generation.id} 
-                    value={generation.id.toString()}
-                  >
-                    {generation.name} 
-                    {generation.from_year ? (() => {
-                      const from = generation.from_year.toString().slice(-2);
-                      const currentYear = new Date().getFullYear();
-                      const toYearRaw = generation.to_year || currentYear;
-                      const to = (generation.to_year && generation.to_year !== currentYear) ? toYearRaw.toString().slice(-2) : 'present';
-                      return ` (${from}-${to})`;
-                    })() : ''}
-                    {displayCount > 0 ? ` (${displayCount})` : ''}
-                  </SelectItem>
-                );
-              })
-            ) : (
-              <SelectItem value="no-generations" disabled>
-                {filters.model_id ? "Duke ngarkuar gjeneratat..." : "Zgjidh modelin së pari"}
-              </SelectItem>
-            )}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-1">
-          <Label htmlFor="grade" className="text-xs font-medium truncate">Grada/Motorr</Label>
-          <Select 
-            value={filters.grade_iaai || 'all'} 
-            onValueChange={(value) => updateFilter('grade_iaai', value)}
-            disabled={!filters.manufacturer_id || isLoading}
-          >
-            <SelectTrigger className="h-7 text-xs">
-              <SelectValue placeholder={filters.manufacturer_id ? "Gradat" : "Marka së pari"} />
-            </SelectTrigger>
-            <SelectContent className="max-h-60 overflow-y-auto">
-              <SelectItem value="all">Të gjitha Gradat</SelectItem>
-              {grades.length === 0 && isLoadingGrades ? (
-                <SelectItem value="loading" disabled>
-                  Duke ngarkuar gradat...
-                </SelectItem>
-              ) : grades.length === 0 && filters.manufacturer_id ? (
-                <SelectItem value="no-grades" disabled>
-                  Nuk u gjetën grada
-                </SelectItem>
-              ) : (
-                grades.map((grade) => (
-                  <SelectItem key={grade.value} value={grade.value}>
-                    {grade.label} {grade.count ? `(${grade.count})` : ''}
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
