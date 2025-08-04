@@ -86,6 +86,42 @@ const useDeviceDetection = () => {
   return deviceInfo;
 };
 
+// Helper function to extract text from JSX or React elements
+const extractTextFromJSX = (element: any): string => {
+  if (typeof element === 'string') {
+    return element;
+  }
+  
+  if (typeof element === 'number') {
+    return element.toString();
+  }
+  
+  if (React.isValidElement(element)) {
+    // If it's a React element, try to extract text from its children
+    const children = element.props?.children;
+    
+    if (Array.isArray(children)) {
+      // Handle array of children - concatenate text from all elements
+      return children
+        .map(child => extractTextFromJSX(child))
+        .filter(text => text && text.trim())
+        .join(' ');
+    } else if (children) {
+      return extractTextFromJSX(children);
+    }
+  }
+  
+  if (Array.isArray(element)) {
+    return element
+      .map(item => extractTextFromJSX(item))
+      .filter(text => text && text.trim())
+      .join(' ');
+  }
+  
+  // Fallback to empty string for other types
+  return '';
+};
+
 // Enhanced Native HTML Select for mobile devices and touch interfaces
 const NativeSelect: React.FC<AdaptiveSelectProps> = ({
   value,
@@ -110,6 +146,9 @@ const NativeSelect: React.FC<AdaptiveSelectProps> = ({
         // iOS Safari specific fixes
         "-webkit-appearance-none",
         "focus:-webkit-appearance-none",
+        // Dark mode specific styling for native select
+        "dark:bg-background dark:border-border dark:text-foreground",
+        "dark:focus:ring-ring dark:focus:ring-offset-background",
         className
       )}
       style={{
@@ -128,16 +167,23 @@ const NativeSelect: React.FC<AdaptiveSelectProps> = ({
           {placeholder}
         </option>
       )}
-      {options.map((option) => (
-        <option 
-          key={option.value} 
-          value={option.value}
-          disabled={option.disabled}
-          className="py-2 px-3"
-        >
-          {typeof option.label === 'string' ? option.label : option.value}
-        </option>
-      ))}
+      {options.map((option) => {
+        // Extract text content from JSX labels or use the label as-is if it's a string
+        const displayText = typeof option.label === 'string' 
+          ? option.label 
+          : extractTextFromJSX(option.label) || option.value;
+        
+        return (
+          <option 
+            key={option.value} 
+            value={option.value}
+            disabled={option.disabled}
+            className="py-2 px-3 dark:bg-background dark:text-foreground"
+          >
+            {displayText}
+          </option>
+        );
+      })}
     </select>
   );
 };
@@ -371,6 +417,23 @@ export const adaptiveSelectStyles = `
     outline: none;
     box-shadow: 0 0 0 2px hsl(var(--ring));
   }
+}
+
+/* Dark mode specific styling for native select elements */
+.dark .adaptive-select select {
+  background-color: hsl(var(--background));
+  border-color: hsl(var(--border));
+  color: hsl(var(--foreground));
+}
+
+.dark .adaptive-select select:focus {
+  ring-color: hsl(var(--ring));
+  ring-offset-color: hsl(var(--background));
+}
+
+.dark .adaptive-select select option {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
 
 /* macOS Safari optimizations */
