@@ -494,6 +494,35 @@ export const useSecureAuctionAPI = () => {
 
   const fetchGenerations = async (modelId: string): Promise<Generation[]> => {
     try {
+      console.log(`🚗 Fetching generations for model ${modelId} from direct API...`);
+      
+      // First try to fetch generations directly from the generations endpoint for this model
+      const generationsResponse = await makeSecureAPICall(`models/${modelId}/generations`);
+      
+      if (generationsResponse.data && Array.isArray(generationsResponse.data) && generationsResponse.data.length > 0) {
+        console.log(`✅ Found ${generationsResponse.data.length} generations from direct API`);
+        
+        // Process generations from direct API call
+        const generations = generationsResponse.data
+          .filter((gen: any) => gen && gen.id && gen.name)
+          .map((gen: any) => ({
+            id: gen.id,
+            name: gen.name.trim(),
+            manufacturer_id: gen.manufacturer_id,
+            model_id: gen.model_id,
+            from_year: gen.from_year,
+            to_year: gen.to_year,
+            cars_qty: gen.cars_qty || 0
+          }))
+          .sort((a: any, b: any) => a.name.localeCompare(b.name));
+        
+        console.log(`📊 Processed generations:`, generations.map(g => `${g.name} (${g.from_year}-${g.to_year})`));
+        return generations;
+      }
+      
+      console.log(`⚠️ No generations from direct API, falling back to car data extraction...`);
+      
+      // Fallback: extract from car data if direct API doesn't return results
       const carResponse = await makeSecureAPICall('cars', {
         model_id: modelId,
         per_page: '20',
