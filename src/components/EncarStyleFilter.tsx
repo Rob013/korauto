@@ -302,8 +302,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                       {generation.from_year ? (() => {
                         const from = generation.from_year.toString().slice(-2);
                         const currentYear = new Date().getFullYear();
-                        // Show 'present' if to_year is null, undefined, or equals current year
-                        const to = (!generation.to_year || generation.to_year >= currentYear) ? 'present' : generation.to_year.toString().slice(-2);
+                        const toYearRaw = generation.to_year || currentYear;
+                        const to = (generation.to_year && generation.to_year !== currentYear) ? toYearRaw.toString().slice(-2) : 'present';
                         return ` (${from}-${to})`;
                       })() : ''}
                     </SelectItem>
@@ -416,8 +416,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                       {generation.from_year ? (() => {
                         const from = generation.from_year.toString().slice(-2);
                         const currentYear = new Date().getFullYear();
-                        // Show 'present' if to_year is null, undefined, or equals current year  
-                        const to = (!generation.to_year || generation.to_year >= currentYear) ? 'present' : generation.to_year.toString().slice(-2);
+                        const toYearRaw = generation.to_year || currentYear;
+                        const to = (generation.to_year && generation.to_year !== currentYear) ? toYearRaw.toString().slice(-2) : 'present';
                         return ` (${from}-${to})`;
                       })() : ''}
                     </SelectItem>
