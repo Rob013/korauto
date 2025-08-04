@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Lot {
@@ -341,7 +341,7 @@ export const useSecureAuctionAPI = () => {
     }
   };
 
-  const fetchCars = useCallback(async (
+  const fetchCars = async (
     page: number = 1,
     newFilters: APIFilters = filters,
     resetList: boolean = true
@@ -446,9 +446,9 @@ export const useSecureAuctionAPI = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  };
 
-  const fetchManufacturers = useCallback(async (): Promise<Manufacturer[]> => {
+  const fetchManufacturers = async (): Promise<Manufacturer[]> => {
     try {
       console.log(`🔍 Fetching all manufacturers`);
       
@@ -467,7 +467,7 @@ export const useSecureAuctionAPI = () => {
       console.error("❌ Error fetching manufacturers:", err);
       return [];
     }
-  }, []);
+  };
 
   const fetchModels = async (manufacturerId: string): Promise<Model[]> => {
     try {
