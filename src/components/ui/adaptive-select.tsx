@@ -45,7 +45,8 @@ const useDeviceDetection = () => {
     isMac: false,
     isAndroid: false,
     isMobile: false,
-    isTouch: false
+    isTouch: false,
+    isPad: false
   });
   
   useEffect(() => {
@@ -54,8 +55,12 @@ const useDeviceDetection = () => {
     // Enhanced iOS detection (includes iPhone, iPad, iPod)
     const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !(window as any).MSStream;
     
-    // Mac detection
-    const isMac = /Macintosh|Mac OS X|MacIntel/.test(userAgent) && !isIOS;
+    // iPad specific detection
+    const isPad = /iPad/.test(userAgent) || 
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    
+    // Mac detection (excluding iPads)
+    const isMac = /Macintosh|Mac OS X|MacIntel/.test(userAgent) && !isIOS && !isPad;
     
     // Android detection
     const isAndroid = /Android/.test(userAgent);
@@ -73,7 +78,8 @@ const useDeviceDetection = () => {
       isMac,
       isAndroid,
       isMobile,
-      isTouch
+      isTouch,
+      isPad
     });
   }, []);
   
@@ -97,8 +103,13 @@ const NativeSelect: React.FC<AdaptiveSelectProps> = ({
       className={cn(
         "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
         "appearance-none", // Remove default styling
-        // Enhanced mobile styling
-        "min-h-[44px] text-base sm:text-sm", // iOS-friendly touch target and font size
+        // Enhanced mobile styling for iOS/iPad
+        "min-h-[44px] text-[16px] sm:text-sm", // iOS-friendly touch target and font size (16px prevents zoom)
+        // iPad specific styling
+        "md:min-h-[48px]", // Larger touch targets on tablets
+        // iOS Safari specific fixes
+        "-webkit-appearance-none",
+        "focus:-webkit-appearance-none",
         className
       )}
       style={{
@@ -106,7 +117,10 @@ const NativeSelect: React.FC<AdaptiveSelectProps> = ({
         backgroundPosition: 'right 0.75rem center',
         backgroundSize: '1rem',
         backgroundRepeat: 'no-repeat',
-        paddingRight: '2.5rem'
+        paddingRight: '2.5rem',
+        // iOS Safari specific fixes
+        WebkitAppearance: 'none',
+        MozAppearance: 'none'
       }}
     >
       {placeholder && (
@@ -119,6 +133,7 @@ const NativeSelect: React.FC<AdaptiveSelectProps> = ({
           key={option.value} 
           value={option.value}
           disabled={option.disabled}
+          className="py-2 px-3"
         >
           {typeof option.label === 'string' ? option.label : option.value}
         </option>
@@ -269,7 +284,7 @@ const CustomSelect: React.FC<AdaptiveSelectProps> = ({
 
 // Main Adaptive Select Component with improved device detection
 export const AdaptiveSelect: React.FC<AdaptiveSelectProps> = (props) => {
-  const { isIOS, isMac, isAndroid, isMobile, isTouch } = useDeviceDetection();
+  const { isIOS, isMac, isAndroid, isMobile, isTouch, isPad } = useDeviceDetection();
 
   // Enhanced logic for when to use native select:
   // 1. iOS devices (iPhone, iPad) - always use native for best UX
@@ -277,8 +292,11 @@ export const AdaptiveSelect: React.FC<AdaptiveSelectProps> = (props) => {
   // 3. Touch devices with small screens - use native
   // 4. Desktop (including Mac) - use custom select for better styling control
   const shouldUseNative = useMemo(() => {
-    // Always use native on iOS (iPhone, iPad)
+    // Always use native on iOS (iPhone, iPad, iPod)
     if (isIOS) return true;
+    
+    // Always use native on iPad (even when not detected as iOS)
+    if (isPad) return true;
     
     // Use native on Android mobile devices
     if (isAndroid && isMobile) return true;
@@ -288,7 +306,7 @@ export const AdaptiveSelect: React.FC<AdaptiveSelectProps> = (props) => {
     
     // Use custom select for desktop (including Mac desktop)
     return false;
-  }, [isIOS, isAndroid, isMobile, isTouch]);
+  }, [isIOS, isPad, isAndroid, isMobile, isTouch]);
 
   if (shouldUseNative) {
     return <NativeSelect {...props} />;
