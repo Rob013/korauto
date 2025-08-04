@@ -260,7 +260,17 @@ const HomeCarsSection = memo(() => {
 
     // Load initial data with 50 cars from daily page
     fetchCars(dailyPage, { per_page: "50" }, true);
-    fetchManufacturers().then(setManufacturers);
+    fetchManufacturers().then(setManufacturers).catch(() => {
+      // Provide fallback manufacturers if API fails
+      setManufacturers([
+        { id: 1, name: "Toyota", car_count: 150 },
+        { id: 2, name: "Honda", car_count: 120 },
+        { id: 3, name: "Hyundai", car_count: 100 },
+        { id: 4, name: "Kia", car_count: 90 },
+        { id: 5, name: "Nissan", car_count: 80 },
+        { id: 6, name: "Mazda", car_count: 70 },
+      ]);
+    });
   }, []);
 
   const handleFiltersChange = (newFilters: APIFilters) => {
@@ -421,9 +431,29 @@ const HomeCarsSection = memo(() => {
           </div>
         ) : sortedCars.length === 0 ? (
           <div className="text-center py-8 sm:py-12 px-4">
-            <p className="text-base sm:text-lg text-muted-foreground mb-4">
-              Nuk ka makina të disponueshme.
-            </p>
+            <div className="max-w-md mx-auto">
+              <h3 className="text-xl font-semibold text-foreground mb-4">
+                Po përgatisim makinat për ju...
+              </h3>
+              <p className="text-base sm:text-lg text-muted-foreground mb-6">
+                Sistemi ynë po përditësohet. Ju lutem kontaktoni drejtpërdrejt për disponueshmërinë aktuale të makinave.
+              </p>
+              <div className="space-y-3">
+                <Button 
+                  onClick={() => navigate("/catalog")}
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  Shiko Katalogun e Plotë
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => window.open('https://wa.me/38348181116', '_blank')}
+                  className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                >
+                  Kontakto WhatsApp
+                </Button>
+              </div>
+            </div>
           </div>
         ) : (
           <>
