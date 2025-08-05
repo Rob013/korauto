@@ -347,4 +347,91 @@ All colors MUST be HSL.
       border-width: 0.5px;
     }
   }
+
+  /* Performance and smoothness optimizations */
+  .performance-optimized {
+    contain: layout style paint;
+    content-visibility: auto;
+  }
+
+  /* Smooth scrolling for better UX */
+  .smooth-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* GPU acceleration for animations */
+  .gpu-accelerated {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  /* Layout stability utilities */
+  .layout-stable {
+    contain: size layout;
+  }
+
+  .size-stable {
+    min-height: 0;
+    min-width: 0;
+  }
+
+  /* Image optimization */
+  .optimized-image {
+    content-visibility: auto;
+    contain-intrinsic-size: 280px 160px;
+  }
+
+  /* Prevent layout shifts in card grids */
+  .stable-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  /* Better focus management */
+  .focus-trap {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--ring));
+    border-radius: calc(var(--radius) - 2px);
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .hover-lift:hover {
+      transform: none;
+    }
+    
+    .transition-smooth {
+      transition: none;
+    }
+    
+    .animate-fade-in-up {
+      animation: none;
+    }
+    
+    .group-hover\\:scale-105:hover {
+      transform: none;
+    }
+  }
+
+  /* Enhanced button touch targets */
+  .enhanced-touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 12px;
+    position: relative;
+  }
+
+  .enhanced-touch-target::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-height: 44px;
+    min-width: 44px;
+    z-index: -1;
+  }
 }
