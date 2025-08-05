@@ -170,16 +170,24 @@ All colors MUST be HSL.
 
   /* Mobile-first responsive utilities */
   .container-responsive {
-    @apply w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8;
+    @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
 
-  /* Text responsive classes */
+  .container-tight {
+    @apply w-full max-w-6xl mx-auto px-3 sm:px-4 md:px-6;
+  }
+
+  /* Enhanced text responsive classes */
   .text-responsive-xs {
     @apply text-xs sm:text-sm;
   }
 
   .text-responsive-sm {
     @apply text-sm sm:text-base;
+  }
+
+  .text-responsive-base {
+    @apply text-sm sm:text-base md:text-lg;
   }
 
   .text-responsive-lg {
@@ -190,9 +198,17 @@ All colors MUST be HSL.
     @apply text-xl sm:text-2xl lg:text-3xl xl:text-4xl;
   }
 
-  /* Grid responsive utilities */
+  .text-responsive-2xl {
+    @apply text-2xl sm:text-3xl lg:text-4xl xl:text-5xl;
+  }
+
+  /* Enhanced grid responsive utilities */
   .grid-responsive-cards {
-    @apply grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6;
+    @apply grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6;
+  }
+
+  .grid-responsive-auto {
+    @apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6;
   }
 
   /* Mobile touch improvements */
@@ -200,13 +216,51 @@ All colors MUST be HSL.
     @apply min-h-[44px] min-w-[44px];
   }
 
+  .touch-target-lg {
+    @apply min-h-[48px] min-w-[48px];
+  }
+
+  /* Enhanced mobile spacing */
   .mobile-padding {
-    @apply px-3 sm:px-4 lg:px-6;
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+
+  .mobile-padding-sm {
+    @apply px-3 sm:px-4 md:px-6;
+  }
+
+  .mobile-padding-lg {
+    @apply px-6 sm:px-8 lg:px-10;
+  }
+
+  .mobile-margin {
+    @apply mx-4 sm:mx-6 lg:mx-8;
+  }
+
+  .mobile-gap {
+    @apply gap-3 sm:gap-4 md:gap-6;
+  }
+
+  /* Mobile-optimized sections */
+  .mobile-section {
+    @apply py-8 sm:py-12 lg:py-16;
+  }
+
+  .mobile-section-sm {
+    @apply py-6 sm:py-8 lg:py-12;
+  }
+
+  .mobile-section-lg {
+    @apply py-12 sm:py-16 lg:py-20;
   }
 
   /* Button enhancements */
   .btn-enhanced {
-    @apply transition-all duration-200 transform hover:scale-105 active:scale-95;
+    @apply transition-all duration-200 transform hover:scale-105 active:scale-95 touch-target;
+  }
+
+  .btn-mobile {
+    @apply touch-target-lg text-base sm:text-sm font-medium rounded-lg transition-all duration-200;
   }
 
   /* Card enhancements */
@@ -214,9 +268,70 @@ All colors MUST be HSL.
     @apply hover-lift border-0 shadow-lg hover:shadow-xl transition-all duration-300;
   }
 
+  .card-mobile {
+    @apply rounded-xl border border-border bg-card shadow-sm hover:shadow-md transition-all duration-200;
+  }
+
   /* Focus improvements for accessibility */
   .focus-enhanced {
     @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 focus:ring-offset-2;
+  }
+
+  /* Mobile navigation improvements */
+  .mobile-nav-item {
+    @apply touch-target-lg flex items-center justify-start w-full text-left px-4 py-3 rounded-lg text-base font-medium transition-all duration-200;
+  }
+
+  /* Mobile form improvements */
+  .mobile-input {
+    @apply touch-target h-12 px-4 text-base rounded-lg border border-input bg-background transition-colors;
+  }
+
+  .mobile-textarea {
+    @apply min-h-[120px] p-4 text-base rounded-lg border border-input bg-background resize-none transition-colors;
+  }
+
+  /* Mobile image optimizations */
+  .mobile-image {
+    @apply w-full h-auto object-cover rounded-lg;
+  }
+
+  .mobile-avatar {
+    @apply w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover;
+  }
+
+  /* Mobile layout helpers */
+  .mobile-stack {
+    @apply flex flex-col gap-4 sm:gap-6;
+  }
+
+  .mobile-stack-sm {
+    @apply flex flex-col gap-3 sm:gap-4;
+  }
+
+  .mobile-inline {
+    @apply flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4;
+  }
+
+  .mobile-center {
+    @apply flex flex-col items-center justify-center text-center;
+  }
+
+  /* Mobile text utilities */
+  .mobile-title {
+    @apply text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight;
+  }
+
+  .mobile-subtitle {
+    @apply text-lg sm:text-xl lg:text-2xl font-semibold leading-snug;
+  }
+
+  .mobile-body {
+    @apply text-base sm:text-lg leading-relaxed;
+  }
+
+  .mobile-caption {
+    @apply text-sm sm:text-base text-muted-foreground;
   }
 
   /* Loading animations */
@@ -276,284 +391,4 @@ All colors MUST be HSL.
       @apply ring-0 ring-transparent;
     }
   }
-
-  /* Enhanced Adaptive Select Optimizations for All Devices */
-  
-  /* Base responsive optimizations */
-  .adaptive-select-trigger {
-    min-height: 44px; /* iOS and Android friendly touch target */
-    transition: all 0.2s ease;
-  }
-
-  /* Mobile optimization for touch devices */
-  @media (max-width: 768px), (pointer: coarse) {
-    .adaptive-select-trigger {
-      height: 48px; /* Larger touch target for mobile */
-      font-size: 16px; /* Prevent zoom on iOS */
-      padding: 12px 16px;
-    }
-    
-    .adaptive-select-content {
-      max-height: 60vh; /* Limit height on mobile */
-      margin-top: 4px;
-    }
-    
-    .adaptive-select-item {
-      padding: 16px 20px; /* Larger touch targets */
-      min-height: 48px;
-      font-size: 16px;
-    }
-  }
-
-  /* iPad specific optimizations */
-  @media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait),
-         (min-width: 1024px) and (max-width: 1366px) and (orientation: landscape) {
-    .adaptive-select-trigger {
-      height: 44px;
-      font-size: 16px;
-    }
-  }
-
-  /* iOS Safari specific optimizations */
-  @supports (-webkit-touch-callout: none) {
-    .adaptive-select select {
-      font-size: 16px !important; /* Prevent zoom */
-      border-radius: 8px; /* iOS-style corners */
-      -webkit-appearance: none;
-      appearance: none;
-    }
-    
-    /* Fix for iOS select styling */
-    .adaptive-select select:focus {
-      outline: none;
-      box-shadow: 0 0 0 2px hsl(var(--ring));
-    }
-  }
-
-  /* macOS Safari optimizations */
-  @media (hover: hover) and (pointer: fine) {
-    .adaptive-select-trigger:hover {
-      background-color: hsl(var(--accent));
-    }
-    
-    .adaptive-select-item:hover {
-      background-color: hsl(var(--accent));
-    }
-  }
-
-  /* High DPI display optimizations */
-  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-    .adaptive-select-trigger {
-      border-width: 0.5px;
-    }
-  }
-
-  /* Performance and smoothness optimizations */
-  .performance-optimized {
-    contain: layout style paint;
-    content-visibility: auto;
-  }
-
-  /* Smooth scrolling for better UX */
-  .smooth-scroll {
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* GPU acceleration for animations */
-  .gpu-accelerated {
-    transform: translateZ(0);
-    will-change: transform;
-  }
-
-  /* Layout stability utilities */
-  .layout-stable {
-    contain: size layout;
-  }
-
-  .size-stable {
-    min-height: 0;
-    min-width: 0;
-  }
-
-  /* Image optimization */
-  .optimized-image {
-    content-visibility: auto;
-    contain-intrinsic-size: 280px 160px;
-  }
-
-  /* Prevent layout shifts in card grids */
-  .stable-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.5rem;
-    align-items: start;
-  }
-
-  /* Better focus management */
-  .focus-trap {
-    outline: none;
-    box-shadow: 0 0 0 2px hsl(var(--ring));
-    border-radius: calc(var(--radius) - 2px);
-  }
-
-  /* Reduced motion support */
-  @media (prefers-reduced-motion: reduce) {
-    .hover-lift:hover {
-      transform: none;
-    }
-    
-    .transition-smooth {
-      transition: none;
-    }
-    
-    .animate-fade-in-up {
-      animation: none;
-    }
-    
-    .group-hover\\:scale-105:hover {
-      transform: none;
-    }
-  }
-
-  /* Enhanced button touch targets */
-  .enhanced-touch-target {
-    min-height: 44px;
-    min-width: 44px;
-    padding: 12px;
-    position: relative;
-  }
-
-  .enhanced-touch-target::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    min-height: 44px;
-  }
-
-/* Mobile Layout Optimizations */
-@media (max-width: 768px) {
-  /* Safe area inset for notched devices */
-  .safe-area-inset {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-  }
-
-  /* Optimized container spacing for mobile */
-  .container-responsive {
-    padding-left: max(16px, env(safe-area-inset-left));
-    padding-right: max(16px, env(safe-area-inset-right));
-  }
-
-  /* Better touch targets */
-  button, [role="button"] {
-    min-height: 44px;
-    min-width: 44px;
-  }
-
-  /* Enhanced filter button visibility */
-  .mobile-filter-button {
-    position: sticky;
-    top: 16px;
-    z-index: 20;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  }
-
-  /* Smooth filter panel transitions */
-  .filter-panel {
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-  }
-
-  /* Better text readability on mobile */
-  .mobile-text-optimize {
-    -webkit-text-size-adjust: 100%;
-    text-size-adjust: 100%;
-    font-size: clamp(14px, 4vw, 16px);
-    line-height: 1.5;
-  }
-
-  /* Improved car grid layout */
-  .mobile-car-grid {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 12px;
-  }
-
-  /* Better loading states */
-  .mobile-loading {
-    min-height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-}
-
-/* Small mobile devices */
-@media (max-width: 375px) {
-  .container-responsive {
-    padding-left: 12px;
-    padding-right: 12px;
-  }
-
-  .mobile-car-grid {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-
-  .mobile-text-optimize {
-    font-size: clamp(12px, 4vw, 14px);
-  }
-}
-
-/* Enhanced filter animations */
-@keyframes slideInFromLeft {
-  from {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slideOutToLeft {
-  from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-}
-
-.filter-enter {
-  animation: slideInFromLeft 300ms ease-out;
-}
-
-.filter-exit {
-  animation: slideOutToLeft 300ms ease-in;
-}
-
-/* Improved lot number visibility */
-.lot-number-highlight {
-  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%);
-  color: hsl(var(--primary-foreground));
-  font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  letter-spacing: 0.025em;
-  text-transform: uppercase;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
 }

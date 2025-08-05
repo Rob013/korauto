@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Car, Heart, Menu, X, User } from "lucide-react";
-import { ThemeToggle } from "@/components/ThemeToggle";
+// import { ThemeToggle } from "@/components/ThemeToggle";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,48 +38,48 @@ const Header = () => {
   return (
     <header className="bg-background/95 backdrop-blur-sm shadow-sm border-b border-border sticky top-0 z-50">
       {/* Main header */}
-      <div className="container mx-auto">
-        <div className="flex h-14 sm:h-16 items-center justify-between px-3 sm:px-4">
+      <div className="container-responsive">
+        <div className="flex h-16 sm:h-18 items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 group min-w-0">
-            <div className=" rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
+          <Link to="/" className="flex items-center space-x-2 group min-w-0 flex-shrink-0">
+            <div className="rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
               <img 
                 src="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png" 
                 alt="KORAUTO Logo" 
-                className="h-20 w-auto object-contain dark:invert dark:brightness-0 dark:contrast-100 transition-all duration-200"
+                className="h-12 sm:h-16 w-auto object-contain dark:invert dark:brightness-0 dark:contrast-100 transition-all duration-200"
               />
             </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-6">
+          <nav className="hidden lg:flex items-center space-x-8">
             <Link 
               to="/" 
-              className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200"
+              className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200 touch-target"
             >
               Kryefaqja
             </Link>
             <Link 
               to="/catalog" 
-              className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200"
+              className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200 touch-target"
             >
               Katalogu
             </Link>
             <Link 
               to="/inspections" 
-              className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200"
+              className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200 touch-target"
             >
               Inspektimet
             </Link>
             <Link 
               to="/contacts" 
-              className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200"
+              className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200 touch-target"
             >
               Kontaktet
             </Link>
             <Link 
               to="/favorites" 
-              className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200 flex items-center gap-1"
+              className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200 flex items-center gap-2 touch-target"
             >
               <Heart className="h-4 w-4" />
               Favorites
@@ -87,26 +87,24 @@ const Header = () => {
           </nav>
 
           {/* Right side actions */}
-          <div className="flex items-center space-x-1 sm:space-x-2">
-            <ThemeToggle />
-            
+          <div className="flex items-center space-x-2">
             {/* Mobile menu button */}
             <Button
               variant="ghost"
               size="sm"
-              className="lg:hidden focus-enhanced p-2"
+              className="lg:hidden focus-enhanced touch-target-lg"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
-              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
             
             {/* Desktop Auth Buttons */}
-            <div className="hidden lg:flex items-center space-x-2">
+            <div className="hidden lg:flex items-center space-x-3">
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={handleAuthClick}
-                className="btn-enhanced focus-enhanced flex items-center gap-2"
+                className="btn-enhanced focus-enhanced flex items-center gap-2 touch-target"
               >
                 <User className="h-4 w-4" />
                 {user ? 'Llogaria Ime' : 'Llogaria Ime'}
@@ -120,32 +118,32 @@ const Header = () => {
       {/* Mobile Navigation */}
       {isMobileMenuOpen && (
         <div className="lg:hidden bg-background border-t border-border shadow-lg">
-          <div className="container mx-auto px-4 py-4">
-            <nav className="flex flex-col space-y-4">
+          <div className="container-responsive py-6">
+            <nav className="mobile-stack-sm">
               <Link 
                 to="/" 
-                className="text-foreground hover:text-primary font-medium transition-colors py-2 px-3 rounded-md hover:bg-primary/10"
+                className="mobile-nav-item text-foreground hover:text-primary hover:bg-primary/10"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Kryefaqja
               </Link>
               <Link 
                 to="/catalog" 
-                className="text-foreground hover:text-primary font-medium transition-colors py-2 px-3 rounded-md hover:bg-primary/10"
+                className="mobile-nav-item text-foreground hover:text-primary hover:bg-primary/10"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Katalogu
               </Link>
               <Link 
                 to="/inspections" 
-                className="text-foreground hover:text-primary font-medium transition-colors py-2 px-3 rounded-md hover:bg-primary/10"
+                className="mobile-nav-item text-foreground hover:text-primary hover:bg-primary/10"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Inspektimet
               </Link>
               <Link 
                 to="/contacts" 
-                className="text-foreground hover:text-primary font-medium transition-colors py-2 px-3 rounded-md hover:bg-primary/10"
+                className="mobile-nav-item text-foreground hover:text-primary hover:bg-primary/10"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Kontaktet
@@ -153,29 +151,29 @@ const Header = () => {
 
               <Link 
                 to="/favorites" 
-                className="flex items-center gap-2 text-foreground hover:text-primary font-medium transition-colors py-2 px-3 rounded-md hover:bg-primary/10"
+                className="mobile-nav-item text-foreground hover:text-primary hover:bg-primary/10"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                <Heart className="h-4 w-4" />
+                <Heart className="h-5 w-5 mr-3" />
                 Favorites
               </Link>
               <button 
-                className="flex items-center gap-2 text-foreground hover:text-primary font-medium transition-colors py-2 px-3 rounded-md hover:bg-primary/10 w-full text-left"
+                className="mobile-nav-item text-foreground hover:text-primary hover:bg-primary/10"
                 onClick={() => {
                   setIsMobileMenuOpen(false);
                   handleAuthClick();
                 }}
               >
-                <User className="h-4 w-4" />
+                <User className="h-5 w-5 mr-3" />
                 {user ? 'Llogaria Ime' : 'Llogaria Ime'}
               </button>
               
               {/* Mobile CTA Buttons */}
-              <div className="flex flex-col gap-3 pt-4 border-t border-border">
+              <div className="flex flex-col gap-4 pt-6 border-t border-border mt-4">
                 <Button 
                   variant="outline" 
-                  size="sm" 
-                  className="w-full text-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
+                  size="lg" 
+                  className="btn-mobile w-full text-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
                   onClick={() => {
                     setIsMobileMenuOpen(false);
                     navigate("/catalog");
@@ -184,8 +182,8 @@ const Header = () => {
                   Shiko Makinat
                 </Button>
                 <Button 
-                  size="sm" 
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200"
+                  size="lg" 
+                  className="btn-mobile w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200"
                   onClick={() => {
                     setIsMobileMenuOpen(false);
                     window.open('https://wa.me/38348181116', '_blank');

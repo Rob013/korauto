@@ -27,10 +27,10 @@ import {
   XCircle,
 } from "lucide-react";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { OptimizedImage } from "@/components/OptimizedImage";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 interface CarCardProps {
   id: string;
   make: string;
@@ -208,7 +208,7 @@ interface CarCardProps {
     seats_count?: number;
   };
 }
-const CarCard = ({
+const CarCard = memo(({
   id,
   make,
   model,
@@ -363,120 +363,118 @@ const CarCard = ({
 
     // Save current page for back navigation
     setPreviousPage(window.location.pathname + window.location.search);
-    // Open car details in new tab
-    window.open(`/car/${lot}`, '_blank');
+    // Navigate in same tab
+    navigate(`/car/${lot}`);
   };
   return (
     <div
-      className="bg-card rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-border cursor-pointer group touch-manipulation relative"
+      className="card-mobile overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group touch-manipulation"
       onClick={handleCardClick}
-      style={{
-        // Prevent layout shifts by setting fixed dimensions
-        minHeight: '320px',
-        aspectRatio: '280/320'
-      }}
     >
-      <div className="relative h-40 bg-muted overflow-hidden">
+      <div className="relative h-48 sm:h-56 bg-muted overflow-hidden">
         {image ? (
           <OptimizedImage
             src={image}
             alt={`${year} ${make} ${model}`}
-            className="w-full h-full group-hover:scale-105 transition-transform duration-300"
-            width={280}
-            priority={false}
-            enableLazyLoad={true}
-            enableProgressiveLoad={true}
+            className="mobile-image group-hover:scale-105 transition-transform duration-300"
+            width={400}
+            height={300}
+            quality={85}
           />
         ) : (
-          <div 
-            className="w-full h-full flex items-center justify-center bg-muted"
-            style={{ aspectRatio: '280/160' }}
-          >
+          <div className="w-full h-full mobile-center bg-muted">
             <Car className="h-16 w-16 text-muted-foreground" />
           </div>
         )}
         {/* Sold Out Badge - Takes priority over lot number */}
         {status === 3 || sale_status === "sold" ? (
-          <div className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded text-xs font-bold shadow-lg z-10">
+          <div className="absolute top-3 right-3 bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-bold shadow-lg z-10">
             SOLD OUT
           </div>
         ) : (
           lot && (
-            <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-semibold">
+            <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-2 rounded-lg text-sm font-semibold">
               Kodi #{lot}
             </div>
           )
         )}
       </div>
 
-      <div className="p-3 flex flex-col flex-1" style={{ minHeight: '160px' }}>
-        <div className="mb-2">
-          <h3 className="text-base font-semibold text-foreground line-clamp-1" style={{ minHeight: '1.5rem' }}>
+      <div className="mobile-padding-sm py-5">
+        <div className="mb-4">
+          <h3 className="mobile-subtitle text-foreground line-clamp-2 mb-2">
             {year} {make} {model}
           </h3>
           {title && title !== `${make} ${model}` && (
-            <p className="text-xs text-muted-foreground line-clamp-1" style={{ minHeight: '1rem' }}>
+            <p className="mobile-caption mb-2 line-clamp-1">
               {title}
             </p>
           )}
         </div>
 
-        {/* Compact Vehicle Info - Grid Layout with fixed heights */}
-        <div className="grid grid-cols-2 gap-2 mb-3 text-xs" style={{ minHeight: '3rem' }}>
+        {/* Basic Vehicle Info */}
+        <div className="mobile-stack-sm mb-4 text-sm">
           {mileage && (
-            <div className="flex items-center gap-1">
-              <Gauge className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="truncate text-muted-foreground">{mileage}</span>
+            <div className="flex items-center gap-3">
+              <Gauge className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+              <span className="truncate">{mileage}</span>
             </div>
           )}
           {transmission && (
-            <div className="flex items-center gap-1">
-              <Settings className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate text-muted-foreground">{transmission}</span>
+            <div className="flex items-center gap-3">
+              <Settings className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+              <span className="capitalize truncate">{transmission}</span>
             </div>
           )}
           {fuel && (
-            <div className="flex items-center gap-1">
-              <Fuel className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate text-muted-foreground">{fuel}</span>
+            <div className="flex items-center gap-3">
+              <Fuel className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+              <span className="capitalize truncate">{fuel}</span>
             </div>
           )}
           {color && (
-            <div className="flex items-center gap-1">
-              <Palette className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate text-muted-foreground">{color}</span>
+            <div className="flex items-center gap-3">
+              <Palette className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+              <span className="capitalize truncate">{color}</span>
             </div>
           )}
         </div>
 
-        {/* Compact Pricing and Action - Push to bottom */}
-        <div className="space-y-2 mt-auto">
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-bold text-primary">
-              €{price.toLocaleString()}
-            </span>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={handleFavoriteToggle}
-              className="h-8 w-8 p-0 hover:bg-muted touch-target"
-              style={{ minHeight: '44px', minWidth: '44px' }}
-            >
-              <Heart
-                className={`h-4 w-4 ${
-                  isFavorite ? "fill-red-500 text-red-500" : ""
-                }`}
-              />
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">Deri ne portin e Durresit</p>
+        {/* Pricing Information */}
+        <div className="mobile-inline justify-between mb-4">
+          <span className="text-2xl sm:text-3xl font-bold text-primary">
+            €{price.toLocaleString()}
+          </span>
+          <span className="mobile-caption">
+            Deri ne portin e Durresit
+          </span>
         </div>
 
-        <div className="text-center pt-2 border-t border-border/50">
-          <p className="text-xs text-muted-foreground font-medium">KORAUTO</p>
+        {/* Action Buttons */}
+        <div className="mobile-stack-sm mb-4">
+          <Button
+            size="lg"
+            variant="ghost"
+            onClick={handleFavoriteToggle}
+            className="btn-mobile border border-border hover:bg-muted w-full"
+          >
+            <Heart
+              className={`h-5 w-5 mr-2 ${
+                isFavorite ? "fill-red-500 text-red-500" : ""
+              }`}
+            />
+            {isFavorite ? "Favorit" : "Ruaj"}
+          </Button>
+        </div>
+
+        <div className="text-center">
+          <p className="mobile-caption">KORAUTO</p>
         </div>
       </div>
     </div>
   );
-};
+});
+
+CarCard.displayName = 'CarCard';
+
 export default CarCard;

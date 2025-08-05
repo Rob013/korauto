@@ -194,16 +194,16 @@ const LazyCarCard = memo(({
     return (
       <div 
         ref={cardRef}
-        className="bg-card rounded-lg overflow-hidden shadow-md border border-border h-96"
+        className="bg-card rounded-lg overflow-hidden shadow-md border border-border h-80"
       >
-          <div className="animate-pulse">
-            <div className="h-52 bg-muted" />
-            <div className="p-3 space-y-2">
-              <div className="h-5 bg-muted rounded w-3/4" />
-              <div className="h-3 bg-muted rounded w-1/2" />
-              <div className="h-6 bg-muted rounded w-2/3" />
-            </div>
+        <div className="animate-pulse">
+          <div className="h-40 bg-muted" />
+          <div className="p-3 space-y-2">
+            <div className="h-5 bg-muted rounded w-3/4" />
+            <div className="h-3 bg-muted rounded w-1/2" />
+            <div className="h-6 bg-muted rounded w-2/3" />
           </div>
+        </div>
       </div>
     );
   }
@@ -214,7 +214,7 @@ const LazyCarCard = memo(({
       className="bg-card rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border border-border cursor-pointer group touch-manipulation"
       onClick={handleCardClick}
     >
-      <div className="relative h-52 sm:h-56 bg-muted overflow-hidden">
+      <div className="relative h-40 sm:h-44 bg-muted overflow-hidden">
         {image ? (
           <img 
             src={image} 
