@@ -10,7 +10,7 @@ const AdminCarSearchDemo = () => {
           <div>
             <h1 className="text-3xl font-bold">Admin Car Search Demo</h1>
             <p className="text-muted-foreground mt-2">
-              This is a demonstration of the admin car search functionality that has been added to the admin dashboard.
+              This is a demonstration of the enhanced admin car search functionality with improved search algorithms and better result prioritization.
             </p>
           </div>
           
@@ -18,14 +18,17 @@ const AdminCarSearchDemo = () => {
             <AdminCarSearch />
             
             <div className="bg-muted/50 rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">Features</h2>
+              <h2 className="text-xl font-semibold mb-4">Enhanced Features</h2>
               <ul className="space-y-2 text-sm">
-                <li>• Search by Car ID, Lot Number, or VIN</li>
+                <li>• <strong>Enhanced Search Algorithm:</strong> Exact matches prioritized, then partial matches</li>
+                <li>• <strong>Multiple Database Queries:</strong> Searches exact matches, partial matches, and broad searches</li>
+                <li>• <strong>Extended API Coverage:</strong> Additional search methods including enhanced lot search</li>
                 <li>• Real-time search with debouncing (500ms delay)</li>
                 <li>• Search both cached cars in database and live API data</li>
                 <li>• Visual results with car images, prices, and specifications</li>
                 <li>• Click to open car details in new tab</li>
                 <li>• Responsive design for mobile and desktop</li>
+                <li>• <strong>Better Error Handling:</strong> Improved feedback when APIs are unavailable</li>
               </ul>
             </div>
             

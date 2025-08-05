@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useQuickAudit } from "@/hooks/usePerformanceAudit";
-import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { 
   Activity, 
   X, 
@@ -15,29 +14,25 @@ import {
 } from "lucide-react";
 
 interface FloatingPerformanceWidgetProps {
+  enabled?: boolean;
   position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
 }
 
 const FloatingPerformanceWidget = ({ 
+  enabled = process.env.NODE_ENV === 'development',
   position = 'bottom-right' 
 }: FloatingPerformanceWidgetProps) => {
   const [isMinimized, setIsMinimized] = useState(true);
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(enabled);
   const { metrics, isLoading, runQuickCheck } = useQuickAudit();
-  const { isAdmin, isLoading: adminLoading } = useIsAdmin();
 
-  // Show widget only for admin users
+  // Auto-run audit on mount
   useEffect(() => {
-    setIsVisible(isAdmin && !adminLoading);
-  }, [isAdmin, adminLoading]);
-
-  // Auto-run audit on mount when admin and visible
-  useEffect(() => {
-    if (isAdmin && !adminLoading) {
+    if (enabled) {
       const timer = setTimeout(runQuickCheck, 2000);
       return () => clearTimeout(timer);
     }
-  }, [isAdmin, adminLoading, runQuickCheck]);
+  }, [enabled, runQuickCheck]);
 
   // Position classes
   const positionClasses = {
