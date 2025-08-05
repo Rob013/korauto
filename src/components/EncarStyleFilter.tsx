@@ -93,6 +93,7 @@ interface EncarStyleFilterProps {
   isHomepage?: boolean;
   compact?: boolean;
   enableManualSearch?: boolean; // New prop to enable manual search mode
+  onManualSearch?: () => void; // New prop for manual search handler
 }
 
 const EncarStyleFilter = memo<EncarStyleFilterProps>(({
@@ -112,7 +113,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   onFetchGrades,
   isHomepage = false,
   compact = false,
-  enableManualSearch = false
+  enableManualSearch = false,
+  onManualSearch
 }) => {
   const [grades, setGrades] = useState<{ value: string; label: string; count?: number }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -188,12 +190,22 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   // Manual search trigger function
   const handleManualSearch = useCallback(() => {
     if (enableManualSearch && hasChanges) {
-      setIsLoading(true);
-      onFiltersChange(pendingFilters);
-      setHasChanges(false);
-      setTimeout(() => setIsLoading(false), 100);
+      if (onManualSearch) {
+        // Use parent's manual search handler if provided
+        onManualSearch();
+        setHasChanges(false);
+      } else {
+        // Fallback to original behavior
+        setIsLoading(true);
+        onFiltersChange(pendingFilters);
+        setHasChanges(false);
+        setTimeout(() => setIsLoading(false), 100);
+      }
+    } else if (onManualSearch && !enableManualSearch) {
+      // If not in manual search mode but handler provided, use it directly
+      onManualSearch();
     }
-  }, [enableManualSearch, hasChanges, pendingFilters, onFiltersChange]);
+  }, [enableManualSearch, hasChanges, pendingFilters, onFiltersChange, onManualSearch]);
 
   // Reset pending filters when external filters change
   useEffect(() => {
