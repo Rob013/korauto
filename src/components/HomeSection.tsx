@@ -1,14 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
-
 const HomeSection = () => {
-  return (
-    <section id="home" className="min-h-[85vh] flex items-center justify-center bg-background section-padding-mobile relative">
-      <div className="container-mobile text-center">
+  return <section id="home" className="min-h-[85vh] flex items-center justify-center bg-background pt-2 pb-4 relative">
+      <div className="container-responsive text-center">
         <div className="max-w-4xl mx-auto">
           {/* Logo on Homepage */}
-          <div className="mb-6 sm:mb-8">
-            <div className="w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 mx-auto flex items-center justify-center mb-4">
+          <div className="mb-4">
+            <div className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 mx-auto flex items-center justify-center mb-2">
               <img 
                 src="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png" 
                 alt="KORAUTO Logo" 
@@ -17,71 +15,58 @@ const HomeSection = () => {
             </div>
           </div>
           
-          <h1 className="heading-mobile-h1 mb-4 sm:mb-6 text-foreground">
+          <h1 className="text-4xl md:text-6xl font-bold mb-4 text-foreground">
             Mirë se vini në KORAUTO
           </h1>
-          <p className="text-responsive-sm mb-6 sm:mb-8 text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+          <p className="text-lg md:text-xl mb-6 text-muted-foreground max-w-3xl mx-auto">
             Find your perfect car from South Korea with best price and quality
           </p>
           
-          <div className="flex-mobile-stack sm:flex-row justify-center items-center mb-8 sm:mb-12">
-            <Button 
-              className="btn-mobile w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl" 
-              onClick={() => document.getElementById('cars')?.scrollIntoView({
-                behavior: 'smooth'
-              })}
-            >
+          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-8">
+            <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 text-lg" onClick={() => document.getElementById('cars')?.scrollIntoView({
+            behavior: 'smooth'
+          })}>
               Shfleto Makinat
             </Button>
-            <Button 
-              variant="outline" 
-              className="btn-mobile w-full sm:w-auto border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors" 
-              onClick={() => window.location.href = '/catalog'}
-            >
+            <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3 text-lg transition-colors" onClick={() => window.location.href = '/catalog'}>
               Katalogu
             </Button>
-            <Button 
-              variant="outline" 
-              className="btn-mobile w-full sm:w-auto border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors" 
-              onClick={() => window.location.href = '/inspections'}
-            >
+            <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3 text-lg transition-colors" onClick={() => window.location.href = '/inspections'}>
               Mëso për Inspektimet
             </Button>
           </div>
 
           {/* Quick Stats */}
-          <div className="stats-grid-mobile max-w-2xl mx-auto">
-            <div className="text-center p-4 sm:p-6 rounded-lg bg-card/50 backdrop-blur-sm">
-              <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-2">300+</div>
-              <div className="text-sm sm:text-base text-muted-foreground leading-tight">Makina të Shitura në Kosovë</div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-2xl mx-auto mt-8">
+            <div className="text-center">
+              <div className="text-3xl md:text-4xl font-bold text-primary mb-1">300+</div>
+              <div className="text-sm text-muted-foreground">Makina të Shitura në Kosovë</div>
             </div>
-            <div className="text-center p-4 sm:p-6 rounded-lg bg-card/50 backdrop-blur-sm">
-              <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-2">100%</div>
-              <div className="text-sm sm:text-base text-muted-foreground leading-tight">Profesional</div>
+            <div className="text-center">
+              <div className="text-3xl md:text-4xl font-bold text-primary mb-1">100%</div>
+              <div className="text-sm text-muted-foreground">Profesional</div>
             </div>
-            <div className="text-center p-4 sm:p-6 rounded-lg bg-card/50 backdrop-blur-sm">
-              <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-2">24/7</div>
-              <div className="text-sm sm:text-base text-muted-foreground leading-tight">Mbështetje</div>
+            <div className="text-center col-span-2 md:col-span-1">
+              <div className="text-3xl md:text-4xl font-bold text-primary mb-1">24/7</div>
+              <div className="text-sm text-muted-foreground">Mbështetje</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Sleek arrows on the sides - desktop only */}
+      {/* Sleek arrows on the sides */}
       <div className="absolute left-4 top-1/2 transform -translate-y-1/2 hidden lg:block">
         <ChevronDown 
-          className="w-8 h-8 text-primary/60 animate-bounce cursor-pointer hover:text-primary transition-colors duration-300 rotate-45 touch-target"
+          className="w-8 h-8 text-primary/60 animate-bounce cursor-pointer hover:text-primary transition-colors duration-300 rotate-45"
           onClick={() => document.getElementById('cars')?.scrollIntoView({ behavior: 'smooth' })}
         />
       </div>
       <div className="absolute right-4 top-1/2 transform -translate-y-1/2 hidden lg:block">
         <ChevronDown 
-          className="w-8 h-8 text-primary/60 animate-bounce cursor-pointer hover:text-primary transition-colors duration-300 -rotate-45 touch-target"
+          className="w-8 h-8 text-primary/60 animate-bounce cursor-pointer hover:text-primary transition-colors duration-300 -rotate-45"
           onClick={() => document.getElementById('cars')?.scrollIntoView({ behavior: 'smooth' })}
         />
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default HomeSection;
