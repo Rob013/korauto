@@ -82,8 +82,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [allCarsForSorting, setAllCarsForSorting] = useState<any[]>([]);
   const [isSortingGlobal, setIsSortingGlobal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(true); // Show filters by default
   const [hasSelectedCategories, setHasSelectedCategories] = useState(false);
+  const [pendingFilters, setPendingFilters] = useState<APIFilters>({}); // Store filters before search
+  const [hasSearched, setHasSearched] = useState(false); // Track if user has searched
   const isMobile = useIsMobile();
 
   // Memoized helper function to extract grades from title
@@ -274,32 +276,30 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
   };
 
+  // Handle filter changes without automatically searching
   const handleFiltersChange = useCallback((newFilters: APIFilters) => {
-    setFilters(newFilters);
-    setCurrentPage(1); // Reset to first page when filters change
-    
+    console.log(`🎯 FILTER CHANGE: Filters updated (not searching yet):`, newFilters);
+    setPendingFilters(newFilters);
+    setFilters(newFilters); // Still update the filters state for UI
+  }, []);
+
+  // Manual search function - only search when user clicks search button
+  const handleManualSearch = useCallback(() => {
+    console.log(`🔍 MANUAL SEARCH: Searching with filters:`, pendingFilters);
+    setCurrentPage(1);
+    setLoadedPages(1);
+    setHasSearched(true);
+
     // Reset global sorting when filters change
     setIsSortingGlobal(false);
     setAllCarsForSorting([]);
     
     // Clear previous data immediately to show loading state
     setCars([]);
-    
-    // Auto-hide filters on mobile after applying filters, and on all devices when categories are selected
-    if (isMobile && Object.keys(newFilters).length > 0) {
-      setShowFilters(false);
-    } else if (newFilters.manufacturer_id && newFilters.model_id) {
-      // Auto-hide filters on all devices when both manufacturer and model are selected
-      // This will be enhanced by the useEffect that waits for cars to load
-      const hasFilters = Object.values(newFilters).some(value => value !== undefined && value !== "" && value !== null);
-      if (hasFilters) {
-        setTimeout(() => setShowFilters(false), 1000); // Hide after data loads
-      }
-    }
-    
+
     // Use 50 cars per page for proper pagination
     const filtersWithPagination = {
-      ...newFilters,
+      ...pendingFilters,
       per_page: "50" // Show 50 cars per page
     };
     
@@ -307,7 +307,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
     // Update URL with all non-empty filter values - properly encode grade filter
     const paramsToSet: any = {};
-    Object.entries(newFilters).forEach(([key, value]) => {
+    Object.entries(pendingFilters).forEach(([key, value]) => {
       if (value !== undefined && value !== "" && value !== null) {
         // Properly encode grade filter for URL
         paramsToSet[key] = key === 'grade_iaai' ? encodeURIComponent(value) : value;
@@ -315,25 +315,34 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     });
     paramsToSet.page = "1";
     setSearchParams(paramsToSet);
-  }, [fetchCars, setSearchParams, isMobile]);
+
+    // Auto-hide filters after search on mobile if categories are selected
+    if (isMobile && pendingFilters.manufacturer_id && pendingFilters.model_id) {
+      setTimeout(() => setShowFilters(false), 800);
+    }
+  }, [pendingFilters, fetchCars, setSearchParams, isMobile, setCars]);
 
   const handleClearFilters = useCallback(() => {
     setFilters({});
+    setPendingFilters({});
     setSearchTerm("");
     setLoadedPages(1);
     setModels([]);
     setGenerations([]);
-    fetchCars(1, {}, true);
+    setHasSearched(false);
+    setCars([]); // Clear cars when filters are cleared
     setSearchParams({});
-  }, [fetchCars, setSearchParams]);
+  }, [setSearchParams, setCars]);
 
   const handleSearch = useCallback(() => {
     const newFilters = {
-      ...filters,
+      ...pendingFilters,
       search: searchTerm.trim() || undefined,
     };
-    handleFiltersChange(newFilters);
-  }, [filters, searchTerm, handleFiltersChange]);
+    setPendingFilters(newFilters);
+    setFilters(newFilters);
+    // Don't automatically search - let user click search button
+  }, [pendingFilters, searchTerm]);
 
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
@@ -545,11 +554,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         }
       }
 
-      // Set default manufacturer_id=9 if no filters in URL
-      if (Object.keys(urlFilters).length === 0) {
-        urlFilters.manufacturer_id = "9";
-      }
-
       // Set search term from URL
       if (urlFilters.search) {
         setSearchTerm(urlFilters.search);
@@ -557,7 +561,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
       // Set filters immediately for faster UI response
       setFilters(urlFilters);
+      setPendingFilters(urlFilters);
       setLoadedPages(urlLoadedPages);
+
+      // If there are URL filters, mark as already searched and load cars
+      if (Object.keys(urlFilters).length > 0 && urlFilters.manufacturer_id && urlFilters.model_id) {
+        setHasSearched(true);
+      }
 
       // Load data in parallel for faster loading
       const loadPromises = [
@@ -580,13 +590,15 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       // Wait for all data to load
       await Promise.all(loadPromises);
 
-      // Load cars with optimized pagination - only load current page
-      const initialFilters = {
-        ...urlFilters,
-        per_page: "50"
-      };
-      
-      await fetchCars(1, initialFilters, true);
+      // Load cars only if this is a restore from URL with valid filters
+      if (Object.keys(urlFilters).length > 0 && urlFilters.manufacturer_id && urlFilters.model_id) {
+        const initialFilters = {
+          ...urlFilters,
+          per_page: "50"
+        };
+        
+        await fetchCars(1, initialFilters, true);
+      }
 
       setIsRestoringState(false);
 
@@ -693,24 +705,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
   }, [sortBy, totalPages, totalCount, filters.grade_iaai]);
 
-  // Don't show cars until brand and model are selected
-  const shouldShowCars = filters.manufacturer_id && filters.model_id;
+  // Show cars only after user has performed a search
+  const shouldShowCars = hasSearched && cars.length > 0;
 
-  // Track when categories are selected to auto-hide filters
+  // Track when categories are selected (for UI feedback only, not for auto-hiding)
   useEffect(() => {
-    const hasCategories = filters.manufacturer_id && filters.model_id;
+    const hasCategories = pendingFilters.manufacturer_id && pendingFilters.model_id;
     setHasSelectedCategories(!!hasCategories);
-    
-    // Issue #4: Auto-hide filters when categories are selected and cars are loaded (for both mobile and non-mobile)
-    if (hasCategories && !isRestoringState && cars.length > 0 && !loading) {
-      // Auto-hide filters after cars are successfully loaded
-      const hideTimeout = setTimeout(() => {
-        setShowFilters(false);
-      }, 800); // Slightly faster hide for better UX
-      
-      return () => clearTimeout(hideTimeout);
-    }
-  }, [filters.manufacturer_id, filters.model_id, isRestoringState, cars.length, loading]);
+  }, [pendingFilters.manufacturer_id, pendingFilters.model_id]);
 
   // Effect to highlight and scroll to specific car by lot number
   useEffect(() => {
@@ -771,19 +773,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => {
-                // Issue #1: Do not allow closing filters until brand and model are selected
-                if (!filters.manufacturer_id || !filters.model_id) {
-                  toast({
-                    title: "Zgjidhni markën dhe modelin",
-                    description: "Për të mbyllur filtrat, së pari duhet të zgjidhni markën dhe modelin e makinës.",
-                    variant: "destructive",
-                    duration: 3000,
-                  });
-                  return;
-                }
-                setShowFilters(false);
-              }}
+              onClick={() => setShowFilters(false)}
               className={`lg:hidden h-8 w-8 p-0 ${isMobile ? 'hover:bg-primary-foreground/20 text-primary-foreground' : ''}`}
             >
               <X className="h-4 w-4" />
@@ -810,23 +800,60 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             compact={true}
           />
           
+          {/* Search Button - Always visible */}
+          <div className="mt-4 pt-4 border-t">
+            <Button
+              onClick={handleManualSearch}
+              disabled={!pendingFilters.manufacturer_id || !pendingFilters.model_id || loading}
+              className="w-full h-12 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50"
+              size="lg"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  Duke kërkuar...
+                </>
+              ) : (
+                <>
+                  <Search className="h-5 w-5 mr-2" />
+                  Kërko Makina
+                  {pendingFilters.manufacturer_id && pendingFilters.model_id && (
+                    <span className="ml-2 text-sm bg-primary-foreground/20 px-2 py-1 rounded">
+                      {Object.values(pendingFilters).filter(Boolean).length} filtër
+                    </span>
+                  )}
+                </>
+              )}
+            </Button>
+            {!pendingFilters.manufacturer_id || !pendingFilters.model_id ? (
+              <p className="text-center text-sm text-muted-foreground mt-2">
+                Zgjidhni markën dhe modelin për të kërkuar
+              </p>
+            ) : (
+              hasSearched && (
+                <p className="text-center text-sm text-green-600 mt-2">
+                  ✓ Gati për kërkim të ri
+                </p>
+              )
+            )}
+          </div>
+          
           {/* Mobile Apply/Close Filters Button - Enhanced */}
           {isMobile && (
             <div className="mt-6 pt-4 border-t space-y-3">
               {/* Show current selection status */}
               <div className="text-center text-sm text-muted-foreground">
-                {filters.manufacturer_id && filters.model_id ? (
+                {pendingFilters.manufacturer_id && pendingFilters.model_id ? (
                   <span className="text-green-600 font-medium">✓ Marka dhe modeli të zgjedhur</span>
                 ) : (
                   <span className="text-orange-600 font-medium">⚠ Zgjidhni markën dhe modelin</span>
                 )}
               </div>
               
-              {/* Apply/Close button */}
+              {/* Apply/Search button */}
               <Button
                 onClick={() => {
-                  // Issue #2: Enhanced mobile filter close button
-                  if (!filters.manufacturer_id || !filters.model_id) {
+                  if (!pendingFilters.manufacturer_id || !pendingFilters.model_id) {
                     // Show a visual feedback but don't close
                     const button = document.querySelector('[data-mobile-apply-button]');
                     if (button) {
@@ -837,24 +864,35 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     }
                     return;
                   }
+                  handleManualSearch();
                   setShowFilters(false);
                 }}
                 data-mobile-apply-button
                 className={`w-full h-12 text-lg font-semibold relative overflow-hidden transition-all duration-300 ${
-                  filters.manufacturer_id && filters.model_id
+                  pendingFilters.manufacturer_id && pendingFilters.model_id
                     ? "bg-primary hover:bg-primary/90 text-primary-foreground"
                     : "bg-muted hover:bg-muted/80 text-muted-foreground border-2 border-dashed border-orange-300"
                 }`}
                 size="lg"
+                disabled={loading}
               >
                 <span className="relative z-10">
-                  {filters.manufacturer_id && filters.model_id
-                    ? `Shfaq Rezultatet (${cars.length} makina)`
-                    : "Zgjidhni markën dhe modelin"
-                  }
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                      Duke kërkuar...
+                    </>
+                  ) : pendingFilters.manufacturer_id && pendingFilters.model_id ? (
+                    <>
+                      <Search className="h-5 w-5 mr-2" />
+                      Kërko Makina
+                    </>
+                  ) : (
+                    "Zgjidhni markën dhe modelin"
+                  )}
                 </span>
                 {/* Subtle animation background for selected state */}
-                {filters.manufacturer_id && filters.model_id && (
+                {pendingFilters.manufacturer_id && pendingFilters.model_id && (
                   <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-transparent animate-pulse"></div>
                 )}
               </Button>
@@ -869,19 +907,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           className={`fixed inset-0 z-30 lg:hidden transition-opacity duration-300 ${
             isMobile ? 'bg-black/70 backdrop-blur-md' : 'bg-black/50 backdrop-blur-sm'
           }`}
-          onClick={() => {
-            // Issue #1: Prevent closing filters via overlay click if brand and model not selected
-            if (!filters.manufacturer_id || !filters.model_id) {
-              toast({
-                title: "Zgjidhni markën dhe modelin",
-                description: "Për të mbyllur filtrat, së pari duhet të zgjidhni markën dhe modelin e makinës.",
-                variant: "destructive",
-                duration: 3000,
-              });
-              return;
-            }
-            setShowFilters(false);
-          }}
+          onClick={() => setShowFilters(false)}
         />
       )}
 
@@ -905,35 +931,25 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 
                 {/* Filter Toggle Button - Enhanced styling and feedback */}
                 <Button
-                  variant={showFilters ? "default" : hasSelectedCategories ? "default" : "outline"}
+                  variant={showFilters ? "default" : "outline"}
                   size="lg"
-                  onClick={() => {
-                    // Issue #1: Prevent closing filters if brand and model not selected
-                    if (showFilters && (!filters.manufacturer_id || !filters.model_id)) {
-                      toast({
-                        title: "Zgjidhni markën dhe modelin",
-                        description: "Për të mbyllur filtrat, së pari duhet të zgjidhni markën dhe modelin e makinës.",
-                        variant: "destructive",
-                        duration: 3000,
-                      });
-                      return;
-                    }
-                    setShowFilters(!showFilters);
-                  }}
+                  onClick={() => setShowFilters(!showFilters)}
                   className={`flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base transition-all duration-200 ${
-                    hasSelectedCategories 
-                      ? showFilters 
-                        ? "bg-primary hover:bg-primary/90 text-primary-foreground border-2 border-primary shadow-lg" 
-                        : "bg-primary hover:bg-primary/90 text-primary-foreground border-2 border-primary shadow-lg scale-105 animate-pulse" 
-                      : "bg-primary/10 hover:bg-primary hover:text-primary-foreground border-2 border-primary/20 hover:border-primary"
+                    showFilters 
+                      ? "bg-primary hover:bg-primary/90 text-primary-foreground border-2 border-primary shadow-lg" 
+                      : hasSearched
+                        ? "bg-primary/10 hover:bg-primary hover:text-primary-foreground border-2 border-primary/50 hover:border-primary"
+                        : "bg-primary hover:bg-primary/90 text-primary-foreground border-2 border-primary shadow-lg"
                   }`}
                 >
                   {showFilters ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
-                  <span className="hidden xs:inline">Shfaq Filtrat</span>
+                  <span className="hidden xs:inline">
+                    {showFilters ? 'Fshih Filtrat' : 'Shfaq Filtrat'}
+                  </span>
                   <span className="xs:hidden">Filtrat</span>
-                  {hasSelectedCategories && !showFilters && (
-                    <span className="ml-1 text-xs bg-primary-foreground/20 px-2 py-1 rounded-full animate-bounce">
-                      {Object.values(filters).filter(Boolean).length}
+                  {!showFilters && hasSearched && (
+                    <span className="ml-1 text-xs bg-primary-foreground/20 px-2 py-1 rounded-full">
+                      {Object.values(pendingFilters).filter(Boolean).length}
                     </span>
                   )}
                 </Button>
@@ -1005,14 +1021,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             </div>
           ) : null}
 
-          {/* No Selection State */}
-          {!shouldShowCars && !loading && !isRestoringState && (
+          {/* No Search Performed State */}
+          {!hasSearched && !loading && !isRestoringState && (
             <div className="text-center py-16">
               <div className="max-w-md mx-auto">
                 <Car className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Zgjidhni markën dhe modelin</h3>
+                <h3 className="text-lg font-semibold mb-2">Mirë se vini në KORAUTO</h3>
                 <p className="text-muted-foreground mb-6">
-                  Për të parë makinat, ju duhet të zgjidhni së paku markën dhe modelin e makinës.
+                  Zgjidhni markën dhe modelin e makinës, më pas klikoni butonin "Kërko Makina" për të parë rezultatet.
                 </p>
                 <Button
                   variant="outline"
@@ -1020,24 +1036,24 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   className="flex items-center gap-2"
                 >
                   <Filter className="h-4 w-4" />
-                  Open Filters
+                  Hap Filtrat
                 </Button>
               </div>
             </div>
           )}
 
           {/* No Results State */}
-          {shouldShowCars && !loading && !isRestoringState && cars.length === 0 && (
+          {hasSearched && !loading && !isRestoringState && cars.length === 0 && (
             <div className="text-center py-12">
               <p className="text-muted-foreground">
-                No cars found matching your filters.
+                Nuk u gjetën makina që përputhen me filtrat tuaj.
               </p>
               <Button
                 variant="outline"
                 onClick={handleClearFilters}
                 className="mt-4"
               >
-                Clear Filters
+                Pastro Filtrat
               </Button>
             </div>
           )}
