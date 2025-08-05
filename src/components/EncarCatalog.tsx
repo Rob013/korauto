@@ -12,7 +12,7 @@ import {
   ArrowUpDown,
   Car,
 } from "lucide-react";
-import CarCard from "@/components/CarCard";
+import LazyCarCard from "@/components/LazyCarCard";
 import { useSecureAuctionAPI, createFallbackManufacturers } from "@/hooks/useSecureAuctionAPI";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
 
@@ -869,7 +869,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                       : ""
                   }
                 >
-                  <CarCard
+                  <LazyCarCard
                     id={car.id}
                     make={car.manufacturer?.name || "Unknown"}
                     model={car.model?.name || "Unknown"}
@@ -885,38 +885,12 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     transmission={car.transmission?.name}
                     fuel={car.fuel?.name}
                     color={car.color?.name}
-                    condition={car.condition?.replace("run_and_drives", "Good")}
                     lot={car.lot_number || lot?.lot || ""}
                     title={car.title || ""}
                     status={Number(car.status || lot?.status || 1)}
                     sale_status={car.sale_status || lot?.sale_status}
                     final_price={car.final_price || lot?.final_price}
-                    generation={car.generation?.name}
-                    body_type={car.body_type?.name}
-                    engine={car.engine?.name}
-                    drive_wheel={car.drive_wheel}
-                    vehicle_type={car.vehicle_type?.name}
-                    cylinders={car.cylinders}
-                    bid={lot?.bid}
-                    estimate_repair_price={lot?.estimate_repair_price}
-                    pre_accident_price={lot?.pre_accident_price}
-                    clean_wholesale_price={lot?.clean_wholesale_price}
-                    actual_cash_value={lot?.actual_cash_value}
-                    sale_date={lot?.sale_date}
-                    seller={lot?.seller}
-                    seller_type={lot?.seller_type}
-                    detailed_title={lot?.detailed_title}
-                    damage_main={lot?.damage?.main}
-                    damage_second={lot?.damage?.second}
-                    keys_available={lot?.keys_available}
-                    airbags={lot?.airbags}
-                    grade_iaai={lot?.grade_iaai}
-                    domain={lot?.domain?.name}
-                    external_id={lot?.external_id}
-                    insurance={(lot as any)?.insurance}
                     insurance_v2={(lot as any)?.insurance_v2}
-                    location={(lot as any)?.location}
-                    inspect={(lot as any)?.inspect}
                     details={(lot as any)?.details}
                   />
                 </div>
