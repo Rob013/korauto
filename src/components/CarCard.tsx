@@ -370,7 +370,7 @@ const CarCard = ({
       className="bg-card rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-border cursor-pointer group touch-manipulation"
       onClick={handleCardClick}
     >
-      <div className="relative h-48 sm:h-52 bg-muted overflow-hidden">
+      <div className="relative h-40 bg-muted overflow-hidden">
         {image ? (
           <img
             src={image}
@@ -399,80 +399,70 @@ const CarCard = ({
         )}
       </div>
 
-      <div className="p-4 sm:p-5">
-        <div className="mb-3">
-          <h3 className="text-lg sm:text-xl font-semibold text-foreground line-clamp-2">
+      <div className="p-3">
+        <div className="mb-2">
+          <h3 className="text-base font-semibold text-foreground line-clamp-1">
             {year} {make} {model}
           </h3>
           {title && title !== `${make} ${model}` && (
-            <p className="text-sm text-muted-foreground mb-1 line-clamp-1">
+            <p className="text-xs text-muted-foreground line-clamp-1">
               {title}
             </p>
           )}
         </div>
 
-        {/* Basic Vehicle Info */}
-        <div className="space-y-2 mb-4 text-sm">
+        {/* Compact Vehicle Info - Grid Layout */}
+        <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
           {mileage && (
-            <div className="flex items-center gap-2">
-              <Gauge className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="truncate">{mileage}</span>
+            <div className="flex items-center gap-1">
+              <Gauge className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="truncate text-muted-foreground">{mileage}</span>
             </div>
           )}
           {transmission && (
-            <div className="flex items-center gap-2">
-              <Settings className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate">{transmission}</span>
+            <div className="flex items-center gap-1">
+              <Settings className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="capitalize truncate text-muted-foreground">{transmission}</span>
             </div>
           )}
           {fuel && (
-            <div className="flex items-center gap-2">
-              <Fuel className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate">{fuel}</span>
+            <div className="flex items-center gap-1">
+              <Fuel className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="capitalize truncate text-muted-foreground">{fuel}</span>
             </div>
           )}
           {color && (
-            <div className="flex items-center gap-2">
-              <Palette className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate">{color}</span>
+            <div className="flex items-center gap-1">
+              <Palette className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="capitalize truncate text-muted-foreground">{color}</span>
             </div>
           )}
         </div>
 
-        {/* Technical Details */}
-        <div className="mb-4"></div>
-
-        {/* Quick Status Indicators */}
-
-        {/* Pricing Information */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-          <span className="text-xl sm:text-2xl font-bold text-primary">
-            €{price.toLocaleString()}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            Deri ne portin e Durresit
-          </span>
+        {/* Compact Pricing and Action */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-lg font-bold text-primary">
+              €{price.toLocaleString()}
+            </span>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleFavoriteToggle}
+              className="h-8 w-8 p-0 hover:bg-muted"
+            >
+              <Heart
+                className={`h-4 w-4 ${
+                  isFavorite ? "fill-red-500 text-red-500" : ""
+                }`}
+              />
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">Deri ne portin e Durresit</p>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-2 mb-4">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleFavoriteToggle}
-            className="border border-border hover:bg-muted flex-1"
-          >
-            <Heart
-              className={`h-4 w-4 mr-1 ${
-                isFavorite ? "fill-red-500 text-red-500" : ""
-              }`}
-            />
-            {isFavorite ? "Favorit" : "Ruaj"}
-          </Button>
-        </div>
-
-        <div className="text-center">
-          <p className="text-xs text-muted-foreground">KORAUTO</p>
+        <div className="text-center pt-2 border-t border-border/50">
+          <p className="text-xs text-muted-foreground font-medium">KORAUTO</p>
         </div>
       </div>
     </div>

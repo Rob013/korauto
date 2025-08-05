@@ -18,6 +18,7 @@ const InspectionServices = lazy(() => import("./pages/InspectionServices"));
 const MyAccount = lazy(() => import("./pages/MyAccount"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Contacts = lazy(() => import("./pages/Contacts"));
+const ComponentDemo = lazy(() => import("./pages/ComponentDemo"));
 
 // Lazy load admin components for better code splitting
 const AdminSyncDashboard = lazy(() => 
@@ -142,6 +143,11 @@ const App = () => (
           <Route path="/contacts" element={
             <Suspense fallback={<PageSkeleton />}>
               <Contacts />
+            </Suspense>
+          } />
+          <Route path="/demo" element={
+            <Suspense fallback={<PageSkeleton />}>
+              <ComponentDemo />
             </Suspense>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
