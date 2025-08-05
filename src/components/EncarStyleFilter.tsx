@@ -402,9 +402,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     className="h-9 sm:h-10 text-sm"
                     options={[
                       { value: 'all', label: 'Any color' },
-                      ...Object.entries(COLOR_OPTIONS).map(([value, label]) => ({
-                        value,
-                        label
+                      ...Object.entries(COLOR_OPTIONS).map(([name, id]) => ({
+                        value: id.toString(),
+                        label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
                       }))
                     ]}
                   />
@@ -422,9 +422,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     className="h-9 sm:h-10 text-sm"
                     options={[
                       { value: 'all', label: 'Any type' },
-                      ...Object.entries(FUEL_TYPE_OPTIONS).map(([value, label]) => ({
-                        value,
-                        label
+                      ...Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => ({
+                        value: id.toString(),
+                        label: name.charAt(0).toUpperCase() + name.slice(1)
                       }))
                     ]}
                   />
@@ -442,9 +442,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     className="h-9 sm:h-10 text-sm"
                     options={[
                       { value: 'all', label: 'Any type' },
-                      ...Object.entries(TRANSMISSION_OPTIONS).map(([value, label]) => ({
-                        value,
-                        label
+                      ...Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => ({
+                        value: id.toString(),
+                        label: name.charAt(0).toUpperCase() + name.slice(1)
                       }))
                     ]}
                   />
@@ -848,9 +848,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   placeholder="Çdo ngjyrë"
                   options={[
                     { value: 'all', label: 'Çdo ngjyrë' },
-                    ...Object.entries(COLOR_OPTIONS).map(([value, label]) => ({
-                      value,
-                      label
+                    ...Object.entries(COLOR_OPTIONS).map(([name, id]) => ({
+                      value: id.toString(),
+                      label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
                     }))
                   ]}
                 />
@@ -867,9 +867,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   placeholder="Çdo tip"
                   options={[
                     { value: 'all', label: 'Çdo tip' },
-                    ...Object.entries(FUEL_TYPE_OPTIONS).map(([value, label]) => ({
-                      value,
-                      label
+                    ...Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => ({
+                      value: id.toString(),
+                      label: name.charAt(0).toUpperCase() + name.slice(1)
                     }))
                   ]}
                 />
@@ -886,9 +886,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   placeholder="Çdo tip"
                   options={[
                     { value: 'all', label: 'Çdo tip' },
-                    ...Object.entries(TRANSMISSION_OPTIONS).map(([value, label]) => ({
-                      value,
-                      label
+                    ...Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => ({
+                      value: id.toString(),
+                      label: name.charAt(0).toUpperCase() + name.slice(1)
                     }))
                   ]}
                 />
