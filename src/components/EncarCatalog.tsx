@@ -13,7 +13,7 @@ import {
   Car,
 } from "lucide-react";
 import CarCard from "@/components/CarCard";
-import { useSecureAuctionAPI } from "@/hooks/useSecureAuctionAPI";
+import { useSecureAuctionAPI, createFallbackManufacturers } from "@/hooks/useSecureAuctionAPI";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
 
 import { useSearchParams } from "react-router-dom";
@@ -190,7 +190,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       cars_qty?: number;
       image?: string;
     }[]
-  >([]);
+  >(createFallbackManufacturers()); // Initialize with fallback data immediately
 
   const [models, setModels] = useState<
     {
