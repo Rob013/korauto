@@ -1212,7 +1212,9 @@ const AdminDashboard = () => {
                                     </div>
                                     <div className="text-xs text-muted-foreground">ID: {request.car_id}</div>
                                     {carDetails[request.car_id].lot_number && (
-                                      <div className="text-xs text-muted-foreground">Lot: {carDetails[request.car_id].lot_number}</div>
+                                      <div className="text-xs lot-number-highlight mt-1">
+                                        Lot: {carDetails[request.car_id].lot_number}
+                                      </div>
                                     )}
                                   </div>
                                 </div>
@@ -1362,7 +1364,9 @@ const AdminDashboard = () => {
                                 <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
                                   <span>{car.year} {car.make} {car.model}</span>
                                   {car.lot_number && (
-                                    <span className="text-primary/70">• Lot: {car.lot_number}</span>
+                                    <span className="lot-number-highlight ml-2">
+                                      Lot: {car.lot_number}
+                                    </span>
                                   )}
                                 </div>
                               </div>

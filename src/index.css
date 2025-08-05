@@ -430,8 +430,130 @@ All colors MUST be HSL.
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+/* Mobile Layout Optimizations */
+@media (max-width: 768px) {
+  /* Safe area inset for notched devices */
+  .safe-area-inset {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Optimized container spacing for mobile */
+  .container-responsive {
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+
+  /* Better touch targets */
+  button, [role="button"] {
     min-height: 44px;
     min-width: 44px;
-    z-index: -1;
   }
+
+  /* Enhanced filter button visibility */
+  .mobile-filter-button {
+    position: sticky;
+    top: 16px;
+    z-index: 20;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Smooth filter panel transitions */
+  .filter-panel {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  /* Better text readability on mobile */
+  .mobile-text-optimize {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    font-size: clamp(14px, 4vw, 16px);
+    line-height: 1.5;
+  }
+
+  /* Improved car grid layout */
+  .mobile-car-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+  }
+
+  /* Better loading states */
+  .mobile-loading {
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 375px) {
+  .container-responsive {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .mobile-car-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .mobile-text-optimize {
+    font-size: clamp(12px, 4vw, 14px);
+  }
+}
+
+/* Enhanced filter animations */
+@keyframes slideInFromLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutToLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+.filter-enter {
+  animation: slideInFromLeft 300ms ease-out;
+}
+
+.filter-exit {
+  animation: slideOutToLeft 300ms ease-in;
+}
+
+/* Improved lot number visibility */
+.lot-number-highlight {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%);
+  color: hsl(var(--primary-foreground));
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
 }
