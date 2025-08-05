@@ -4,11 +4,12 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 const Header = () => {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
 
   // Check authentication state
   useEffect(() => {
@@ -36,46 +37,53 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-background/95 backdrop-blur-sm shadow-sm border-b border-border sticky top-0 z-50">
+    <header className="bg-background/95 backdrop-blur-md shadow-sm border-b border-border/50 sticky top-0 z-50 transition-all duration-300">
       {/* Main header */}
       <div className="container mx-auto">
-        <div className="flex h-14 sm:h-16 items-center justify-between px-3 sm:px-4">
+        <div className="flex h-16 sm:h-18 items-center justify-between px-4 sm:px-6">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 group min-w-0">
-            <div className=" rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
+          <Link to="/" className="flex items-center space-x-3 group min-w-0">
+            <div className="rounded-xl p-1 flex items-center justify-center group-hover:scale-105 transition-all duration-300 flex-shrink-0">
               <img 
                 src="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png" 
                 alt="KORAUTO Logo" 
-                className="h-20 w-auto object-contain dark:invert dark:brightness-0 dark:contrast-100 transition-all duration-200"
+                className="h-12 w-auto object-contain dark:invert dark:brightness-0 dark:contrast-100 transition-all duration-300 group-hover:brightness-110"
               />
             </div>
+            <span className="hidden sm:block font-bold text-xl text-foreground group-hover:text-primary transition-colors duration-300">
+              KORAUTO
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-6">
+          <nav className="hidden lg:flex items-center space-x-8">
             <Link 
               to="/" 
-              className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200"
+              className="relative text-foreground hover:text-primary font-medium transition-all duration-300 group"
             >
               Kryefaqja
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
             </Link>
             <Link 
               to="/catalog" 
-              className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200"
+              className="relative text-foreground hover:text-primary font-medium transition-all duration-300 group"
             >
               Katalogu
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
             </Link>
             <Link 
               to="/inspections" 
-              className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200"
+              className="relative text-foreground hover:text-primary font-medium transition-all duration-300 group"
             >
               Inspektimet
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
             </Link>
             <Link 
               to="/contacts" 
-              className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200"
+              className="relative text-foreground hover:text-primary font-medium transition-all duration-300 group"
             >
               Kontaktet
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
             </Link>
             <Link 
               to="/favorites" 
