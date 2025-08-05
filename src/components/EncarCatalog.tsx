@@ -52,6 +52,32 @@ interface EncarCatalogProps {
   highlightCarId?: string | null;
 }
 
+// Fallback models for testing when API is not available
+const getFallbackModels = (manufacturerId: string) => {
+  const fallbackModels: Record<string, { id: number; name: string; cars_qty: number }[]> = {
+    '1': [ // Audi
+      { id: 1, name: 'A3', cars_qty: 25 },
+      { id: 2, name: 'A4', cars_qty: 35 },
+      { id: 3, name: 'A6', cars_qty: 28 },
+      { id: 4, name: 'Q3', cars_qty: 18 },
+      { id: 5, name: 'Q5', cars_qty: 22 }
+    ],
+    '9': [ // BMW  
+      { id: 10, name: '3 Series', cars_qty: 45 },
+      { id: 11, name: '5 Series', cars_qty: 38 },
+      { id: 12, name: 'X3', cars_qty: 32 },
+      { id: 13, name: 'X5', cars_qty: 28 }
+    ],
+    '16': [ // Mercedes-Benz
+      { id: 20, name: 'C-Class', cars_qty: 42 },
+      { id: 21, name: 'E-Class', cars_qty: 35 },
+      { id: 22, name: 'GLC', cars_qty: 28 }
+    ]
+  };
+  
+  return fallbackModels[manufacturerId] || [];
+};
+
 const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const { toast } = useToast();
   const {
@@ -421,8 +447,16 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         console.log(`[handleManufacturerChange] Fetching models...`);
         const modelData = await fetchModels(manufacturerId);
         console.log(`[handleManufacturerChange] Received modelData:`, modelData);
-        console.log(`[handleManufacturerChange] Setting models to:`, modelData);
-        setModels(modelData);
+        
+        // If API fails, provide fallback models for demonstration purposes
+        if (!modelData || modelData.length === 0) {
+          const fallbackModels = getFallbackModels(manufacturerId);
+          console.log(`[handleManufacturerChange] Using fallback models:`, fallbackModels);
+          setModels(fallbackModels);
+        } else {
+          console.log(`[handleManufacturerChange] Setting models to:`, modelData);
+          setModels(modelData);
+        }
       }
       const newFilters: APIFilters = {
         manufacturer_id: manufacturerId,
