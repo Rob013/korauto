@@ -18,7 +18,8 @@ import {
   Fuel,
   Settings,
   MapPin,
-  DollarSign
+  DollarSign,
+  Cog
 } from "lucide-react";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS } from '@/hooks/useAuctionAPI';
 
@@ -416,7 +417,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
         </Button>
 
         {expandedSections.includes('basic') && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-3 bg-muted/30 rounded-lg">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-muted/30 rounded-lg">
             <div className="space-y-2">
               <Label className="text-sm font-medium">Marka</Label>
               <AdaptiveSelect 
@@ -456,82 +457,6 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 ]}
               />
             </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Gjenerata</Label>
-              <AdaptiveSelect 
-                value={filters.generation_id || 'all'} 
-                onValueChange={(value) => updateFilter('generation_id', value)}
-                disabled={!filters.model_id}
-                placeholder={filters.model_id ? "Gjeneratat" : "Zgjidhni modelin së pari"}
-                options={[
-                  { value: 'all', label: 'Të gjitha Gjeneratat' },
-                  ...generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => ({
-                    value: generation.id.toString(),
-                    label: `${generation.name}${generation.from_year ? (() => {
-                      const from = generation.from_year.toString();
-                      const currentYear = new Date().getFullYear();
-                      const to = (!generation.to_year || generation.to_year >= currentYear) ? 'sot' : generation.to_year.toString();
-                      return ` (${from}-${to})`;
-                    })() : ''} • ${generation.cars_qty} makina`
-                  }))
-                ]}
-              />
-              
-              {/* Year Range Preset Buttons */}
-              <div className="mt-2">
-                <Label className="text-xs text-muted-foreground mb-2 block">Vite të shpejta (si Encar.com):</Label>
-                <div className="flex flex-wrap gap-1">
-                  {yearRangePresets.map((preset) => (
-                    <Button
-                      key={preset.label}
-                      variant={
-                        filters.from_year === preset.from.toString() && 
-                        filters.to_year === preset.to.toString() 
-                          ? "default" 
-                          : "outline"
-                      }
-                      size="sm"
-                      className="h-7 px-2 text-xs"
-                      onClick={() => handleYearRangePreset(preset)}
-                    >
-                      {preset.label}
-                    </Button>
-                  ))}
-                  {(filters.from_year || filters.to_year) && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 px-2 text-xs text-muted-foreground"
-                      onClick={() => onFiltersChange({
-                        ...filters,
-                        from_year: undefined,
-                        to_year: undefined
-                      })}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Variants</Label>
-              <AdaptiveSelect 
-                value={filters.grade_iaai || 'all'} 
-                onValueChange={(value) => updateFilter('grade_iaai', value)}
-                disabled={!filters.generation_id || isLoadingGrades}
-                placeholder={isLoadingGrades ? "Loading..." : "Select variant"}
-                options={[
-                  { value: 'all', label: 'All Variants' },
-                  ...grades.map((grade) => ({
-                    value: grade.value,
-                    label: grade.label
-                  }))
-                ]}
-              />
-            </div>
           </div>
         )}
       </div>
@@ -552,22 +477,65 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
         {expandedSections.includes('advanced') && (
           <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
-            {/* Year and Price */}
+            {/* Price */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-3">
                 <Label className="text-sm font-medium flex items-center gap-2">
+                  <DollarSign className="h-3 w-3" />
+                  Çmimi (EUR)
+                </Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Nga"
+                    value={filters.buy_now_price_from || ''}
+                    onChange={(e) => updateFilter('buy_now_price_from', e.target.value)}
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Deri"
+                    value={filters.buy_now_price_to || ''}
+                    onChange={(e) => updateFilter('buy_now_price_to', e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Generation and Variants */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-2">
                   <Calendar className="h-3 w-3" />
-                  Viti
+                  Gjenerata
                   {(filters.from_year || filters.to_year) && (
                     <Badge variant="secondary" className="text-xs">
                       {filters.from_year || 'Çdo vit'} - {filters.to_year || 'sot'}
                     </Badge>
                   )}
                 </Label>
+                <AdaptiveSelect 
+                  value={filters.generation_id || 'all'} 
+                  onValueChange={(value) => updateFilter('generation_id', value)}
+                  disabled={!filters.model_id}
+                  placeholder={filters.model_id ? "Gjeneratat" : "Zgjidhni modelin së pari"}
+                  options={[
+                    { value: 'all', label: 'Të gjitha Gjeneratat' },
+                    ...generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => ({
+                      value: generation.id.toString(),
+                      label: `${generation.name}${generation.from_year ? (() => {
+                        const from = generation.from_year.toString();
+                        const currentYear = new Date().getFullYear();
+                        const to = (!generation.to_year || generation.to_year >= currentYear) ? 'sot' : generation.to_year.toString();
+                        return ` (${from}-${to})`;
+                      })() : ''} • ${generation.cars_qty} makina`
+                    }))
+                  ]}
+                />
                 
-                {/* Quick Year Range Presets - Same as in generation section */}
-                <div className="mb-3">
-                  <div className="flex flex-wrap gap-1 mb-2">
+                {/* Year Range Preset Buttons - Compact without Encar.com text */}
+                <div className="mt-2">
+                  <Label className="text-xs text-muted-foreground mb-2 block">Vitet:</Label>
+                  <div className="flex flex-wrap gap-1">
                     {yearRangePresets.map((preset) => (
                       <Button
                         key={preset.label}
@@ -600,54 +568,26 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     )}
                   </div>
                 </div>
-                
-                <div className="grid grid-cols-2 gap-2">
-                  <AdaptiveSelect 
-                    value={filters.from_year || 'all'} 
-                    onValueChange={(value) => updateFilter('from_year', value)}
-                    placeholder="Nga"
-                    options={[
-                      { value: 'all', label: 'Çdo vit' },
-                      ...years.map(year => ({
-                        value: year.toString(),
-                        label: year.toString()
-                      }))
-                    ]}
-                  />
-                  <AdaptiveSelect 
-                    value={filters.to_year || 'all'} 
-                    onValueChange={(value) => updateFilter('to_year', value)}
-                    placeholder="Deri"
-                    options={[
-                      { value: 'all', label: 'Çdo vit' },
-                      ...years.map(year => ({
-                        value: year.toString(),
-                        label: year.toString()
-                      }))
-                    ]}
-                  />
-                </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <Label className="text-sm font-medium flex items-center gap-2">
-                  <DollarSign className="h-3 w-3" />
-                  Çmimi (EUR)
+                  <Cog className="h-3 w-3" />
+                  Variants
                 </Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Nga"
-                    value={filters.buy_now_price_from || ''}
-                    onChange={(e) => updateFilter('buy_now_price_from', e.target.value)}
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Deri"
-                    value={filters.buy_now_price_to || ''}
-                    onChange={(e) => updateFilter('buy_now_price_to', e.target.value)}
-                  />
-                </div>
+                <AdaptiveSelect 
+                  value={filters.grade_iaai || 'all'} 
+                  onValueChange={(value) => updateFilter('grade_iaai', value)}
+                  disabled={!filters.generation_id || isLoadingGrades}
+                  placeholder={isLoadingGrades ? "Loading..." : "Select variant"}
+                  options={[
+                    { value: 'all', label: 'All Variants' },
+                    ...grades.map((grade) => ({
+                      value: grade.value,
+                      label: grade.label
+                    }))
+                  ]}
+                />
               </div>
             </div>
 
