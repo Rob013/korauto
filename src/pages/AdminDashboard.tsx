@@ -747,11 +747,10 @@ const AdminDashboard = () => {
           onValueChange={setActiveTab}
           className="space-y-3 sm:space-y-4"
         >
-          <TabsList className="grid w-full grid-cols-4 h-auto">
+          <TabsList className="grid w-full grid-cols-3 h-auto">
             <TabsTrigger value="overview" className="text-xs sm:text-sm p-2 sm:p-3">Overview</TabsTrigger>
             <TabsTrigger value="inspections" className="text-xs sm:text-sm p-2 sm:p-3">Inspections</TabsTrigger>
             <TabsTrigger value="analytics" className="text-xs sm:text-sm p-2 sm:p-3">Analytics</TabsTrigger>
-            <TabsTrigger value="performance" className="text-xs sm:text-sm p-2 sm:p-3">Performance</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-3 sm:space-y-4">
@@ -1718,150 +1717,6 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
-
-          <TabsContent value="performance" className="space-y-3 sm:space-y-4">
-            {/* Performance Section */}
-            <div className="grid gap-2 sm:gap-3 grid-cols-2 lg:grid-cols-4">
-              <Card className="p-3">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">
-                    Overall Score
-                  </CardTitle>
-                  <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="text-lg sm:text-xl font-bold">-</div>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">
-                    Run audit to check
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="p-3">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">
-                    Layout Shifts
-                  </CardTitle>
-                  <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="text-lg sm:text-xl font-bold">-</div>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">
-                    Stability check
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="p-3">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">
-                    Animation
-                  </CardTitle>
-                  <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="text-lg sm:text-xl font-bold">-</div>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">
-                    Smoothness
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="p-3">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">
-                    Issues Found
-                  </CardTitle>
-                  <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="text-lg sm:text-xl font-bold">-</div>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">
-                    Run audit to check
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Performance Dashboard Integration */}
-            <Card className="p-4 sm:p-6">
-              <CardHeader className="p-0 pb-4">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
-                    <Activity className="h-5 w-5" />
-                    Website Performance Monitor
-                  </CardTitle>
-                  <Button 
-                    onClick={() => window.open('/performance', '_blank')}
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-2"
-                  >
-                    <TrendingUp className="h-4 w-4" />
-                    Full Dashboard
-                  </Button>
-                </div>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                  Monitor website alignment, smoothness, and performance metrics
-                </p>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-800 p-6">
-                  <div className="text-center space-y-4">
-                    <div className="flex justify-center">
-                      <div className="relative">
-                        <Activity className="h-16 w-16 text-blue-600 dark:text-blue-400" />
-                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                        Real-time Performance Monitoring
-                      </h3>
-                      <p className="text-sm text-blue-700 dark:text-blue-300 mb-4">
-                        Advanced performance auditing system is active and monitoring your website's 
-                        alignment, smoothness, and user experience in real-time.
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                      <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3">
-                        <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-1" />
-                        <div className="text-sm font-medium text-blue-900 dark:text-blue-100">Layout Tracking</div>
-                        <div className="text-xs text-blue-700 dark:text-blue-300">Real-time shifts detection</div>
-                      </div>
-                      
-                      <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3">
-                        <Activity className="h-6 w-6 text-blue-600 mx-auto mb-1" />
-                        <div className="text-sm font-medium text-blue-900 dark:text-blue-100">Animation Monitor</div>
-                        <div className="text-xs text-blue-700 dark:text-blue-300">Smoothness analysis</div>
-                      </div>
-                      
-                      <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3">
-                        <TrendingUp className="h-6 w-6 text-green-600 mx-auto mb-1" />
-                        <div className="text-sm font-medium text-blue-900 dark:text-blue-100">Auto-Optimization</div>
-                        <div className="text-xs text-blue-700 dark:text-blue-300">Continuous improvements</div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Button 
-                        onClick={() => window.open('/performance', '_blank')}
-                        className="w-full sm:w-auto"
-                      >
-                        <Activity className="h-4 w-4 mr-2" />
-                        Open Performance Dashboard
-                      </Button>
-                      <p className="text-xs text-blue-600 dark:text-blue-400">
-                        View detailed metrics, run audits, and apply optimizations
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </TabsContent>
         </Tabs>
       </div>
