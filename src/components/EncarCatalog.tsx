@@ -719,26 +719,26 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       <div className={`
         fixed lg:relative z-40 bg-card border-r transition-transform duration-300 ease-in-out
         ${showFilters ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        w-80 lg:w-72 h-full overflow-y-auto
+        w-full sm:w-80 lg:w-72 h-full overflow-y-auto lg:shadow-none shadow-xl
       `}>
-        <div className="p-4 border-b">
+        <div className="p-3 sm:p-4 border-b">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Filter className="h-5 w-5 text-primary" />
-              <h3 className="font-semibold">Filters</h3>
+              <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              <h3 className="font-semibold text-sm sm:text-base">Filters</h3>
             </div>
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={() => setShowFilters(false)}
-              className="lg:hidden"
+              className="lg:hidden h-8 w-8 p-0"
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
         </div>
         
-        <div className="p-4">
+        <div className="p-3 sm:p-4">
           <EncarStyleFilter
             filters={filters}
             manufacturers={manufacturers}
@@ -762,81 +762,87 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       {/* Overlay for mobile */}
       {showFilters && (
         <div 
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden backdrop-blur-sm"
           onClick={() => setShowFilters(false)}
         />
       )}
 
       {/* Main Content */}
-      <div className="flex-1 lg:ml-0">
-        <div className="container-responsive py-4 sm:py-6">
-          {/* Header Section - More compact */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => window.history.back()}
-                className="flex items-center gap-2 hover:bg-primary hover:text-primary-foreground transition-colors"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">Back</span>
-              </Button>
+      <div className={`flex-1 transition-all duration-300 ${showFilters ? 'lg:ml-0' : 'lg:ml-0'}`}>
+        <div className="container-responsive py-3 sm:py-6">
+          {/* Header Section - Mobile optimized */}
+          <div className="flex flex-col gap-3 mb-4">
+            {/* Mobile header - stacked layout */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => window.history.back()}
+                  className="flex items-center gap-1 hover:bg-primary hover:text-primary-foreground transition-colors h-8 px-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span className="hidden xs:inline text-xs">Back</span>
+                </Button>
+                
+                {/* Filter Toggle Button - more prominent on mobile */}
+                <Button
+                  variant={showFilters ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="flex items-center gap-1 h-8 px-2 lg:px-3"
+                >
+                  {showFilters ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+                  <span className="text-xs">Filters</span>
+                </Button>
+              </div>
               
-              {/* Filter Toggle Button */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2"
-              >
-                {showFilters ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
-                <span className="hidden sm:inline">Filters</span>
-              </Button>
-              
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                  Car Catalog
-                </h1>
-                <p className="text-muted-foreground text-sm">
-                  {totalCount.toLocaleString()} cars {filters.grade_iaai && filters.grade_iaai !== 'all' ? `filtered by ${filters.grade_iaai}` : 'total'} • Page {currentPage} of {totalPages} • Showing {carsForCurrentPage.length} cars
-                </p>
+              {/* View mode and sort - mobile optimized */}
+              <div className="flex gap-1 items-center">
+                {/* Sort Control - smaller on mobile */}
+                <div className="relative">
+                  <ArrowUpDown className="h-3 w-3 absolute left-2 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none" />
+                  <AdaptiveSelect
+                    value={sortBy}
+                    onValueChange={(value: SortOption) => {
+                      setSortBy(value);
+                    }}
+                    placeholder="Sort"
+                    className="w-24 sm:w-32 h-7 text-xs pl-6"
+                    options={getSortOptions().map((option) => ({
+                      value: option.value,
+                      label: option.label
+                    }))}
+                  />
+                </div>
+                
+                <Button
+                  variant={viewMode === "grid" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setViewMode("grid")}
+                  className="h-7 w-7 p-0"
+                >
+                  <Grid className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant={viewMode === "list" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setViewMode("list")}
+                  className="h-7 w-7 p-0"
+                >
+                  <List className="h-3 w-3" />
+                </Button>
               </div>
             </div>
-
-            {/* View Mode Toggle and Sort */}
-            <div className="flex gap-2 items-center">
-              {/* Sort Control */}
-              <div className="relative">
-                <ArrowUpDown className="h-3 w-3 absolute left-3 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none" />
-                <AdaptiveSelect
-                  value={sortBy}
-                  onValueChange={(value: SortOption) => {
-                    setSortBy(value);
-                  }}
-                  placeholder="Sort by..."
-                  className="w-40 h-8 text-sm pl-8"
-                  options={getSortOptions().map((option) => ({
-                    value: option.value,
-                    label: option.label
-                  }))}
-                />
-              </div>
-              
-              <Button
-                variant={viewMode === "grid" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("grid")}
-              >
-                <Grid className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === "list" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("list")}
-              >
-                <List className="h-4 w-4" />
-              </Button>
+            
+            {/* Title and stats - separate row for better mobile layout */}
+            <div className="space-y-1">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                Car Catalog
+              </h1>
+              <p className="text-muted-foreground text-xs sm:text-sm">
+                {totalCount.toLocaleString()} cars {filters.grade_iaai && filters.grade_iaai !== 'all' ? `filtered by ${filters.grade_iaai}` : 'total'} • Page {currentPage} of {totalPages} • Showing {carsForCurrentPage.length} cars
+              </p>
             </div>
           </div>
 

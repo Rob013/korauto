@@ -240,14 +240,14 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   // Compact mode for sidebar
   if (compact) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Search Cars</h3>
+          <h3 className="text-base sm:text-lg font-semibold">Search Cars</h3>
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={onClearFilters}
-            className="text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground h-8 w-8 p-0"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -255,8 +255,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
         
         {/* Basic filters */}
         <div className="space-y-3">
-          <div className="space-y-2">
-            <Label className="text-sm font-medium flex items-center gap-2">
+          <div className="space-y-1.5">
+            <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
               <Car className="h-3 w-3" />
               Brand
             </Label>
@@ -264,7 +264,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               value={filters.manufacturer_id || 'all'} 
               onValueChange={(value) => updateFilter('manufacturer_id', value)}
               placeholder="Select brand"
-              className="h-10"
+              className="h-9 sm:h-10 text-sm"
               options={[
                 { value: 'all', label: 'All Brands' },
                 ...sortedManufacturers.map((manufacturer) => ({
@@ -274,7 +274,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                       {manufacturer.image && (
                         <img src={manufacturer.image} alt={manufacturer.name} className="w-4 h-4 object-contain" />
                       )}
-                      <span>{manufacturer.name} ({manufacturer.cars_qty})</span>
+                      <span className="text-sm">{manufacturer.name} ({manufacturer.cars_qty})</span>
                     </div>
                   )
                 }))
@@ -282,8 +282,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-sm font-medium flex items-center gap-2">
+          <div className="space-y-1.5">
+            <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
               <Settings className="h-3 w-3" />
               Model
             </Label>
@@ -292,7 +292,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               onValueChange={(value) => updateFilter('model_id', value)}
               disabled={!filters.manufacturer_id}
               placeholder={filters.manufacturer_id ? "Select model" : "Select brand first"}
-              className="h-10"
+              className="h-9 sm:h-10 text-sm"
               options={[
                 { value: 'all', label: 'All Models' },
                 ...models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => ({
@@ -303,8 +303,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-sm font-medium flex items-center gap-2">
+          <div className="space-y-1.5">
+            <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
               <Calendar className="h-3 w-3" />
               Generation
             </Label>
@@ -313,7 +313,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               onValueChange={(value) => updateFilter('generation_id', value)}
               disabled={!filters.model_id}
               placeholder={filters.model_id ? "Generations" : "Select model first"}
-              className="h-10"
+              className="h-9 sm:h-10 text-sm"
               options={[
                 { value: 'all', label: 'All Generations' },
                 ...generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => ({
@@ -330,8 +330,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           </div>
 
           {/* Price Range */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium flex items-center gap-2">
+          <div className="space-y-1.5">
+            <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
               <DollarSign className="h-3 w-3" />
               Price (EUR)
             </Label>
@@ -341,20 +341,20 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 placeholder="From"
                 value={filters.buy_now_price_from || ''}
                 onChange={(e) => updateFilter('buy_now_price_from', e.target.value)}
-                className="h-10"
+                className="h-9 sm:h-10 text-sm"
               />
               <Input
                 type="number"
                 placeholder="To"
                 value={filters.buy_now_price_to || ''}
                 onChange={(e) => updateFilter('buy_now_price_to', e.target.value)}
-                className="h-10"
+                className="h-9 sm:h-10 text-sm"
               />
             </div>
           </div>
 
           {/* Year presets */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">Year Range:</Label>
             <div className="flex flex-wrap gap-1">
               {yearRangePresets.slice(0, 4).map((preset) => (
@@ -367,7 +367,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                       : "outline"
                   }
                   size="sm"
-                  className="h-8 px-2 text-xs"
+                  className="h-7 sm:h-8 px-2 text-xs"
                   onClick={() => handleYearRangePreset(preset)}
                 >
                   {preset.label}
@@ -380,18 +380,18 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           <Button
             variant="ghost"
             onClick={() => toggleSection('more')}
-            className="w-full justify-between text-sm"
+            className="w-full justify-between text-xs sm:text-sm h-8 sm:h-9"
           >
             More Filters
             {expandedSections.includes('more') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
 
           {expandedSections.includes('more') && (
-            <div className="space-y-3 pt-2 border-t">
+            <div className="space-y-2.5 pt-2 border-t">
               {/* Color, Fuel, Transmission in compact layout */}
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium flex items-center gap-2">
+              <div className="space-y-2.5">
+                <div className="space-y-1.5">
+                  <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
                     <Palette className="h-3 w-3" />
                     Color
                   </Label>
@@ -399,7 +399,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     value={filters.color || 'all'} 
                     onValueChange={(value) => updateFilter('color', value)}
                     placeholder="Any color"
-                    className="h-10"
+                    className="h-9 sm:h-10 text-sm"
                     options={[
                       { value: 'all', label: 'Any color' },
                       ...Object.entries(COLOR_OPTIONS).map(([value, label]) => ({
@@ -410,8 +410,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium flex items-center gap-2">
+                <div className="space-y-1.5">
+                  <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
                     <Fuel className="h-3 w-3" />
                     Fuel
                   </Label>
@@ -419,7 +419,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     value={filters.fuel_type || 'all'} 
                     onValueChange={(value) => updateFilter('fuel_type', value)}
                     placeholder="Any type"
-                    className="h-10"
+                    className="h-9 sm:h-10 text-sm"
                     options={[
                       { value: 'all', label: 'Any type' },
                       ...Object.entries(FUEL_TYPE_OPTIONS).map(([value, label]) => ({
@@ -430,8 +430,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium flex items-center gap-2">
+                <div className="space-y-1.5">
+                  <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
                     <Settings className="h-3 w-3" />
                     Transmission
                   </Label>
@@ -439,7 +439,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     value={filters.transmission || 'all'} 
                     onValueChange={(value) => updateFilter('transmission', value)}
                     placeholder="Any type"
-                    className="h-10"
+                    className="h-9 sm:h-10 text-sm"
                     options={[
                       { value: 'all', label: 'Any type' },
                       ...Object.entries(TRANSMISSION_OPTIONS).map(([value, label]) => ({
@@ -451,8 +451,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 </div>
 
                 {/* Mileage */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium flex items-center gap-2">
+                <div className="space-y-1.5">
+                  <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
                     <MapPin className="h-3 w-3" />
                     Mileage (km)
                   </Label>
@@ -462,14 +462,14 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                       placeholder="From"
                       value={filters.odometer_from_km || ''}
                       onChange={(e) => updateFilter('odometer_from_km', e.target.value)}
-                      className="h-10"
+                      className="h-9 sm:h-10 text-sm"
                     />
                     <Input
                       type="number"
                       placeholder="To"
                       value={filters.odometer_to_km || ''}
                       onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
-                      className="h-10"
+                      className="h-9 sm:h-10 text-sm"
                     />
                   </div>
                 </div>
