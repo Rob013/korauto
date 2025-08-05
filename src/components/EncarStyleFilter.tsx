@@ -210,41 +210,41 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     );
   };
 
-  // Homepage style - compact single row
+  // Homepage style - compact mobile-optimized layout
   if (isHomepage) {
     return (
-      <Card className="p-4 bg-gradient-to-r from-card via-card/95 to-card border-border/50 shadow-sm">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+      <Card className="card-mobile mobile-padding bg-gradient-to-r from-card via-card/95 to-card border-border/50 shadow-sm">
+        <div className="mobile-stack">
+          <div className="mobile-inline justify-between">
+            <div className="flex items-center gap-3">
               <Car className="h-5 w-5 text-primary" />
-              <h3 className="text-lg font-semibold">Kërko Makinën</h3>
+              <h3 className="mobile-subtitle">Kërko Makinën</h3>
             </div>
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={onClearFilters}
-              className="text-muted-foreground hover:text-foreground"
+              className="touch-target text-muted-foreground hover:text-foreground"
             >
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5" />
             </Button>
           </div>
           
-          {/* Main filters in single row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <Car className="h-3 w-3" />
+          {/* Main filters in mobile-friendly layout */}
+          <div className="mobile-stack sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="mobile-stack-sm">
+              <Label className="mobile-body font-medium flex items-center gap-2">
+                <Car className="h-4 w-4" />
                 Marka
               </Label>
               <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
-                <SelectTrigger className="h-11">
+                <SelectTrigger className="touch-target-lg">
                   <SelectValue placeholder="Zgjidhni markën" />
                 </SelectTrigger>
                 <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="all">Të gjitha Markat</SelectItem>
+                  <SelectItem value="all" className="touch-target">Të gjitha Markat</SelectItem>
                   {sortedManufacturers.map((manufacturer) => (
-                    <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
+                    <SelectItem key={manufacturer.id} value={manufacturer.id.toString()} className="touch-target">
                       <div className="flex items-center gap-2">
                         {manufacturer.image && (
                           <img src={manufacturer.image} alt={manufacturer.name} className="w-5 h-5 object-contain" />
@@ -257,9 +257,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <Settings className="h-3 w-3" />
+            <div className="mobile-stack-sm">
+              <Label className="mobile-body font-medium flex items-center gap-2">
+                <Settings className="h-4 w-4" />
                 Modeli
               </Label>
               <Select 
@@ -267,13 +267,13 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 onValueChange={(value) => updateFilter('model_id', value)}
                 disabled={!filters.manufacturer_id}
               >
-                <SelectTrigger className="h-11">
+                <SelectTrigger className="touch-target-lg">
                   <SelectValue placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"} />
                 </SelectTrigger>
                 <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="all">Të gjithë Modelet</SelectItem>
+                  <SelectItem value="all" className="touch-target">Të gjithë Modelet</SelectItem>
                   {models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => (
-                    <SelectItem key={model.id} value={model.id.toString()}>
+                    <SelectItem key={model.id} value={model.id.toString()} className="touch-target">
                       {model.name} ({model.cars_qty})
                     </SelectItem>
                   ))}
@@ -281,9 +281,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <Calendar className="h-3 w-3" />
+            <div className="mobile-stack-sm sm:col-span-2 lg:col-span-1">
+              <Label className="mobile-body font-medium flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
                 Gjenerata
               </Label>
               <Select 
@@ -291,13 +291,13 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 onValueChange={(value) => updateFilter('generation_id', value)}
                 disabled={!filters.model_id}
               >
-                <SelectTrigger className="h-11">
+                <SelectTrigger className="touch-target-lg">
                   <SelectValue placeholder={filters.model_id ? "Zgjidhni gjeneratën" : "Zgjidhni modelin së pari"} />
                 </SelectTrigger>
                 <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="all">Të gjitha Gjeneratat</SelectItem>
+                  <SelectItem value="all" className="touch-target">Të gjitha Gjeneratat</SelectItem>
                   {generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => (
-                    <SelectItem key={generation.id} value={generation.id.toString()}>
+                    <SelectItem key={generation.id} value={generation.id.toString()} className="touch-target">
                       {generation.name}
                       {generation.from_year ? (() => {
                         const from = generation.from_year.toString().slice(-2);
@@ -311,7 +311,6 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 </SelectContent>
               </Select>
             </div>
-
 
           </div>
         </div>

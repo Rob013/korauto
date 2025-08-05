@@ -2,9 +2,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Suspense } from "react-router-dom";
-import { lazy, memo } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { lazy, memo, Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import NavigationErrorBoundary from "@/components/NavigationErrorBoundary";
+import NavigationErrorViewer from "@/components/NavigationErrorViewer";
 // import { usePerformance } from "@/hooks/use-performance";
 // import { PerformanceMonitorComponent } from "@/components/PerformanceMonitor";
 
@@ -65,27 +67,31 @@ const App = memo(() => {
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
-          <Suspense fallback={<PageSkeleton />}>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/catalog" element={<Catalog />} />
-              <Route path="/car/:id" element={<CarDetails />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/sync" element={<AdminSyncDashboard />} />
-              <Route path="/auth" element={<AuthPage />} />
-              <Route path="/account" element={<MyAccount />} />
-              <Route path="/favorites" element={<FavoritesPage />} />
-              <Route path="/inspections" element={<InspectionServices />} />
-              <Route path="/contacts" element={<Contacts />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
+        <NavigationErrorBoundary>
+          <BrowserRouter>
+            <Suspense fallback={<PageSkeleton />}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/catalog" element={<Catalog />} />
+                <Route path="/car/:id" element={<CarDetails />} />
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/sync" element={<AdminSyncDashboard />} />
+                <Route path="/auth" element={<AuthPage />} />
+                <Route path="/account" element={<MyAccount />} />
+                <Route path="/favorites" element={<FavoritesPage />} />
+                <Route path="/inspections" element={<InspectionServices />} />
+                <Route path="/contacts" element={<Contacts />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </BrowserRouter>
+        </NavigationErrorBoundary>
         <Suspense fallback={null}>
           <InstallPrompt />
         </Suspense>
+        {/* Development navigation error viewer */}
+        {process.env.NODE_ENV === 'development' && <NavigationErrorViewer />}
         {/* <PerformanceMonitorComponent /> */}
       </TooltipProvider>
     </QueryClientProvider>
