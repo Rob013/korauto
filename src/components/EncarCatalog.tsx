@@ -700,16 +700,17 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     const hasCategories = filters.manufacturer_id && filters.model_id;
     setHasSelectedCategories(!!hasCategories);
     
-    // Auto-hide filters when categories are selected and cars are loaded
-    if (hasCategories && !isRestoringState && cars.length > 0 && !loading) {
-      // Auto-hide filters after cars are successfully loaded
+    // Auto-hide filters when both manufacturer and model are selected
+    // This should work regardless of API loading status for better UX
+    if (hasCategories && !isRestoringState) {
+      // Auto-hide filters after a short delay to let user see the selection
       const hideTimeout = setTimeout(() => {
         setShowFilters(false);
-      }, 500); // Small delay to let user see the results loading
+      }, 1000); // Delay to let user see the results are being searched
       
       return () => clearTimeout(hideTimeout);
     }
-  }, [filters.manufacturer_id, filters.model_id, isRestoringState, cars.length, loading]);
+  }, [filters.manufacturer_id, filters.model_id, isRestoringState]);
 
   // Effect to highlight and scroll to specific car by lot number
   useEffect(() => {
@@ -834,21 +835,23 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   <span className="hidden xs:inline text-xs">Back</span>
                 </Button>
                 
-                {/* Filter Toggle Button - big and prominent when categories selected */}
+                {/* Filter Toggle Button - enhanced styling and prominence */}
                 <Button
                   variant={showFilters ? "default" : hasSelectedCategories ? "default" : "outline"}
-                  size={hasSelectedCategories ? "lg" : "lg"}
+                  size="lg"
                   onClick={() => setShowFilters(!showFilters)}
                   className={`flex items-center gap-2 h-12 px-6 lg:px-8 font-semibold text-base transition-all duration-200 ${
-                    hasSelectedCategories 
-                      ? "bg-primary hover:bg-primary/90 text-primary-foreground border-2 border-primary shadow-lg scale-105" 
+                    hasSelectedCategories && !showFilters
+                      ? "bg-primary hover:bg-primary/90 text-primary-foreground border-2 border-primary shadow-lg pulse-effect" 
+                      : showFilters
+                      ? "bg-primary hover:bg-primary/90 text-primary-foreground border-2 border-primary"
                       : "bg-primary/10 hover:bg-primary hover:text-primary-foreground border-2 border-primary/20 hover:border-primary"
                   }`}
                 >
                   {showFilters ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
-                  <span>Filtrat</span>
+                  <span>{showFilters ? "Fshih Filtrat" : "Shfaq Filtrat"}</span>
                   {hasSelectedCategories && !showFilters && (
-                    <span className="ml-1 text-sm bg-primary-foreground/20 px-2 py-1 rounded">
+                    <span className="ml-1 text-sm bg-primary-foreground/20 px-2 py-1 rounded font-normal">
                       {Object.values(filters).filter(Boolean).length}
                     </span>
                   )}
