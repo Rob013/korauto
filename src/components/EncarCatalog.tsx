@@ -284,9 +284,16 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Clear previous data immediately to show loading state
     setCars([]);
     
-    // Auto-hide filters on mobile after applying filters
+    // Auto-hide filters on mobile after applying filters, and on all devices when categories are selected
     if (isMobile && Object.keys(newFilters).length > 0) {
       setShowFilters(false);
+    } else if (newFilters.manufacturer_id && newFilters.model_id) {
+      // Auto-hide filters on all devices when both manufacturer and model are selected
+      // This will be enhanced by the useEffect that waits for cars to load
+      const hasFilters = Object.values(newFilters).some(value => value !== undefined && value !== "" && value !== null);
+      if (hasFilters) {
+        setTimeout(() => setShowFilters(false), 1000); // Hide after data loads
+      }
     }
     
     // Use 50 cars per page for proper pagination
@@ -693,11 +700,16 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     const hasCategories = filters.manufacturer_id && filters.model_id;
     setHasSelectedCategories(!!hasCategories);
     
-    // Auto-hide filters when categories are selected (but only after initial load)
-    if (hasCategories && !isRestoringState && cars.length === 0) {
-      setShowFilters(false);
+    // Auto-hide filters when categories are selected and cars are loaded
+    if (hasCategories && !isRestoringState && cars.length > 0 && !loading) {
+      // Auto-hide filters after cars are successfully loaded
+      const hideTimeout = setTimeout(() => {
+        setShowFilters(false);
+      }, 500); // Small delay to let user see the results loading
+      
+      return () => clearTimeout(hideTimeout);
     }
-  }, [filters.manufacturer_id, filters.model_id, isRestoringState, cars.length]);
+  }, [filters.manufacturer_id, filters.model_id, isRestoringState, cars.length, loading]);
 
   // Effect to highlight and scroll to specific car by lot number
   useEffect(() => {
