@@ -23,6 +23,21 @@ interface CarSearchResult {
   source?: 'cached' | 'api'; // Add source tracking
 }
 
+interface CachedCarData {
+  api_id: string;
+  make: string;
+  model: string;
+  year: number;
+  vin?: string;
+  lot_number?: string;
+  car_data: Record<string, any>;
+  price?: number;
+  mileage?: string;
+  color?: string;
+  fuel?: string;
+  transmission?: string;
+}
+
 interface AdminCarSearchProps {
   className?: string;
 }
@@ -56,17 +71,53 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
 
       let allResults: CarSearchResult[] = [];
 
-      // 1. First search in cached cars (fastest)
-      const { data: cachedCars, error: cacheError } = await supabase
-        .from('cars_cache')
-        .select('api_id, make, model, year, vin, lot_number, car_data')
-        .or(`api_id.ilike.%${term}%,vin.ilike.%${term}%,lot_number.ilike.%${term}%`)
-        .limit(10);
+      // 1. First search in cached cars (fastest) - Enhanced with exact and partial matches
+      console.log('🔍 Searching cached database...');
+      
+      // Enhanced search: exact matches first, then partial matches
+      const searchQueries = [
+        // Exact matches (highest priority)
+        supabase
+          .from('cars_cache')
+          .select('api_id, make, model, year, vin, lot_number, car_data, price, mileage, color, fuel, transmission')
+          .or(`api_id.eq.${term},lot_number.eq.${term},vin.eq.${term}`)
+          .limit(5),
+        
+        // Partial matches with ilike (secondary priority)
+        supabase
+          .from('cars_cache')
+          .select('api_id, make, model, year, vin, lot_number, car_data, price, mileage, color, fuel, transmission')
+          .or(`api_id.ilike.%${term}%,vin.ilike.%${term}%,lot_number.ilike.%${term}%`)
+          .limit(8),
+          
+        // Additional broad search including make/model if term is longer
+        ...(term.length >= 4 ? [
+          supabase
+            .from('cars_cache')
+            .select('api_id, make, model, year, vin, lot_number, car_data, price, mileage, color, fuel, transmission')
+            .or(`make.ilike.%${term}%,model.ilike.%${term}%`)
+            .limit(5)
+        ] : [])
+      ];
 
-      if (cachedCars && cachedCars.length > 0) {
-        console.log('✅ Found cached cars:', cachedCars.length);
-        const cachedResults = cachedCars.map(car => {
-          const carData = car.car_data as any;
+      const cachedResults = await Promise.all(searchQueries);
+      const allCachedCars: CachedCarData[] = [];
+      
+      // Combine results from all queries, removing duplicates
+      cachedResults.forEach(({ data: cars, error }) => {
+        if (!error && cars && cars.length > 0) {
+          cars.forEach(car => {
+            if (!allCachedCars.some(existing => existing.api_id === car.api_id)) {
+              allCachedCars.push(car);
+            }
+          });
+        }
+      });
+
+      if (allCachedCars && allCachedCars.length > 0) {
+        console.log('✅ Found cached cars:', allCachedCars.length);
+        const cachedCarResults = allCachedCars.map((car: CachedCarData) => {
+          const carData = car.car_data as Record<string, any>;
           const lot = carData?.lots?.[0];
           
           return {
@@ -76,17 +127,19 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
             model: car.model,
             vin: car.vin,
             lot_number: car.lot_number || lot?.lot,
-            price: lot?.buy_now ? Math.round(lot.buy_now + 2200) : undefined,
+            price: car.price || (lot?.buy_now ? Math.round(lot.buy_now + 2200) : undefined),
             image: lot?.images?.normal?.[0] || lot?.images?.big?.[0],
-            mileage: lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined,
-            fuel: carData?.fuel?.name,
-            transmission: carData?.transmission?.name,
-            color: carData?.color?.name,
+            mileage: car.mileage || (lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined),
+            fuel: car.fuel || carData?.fuel?.name,
+            transmission: car.transmission || carData?.transmission?.name,
+            color: car.color || carData?.color?.name,
             source: 'cached' as const,
           };
         });
-        allResults.push(...cachedResults);
+        allResults.push(...cachedCarResults);
       }
+
+
 
       // 2. Comprehensive API search across all data sources
       console.log('🔍 Searching across all API data sources...');
@@ -131,9 +184,21 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
             },
           },
         },
+        // Enhanced lot-specific search
+        {
+          method: "Enhanced Lot Search",
+          payload: {
+            endpoint: "cars",
+            filters: {
+              lot_number: term,
+              per_page: '10'
+            },
+          },
+        },
       ];
 
       // Try each search method and collect results
+      let apiSearchSuccessful = false;
       for (const searchMethod of searchMethods) {
         try {
           console.log(`🔍 Trying ${searchMethod.method}...`);
@@ -164,8 +229,9 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
 
             if (carData && Array.isArray(carData)) {
               console.log(`✅ Found ${carData.length} results via ${searchMethod.method}`);
+              apiSearchSuccessful = true;
               
-              apiResults = carData.map((car: any) => {
+              apiResults = carData.map((car: Record<string, any>) => {
                 const lot = car.lots?.[0];
                 return {
                   id: car.id || car.api_id,
@@ -198,6 +264,11 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
         }
       }
 
+      // Provide feedback based on API search results
+      if (!apiSearchSuccessful && allResults.length === 0) {
+        console.log('ℹ️ No API results due to network restrictions, showing cached results only');
+      }
+
       // Remove duplicates based on ID and sort by relevance
       const uniqueResults = allResults.filter((result, index, self) => 
         index === self.findIndex(r => r.id === result.id)
@@ -224,13 +295,22 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
       if (sortedResults.length === 0) {
         toast({
           title: 'No results found',
-          description: `No cars found matching "${term}" across all data sources`,
+          description: `No cars found matching "${term}". Searched ${allCachedCars.length > 0 ? 'cached database and ' : ''}live APIs across multiple auction sources.`,
           variant: 'default',
         });
       } else {
+        const sourceBreakdown = sortedResults.reduce((acc, car) => {
+          acc[car.source] = (acc[car.source] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+        
+        const sourceText = Object.entries(sourceBreakdown)
+          .map(([source, count]) => `${count} from ${source === 'cached' ? 'database' : 'live API'}`)
+          .join(', ');
+        
         toast({
-          title: 'Search completed',
-          description: `Found ${sortedResults.length} car${sortedResults.length !== 1 ? 's' : ''} across all data sources`,
+          title: 'Search completed successfully',
+          description: `Found ${sortedResults.length} car${sortedResults.length !== 1 ? 's' : ''}: ${sourceText}`,
           variant: 'default',
         });
       }
@@ -301,7 +381,7 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-semibold flex items-center gap-2">
             <Search className="h-5 w-5 text-primary" />
-            Comprehensive Car Search
+            Enhanced Car Search
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
@@ -310,7 +390,7 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
               <Input
                 ref={inputRef}
                 type="text"
-                placeholder="Search by Car ID, Lot Number, VIN... (comprehensive search across all data)"
+                placeholder="Search by Car ID, Lot Number, VIN... (enhanced search: exact matches first, then partial)"
                 value={searchTerm}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="pr-10"
