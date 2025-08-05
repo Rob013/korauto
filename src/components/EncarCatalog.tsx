@@ -808,6 +808,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
             onFetchGrades={fetchGrades}
             compact={true}
+            enableManualSearch={true}
           />
           
           {/* Mobile Apply/Close Filters Button - Enhanced */}

@@ -92,6 +92,7 @@ interface EncarStyleFilterProps {
   onFetchGrades?: (manufacturerId?: string, modelId?: string, generationId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
   isHomepage?: boolean;
   compact?: boolean;
+  enableManualSearch?: boolean; // New prop to enable manual search mode
 }
 
 const EncarStyleFilter = memo<EncarStyleFilterProps>(({
@@ -110,47 +111,97 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   onToggleAdvanced,
   onFetchGrades,
   isHomepage = false,
-  compact = false
+  compact = false,
+  enableManualSearch = false
 }) => {
   const [grades, setGrades] = useState<{ value: string; label: string; count?: number }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingGrades, setIsLoadingGrades] = useState(false);
   const [expandedSections, setExpandedSections] = useState<string[]>(['basic']);
+  
+  // Local state for pending filters when manual search is enabled
+  const [pendingFilters, setPendingFilters] = useState(filters);
+  const [hasChanges, setHasChanges] = useState(false);
 
   const updateFilter = useCallback((key: string, value: string) => {
     const actualValue = value === 'all' || value === 'any' ? undefined : value;
     
-    setIsLoading(true);
-    
-    if (key === 'manufacturer_id') {
-      onManufacturerChange?.(actualValue || '');
-      onFiltersChange({
-        ...filters,
-        [key]: actualValue,
-        model_id: undefined,
-        generation_id: undefined,
-        grade_iaai: undefined
-      });
-    } else if (key === 'model_id') {
-      onModelChange?.(actualValue || '');
-      onFiltersChange({
-        ...filters,
-        [key]: actualValue,
-        generation_id: undefined,
-        grade_iaai: undefined
-      });
-    } else {
-      const updatedFilters = { ...filters, [key]: actualValue };
+    if (enableManualSearch) {
+      // In manual search mode, update pending filters without triggering search
+      const updatedFilters = { ...pendingFilters };
       
-      if (key === 'generation_id') {
+      if (key === 'manufacturer_id') {
+        onManufacturerChange?.(actualValue || '');
+        updatedFilters[key] = actualValue;
+        updatedFilters.model_id = undefined;
+        updatedFilters.generation_id = undefined;
         updatedFilters.grade_iaai = undefined;
+      } else if (key === 'model_id') {
+        onModelChange?.(actualValue || '');
+        updatedFilters[key] = actualValue;
+        updatedFilters.generation_id = undefined;
+        updatedFilters.grade_iaai = undefined;
+      } else {
+        updatedFilters[key] = actualValue;
+        if (key === 'generation_id') {
+          updatedFilters.grade_iaai = undefined;
+        }
       }
       
-      onFiltersChange(updatedFilters);
+      setPendingFilters(updatedFilters);
+      setHasChanges(true);
+    } else {
+      // Original immediate search behavior
+      setIsLoading(true);
+      
+      if (key === 'manufacturer_id') {
+        onManufacturerChange?.(actualValue || '');
+        onFiltersChange({
+          ...filters,
+          [key]: actualValue,
+          model_id: undefined,
+          generation_id: undefined,
+          grade_iaai: undefined
+        });
+      } else if (key === 'model_id') {
+        onModelChange?.(actualValue || '');
+        onFiltersChange({
+          ...filters,
+          [key]: actualValue,
+          generation_id: undefined,
+          grade_iaai: undefined
+        });
+      } else {
+        const updatedFilters = { ...filters, [key]: actualValue };
+        
+        if (key === 'generation_id') {
+          updatedFilters.grade_iaai = undefined;
+        }
+        
+        onFiltersChange(updatedFilters);
+      }
+      
+      setTimeout(() => setIsLoading(false), 50);
     }
-    
-    setTimeout(() => setIsLoading(false), 50);
-  }, [filters, onFiltersChange, onManufacturerChange, onModelChange]);
+  }, [filters, pendingFilters, enableManualSearch, onFiltersChange, onManufacturerChange, onModelChange]);
+
+  // Manual search trigger function
+  const handleManualSearch = useCallback(() => {
+    if (enableManualSearch && hasChanges) {
+      setIsLoading(true);
+      onFiltersChange(pendingFilters);
+      setHasChanges(false);
+      setTimeout(() => setIsLoading(false), 100);
+    }
+  }, [enableManualSearch, hasChanges, pendingFilters, onFiltersChange]);
+
+  // Reset pending filters when external filters change
+  useEffect(() => {
+    if (enableManualSearch) {
+      setPendingFilters(filters);
+      setHasChanges(false);
+    }
+  }, [filters, enableManualSearch]);
 
   // Handle year range preset selection
   const handleYearRangePreset = useCallback((preset: { label: string; from: number; to: number }) => {
@@ -242,23 +293,48 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     return (
       <div className="space-y-3 sm:space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-base sm:text-lg font-semibold">Search Cars</h3>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => {
-              // Issue #1: Do not allow closing filters until brand and model are selected
-              if (!filters.manufacturer_id || !filters.model_id) {
-                // Don't show toast here as the parent component will handle it
-                // Just return without closing
-                return;
-              }
-              onClearFilters();
-            }}
-            className="text-muted-foreground hover:text-foreground h-8 w-8 p-0"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <h3 className="text-base sm:text-lg font-semibold">Search Cars</h3>
+            {enableManualSearch && hasChanges && (
+              <Badge variant="secondary" className="text-xs">
+                Changes pending
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {enableManualSearch && (
+              <Button 
+                variant="default"
+                size="sm" 
+                onClick={handleManualSearch}
+                disabled={!hasChanges || isLoading}
+                className="text-xs px-3 py-1 h-7 bg-primary hover:bg-primary/90"
+              >
+                {isLoading ? (
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                ) : (
+                  <Search className="h-3 w-3 mr-1" />
+                )}
+                Search
+              </Button>
+            )}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => {
+                // Issue #1: Do not allow closing filters until brand and model are selected
+                if (!filters.manufacturer_id || !filters.model_id) {
+                  // Don't show toast here as the parent component will handle it
+                  // Just return without closing
+                  return;
+                }
+                onClearFilters();
+              }}
+              className="text-muted-foreground hover:text-foreground h-8 w-8 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         
         {/* Basic filters */}
