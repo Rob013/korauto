@@ -30,6 +30,7 @@ import InspectionRequestForm from "@/components/InspectionRequestForm";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { OptimizedImage } from "@/components/OptimizedImage";
 interface CarCardProps {
   id: string;
   make: string;
@@ -367,21 +368,30 @@ const CarCard = ({
   };
   return (
     <div
-      className="bg-card rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-border cursor-pointer group touch-manipulation"
+      className="bg-card rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-border cursor-pointer group touch-manipulation relative"
       onClick={handleCardClick}
+      style={{
+        // Prevent layout shifts by setting fixed dimensions
+        minHeight: '320px',
+        aspectRatio: '280/320'
+      }}
     >
       <div className="relative h-40 bg-muted overflow-hidden">
         {image ? (
-          <img
+          <OptimizedImage
             src={image}
             alt={`${year} ${make} ${model}`}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={(e) => {
-              e.currentTarget.src = "/placeholder.svg";
-            }}
+            className="w-full h-full group-hover:scale-105 transition-transform duration-300"
+            width={280}
+            priority={false}
+            enableLazyLoad={true}
+            enableProgressiveLoad={true}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-muted">
+          <div 
+            className="w-full h-full flex items-center justify-center bg-muted"
+            style={{ aspectRatio: '280/160' }}
+          >
             <Car className="h-16 w-16 text-muted-foreground" />
           </div>
         )}
@@ -399,20 +409,20 @@ const CarCard = ({
         )}
       </div>
 
-      <div className="p-3">
+      <div className="p-3 flex flex-col flex-1" style={{ minHeight: '160px' }}>
         <div className="mb-2">
-          <h3 className="text-base font-semibold text-foreground line-clamp-1">
+          <h3 className="text-base font-semibold text-foreground line-clamp-1" style={{ minHeight: '1.5rem' }}>
             {year} {make} {model}
           </h3>
           {title && title !== `${make} ${model}` && (
-            <p className="text-xs text-muted-foreground line-clamp-1">
+            <p className="text-xs text-muted-foreground line-clamp-1" style={{ minHeight: '1rem' }}>
               {title}
             </p>
           )}
         </div>
 
-        {/* Compact Vehicle Info - Grid Layout */}
-        <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
+        {/* Compact Vehicle Info - Grid Layout with fixed heights */}
+        <div className="grid grid-cols-2 gap-2 mb-3 text-xs" style={{ minHeight: '3rem' }}>
           {mileage && (
             <div className="flex items-center gap-1">
               <Gauge className="h-3 w-3 text-muted-foreground flex-shrink-0" />
@@ -439,8 +449,8 @@ const CarCard = ({
           )}
         </div>
 
-        {/* Compact Pricing and Action */}
-        <div className="space-y-2">
+        {/* Compact Pricing and Action - Push to bottom */}
+        <div className="space-y-2 mt-auto">
           <div className="flex items-center justify-between">
             <span className="text-lg font-bold text-primary">
               €{price.toLocaleString()}
@@ -449,7 +459,8 @@ const CarCard = ({
               size="sm"
               variant="ghost"
               onClick={handleFavoriteToggle}
-              className="h-8 w-8 p-0 hover:bg-muted"
+              className="h-8 w-8 p-0 hover:bg-muted touch-target"
+              style={{ minHeight: '44px', minWidth: '44px' }}
             >
               <Heart
                 className={`h-4 w-4 ${
