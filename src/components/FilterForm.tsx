@@ -389,7 +389,7 @@ const FilterForm = memo<FilterFormProps>(({
             value={filters.model_id || 'all'} 
             onValueChange={(value) => updateFilter('model_id', value)}
             disabled={!filters.manufacturer_id || isLoading}
-            placeholder={isLoading ? "Duke ngarkuar..." : (filters.manufacturer_id ? "Modelet" : "Marka së pari")}
+            placeholder={isLoading ? "Duke ngarkuar..." : (filters.manufacturer_id ? "Modelet" : "Markën së pari")}
             className="h-7 text-xs"
             options={[
               { value: 'all', label: 'Të gjithë Modelet' },
@@ -456,7 +456,7 @@ const FilterForm = memo<FilterFormProps>(({
             value={filters.grade_iaai || 'all'} 
             onValueChange={(value) => updateFilter('grade_iaai', value)}
             disabled={!filters.manufacturer_id || isLoading}
-            placeholder={filters.manufacturer_id ? "Gradat" : "Marka së pari"}
+            placeholder={filters.manufacturer_id ? "Gradat" : "Markën së pari"}
             className="h-7 text-xs"
             options={[
               { value: 'all', label: 'Të gjitha Gradat' },

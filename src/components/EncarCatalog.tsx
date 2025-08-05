@@ -27,6 +27,7 @@ import {
   SortOption,
 } from "@/hooks/useSortedCars";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 
 interface APIFilters {
@@ -81,6 +82,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [isSortingGlobal, setIsSortingGlobal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [hasSelectedCategories, setHasSelectedCategories] = useState(false);
+  const isMobile = useIsMobile();
 
   // Memoized helper function to extract grades from title
   const extractGradesFromTitle = useCallback((title: string): string[] => {
@@ -281,6 +284,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Clear previous data immediately to show loading state
     setCars([]);
     
+    // Auto-hide filters on mobile after applying filters
+    if (isMobile && Object.keys(newFilters).length > 0) {
+      setShowFilters(false);
+    }
+    
     // Use 50 cars per page for proper pagination
     const filtersWithPagination = {
       ...newFilters,
@@ -299,7 +307,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     });
     paramsToSet.page = "1";
     setSearchParams(paramsToSet);
-  }, [fetchCars, setSearchParams]);
+  }, [fetchCars, setSearchParams, isMobile]);
 
   const handleClearFilters = useCallback(() => {
     setFilters({});
@@ -680,6 +688,17 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Don't show cars until brand and model are selected
   const shouldShowCars = filters.manufacturer_id && filters.model_id;
 
+  // Track when categories are selected to auto-hide filters
+  useEffect(() => {
+    const hasCategories = filters.manufacturer_id && filters.model_id;
+    setHasSelectedCategories(!!hasCategories);
+    
+    // Auto-hide filters when categories are selected (but only after initial load)
+    if (hasCategories && !isRestoringState && cars.length === 0) {
+      setShowFilters(false);
+    }
+  }, [filters.manufacturer_id, filters.model_id, isRestoringState, cars.length]);
+
   // Effect to highlight and scroll to specific car by lot number
   useEffect(() => {
     if (highlightCarId && cars.length > 0) {
@@ -715,23 +734,26 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Collapsible Filter Sidebar */}
+      {/* Collapsible Filter Sidebar - Full screen on mobile */}
       <div className={`
         fixed lg:relative z-40 bg-card border-r transition-transform duration-300 ease-in-out
         ${showFilters ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        w-full sm:w-80 lg:w-72 h-full overflow-y-auto lg:shadow-none shadow-xl
+        ${isMobile ? 'inset-0 w-full h-full' : 'w-full sm:w-80 lg:w-72 h-full'} 
+        overflow-y-auto lg:shadow-none shadow-xl
       `}>
-        <div className="p-3 sm:p-4 border-b">
+        <div className={`p-3 sm:p-4 border-b ${isMobile ? 'bg-primary text-primary-foreground' : ''}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-              <h3 className="font-semibold text-sm sm:text-base">Filters</h3>
+              <Filter className={`h-4 w-4 sm:h-5 sm:w-5 ${isMobile ? 'text-primary-foreground' : 'text-primary'}`} />
+              <h3 className={`font-semibold text-sm sm:text-base ${isMobile ? 'text-lg text-primary-foreground' : ''}`}>
+                {isMobile ? 'Filtrat e Kërkimit' : 'Filters'}
+              </h3>
             </div>
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={() => setShowFilters(false)}
-              className="lg:hidden h-8 w-8 p-0"
+              className={`lg:hidden h-8 w-8 p-0 ${isMobile ? 'hover:bg-primary-foreground/20 text-primary-foreground' : ''}`}
             >
               <X className="h-4 w-4" />
             </Button>
@@ -756,13 +778,28 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             onFetchGrades={fetchGrades}
             compact={true}
           />
+          
+          {/* Mobile Apply Filters Button */}
+          {isMobile && hasSelectedCategories && (
+            <div className="mt-6 pt-4 border-t">
+              <Button
+                onClick={() => setShowFilters(false)}
+                className="w-full h-12 text-lg font-semibold bg-primary hover:bg-primary/90"
+                size="lg"
+              >
+                Shfaq Rezultatet ({cars.length} makina)
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Overlay for mobile */}
+      {/* Overlay for mobile - stronger backdrop on mobile */}
       {showFilters && (
         <div 
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden backdrop-blur-sm"
+          className={`fixed inset-0 z-30 lg:hidden transition-opacity duration-300 ${
+            isMobile ? 'bg-black/70 backdrop-blur-md' : 'bg-black/50 backdrop-blur-sm'
+          }`}
           onClick={() => setShowFilters(false)}
         />
       )}
@@ -785,15 +822,24 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   <span className="hidden xs:inline text-xs">Back</span>
                 </Button>
                 
-                {/* Filter Toggle Button - big and prominent */}
+                {/* Filter Toggle Button - big and prominent when categories selected */}
                 <Button
-                  variant={showFilters ? "default" : "outline"}
-                  size="lg"
+                  variant={showFilters ? "default" : hasSelectedCategories ? "default" : "outline"}
+                  size={hasSelectedCategories ? "lg" : "lg"}
                   onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center gap-2 h-10 px-4 lg:px-6 bg-primary/10 hover:bg-primary hover:text-primary-foreground border-2 border-primary/20 hover:border-primary font-semibold"
+                  className={`flex items-center gap-2 h-12 px-6 lg:px-8 font-semibold text-base transition-all duration-200 ${
+                    hasSelectedCategories 
+                      ? "bg-primary hover:bg-primary/90 text-primary-foreground border-2 border-primary shadow-lg scale-105" 
+                      : "bg-primary/10 hover:bg-primary hover:text-primary-foreground border-2 border-primary/20 hover:border-primary"
+                  }`}
                 >
                   {showFilters ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
-                  <span className="text-sm">Filters</span>
+                  <span>Filtrat</span>
+                  {hasSelectedCategories && !showFilters && (
+                    <span className="ml-1 text-sm bg-primary-foreground/20 px-2 py-1 rounded">
+                      {Object.values(filters).filter(Boolean).length}
+                    </span>
+                  )}
                 </Button>
               </div>
               
