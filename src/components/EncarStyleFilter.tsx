@@ -302,9 +302,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   ...generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => ({
                     value: generation.id.toString(),
                     label: `${generation.name}${generation.from_year ? (() => {
-                      const from = generation.from_year.toString().slice(-2);
+                      const from = generation.from_year.toString();
                       const currentYear = new Date().getFullYear();
-                      const to = (!generation.to_year || generation.to_year >= currentYear) ? 'present' : generation.to_year.toString().slice(-2);
+                      const to = (!generation.to_year || generation.to_year >= currentYear) ? 'sot' : generation.to_year.toString();
                       return ` (${from}-${to})`;
                     })() : ''}`
                   }))
@@ -407,9 +407,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   ...generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => ({
                     value: generation.id.toString(),
                     label: `${generation.name}${generation.from_year ? (() => {
-                      const from = generation.from_year.toString().slice(-2);
+                      const from = generation.from_year.toString();
                       const currentYear = new Date().getFullYear();
-                      const to = (!generation.to_year || generation.to_year >= currentYear) ? 'present' : generation.to_year.toString().slice(-2);
+                      const to = (!generation.to_year || generation.to_year >= currentYear) ? 'sot' : generation.to_year.toString();
                       return ` (${from}-${to})`;
                     })() : ''}`
                   }))

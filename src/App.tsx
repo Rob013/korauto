@@ -21,11 +21,7 @@ const Contacts = lazy(() => import("./pages/Contacts"));
 const ComponentDemo = lazy(() => import("./pages/ComponentDemo"));
 
 // Lazy load admin components for better code splitting
-const AdminSyncDashboard = lazy(() => 
-  import("./components/AdminSyncDashboard").then(module => ({ 
-    default: module.AdminSyncDashboard 
-  }))
-);
+const AdminSyncDashboard = lazy(() => import("./components/AdminSyncDashboard"));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-background">
