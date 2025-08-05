@@ -170,157 +170,53 @@ All colors MUST be HSL.
 
   /* Mobile-first responsive utilities */
   .container-responsive {
-    @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    @apply w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8;
   }
 
-  /* Enhanced mobile container with better padding */
-  .container-mobile {
-    @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
-  }
-
-  /* Text responsive classes with better mobile scaling */
+  /* Text responsive classes */
   .text-responsive-xs {
-    @apply text-sm sm:text-base;
+    @apply text-xs sm:text-sm;
   }
 
   .text-responsive-sm {
-    @apply text-base sm:text-lg;
+    @apply text-sm sm:text-base;
   }
 
   .text-responsive-lg {
-    @apply text-xl sm:text-2xl lg:text-3xl;
+    @apply text-lg sm:text-xl lg:text-2xl;
   }
 
   .text-responsive-xl {
-    @apply text-2xl sm:text-3xl lg:text-4xl xl:text-5xl;
-  }
-
-  /* Mobile-optimized headings */
-  .heading-mobile-h1 {
-    @apply text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold leading-tight;
-  }
-
-  .heading-mobile-h2 {
-    @apply text-xl sm:text-2xl lg:text-3xl font-semibold leading-tight;
-  }
-
-  .heading-mobile-h3 {
-    @apply text-lg sm:text-xl lg:text-2xl font-medium leading-tight;
+    @apply text-xl sm:text-2xl lg:text-3xl xl:text-4xl;
   }
 
   /* Grid responsive utilities */
   .grid-responsive-cards {
-    @apply grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6;
+    @apply grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6;
   }
 
-  /* Enhanced mobile touch improvements */
+  /* Mobile touch improvements */
   .touch-target {
-    @apply min-h-[48px] min-w-[48px] flex items-center justify-center;
+    @apply min-h-[44px] min-w-[44px];
   }
 
-  .touch-target-large {
-    @apply min-h-[56px] min-w-[56px] flex items-center justify-center;
-  }
-
-  /* Mobile spacing utilities */
   .mobile-padding {
-    @apply px-4 sm:px-6 lg:px-8;
+    @apply px-3 sm:px-4 lg:px-6;
   }
 
-  .mobile-padding-x {
-    @apply px-4 sm:px-6 lg:px-8;
-  }
-
-  .mobile-padding-y {
-    @apply py-4 sm:py-6 lg:py-8;
-  }
-
-  .mobile-margin {
-    @apply mx-4 sm:mx-6 lg:mx-8;
-  }
-
-  /* Mobile section spacing */
-  .section-padding-mobile {
-    @apply py-8 sm:py-12 lg:py-16;
-  }
-
-  .section-padding-small-mobile {
-    @apply py-6 sm:py-8 lg:py-12;
-  }
-
-  /* Button enhancements with better mobile touch targets */
+  /* Button enhancements */
   .btn-enhanced {
-    @apply transition-all duration-200 transform hover:scale-105 active:scale-95 min-h-[48px] min-w-[48px];
+    @apply transition-all duration-200 transform hover:scale-105 active:scale-95;
   }
 
-  .btn-mobile {
-    @apply min-h-[52px] px-6 py-3 text-base font-medium transition-all duration-200 active:scale-95;
-  }
-
-  .btn-mobile-small {
-    @apply min-h-[44px] px-4 py-2 text-sm font-medium transition-all duration-200 active:scale-95;
-  }
-
-  /* Card enhancements with better mobile spacing */
+  /* Card enhancements */
   .card-enhanced {
     @apply hover-lift border-0 shadow-lg hover:shadow-xl transition-all duration-300;
-  }
-
-  .card-mobile {
-    @apply rounded-lg bg-card shadow-md hover:shadow-lg transition-all duration-300 p-4 sm:p-6;
   }
 
   /* Focus improvements for accessibility */
   .focus-enhanced {
     @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 focus:ring-offset-2;
-  }
-
-  /* Mobile form improvements */
-  .form-input-mobile {
-    @apply min-h-[48px] px-4 py-3 text-base border border-input rounded-md bg-background;
-  }
-
-  .form-select-mobile {
-    @apply min-h-[48px] px-4 py-3 text-base border border-input rounded-md bg-background;
-  }
-
-  /* Mobile navigation improvements */
-  .nav-link-mobile {
-    @apply block px-4 py-3 text-base font-medium transition-colors duration-200 hover:bg-accent/10 rounded-md min-h-[48px] flex items-center;
-  }
-
-  /* Mobile hero improvements */
-  .hero-mobile {
-    @apply text-center px-4 py-12 sm:py-16 lg:py-20;
-  }
-
-  /* Mobile stats grid */
-  .stats-grid-mobile {
-    @apply grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 mt-8 sm:mt-12;
-  }
-
-  /* Mobile contact cards */
-  .contact-card-mobile {
-    @apply bg-card rounded-lg p-4 sm:p-6 shadow-md hover:shadow-lg transition-all duration-300;
-  }
-
-  /* Mobile filter improvements */
-  .filter-mobile {
-    @apply bg-card rounded-lg p-4 mb-6 shadow-sm border;
-  }
-
-  /* Better mobile spacing for lists */
-  .list-mobile-spacing > * + * {
-    @apply mt-3 sm:mt-4;
-  }
-
-  /* Mobile-optimized flex layouts */
-  .flex-mobile-stack {
-    @apply flex flex-col gap-3 sm:gap-4;
-  }
-
-  .flex-mobile-row {
-    @apply flex flex-col sm:flex-row gap-3 sm:gap-4;
   }
 
   /* Loading animations */
