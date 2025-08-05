@@ -76,6 +76,8 @@ interface AdminStats {
 
 const AdminDashboard = () => {
   const [requests, setRequests] = useState<InspectionRequest[]>([]);
+  const [filteredRequests, setFilteredRequests] = useState<InspectionRequest[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [carDetails, setCarDetails] = useState<{ [key: string]: CarData }>({});
   const [searchingCars, setSearchingCars] = useState<{
     [key: string]: boolean;
@@ -238,6 +240,7 @@ const AdminDashboard = () => {
 
       if (requestsError) throw requestsError;
       setRequests(requestsData || []);
+      setFilteredRequests(requestsData || []);
 
       // Fetch car details for requests that have car_id
       const carIds = requestsData?.map((r) => r.car_id).filter(Boolean) || [];
@@ -892,6 +895,13 @@ const AdminDashboard = () => {
                                   <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
                                     <span>{car.year} {car.make} {car.model}</span>
                                   </div>
+                                  {car.lot_number && (
+                                    <div className="mt-1">
+                                      <div className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
+                                        <span>Lot: {car.lot_number}</span>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               )}
 
@@ -902,7 +912,11 @@ const AdminDashboard = () => {
                                   {request.car_id && car && (
                                     <button
                                       onClick={() => {
-                                        window.location.href = `/catalog?highlight=${request.car_id}`;
+                                        if (car?.lot_number) {
+                                          window.open(`/car/${car.lot_number}`, "_blank");
+                                        } else {
+                                          window.location.href = `/catalog?highlight=${request.car_id}`;
+                                        }
                                       }}
                                       className="text-primary hover:text-primary/80 font-medium transition-colors"
                                     >
@@ -1051,12 +1065,55 @@ const AdminDashboard = () => {
                     Inspection Requests
                   </CardTitle>
                   <Badge variant="secondary" className="text-xs">
-                    {requests.length} records
+                    {filteredRequests.length} of {requests.length} records
                   </Badge>
                 </div>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                   Manage all customer inspection requests
                 </p>
+                <div className="mt-3 flex gap-2">
+                  <div className="relative flex-1 max-w-sm">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Search by customer name, email, or lot number..."
+                      value={searchTerm}
+                      className="w-full pl-10 pr-4 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      onChange={(e) => {
+                        const term = e.target.value;
+                        setSearchTerm(term);
+                        
+                        if (!term.trim()) {
+                          setFilteredRequests(requests);
+                          return;
+                        }
+                        
+                        const filtered = requests.filter(request => {
+                          const car = request.car_id ? carDetails[request.car_id] : null;
+                          return (
+                            request.customer_name.toLowerCase().includes(term.toLowerCase()) ||
+                            request.customer_email.toLowerCase().includes(term.toLowerCase()) ||
+                            request.customer_phone.includes(term) ||
+                            (car?.lot_number && car.lot_number.toLowerCase().includes(term.toLowerCase())) ||
+                            (request.car_id && request.car_id.toLowerCase().includes(term.toLowerCase()))
+                          );
+                        });
+                        setFilteredRequests(filtered);
+                      }}
+                    />
+                    {searchTerm && (
+                      <button
+                        onClick={() => {
+                          setSearchTerm("");
+                          setFilteredRequests(requests);
+                        }}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="p-0">
                 {/* Desktop Table View */}
@@ -1068,13 +1125,14 @@ const AdminDashboard = () => {
                           <th className="border border-border px-3 py-2 text-left text-xs font-medium">Customer</th>
                           <th className="border border-border px-3 py-2 text-left text-xs font-medium">Contact</th>
                           <th className="border border-border px-3 py-2 text-left text-xs font-medium">Car Details</th>
+                          <th className="border border-border px-3 py-2 text-left text-xs font-medium">Lot Number</th>
                           <th className="border border-border px-3 py-2 text-left text-xs font-medium">Status</th>
                           <th className="border border-border px-3 py-2 text-left text-xs font-medium">Date</th>
                           <th className="border border-border px-3 py-2 text-left text-xs font-medium">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {requests.map((request) => (
+                        {filteredRequests.map((request) => (
                           <tr key={request.id} className="hover:bg-muted/30 transition-colors">
                             <td className="border border-border px-3 py-2">
                               <div>
@@ -1106,13 +1164,29 @@ const AdminDashboard = () => {
                                     <div className="text-sm font-medium">
                                       {carDetails[request.car_id].year} {carDetails[request.car_id].make} {carDetails[request.car_id].model}
                                     </div>
-                                    <div className="text-xs text-muted-foreground">ID: {request.car_id}</div>
+                                    <div className="text-xs text-muted-foreground">
+                                      ID: {request.car_id}
+                                      {carDetails[request.car_id].lot_number && (
+                                        <span className="ml-2 text-blue-600 font-medium">
+                                          • Lot: {carDetails[request.car_id].lot_number}
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               ) : request.car_id ? (
                                 <div className="text-sm text-muted-foreground">Car ID: {request.car_id}</div>
                               ) : (
                                 <div className="text-sm text-muted-foreground">General request</div>
+                              )}
+                            </td>
+                            <td className="border border-border px-3 py-2">
+                              {request.car_id && carDetails[request.car_id]?.lot_number ? (
+                                <div className="text-sm font-medium text-blue-600">
+                                  {carDetails[request.car_id].lot_number}
+                                </div>
+                              ) : (
+                                <div className="text-sm text-muted-foreground">N/A</div>
                               )}
                             </td>
                             <td className="border border-border px-3 py-2">
@@ -1171,7 +1245,7 @@ const AdminDashboard = () => {
 
                 {/* Mobile Card View */}
                 <div className="lg:hidden space-y-3">
-                  {requests.map((request) => {
+                  {filteredRequests.map((request) => {
                     const car = request.car_id ? carDetails[request.car_id] : null;
                     return (
                       <div
@@ -1221,6 +1295,13 @@ const AdminDashboard = () => {
                                 <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
                                   <span>{car.year} {car.make} {car.model}</span>
                                 </div>
+                                {car.lot_number && (
+                                  <div className="mt-1">
+                                    <div className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
+                                      <span>Lot: {car.lot_number}</span>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             )}
 
@@ -1272,11 +1353,18 @@ const AdminDashboard = () => {
                   })}
                 </div>
 
-                {requests.length === 0 && (
+                {filteredRequests.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
                     <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <h3 className="text-lg font-medium mb-2">No inspection requests</h3>
-                    <p className="text-sm">No inspection requests found in the database</p>
+                    <h3 className="text-lg font-medium mb-2">
+                      {searchTerm ? "No matching inspection requests" : "No inspection requests"}
+                    </h3>
+                    <p className="text-sm">
+                      {searchTerm 
+                        ? `No inspection requests found matching "${searchTerm}"`
+                        : "No inspection requests found in the database"
+                      }
+                    </p>
                   </div>
                 )}
               </CardContent>

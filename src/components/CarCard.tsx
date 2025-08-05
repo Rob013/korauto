@@ -27,9 +27,10 @@ import {
   XCircle,
 } from "lucide-react";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 interface CarCardProps {
   id: string;
   make: string;
@@ -207,7 +208,7 @@ interface CarCardProps {
     seats_count?: number;
   };
 }
-const CarCard = ({
+const CarCard = memo(({
   id,
   make,
   model,
@@ -372,13 +373,13 @@ const CarCard = ({
     >
       <div className="relative h-48 sm:h-52 bg-muted overflow-hidden">
         {image ? (
-          <img
+          <OptimizedImage
             src={image}
             alt={`${year} ${make} ${model}`}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={(e) => {
-              e.currentTarget.src = "/placeholder.svg";
-            }}
+            className="w-full h-full group-hover:scale-105 transition-transform duration-300"
+            width={400}
+            height={300}
+            quality={85}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-muted">
@@ -477,5 +478,8 @@ const CarCard = ({
       </div>
     </div>
   );
-};
+});
+
+CarCard.displayName = 'CarCard';
+
 export default CarCard;
