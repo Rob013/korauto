@@ -1446,15 +1446,15 @@ const CarDetails = memo(() => {
 
                     {/* Modern Inspection Report Section - Triggered by Raporti Button */}
                     {showInspectionReport && (
-                      <div className="space-y-8 p-8 bg-white rounded-2xl border border-gray-200 shadow-lg">
+                      <div className="space-y-8 p-8 bg-card rounded-2xl border border-border shadow-lg">
                         <div className="text-center mb-8">
                           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                             <FileText className="h-8 w-8 text-blue-600" />
                           </div>
-                          <h4 className="text-3xl font-bold text-gray-900 mb-3">
+                          <h4 className="text-3xl font-bold text-foreground mb-3">
                             Raporti i Inspektimit të Plotë
                           </h4>
-                          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+                          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
                             Analiza e detajuar profesionale e gjendjes së automjetit në të gjitha aspektet
                           </p>
                         </div>
@@ -1470,8 +1470,8 @@ const CarDetails = memo(() => {
                                   <Cog className="h-6 w-6 text-white" />
                                 </div>
                                 <div>
-                                  <h5 className="text-xl font-bold text-gray-900">Motori dhe Sistemi Mekanik</h5>
-                                  <p className="text-gray-600 text-sm">Kontrolli teknik i komponentëve kryesorë</p>
+                                  <h5 className="text-xl font-bold text-foreground">Motori dhe Sistemi Mekanik</h5>
+                                  <p className="text-muted-foreground text-sm">Kontrolli teknik i komponentëve kryesorë</p>
                                 </div>
                               </div>
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1488,7 +1488,7 @@ const CarDetails = memo(() => {
                                     return (
                                       <div
                                         key={key}
-                                        className={`flex items-center justify-between p-4 bg-white rounded-lg border transition-all hover:shadow-md ${
+                                        className={`flex items-center justify-between p-4 bg-card rounded-lg border transition-all hover:shadow-md ${
                                           isGood ? 'border-green-200' : 'border-red-200'
                                         }`}
                                       >
@@ -1496,7 +1496,7 @@ const CarDetails = memo(() => {
                                           <div className={`w-3 h-3 rounded-full ${
                                             isGood ? 'bg-green-500' : 'bg-red-500'
                                           }`} />
-                                          <span className="text-sm font-medium text-gray-800">
+                                          <span className="text-sm font-medium text-foreground">
                                             {label}
                                           </span>
                                         </div>
@@ -1531,50 +1531,50 @@ const CarDetails = memo(() => {
                                   <Shield className="h-6 w-6 text-white" />
                                 </div>
                                 <div>
-                                  <h5 className="text-xl font-bold text-gray-900">Historia e Sigurisë dhe Sigurimit</h5>
-                                  <p className="text-gray-600 text-sm">Të dhënat e sigurimit dhe aksidenteve</p>
+                                  <h5 className="text-xl font-bold text-foreground">Historia e Sigurisë dhe Sigurimit</h5>
+                                  <p className="text-muted-foreground text-sm">Të dhënat e sigurimit dhe aksidenteve</p>
                                 </div>
                               </div>
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                 {car.details.insurance.car_info && (
                                   <>
-                                    <div className="p-4 bg-white rounded-lg border border-green-200 hover:shadow-md transition-shadow">
+                                    <div className="p-4 bg-card rounded-lg border border-green-500/20 hover:shadow-md transition-shadow">
                                       <div className="flex items-center gap-2 mb-2">
                                         <CheckCircle className="h-4 w-4 text-green-600" />
-                                        <span className="text-sm font-semibold text-gray-800">
+                                        <span className="text-sm font-semibold text-foreground">
                                           Historia e Aksidenteve
                                         </span>
                                       </div>
-                                      <p className="text-sm text-gray-600">
+                                      <p className="text-sm text-muted-foreground">
                                         {car.details.insurance.car_info.accident_history}
                                       </p>
                                     </div>
-                                    <div className="p-4 bg-white rounded-lg border border-green-200 hover:shadow-md transition-shadow">
+                                    <div className="p-4 bg-card rounded-lg border border-green-500/20 hover:shadow-md transition-shadow">
                                       <div className="flex items-center gap-2 mb-2">
                                         <Settings className="h-4 w-4 text-green-600" />
-                                        <span className="text-sm font-semibold text-gray-800">
+                                        <span className="text-sm font-semibold text-foreground">
                                           Numri i Riparimeve
                                         </span>
                                       </div>
-                                      <p className="text-sm text-gray-600">
+                                      <p className="text-sm text-muted-foreground">
                                         {car.details.insurance.car_info.repair_count}
                                       </p>
                                     </div>
-                                    <div className="p-4 bg-white rounded-lg border border-green-200 hover:shadow-md transition-shadow">
+                                    <div className="p-4 bg-card rounded-lg border border-green-500/20 hover:shadow-md transition-shadow">
                                       <div className="flex items-center gap-2 mb-2">
                                         <AlertTriangle className="h-4 w-4 text-green-600" />
-                                        <span className="text-sm font-semibold text-gray-800">
+                                        <span className="text-sm font-semibold text-foreground">
                                           Humbje Totale
                                         </span>
                                       </div>
-                                      <p className="text-sm text-gray-600">
+                                      <p className="text-sm text-muted-foreground">
                                         {car.details.insurance.car_info.total_loss}
                                       </p>
                                     </div>
-                                    <div className="p-4 bg-white rounded-lg border border-green-200 hover:shadow-md transition-shadow">
+                                    <div className="p-4 bg-card rounded-lg border border-green-500/20 hover:shadow-md transition-shadow">
                                       <div className="flex items-center gap-2 mb-2">
                                         <Car className="h-4 w-4 text-green-600" />
-                                        <span className="text-sm font-semibold text-gray-800">
+                                        <span className="text-sm font-semibold text-foreground">
                                           Dëmtime nga Uji
                                         </span>
                                       </div>
@@ -1596,26 +1596,26 @@ const CarDetails = memo(() => {
                                   <AlertTriangle className="h-6 w-6 text-white" />
                                 </div>
                                 <div>
-                                  <h5 className="text-xl font-bold text-gray-900">Gjendja e Jashtme dhe Karocerisë</h5>
-                                  <p className="text-gray-600 text-sm">Vlerësimi i dëmtimeve dhe riparimeve</p>
+                                  <h5 className="text-xl font-bold text-foreground">Gjendja e Jashtme dhe Karocerisë</h5>
+                                  <p className="text-muted-foreground text-sm">Vlerësimi i dëmtimeve dhe riparimeve</p>
                                 </div>
                               </div>
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                 {car.damage.main && (
-                                  <div className="p-4 bg-white rounded-lg border border-orange-200 hover:shadow-md transition-shadow">
+                                  <div className="p-4 bg-card rounded-lg border border-orange-500/20 hover:shadow-md transition-shadow">
                                     <div className="flex items-center gap-2 mb-2">
                                       <AlertTriangle className="h-4 w-4 text-orange-600" />
-                                      <span className="text-sm font-semibold text-gray-800">
+                                      <span className="text-sm font-semibold text-foreground">
                                         Dëmtimi Kryesor
                                       </span>
                                     </div>
-                                    <p className="text-sm text-gray-600 capitalize">
+                                    <p className="text-sm text-muted-foreground capitalize">
                                       {car.damage.main}
                                     </p>
                                   </div>
                                 )}
                                 {car.damage.second && (
-                                  <div className="p-4 bg-white rounded-lg border border-orange-200 hover:shadow-md transition-shadow">
+                                  <div className="p-4 bg-card rounded-lg border border-orange-500/20 hover:shadow-md transition-shadow">
                                     <div className="flex items-center gap-2 mb-2">
                                       <AlertTriangle className="h-4 w-4 text-orange-600" />
                                       <span className="text-sm font-semibold text-gray-800">
@@ -1649,7 +1649,7 @@ const CarDetails = memo(() => {
                                     (change: any, index: number) => (
                                       <div
                                         key={index}
-                                        className="p-4 bg-white rounded-lg border border-purple-200 hover:shadow-md transition-shadow"
+                                        className="p-4 bg-card rounded-lg border border-purple-500/20 hover:shadow-md transition-shadow"
                                       >
                                         <div className="flex justify-between items-start">
                                           <div className="flex items-center gap-3">
@@ -1714,7 +1714,7 @@ const CarDetails = memo(() => {
                                     (record: any, index: number) => (
                                       <div
                                         key={index}
-                                        className="p-4 bg-white rounded-lg border border-yellow-200 hover:shadow-md transition-shadow"
+                                        className="p-4 bg-card rounded-lg border border-yellow-500/20 hover:shadow-md transition-shadow"
                                       >
                                         <div className="flex justify-between items-start">
                                           <div className="flex items-center gap-3">
