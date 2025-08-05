@@ -339,7 +339,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               
               {/* Year Range Preset Buttons for Homepage */}
               <div className="mt-3">
-                <Label className="text-xs text-muted-foreground mb-2 block">Vite si Encar.com:</Label>
+                <Label className="text-xs text-muted-foreground mb-2 block">Vitet:</Label>
                 <div className="flex flex-wrap gap-1">
                   {yearRangePresets.slice(0, 4).map((preset) => (
                     <Button
