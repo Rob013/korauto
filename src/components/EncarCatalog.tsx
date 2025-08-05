@@ -746,12 +746,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Collapsible Filter Sidebar - Full screen on mobile */}
+      {/* Collapsible Filter Sidebar - Optimized for mobile */}
       <div className={`
         fixed lg:relative z-40 bg-card border-r transition-transform duration-300 ease-in-out
         ${showFilters ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         ${isMobile ? 'inset-0 w-full h-full' : 'w-full sm:w-80 lg:w-72 h-full'} 
         overflow-y-auto lg:shadow-none shadow-xl
+        ${isMobile ? 'safe-area-inset' : ''}
       `}>
         <div className={`p-3 sm:p-4 border-b ${isMobile ? 'bg-primary text-primary-foreground' : ''}`}>
           <div className="flex items-center justify-between">
@@ -760,6 +761,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               <h3 className={`font-semibold text-sm sm:text-base ${isMobile ? 'text-lg text-primary-foreground' : ''}`}>
                 {isMobile ? 'Filtrat e Kërkimit' : 'Filters'}
               </h3>
+              {hasSelectedCategories && isMobile && (
+                <Badge variant="secondary" className="ml-2 bg-primary-foreground/20 text-primary-foreground">
+                  {Object.values(filters).filter(Boolean).length} aktiv
+                </Badge>
+              )}
             </div>
             <Button 
               variant="ghost" 
@@ -791,15 +797,19 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             compact={true}
           />
           
-          {/* Mobile Apply Filters Button */}
+          {/* Mobile Apply Filters Button - Enhanced */}
           {isMobile && hasSelectedCategories && (
             <div className="mt-6 pt-4 border-t">
               <Button
                 onClick={() => setShowFilters(false)}
-                className="w-full h-12 text-lg font-semibold bg-primary hover:bg-primary/90"
+                className="w-full h-12 text-lg font-semibold bg-primary hover:bg-primary/90 relative overflow-hidden"
                 size="lg"
               >
-                Shfaq Rezultatet ({cars.length} makina)
+                <span className="relative z-10">
+                  Shfaq Rezultatet ({cars.length} makina)
+                </span>
+                {/* Subtle animation background */}
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-transparent animate-pulse"></div>
               </Button>
             </div>
           )}
@@ -818,7 +828,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
       {/* Main Content */}
       <div className={`flex-1 transition-all duration-300 ${showFilters ? 'lg:ml-0' : 'lg:ml-0'}`}>
-        <div className="container-responsive py-3 sm:py-6">
+        <div className="container-responsive py-3 sm:py-6 mobile-text-optimize">
           {/* Header Section - Mobile optimized */}
           <div className="flex flex-col gap-3 mb-4">
             {/* Mobile header - stacked layout */}
@@ -834,21 +844,24 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   <span className="hidden xs:inline text-xs">Back</span>
                 </Button>
                 
-                {/* Filter Toggle Button - big and prominent when categories selected */}
+                {/* Filter Toggle Button - Enhanced styling and feedback */}
                 <Button
                   variant={showFilters ? "default" : hasSelectedCategories ? "default" : "outline"}
-                  size={hasSelectedCategories ? "lg" : "lg"}
+                  size="lg"
                   onClick={() => setShowFilters(!showFilters)}
-                  className={`flex items-center gap-2 h-12 px-6 lg:px-8 font-semibold text-base transition-all duration-200 ${
+                  className={`flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base transition-all duration-200 ${
                     hasSelectedCategories 
-                      ? "bg-primary hover:bg-primary/90 text-primary-foreground border-2 border-primary shadow-lg scale-105" 
+                      ? showFilters 
+                        ? "bg-primary hover:bg-primary/90 text-primary-foreground border-2 border-primary shadow-lg" 
+                        : "bg-primary hover:bg-primary/90 text-primary-foreground border-2 border-primary shadow-lg scale-105 animate-pulse" 
                       : "bg-primary/10 hover:bg-primary hover:text-primary-foreground border-2 border-primary/20 hover:border-primary"
                   }`}
                 >
                   {showFilters ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
-                  <span>Filtrat</span>
+                  <span className="hidden xs:inline">Shfaq Filtrat</span>
+                  <span className="xs:hidden">Filtrat</span>
                   {hasSelectedCategories && !showFilters && (
-                    <span className="ml-1 text-sm bg-primary-foreground/20 px-2 py-1 rounded">
+                    <span className="ml-1 text-xs bg-primary-foreground/20 px-2 py-1 rounded-full animate-bounce">
                       {Object.values(filters).filter(Boolean).length}
                     </span>
                   )}
@@ -965,7 +978,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 ref={containerRef}
                 className={
                   viewMode === "grid"
-                    ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4"
+                    ? "grid mobile-car-grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4"
                     : "space-y-3"
                 }
               >
