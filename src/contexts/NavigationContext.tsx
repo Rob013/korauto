@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { navigationErrorLogger } from '@/utils/navigationErrorLogger';
 
 interface FilterState {
   filterMake: string;
@@ -53,14 +54,26 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({ children
   };
 
   const goBack = () => {
-    if (previousPage) {
-      // Use history.back() if available, otherwise navigate to saved page
-      if (window.history.length > 1) {
-        window.history.back();
+    try {
+      if (previousPage) {
+        // Use history.back() if available, otherwise navigate to saved page
+        if (window.history.length > 1) {
+          window.history.back();
+        } else {
+          window.location.href = previousPage;
+        }
       } else {
-        window.location.href = previousPage;
+        // Fallback to homepage
+        window.location.href = '/';
       }
-    } else {
+    } catch (error) {
+      // Log navigation error
+      navigationErrorLogger.logNavigationError(
+        window.location.pathname,
+        'navigation_error',
+        `Failed to navigate back: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+      
       // Fallback to homepage
       window.location.href = '/';
     }
