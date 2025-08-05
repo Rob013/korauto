@@ -20,6 +20,7 @@ interface CarSearchResult {
   fuel?: string;
   transmission?: string;
   color?: string;
+  source?: 'cached' | 'api'; // Add source tracking
 }
 
 interface AdminCarSearchProps {
@@ -35,7 +36,7 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Debounced search function
+  // Comprehensive search function across all API data
   const performSearch = useCallback(async (term: string) => {
     if (!term.trim()) {
       setSearchResults([]);
@@ -51,20 +52,20 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
     setShowResults(true);
 
     try {
-      console.log('🔍 Searching for:', term);
+      console.log('🔍 Comprehensive search for:', term);
 
-      // First try to search in cached cars
+      let allResults: CarSearchResult[] = [];
+
+      // 1. First search in cached cars (fastest)
       const { data: cachedCars, error: cacheError } = await supabase
         .from('cars_cache')
         .select('api_id, make, model, year, vin, lot_number, car_data')
         .or(`api_id.ilike.%${term}%,vin.ilike.%${term}%,lot_number.ilike.%${term}%`)
         .limit(10);
 
-      let results: CarSearchResult[] = [];
-
       if (cachedCars && cachedCars.length > 0) {
         console.log('✅ Found cached cars:', cachedCars.length);
-        results = cachedCars.map(car => {
+        const cachedResults = cachedCars.map(car => {
           const carData = car.car_data as any;
           const lot = carData?.lots?.[0];
           
@@ -81,59 +82,155 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
             fuel: carData?.fuel?.name,
             transmission: carData?.transmission?.name,
             color: carData?.color?.name,
+            source: 'cached' as const,
           };
         });
+        allResults.push(...cachedResults);
       }
 
-      // If no cached results, try API search
-      if (results.length === 0) {
-        console.log('🔍 No cached results, trying API search...');
-        
-        try {
-          const { data: apiData, error: apiError } = await supabase.functions.invoke(
-            'secure-cars-api',
-            {
-              body: {
-                endpoint: 'cars',
-                filters: {
-                  search: term,
-                  per_page: '10'
-                }
-              }
-            }
-          );
+      // 2. Comprehensive API search across all data sources
+      console.log('🔍 Searching across all API data sources...');
+      
+      // Define multiple search methods for comprehensive coverage
+      const searchMethods = [
+        // Direct car ID search
+        {
+          method: "Car ID",
+          payload: {
+            endpoint: "cars",
+            carId: term,
+          },
+        },
+        // Lot number search in IAAI
+        {
+          method: "Lot Number (IAAI)",
+          payload: {
+            endpoint: "search-lot",
+            lotNumber: term,
+          },
+        },
+        // General search with filters
+        {
+          method: "General Search",
+          payload: {
+            endpoint: "cars",
+            filters: {
+              search: term,
+              per_page: '10'
+            },
+          },
+        },
+        // VIN-specific search
+        {
+          method: "VIN Search",
+          payload: {
+            endpoint: "cars",
+            filters: {
+              vin: term,
+              per_page: '10'
+            },
+          },
+        },
+      ];
 
-          if (!apiError && apiData?.data) {
-            console.log('✅ API search results:', apiData.data.length);
-            results = apiData.data.map((car: any) => {
-              const lot = car.lots?.[0];
-              return {
-                id: car.id,
-                year: car.year,
-                make: car.manufacturer?.name || 'Unknown',
-                model: car.model?.name || 'Unknown',
-                vin: car.vin,
-                lot_number: car.lot_number || lot?.lot,
-                price: lot?.buy_now ? Math.round(lot.buy_now + 2200) : undefined,
-                image: lot?.images?.normal?.[0] || lot?.images?.big?.[0],
-                mileage: lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined,
-                fuel: car.fuel?.name,
-                transmission: car.transmission?.name,
-                color: car.color?.name,
-              };
-            });
+      // Try each search method and collect results
+      for (const searchMethod of searchMethods) {
+        try {
+          console.log(`🔍 Trying ${searchMethod.method}...`);
+
+          const response = await supabase.functions.invoke('secure-cars-api', {
+            body: searchMethod.payload
+          });
+
+          if (!response.error && response.data) {
+            let apiResults: CarSearchResult[] = [];
+            
+            // Handle different response formats
+            let carData = null;
+            
+            if (response.data.data && Array.isArray(response.data.data)) {
+              // If it's a search result with data array
+              carData = response.data.data;
+            } else if (response.data.lots && response.data.lots.length > 0) {
+              // If it's a direct car result
+              carData = [response.data];
+            } else if (Array.isArray(response.data)) {
+              // If it's an array of cars
+              carData = response.data;
+            } else if (response.data.id || response.data.year) {
+              // If it's a single car object
+              carData = [response.data];
+            }
+
+            if (carData && Array.isArray(carData)) {
+              console.log(`✅ Found ${carData.length} results via ${searchMethod.method}`);
+              
+              apiResults = carData.map((car: any) => {
+                const lot = car.lots?.[0];
+                return {
+                  id: car.id || car.api_id,
+                  year: car.year,
+                  make: car.manufacturer?.name || car.make || 'Unknown',
+                  model: car.model?.name || car.model || 'Unknown',
+                  vin: car.vin,
+                  lot_number: car.lot_number || lot?.lot,
+                  price: lot?.buy_now ? Math.round(lot.buy_now + 2200) : undefined,
+                  image: lot?.images?.normal?.[0] || lot?.images?.big?.[0],
+                  mileage: lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined,
+                  fuel: car.fuel?.name,
+                  transmission: car.transmission?.name,
+                  color: car.color?.name,
+                  source: 'api' as const,
+                };
+              });
+
+              // Add to results, avoiding duplicates
+              apiResults.forEach(result => {
+                if (!allResults.some(existing => existing.id === result.id)) {
+                  allResults.push(result);
+                }
+              });
+            }
           }
-        } catch (apiError) {
-          console.error('API search error:', apiError);
+        } catch (methodError) {
+          console.log(`⚠️ ${searchMethod.method} failed:`, methodError);
+          // Continue with next method
         }
       }
 
-      setSearchResults(results);
+      // Remove duplicates based on ID and sort by relevance
+      const uniqueResults = allResults.filter((result, index, self) => 
+        index === self.findIndex(r => r.id === result.id)
+      );
 
-      if (results.length === 0) {
+      // Sort results: exact ID matches first, then lot number matches, then others
+      const sortedResults = uniqueResults.sort((a, b) => {
+        const termLower = term.toLowerCase();
+        const aIdMatch = a.id.toLowerCase() === termLower;
+        const bIdMatch = b.id.toLowerCase() === termLower;
+        const aLotMatch = a.lot_number?.toLowerCase() === termLower;
+        const bLotMatch = b.lot_number?.toLowerCase() === termLower;
+        
+        if (aIdMatch && !bIdMatch) return -1;
+        if (!aIdMatch && bIdMatch) return 1;
+        if (aLotMatch && !bLotMatch) return -1;
+        if (!aLotMatch && bLotMatch) return 1;
+        
+        return 0;
+      });
+
+      setSearchResults(sortedResults.slice(0, 10)); // Limit to 10 results
+
+      if (sortedResults.length === 0) {
         toast({
           title: 'No results found',
-          description: `No cars found matching "${term}"`,
+          description: `No cars found matching "${term}" across all data sources`,
+          variant: 'default',
+        });
+      } else {
+        toast({
+          title: 'Search completed',
+          description: `Found ${sortedResults.length} car${sortedResults.length !== 1 ? 's' : ''} across all data sources`,
           variant: 'default',
         });
       }
@@ -204,7 +301,7 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-semibold flex items-center gap-2">
             <Search className="h-5 w-5 text-primary" />
-            Car Search
+            Comprehensive Car Search
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
@@ -213,7 +310,7 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
               <Input
                 ref={inputRef}
                 type="text"
-                placeholder="Search by Car ID, Lot Number, or VIN..."
+                placeholder="Search by Car ID, Lot Number, VIN... (comprehensive search across all data)"
                 value={searchTerm}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="pr-10"
@@ -300,6 +397,12 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
                                       VIN: {car.vin.slice(-6)}
                                     </Badge>
                                   )}
+                                  <Badge 
+                                    variant={car.source === 'cached' ? 'default' : 'secondary'} 
+                                    className="text-xs"
+                                  >
+                                    {car.source === 'cached' ? '💾 Cached' : '🌐 Live API'}
+                                  </Badge>
                                 </div>
                               </div>
                               <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -327,7 +430,7 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
                 <div className="text-center py-8 text-muted-foreground">
                   <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p className="text-sm">No cars found matching "{searchTerm}"</p>
-                  <p className="text-xs mt-1">Try searching by Car ID, Lot Number, or VIN</p>
+                  <p className="text-xs mt-1">Comprehensive search across cached database and live APIs</p>
                 </div>
               )}
             </div>
