@@ -246,7 +246,15 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={onClearFilters}
+            onClick={() => {
+              // Issue #1: Do not allow closing filters until brand and model are selected
+              if (!filters.manufacturer_id || !filters.model_id) {
+                // Don't show toast here as the parent component will handle it
+                // Just return without closing
+                return;
+              }
+              onClearFilters();
+            }}
             className="text-muted-foreground hover:text-foreground h-8 w-8 p-0"
           >
             <X className="h-4 w-4" />

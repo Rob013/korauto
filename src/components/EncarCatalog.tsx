@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { AdaptiveSelect } from "@/components/ui/adaptive-select";
 import { useToast } from "@/hooks/use-toast";
@@ -700,12 +701,12 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     const hasCategories = filters.manufacturer_id && filters.model_id;
     setHasSelectedCategories(!!hasCategories);
     
-    // Auto-hide filters when categories are selected and cars are loaded
+    // Issue #4: Auto-hide filters when categories are selected and cars are loaded (for both mobile and non-mobile)
     if (hasCategories && !isRestoringState && cars.length > 0 && !loading) {
       // Auto-hide filters after cars are successfully loaded
       const hideTimeout = setTimeout(() => {
         setShowFilters(false);
-      }, 500); // Small delay to let user see the results loading
+      }, 800); // Slightly faster hide for better UX
       
       return () => clearTimeout(hideTimeout);
     }
@@ -770,7 +771,19 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => setShowFilters(false)}
+              onClick={() => {
+                // Issue #1: Do not allow closing filters until brand and model are selected
+                if (!filters.manufacturer_id || !filters.model_id) {
+                  toast({
+                    title: "Zgjidhni markën dhe modelin",
+                    description: "Për të mbyllur filtrat, së pari duhet të zgjidhni markën dhe modelin e makinës.",
+                    variant: "destructive",
+                    duration: 3000,
+                  });
+                  return;
+                }
+                setShowFilters(false);
+              }}
               className={`lg:hidden h-8 w-8 p-0 ${isMobile ? 'hover:bg-primary-foreground/20 text-primary-foreground' : ''}`}
             >
               <X className="h-4 w-4" />
@@ -797,19 +810,53 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             compact={true}
           />
           
-          {/* Mobile Apply Filters Button - Enhanced */}
-          {isMobile && hasSelectedCategories && (
-            <div className="mt-6 pt-4 border-t">
+          {/* Mobile Apply/Close Filters Button - Enhanced */}
+          {isMobile && (
+            <div className="mt-6 pt-4 border-t space-y-3">
+              {/* Show current selection status */}
+              <div className="text-center text-sm text-muted-foreground">
+                {filters.manufacturer_id && filters.model_id ? (
+                  <span className="text-green-600 font-medium">✓ Marka dhe modeli të zgjedhur</span>
+                ) : (
+                  <span className="text-orange-600 font-medium">⚠ Zgjidhni markën dhe modelin</span>
+                )}
+              </div>
+              
+              {/* Apply/Close button */}
               <Button
-                onClick={() => setShowFilters(false)}
-                className="w-full h-12 text-lg font-semibold bg-primary hover:bg-primary/90 relative overflow-hidden"
+                onClick={() => {
+                  // Issue #2: Enhanced mobile filter close button
+                  if (!filters.manufacturer_id || !filters.model_id) {
+                    // Show a visual feedback but don't close
+                    const button = document.querySelector('[data-mobile-apply-button]');
+                    if (button) {
+                      button.classList.add('animate-pulse');
+                      setTimeout(() => {
+                        button?.classList.remove('animate-pulse');
+                      }, 1000);
+                    }
+                    return;
+                  }
+                  setShowFilters(false);
+                }}
+                data-mobile-apply-button
+                className={`w-full h-12 text-lg font-semibold relative overflow-hidden transition-all duration-300 ${
+                  filters.manufacturer_id && filters.model_id
+                    ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                    : "bg-muted hover:bg-muted/80 text-muted-foreground border-2 border-dashed border-orange-300"
+                }`}
                 size="lg"
               >
                 <span className="relative z-10">
-                  Shfaq Rezultatet ({cars.length} makina)
+                  {filters.manufacturer_id && filters.model_id
+                    ? `Shfaq Rezultatet (${cars.length} makina)`
+                    : "Zgjidhni markën dhe modelin"
+                  }
                 </span>
-                {/* Subtle animation background */}
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-transparent animate-pulse"></div>
+                {/* Subtle animation background for selected state */}
+                {filters.manufacturer_id && filters.model_id && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-transparent animate-pulse"></div>
+                )}
               </Button>
             </div>
           )}
@@ -822,7 +869,19 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           className={`fixed inset-0 z-30 lg:hidden transition-opacity duration-300 ${
             isMobile ? 'bg-black/70 backdrop-blur-md' : 'bg-black/50 backdrop-blur-sm'
           }`}
-          onClick={() => setShowFilters(false)}
+          onClick={() => {
+            // Issue #1: Prevent closing filters via overlay click if brand and model not selected
+            if (!filters.manufacturer_id || !filters.model_id) {
+              toast({
+                title: "Zgjidhni markën dhe modelin",
+                description: "Për të mbyllur filtrat, së pari duhet të zgjidhni markën dhe modelin e makinës.",
+                variant: "destructive",
+                duration: 3000,
+              });
+              return;
+            }
+            setShowFilters(false);
+          }}
         />
       )}
 
@@ -848,7 +907,19 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 <Button
                   variant={showFilters ? "default" : hasSelectedCategories ? "default" : "outline"}
                   size="lg"
-                  onClick={() => setShowFilters(!showFilters)}
+                  onClick={() => {
+                    // Issue #1: Prevent closing filters if brand and model not selected
+                    if (showFilters && (!filters.manufacturer_id || !filters.model_id)) {
+                      toast({
+                        title: "Zgjidhni markën dhe modelin",
+                        description: "Për të mbyllur filtrat, së pari duhet të zgjidhni markën dhe modelin e makinës.",
+                        variant: "destructive",
+                        duration: 3000,
+                      });
+                      return;
+                    }
+                    setShowFilters(!showFilters);
+                  }}
                   className={`flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base transition-all duration-200 ${
                     hasSelectedCategories 
                       ? showFilters 
