@@ -785,15 +785,15 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   <span className="hidden xs:inline text-xs">Back</span>
                 </Button>
                 
-                {/* Filter Toggle Button - more prominent on mobile */}
+                {/* Filter Toggle Button - big and prominent */}
                 <Button
                   variant={showFilters ? "default" : "outline"}
-                  size="sm"
+                  size="lg"
                   onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center gap-1 h-8 px-2 lg:px-3"
+                  className="flex items-center gap-2 h-10 px-4 lg:px-6 bg-primary/10 hover:bg-primary hover:text-primary-foreground border-2 border-primary/20 hover:border-primary font-semibold"
                 >
-                  {showFilters ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
-                  <span className="text-xs">Filters</span>
+                  {showFilters ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
+                  <span className="text-sm">Filters</span>
                 </Button>
               </div>
               
