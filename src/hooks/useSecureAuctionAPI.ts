@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 // Create fallback manufacturer data without logos
-const createFallbackManufacturers = () => {
+export const createFallbackManufacturers = () => {
   const fallbackData = [
     // German brands (priority)
     { id: 9, name: 'BMW', cars_qty: 245 },
