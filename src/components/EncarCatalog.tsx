@@ -11,6 +11,10 @@ import {
   ArrowLeft,
   ArrowUpDown,
   Car,
+  Filter,
+  X,
+  PanelLeftOpen,
+  PanelLeftClose,
 } from "lucide-react";
 import LazyCarCard from "@/components/LazyCarCard";
 import { useSecureAuctionAPI, createFallbackManufacturers } from "@/hooks/useSecureAuctionAPI";
@@ -76,6 +80,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [allCarsForSorting, setAllCarsForSorting] = useState<any[]>([]);
   const [isSortingGlobal, setIsSortingGlobal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   // Memoized helper function to extract grades from title
   const extractGradesFromTitle = useCallback((title: string): string[] => {
@@ -709,249 +714,300 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   }, [highlightCarId, cars]);
 
   return (
-    <div className="container-responsive py-4 sm:py-6">
-      {/* Header Section - More compact */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => window.history.back()}
-            className="flex items-center gap-2 hover:bg-primary hover:text-primary-foreground transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">Back</span>
-          </Button>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              Car Catalog
-            </h1>
-            <p className="text-muted-foreground text-sm">
-              {totalCount.toLocaleString()} cars {filters.grade_iaai && filters.grade_iaai !== 'all' ? `filtered by ${filters.grade_iaai}` : 'total'} • Page {currentPage} of {totalPages} • Showing {carsForCurrentPage.length} cars
-            </p>
+    <div className="flex min-h-screen bg-background">
+      {/* Collapsible Filter Sidebar */}
+      <div className={`
+        fixed lg:relative z-40 bg-card border-r transition-transform duration-300 ease-in-out
+        ${showFilters ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        w-80 lg:w-72 h-full overflow-y-auto
+      `}>
+        <div className="p-4 border-b">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Filter className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold">Filters</h3>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setShowFilters(false)}
+              className="lg:hidden"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
         </div>
-
-        {/* View Mode Toggle */}
-        <div className="flex gap-2">
-          <Button
-            variant={viewMode === "grid" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setViewMode("grid")}
-          >
-            <Grid className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={viewMode === "list" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setViewMode("list")}
-          >
-            <List className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Filter Form with Sort - More compact */}
-      <div className="mb-4 space-y-3">
-        <EncarStyleFilter
-          filters={filters}
-          manufacturers={manufacturers}
-          models={models}
-          generations={generations}
-          filterCounts={filterCounts}
-          loadingCounts={loadingCounts}
-          onFiltersChange={handleFiltersChange}
-          onClearFilters={handleClearFilters}
-          onManufacturerChange={handleManufacturerChange}
-          onModelChange={handleModelChange}
-          onGenerationChange={handleGenerationChange}
-          showAdvanced={showAdvancedFilters}
-          onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
-          onFetchGrades={fetchGrades}
-        />
         
-
-        {/* Sort Control - positioned under filters, right side */}
-        <div className="flex justify-end">
-          <div className="relative">
-            <ArrowUpDown className="h-3 w-3 absolute left-3 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none" />
-            <AdaptiveSelect
-              value={sortBy}
-              onValueChange={(value: SortOption) => {
-                setSortBy(value);
-                // No need to re-fetch since we're using client-side sorting
-              }}
-              placeholder="Rreshtoni sipas..."
-              className="w-40 h-8 text-sm pl-8"
-              options={getSortOptions().map((option) => ({
-                value: option.value,
-                label: option.label
-              }))}
-            />
-          </div>
+        <div className="p-4">
+          <EncarStyleFilter
+            filters={filters}
+            manufacturers={manufacturers}
+            models={models}
+            generations={generations}
+            filterCounts={filterCounts}
+            loadingCounts={loadingCounts}
+            onFiltersChange={handleFiltersChange}
+            onClearFilters={handleClearFilters}
+            onManufacturerChange={handleManufacturerChange}
+            onModelChange={handleModelChange}
+            onGenerationChange={handleGenerationChange}
+            showAdvanced={showAdvancedFilters}
+            onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            onFetchGrades={fetchGrades}
+            compact={true}
+          />
         </div>
       </div>
 
-      {/* Error State */}
-      {error && (
-        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-8">
-          <p className="text-destructive font-medium">Error: {error}</p>
-        </div>
+      {/* Overlay for mobile */}
+      {showFilters && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          onClick={() => setShowFilters(false)}
+        />
       )}
 
+      {/* Main Content */}
+      <div className="flex-1 lg:ml-0">
+        <div className="container-responsive py-4 sm:py-6">
+          {/* Header Section - More compact */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => window.history.back()}
+                className="flex items-center gap-2 hover:bg-primary hover:text-primary-foreground transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span className="hidden sm:inline">Back</span>
+              </Button>
+              
+              {/* Filter Toggle Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-2"
+              >
+                {showFilters ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+                <span className="hidden sm:inline">Filters</span>
+              </Button>
+              
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                  Car Catalog
+                </h1>
+                <p className="text-muted-foreground text-sm">
+                  {totalCount.toLocaleString()} cars {filters.grade_iaai && filters.grade_iaai !== 'all' ? `filtered by ${filters.grade_iaai}` : 'total'} • Page {currentPage} of {totalPages} • Showing {carsForCurrentPage.length} cars
+                </p>
+              </div>
+            </div>
 
-
-      {/* Loading State */}
-      {(loading && cars.length === 0) || isRestoringState ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin mr-2" />
-          <span>
-            {isRestoringState ? "Restoring your view..." : "Loading cars..."}
-          </span>
-        </div>
-      ) : null}
-
-      {/* No Selection State */}
-      {!shouldShowCars && !loading && !isRestoringState && (
-        <div className="text-center py-16">
-          <div className="max-w-md mx-auto">
-            <Car className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Zgjidhni markën dhe modelin</h3>
-            <p className="text-muted-foreground mb-6">
-              Për të parë makinat, ju duhet të zgjidhni së paku markën dhe modelin e makinës.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* No Results State */}
-      {shouldShowCars && !loading && !isRestoringState && cars.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">
-            No cars found matching your filters.
-          </p>
-          <Button
-            variant="outline"
-            onClick={handleClearFilters}
-            className="mt-4"
-          >
-            Clear Filters
-          </Button>
-        </div>
-      )}
-
-      {/* Cars Grid/List - Only show if brand and model are selected */}
-      {shouldShowCars && cars.length > 0 && (
-        <>
-          <div
-            ref={containerRef}
-            className={
-              viewMode === "grid"
-                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4"
-                : "space-y-3"
-            }
-          >
-            {carsForCurrentPage.map((car) => {
-              const lot = car.lots?.[0];
-              const usdPrice = lot?.buy_now || 25000;
-              const price = convertUSDtoEUR(Math.round(usdPrice + 2200));
-              const lotNumber = car.lot_number || lot?.lot || "";
-
-              return (
-                <div
-                  key={car.id}
-                  id={`car-${car.id}`}
-                  data-lot-id={`car-lot-${lotNumber}`}
-                  className={
-                    highlightedCarId === lotNumber ||
-                    highlightedCarId === car.id
-                      ? "car-highlight"
-                      : ""
-                  }
-                >
-                  <LazyCarCard
-                    id={car.id}
-                    make={car.manufacturer?.name || "Unknown"}
-                    model={car.model?.name || "Unknown"}
-                    year={car.year}
-                    price={price}
-                    image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]}
-                    vin={car.vin}
-                    mileage={
-                      lot?.odometer?.km
-                        ? `${lot.odometer.km.toLocaleString()} km`
-                        : undefined
-                    }
-                    transmission={car.transmission?.name}
-                    fuel={car.fuel?.name}
-                    color={car.color?.name}
-                    lot={car.lot_number || lot?.lot || ""}
-                    title={car.title || ""}
-                    status={Number(car.status || lot?.status || 1)}
-                    sale_status={car.sale_status || lot?.sale_status}
-                    final_price={car.final_price || lot?.final_price}
-                    insurance_v2={(lot as any)?.insurance_v2}
-                    details={(lot as any)?.details}
-                  />
-                </div>
-              );
-            })}
+            {/* View Mode Toggle and Sort */}
+            <div className="flex gap-2 items-center">
+              {/* Sort Control */}
+              <div className="relative">
+                <ArrowUpDown className="h-3 w-3 absolute left-3 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none" />
+                <AdaptiveSelect
+                  value={sortBy}
+                  onValueChange={(value: SortOption) => {
+                    setSortBy(value);
+                  }}
+                  placeholder="Sort by..."
+                  className="w-40 h-8 text-sm pl-8"
+                  options={getSortOptions().map((option) => ({
+                    value: option.value,
+                    label: option.label
+                  }))}
+                />
+              </div>
+              
+              <Button
+                variant={viewMode === "grid" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("grid")}
+              >
+                <Grid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === "list" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("list")}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center mt-6">
-              <div className="flex items-center gap-2">
+          {/* Error State */}
+          {error && (
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-8">
+              <p className="text-destructive font-medium">Error: {error}</p>
+            </div>
+          )}
+
+          {/* Loading State */}
+          {(loading && cars.length === 0) || isRestoringState ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin mr-2" />
+              <span>
+                {isRestoringState ? "Restoring your view..." : "Loading cars..."}
+              </span>
+            </div>
+          ) : null}
+
+          {/* No Selection State */}
+          {!shouldShowCars && !loading && !isRestoringState && (
+            <div className="text-center py-16">
+              <div className="max-w-md mx-auto">
+                <Car className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Zgjidhni markën dhe modelin</h3>
+                <p className="text-muted-foreground mb-6">
+                  Për të parë makinat, ju duhet të zgjidhni së paku markën dhe modelin e makinës.
+                </p>
                 <Button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1 || loading}
                   variant="outline"
-                  size="sm"
+                  onClick={() => setShowFilters(true)}
+                  className="flex items-center gap-2"
                 >
-                  Previous
-                </Button>
-                
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-                    
-                    return (
-                      <Button
-                        key={pageNum}
-                        onClick={() => handlePageChange(pageNum)}
-                        variant={currentPage === pageNum ? "default" : "outline"}
-                        size="sm"
-                        className="w-10 h-8"
-                        disabled={loading}
-                      >
-                        {pageNum}
-                      </Button>
-                    );
-                  })}
-                </div>
-                
-                <Button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages || loading}
-                  variant="outline"
-                  size="sm"
-                >
-                  Next
+                  <Filter className="h-4 w-4" />
+                  Open Filters
                 </Button>
               </div>
             </div>
           )}
-        </>
-      )}
+
+          {/* No Results State */}
+          {shouldShowCars && !loading && !isRestoringState && cars.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">
+                No cars found matching your filters.
+              </p>
+              <Button
+                variant="outline"
+                onClick={handleClearFilters}
+                className="mt-4"
+              >
+                Clear Filters
+              </Button>
+            </div>
+          )}
+
+          {/* Cars Grid/List - Only show if brand and model are selected */}
+          {shouldShowCars && cars.length > 0 && (
+            <>
+              <div
+                ref={containerRef}
+                className={
+                  viewMode === "grid"
+                    ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4"
+                    : "space-y-3"
+                }
+              >
+                {carsForCurrentPage.map((car) => {
+                  const lot = car.lots?.[0];
+                  const usdPrice = lot?.buy_now || 25000;
+                  const price = convertUSDtoEUR(Math.round(usdPrice + 2200));
+                  const lotNumber = car.lot_number || lot?.lot || "";
+
+                  return (
+                    <div
+                      key={car.id}
+                      id={`car-${car.id}`}
+                      data-lot-id={`car-lot-${lotNumber}`}
+                      className={
+                        highlightedCarId === lotNumber ||
+                        highlightedCarId === car.id
+                          ? "car-highlight"
+                          : ""
+                      }
+                    >
+                      <LazyCarCard
+                        id={car.id}
+                        make={car.manufacturer?.name || "Unknown"}
+                        model={car.model?.name || "Unknown"}
+                        year={car.year}
+                        price={price}
+                        image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]}
+                        vin={car.vin}
+                        mileage={
+                          lot?.odometer?.km
+                            ? `${lot.odometer.km.toLocaleString()} km`
+                            : undefined
+                        }
+                        transmission={car.transmission?.name}
+                        fuel={car.fuel?.name}
+                        color={car.color?.name}
+                        lot={car.lot_number || lot?.lot || ""}
+                        title={car.title || ""}
+                        status={Number(car.status || lot?.status || 1)}
+                        sale_status={car.sale_status || lot?.sale_status}
+                        final_price={car.final_price || lot?.final_price}
+                        insurance_v2={(lot as any)?.insurance_v2}
+                        details={(lot as any)?.details}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex justify-center mt-6">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1 || loading}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Previous
+                    </Button>
+                    
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        
+                        return (
+                          <Button
+                            key={pageNum}
+                            onClick={() => handlePageChange(pageNum)}
+                            variant={currentPage === pageNum ? "default" : "outline"}
+                            size="sm"
+                            className="w-10 h-8"
+                            disabled={loading}
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    
+                    <Button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages || loading}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
