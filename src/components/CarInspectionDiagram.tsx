@@ -142,51 +142,51 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
   };
 
   return (
-    <div className={`w-full max-w-6xl mx-auto p-6 bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-2xl shadow-lg ${className}`}>
+    <div className={`w-full max-w-6xl mx-auto p-6 bg-card border border-border rounded-2xl shadow-lg ${className}`}>
       {/* Header */}
       <div className="text-center mb-8">
-        <h3 className="text-2xl font-bold text-gray-900 mb-3">Diagrami i Inspektimit të Automjetit</h3>
-        <p className="text-gray-600">Kliko mbi pjesët e makinës për më shumë detaje</p>
+        <h3 className="text-2xl font-bold text-foreground mb-3">Diagrami i Inspektimit të Automjetit</h3>
+        <p className="text-muted-foreground">Kliko mbi pjesët e makinës për më shumë detaje</p>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left side - Statistics */}
         <div className="space-y-4">
-          <h4 className="text-lg font-semibold text-gray-800 mb-4">Përmbledhje e Gjendjes</h4>
+          <h4 className="text-lg font-semibold text-foreground mb-4">Përmbledhje e Gjendjes</h4>
           
           {/* Overall Status */}
-          <Card className="border-l-4 border-l-blue-500">
+          <Card className="border-l-4 border-l-primary">
             <CardContent className="p-4">
               {issueCount.critical > 0 ? (
                 <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  <div className="w-3 h-3 bg-destructive rounded-full"></div>
                   <div>
-                    <div className="font-semibold text-red-800">Gjendje Kritike</div>
-                    <div className="text-sm text-gray-600">Nevojiten riparime të rëndësishme</div>
+                    <div className="font-semibold text-destructive">Gjendje Kritike</div>
+                    <div className="text-sm text-muted-foreground">Nevojiten riparime të rëndësishme</div>
                   </div>
                 </div>
               ) : issueCount.major > 0 ? (
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
                   <div>
-                    <div className="font-semibold text-orange-800">Nevojiten Riparime</div>
-                    <div className="text-sm text-gray-600">Disa probleme të rëndësishme</div>
+                    <div className="font-semibold text-orange-700 dark:text-orange-400">Nevojiten Riparime</div>
+                    <div className="text-sm text-muted-foreground">Disa probleme të rëndësishme</div>
                   </div>
                 </div>
               ) : issueCount.minor > 0 ? (
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                   <div>
-                    <div className="font-semibold text-yellow-800">Riparime të Vogla</div>
-                    <div className="text-sm text-gray-600">Probleme të lehta</div>
+                    <div className="font-semibold text-yellow-700 dark:text-yellow-400">Riparime të Vogla</div>
+                    <div className="text-sm text-muted-foreground">Probleme të lehta</div>
                   </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                   <div>
-                    <div className="font-semibold text-green-800">Gjendje e Mirë</div>
-                    <div className="text-sm text-gray-600">Automjeti në rregull</div>
+                    <div className="font-semibold text-green-700 dark:text-green-400">Gjendje e Mirë</div>
+                    <div className="text-sm text-muted-foreground">Automjeti në rregull</div>
                   </div>
                 </div>
               )}
@@ -195,28 +195,28 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
 
           {/* Stats Cards */}
           <div className="grid grid-cols-2 gap-3">
-            <Card className="bg-green-50 border-green-200">
+            <Card className="bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800">
               <CardContent className="p-3 text-center">
-                <div className="text-2xl font-bold text-green-600">{issueCount.good}</div>
-                <div className="text-xs text-green-700">Në rregull</div>
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{issueCount.good}</div>
+                <div className="text-xs text-green-700 dark:text-green-500">Në rregull</div>
               </CardContent>
             </Card>
-            <Card className="bg-yellow-50 border-yellow-200">
+            <Card className="bg-yellow-50 dark:bg-yellow-950/30 border-yellow-200 dark:border-yellow-800">
               <CardContent className="p-3 text-center">
-                <div className="text-2xl font-bold text-yellow-600">{issueCount.minor}</div>
-                <div className="text-xs text-yellow-700">Riparime të vogla</div>
+                <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{issueCount.minor}</div>
+                <div className="text-xs text-yellow-700 dark:text-yellow-500">Riparime të vogla</div>
               </CardContent>
             </Card>
-            <Card className="bg-orange-50 border-orange-200">
+            <Card className="bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800">
               <CardContent className="p-3 text-center">
-                <div className="text-2xl font-bold text-orange-600">{issueCount.major}</div>
-                <div className="text-xs text-orange-700">Riparime të mëdha</div>
+                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{issueCount.major}</div>
+                <div className="text-xs text-orange-700 dark:text-orange-500">Riparime të mëdha</div>
               </CardContent>
             </Card>
-            <Card className="bg-red-50 border-red-200">
+            <Card className="bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800">
               <CardContent className="p-3 text-center">
-                <div className="text-2xl font-bold text-red-600">{issueCount.critical}</div>
-                <div className="text-xs text-red-700">Kritike</div>
+                <div className="text-2xl font-bold text-red-600 dark:text-red-400">{issueCount.critical}</div>
+                <div className="text-xs text-red-700 dark:text-red-500">Kritike</div>
               </CardContent>
             </Card>
           </div>
@@ -224,23 +224,23 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
           {/* Legend */}
           <Card>
             <CardContent className="p-4">
-              <h5 className="text-sm font-semibold text-gray-700 mb-3">Legjenda</h5>
+              <h5 className="text-sm font-semibold text-foreground mb-3">Legjenda</h5>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 bg-green-500 rounded"></div>
-                  <span className="text-sm text-gray-600">Në rregull</span>
+                  <span className="text-sm text-muted-foreground">Në rregull</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-                  <span className="text-sm text-gray-600">Riparim i vogël</span>
+                  <span className="text-sm text-muted-foreground">Riparim i vogël</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 bg-orange-500 rounded"></div>
-                  <span className="text-sm text-gray-600">Riparim i madh</span>
+                  <span className="text-sm text-muted-foreground">Riparim i madh</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 bg-red-500 rounded"></div>
-                  <span className="text-sm text-gray-600">Kritike / Zëvendësim</span>
+                  <span className="text-sm text-muted-foreground">Kritike / Zëvendësim</span>
                 </div>
               </div>
             </CardContent>
@@ -254,10 +254,10 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
               width="600" 
               height="500" 
               viewBox="0 0 600 500" 
-              className="max-w-full h-auto border border-gray-200 rounded-lg bg-white shadow-inner"
+              className="max-w-full h-auto border border-border rounded-lg bg-card shadow-inner"
             >
               {/* Car outline */}
-              <rect x="200" y="40" width="200" height="420" rx="20" fill="none" stroke="#e5e7eb" strokeWidth="2" strokeDasharray="5,5"/>
+              <rect x="200" y="40" width="200" height="420" rx="20" fill="none" stroke="hsl(var(--border))" strokeWidth="2" strokeDasharray="5,5"/>
               
               {/* Car parts */}
               {carParts.map((part) => {
@@ -275,7 +275,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
                     height={part.height}
                     rx={part.rx || 0}
                     fill={color}
-                    stroke={isSelected ? "#374151" : isHovered ? "#6b7280" : color}
+                    stroke={isSelected ? "hsl(var(--foreground))" : isHovered ? "hsl(var(--muted-foreground))" : color}
                     strokeWidth={isSelected ? 3 : isHovered ? 2 : 1}
                     opacity={isHovered || isSelected ? 0.9 : 0.7}
                     className="cursor-pointer transition-all duration-200 hover:opacity-90"
@@ -287,19 +287,19 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
               })}
               
               {/* Car center line */}
-              <line x1="300" y1="50" x2="300" y2="450" stroke="#d1d5db" strokeWidth="1" strokeDasharray="3,3" opacity="0.5"/>
+              <line x1="300" y1="50" x2="300" y2="450" stroke="hsl(var(--border))" strokeWidth="1" strokeDasharray="3,3" opacity="0.5"/>
               
               {/* Direction indicator */}
-              <polygon points="300,30 310,50 290,50" fill="#6b7280" opacity="0.6"/>
-              <text x="320" y="45" className="text-xs fill-gray-600" fontSize="12">Përpara</text>
+              <polygon points="300,30 310,50 290,50" fill="hsl(var(--muted-foreground))" opacity="0.6"/>
+              <text x="320" y="45" className="text-xs fill-muted-foreground" fontSize="12">Përpara</text>
             </svg>
             
             {/* Hover tooltip */}
             {hoveredPart && (
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-3 py-2 rounded-lg text-sm shadow-lg z-10">
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-foreground text-background px-3 py-2 rounded-lg text-sm shadow-lg z-10">
                 {carParts.find(p => p.id === hoveredPart)?.name}
                 <br />
-                <span className="text-gray-300">
+                <span className="opacity-80">
                   {getStatusText(getPartStatus(hoveredPart))}
                 </span>
               </div>
@@ -310,11 +310,11 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
 
       {/* Selected part details */}
       {selectedPart && (
-        <Card className="mt-6 border-blue-200 bg-blue-50">
+        <Card className="mt-6 border-primary bg-primary/5">
           <CardContent className="p-4">
             <div className="flex items-start justify-between">
               <div>
-                <h5 className="font-semibold text-gray-900 mb-2">
+                <h5 className="font-semibold text-foreground mb-2">
                   {carParts.find(p => p.id === selectedPart)?.name}
                 </h5>
                 <div className="space-y-1">
@@ -323,13 +323,13 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
                       className="w-3 h-3 rounded-full" 
                       style={{ backgroundColor: getStatusColor(getPartStatus(selectedPart)) }}
                     ></div>
-                    <span className="text-sm text-gray-700">
+                    <span className="text-sm text-muted-foreground">
                       {getStatusText(getPartStatus(selectedPart))}
                     </span>
                   </div>
                   {getPartStatus(selectedPart).length > 0 && (
                     <div className="mt-2">
-                      <div className="text-sm text-gray-600 mb-1">Detaje:</div>
+                      <div className="text-sm text-muted-foreground mb-1">Detaje:</div>
                       <div className="flex flex-wrap gap-1">
                         {getPartStatus(selectedPart).map((status, index) => (
                           <Badge key={index} variant="outline" className="text-xs">
@@ -343,7 +343,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
               </div>
               <button
                 onClick={() => setSelectedPart(null)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 ✕
               </button>

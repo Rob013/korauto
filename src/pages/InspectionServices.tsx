@@ -61,9 +61,9 @@ const InspectionServices = () => {
     title: "Ekspertizë 10+ Vjetëshe",
     description: "Mekanikë të certifikuar dhe të trajnuar për të gjitha markat e makinave"
   }];
-  return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 text-gray-900">
+  return <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <div className="bg-gray-900 text-gray-100 py-16">
+      <div className="bg-foreground text-background py-16">
         <div className="container-responsive">
           <div className="flex items-center gap-4 mb-8">
             <Button variant="secondary" onClick={() => navigate('/')} className="flex items-center gap-2">
@@ -96,24 +96,24 @@ const InspectionServices = () => {
         {/* Why Choose Our Inspection */}
         <section className="mb-20">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
               Pse të Zgjidhni KORAUTO?
             </h2>
-            <p className="text-xl text-gray-700 max-w-3xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               Ofrojmë shërbime inspektimi të nivelit më të lartë me teknologji moderne dhe ekspertizë të provuar
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {benefits.map((benefit, index) => <Card key={index} className="text-center border-gray-300 bg-white shadow-lg">
+            {benefits.map((benefit, index) => <Card key={index} className="text-center border-border bg-card shadow-lg">
                 <CardHeader>
-                  <div className="mx-auto w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mb-4">
-                    <benefit.icon className="h-8 w-8 text-gray-100" />
+                  <div className="mx-auto w-16 h-16 bg-foreground rounded-full flex items-center justify-center mb-4">
+                    <benefit.icon className="h-8 w-8 text-background" />
                   </div>
-                  <CardTitle className="text-xl text-gray-900">{benefit.title}</CardTitle>
+                  <CardTitle className="text-xl text-foreground">{benefit.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-700">{benefit.description}</p>
+                  <p className="text-muted-foreground">{benefit.description}</p>
                 </CardContent>
               </Card>)}
           </div>
@@ -122,33 +122,33 @@ const InspectionServices = () => {
         {/* Inspection Process */}
         <section className="mb-20">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
               Procesi Ynë i Inspektimit
             </h2>
-            <p className="text-xl text-gray-700 max-w-3xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               Një proces i detajuar dhe sistematik që garanton inspektimin e plotë të çdo komponenti
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {inspectionSteps.map((step, index) => <Card key={index} className="border-gray-300 bg-white shadow-lg">
+            {inspectionSteps.map((step, index) => <Card key={index} className="border-border bg-card shadow-lg">
                 <CardHeader>
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center">
-                      <step.icon className="h-6 w-6 text-gray-100" />
+                    <div className="w-12 h-12 bg-foreground rounded-lg flex items-center justify-center">
+                      <step.icon className="h-6 w-6 text-background" />
                     </div>
                     <div>
-                      <Badge variant="secondary" className="mb-2 bg-gray-200 text-gray-800">Hapi {index + 1}</Badge>
-                      <CardTitle className="text-xl text-gray-900">{step.title}</CardTitle>
+                      <Badge variant="secondary" className="mb-2 bg-secondary text-secondary-foreground">Hapi {index + 1}</Badge>
+                      <CardTitle className="text-xl text-foreground">{step.title}</CardTitle>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <p className="text-gray-700">{step.description}</p>
+                  <p className="text-muted-foreground">{step.description}</p>
                   <ul className="space-y-2">
                     {step.details.map((detail, idx) => <li key={idx} className="flex items-center gap-2 text-sm">
-                        <CheckCircle className="h-4 w-4 text-gray-600 flex-shrink-0" />
-                        <span className="text-gray-700">{detail}</span>
+                        <CheckCircle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="text-muted-foreground">{detail}</span>
                       </li>)}
                   </ul>
                 </CardContent>
@@ -157,7 +157,7 @@ const InspectionServices = () => {
         </section>
 
         {/* CTA Section */}
-        <section className="text-center bg-gradient-to-r from-gray-800 to-gray-900 text-gray-100 rounded-2xl p-12">
+        <section className="text-center bg-foreground text-background rounded-2xl p-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Gati për Inspektim FALAS?
           </h2>
