@@ -321,19 +321,19 @@ const HomeCarsSection = memo(() => {
   };
 
   return (
-    <section id="cars" className="mobile-section bg-secondary/30">
+    <section id="cars" className="py-4 sm:py-6 lg:py-8 bg-secondary/30">
       <div className="container-responsive">
-        <div className="mobile-center mb-6">
-          <h2 className="mobile-title mb-4 text-foreground">
+        <div className="text-center mb-4 sm:mb-6">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground">
             Makinat e Disponueshme
           </h2>
 
-          <div className="flex justify-center mt-6">
+          <div className="flex justify-center mt-4 sm:mt-6">
             <Button
               variant="outline"
-              size="lg"
+              size="sm"
               onClick={() => setShowFilters(!showFilters)}
-              className="btn-mobile w-full sm:w-auto border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              className="w-full sm:w-auto border-primary text-primary hover:bg-primary hover:text-primary-foreground min-h-[44px]"
             >
               {showFilters ? "Fshih Filtrat" : "Shfaq Filtrat"}
             </Button>
@@ -341,9 +341,9 @@ const HomeCarsSection = memo(() => {
         </div>
 
         {error && (
-          <div className="mobile-inline justify-center gap-3 mb-8 mobile-padding bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-            <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
-            <span className="text-yellow-800 dark:text-yellow-200 mobile-body text-left sm:text-center">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-center gap-2 mb-6 sm:mb-8 p-4 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg mx-2 sm:mx-0">
+            <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5 sm:mt-0" />
+            <span className="text-yellow-800 dark:text-yellow-200 text-sm sm:text-base text-left sm:text-center">
               Problem me lidhjen API: {error}
             </span>
           </div>
@@ -351,7 +351,7 @@ const HomeCarsSection = memo(() => {
 
         {/* Filter Form */}
         {showFilters && (
-          <div className="mb-8">
+          <div className="mb-6 sm:mb-8">
             <EncarStyleFilter
               filters={filters}
               manufacturers={manufacturers}
@@ -378,8 +378,8 @@ const HomeCarsSection = memo(() => {
         )}
 
         {/* Daily Selection Badge */}
-        <div className="mobile-center mb-8">
-          <div className="inline-flex items-center gap-3 mobile-padding-sm py-3 bg-primary/10 text-primary rounded-full mobile-body font-medium">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
             <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
             Zgjedhja e Ditës - {new Date().getDate()}{" "}
             {new Date().toLocaleDateString("sq-AL", { month: "long" })}
@@ -387,19 +387,19 @@ const HomeCarsSection = memo(() => {
         </div>
 
         {/* Sort Control */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8 mx-2 sm:mx-0">
           <div className="flex justify-end">
             <Select
               value={sortBy}
               onValueChange={(value: SortOption) => setSortBy(value)}
             >
-              <SelectTrigger className="w-full sm:w-48 touch-target">
-                <ArrowUpDown className="h-4 w-4 mr-2" />
+              <SelectTrigger className="w-48">
+                <ArrowUpDown className="h-3 w-3 mr-2" />
                 <SelectValue placeholder="Rreshtoni sipas..." />
               </SelectTrigger>
               <SelectContent>
                 {getSortOptions().map((option) => (
-                  <SelectItem key={option.value} value={option.value} className="touch-target">
+                  <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
                 ))}
@@ -410,26 +410,24 @@ const HomeCarsSection = memo(() => {
 
         {/* Car Cards */}
         {loading ? (
-          <div className="grid-responsive-cards mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="card-mobile animate-pulse mobile-padding-sm py-6">
-                <div className="h-48 bg-muted rounded-lg mb-4"></div>
-                <div className="mobile-stack-sm">
-                  <div className="h-4 bg-muted rounded"></div>
-                  <div className="h-4 bg-muted rounded w-3/4"></div>
-                </div>
+              <div key={i} className="bg-card rounded-lg p-4 animate-pulse">
+                <div className="h-48 bg-muted rounded mb-4"></div>
+                <div className="h-4 bg-muted rounded mb-2"></div>
+                <div className="h-4 bg-muted rounded w-3/4"></div>
               </div>
             ))}
           </div>
         ) : sortedCars.length === 0 ? (
-          <div className="mobile-center mobile-section-sm">
-            <p className="mobile-body text-muted-foreground mb-4">
+          <div className="text-center py-8 sm:py-12 px-4">
+            <p className="text-base sm:text-lg text-muted-foreground mb-4">
               Nuk ka makina të disponueshme.
             </p>
           </div>
         ) : (
           <>
-            <div className="grid-responsive-cards mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0">
               {displayedCars.map((car) => {
                 const lot = car.lots?.[0];
                 const usdPrice = lot?.buy_now || 25000;
@@ -466,13 +464,13 @@ const HomeCarsSection = memo(() => {
             </div>
 
             {/* Show More Button and Browse All Cars Button */}
-            <div className="mobile-center mobile-stack">
+            <div className="text-center mt-8 space-y-6">
               {sortedCars.length > 50 && !showAllCars && (
                 <Button
                   onClick={() => setShowAllCars(true)}
                   variant="outline"
                   size="lg"
-                  className="btn-mobile bg-card border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-4 w-full sm:w-auto"
+                  className="bg-card border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3"
                 >
                   Shiko të gjitha ({sortedCars.length} makina)
                 </Button>
@@ -481,7 +479,7 @@ const HomeCarsSection = memo(() => {
               <Button
                 onClick={() => navigate("/catalog")}
                 size="lg"
-                className="btn-mobile bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-4 w-full sm:w-auto"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3"
               >
                 Shfleto të gjitha makinat
               </Button>

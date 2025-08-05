@@ -277,18 +277,17 @@ const FilterForm = memo<FilterFormProps>(({
   }, [models, filters.manufacturer_id, isLoading]);
 
   return (
-    <div className="bg-card border border-border rounded-lg p-3 space-y-3">
+    <div className="filter-mobile bg-card border border-border rounded-lg p-4 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-primary" />
-          <h3 className="text-sm sm:text-base font-semibold">Kërkim i mençur</h3>
+          <Filter className="h-5 w-5 text-primary" />
+          <h3 className="text-responsive-sm font-semibold">Kërkim i mençur</h3>
         </div>
         <Button 
           variant="outline" 
-          size="sm" 
           onClick={onClearFilters} 
           disabled={isLoading}
-          className="text-xs px-2 py-1 h-7"
+          className="btn-mobile-small touch-target"
         >
           {isLoading ? (
             <Loader2 className="h-3 w-3 mr-1 animate-spin" />
@@ -304,7 +303,7 @@ const FilterForm = memo<FilterFormProps>(({
 
 
       {/* Basic Filters - Always 4 columns beside each other */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 sm:gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="space-y-1">
           <Label htmlFor="manufacturer" className="text-xs font-medium truncate">Marka</Label>
           <Select value={filters.manufacturer_id || 'all'} onValueChange={handleBrandChange} disabled={isLoading}>

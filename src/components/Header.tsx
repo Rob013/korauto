@@ -38,21 +38,21 @@ const Header = () => {
   return (
     <header className="bg-background/95 backdrop-blur-sm shadow-sm border-b border-border sticky top-0 z-50">
       {/* Main header */}
-      <div className="container-responsive">
+      <div className="container-mobile">
         <div className="flex h-16 sm:h-18 items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 group min-w-0 flex-shrink-0">
-            <div className="rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
+          <Link to="/" className="flex items-center space-x-2 group min-w-0 touch-target">
+            <div className="rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
               <img 
                 src="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png" 
                 alt="KORAUTO Logo" 
-                className="h-12 sm:h-16 w-auto object-contain dark:invert dark:brightness-0 dark:contrast-100 transition-all duration-200"
+                className="h-16 sm:h-20 w-auto object-contain dark:invert dark:brightness-0 dark:contrast-100 transition-all duration-200"
               />
             </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-8">
+          <nav className="hidden lg:flex items-center space-x-6">
             <Link 
               to="/" 
               className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200 touch-target"
@@ -79,7 +79,7 @@ const Header = () => {
             </Link>
             <Link 
               to="/favorites" 
-              className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200 flex items-center gap-2 touch-target"
+              className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200 flex items-center gap-1 touch-target"
             >
               <Heart className="h-4 w-4" />
               Favorites
@@ -88,18 +88,20 @@ const Header = () => {
 
           {/* Right side actions */}
           <div className="flex items-center space-x-2">
+            {/* <ThemeToggle /> */}
+            
             {/* Mobile menu button */}
             <Button
               variant="ghost"
               size="sm"
-              className="lg:hidden focus-enhanced touch-target-lg"
+              className="lg:hidden focus-enhanced touch-target-large"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
             
             {/* Desktop Auth Buttons */}
-            <div className="hidden lg:flex items-center space-x-3">
+            <div className="hidden lg:flex items-center space-x-2">
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -118,32 +120,32 @@ const Header = () => {
       {/* Mobile Navigation */}
       {isMobileMenuOpen && (
         <div className="lg:hidden bg-background border-t border-border shadow-lg">
-          <div className="container-responsive py-6">
-            <nav className="mobile-stack-sm">
+          <div className="container-mobile py-4">
+            <nav className="flex flex-col list-mobile-spacing">
               <Link 
                 to="/" 
-                className="mobile-nav-item text-foreground hover:text-primary hover:bg-primary/10"
+                className="nav-link-mobile"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Kryefaqja
               </Link>
               <Link 
                 to="/catalog" 
-                className="mobile-nav-item text-foreground hover:text-primary hover:bg-primary/10"
+                className="nav-link-mobile"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Katalogu
               </Link>
               <Link 
                 to="/inspections" 
-                className="mobile-nav-item text-foreground hover:text-primary hover:bg-primary/10"
+                className="nav-link-mobile"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Inspektimet
               </Link>
               <Link 
                 to="/contacts" 
-                className="mobile-nav-item text-foreground hover:text-primary hover:bg-primary/10"
+                className="nav-link-mobile"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Kontaktet
@@ -151,28 +153,27 @@ const Header = () => {
 
               <Link 
                 to="/favorites" 
-                className="mobile-nav-item text-foreground hover:text-primary hover:bg-primary/10"
+                className="nav-link-mobile gap-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                <Heart className="h-5 w-5 mr-3" />
+                <Heart className="h-4 w-4" />
                 Favorites
               </Link>
               <button 
-                className="mobile-nav-item text-foreground hover:text-primary hover:bg-primary/10"
+                className="nav-link-mobile gap-2 w-full text-left"
                 onClick={() => {
                   setIsMobileMenuOpen(false);
                   handleAuthClick();
                 }}
               >
-                <User className="h-5 w-5 mr-3" />
+                <User className="h-4 w-4" />
                 {user ? 'Llogaria Ime' : 'Llogaria Ime'}
               </button>
               
               {/* Mobile CTA Buttons */}
-              <div className="flex flex-col gap-4 pt-6 border-t border-border mt-4">
+              <div className="flex flex-col gap-3 pt-4 border-t border-border mt-4">
                 <Button 
                   variant="outline" 
-                  size="lg" 
                   className="btn-mobile w-full text-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
                   onClick={() => {
                     setIsMobileMenuOpen(false);
@@ -182,7 +183,6 @@ const Header = () => {
                   Shiko Makinat
                 </Button>
                 <Button 
-                  size="lg" 
                   className="btn-mobile w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200"
                   onClick={() => {
                     setIsMobileMenuOpen(false);
