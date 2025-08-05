@@ -21,7 +21,6 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const Contacts = lazy(() => import("./pages/Contacts"));
 const ComponentDemo = lazy(() => import("./pages/ComponentDemo"));
 const DiagramDemo = lazy(() => import("./pages/DiagramDemo"));
-const AdminCarSearchDemo = lazy(() => import("./pages/AdminCarSearchDemo"));
 const PerformanceDashboard = lazy(() => import("./components/PerformanceDashboard"));
 
 // Lazy load admin components for better code splitting
@@ -153,11 +152,6 @@ const App = () => (
           <Route path="/diagram-demo" element={
             <Suspense fallback={<PageSkeleton />}>
               <DiagramDemo />
-            </Suspense>
-          } />
-          <Route path="/admin-search-demo" element={
-            <Suspense fallback={<PageSkeleton />}>
-              <AdminCarSearchDemo />
             </Suspense>
           } />
           <Route path="/performance" element={
