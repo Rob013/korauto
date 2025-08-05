@@ -882,16 +882,17 @@ const CarDetails = memo(() => {
     };
   }, [lot, convertUSDtoEUR]);
   const handleContactWhatsApp = useCallback(() => {
+    const currentUrl = window.location.href;
     const message = `Përshëndetje! Jam i interesuar për ${car?.year} ${
       car?.make
     } ${
       car?.model
-    } (€${car?.price.toLocaleString()}). A mund të më jepni më shumë informacion?`;
+    } (€${car?.price.toLocaleString()}) - Kodi #${car?.lot || lot}. A mund të më jepni më shumë informacion? ${currentUrl}`;
     const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(
       message
     )}`;
     window.open(whatsappUrl, "_blank");
-  }, [car]);
+  }, [car, lot]);
   const handleShare = useCallback(() => {
     navigator.clipboard.writeText(window.location.href);
     toast({

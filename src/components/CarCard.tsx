@@ -362,8 +362,8 @@ const CarCard = ({
 
     // Save current page for back navigation
     setPreviousPage(window.location.pathname + window.location.search);
-    // Navigate in same tab
-    navigate(`/car/${lot}`);
+    // Open car details in new tab
+    window.open(`/car/${lot}`, '_blank');
   };
   return (
     <div

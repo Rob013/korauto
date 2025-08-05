@@ -98,7 +98,7 @@ const extractTextFromJSX = (element: any): string => {
   
   if (React.isValidElement(element)) {
     // If it's a React element, try to extract text from its children
-    const children = element.props?.children;
+    const children = (element.props as any)?.children;
     
     if (Array.isArray(children)) {
       // Handle array of children - concatenate text from all elements
