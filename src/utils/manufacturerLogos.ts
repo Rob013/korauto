@@ -145,7 +145,7 @@ export const createFallbackManufacturers = (): ManufacturerWithLogo[] => {
     { id: 33, name: 'Rolls-Royce', cars_qty: 1 },
     { id: 34, name: 'Aston Martin', cars_qty: 2 },
     { id: 35, name: 'McLaren', cars_qty: 1 },
-    { id: 22, name: 'Mini', cars_qty: 14 },
+    { id: 43, name: 'Mini', cars_qty: 14 },
     
     // French brands
     { id: 36, name: 'Peugeot', cars_qty: 28 },
