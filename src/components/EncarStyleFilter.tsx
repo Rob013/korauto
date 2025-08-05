@@ -151,8 +151,28 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     setTimeout(() => setIsLoading(false), 50);
   }, [filters, onFiltersChange, onManufacturerChange, onModelChange]);
 
+  // Handle year range preset selection
+  const handleYearRangePreset = useCallback((preset: { label: string; from: number; to: number }) => {
+    const updatedFilters = {
+      ...filters,
+      from_year: preset.from.toString(),
+      to_year: preset.to.toString()
+    };
+    onFiltersChange(updatedFilters);
+  }, [filters, onFiltersChange]);
+
   const currentYear = useMemo(() => new Date().getFullYear(), []);
   const years = useMemo(() => Array.from({ length: 25 }, (_, i) => currentYear - i), [currentYear]);
+  
+  // Year range presets like Encar.com
+  const yearRangePresets = useMemo(() => [
+    { label: '2023+', from: 2023, to: currentYear },
+    { label: '2020+', from: 2020, to: currentYear },
+    { label: '2018+', from: 2018, to: currentYear },
+    { label: '2015+', from: 2015, to: currentYear },
+    { label: '2010+', from: 2010, to: currentYear },
+    { label: '2005+', from: 2005, to: currentYear },
+  ], [currentYear]);
 
   // Prioritized manufacturer sorting (German, Korean, Popular)
   const sortedManufacturers = useMemo(() => {
@@ -290,6 +310,11 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               <Label className="text-sm font-medium flex items-center gap-2">
                 <Calendar className="h-3 w-3" />
                 Gjenerata
+                {(filters.from_year || filters.to_year) && (
+                  <Badge variant="secondary" className="text-xs">
+                    {filters.from_year || 'Çdo vit'} - {filters.to_year || 'sot'}
+                  </Badge>
+                )}
               </Label>
               <AdaptiveSelect 
                 value={filters.generation_id || 'all'} 
@@ -306,10 +331,47 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                       const currentYear = new Date().getFullYear();
                       const to = (!generation.to_year || generation.to_year >= currentYear) ? 'sot' : generation.to_year.toString();
                       return ` (${from}-${to})`;
-                    })() : ''}`
+                    })() : ''} • ${generation.cars_qty} makina`
                   }))
                 ]}
               />
+              
+              {/* Year Range Preset Buttons for Homepage */}
+              <div className="mt-3">
+                <Label className="text-xs text-muted-foreground mb-2 block">Vite si Encar.com:</Label>
+                <div className="flex flex-wrap gap-1">
+                  {yearRangePresets.slice(0, 4).map((preset) => (
+                    <Button
+                      key={preset.label}
+                      variant={
+                        filters.from_year === preset.from.toString() && 
+                        filters.to_year === preset.to.toString() 
+                          ? "default" 
+                          : "outline"
+                      }
+                      size="sm"
+                      className="h-8 px-3 text-xs"
+                      onClick={() => handleYearRangePreset(preset)}
+                    >
+                      {preset.label}
+                    </Button>
+                  ))}
+                  {(filters.from_year || filters.to_year) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-2 text-xs text-muted-foreground"
+                      onClick={() => onFiltersChange({
+                        ...filters,
+                        from_year: undefined,
+                        to_year: undefined
+                      })}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
 
 
@@ -411,10 +473,47 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                       const currentYear = new Date().getFullYear();
                       const to = (!generation.to_year || generation.to_year >= currentYear) ? 'sot' : generation.to_year.toString();
                       return ` (${from}-${to})`;
-                    })() : ''}`
+                    })() : ''} • ${generation.cars_qty} makina`
                   }))
                 ]}
               />
+              
+              {/* Year Range Preset Buttons */}
+              <div className="mt-2">
+                <Label className="text-xs text-muted-foreground mb-2 block">Vite të shpejta (si Encar.com):</Label>
+                <div className="flex flex-wrap gap-1">
+                  {yearRangePresets.map((preset) => (
+                    <Button
+                      key={preset.label}
+                      variant={
+                        filters.from_year === preset.from.toString() && 
+                        filters.to_year === preset.to.toString() 
+                          ? "default" 
+                          : "outline"
+                      }
+                      size="sm"
+                      className="h-7 px-2 text-xs"
+                      onClick={() => handleYearRangePreset(preset)}
+                    >
+                      {preset.label}
+                    </Button>
+                  ))}
+                  {(filters.from_year || filters.to_year) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2 text-xs text-muted-foreground"
+                      onClick={() => onFiltersChange({
+                        ...filters,
+                        from_year: undefined,
+                        to_year: undefined
+                      })}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -459,7 +558,49 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 <Label className="text-sm font-medium flex items-center gap-2">
                   <Calendar className="h-3 w-3" />
                   Viti
+                  {(filters.from_year || filters.to_year) && (
+                    <Badge variant="secondary" className="text-xs">
+                      {filters.from_year || 'Çdo vit'} - {filters.to_year || 'sot'}
+                    </Badge>
+                  )}
                 </Label>
+                
+                {/* Quick Year Range Presets - Same as in generation section */}
+                <div className="mb-3">
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {yearRangePresets.map((preset) => (
+                      <Button
+                        key={preset.label}
+                        variant={
+                          filters.from_year === preset.from.toString() && 
+                          filters.to_year === preset.to.toString() 
+                            ? "default" 
+                            : "outline"
+                        }
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => handleYearRangePreset(preset)}
+                      >
+                        {preset.label}
+                      </Button>
+                    ))}
+                    {(filters.from_year || filters.to_year) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-xs text-muted-foreground"
+                        onClick={() => onFiltersChange({
+                          ...filters,
+                          from_year: undefined,
+                          to_year: undefined
+                        })}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                
                 <div className="grid grid-cols-2 gap-2">
                   <AdaptiveSelect 
                     value={filters.from_year || 'all'} 
