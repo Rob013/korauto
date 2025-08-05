@@ -7,7 +7,7 @@ import { Filter, X, Loader2, Search } from "lucide-react";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS } from '@/hooks/useAuctionAPI';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ManufacturerLogo } from "@/components/ui/manufacturer-logo";
+
 
 
 // Debounce utility function
@@ -375,11 +375,6 @@ const FilterForm = memo<FilterFormProps>(({
                 value: manufacturer.id.toString(),
                 label: (
                   <div className="flex items-center gap-2">
-                    <ManufacturerLogo 
-                      manufacturerName={manufacturer.name}
-                      size="sm"
-                      className="flex-shrink-0"
-                    />
                     <span className="truncate">{manufacturer.name} ({manufacturer.cars_qty})</span>
                   </div>
                 )
