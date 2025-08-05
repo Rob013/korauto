@@ -1,12 +1,33 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import CarCard from "@/components/CarCard";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Heart, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
+const Footer = lazy(() => import("@/components/Footer"));
+
+const FooterSkeleton = () => (
+  <footer className="bg-card">
+    <div className="container-responsive py-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="space-y-3">
+            <Skeleton className="h-5 w-24" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </footer>
+);
 
 interface FavoriteCar {
   id: string;
@@ -117,7 +138,9 @@ const FavoritesPage = () => {
             </Button>
           </div>
         </div>
-        <Footer />
+        <Suspense fallback={<FooterSkeleton />}>
+          <Footer />
+        </Suspense>
       </div>
     );
   }
@@ -130,7 +153,9 @@ const FavoritesPage = () => {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading your favorites...</p>
         </div>
-        <Footer />
+        <Suspense fallback={<FooterSkeleton />}>
+          <Footer />
+        </Suspense>
       </div>
     );
   }
@@ -182,7 +207,9 @@ const FavoritesPage = () => {
           </div>
         )}
       </div>
-      <Footer />
+      <Suspense fallback={<FooterSkeleton />}>
+        <Footer />
+      </Suspense>
     </div>
   );
 };

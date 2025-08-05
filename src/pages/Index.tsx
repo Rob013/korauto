@@ -66,7 +66,6 @@ const Index = () => {
     // Initialize analytics tracking for homepage
     initializeAnalytics();
     trackPageView(undefined, { page_type: 'homepage' });
-    console.log('Index page loaded');
   }, []);
 
   return (

@@ -20,38 +20,32 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    // Enable source maps for debugging
-    sourcemap: mode === 'development',
-    
-    // Optimize chunk splitting
+    // Enable gzip compression and optimize chunks
+    cssCodeSplit: true,
     rollupOptions: {
       output: {
         manualChunks: {
-          // Vendor chunks for better caching
-          'react-vendor': ['react', 'react-dom'],
-          'router-vendor': ['react-router-dom'],
-          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-tabs'],
-          'utils-vendor': ['clsx', 'class-variance-authority', 'tailwind-merge'],
-          'supabase-vendor': ['@supabase/supabase-js'],
-          'query-vendor': ['@tanstack/react-query'],
+          // Separate vendor chunks for better caching
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select', '@radix-ui/react-tabs'],
+          supabase: ['@supabase/supabase-js'],
+          query: ['@tanstack/react-query'],
+          utils: ['clsx', 'tailwind-merge', 'date-fns', 'zod'],
         },
       },
     },
-    
+    // Optimize chunk size warnings
+    chunkSizeWarningLimit: 1000,
     // Enable minification
     minify: 'terser',
     terserOptions: {
       compress: {
         drop_console: mode === 'production',
-        drop_debugger: mode === 'production',
+        drop_debugger: true,
       },
     },
-    
-    // Optimize chunk size warnings
-    chunkSizeWarningLimit: 1000,
   },
-  
-  // Optimize dependencies
+  // Optimize dependency pre-bundling
   optimizeDeps: {
     include: [
       'react',
@@ -60,10 +54,5 @@ export default defineConfig(({ mode }) => ({
       '@tanstack/react-query',
       '@supabase/supabase-js',
     ],
-  },
-  
-  // CSS optimization
-  css: {
-    devSourcemap: mode === 'development',
   },
 }));

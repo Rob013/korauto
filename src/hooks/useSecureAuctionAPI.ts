@@ -1,6 +1,79 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+// Create fallback manufacturer data without logos
+export const createFallbackManufacturers = () => {
+  const fallbackData = [
+    // German brands (priority)
+    { id: 9, name: 'BMW', cars_qty: 245 },
+    { id: 16, name: 'Mercedes-Benz', cars_qty: 189 },
+    { id: 1, name: 'Audi', cars_qty: 167 },
+    { id: 147, name: 'Volkswagen', cars_qty: 134 },
+    { id: 13, name: 'Porsche', cars_qty: 27 },
+    { id: 22, name: 'Opel', cars_qty: 45 },
+    
+    // Korean brands
+    { id: 7, name: 'Hyundai', cars_qty: 112 },
+    { id: 8, name: 'Kia', cars_qty: 95 },
+    { id: 19, name: 'Genesis', cars_qty: 12 },
+    
+    // Japanese brands
+    { id: 3, name: 'Toyota', cars_qty: 156 },
+    { id: 2, name: 'Honda', cars_qty: 98 },
+    { id: 4, name: 'Nissan', cars_qty: 87 },
+    { id: 10, name: 'Mazda', cars_qty: 43 },
+    { id: 11, name: 'Subaru', cars_qty: 29 },
+    { id: 12, name: 'Lexus', cars_qty: 38 },
+    { id: 17, name: 'Infiniti', cars_qty: 18 },
+    { id: 18, name: 'Acura', cars_qty: 15 },
+    { id: 23, name: 'Mitsubishi', cars_qty: 25 },
+    
+    // American brands
+    { id: 5, name: 'Ford', cars_qty: 76 },
+    { id: 6, name: 'Chevrolet', cars_qty: 54 },
+    { id: 24, name: 'Cadillac', cars_qty: 18 },
+    { id: 25, name: 'GMC', cars_qty: 15 },
+    { id: 20, name: 'Tesla', cars_qty: 8 },
+    { id: 26, name: 'Chrysler', cars_qty: 12 },
+    { id: 27, name: 'Jeep', cars_qty: 22 },
+    { id: 28, name: 'Dodge', cars_qty: 16 },
+    
+    // Luxury/European brands
+    { id: 14, name: 'Land Rover', cars_qty: 22 },
+    { id: 21, name: 'Jaguar', cars_qty: 9 },
+    { id: 15, name: 'Volvo', cars_qty: 31 },
+    { id: 29, name: 'Ferrari', cars_qty: 3 },
+    { id: 30, name: 'Lamborghini', cars_qty: 2 },
+    { id: 31, name: 'Maserati', cars_qty: 4 },
+    { id: 32, name: 'Bentley', cars_qty: 2 },
+    { id: 33, name: 'Rolls-Royce', cars_qty: 1 },
+    { id: 34, name: 'Aston Martin', cars_qty: 2 },
+    { id: 35, name: 'McLaren', cars_qty: 1 },
+    { id: 43, name: 'Mini', cars_qty: 14 },
+    
+    // French brands
+    { id: 36, name: 'Peugeot', cars_qty: 28 },
+    { id: 37, name: 'Renault', cars_qty: 35 },
+    { id: 38, name: 'Citroën', cars_qty: 18 },
+    
+    // Italian brands
+    { id: 39, name: 'Fiat', cars_qty: 22 },
+    { id: 40, name: 'Alfa Romeo', cars_qty: 11 },
+    
+    // Other European brands
+    { id: 41, name: 'Skoda', cars_qty: 24 },
+    { id: 42, name: 'Seat', cars_qty: 16 }
+  ];
+  
+  return fallbackData.map(manufacturer => ({
+    id: manufacturer.id,
+    name: manufacturer.name,
+    cars_qty: manufacturer.cars_qty,
+    car_count: manufacturer.cars_qty
+  }));
+};
+
+
 interface Lot {
   buy_now?: number;
   odometer?: { km?: number };
@@ -184,6 +257,8 @@ interface Manufacturer {
   id: number;
   name: string;
   car_count?: number;
+  cars_qty?: number;
+  image?: string;
 }
 
 interface Model {
@@ -452,20 +527,39 @@ export const useSecureAuctionAPI = () => {
     try {
       console.log(`🔍 Fetching all manufacturers`);
       
-      // Get all manufacturers with high per_page limit
+      // Try to get manufacturers from API first
       const data = await makeSecureAPICall("manufacturers/cars", {
         per_page: "1000", // Get all manufacturers
         simple_paginate: "0"
       });
       
-      const manufacturers = data.data || [];
-      console.log(`✅ Found ${manufacturers.length} manufacturers:`, 
-        manufacturers.map(m => `${m.name} (${m.car_count || 0} cars)`));
+      let manufacturers = data.data || [];
+      
+      // If we got manufacturers from API, normalize them
+      if (manufacturers.length > 0) {
+        console.log(`✅ Found ${manufacturers.length} manufacturers from API`);
+        manufacturers = manufacturers.map(manufacturer => ({
+          id: manufacturer.id,
+          name: manufacturer.name,
+          cars_qty: manufacturer.cars_qty || manufacturer.car_count || 0,
+          car_count: manufacturer.car_count || manufacturer.cars_qty || 0
+        }));
+      } else {
+        // No manufacturers from API, use fallback data
+        console.log(`⚠️ No manufacturers from API, using fallback data`);
+        manufacturers = createFallbackManufacturers();
+      }
+      
+      console.log(`🏷️ Retrieved manufacturers:`, 
+        manufacturers.slice(0, 5).map(m => `${m.name} (${m.cars_qty || 0} cars)`));
       
       return manufacturers;
     } catch (err) {
       console.error("❌ Error fetching manufacturers:", err);
-      return [];
+      console.log(`🔄 Using fallback manufacturer data`);
+      
+      // Return fallback data when API fails
+      return createFallbackManufacturers();
     }
   };
 
@@ -494,19 +588,91 @@ export const useSecureAuctionAPI = () => {
 
   const fetchGenerations = async (modelId: string): Promise<Generation[]> => {
     try {
+      // First try to fetch generations from a dedicated endpoint
+      let generationsFromAPI: Generation[] = [];
+      try {
+        const generationResponse = await makeSecureAPICall(`generations/${modelId}`, {});
+        if (generationResponse.data && Array.isArray(generationResponse.data)) {
+          generationsFromAPI = generationResponse.data.filter(g => g && g.id && g.name);
+          console.log(`🎯 Found ${generationsFromAPI.length} generations from dedicated API endpoint`);
+        }
+      } catch (err) {
+        console.log('📍 No dedicated generations endpoint, falling back to car data extraction');
+      }
+
+      // If we have API generations with proper year data, use them
+      if (generationsFromAPI.length > 0 && generationsFromAPI.some(g => g.from_year || g.to_year)) {
+        console.log('✅ Using generations with real API year data');
+        return generationsFromAPI.sort((a, b) => a.name.localeCompare(b.name));
+      }
+
+      // Fallback: extract generations from car data but prioritize API generation data
       const carResponse = await makeSecureAPICall('cars', {
         model_id: modelId,
         per_page: '20',
         simple_paginate: '0'
       });
       const cars = carResponse.data || [];
-      const generations = extractGenerationsFromCars(cars).filter(g => g && g.id && g.name);
-      generations.sort((a, b) => a.name.localeCompare(b.name));
-      return generations;
+      
+      // Use API generations if available, otherwise extract from cars
+      let generations: Generation[];
+      if (generationsFromAPI.length > 0) {
+        // We have API generations but no year data, so we'll enhance them with car year data
+        console.log('📊 Enhancing API generations with car year data');
+        generations = enhanceGenerationsWithCarYears(generationsFromAPI, cars);
+      } else {
+        // No API generations, extract everything from car data
+        console.log('🔄 Extracting generations from car data');
+        generations = extractGenerationsFromCars(cars);
+      }
+      
+      const filteredGenerations = generations.filter(g => g && g.id && g.name);
+      filteredGenerations.sort((a, b) => a.name.localeCompare(b.name));
+      return filteredGenerations;
     } catch (err) {
       console.error('[fetchGenerations] Error:', err);
       return [];
     }
+  };
+
+  // Helper function to enhance API generations with car year data
+  const enhanceGenerationsWithCarYears = (apiGenerations: Generation[], cars: Car[]): Generation[] => {
+    const yearDataMap = new Map<number, { from_year?: number; to_year?: number; car_count: number }>();
+    
+    // Extract year data from cars for each generation
+    cars.forEach(car => {
+      if (car.generation && car.generation.id && car.year) {
+        const genId = car.generation.id;
+        const existing = yearDataMap.get(genId);
+        
+        if (existing) {
+          existing.car_count++;
+          if (!existing.from_year || car.year < existing.from_year) {
+            existing.from_year = car.year;
+          }
+          if (!existing.to_year || car.year > existing.to_year) {
+            existing.to_year = car.year;
+          }
+        } else {
+          yearDataMap.set(genId, {
+            from_year: car.year,
+            to_year: car.year,
+            car_count: 1
+          });
+        }
+      }
+    });
+
+    // Enhance API generations with extracted year data
+    return apiGenerations.map(gen => {
+      const yearData = yearDataMap.get(gen.id);
+      return {
+        ...gen,
+        from_year: gen.from_year || yearData?.from_year,
+        to_year: gen.to_year || yearData?.to_year,
+        cars_qty: gen.cars_qty || yearData?.car_count || 0
+      };
+    });
   };
 
   const fetchFilterCounts = async (

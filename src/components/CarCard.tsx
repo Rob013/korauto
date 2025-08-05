@@ -27,10 +27,10 @@ import {
   XCircle,
 } from "lucide-react";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
-import { useState, useEffect, memo } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { OptimizedImage } from "@/components/ui/optimized-image";
+import { OptimizedImage } from "@/components/OptimizedImage";
 interface CarCardProps {
   id: string;
   make: string;
@@ -208,7 +208,7 @@ interface CarCardProps {
     seats_count?: number;
   };
 }
-const CarCard = memo(({
+const CarCard = ({
   id,
   make,
   model,
@@ -363,26 +363,35 @@ const CarCard = memo(({
 
     // Save current page for back navigation
     setPreviousPage(window.location.pathname + window.location.search);
-    // Navigate in same tab
-    navigate(`/car/${lot}`);
+    // Open car details in new tab
+    window.open(`/car/${lot}`, '_blank');
   };
   return (
     <div
-      className="bg-card rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-border cursor-pointer group touch-manipulation"
+      className="bg-card rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-border cursor-pointer group touch-manipulation relative"
       onClick={handleCardClick}
+      style={{
+        // Prevent layout shifts by setting fixed dimensions
+        minHeight: '320px',
+        aspectRatio: '280/320'
+      }}
     >
-      <div className="relative h-48 sm:h-52 bg-muted overflow-hidden">
+      <div className="relative h-40 bg-muted overflow-hidden">
         {image ? (
           <OptimizedImage
             src={image}
             alt={`${year} ${make} ${model}`}
             className="w-full h-full group-hover:scale-105 transition-transform duration-300"
-            width={400}
-            height={300}
-            quality={85}
+            width={280}
+            priority={false}
+            enableLazyLoad={true}
+            enableProgressiveLoad={true}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-muted">
+          <div 
+            className="w-full h-full flex items-center justify-center bg-muted"
+            style={{ aspectRatio: '280/160' }}
+          >
             <Car className="h-16 w-16 text-muted-foreground" />
           </div>
         )}
@@ -400,86 +409,74 @@ const CarCard = memo(({
         )}
       </div>
 
-      <div className="p-4 sm:p-5">
-        <div className="mb-3">
-          <h3 className="text-lg sm:text-xl font-semibold text-foreground line-clamp-2">
+      <div className="p-3 flex flex-col flex-1" style={{ minHeight: '160px' }}>
+        <div className="mb-2">
+          <h3 className="text-base font-semibold text-foreground line-clamp-1" style={{ minHeight: '1.5rem' }}>
             {year} {make} {model}
           </h3>
           {title && title !== `${make} ${model}` && (
-            <p className="text-sm text-muted-foreground mb-1 line-clamp-1">
+            <p className="text-xs text-muted-foreground line-clamp-1" style={{ minHeight: '1rem' }}>
               {title}
             </p>
           )}
         </div>
 
-        {/* Basic Vehicle Info */}
-        <div className="space-y-2 mb-4 text-sm">
+        {/* Compact Vehicle Info - Grid Layout with fixed heights */}
+        <div className="grid grid-cols-2 gap-2 mb-3 text-xs" style={{ minHeight: '3rem' }}>
           {mileage && (
-            <div className="flex items-center gap-2">
-              <Gauge className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="truncate">{mileage}</span>
+            <div className="flex items-center gap-1">
+              <Gauge className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="truncate text-muted-foreground">{mileage}</span>
             </div>
           )}
           {transmission && (
-            <div className="flex items-center gap-2">
-              <Settings className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate">{transmission}</span>
+            <div className="flex items-center gap-1">
+              <Settings className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="capitalize truncate text-muted-foreground">{transmission}</span>
             </div>
           )}
           {fuel && (
-            <div className="flex items-center gap-2">
-              <Fuel className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate">{fuel}</span>
+            <div className="flex items-center gap-1">
+              <Fuel className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="capitalize truncate text-muted-foreground">{fuel}</span>
             </div>
           )}
           {color && (
-            <div className="flex items-center gap-2">
-              <Palette className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate">{color}</span>
+            <div className="flex items-center gap-1">
+              <Palette className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="capitalize truncate text-muted-foreground">{color}</span>
             </div>
           )}
         </div>
 
-        {/* Technical Details */}
-        <div className="mb-4"></div>
-
-        {/* Quick Status Indicators */}
-
-        {/* Pricing Information */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-          <span className="text-xl sm:text-2xl font-bold text-primary">
-            €{price.toLocaleString()}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            Deri ne portin e Durresit
-          </span>
+        {/* Compact Pricing and Action - Push to bottom */}
+        <div className="space-y-2 mt-auto">
+          <div className="flex items-center justify-between">
+            <span className="text-lg font-bold text-primary">
+              €{price.toLocaleString()}
+            </span>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleFavoriteToggle}
+              className="h-8 w-8 p-0 hover:bg-muted touch-target"
+              style={{ minHeight: '44px', minWidth: '44px' }}
+            >
+              <Heart
+                className={`h-4 w-4 ${
+                  isFavorite ? "fill-red-500 text-red-500" : ""
+                }`}
+              />
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">Deri ne portin e Durresit</p>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-2 mb-4">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleFavoriteToggle}
-            className="border border-border hover:bg-muted flex-1"
-          >
-            <Heart
-              className={`h-4 w-4 mr-1 ${
-                isFavorite ? "fill-red-500 text-red-500" : ""
-              }`}
-            />
-            {isFavorite ? "Favorit" : "Ruaj"}
-          </Button>
-        </div>
-
-        <div className="text-center">
-          <p className="text-xs text-muted-foreground">KORAUTO</p>
+        <div className="text-center pt-2 border-t border-border/50">
+          <p className="text-xs text-muted-foreground font-medium">KORAUTO</p>
         </div>
       </div>
     </div>
   );
-});
-
-CarCard.displayName = 'CarCard';
-
+};
 export default CarCard;
