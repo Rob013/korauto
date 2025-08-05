@@ -1211,6 +1211,9 @@ const AdminDashboard = () => {
                                       {carDetails[request.car_id].year} {carDetails[request.car_id].make} {carDetails[request.car_id].model}
                                     </div>
                                     <div className="text-xs text-muted-foreground">ID: {request.car_id}</div>
+                                    {carDetails[request.car_id].lot_number && (
+                                      <div className="text-xs text-muted-foreground">Lot: {carDetails[request.car_id].lot_number}</div>
+                                    )}
                                   </div>
                                 </div>
                               ) : request.car_id ? (
@@ -1358,6 +1361,9 @@ const AdminDashboard = () => {
                               <div className="mb-2">
                                 <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
                                   <span>{car.year} {car.make} {car.model}</span>
+                                  {car.lot_number && (
+                                    <span className="text-primary/70">• Lot: {car.lot_number}</span>
+                                  )}
                                 </div>
                               </div>
                             )}
