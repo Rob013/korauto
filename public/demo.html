@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lot Number API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-case {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            background-color: #fafafa;
+        }
+        .loading {
+            color: #666;
+        }
+        .success {
+            color: #28a745;
+        }
+        .error {
+            color: #dc3545;
+        }
+        .lot-number {
+            font-weight: bold;
+            color: #007bff;
+        }
+        .api-indicator {
+            color: #28a745;
+            font-weight: bold;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚗 KORAUTO Admin Dashboard - Lot Number API Test</h1>
+        <p>This demonstrates the real-time lot number fetching functionality implemented for inspection requests.</p>
+        
+        <h2>📋 Simulated Inspection Requests</h2>
+        <div id="inspection-requests">
+            <!-- Will be populated by JavaScript -->
+        </div>
+        
+        <button onclick="simulateFetchRealLotNumbers()">🔄 Fetch Real Lot Numbers from API</button>
+        <button onclick="resetDemo()">↻ Reset Demo</button>
+        
+        <h2>📊 Implementation Details</h2>
+        <div class="test-case">
+            <h3>✅ Key Features Implemented:</h3>
+            <ul>
+                <li><strong>Real-time API fetching:</strong> Gets fresh lot numbers from secure-cars-api</li>
+                <li><strong>Visual indicators:</strong> ✓ shows API-sourced data, ⟳ shows loading</li>
+                <li><strong>Graceful fallback:</strong> Shows cached data if API fails</li>
+                <li><strong>Non-blocking UI:</strong> Shows cached data immediately, updates with API data</li>
+                <li><strong>Error handling:</strong> Continues to work even if some API calls fail</li>
+            </ul>
+        </div>
+        
+        <div class="test-case">
+            <h3>🔧 Technical Implementation:</h3>
+            <ul>
+                <li><strong>State Management:</strong> <code>realLotNumbers</code> and <code>fetchingLotNumbers</code> states</li>
+                <li><strong>API Integration:</strong> Uses existing <code>secure-cars-api</code> function</li>
+                <li><strong>Performance:</strong> Parallel fetching with <code>Promise.allSettled</code></li>
+                <li><strong>UI Updates:</strong> Both desktop table and mobile card views updated</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Simulated inspection requests data
+        const mockInspectionRequests = [
+            {
+                id: '1',
+                customer_name: 'John Smith',
+                customer_email: 'john@example.com',
+                car_id: '12345678',
+                cached_lot_number: 'LOT12345',
+                status: 'pending'
+            },
+            {
+                id: '2',
+                customer_name: 'Jane Doe',
+                customer_email: 'jane@example.com',
+                car_id: '87654321',
+                cached_lot_number: 'LOT54321',
+                status: 'in_progress'
+            },
+            {
+                id: '3',
+                customer_name: 'Bob Johnson',
+                customer_email: 'bob@example.com',
+                car_id: '11223344',
+                cached_lot_number: 'LOT99999',
+                status: 'pending'
+            }
+        ];
+
+        // Simulated API responses (real implementation would fetch from secure-cars-api)
+        const mockApiResponses = {
+            '12345678': 'LOT12345A', // Different from cached
+            '87654321': 'LOT54321',  // Same as cached
+            '11223344': 'LOT88888'   // Different from cached
+        };
+
+        let realLotNumbers = {};
+        let fetchingLotNumbers = {};
+
+        function renderInspectionRequests() {
+            const container = document.getElementById('inspection-requests');
+            
+            container.innerHTML = mockInspectionRequests.map(request => `
+                <div class="test-case">
+                    <h4>👤 ${request.customer_name}</h4>
+                    <p><strong>Email:</strong> ${request.customer_email}</p>
+                    <p><strong>Car ID:</strong> ${request.car_id}</p>
+                    <p><strong>Status:</strong> ${request.status}</p>
+                    <p>
+                        <strong>Lot Number:</strong> 
+                        <span class="lot-number">
+                            ${realLotNumbers[request.car_id] || request.cached_lot_number}
+                        </span>
+                        ${fetchingLotNumbers[request.car_id] ? '<span class="spinner loading">⟳</span>' : ''}
+                        ${realLotNumbers[request.car_id] && realLotNumbers[request.car_id] !== request.cached_lot_number ? 
+                            '<span class="api-indicator" title="Real-time from API">✓</span>' : ''}
+                    </p>
+                    ${realLotNumbers[request.car_id] ? 
+                        `<p class="success">📡 Real-time data from API</p>` : 
+                        `<p class="loading">💾 Showing cached data</p>`
+                    }
+                </div>
+            `).join('');
+        }
+
+        async function simulateFetchRealLotNumbers() {
+            // Reset real lot numbers
+            realLotNumbers = {};
+            
+            // Set loading state for all cars
+            mockInspectionRequests.forEach(request => {
+                fetchingLotNumbers[request.car_id] = true;
+            });
+            
+            renderInspectionRequests();
+
+            // Simulate API calls with different delays
+            await Promise.allSettled(
+                mockInspectionRequests.map(async (request, index) => {
+                    // Simulate network delay
+                    await new Promise(resolve => setTimeout(resolve, 1000 + (index * 500)));
+                    
+                    // Simulate API response
+                    const apiLotNumber = mockApiResponses[request.car_id];
+                    if (apiLotNumber) {
+                        realLotNumbers[request.car_id] = apiLotNumber;
+                    }
+                    
+                    // Clear loading state
+                    fetchingLotNumbers[request.car_id] = false;
+                    
+                    // Update UI
+                    renderInspectionRequests();
+                })
+            );
+
+            console.log('Final real lot numbers:', realLotNumbers);
+        }
+
+        function resetDemo() {
+            realLotNumbers = {};
+            fetchingLotNumbers = {};
+            renderInspectionRequests();
+        }
+
+        // Initial render
+        renderInspectionRequests();
+    </script>
+</body>
+</html>
