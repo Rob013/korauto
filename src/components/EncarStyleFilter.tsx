@@ -165,7 +165,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   const currentYear = useMemo(() => new Date().getFullYear(), []);
   const years = useMemo(() => Array.from({ length: 25 }, (_, i) => currentYear - i), [currentYear]);
   
-  // Year range presets like Encar.com
+  // Year range presets
   const yearRangePresets = useMemo(() => [
     { label: '2023+', from: 2023, to: currentYear },
     { label: '2020+', from: 2020, to: currentYear },
@@ -236,6 +236,250 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
         : [...prev, section]
     );
   };
+
+  // Compact mode for sidebar
+  if (compact) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Search Cars</h3>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onClearFilters}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        
+        {/* Basic filters */}
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <Car className="h-3 w-3" />
+              Brand
+            </Label>
+            <AdaptiveSelect 
+              value={filters.manufacturer_id || 'all'} 
+              onValueChange={(value) => updateFilter('manufacturer_id', value)}
+              placeholder="Select brand"
+              className="h-10"
+              options={[
+                { value: 'all', label: 'All Brands' },
+                ...sortedManufacturers.map((manufacturer) => ({
+                  value: manufacturer.id.toString(),
+                  label: (
+                    <div className="flex items-center gap-2">
+                      {manufacturer.image && (
+                        <img src={manufacturer.image} alt={manufacturer.name} className="w-4 h-4 object-contain" />
+                      )}
+                      <span>{manufacturer.name} ({manufacturer.cars_qty})</span>
+                    </div>
+                  )
+                }))
+              ]}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <Settings className="h-3 w-3" />
+              Model
+            </Label>
+            <AdaptiveSelect 
+              value={filters.model_id || 'all'} 
+              onValueChange={(value) => updateFilter('model_id', value)}
+              disabled={!filters.manufacturer_id}
+              placeholder={filters.manufacturer_id ? "Select model" : "Select brand first"}
+              className="h-10"
+              options={[
+                { value: 'all', label: 'All Models' },
+                ...models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => ({
+                  value: model.id.toString(),
+                  label: `${model.name} (${model.cars_qty})`
+                }))
+              ]}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <Calendar className="h-3 w-3" />
+              Generation
+            </Label>
+            <AdaptiveSelect 
+              value={filters.generation_id || 'all'} 
+              onValueChange={(value) => updateFilter('generation_id', value)}
+              disabled={!filters.model_id}
+              placeholder={filters.model_id ? "Generations" : "Select model first"}
+              className="h-10"
+              options={[
+                { value: 'all', label: 'All Generations' },
+                ...generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => ({
+                  value: generation.id.toString(),
+                  label: `${generation.name}${generation.from_year ? (() => {
+                    const from = generation.from_year.toString();
+                    const currentYear = new Date().getFullYear();
+                    const to = (!generation.to_year || generation.to_year >= currentYear) ? 'now' : generation.to_year.toString();
+                    return ` (${from}-${to})`;
+                  })() : ''} • ${generation.cars_qty} cars`
+                }))
+              ]}
+            />
+          </div>
+
+          {/* Price Range */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <DollarSign className="h-3 w-3" />
+              Price (EUR)
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                type="number"
+                placeholder="From"
+                value={filters.buy_now_price_from || ''}
+                onChange={(e) => updateFilter('buy_now_price_from', e.target.value)}
+                className="h-10"
+              />
+              <Input
+                type="number"
+                placeholder="To"
+                value={filters.buy_now_price_to || ''}
+                onChange={(e) => updateFilter('buy_now_price_to', e.target.value)}
+                className="h-10"
+              />
+            </div>
+          </div>
+
+          {/* Year presets */}
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Year Range:</Label>
+            <div className="flex flex-wrap gap-1">
+              {yearRangePresets.slice(0, 4).map((preset) => (
+                <Button
+                  key={preset.label}
+                  variant={
+                    filters.from_year === preset.from.toString() && 
+                    filters.to_year === preset.to.toString() 
+                      ? "default" 
+                      : "outline"
+                  }
+                  size="sm"
+                  className="h-8 px-2 text-xs"
+                  onClick={() => handleYearRangePreset(preset)}
+                >
+                  {preset.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Additional Filters Toggle */}
+          <Button
+            variant="ghost"
+            onClick={() => toggleSection('more')}
+            className="w-full justify-between text-sm"
+          >
+            More Filters
+            {expandedSections.includes('more') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+
+          {expandedSections.includes('more') && (
+            <div className="space-y-3 pt-2 border-t">
+              {/* Color, Fuel, Transmission in compact layout */}
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <Palette className="h-3 w-3" />
+                    Color
+                  </Label>
+                  <AdaptiveSelect 
+                    value={filters.color || 'all'} 
+                    onValueChange={(value) => updateFilter('color', value)}
+                    placeholder="Any color"
+                    className="h-10"
+                    options={[
+                      { value: 'all', label: 'Any color' },
+                      ...Object.entries(COLOR_OPTIONS).map(([value, label]) => ({
+                        value,
+                        label
+                      }))
+                    ]}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <Fuel className="h-3 w-3" />
+                    Fuel
+                  </Label>
+                  <AdaptiveSelect 
+                    value={filters.fuel_type || 'all'} 
+                    onValueChange={(value) => updateFilter('fuel_type', value)}
+                    placeholder="Any type"
+                    className="h-10"
+                    options={[
+                      { value: 'all', label: 'Any type' },
+                      ...Object.entries(FUEL_TYPE_OPTIONS).map(([value, label]) => ({
+                        value,
+                        label
+                      }))
+                    ]}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <Settings className="h-3 w-3" />
+                    Transmission
+                  </Label>
+                  <AdaptiveSelect 
+                    value={filters.transmission || 'all'} 
+                    onValueChange={(value) => updateFilter('transmission', value)}
+                    placeholder="Any type"
+                    className="h-10"
+                    options={[
+                      { value: 'all', label: 'Any type' },
+                      ...Object.entries(TRANSMISSION_OPTIONS).map(([value, label]) => ({
+                        value,
+                        label
+                      }))
+                    ]}
+                  />
+                </div>
+
+                {/* Mileage */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <MapPin className="h-3 w-3" />
+                    Mileage (km)
+                  </Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      type="number"
+                      placeholder="From"
+                      value={filters.odometer_from_km || ''}
+                      onChange={(e) => updateFilter('odometer_from_km', e.target.value)}
+                      className="h-10"
+                    />
+                    <Input
+                      type="number"
+                      placeholder="To"
+                      value={filters.odometer_to_km || ''}
+                      onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
+                      className="h-10"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   // Homepage style - compact single row
   if (isHomepage) {
@@ -532,7 +776,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   ]}
                 />
                 
-                {/* Year Range Preset Buttons - Compact without Encar.com text */}
+                {/* Year Range Preset Buttons - Compact layout */}
                 <div className="mt-2">
                   <Label className="text-xs text-muted-foreground mb-2 block">Vitet:</Label>
                   <div className="flex flex-wrap gap-1">
