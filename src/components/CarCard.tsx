@@ -368,98 +368,103 @@ const CarCard = memo(({
   };
   return (
     <div
-      className="card-mobile overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group touch-manipulation"
+      className="bg-card rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-border cursor-pointer group touch-manipulation"
       onClick={handleCardClick}
     >
-      <div className="relative h-48 sm:h-56 bg-muted overflow-hidden">
+      <div className="relative h-48 sm:h-52 bg-muted overflow-hidden">
         {image ? (
           <OptimizedImage
             src={image}
             alt={`${year} ${make} ${model}`}
-            className="mobile-image group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full group-hover:scale-105 transition-transform duration-300"
             width={400}
             height={300}
             quality={85}
           />
         ) : (
-          <div className="w-full h-full mobile-center bg-muted">
+          <div className="w-full h-full flex items-center justify-center bg-muted">
             <Car className="h-16 w-16 text-muted-foreground" />
           </div>
         )}
         {/* Sold Out Badge - Takes priority over lot number */}
         {status === 3 || sale_status === "sold" ? (
-          <div className="absolute top-3 right-3 bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-bold shadow-lg z-10">
+          <div className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded text-xs font-bold shadow-lg z-10">
             SOLD OUT
           </div>
         ) : (
           lot && (
-            <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-2 rounded-lg text-sm font-semibold">
+            <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-semibold">
               Kodi #{lot}
             </div>
           )
         )}
       </div>
 
-      <div className="mobile-padding-sm py-5">
-        <div className="mb-4">
-          <h3 className="mobile-subtitle text-foreground line-clamp-2 mb-2">
+      <div className="p-4 sm:p-5">
+        <div className="mb-3">
+          <h3 className="text-lg sm:text-xl font-semibold text-foreground line-clamp-2">
             {year} {make} {model}
           </h3>
           {title && title !== `${make} ${model}` && (
-            <p className="mobile-caption mb-2 line-clamp-1">
+            <p className="text-sm text-muted-foreground mb-1 line-clamp-1">
               {title}
             </p>
           )}
         </div>
 
         {/* Basic Vehicle Info */}
-        <div className="mobile-stack-sm mb-4 text-sm">
+        <div className="space-y-2 mb-4 text-sm">
           {mileage && (
-            <div className="flex items-center gap-3">
-              <Gauge className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+            <div className="flex items-center gap-2">
+              <Gauge className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <span className="truncate">{mileage}</span>
             </div>
           )}
           {transmission && (
-            <div className="flex items-center gap-3">
-              <Settings className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+            <div className="flex items-center gap-2">
+              <Settings className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <span className="capitalize truncate">{transmission}</span>
             </div>
           )}
           {fuel && (
-            <div className="flex items-center gap-3">
-              <Fuel className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+            <div className="flex items-center gap-2">
+              <Fuel className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <span className="capitalize truncate">{fuel}</span>
             </div>
           )}
           {color && (
-            <div className="flex items-center gap-3">
-              <Palette className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+            <div className="flex items-center gap-2">
+              <Palette className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <span className="capitalize truncate">{color}</span>
             </div>
           )}
         </div>
 
+        {/* Technical Details */}
+        <div className="mb-4"></div>
+
+        {/* Quick Status Indicators */}
+
         {/* Pricing Information */}
-        <div className="mobile-inline justify-between mb-4">
-          <span className="text-2xl sm:text-3xl font-bold text-primary">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+          <span className="text-xl sm:text-2xl font-bold text-primary">
             €{price.toLocaleString()}
           </span>
-          <span className="mobile-caption">
+          <span className="text-xs text-muted-foreground">
             Deri ne portin e Durresit
           </span>
         </div>
 
         {/* Action Buttons */}
-        <div className="mobile-stack-sm mb-4">
+        <div className="flex flex-col sm:flex-row gap-2 mb-4">
           <Button
-            size="lg"
+            size="sm"
             variant="ghost"
             onClick={handleFavoriteToggle}
-            className="btn-mobile border border-border hover:bg-muted w-full"
+            className="border border-border hover:bg-muted flex-1"
           >
             <Heart
-              className={`h-5 w-5 mr-2 ${
+              className={`h-4 w-4 mr-1 ${
                 isFavorite ? "fill-red-500 text-red-500" : ""
               }`}
             />
@@ -468,7 +473,7 @@ const CarCard = memo(({
         </div>
 
         <div className="text-center">
-          <p className="mobile-caption">KORAUTO</p>
+          <p className="text-xs text-muted-foreground">KORAUTO</p>
         </div>
       </div>
     </div>

@@ -170,24 +170,16 @@ All colors MUST be HSL.
 
   /* Mobile-first responsive utilities */
   .container-responsive {
-    @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    @apply w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8;
   }
 
-  .container-tight {
-    @apply w-full max-w-6xl mx-auto px-3 sm:px-4 md:px-6;
-  }
-
-  /* Enhanced text responsive classes */
+  /* Text responsive classes */
   .text-responsive-xs {
     @apply text-xs sm:text-sm;
   }
 
   .text-responsive-sm {
     @apply text-sm sm:text-base;
-  }
-
-  .text-responsive-base {
-    @apply text-sm sm:text-base md:text-lg;
   }
 
   .text-responsive-lg {
@@ -198,17 +190,9 @@ All colors MUST be HSL.
     @apply text-xl sm:text-2xl lg:text-3xl xl:text-4xl;
   }
 
-  .text-responsive-2xl {
-    @apply text-2xl sm:text-3xl lg:text-4xl xl:text-5xl;
-  }
-
-  /* Enhanced grid responsive utilities */
+  /* Grid responsive utilities */
   .grid-responsive-cards {
-    @apply grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6;
-  }
-
-  .grid-responsive-auto {
-    @apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6;
+    @apply grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6;
   }
 
   /* Mobile touch improvements */
@@ -216,51 +200,13 @@ All colors MUST be HSL.
     @apply min-h-[44px] min-w-[44px];
   }
 
-  .touch-target-lg {
-    @apply min-h-[48px] min-w-[48px];
-  }
-
-  /* Enhanced mobile spacing */
   .mobile-padding {
-    @apply px-4 sm:px-6 lg:px-8;
-  }
-
-  .mobile-padding-sm {
-    @apply px-3 sm:px-4 md:px-6;
-  }
-
-  .mobile-padding-lg {
-    @apply px-6 sm:px-8 lg:px-10;
-  }
-
-  .mobile-margin {
-    @apply mx-4 sm:mx-6 lg:mx-8;
-  }
-
-  .mobile-gap {
-    @apply gap-3 sm:gap-4 md:gap-6;
-  }
-
-  /* Mobile-optimized sections */
-  .mobile-section {
-    @apply py-8 sm:py-12 lg:py-16;
-  }
-
-  .mobile-section-sm {
-    @apply py-6 sm:py-8 lg:py-12;
-  }
-
-  .mobile-section-lg {
-    @apply py-12 sm:py-16 lg:py-20;
+    @apply px-3 sm:px-4 lg:px-6;
   }
 
   /* Button enhancements */
   .btn-enhanced {
-    @apply transition-all duration-200 transform hover:scale-105 active:scale-95 touch-target;
-  }
-
-  .btn-mobile {
-    @apply touch-target-lg text-base sm:text-sm font-medium rounded-lg transition-all duration-200;
+    @apply transition-all duration-200 transform hover:scale-105 active:scale-95;
   }
 
   /* Card enhancements */
@@ -268,70 +214,9 @@ All colors MUST be HSL.
     @apply hover-lift border-0 shadow-lg hover:shadow-xl transition-all duration-300;
   }
 
-  .card-mobile {
-    @apply rounded-xl border border-border bg-card shadow-sm hover:shadow-md transition-all duration-200;
-  }
-
   /* Focus improvements for accessibility */
   .focus-enhanced {
     @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 focus:ring-offset-2;
-  }
-
-  /* Mobile navigation improvements */
-  .mobile-nav-item {
-    @apply touch-target-lg flex items-center justify-start w-full text-left px-4 py-3 rounded-lg text-base font-medium transition-all duration-200;
-  }
-
-  /* Mobile form improvements */
-  .mobile-input {
-    @apply touch-target h-12 px-4 text-base rounded-lg border border-input bg-background transition-colors;
-  }
-
-  .mobile-textarea {
-    @apply min-h-[120px] p-4 text-base rounded-lg border border-input bg-background resize-none transition-colors;
-  }
-
-  /* Mobile image optimizations */
-  .mobile-image {
-    @apply w-full h-auto object-cover rounded-lg;
-  }
-
-  .mobile-avatar {
-    @apply w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover;
-  }
-
-  /* Mobile layout helpers */
-  .mobile-stack {
-    @apply flex flex-col gap-4 sm:gap-6;
-  }
-
-  .mobile-stack-sm {
-    @apply flex flex-col gap-3 sm:gap-4;
-  }
-
-  .mobile-inline {
-    @apply flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4;
-  }
-
-  .mobile-center {
-    @apply flex flex-col items-center justify-center text-center;
-  }
-
-  /* Mobile text utilities */
-  .mobile-title {
-    @apply text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight;
-  }
-
-  .mobile-subtitle {
-    @apply text-lg sm:text-xl lg:text-2xl font-semibold leading-snug;
-  }
-
-  .mobile-body {
-    @apply text-base sm:text-lg leading-relaxed;
-  }
-
-  .mobile-caption {
-    @apply text-sm sm:text-base text-muted-foreground;
   }
 
   /* Loading animations */
