@@ -79,10 +79,6 @@ const AdminDashboard = () => {
   const [filteredRequests, setFilteredRequests] = useState<InspectionRequest[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [carDetails, setCarDetails] = useState<{ [key: string]: CarData }>({});
-  const [realLotNumbers, setRealLotNumbers] = useState<{ [key: string]: string }>({});
-  const [fetchingLotNumbers, setFetchingLotNumbers] = useState<{
-    [key: string]: boolean;
-  }>({});
   const [searchingCars, setSearchingCars] = useState<{
     [key: string]: boolean;
   }>({});
@@ -228,85 +224,9 @@ const AdminDashboard = () => {
       });
 
       setCarDetails(carDetailsMap);
-      
-      // After setting car details, fetch real lot numbers from API
-      await fetchRealLotNumbers(uniqueCarIds);
     } catch (error) {
       console.error("Error fetching car details:", error);
     }
-  };
-
-  const fetchRealLotNumbers = async (carIds: string[]) => {
-    const uniqueCarIds = [...new Set(carIds.filter(Boolean))];
-    if (uniqueCarIds.length === 0) return;
-
-    console.log('🔍 Fetching real lot numbers from API for cars:', uniqueCarIds);
-
-    // Set loading state for all cars
-    const loadingState: { [key: string]: boolean } = {};
-    uniqueCarIds.forEach(carId => {
-      loadingState[carId] = true;
-    });
-    setFetchingLotNumbers(loadingState);
-
-    const realLotNumbersMap: { [key: string]: string } = {};
-
-    // Fetch real lot numbers from API for each car
-    await Promise.allSettled(
-      uniqueCarIds.map(async (carId) => {
-        try {
-          console.log(`🚗 Fetching real lot number for car: ${carId}`);
-
-          const response = await fetch(
-            `https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/secure-cars-api`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0eXlpcWlta3lzbWpuYW9jc3dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0MzkxMzQsImV4cCI6MjA2OTAxNTEzNH0.lyRCHiShhW4wrGHL3G7pK5JBUHNAtgSUQACVOBGRpL8`,
-              },
-              body: JSON.stringify({
-                endpoint: "cars",
-                carId: carId,
-              }),
-            }
-          );
-
-          if (response.ok) {
-            const carData = await response.json();
-            console.log(`✅ Received car data for ${carId}:`, carData);
-
-            // Extract lot number from API response
-            let realLotNumber = null;
-            
-            if (carData.lots && carData.lots.length > 0) {
-              realLotNumber = carData.lots[0].lot;
-            } else if (carData.lot) {
-              realLotNumber = carData.lot;
-            }
-
-            if (realLotNumber) {
-              realLotNumbersMap[carId] = realLotNumber;
-              console.log(`🎯 Found real lot number for ${carId}: ${realLotNumber}`);
-            } else {
-              console.log(`⚠️ No lot number found in API response for ${carId}`);
-            }
-          } else {
-            console.error(`❌ Failed to fetch car data for ${carId}:`, response.status, response.statusText);
-          }
-        } catch (error) {
-          console.error(`❌ Error fetching real lot number for car ${carId}:`, error);
-        }
-      })
-    );
-
-    // Update state with real lot numbers
-    setRealLotNumbers(realLotNumbersMap);
-    
-    // Clear loading state
-    setFetchingLotNumbers({});
-
-    console.log('📊 Final real lot numbers:', realLotNumbersMap);
   };
 
   const fetchData = async () => {
@@ -978,15 +898,7 @@ const AdminDashboard = () => {
                                   {car.lot_number && (
                                     <div className="mt-1">
                                       <div className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
-                                        <span>
-                                          Lot: {realLotNumbers[request.car_id] || car.lot_number}
-                                          {fetchingLotNumbers[request.car_id] && (
-                                            <span className="ml-1 animate-spin">⟳</span>
-                                          )}
-                                          {realLotNumbers[request.car_id] && realLotNumbers[request.car_id] !== car.lot_number && (
-                                            <span className="ml-1 text-green-600 font-bold" title="Real-time from API">✓</span>
-                                          )}
-                                        </span>
+                                        <span>Lot: {car.lot_number}</span>
                                       </div>
                                     </div>
                                   )}
@@ -1254,15 +1166,9 @@ const AdminDashboard = () => {
                                     </div>
                                     <div className="text-xs text-muted-foreground">
                                       ID: {request.car_id}
-                                      {(realLotNumbers[request.car_id] || carDetails[request.car_id].lot_number) && (
+                                      {carDetails[request.car_id].lot_number && (
                                         <span className="ml-2 text-blue-600 font-medium">
-                                          • Lot: {realLotNumbers[request.car_id] || carDetails[request.car_id].lot_number}
-                                          {fetchingLotNumbers[request.car_id] && (
-                                            <span className="ml-1 animate-spin">⟳</span>
-                                          )}
-                                          {realLotNumbers[request.car_id] && realLotNumbers[request.car_id] !== carDetails[request.car_id].lot_number && (
-                                            <span className="ml-1 text-green-600 font-bold" title="Real-time from API">✓</span>
-                                          )}
+                                          • Lot: {carDetails[request.car_id].lot_number}
                                         </span>
                                       )}
                                     </div>
@@ -1275,17 +1181,9 @@ const AdminDashboard = () => {
                               )}
                             </td>
                             <td className="border border-border px-3 py-2">
-                              {request.car_id && (realLotNumbers[request.car_id] || carDetails[request.car_id]?.lot_number) ? (
-                                <div className="flex items-center gap-2">
-                                  <div className="text-sm font-medium text-blue-600">
-                                    {realLotNumbers[request.car_id] || carDetails[request.car_id].lot_number}
-                                  </div>
-                                  {fetchingLotNumbers[request.car_id] && (
-                                    <span className="animate-spin text-xs">⟳</span>
-                                  )}
-                                  {realLotNumbers[request.car_id] && realLotNumbers[request.car_id] !== carDetails[request.car_id]?.lot_number && (
-                                    <span className="text-green-600 font-bold text-xs" title="Real-time from API">✓</span>
-                                  )}
+                              {request.car_id && carDetails[request.car_id]?.lot_number ? (
+                                <div className="text-sm font-medium text-blue-600">
+                                  {carDetails[request.car_id].lot_number}
                                 </div>
                               ) : (
                                 <div className="text-sm text-muted-foreground">N/A</div>
@@ -1400,15 +1298,7 @@ const AdminDashboard = () => {
                                 {car.lot_number && (
                                   <div className="mt-1">
                                     <div className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
-                                      <span>
-                                        Lot: {realLotNumbers[request.car_id] || car.lot_number}
-                                        {fetchingLotNumbers[request.car_id] && (
-                                          <span className="ml-1 animate-spin">⟳</span>
-                                        )}
-                                        {realLotNumbers[request.car_id] && realLotNumbers[request.car_id] !== car.lot_number && (
-                                          <span className="ml-1 text-green-600 font-bold" title="Real-time from API">✓</span>
-                                        )}
-                                      </span>
+                                      <span>Lot: {car.lot_number}</span>
                                     </div>
                                   </div>
                                 )}
