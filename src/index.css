@@ -556,4 +556,115 @@ All colors MUST be HSL.
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+/* General Layout Alignment Fixes */
+.layout-fix {
+  /* Fix common alignment issues */
+  box-sizing: border-box;
+}
+
+/* Ensure consistent padding and margins */
+* {
+  box-sizing: border-box;
+}
+
+/* Fix button alignment issues */
+button, [role="button"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Fix text alignment in centered elements */
+.text-center {
+  text-align: center;
+}
+
+.text-center * {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Fix card alignment and spacing */
+.card, [class*="Card"] {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.card > *, [class*="Card"] > * {
+  flex-shrink: 0;
+}
+
+/* Fix grid alignment */
+[class*="grid"] {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+/* Fix flexbox alignment */
+[class*="flex"] {
+  display: flex;
+  align-items: center;
+}
+
+/* Fix image alignment and sizing */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Fix aspect ratio issues */
+.aspect-ratio-fix {
+  aspect-ratio: 16/9;
+  object-fit: cover;
+}
+
+/* Fix container alignment */
+.container, .container-responsive {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 100%;
+}
+
+/* Fix responsive text sizing */
+.responsive-text {
+  font-size: clamp(0.875rem, 2.5vw, 1rem);
+  line-height: 1.5;
+}
+
+/* Fix spacing consistency */
+.space-y-consistent > * + * {
+  margin-top: 1rem;
+}
+
+.space-x-consistent > * + * {
+  margin-left: 1rem;
+}
+
+/* Fix mobile layout alignment */
+@media (max-width: 768px) {
+  .mobile-stack {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .mobile-center {
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Fix touch target sizes */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.75rem;
+  }
+}
+
 }
