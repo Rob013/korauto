@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getManufacturerLogoFallbacks } from '@/utils/manufacturerLogos';
 import { cn } from '@/lib/utils';
-import { useTheme } from 'next-themes';
 
 interface ManufacturerLogoProps {
   manufacturerName: string;
@@ -19,7 +18,6 @@ export const ManufacturerLogo: React.FC<ManufacturerLogoProps> = ({
   const [currentLogoIndex, setCurrentLogoIndex] = useState(0);
   const [logoError, setLogoError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const { theme } = useTheme();
   
   const logoUrls = getManufacturerLogoFallbacks(manufacturerName);
   const currentLogoUrl = logoUrls[currentLogoIndex];
@@ -99,22 +97,12 @@ export const ManufacturerLogo: React.FC<ManufacturerLogoProps> = ({
         src={currentLogoUrl}
         alt={`${manufacturerName} logo`}
         className={cn(
-          'object-contain rounded-full transition-opacity',
+          'object-contain transition-opacity',
           sizeClasses[size],
-          isLoading ? 'opacity-0' : 'opacity-100',
-          // Apply theme-aware styling for SVGs
-          theme === 'dark' ? 'filter brightness-0 invert' : '',
-          // Handle SVG color adaptation
-          currentLogoUrl.endsWith('.svg') ? 'dark:filter dark:brightness-0 dark:invert' : ''
+          isLoading ? 'opacity-0' : 'opacity-100'
         )}
         onError={handleImageError}
         onLoad={handleImageLoad}
-        style={{
-          // For SVG logos, ensure they adapt to theme
-          filter: currentLogoUrl.endsWith('.svg') && theme === 'dark' 
-            ? 'brightness(0) invert(1)' 
-            : undefined
-        }}
       />
     </div>
   );

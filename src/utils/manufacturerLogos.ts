@@ -9,190 +9,201 @@ export interface ManufacturerWithLogo {
 
 // Car manufacturer logos with local fallbacks and multiple CDN sources
 export const MANUFACTURER_LOGOS: Record<string, string[]> = {
-  // German brands - Local assets with multiple CDN fallbacks
+  // German brands - Using more reliable logo sources
   'BMW': [
     '/logos/bmw.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/4/44/BMW.svg',
-    'https://logoeps.com/wp-content/uploads/2013/03/bmw-vector-logo.png'
+    'https://logoeps.com/wp-content/uploads/2013/03/bmw-vector-logo.png',
+    'https://cdn.freebiesupply.com/logos/large/2x/bmw-logo-png-transparent.png'
   ],
   'Mercedes-Benz': [
     '/logos/mercedes.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/9/90/Mercedes-Logo.svg',
-    'https://logoeps.com/wp-content/uploads/2013/03/mercedes-benz-vector-logo.png'
+    'https://logoeps.com/wp-content/uploads/2013/03/mercedes-benz-vector-logo.png',
+    'https://cdn.freebiesupply.com/logos/large/2x/mercedes-benz-6-logo-png-transparent.png'
   ], 
   'Audi': [
     '/logos/audi.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/9/92/Audi-Logo_2016.svg',
-    'https://logoeps.com/wp-content/uploads/2013/03/audi-vector-logo.png'
+    'https://logoeps.com/wp-content/uploads/2013/03/audi-vector-logo.png',
+    'https://cdn.freebiesupply.com/logos/large/2x/audi-logo-png-transparent.png'
   ],
   'Volkswagen': [
     '/logos/volkswagen.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/6/6d/Volkswagen_logo_2019.svg',
-    'https://logoeps.com/wp-content/uploads/2013/03/volkswagen-vector-logo.png'
+    'https://logoeps.com/wp-content/uploads/2013/03/volkswagen-vector-logo.png',
+    'https://cdn.freebiesupply.com/logos/large/2x/volkswagen-logo-png-transparent.png'
   ],
   'Porsche': [
     '/logos/porsche.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/2/2e/Porsche_logo.svg',
-    'https://logoeps.com/wp-content/uploads/2013/03/porsche-vector-logo.png'
+    'https://logoeps.com/wp-content/uploads/2013/03/porsche-vector-logo.png',
+    'https://cdn.freebiesupply.com/logos/large/2x/porsche-logo-png-transparent.png'
   ],
   'Opel': [
     '/logos/opel.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/7/7b/Opel_logo_2017.svg'
+    'https://cdn.freebiesupply.com/logos/large/2x/opel-logo-png-transparent.png'
   ],
   
   // Korean brands
   'Hyundai': [
     '/logos/hyundai.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/0/00/Hyundai_logo.svg'
+    'https://cdn.freebiesupply.com/logos/large/2x/hyundai-logo-png-transparent.png'
   ],
   'Kia': [
     '/logos/kia.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/7/7d/Kia_logo2.svg'
+    'https://cdn.freebiesupply.com/logos/large/2x/kia-logo-png-transparent.png'
   ],
   'Genesis': [
     '/logos/genesis.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/1/1c/Genesis_Motor_logo.svg'
+    'https://www.carlogos.org/car-logos/genesis-logo.png'
   ],
   
   // Japanese brands
   'Toyota': [
     '/logos/toyota.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/5/5c/Toyota_logo.svg'
+    'https://cdn.freebiesupply.com/logos/large/2x/toyota-logo-png-transparent.png'
   ],
   'Honda': [
     '/logos/honda.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/7/76/Honda_logo.svg'
+    'https://cdn.freebiesupply.com/logos/large/2x/honda-logo-png-transparent.png'
   ],
   'Nissan': [
     '/logos/nissan.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/2/23/Nissan_2020_logo.svg'
+    'https://cdn.freebiesupply.com/logos/large/2x/nissan-logo-png-transparent.png'
   ],
   'Mazda': [
     '/logos/mazda.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/2/22/Mazda_logo.svg'
+    'https://cdn.freebiesupply.com/logos/large/2x/mazda-logo-png-transparent.png'
   ],
   'Subaru': [
     '/logos/subaru.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/0/0c/Subaru_logo.svg'
+    'https://cdn.freebiesupply.com/logos/large/2x/subaru-logo-png-transparent.png'
   ],
   'Mitsubishi': [
     '/logos/mitsubishi.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/5/5a/Mitsubishi_logo.svg'
+    'https://cdn.freebiesupply.com/logos/large/2x/mitsubishi-logo-png-transparent.png'
   ],
   'Lexus': [
     '/logos/lexus.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/c/ce/Lexus_logo.svg'
+    'https://cdn.freebiesupply.com/logos/large/2x/lexus-logo-png-transparent.png'
   ],
   'Infiniti': [
     '/logos/infiniti.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/b/bb/Infiniti_logo_2013.svg'
+    'https://www.carlogos.org/car-logos/infiniti-logo.png'
   ],
   'Acura': [
     '/logos/acura.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/6/6c/Acura_logo.svg'
+    'https://cdn.freebiesupply.com/logos/large/2x/acura-logo-png-transparent.png'
   ],
   
   // American brands  
   'Ford': [
     '/logos/ford.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/3/3e/Ford_logo_flat.svg'
+    'https://cdn.freebiesupply.com/logos/large/2x/ford-logo-png-transparent.png'
   ],
   'Chevrolet': [
     '/logos/chevrolet.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Chevrolet_logo.svg/500px-Chevrolet_logo.svg.png'
+    'https://cdn.freebiesupply.com/logos/large/2x/chevrolet-logo-png-transparent.png'
   ],
   'Cadillac': [
     '/logos/cadillac.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/e/e1/Cadillac_logo.svg'
+    'https://cdn.freebiesupply.com/logos/large/2x/cadillac-logo-png-transparent.png'
   ],
   'GMC': [
     '/logos/gmc.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/4/4c/GMC_logo.svg'
+    'https://www.carlogos.org/car-logos/gmc-logo.png'
   ],
   'Tesla': [
     '/logos/tesla.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/b/bb/Tesla_T_symbol.svg'
+    'https://cdn.freebiesupply.com/logos/large/2x/tesla-logo-png-transparent.png'
   ],
   'Chrysler': [
-    '/logos/chrysler.svg'
+    '/logos/chrysler.svg',
+    'https://www.carlogos.org/car-logos/chrysler-logo.png'
   ],
   'Jeep': [
     '/logos/jeep.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/e/e8/Jeep_logo.svg'
+    'https://cdn.freebiesupply.com/logos/large/2x/jeep-logo-png-transparent.png'
   ],
   'Dodge': [
-    '/logos/dodge.svg'
+    '/logos/dodge.svg',
+    'https://www.carlogos.org/car-logos/dodge-logo.png'
   ],
   
   // Luxury/European brands
   'Land Rover': [
     '/logos/landrover.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/6/60/Land_Rover_logo.svg'
+    'https://cdn.freebiesupply.com/logos/large/2x/land-rover-logo-png-transparent.png'
   ],
   'Jaguar': [
     '/logos/jaguar.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/e/e8/Jaguar_logo_2012.svg'
+    'https://cdn.freebiesupply.com/logos/large/2x/jaguar-logo-png-transparent.png'
   ],
   'Volvo': [
     '/logos/volvo.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/c/c1/Volvo_logo_%282014%29.svg'
+    'https://cdn.freebiesupply.com/logos/large/2x/volvo-logo-png-transparent.png'
   ],
   'Ferrari': [
     '/logos/ferrari.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/c/c0/Ferrari_Logo.svg'
+    'https://cdn.freebiesupply.com/logos/large/2x/ferrari-logo-png-transparent.png'
   ],
   'Lamborghini': [
-    '/logos/lamborghini.svg'
+    '/logos/lamborghini.svg',
+    'https://www.carlogos.org/car-logos/lamborghini-logo.png'
   ],
   'Maserati': [
-    '/logos/maserati.svg'
+    '/logos/maserati.svg',
+    'https://www.carlogos.org/car-logos/maserati-logo.png'
   ],
   'Bentley': [
-    '/logos/bentley.svg'
+    '/logos/bentley.svg',
+    'https://www.carlogos.org/car-logos/bentley-logo.png'
   ],
   'Rolls-Royce': [
-    '/logos/rollsroyce.svg'
+    '/logos/rollsroyce.svg',
+    'https://www.carlogos.org/car-logos/rolls-royce-logo.png'
   ],
   'Aston Martin': [
-    '/logos/astonmartin.svg'
+    '/logos/astonmartin.svg',
+    'https://www.carlogos.org/car-logos/aston-martin-logo.png'
   ],
   'McLaren': [
-    '/logos/mclaren.svg'
+    '/logos/mclaren.svg',
+    'https://www.carlogos.org/car-logos/mclaren-logo.png'
   ],
   
   // French brands
   'Peugeot': [
     '/logos/peugeot.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/2/20/Peugeot_logo.svg'
+    'https://cdn.freebiesupply.com/logos/large/2x/peugeot-logo-png-transparent.png'
   ],
   'Renault': [
     '/logos/renault.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/4/49/Renault_logo.svg'
+    'https://cdn.freebiesupply.com/logos/large/2x/renault-logo-png-transparent.png'
   ],
   'Citroën': [
-    '/logos/citroen.svg'
+    '/logos/citroen.svg',
+    'https://www.carlogos.org/car-logos/citroen-logo.png'
   ],
   
   // Italian brands
   'Fiat': [
     '/logos/fiat.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/f/f4/Fiat_logo.svg'
+    'https://cdn.freebiesupply.com/logos/large/2x/fiat-logo-png-transparent.png'
   ],
   'Alfa Romeo': [
-    '/logos/alfaromeo.svg'
+    '/logos/alfaromeo.svg',
+    'https://www.carlogos.org/car-logos/alfa-romeo-logo.png'
   ],
   
   // Other brands
   'Skoda': [
     '/logos/skoda.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/f/f7/Škoda_Auto_logo.svg'
+    'https://cdn.freebiesupply.com/logos/large/2x/skoda-logo-png-transparent.png'
   ],
   'Seat': [
-    '/logos/seat.svg'
+    '/logos/seat.svg',
+    'https://www.carlogos.org/car-logos/seat-logo.png'
   ],
   'Mini': [
     '/logos/mini.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/3/31/Mini_logo.svg'
+    'https://cdn.freebiesupply.com/logos/large/2x/mini-logo-png-transparent.png'
   ]
 };
 
