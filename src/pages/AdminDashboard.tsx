@@ -33,6 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import AuthLogin from "@/components/AuthLogin";
 import { CarsSyncButton } from "@/components/CarsSyncButton";
+import AdminCarSearch from "@/components/AdminCarSearch";
 
 // Lazy load heavy admin components
 const AdminSyncDashboard = lazy(() => 
@@ -736,6 +737,11 @@ const AdminDashboard = () => {
           </div>
         </div>
 
+        {/* Car Search Section */}
+        <div className="mb-6">
+          <AdminCarSearch />
+        </div>
+
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
@@ -1246,7 +1252,9 @@ const AdminDashboard = () => {
                                 >
                                   <Phone className="h-3 w-3" />
                                 </Button>
-                                {request.car_id && carDetails[request.car_id] && (
+                                {/* Always show car-related button for every inspection */}
+                                {request.car_id && carDetails[request.car_id] ? (
+                                  // Car details are available - direct view
                                   <Button
                                     size="sm"
                                     variant="default"
@@ -1254,7 +1262,39 @@ const AdminDashboard = () => {
                                     className="h-7 px-2 text-xs"
                                   >
                                     <Car className="h-3 w-3 mr-1" />
-                                    View
+                                    View Car
+                                  </Button>
+                                ) : request.car_id ? (
+                                  // Car ID exists but details not cached - search and redirect
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => findCarByLotNumber(request.id, request.car_id)}
+                                    disabled={searchingCars[request.id]}
+                                    className="h-7 px-2 text-xs"
+                                  >
+                                    {searchingCars[request.id] ? (
+                                      <div className="h-3 w-3 mr-1 animate-spin rounded-full border border-current border-t-transparent" />
+                                    ) : (
+                                      <Search className="h-3 w-3 mr-1" />
+                                    )}
+                                    {searchingCars[request.id] ? "Finding..." : "Find Car"}
+                                  </Button>
+                                ) : (
+                                  // No car ID - search based on notes or general search
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    onClick={() => findCarByLotNumber(request.id, request.notes || "general inspection")}
+                                    disabled={searchingCars[request.id]}
+                                    className="h-7 px-2 text-xs"
+                                  >
+                                    {searchingCars[request.id] ? (
+                                      <div className="h-3 w-3 mr-1 animate-spin rounded-full border border-current border-t-transparent" />
+                                    ) : (
+                                      <Search className="h-3 w-3 mr-1" />
+                                    )}
+                                    {searchingCars[request.id] ? "Searching..." : "Search Car"}
                                   </Button>
                                 )}
                               </div>
@@ -1346,7 +1386,9 @@ const AdminDashboard = () => {
                                 >
                                   <Mail className="h-3 w-3" />
                                 </Button>
-                                {car && (
+                                {/* Always show car-related button for every inspection */}
+                                {car ? (
+                                  // Car details are available - direct view
                                   <Button
                                     size="sm"
                                     variant="default"
@@ -1354,7 +1396,39 @@ const AdminDashboard = () => {
                                     className="h-6 px-2 text-xs"
                                   >
                                     <Car className="h-3 w-3 mr-1" />
-                                    View
+                                    View Car
+                                  </Button>
+                                ) : request.car_id ? (
+                                  // Car ID exists but details not cached - search and redirect
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => findCarByLotNumber(request.id, request.car_id)}
+                                    disabled={searchingCars[request.id]}
+                                    className="h-6 px-2 text-xs"
+                                  >
+                                    {searchingCars[request.id] ? (
+                                      <div className="h-3 w-3 mr-1 animate-spin rounded-full border border-current border-t-transparent" />
+                                    ) : (
+                                      <Search className="h-3 w-3 mr-1" />
+                                    )}
+                                    {searchingCars[request.id] ? "Finding..." : "Find Car"}
+                                  </Button>
+                                ) : (
+                                  // No car ID - search based on notes or general search
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    onClick={() => findCarByLotNumber(request.id, request.notes || "general inspection")}
+                                    disabled={searchingCars[request.id]}
+                                    className="h-6 px-2 text-xs"
+                                  >
+                                    {searchingCars[request.id] ? (
+                                      <div className="h-3 w-3 mr-1 animate-spin rounded-full border border-current border-t-transparent" />
+                                    ) : (
+                                      <Search className="h-3 w-3 mr-1" />
+                                    )}
+                                    {searchingCars[request.id] ? "Searching..." : "Search Car"}
                                   </Button>
                                 )}
                               </div>
