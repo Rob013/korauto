@@ -940,7 +940,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   <span className="hidden xs:inline text-sm">Back</span>
                 </Button>
                 
-                {/* Filter Toggle Button - Enhanced styling and feedback */}
+                {/* Filter Toggle Button - Solid styling without animations */}
                 <Button
                   variant={showFilters ? "default" : hasSelectedCategories ? "default" : "outline"}
                   size="lg"
@@ -957,11 +957,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     }
                     setShowFilters(!showFilters);
                   }}
-                  className={`flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base transition-all duration-200 flex-1 sm:flex-initial ${
+                  className={`flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base flex-1 sm:flex-initial ${
                     hasSelectedCategories 
-                      ? showFilters 
-                        ? "bg-primary hover:bg-primary/90 text-primary-foreground border-2 border-primary shadow-lg" 
-                        : "bg-primary hover:bg-primary/90 text-primary-foreground border-2 border-primary shadow-lg scale-105 animate-pulse" 
+                      ? "bg-primary hover:bg-primary/90 text-primary-foreground border-2 border-primary"
                       : "bg-primary/10 hover:bg-primary hover:text-primary-foreground border-2 border-primary/20 hover:border-primary"
                   }`}
                 >
@@ -969,7 +967,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   <span className="hidden xs:inline">Shfaq Filtrat</span>
                   <span className="xs:hidden">Filtrat</span>
                   {hasSelectedCategories && !showFilters && (
-                    <span className="ml-1 text-xs bg-primary-foreground/20 px-2 py-1 rounded-full animate-bounce">
+                    <span className="ml-1 text-xs bg-primary-foreground/20 px-2 py-1 rounded-full">
                       {Object.values(filters).filter(Boolean).length}
                     </span>
                   )}
@@ -1041,42 +1039,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             </div>
           </div>
 
-          {/* Search Button Section - Prominent when filters are selected */}
-          {(filters.manufacturer_id || filters.model_id || Object.values(filters).some(Boolean)) && (
-            <div className="mb-6 flex flex-col sm:flex-row gap-3 items-center justify-center bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 p-4 rounded-lg border-2 border-primary/20">
-              <div className="text-center sm:text-left">
-                <h3 className="font-semibold text-primary">Ready to search?</h3>
-                <p className="text-sm text-muted-foreground">
-                  {filters.manufacturer_id && filters.model_id 
-                    ? "Click search to find cars matching your criteria" 
-                    : "Select brand and model first, then click search"
-                  }
-                </p>
-              </div>
-              <Button
-                onClick={handleManualSearch}
-                disabled={!filters.manufacturer_id || !filters.model_id || loading}
-                size="lg"
-                className={`h-12 px-8 font-bold text-lg transition-all duration-300 ${
-                  filters.manufacturer_id && filters.model_id
-                    ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl scale-105"
-                    : "bg-muted text-muted-foreground cursor-not-allowed"
-                }`}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                    Searching...
-                  </>
-                ) : (
-                  <>
-                    <Search className="h-5 w-5 mr-2" />
-                    Search Cars
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
+
 
           {/* Error State */}
           {error && (

@@ -313,41 +313,32 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            {enableManualSearch && (
-              <Button 
-                variant="default"
-                size="sm" 
-                onClick={handleManualSearch}
-                disabled={!hasChanges || isLoading}
-                className="text-xs px-3 py-1 h-7 bg-primary hover:bg-primary/90"
-              >
-                {isLoading ? (
-                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                ) : (
-                  <Search className="h-3 w-3 mr-1" />
-                )}
-                Search
-              </Button>
-            )}
+        </div>
+        
+        {/* Search Button - Moved inside filters */}
+        {enableManualSearch && (
+          <div className="mb-4">
             <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => {
-                // Issue #1: Do not allow closing filters until brand and model are selected
-                if (!filters.manufacturer_id || !filters.model_id) {
-                  // Don't show toast here as the parent component will handle it
-                  // Just return without closing
-                  return;
-                }
-                onClearFilters();
-              }}
-              className="text-muted-foreground hover:text-foreground h-8 w-8 p-0"
+              variant="default"
+              size="lg" 
+              onClick={handleManualSearch}
+              disabled={!hasChanges || isLoading || !pendingFilters.manufacturer_id || !pendingFilters.model_id}
+              className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90 text-primary-foreground"
             >
-              <X className="h-4 w-4" />
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Searching...
+                </>
+              ) : (
+                <>
+                  <Search className="h-4 w-4 mr-2" />
+                  Search Cars
+                </>
+              )}
             </Button>
           </div>
-        </div>
+        )}
         
         {/* Basic filters */}
         <div className="space-y-3">
@@ -387,7 +378,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               value={filters.model_id || 'all'} 
               onValueChange={(value) => updateFilter('model_id', value)}
               disabled={!filters.manufacturer_id}
-              placeholder={filters.manufacturer_id ? "Select model" : "Select brand first"}
+              placeholder="Select model"
               className="h-9 sm:h-10 text-sm"
               options={[
                 { value: 'all', label: 'All Models' },
@@ -408,7 +399,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               value={filters.generation_id || 'all'} 
               onValueChange={(value) => updateFilter('generation_id', value)}
               disabled={!filters.model_id}
-              placeholder={filters.model_id ? "Generations" : "Select model first"}
+              placeholder="Select generation"
               className="h-9 sm:h-10 text-sm"
               options={[
                 { value: 'all', label: 'All Generations' },
@@ -635,7 +626,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 value={filters.model_id || 'all'} 
                 onValueChange={(value) => updateFilter('model_id', value)}
                 disabled={!filters.manufacturer_id}
-                placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"}
+                placeholder="Zgjidhni modelin"
                 className="h-11"
                 options={[
                   { value: 'all', label: 'Të gjithë Modelet' },
@@ -661,7 +652,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 value={filters.generation_id || 'all'} 
                 onValueChange={(value) => updateFilter('generation_id', value)}
                 disabled={!filters.model_id}
-                placeholder={filters.model_id ? "Gjeneratat" : "Zgjidhni modelin së pari"}
+                placeholder="Gjeneratat"
                 className="h-11"
                 options={[
                   { value: 'all', label: 'Të gjitha Gjeneratat' },
@@ -787,7 +778,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 value={filters.model_id || 'all'} 
                 onValueChange={(value) => updateFilter('model_id', value)}
                 disabled={!filters.manufacturer_id}
-                placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"}
+                placeholder="Zgjidhni modelin"
                 options={[
                   { value: 'all', label: 'Të gjithë Modelet' },
                   ...models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => ({
@@ -857,7 +848,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   value={filters.generation_id || 'all'} 
                   onValueChange={(value) => updateFilter('generation_id', value)}
                   disabled={!filters.model_id}
-                  placeholder={filters.model_id ? "Gjeneratat" : "Zgjidhni modelin së pari"}
+                  placeholder="Gjeneratat"
                   options={[
                     { value: 'all', label: 'Të gjitha Gjeneratat' },
                     ...generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => ({
