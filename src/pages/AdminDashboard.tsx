@@ -33,6 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import AuthLogin from "@/components/AuthLogin";
 import { CarsSyncButton } from "@/components/CarsSyncButton";
+import AdminCarSearch from "@/components/AdminCarSearch";
 
 // Lazy load heavy admin components
 const AdminSyncDashboard = lazy(() => 
@@ -734,6 +735,11 @@ const AdminDashboard = () => {
               <span className="hidden sm:inline">Refresh</span>
             </Button>
           </div>
+        </div>
+
+        {/* Car Search Section */}
+        <div className="mb-6">
+          <AdminCarSearch />
         </div>
 
         <Tabs
