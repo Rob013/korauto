@@ -1,0 +1,9 @@
+{
+  "errors": [],
+  "lastUpdated": null,
+  "config": {
+    "enabled": true,
+    "maxEntries": 100,
+    "logLevel": "error"
+  }
+}
