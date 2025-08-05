@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { useEncarAPI } from '@/hooks/useEncarAPI';
 import { useToast } from '@/hooks/use-toast';
 import { Activity, CheckCircle, AlertCircle, Clock, Pause, Database, TrendingUp, RefreshCw, Zap, AlertTriangle, StopCircle, Shield } from 'lucide-react';
-export default function AdminSyncDashboard() {
+export function AdminSyncDashboard() {
   const {
     syncStatus,
     totalCount,

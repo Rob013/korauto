@@ -1,5 +1,5 @@
 import React, { useState, memo, useCallback, useMemo, useEffect, useRef } from 'react';
-import { AdaptiveSelect } from "@/components/ui/adaptive-select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -7,7 +7,6 @@ import { Filter, X, Loader2, Search } from "lucide-react";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS } from '@/hooks/useAuctionAPI';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
 
 
 // Debounce utility function
@@ -184,95 +183,40 @@ const FilterForm = memo<FilterFormProps>(({
   const currentYear = useMemo(() => new Date().getFullYear(), []);
   const years = useMemo(() => Array.from({ length: 25 }, (_, i) => currentYear - i), [currentYear]);
 
-  // Memoized sorted manufacturers with enhanced API data validation and categorization
+  // Memoize sorted manufacturers to prevent unnecessary re-renders
   const sortedManufacturers = useMemo(() => {
-    const validManufacturers = manufacturers
-      .filter((m) => {
-        // Ensure manufacturer has valid data from API
-        return m.id && 
-               m.name && 
-               typeof m.name === 'string' && 
-               m.name.trim().length > 0 &&
-               (m.cars_qty && m.cars_qty > 0);
-      });
-
-    // Define categories with their brand priorities
-    const categories = {
-      german: {
-        name: 'German Brands',
-        brands: ['BMW', 'Mercedes-Benz', 'Audi', 'Volkswagen', 'Porsche', 'Opel'],
-        priority: 1
-      },
-      korean: {
-        name: 'Korean Brands', 
-        brands: ['Hyundai', 'Kia', 'Genesis'],
-        priority: 2
-      },
-      japanese: {
-        name: 'Japanese Brands',
-        brands: ['Toyota', 'Honda', 'Nissan', 'Mazda', 'Subaru', 'Lexus', 'Infiniti', 'Acura', 'Mitsubishi'],
-        priority: 3
-      },
-      american: {
-        name: 'American Brands',
-        brands: ['Ford', 'Chevrolet', 'Cadillac', 'GMC', 'Tesla', 'Chrysler', 'Jeep', 'Dodge'],
-        priority: 4
-      },
-      luxury: {
-        name: 'Luxury/European Brands',
-        brands: ['Land Rover', 'Jaguar', 'Volvo', 'Ferrari', 'Lamborghini', 'Maserati', 'Bentley', 'Rolls-Royce', 'Aston Martin', 'McLaren', 'Mini'],
-        priority: 5
-      },
-      french: {
-        name: 'French Brands',
-        brands: ['Peugeot', 'Renault', 'Citroën'],
-        priority: 6
-      },
-      italian: {
-        name: 'Italian Brands', 
-        brands: ['Fiat', 'Alfa Romeo'],
-        priority: 7
-      },
-      other: {
-        name: 'Other Brands',
-        brands: ['Skoda', 'Seat'],
-        priority: 8
-      }
-    };
-
-    // Sort manufacturers by category and count
-    return validManufacturers.sort((a, b) => {
-      const aName = a.name.trim();
-      const bName = b.name.trim();
-      
-      // Find category for each manufacturer
-      let aCategoryPriority = 999;
-      let bCategoryPriority = 999;
-      
-      Object.values(categories).forEach(category => {
-        if (category.brands.includes(aName)) {
-          aCategoryPriority = category.priority;
-        }
-        if (category.brands.includes(bName)) {
-          bCategoryPriority = category.priority;
-        }
-      });
-      
-      // Sort by category priority first
-      if (aCategoryPriority !== bCategoryPriority) {
-        return aCategoryPriority - bCategoryPriority;
-      }
-      
-      // Within same category, sort by car count (descending)
-      const aCount = a.cars_qty || 0;
-      const bCount = b.cars_qty || 0;
-      if (aCount !== bCount) {
-        return bCount - aCount;
-      }
-      
-      // Finally, alphabetical
-      return aName.localeCompare(bName);
-    });
+    return manufacturers
+      .sort((a, b) => {
+        // German cars priority
+        const germanBrands = ['BMW', 'Mercedes-Benz', 'Audi', 'Volkswagen', 'Porsche', 'Opel'];
+        // Korean cars priority  
+        const koreanBrands = ['Hyundai', 'Kia', 'Genesis'];
+        // Other popular cars
+        const popularBrands = ['Toyota', 'Honda', 'Nissan', 'Ford', 'Chevrolet', 'Mazda', 'Subaru', 'Lexus'];
+        
+        const aIsGerman = germanBrands.includes(a.name);
+        const bIsGerman = germanBrands.includes(b.name);
+        const aIsKorean = koreanBrands.includes(a.name);
+        const bIsKorean = koreanBrands.includes(b.name);
+        const aIsPopular = popularBrands.includes(a.name);
+        const bIsPopular = popularBrands.includes(b.name);
+        
+        // German brands first
+        if (aIsGerman && !bIsGerman) return -1;
+        if (!aIsGerman && bIsGerman) return 1;
+        
+        // Korean brands second
+        if (aIsKorean && !bIsKorean && !bIsGerman) return -1;
+        if (!aIsKorean && bIsKorean && !aIsGerman) return 1;
+        
+        // Popular brands third
+        if (aIsPopular && !bIsPopular && !bIsGerman && !bIsKorean) return -1;
+        if (!aIsPopular && bIsPopular && !aIsGerman && !aIsKorean) return 1;
+        
+        // Alphabetical within same category
+        return a.name.localeCompare(b.name);
+      })
+      .filter((m) => m.cars_qty && m.cars_qty > 0);
   }, [manufacturers]);
 
   const getFallbackGrades = (manufacturerId: string) => {
@@ -363,52 +307,78 @@ const FilterForm = memo<FilterFormProps>(({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 sm:gap-2">
         <div className="space-y-1">
           <Label htmlFor="manufacturer" className="text-xs font-medium truncate">Marka</Label>
-          <AdaptiveSelect 
-            value={filters.manufacturer_id || 'all'} 
-            onValueChange={handleBrandChange} 
-            disabled={isLoading}
-            placeholder={isLoading ? "Duke ngarkuar..." : "Markat"}
-            className="h-7 text-xs"
-            options={[
-              { value: 'all', label: 'Të gjitha Markat' },
-              ...sortedManufacturers.map((manufacturer) => ({
-                value: manufacturer.id.toString(),
-                label: (
-                  <div className="flex items-center gap-2">
-                    <span className="truncate">{manufacturer.name} ({manufacturer.cars_qty})</span>
-                  </div>
-                )
-              }))
-            ]}
-          />
+          <Select value={filters.manufacturer_id || 'all'} onValueChange={handleBrandChange} disabled={isLoading}>
+            <SelectTrigger className="h-7 text-xs">
+              <SelectValue placeholder={isLoading ? "Duke ngarkuar..." : "Markat"} />
+            </SelectTrigger>
+            <SelectContent className="max-h-60 overflow-y-auto">
+              <SelectItem value="all">Të gjitha Markat</SelectItem>
+               {sortedManufacturers.length > 0 ? (
+                 sortedManufacturers.map((manufacturer) => {
+                   const count = filterCounts?.manufacturers[manufacturer.id.toString()];
+                   return (
+                     <SelectItem 
+                       key={manufacturer.id} 
+                       value={manufacturer.id.toString()}
+                     >
+                       <div className="flex items-center gap-2">
+                         {manufacturer?.image && (
+                           <img
+                             src={manufacturer?.image}
+                             alt={manufacturer.name}
+                             className="w-5 h-5 object-contain"
+                           />
+                         )}
+                         <span>{manufacturer.name} ({manufacturer.cars_qty})</span>
+                       </div>
+                     </SelectItem>
+                   );
+                 })
+               ) : (
+                 <SelectItem value="loading" disabled>
+                   {isLoading ? "Duke ngarkuar..." : "Nuk u gjetën marka"}
+                 </SelectItem>
+               )}
+
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="space-y-1">
           <Label htmlFor="model" className="text-xs font-medium truncate">Modeli</Label>
-          <AdaptiveSelect 
+          <Select 
             value={filters.model_id || 'all'} 
             onValueChange={(value) => updateFilter('model_id', value)}
             disabled={!filters.manufacturer_id || isLoading}
-            placeholder={isLoading ? "Duke ngarkuar..." : (filters.manufacturer_id ? "Modelet" : "Markën së pari")}
-            className="h-7 text-xs"
-            options={[
-              { value: 'all', label: 'Të gjithë Modelet' },
-              ...(models && models.length > 0 ? 
+          >
+            <SelectTrigger className="h-7 text-xs">
+              <SelectValue placeholder={isLoading ? "Duke ngarkuar..." : (filters.manufacturer_id ? "Modelet" : "Marka së pari")} />
+            </SelectTrigger>
+            <SelectContent className="max-h-60 overflow-y-auto">
+              <SelectItem value="all">Të gjithë Modelet</SelectItem>
+              {models && models.length > 0 ? (
                 models
                   .filter((model) => model.cars_qty && model.cars_qty > 0)
-                  .map((model) => ({
-                    value: model.id.toString(),
-                    label: `${model.name} (${model.cars_qty})`
-                  }))
-                : []
-              )
-            ]}
-          />
+                  .map((model) => (
+                    <SelectItem 
+                      key={model.id} 
+                      value={model.id.toString()}
+                    >
+                      {model.name} ({model.cars_qty})
+                    </SelectItem>
+                  ))
+              ) : (
+                <SelectItem value="loading" disabled>
+                  {isLoading ? "Duke ngarkuar..." : (filters.manufacturer_id ? "Nuk u gjetën modele" : "Zgjidh markën së pari")}
+                </SelectItem>
+              )}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="space-y-1">
           <Label htmlFor="generation" className="text-xs font-medium truncate">Gjeneratat</Label>
-          <AdaptiveSelect
+          <Select
             value={filters.generation_id || 'all'} 
             onValueChange={(value) => {
               console.log(`🎯 ULTRA PRECISE: Generation select changed to ${value}`);
@@ -419,58 +389,73 @@ const FilterForm = memo<FilterFormProps>(({
               }
             }}
             disabled={!filters.manufacturer_id || !filters.model_id}
-            placeholder={filters.model_id ? "Gjeneratat" : "Zgjidh modelin së pari"}
-            className="h-7 text-xs"
-            options={[
-              { 
-                value: 'all', 
-                label: filters.model_id ? "Të gjitha Gjeneratat" : "Të gjitha Gjeneratat (të gjitha modelet)"
-              },
-              ...(generations && generations.length > 0 ? 
-                generations.map((generation) => {
-                  const displayCount = generation.cars_qty || 0;
-                  let yearRange = '';
-                  if (generation.from_year) {
-                    const from = generation.from_year.toString().slice(-2);
-                    const currentYear = new Date().getFullYear();
-                    const toYearRaw = generation.to_year || currentYear;
-                    const to = (generation.to_year && generation.to_year !== currentYear) ? toYearRaw.toString().slice(-2) : 'present';
-                    yearRange = ` (${from}-${to})`;
-                  }
-                  const countText = displayCount > 0 ? ` (${displayCount})` : '';
-                  
-                  return {
-                    value: generation.id.toString(),
-                    label: `${generation.name}${yearRange}${countText}`
-                  };
-                })
-                : []
-              )
-            ]}
-          />
+          >
+            <SelectTrigger className="h-7 text-xs">
+              <SelectValue placeholder={filters.manufacturer_id ? "Gjeneratat" : "Marka së pari"} />
+            </SelectTrigger>
+            <SelectContent className="max-h-60 overflow-y-auto">
+              <SelectItem value="all">
+                {filters.model_id ? "Të gjitha Gjeneratat" : "Të gjitha Gjeneratat (të gjitha modelet)"}
+              </SelectItem>
+            {generations && generations.length > 0 ? (
+              generations.map((generation) => {
+                const displayCount = generation.cars_qty || 0;
+                
+                return (
+                  <SelectItem 
+                    key={generation.id} 
+                    value={generation.id.toString()}
+                  >
+                    {generation.name} 
+                    {generation.from_year ? (() => {
+                      const from = generation.from_year.toString().slice(-2);
+                      const currentYear = new Date().getFullYear();
+                      const toYearRaw = generation.to_year || currentYear;
+                      const to = (generation.to_year && generation.to_year !== currentYear) ? toYearRaw.toString().slice(-2) : 'present';
+                      return ` (${from}-${to})`;
+                    })() : ''}
+                    {displayCount > 0 ? ` (${displayCount})` : ''}
+                  </SelectItem>
+                );
+              })
+            ) : (
+              <SelectItem value="no-generations" disabled>
+                {filters.model_id ? "Nuk u gjetën gjenerata" : "Zgjidh modelin së pari"}
+              </SelectItem>
+            )}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="space-y-1">
           <Label htmlFor="grade" className="text-xs font-medium truncate">Grada/Motorr</Label>
-          <AdaptiveSelect 
+          <Select 
             value={filters.grade_iaai || 'all'} 
             onValueChange={(value) => updateFilter('grade_iaai', value)}
             disabled={!filters.manufacturer_id || isLoading}
-            placeholder={filters.manufacturer_id ? "Gradat" : "Markën së pari"}
-            className="h-7 text-xs"
-            options={[
-              { value: 'all', label: 'Të gjitha Gradat' },
-              ...(grades.length === 0 && isLoadingGrades ? 
-                [{ value: 'loading', label: 'Duke ngarkuar gradat...', disabled: true }] :
-                grades.length === 0 && filters.manufacturer_id ? 
-                [{ value: 'no-grades', label: 'Nuk u gjetën grada', disabled: true }] :
-                grades.map((grade) => ({
-                  value: grade.value,
-                  label: `${grade.label}${grade.count ? ` (${grade.count})` : ''}`
-                }))
-              )
-            ]}
-          />
+          >
+            <SelectTrigger className="h-7 text-xs">
+              <SelectValue placeholder={filters.manufacturer_id ? "Gradat" : "Marka së pari"} />
+            </SelectTrigger>
+            <SelectContent className="max-h-60 overflow-y-auto">
+              <SelectItem value="all">Të gjitha Gradat</SelectItem>
+              {grades.length === 0 && isLoadingGrades ? (
+                <SelectItem value="loading" disabled>
+                  Duke ngarkuar gradat...
+                </SelectItem>
+              ) : grades.length === 0 && filters.manufacturer_id ? (
+                <SelectItem value="no-grades" disabled>
+                  Nuk u gjetën grada
+                </SelectItem>
+              ) : (
+                grades.map((grade) => (
+                  <SelectItem key={grade.value} value={grade.value}>
+                    {grade.label} {grade.count ? `(${grade.count})` : ''}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -487,124 +472,137 @@ const FilterForm = memo<FilterFormProps>(({
           <div className="space-y-3">{/* Changed advanced filters to vertical too */}
             <div className="space-y-1">
               <Label htmlFor="color" className="text-xs font-medium">Ngjyra</Label>
-              <AdaptiveSelect 
-                value={filters.color || 'all'} 
-                onValueChange={(value) => updateFilter('color', value)}
-                placeholder="Të gjitha Ngjyrat"
-                className="h-8 text-sm"
-                options={[
-                  { value: 'all', label: 'Të gjitha Ngjyrat' },
-                  ...Object.entries(COLOR_OPTIONS).map(([name, id]) => ({
-                    value: id.toString(),
-                    label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
-                  }))
-                ]}
-              />
+              <Select value={filters.color || 'all'} onValueChange={(value) => updateFilter('color', value)}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder="Të gjitha Ngjyrat" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Të gjitha Ngjyrat</SelectItem>
+                  {Object.entries(COLOR_OPTIONS).map(([name, id]) => {
+                    return (
+                      <SelectItem 
+                        key={id} 
+                        value={id.toString()}
+                      >
+                        {name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="fuel_type" className="text-xs font-medium">Lloji i Karburantit</Label>
-              <AdaptiveSelect 
-                value={filters.fuel_type || 'all'} 
-                onValueChange={(value) => updateFilter('fuel_type', value)}
-                placeholder="Të gjithë Llojet"
-                className="h-8 text-sm"
-                options={[
-                  { value: 'all', label: 'Të gjithë Llojet' },
-                  ...Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => ({
-                    value: id.toString(),
-                    label: name.charAt(0).toUpperCase() + name.slice(1)
-                  }))
-                ]}
-              />
+              <Select value={filters.fuel_type || 'all'} onValueChange={(value) => updateFilter('fuel_type', value)}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder="Të gjithë Llojet" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Të gjithë Llojet</SelectItem>
+                  {Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => {
+                    return (
+                      <SelectItem 
+                        key={id} 
+                        value={id.toString()}
+                      >
+                        {name.charAt(0).toUpperCase() + name.slice(1)}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="transmission" className="text-xs font-medium">Transmisioni</Label>
-              <AdaptiveSelect 
-                value={filters.transmission || 'all'} 
-                onValueChange={(value) => updateFilter('transmission', value)}
-                placeholder="Të gjithë"
-                className="h-8 text-sm"
-                options={[
-                  { value: 'all', label: 'Të gjithë' },
-                  ...Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => ({
-                    value: id.toString(),
-                    label: name.charAt(0).toUpperCase() + name.slice(1)
-                  }))
-                ]}
-              />
+              <Select value={filters.transmission || 'all'} onValueChange={(value) => updateFilter('transmission', value)}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder="Të gjithë" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Të gjithë</SelectItem>
+                  {Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => {
+                    return (
+                      <SelectItem 
+                        key={id} 
+                        value={id.toString()}
+                      >
+                        {name.charAt(0).toUpperCase() + name.slice(1)}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           <div className="space-y-3">{/* Continue vertical layout for remaining filters */}
             <div className="space-y-1">
               <Label htmlFor="from_year" className="text-xs font-medium">Nga Viti</Label>
-              <AdaptiveSelect 
-                value={filters.from_year || 'any'} 
-                onValueChange={(value) => updateFilter('from_year', value)}
-                placeholder="Çdo vit"
-                className="h-8 text-sm"
-                options={[
-                  { value: 'any', label: 'Çdo vit' },
-                  ...years.map((year) => ({
-                    value: year.toString(),
-                    label: year.toString()
-                  }))
-                ]}
-              />
+              <Select value={filters.from_year || 'any'} onValueChange={(value) => updateFilter('from_year', value)}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder="Çdo vit" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Çdo vit</SelectItem>
+                  {years.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="to_year" className="text-xs font-medium">Deri në Vitin</Label>
-              <AdaptiveSelect 
-                value={filters.to_year || 'any'} 
-                onValueChange={(value) => updateFilter('to_year', value)}
-                placeholder="Çdo vit"
-                className="h-8 text-sm"
-                options={[
-                  { value: 'any', label: 'Çdo vit' },
-                  ...years.map((year) => ({
-                    value: year.toString(),
-                    label: year.toString()
-                  }))
-                ]}
-              />
+              <Select value={filters.to_year || 'any'} onValueChange={(value) => updateFilter('to_year', value)}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder="Çdo vit" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Çdo vit</SelectItem>
+                  {years.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="seats" className="text-xs font-medium">Numri i Vendeve</Label>
-              <AdaptiveSelect 
-                value={filters.seats_count || 'all'} 
-                onValueChange={(value) => updateFilter('seats_count', value)}
-                placeholder="Të gjitha"
-                className="h-8 text-sm"
-                options={[
-                  { value: 'all', label: 'Të gjitha' },
-                  { value: '2', label: '2 Vende' },
-                  { value: '4', label: '4 Vende' },
-                  { value: '5', label: '5 Vende' },
-                  { value: '7', label: '7 Vende' },
-                  { value: '8', label: '8 Vende' },
-                  { value: '9', label: '9+ Vende' }
-                ]}
-              />
+              <Select value={filters.seats_count || 'all'} onValueChange={(value) => updateFilter('seats_count', value)}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder="Të gjitha" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Të gjitha</SelectItem>
+                  <SelectItem value="2">2 Vende</SelectItem>
+                  <SelectItem value="4">4 Vende</SelectItem>
+                  <SelectItem value="5">5 Vende</SelectItem>
+                  <SelectItem value="7">7 Vende</SelectItem>
+                  <SelectItem value="8">8 Vende</SelectItem>
+                  <SelectItem value="9">9+ Vende</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="max_accidents" className="text-xs font-medium">Aksidente (Maksimale)</Label>
-              <AdaptiveSelect 
-                value={filters.max_accidents || 'all'} 
-                onValueChange={(value) => updateFilter('max_accidents', value)}
-                placeholder="Të gjitha"
-                className="h-8 text-sm"
-                options={[
-                  { value: 'all', label: 'Të gjitha' },
-                  { value: '0', label: 'Pa aksidente' },
-                  { value: '1', label: 'Maksimale 1 aksident' },
-                  { value: '2', label: 'Maksimale 2 aksidente' }
-                ]}
-              />
+              <Select value={filters.max_accidents || 'all'} onValueChange={(value) => updateFilter('max_accidents', value)}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder="Të gjitha" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Të gjitha</SelectItem>
+                  <SelectItem value="0">Pa aksidente</SelectItem>
+                  <SelectItem value="1">Maksimale 1 aksident</SelectItem>
+                  <SelectItem value="2">Maksimale 2 aksidente</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Car, Heart, Menu, X, User } from "lucide-react";
-import { ThemeToggle } from "@/components/ThemeToggle";
+// import { ThemeToggle } from "@/components/ThemeToggle";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -88,7 +88,7 @@ const Header = () => {
 
           {/* Right side actions */}
           <div className="flex items-center space-x-1 sm:space-x-2">
-            <ThemeToggle />
+            {/* <ThemeToggle /> */}
             
             {/* Mobile menu button */}
             <Button
