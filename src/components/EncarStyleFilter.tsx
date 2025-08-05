@@ -329,6 +329,29 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
             />
           </div>
 
+          {/* Year presets - moved under Generation */}
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Year Range:</Label>
+            <div className="flex flex-wrap gap-1">
+              {yearRangePresets.slice(0, 4).map((preset) => (
+                <Button
+                  key={preset.label}
+                  variant={
+                    filters.from_year === preset.from.toString() && 
+                    filters.to_year === preset.to.toString() 
+                      ? "default" 
+                      : "outline"
+                  }
+                  size="sm"
+                  className="h-7 sm:h-8 px-2 text-xs"
+                  onClick={() => handleYearRangePreset(preset)}
+                >
+                  {preset.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
           {/* Price Range */}
           <div className="space-y-1.5">
             <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
@@ -350,29 +373,6 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 onChange={(e) => updateFilter('buy_now_price_to', e.target.value)}
                 className="h-9 sm:h-10 text-sm"
               />
-            </div>
-          </div>
-
-          {/* Year presets */}
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Year Range:</Label>
-            <div className="flex flex-wrap gap-1">
-              {yearRangePresets.slice(0, 4).map((preset) => (
-                <Button
-                  key={preset.label}
-                  variant={
-                    filters.from_year === preset.from.toString() && 
-                    filters.to_year === preset.to.toString() 
-                      ? "default" 
-                      : "outline"
-                  }
-                  size="sm"
-                  className="h-7 sm:h-8 px-2 text-xs"
-                  onClick={() => handleYearRangePreset(preset)}
-                >
-                  {preset.label}
-                </Button>
-              ))}
             </div>
           </div>
 
