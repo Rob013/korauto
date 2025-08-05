@@ -22,7 +22,6 @@ const Contacts = lazy(() => import("./pages/Contacts"));
 const ComponentDemo = lazy(() => import("./pages/ComponentDemo"));
 const DiagramDemo = lazy(() => import("./pages/DiagramDemo"));
 const PerformanceDashboard = lazy(() => import("./components/PerformanceDashboard"));
-const InspectionButtonDemo = lazy(() => import("./components/InspectionButtonDemo"));
 
 // Lazy load admin components for better code splitting
 const AdminSyncDashboard = lazy(() => import("./components/AdminSyncDashboard"));
@@ -118,11 +117,6 @@ const App = () => (
           <Route path="/admin/sync" element={
             <Suspense fallback={<AdminSyncSkeleton />}>
               <AdminSyncDashboard />
-            </Suspense>
-          } />
-          <Route path="/demo/inspection-buttons" element={
-            <Suspense fallback={<PageSkeleton />}>
-              <InspectionButtonDemo />
             </Suspense>
           } />
           <Route path="/auth" element={
