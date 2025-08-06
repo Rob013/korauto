@@ -24,6 +24,7 @@ const DiagramDemo = lazy(() => import("./pages/DiagramDemo"));
 // Removed demo import - was only for testing layout improvements
 const AdminCarSearchDemo = lazy(() => import("./pages/AdminCarSearchDemo"));
 const PerformanceDashboard = lazy(() => import("./components/PerformanceDashboard"));
+const LotNumberDemoPage = lazy(() => import("./pages/LotNumberDemoPage"));
 
 // Lazy load admin components for better code splitting
 const AdminSyncDashboard = lazy(() => import("./components/AdminSyncDashboard"));
@@ -160,6 +161,11 @@ const App = () => (
           <Route path="/admin-search-demo" element={
             <Suspense fallback={<PageSkeleton />}>
               <AdminCarSearchDemo />
+            </Suspense>
+          } />
+          <Route path="/lot-number-demo" element={
+            <Suspense fallback={<PageSkeleton />}>
+              <LotNumberDemoPage />
             </Suspense>
           } />
           <Route path="/performance" element={
