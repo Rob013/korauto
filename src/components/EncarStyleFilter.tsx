@@ -256,23 +256,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   if (compact) {
     return (
       <div className="space-y-3 sm:space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center">
           <h3 className="text-base sm:text-lg font-semibold">Search Cars</h3>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => {
-              if (onCloseFilter) {
-                onCloseFilter();
-              } else {
-                onClearFilters();
-              }
-            }}
-            className="text-muted-foreground hover:text-foreground flex items-center gap-1 h-8 px-2"
-          >
-            <X className="h-3 w-3" />
-            <span className="text-xs">Close</span>
-          </Button>
         </div>
         
         {/* Basic filters */}
