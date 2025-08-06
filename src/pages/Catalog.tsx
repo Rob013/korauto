@@ -1,11 +1,13 @@
-import { useEffect, lazy, Suspense } from "react";
+import { useEffect, lazy, Suspense, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { trackPageView } from "@/utils/analytics";
 import Header from "@/components/Header";
 import EncarCatalog from "@/components/EncarCatalog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Footer = lazy(() => import("@/components/Footer"));
+const InspectedCarsTab = lazy(() => import("@/components/InspectedCarsTab"));
 
 const FooterSkeleton = () => (
   <footer className="bg-card">
@@ -29,6 +31,7 @@ const FooterSkeleton = () => (
 const Catalog = () => {
   const [searchParams] = useSearchParams();
   const highlightCarId = searchParams.get('highlight');
+  const [activeTab, setActiveTab] = useState("all");
 
   useEffect(() => {
     // Track catalog page view
@@ -41,7 +44,29 @@ const Catalog = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <EncarCatalog highlightCarId={highlightCarId} />
+      <div className="container-responsive py-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="all">Të Gjitha Makinat</TabsTrigger>
+            <TabsTrigger value="inspected">TE INSPEKTUARA</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="all" className="mt-0">
+            <EncarCatalog highlightCarId={highlightCarId} />
+          </TabsContent>
+          
+          <TabsContent value="inspected" className="mt-0">
+            <Suspense fallback={
+              <div className="flex items-center justify-center py-12">
+                <Skeleton className="h-8 w-8 rounded-full mr-2" />
+                <span>Loading inspected cars...</span>
+              </div>
+            }>
+              <InspectedCarsTab />
+            </Suspense>
+          </TabsContent>
+        </Tabs>
+      </div>
       <Suspense fallback={<FooterSkeleton />}>
         <Footer />
       </Suspense>
