@@ -235,6 +235,24 @@ All colors MUST be HSL.
     }
   }
 
+  /* Fix for Albanian inspection texts in dark mode - should be black */
+  .dark .inspection-text-black {
+    color: #000000 !important;
+  }
+
+  .dark .inspection-subtext-black {
+    color: #000000 !important;
+  }
+
+  /* Ensure normal colors in light mode */
+  .inspection-text-black {
+    color: inherit;
+  }
+
+  .inspection-subtext-black {
+    color: inherit;
+  }
+
   /* Text truncation utilities */
   .line-clamp-2 {
     display: -webkit-box;
