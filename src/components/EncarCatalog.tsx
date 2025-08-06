@@ -764,8 +764,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         overflow-y-auto lg:shadow-none shadow-xl
         ${isMobile ? 'safe-area-inset' : ''}
       `}>
-        <div className={`h-14 sm:h-16 px-3 sm:px-4 border-b ${isMobile ? 'bg-primary text-primary-foreground' : ''}`}>
-          <div className="flex h-full items-center justify-between">
+        <div className={`p-3 sm:p-4 border-b ${isMobile ? 'bg-primary text-primary-foreground' : ''}`}>
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Filter className={`h-4 w-4 sm:h-5 sm:w-5 ${isMobile ? 'text-primary-foreground' : 'text-primary'}`} />
               <h3 className={`font-semibold text-sm sm:text-base ${isMobile ? 'text-lg text-primary-foreground' : ''}`}>
