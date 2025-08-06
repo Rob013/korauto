@@ -49,4 +49,20 @@ export const TRANSMISSION_OPTIONS = {
   manual: 2
 };
 
+// Body type options mapping - common car body styles
+export const BODY_TYPE_OPTIONS = {
+  sedan: 1,
+  suv: 2,
+  hatchback: 3,
+  coupe: 4,
+  wagon: 5,
+  convertible: 6,
+  pickup: 7,
+  van: 8,
+  small: 9,
+  crossover: 10,
+  limousine: 11,
+  roadster: 12
+};
+
 export default useAuctionAPI;
