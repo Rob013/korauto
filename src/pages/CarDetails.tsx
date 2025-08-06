@@ -379,6 +379,12 @@ const CarDetails = memo(() => {
   const [showInspectionReport, setShowInspectionReport] = useState(false);
   const [hasAutoExpanded, setHasAutoExpanded] = useState(false);
   const [showEngineSection, setShowEngineSection] = useState(false);
+  const [isPlaceholderImage, setIsPlaceholderImage] = useState(false);
+
+  // Reset placeholder state when image selection changes
+  useEffect(() => {
+    setIsPlaceholderImage(false);
+  }, [selectedImageIndex]);
 
   // Auto-expand detailed info if car has rich data (only once)
   useEffect(() => {
@@ -1085,9 +1091,20 @@ const CarDetails = memo(() => {
                     <img
                       src={images[selectedImageIndex]}
                       alt={`${car.year} ${car.make} ${car.model}`}
-                      className="w-full h-full object-contain transition-transform duration-300 hover:scale-105"
+                      className={`w-full h-full transition-transform duration-300 hover:scale-105 ${
+                        isPlaceholderImage 
+                          ? "object-cover" // Use object-cover for placeholder to fill container properly on mobile
+                          : "object-contain" // Use object-contain for real images to show full image
+                      }`}
                       onError={(e) => {
                         e.currentTarget.src = "/placeholder.svg";
+                        setIsPlaceholderImage(true);
+                      }}
+                      onLoad={(e) => {
+                        // Reset placeholder state when a real image loads successfully
+                        if (!e.currentTarget.src.includes("/placeholder.svg")) {
+                          setIsPlaceholderImage(false);
+                        }
                       }}
                     />
                   ) : (
