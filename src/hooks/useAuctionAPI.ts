@@ -49,4 +49,20 @@ export const TRANSMISSION_OPTIONS = {
   manual: 2
 };
 
+// Body type options mapping
+export const BODY_TYPE_OPTIONS = {
+  sedan: 1,
+  suv: 2,
+  hatchback: 3,
+  coupe: 4,
+  wagon: 5,
+  convertible: 6,
+  pickup: 7,
+  van: 8,
+  minivan: 9,
+  crossover: 10,
+  roadster: 11,
+  limousine: 12
+};
+
 export default useAuctionAPI;

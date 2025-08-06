@@ -340,6 +340,7 @@ interface APIFilters {
   color?: string;
   fuel_type?: string;
   transmission?: string;
+  body_type?: string;
   odometer_from_km?: string;
   odometer_to_km?: string;
   from_year?: string;

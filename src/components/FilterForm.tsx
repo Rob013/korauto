@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Filter, X, Loader2, Search } from "lucide-react";
-import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS } from '@/hooks/useAuctionAPI';
+import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS, BODY_TYPE_OPTIONS } from '@/hooks/useAuctionAPI';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -67,6 +67,7 @@ interface FilterFormProps {
     color?: string;
     fuel_type?: string;
     transmission?: string;
+    body_type?: string;
     odometer_from_km?: string;
     odometer_to_km?: string;
     from_year?: string;
@@ -485,7 +486,7 @@ const FilterForm = memo<FilterFormProps>(({
       {/* Advanced Filters */}
       {showAdvanced && (
         <div className="border-t pt-3 space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
             <div className="space-y-1">
               <Label htmlFor="color" className="text-xs font-medium">Ngjyra</Label>
               <AdaptiveSelect 
@@ -530,6 +531,23 @@ const FilterForm = memo<FilterFormProps>(({
                 options={[
                   { value: 'all', label: 'Të gjithë' },
                   ...Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => ({
+                    value: id.toString(),
+                    label: name.charAt(0).toUpperCase() + name.slice(1)
+                  }))
+                ]}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="body_type" className="text-xs font-medium">Lloji i Trupit</Label>
+              <AdaptiveSelect 
+                value={filters.body_type || 'all'} 
+                onValueChange={(value) => updateFilter('body_type', value)}
+                placeholder="Të gjithë Llojet"
+                className="h-8 text-xs sm:text-sm"
+                options={[
+                  { value: 'all', label: 'Të gjithë Llojet' },
+                  ...Object.entries(BODY_TYPE_OPTIONS).map(([name, id]) => ({
                     value: id.toString(),
                     label: name.charAt(0).toUpperCase() + name.slice(1)
                   }))
