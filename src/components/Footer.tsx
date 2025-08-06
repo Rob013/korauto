@@ -12,7 +12,7 @@ const Footer = () => {
           <div className="space-y-4">
             <h3 className="text-2xl font-bold">KORAUTO</h3>
             <p className="text-sm opacity-90">
-              Partneri juaj i besuar për makina të cilësisë së lartë me shërbime profesionale inspektimi në të gjithë South Korea.
+              Partneri juaj i besuar për makina të cilësisë së lartë me shërbime profesionale inspektimi në të gjithë Korenë e jugut.
             </p>
           </div>
 

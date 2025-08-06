@@ -19,7 +19,7 @@ const HomeSection = () => {
             Mirë se vini në KORAUTO
           </h1>
           <p className="text-lg md:text-xl mb-6 text-muted-foreground max-w-3xl mx-auto">
-            Find your perfect car from South Korea with best price and quality
+            Find your perfect car from Korenë e jugut with best price and quality
           </p>
           
           <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-8">
