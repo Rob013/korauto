@@ -163,17 +163,28 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   }, [filters, onFiltersChange]);
 
   const currentYear = useMemo(() => new Date().getFullYear(), []);
-  const years = useMemo(() => Array.from({ length: 25 }, (_, i) => currentYear - i), [currentYear]);
+  const years = useMemo(() => Array.from({ length: 30 }, (_, i) => currentYear - i), [currentYear]);
   
-  // Year range presets
+  // Enhanced year range presets with more options
   const yearRangePresets = useMemo(() => [
+    { label: '2024+', from: 2024, to: currentYear },
     { label: '2023+', from: 2023, to: currentYear },
     { label: '2020+', from: 2020, to: currentYear },
     { label: '2018+', from: 2018, to: currentYear },
     { label: '2015+', from: 2015, to: currentYear },
     { label: '2010+', from: 2010, to: currentYear },
     { label: '2005+', from: 2005, to: currentYear },
+    { label: '2000+', from: 2000, to: currentYear },
   ], [currentYear]);
+
+  // Year options for dropdowns - "All years" options
+  const yearOptions = useMemo(() => [
+    { value: 'all', label: 'All years' },
+    ...years.map(year => ({
+      value: year.toString(),
+      label: year.toString()
+    }))
+  ], [years]);
 
   // Prioritized manufacturer sorting (German, Korean, Popular)
   const sortedManufacturers = useMemo(() => {
@@ -357,6 +368,36 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   {preset.label}
                 </Button>
               ))}
+            </div>
+          </div>
+
+          {/* Enhanced Year Filter - From/To dropdowns */}
+          <div className="space-y-1.5">
+            <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
+              <Calendar className="h-3 w-3" />
+              Year Range
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">From</Label>
+                <AdaptiveSelect 
+                  value={filters.from_year || 'all'} 
+                  onValueChange={(value) => updateFilter('from_year', value)}
+                  placeholder="All years"
+                  className="h-9 sm:h-10 text-sm"
+                  options={yearOptions}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">To</Label>
+                <AdaptiveSelect 
+                  value={filters.to_year || 'all'} 
+                  onValueChange={(value) => updateFilter('to_year', value)}
+                  placeholder="All years"
+                  className="h-9 sm:h-10 text-sm"
+                  options={yearOptions}
+                />
+              </div>
             </div>
           </div>
 
@@ -818,6 +859,33 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                         <X className="h-3 w-3" />
                       </Button>
                     )}
+                  </div>
+                </div>
+
+                {/* Enhanced Year Filter - From/To dropdowns for advanced section */}
+                <div className="mt-3">
+                  <Label className="text-xs text-muted-foreground mb-2 block">Custom Year Range:</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">From Year</Label>
+                      <AdaptiveSelect 
+                        value={filters.from_year || 'all'} 
+                        onValueChange={(value) => updateFilter('from_year', value)}
+                        placeholder="All years"
+                        className="h-8 text-xs"
+                        options={yearOptions}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">To Year</Label>
+                      <AdaptiveSelect 
+                        value={filters.to_year || 'all'} 
+                        onValueChange={(value) => updateFilter('to_year', value)}
+                        placeholder="All years"
+                        className="h-8 text-xs"
+                        options={yearOptions}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

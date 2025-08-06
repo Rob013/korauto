@@ -903,9 +903,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   <span className="hidden xs:inline text-xs">Back</span>
                 </Button>
                 
-                {/* Filter Toggle Button - Enhanced styling and feedback */}
+                {/* Filter Toggle Button - Solid styling with no effects */}
                 <Button
-                  variant={showFilters ? "default" : hasSelectedCategories ? "default" : "outline"}
+                  variant="default"
                   size="lg"
                   onClick={() => {
                     // Issue #1: Prevent closing filters if brand and model not selected
@@ -920,13 +920,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     }
                     setShowFilters(!showFilters);
                   }}
-                  className={`flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base transition-all duration-200 ${
-                    hasSelectedCategories 
-                      ? showFilters 
-                        ? "bg-primary hover:bg-primary/90 text-primary-foreground border-2 border-primary shadow-lg" 
-                        : "bg-primary hover:bg-primary/90 text-primary-foreground border-2 border-primary shadow-lg scale-105 animate-pulse" 
-                      : "bg-primary/10 hover:bg-primary hover:text-primary-foreground border-2 border-primary/20 hover:border-primary"
-                  }`}
+                  className="flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   {showFilters ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
                   <span className="hidden xs:inline">Shfaq Filtrat</span>
@@ -1049,8 +1043,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 ref={containerRef}
                 className={
                   viewMode === "grid"
-                    ? "grid mobile-car-grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4"
-                    : "space-y-3"
+                    ? "grid mobile-car-grid-compact sm:mobile-car-grid lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 sm:gap-3 lg:gap-4"
+                    : "space-y-2 sm:space-y-3"
                 }
               >
                 {carsForCurrentPage.map((car) => {
