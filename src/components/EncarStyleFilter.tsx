@@ -167,8 +167,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   }, [filters, onFiltersChange]);
 
   const currentYear = useMemo(() => new Date().getFullYear(), []);
-  // Issue #2: Enhanced year range - show years from 2025 to 1996
-  const years = useMemo(() => Array.from({ length: 30 }, (_, i) => Math.max(currentYear + 1 - i, 1996)), [currentYear]);
+  // Fixed: Enhanced year range - show years from current year to 1996, corrected range calculation
+  const years = useMemo(() => Array.from({ length: 30 }, (_, i) => Math.max(currentYear - i, 1996)), [currentYear]);
   
   // Enhanced year range presets with more options
   const yearRangePresets = useMemo(() => [
@@ -351,6 +351,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   label: `${generation.name}${generation.from_year ? (() => {
                     const from = generation.from_year.toString();
                     const currentYear = new Date().getFullYear();
+                    // Fixed: Consistent logic - show 'now' if to_year is current year or later, or missing
                     const to = (!generation.to_year || generation.to_year >= currentYear) ? 'now' : generation.to_year.toString();
                     return ` (${from}-${to})`;
                   })() : ''} • ${generation.cars_qty} cars`
@@ -844,6 +845,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                       label: `${generation.name}${generation.from_year ? (() => {
                         const from = generation.from_year.toString();
                         const currentYear = new Date().getFullYear();
+                        // Fixed: Consistent logic - show 'sot' if to_year is current year or later, or missing
                         const to = (!generation.to_year || generation.to_year >= currentYear) ? 'sot' : generation.to_year.toString();
                         return ` (${from}-${to})`;
                       })() : ''} • ${generation.cars_qty} makina`
