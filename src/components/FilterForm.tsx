@@ -339,29 +339,31 @@ const FilterForm = memo<FilterFormProps>(({
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-primary" />
           <h3 className="text-sm sm:text-base font-semibold">Kërkim i mençur</h3>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onClearFilters} 
+            disabled={isLoading}
+            className="text-xs px-2 py-1 h-6 ml-2 text-muted-foreground hover:text-destructive"
+          >
+            {isLoading ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <>
+                <X className="h-3 w-3 mr-1" />
+                Pastro
+              </>
+            )}
+          </Button>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={onClearFilters} 
-          disabled={isLoading}
-          className="text-xs px-2 py-1 h-7"
-        >
-          {isLoading ? (
-            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-          ) : (
-            <X className="h-3 w-3 mr-1" />
-          )}
-          Pastro
-        </Button>
       </div>
 
 
 
 
 
-      {/* Basic Filters - Responsive layout to prevent horizontal scrolling */}
-      <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
+      {/* Basic Filters - Optimized mobile layout */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3">
         <div className="space-y-1">
           <Label htmlFor="manufacturer" className="text-xs font-medium truncate">Brand</Label>
           <AdaptiveSelect 
@@ -485,14 +487,14 @@ const FilterForm = memo<FilterFormProps>(({
       {/* Advanced Filters */}
       {showAdvanced && (
         <div className="border-t pt-3 space-y-3">
-          <div className="space-y-3">{/* Changed advanced filters to vertical too */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
             <div className="space-y-1">
               <Label htmlFor="color" className="text-xs font-medium">Ngjyra</Label>
               <AdaptiveSelect 
                 value={filters.color || 'all'} 
                 onValueChange={(value) => updateFilter('color', value)}
                 placeholder="Të gjitha Ngjyrat"
-                className="h-8 text-sm"
+                className="h-8 text-xs sm:text-sm"
                 options={[
                   { value: 'all', label: 'Të gjitha Ngjyrat' },
                   ...Object.entries(COLOR_OPTIONS).map(([name, id]) => ({
@@ -509,7 +511,7 @@ const FilterForm = memo<FilterFormProps>(({
                 value={filters.fuel_type || 'all'} 
                 onValueChange={(value) => updateFilter('fuel_type', value)}
                 placeholder="Të gjithë Llojet"
-                className="h-8 text-sm"
+                className="h-8 text-xs sm:text-sm"
                 options={[
                   { value: 'all', label: 'Të gjithë Llojet' },
                   ...Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => ({
@@ -526,7 +528,7 @@ const FilterForm = memo<FilterFormProps>(({
                 value={filters.transmission || 'all'} 
                 onValueChange={(value) => updateFilter('transmission', value)}
                 placeholder="Të gjithë"
-                className="h-8 text-sm"
+                className="h-8 text-xs sm:text-sm"
                 options={[
                   { value: 'all', label: 'Të gjithë' },
                   ...Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => ({
@@ -538,14 +540,14 @@ const FilterForm = memo<FilterFormProps>(({
             </div>
           </div>
 
-          <div className="space-y-3">{/* Continue vertical layout for remaining filters */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
             <div className="space-y-1">
               <Label htmlFor="from_year" className="text-xs font-medium">From Year</Label>
               <AdaptiveSelect 
                 value={filters.from_year || 'any'} 
                 onValueChange={(value) => updateFilter('from_year', value)}
                 placeholder="All years"
-                className="h-8 text-sm"
+                className="h-8 text-xs sm:text-sm"
                 options={[
                   { value: 'any', label: 'All years' },
                   ...years.map((year) => ({
@@ -562,7 +564,7 @@ const FilterForm = memo<FilterFormProps>(({
                 value={filters.to_year || 'any'} 
                 onValueChange={(value) => updateFilter('to_year', value)}
                 placeholder="All years"
-                className="h-8 text-sm"
+                className="h-8 text-xs sm:text-sm"
                 options={[
                   { value: 'any', label: 'All years' },
                   ...years.map((year) => ({
@@ -579,7 +581,7 @@ const FilterForm = memo<FilterFormProps>(({
                 value={filters.seats_count || 'all'} 
                 onValueChange={(value) => updateFilter('seats_count', value)}
                 placeholder="Të gjitha"
-                className="h-8 text-sm"
+                className="h-8 text-xs sm:text-sm"
                 options={[
                   { value: 'all', label: 'Të gjitha' },
                   { value: '2', label: '2 Vende' },
@@ -598,7 +600,7 @@ const FilterForm = memo<FilterFormProps>(({
                 value={filters.max_accidents || 'all'} 
                 onValueChange={(value) => updateFilter('max_accidents', value)}
                 placeholder="Të gjitha"
-                className="h-8 text-sm"
+                className="h-8 text-xs sm:text-sm"
                 options={[
                   { value: 'all', label: 'Të gjitha' },
                   { value: '0', label: 'Pa aksidente' },
@@ -609,21 +611,21 @@ const FilterForm = memo<FilterFormProps>(({
             </div>
           </div>
 
-          <div className="space-y-4">{/* Make price and mileage vertical too */}
+          <div className="space-y-3">
             <div className="space-y-2">
               <Label className="text-xs font-medium">Intervali i Çmimit (Blerje direkte)</Label>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <Input
                   placeholder="Minimum"
                   type="number"
-                  className="h-8 text-sm"
+                  className="h-8 text-xs sm:text-sm"
                   value={filters.buy_now_price_from || ''}
                   onChange={(e) => updateFilter('buy_now_price_from', e.target.value)}
                 />
                 <Input
                   placeholder="Maksimum"
                   type="number"
-                  className="h-8 text-sm"
+                  className="h-8 text-xs sm:text-sm"
                   value={filters.buy_now_price_to || ''}
                   onChange={(e) => updateFilter('buy_now_price_to', e.target.value)}
                 />
@@ -632,18 +634,18 @@ const FilterForm = memo<FilterFormProps>(({
 
             <div className="space-y-2">
               <Label className="text-xs font-medium">Intervali i Kilometrazhit (km)</Label>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <Input
                   placeholder="Minimum"
                   type="number"
-                  className="h-8 text-sm"
+                  className="h-8 text-xs sm:text-sm"
                   value={filters.odometer_from_km || ''}
                   onChange={(e) => updateFilter('odometer_from_km', e.target.value)}
                 />
                 <Input
                   placeholder="Maksimum"
                   type="number"
-                  className="h-8 text-sm"
+                  className="h-8 text-xs sm:text-sm"
                   value={filters.odometer_to_km || ''}
                   onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
                 />

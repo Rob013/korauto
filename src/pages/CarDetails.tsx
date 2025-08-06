@@ -1070,15 +1070,15 @@ const CarDetails = memo(() => {
           </div>
         </div>
 
-        {/* Compact Main Content */}
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-3">
+        {/* Compact Main Content - Mobile-First Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4">
           {/* Left Column - Images and Gallery */}
-          <div className="xl:col-span-3 space-y-3">
+          <div className="lg:col-span-2 xl:col-span-3 space-y-3">
             {/* Compact Main Image */}
             <Card className="shadow-md border overflow-hidden">
               <CardContent className="p-0">
                 <div
-                  className="relative h-[220px] sm:h-[300px] lg:h-[350px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer"
+                  className="relative h-[200px] sm:h-[250px] md:h-[300px] lg:h-[350px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer"
                   onClick={() => setIsImageZoomOpen(true)}
                 >
                   {images.length > 0 ? (
@@ -1110,12 +1110,12 @@ const CarDetails = memo(() => {
 
             {/* Compact Image Thumbnails */}
             {images.length > 1 && (
-              <div className="grid grid-cols-10 md:grid-cols-12 lg:grid-cols-16 gap-1">
-                {images.slice(0, 32).map((image, index) => (
+              <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-16 gap-1">
+                {images.slice(0, 24).map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImageIndex(index)}
-                    className={`relative h-12 bg-muted rounded overflow-hidden border transition-all duration-200 hover:scale-105 ${
+                    className={`relative h-10 sm:h-12 bg-muted rounded overflow-hidden border transition-all duration-200 hover:scale-105 ${
                       selectedImageIndex === index
                         ? "border-primary shadow-md ring-1 ring-primary"
                         : "border-transparent hover:border-primary/50"
@@ -1824,7 +1824,7 @@ const CarDetails = memo(() => {
           </div>
 
           {/* Right Column - Compact Contact Card */}
-          <div className="xl:col-span-1 space-y-3">
+          <div className="lg:col-span-1 xl:col-span-1 space-y-3">
             {/* Compact Contact & Inspection Card */}
             <Card className="shadow-md border sticky top-4">
               <CardContent className="p-3">
