@@ -1,5 +1,59 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { findGenerationYears } from "@/data/generationYears";
+
+// Create fallback generation data for testing when API is not available
+export const createFallbackGenerations = (manufacturerName: string): Generation[] => {
+  const generationData: { [key: string]: Generation[] } = {
+    'BMW': [
+      { id: 1001, name: 'E90/E91/E92/E93', from_year: 2005, to_year: 2013, cars_qty: 45, manufacturer_id: 9, model_id: 101 },
+      { id: 1002, name: 'F30/F31/F34/F35', from_year: 2012, to_year: 2019, cars_qty: 67, manufacturer_id: 9, model_id: 101 },
+      { id: 1003, name: 'G20/G21', from_year: 2019, to_year: 2024, cars_qty: 89, manufacturer_id: 9, model_id: 101 },
+      { id: 1004, name: 'E60/E61', from_year: 2003, to_year: 2010, cars_qty: 23, manufacturer_id: 9, model_id: 102 },
+      { id: 1005, name: 'F10/F11/F07/F18', from_year: 2010, to_year: 2017, cars_qty: 56, manufacturer_id: 9, model_id: 102 },
+      { id: 1006, name: 'G30/G31/G38', from_year: 2017, to_year: 2024, cars_qty: 78, manufacturer_id: 9, model_id: 102 }
+    ],
+    'Audi': [
+      { id: 2001, name: 'C7', from_year: 2011, to_year: 2018, cars_qty: 45, manufacturer_id: 1, model_id: 201 },
+      { id: 2002, name: 'C8', from_year: 2018, to_year: 2024, cars_qty: 67, manufacturer_id: 1, model_id: 201 },
+      { id: 2003, name: 'B8', from_year: 2007, to_year: 2015, cars_qty: 34, manufacturer_id: 1, model_id: 202 },
+      { id: 2004, name: 'B9', from_year: 2015, to_year: 2024, cars_qty: 56, manufacturer_id: 1, model_id: 202 }
+    ],
+    'Mercedes-Benz': [
+      { id: 3001, name: 'W204', from_year: 2007, to_year: 2014, cars_qty: 45, manufacturer_id: 16, model_id: 301 },
+      { id: 3002, name: 'W205', from_year: 2014, to_year: 2021, cars_qty: 67, manufacturer_id: 16, model_id: 301 },
+      { id: 3003, name: 'W206', from_year: 2021, to_year: 2024, cars_qty: 23, manufacturer_id: 16, model_id: 301 }
+    ]
+  };
+
+  return generationData[manufacturerName] || [];
+};
+
+// Create fallback model data for testing when API is not available
+export const createFallbackModels = (manufacturerName: string): Model[] => {
+  const modelData: { [key: string]: Model[] } = {
+    'BMW': [
+      { id: 101, name: '3 Series', cars_qty: 201 },
+      { id: 102, name: '5 Series', cars_qty: 157 },
+      { id: 103, name: '7 Series', cars_qty: 89 },
+      { id: 104, name: 'X3', cars_qty: 145 },
+      { id: 105, name: 'X5', cars_qty: 123 }
+    ],
+    'Audi': [
+      { id: 201, name: 'A6', cars_qty: 112 },
+      { id: 202, name: 'A4', cars_qty: 98 },
+      { id: 203, name: 'A3', cars_qty: 76 },
+      { id: 204, name: 'Q7', cars_qty: 45 }
+    ],
+    'Mercedes-Benz': [
+      { id: 301, name: 'C-Class', cars_qty: 134 },
+      { id: 302, name: 'E-Class', cars_qty: 98 },
+      { id: 303, name: 'S-Class', cars_qty: 67 }
+    ]
+  };
+
+  return modelData[manufacturerName] || [];
+};
 
 // Create fallback manufacturer data without logos
 export const createFallbackManufacturers = () => {
@@ -582,6 +636,15 @@ export const useSecureAuctionAPI = () => {
       return fallbackModels;
     } catch (err) {
       console.error("[fetchModels] Error:", err);
+      console.log(`🔄 Using fallback model data for manufacturer ${manufacturerId}`);
+      
+      // Use fallback model data based on manufacturer name
+      const manufacturers = await fetchManufacturers();
+      const manufacturer = manufacturers.find(m => m.id.toString() === manufacturerId);
+      if (manufacturer) {
+        return createFallbackModels(manufacturer.name);
+      }
+      
       return [];
     }
   };
@@ -631,6 +694,27 @@ export const useSecureAuctionAPI = () => {
       return filteredGenerations;
     } catch (err) {
       console.error('[fetchGenerations] Error:', err);
+      console.log(`🔄 Using fallback generation data for model ${modelId}`);
+      
+      // Use fallback generation data based on manufacturer name
+      const manufacturers = await fetchManufacturers();
+      const models = await Promise.all(
+        manufacturers.map(async m => ({ manufacturer: m, models: await fetchModels(m.id.toString()) }))
+      );
+      
+      // Find the manufacturer for this model
+      let manufacturerName = '';
+      for (const { manufacturer, models: mModels } of models) {
+        if (mModels.some(m => m.id.toString() === modelId)) {
+          manufacturerName = manufacturer.name;
+          break;
+        }
+      }
+      
+      if (manufacturerName) {
+        return createFallbackGenerations(manufacturerName);
+      }
+      
       return [];
     }
   };
@@ -667,14 +751,36 @@ export const useSecureAuctionAPI = () => {
       }
     });
 
-    // Enhance API generations with extracted year data
+    // Enhance API generations with extracted year data and real generation year data as fallback
     return apiGenerations.map(gen => {
       const yearData = yearDataMap.get(gen.id);
+      
+      // Try to get real generation year data from our comprehensive database
+      let realYearData: { from_year?: number; to_year?: number } | null = null;
+      if (gen.manufacturer_id && gen.model_id) {
+        // Get manufacturer and model names from car data or API
+        const manufacturerName = cars.find(car => 
+          car.manufacturer && car.manufacturer.id === gen.manufacturer_id
+        )?.manufacturer?.name;
+        const modelName = cars.find(car => 
+          car.model && car.model.id === gen.model_id
+        )?.model?.name;
+        
+        if (manufacturerName && modelName && gen.name) {
+          realYearData = findGenerationYears(manufacturerName, modelName, gen.name);
+          if (realYearData) {
+            console.log(`🎯 Found real generation year data for ${manufacturerName} ${modelName} ${gen.name}: ${realYearData.from_year}-${realYearData.to_year}`);
+          }
+        }
+      }
+      
       return {
         ...gen,
-        // Fixed: Prioritize API data, fallback to extracted data, ensure years are valid
-        from_year: gen.from_year && gen.from_year >= 1980 ? gen.from_year : yearData?.from_year,
-        to_year: gen.to_year && gen.to_year <= currentYear + 1 ? gen.to_year : yearData?.to_year,
+        // Priority: 1. Valid API data, 2. Real generation data, 3. Car year data
+        from_year: (gen.from_year && gen.from_year >= 1980) ? gen.from_year : 
+                   (realYearData?.from_year || yearData?.from_year),
+        to_year: (gen.to_year && gen.to_year <= currentYear + 1) ? gen.to_year : 
+                 (realYearData?.to_year || yearData?.to_year),
         cars_qty: gen.cars_qty || yearData?.car_count || 0
       };
     });
@@ -930,7 +1036,7 @@ export const useSecureAuctionAPI = () => {
   // Fallback grades based on manufacturer - but only show grades that actually exist in the data
   // Helper function to extract generations from car data
   const extractGenerationsFromCars = (cars: Car[]): Generation[] => {
-    const generationsMap = new Map<string, { id: number; name: string; car_count: number; from_year?: number; to_year?: number }>();
+    const generationsMap = new Map<string, { id: number; name: string; car_count: number; from_year?: number; to_year?: number; manufacturer_name?: string; model_name?: string }>();
     let carsWithGenerations = 0;
     let carsWithoutGenerations = 0;
     const currentYear = new Date().getFullYear();
@@ -962,6 +1068,9 @@ export const useSecureAuctionAPI = () => {
               id: generationId,
               name: generationName,
               car_count: 1,
+              // Store manufacturer and model names for real year data lookup
+              manufacturer_name: car.manufacturer?.name,
+              model_name: car.model?.name,
               // Fixed: Only set year if it's valid
               from_year: car.year && car.year >= 1980 && car.year <= currentYear + 1 ? car.year : undefined,
               to_year: car.year && car.year >= 1980 && car.year <= currentYear + 1 ? car.year : undefined
@@ -978,10 +1087,24 @@ export const useSecureAuctionAPI = () => {
     
     console.log(`📊 Cars with generations: ${carsWithGenerations}, Cars without generations: ${carsWithoutGenerations}`);
     
-    return generations.map(g => ({
-      ...g,
-      cars_qty: g.car_count
-    }));
+    return generations.map(g => {
+      // Try to enhance with real generation year data
+      let realYearData: { from_year?: number; to_year?: number } | null = null;
+      if (g.manufacturer_name && g.model_name) {
+        realYearData = findGenerationYears(g.manufacturer_name, g.model_name, g.name);
+        if (realYearData) {
+          console.log(`🎯 Found real generation year data for ${g.manufacturer_name} ${g.model_name} ${g.name}: ${realYearData.from_year}-${realYearData.to_year}`);
+        }
+      }
+      
+      return {
+        ...g,
+        // Priority: 1. Car-derived years, 2. Real generation data
+        from_year: g.from_year || realYearData?.from_year,
+        to_year: g.to_year || realYearData?.to_year,
+        cars_qty: g.car_count
+      };
+    });
   };
 
   const getFallbackGrades = (manufacturerId?: string): { value: string; label: string; count?: number }[] => {
