@@ -1491,42 +1491,88 @@ const CarDetails = memo(() => {
                               <Button
                                 onClick={() => setShowEngineSection(!showEngineSection)}
                                 variant="ghost"
-                                className="w-full justify-between p-3 md:p-4 h-auto group hover:bg-blue-100/50 transition-all duration-300"
+                                className="w-full p-3 md:p-4 h-auto group hover:bg-blue-100/50 transition-all duration-300"
                               >
-                                <div className="flex items-center gap-3 min-w-0 flex-1">
-                                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-700 transition-colors flex-shrink-0">
-                                    <Cog className="h-4 w-4 text-white" />
+                                {/* Mobile Layout: Stack vertically */}
+                                <div className="flex flex-col gap-2 w-full sm:hidden">
+                                  {/* Title row with icon and chevron */}
+                                  <div className="flex items-center justify-between w-full">
+                                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                                      <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-700 transition-colors flex-shrink-0">
+                                        <Cog className="h-4 w-4 text-white" />
+                                      </div>
+                                      <div className="text-left min-w-0 flex-1">
+                                        <h5 className="text-sm font-bold text-foreground inspection-text-black">Motori dhe Sistemi Mekanik</h5>
+                                        <p className="text-muted-foreground text-xs inspection-subtext-black">Kontrolli teknik i komponentëve kryesorë</p>
+                                      </div>
+                                    </div>
+                                    <ChevronDown
+                                      className={`h-4 w-4 text-muted-foreground transition-all duration-300 flex-shrink-0 ${
+                                        showEngineSection ? "rotate-180 text-primary" : ""
+                                      }`}
+                                    />
                                   </div>
-                                  <div className="text-left min-w-0 flex-1">
-                                    <h5 className="text-base md:text-lg font-bold text-foreground inspection-text-black">Motori dhe Sistemi Mekanik</h5>
-                                    <p className="text-muted-foreground text-xs inspection-subtext-black">Kontrolli teknik i komponentëve kryesorë</p>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  {/* Status indicators row */}
                                   {!showEngineSection && (
-                                    <div className="flex gap-1">
-                                      {Object.entries(car.details.inspect.inner).slice(0, 3).map(([key, value], index) => {
-                                        const isGood = value === "goodness" || value === "proper" || value === "doesn't exist";
-                                        return (
-                                          <div
-                                            key={index}
-                                            className={`w-2 h-2 rounded-full ${isGood ? 'bg-green-500' : 'bg-red-500'}`}
-                                            title={`${key}: ${value}`}
-                                          />
-                                        );
-                                      })}
-                                      {Object.entries(car.details.inspect.inner).length > 3 && (
-                                        <span className="text-xs text-muted-foreground ml-1">
-                                          +{Object.entries(car.details.inspect.inner).length - 3}
-                                        </span>
-                                      )}
+                                    <div className="flex items-center gap-2 justify-center">
+                                      <div className="flex gap-1">
+                                        {Object.entries(car.details.inspect.inner).slice(0, 3).map(([key, value], index) => {
+                                          const isGood = value === "goodness" || value === "proper" || value === "doesn't exist";
+                                          return (
+                                            <div
+                                              key={index}
+                                              className={`w-2 h-2 rounded-full ${isGood ? 'bg-green-500' : 'bg-red-500'}`}
+                                              title={`${key}: ${value}`}
+                                            />
+                                          );
+                                        })}
+                                        {Object.entries(car.details.inspect.inner).length > 3 && (
+                                          <span className="text-xs text-muted-foreground ml-1">
+                                            +{Object.entries(car.details.inspect.inner).length - 3}
+                                          </span>
+                                        )}
+                                      </div>
                                     </div>
                                   )}
-                                  <ChevronDown
-                                    className={`h-4 w-4 md:h-5 md:w-5 text-muted-foreground transition-all duration-300 ${
-                                      showEngineSection ? "rotate-180 text-primary" : ""
-                                    }`}
-                                  />
+                                </div>
+
+                                {/* Desktop Layout: Horizontal */}
+                                <div className="hidden sm:flex sm:items-center sm:justify-between sm:w-full">
+                                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-700 transition-colors flex-shrink-0">
+                                      <Cog className="h-4 w-4 text-white" />
+                                    </div>
+                                    <div className="text-left min-w-0 flex-1">
+                                      <h5 className="text-base md:text-lg font-bold text-foreground inspection-text-black">Motori dhe Sistemi Mekanik</h5>
+                                      <p className="text-muted-foreground text-xs inspection-subtext-black">Kontrolli teknik i komponentëve kryesorë</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                    {!showEngineSection && (
+                                      <div className="flex gap-1">
+                                        {Object.entries(car.details.inspect.inner).slice(0, 3).map(([key, value], index) => {
+                                          const isGood = value === "goodness" || value === "proper" || value === "doesn't exist";
+                                          return (
+                                            <div
+                                              key={index}
+                                              className={`w-2 h-2 rounded-full ${isGood ? 'bg-green-500' : 'bg-red-500'}`}
+                                              title={`${key}: ${value}`}
+                                            />
+                                          );
+                                        })}
+                                        {Object.entries(car.details.inspect.inner).length > 3 && (
+                                          <span className="text-xs text-muted-foreground ml-1">
+                                            +{Object.entries(car.details.inspect.inner).length - 3}
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+                                    <ChevronDown
+                                      className={`h-4 w-4 md:h-5 md:w-5 text-muted-foreground transition-all duration-300 ${
+                                        showEngineSection ? "rotate-180 text-primary" : ""
+                                      }`}
+                                    />
+                                  </div>
                                 </div>
                               </Button>
 
