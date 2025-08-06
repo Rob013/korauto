@@ -466,33 +466,60 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setIsLoading(true);
     setModels([]);
     setGenerations([]);
+    
+    // Create new filters immediately for faster UI response
+    const newFilters: APIFilters = {
+      manufacturer_id: manufacturerId,
+      model_id: undefined,
+      generation_id: undefined,
+      grade_iaai: undefined,
+      color: filters.color,
+      fuel_type: filters.fuel_type,
+      transmission: filters.transmission,
+      odometer_from_km: filters.odometer_from_km,
+      odometer_to_km: filters.odometer_to_km,
+      from_year: filters.from_year,
+      to_year: filters.to_year,
+      buy_now_price_from: filters.buy_now_price_from,
+      buy_now_price_to: filters.buy_now_price_to,
+      seats_count: filters.seats_count,
+      search: filters.search,
+    };
+    setFilters(newFilters);
+    setLoadedPages(1);
+    
     try {
+      // Fetch models and cars in parallel for better performance
+      const promises = [];
+      
       if (manufacturerId) {
         console.log(`[handleManufacturerChange] Fetching models...`);
-        const modelData = await fetchModels(manufacturerId);
-        console.log(`[handleManufacturerChange] Received modelData:`, modelData);
-        console.log(`[handleManufacturerChange] Setting models to:`, modelData);
-        setModels(modelData);
+        promises.push(
+          fetchModels(manufacturerId).then(modelData => {
+            console.log(`[handleManufacturerChange] Received modelData:`, modelData);
+            console.log(`[handleManufacturerChange] Setting models to:`, modelData);
+            setModels(modelData);
+            return modelData;
+          })
+        );
       }
-      const newFilters: APIFilters = {
-        manufacturer_id: manufacturerId,
-        model_id: undefined,
-        generation_id: undefined,
-        grade_iaai: undefined,
-        color: filters.color,
-        fuel_type: filters.fuel_type,
-        transmission: filters.transmission,
-        odometer_from_km: filters.odometer_from_km,
-        odometer_to_km: filters.odometer_to_km,
-        from_year: filters.from_year,
-        to_year: filters.to_year,
-        buy_now_price_from: filters.buy_now_price_from,
-        buy_now_price_to: filters.buy_now_price_to,
-        seats_count: filters.seats_count,
-        search: filters.search,
-      };
-      setLoadedPages(1);
-      handleFiltersChange(newFilters);
+      
+      // Fetch cars with new filters
+      promises.push(
+        fetchCars(1, { ...newFilters, per_page: "50" }, true)
+      );
+      
+      await Promise.all(promises);
+      
+      // Update URL after successful data fetch
+      const paramsToSet: any = {};
+      Object.entries(newFilters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          paramsToSet[key] = value.toString();
+        }
+      });
+      setSearchParams(paramsToSet);
+      
     } catch (error) {
       console.error('[handleManufacturerChange] Error:', error);
       setModels([]);
@@ -510,30 +537,47 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const handleModelChange = async (modelId: string) => {
     setIsLoading(true);
     setGenerations([]);
+    
+    // Create new filters immediately for faster UI response
+    const newFilters: APIFilters = {
+      ...filters,
+      model_id: modelId,
+      generation_id: undefined,
+      grade_iaai: undefined,
+    };
+    setFilters(newFilters);
+    setLoadedPages(1);
+    
     try {
       if (!modelId) {
-        const newFilters: APIFilters = {
-          ...filters,
-          model_id: undefined,
-          generation_id: undefined,
-          grade_iaai: undefined,
-        };
-        setLoadedPages(1);
-        handleFiltersChange(newFilters);
+        // Fetch cars with cleared model filter
+        await fetchCars(1, { ...newFilters, per_page: "50" }, true);
         setIsLoading(false);
         return;
       }
-      const generationData = await fetchGenerations(modelId);
-      setGenerations(generationData);
-      const newFilters: APIFilters = {
-        ...filters,
-        model_id: modelId,
-        generation_id: undefined,
-        grade_iaai: undefined,
-      };
-      setLoadedPages(1);
-      handleFiltersChange(newFilters);
+      
+      // Fetch generations and cars in parallel for better performance
+      const promises = [
+        fetchGenerations(modelId).then(generationData => {
+          setGenerations(generationData);
+          return generationData;
+        }),
+        fetchCars(1, { ...newFilters, per_page: "50" }, true)
+      ];
+      
+      await Promise.all(promises);
+      
+      // Update URL after successful data fetch
+      const paramsToSet: any = {};
+      Object.entries(newFilters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          paramsToSet[key] = value.toString();
+        }
+      });
+      setSearchParams(paramsToSet);
+      
     } catch (error) {
+      console.error('[handleModelChange] Error:', error);
       setGenerations([]);
     } finally {
       setIsLoading(false);
@@ -542,27 +586,31 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
   const handleGenerationChange = async (generationId: string) => {
     setIsLoading(true);
+    
+    // Create new filters immediately for faster UI response
+    const newFilters: APIFilters = {
+      ...filters,
+      generation_id: generationId,
+      grade_iaai: undefined,
+    };
+    setFilters(newFilters);
+    setLoadedPages(1);
+    
     try {
-      if (!generationId) {
-        const newFilters: APIFilters = {
-          ...filters,
-          generation_id: undefined,
-          grade_iaai: undefined,
-        };
-        setLoadedPages(1);
-        handleFiltersChange(newFilters);
-        setIsLoading(false);
-        return;
-      }
-      const newFilters: APIFilters = {
-        ...filters,
-        generation_id: generationId,
-        grade_iaai: undefined,
-      };
-      setLoadedPages(1);
-      handleFiltersChange(newFilters);
+      // Fetch cars with new generation filter
+      await fetchCars(1, { ...newFilters, per_page: "50" }, true);
+      
+      // Update URL after successful data fetch
+      const paramsToSet: any = {};
+      Object.entries(newFilters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          paramsToSet[key] = value.toString();
+        }
+      });
+      setSearchParams(paramsToSet);
+      
     } catch (error) {
-      // nothing
+      console.error('[handleGenerationChange] Error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -682,7 +730,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     };
   }, [filters, loadedPages]); // Re-run when filters or pages change
 
-  // Load filter counts when filters or manufacturers change
+  // Load filter counts when filters or manufacturers change - with debouncing
   useEffect(() => {
     const loadFilterCounts = async () => {
       if (manufacturers.length > 0) {
@@ -696,7 +744,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       }
     };
 
-    loadFilterCounts();
+    // Debounce filter counts loading to avoid excessive API calls
+    const timeoutId = setTimeout(loadFilterCounts, 300);
+    return () => clearTimeout(timeoutId);
   }, [filters, manufacturers]);
 
   useEffect(() => {
