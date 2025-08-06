@@ -182,8 +182,8 @@ const FilterForm = memo<FilterFormProps>(({
 
 
   const currentYear = useMemo(() => new Date().getFullYear(), []);
-  // Issue #2: Enhanced year range - 30 years (2025-1995) to 1996
-  const years = useMemo(() => Array.from({ length: 30 }, (_, i) => Math.max(currentYear + 1 - i, 1996)), [currentYear]);
+  // Fixed: Enhanced year range - 30 years from current year to 1996, corrected calculation
+  const years = useMemo(() => Array.from({ length: 30 }, (_, i) => Math.max(currentYear - i, 1996)), [currentYear]);
 
   // Memoized sorted manufacturers with enhanced API data validation and categorization
   const sortedManufacturers = useMemo(() => {
@@ -436,8 +436,8 @@ const FilterForm = memo<FilterFormProps>(({
                   if (generation.from_year) {
                     const from = generation.from_year.toString().slice(-2);
                     const currentYear = new Date().getFullYear();
-                    const toYearRaw = generation.to_year || currentYear;
-                    const to = (generation.to_year && generation.to_year !== currentYear) ? toYearRaw.toString().slice(-2) : 'present';
+                    // Fixed: Consistent logic - show 'present' if to_year is current year or later, or missing
+                    const to = (!generation.to_year || generation.to_year >= currentYear) ? 'present' : generation.to_year.toString().slice(-2);
                     yearRange = ` (${from}-${to})`;
                   }
                   const countText = displayCount > 0 ? ` (${displayCount})` : '';

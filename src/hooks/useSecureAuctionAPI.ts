@@ -638,27 +638,31 @@ export const useSecureAuctionAPI = () => {
   // Helper function to enhance API generations with car year data
   const enhanceGenerationsWithCarYears = (apiGenerations: Generation[], cars: Car[]): Generation[] => {
     const yearDataMap = new Map<number, { from_year?: number; to_year?: number; car_count: number }>();
+    const currentYear = new Date().getFullYear();
     
     // Extract year data from cars for each generation
     cars.forEach(car => {
       if (car.generation && car.generation.id && car.year) {
-        const genId = car.generation.id;
-        const existing = yearDataMap.get(genId);
-        
-        if (existing) {
-          existing.car_count++;
-          if (!existing.from_year || car.year < existing.from_year) {
-            existing.from_year = car.year;
+        // Fixed: Validate that car year is reasonable (between 1980 and current year + 1)
+        if (car.year >= 1980 && car.year <= currentYear + 1) {
+          const genId = car.generation.id;
+          const existing = yearDataMap.get(genId);
+          
+          if (existing) {
+            existing.car_count++;
+            if (!existing.from_year || car.year < existing.from_year) {
+              existing.from_year = car.year;
+            }
+            if (!existing.to_year || car.year > existing.to_year) {
+              existing.to_year = car.year;
+            }
+          } else {
+            yearDataMap.set(genId, {
+              from_year: car.year,
+              to_year: car.year,
+              car_count: 1
+            });
           }
-          if (!existing.to_year || car.year > existing.to_year) {
-            existing.to_year = car.year;
-          }
-        } else {
-          yearDataMap.set(genId, {
-            from_year: car.year,
-            to_year: car.year,
-            car_count: 1
-          });
         }
       }
     });
@@ -668,8 +672,9 @@ export const useSecureAuctionAPI = () => {
       const yearData = yearDataMap.get(gen.id);
       return {
         ...gen,
-        from_year: gen.from_year || yearData?.from_year,
-        to_year: gen.to_year || yearData?.to_year,
+        // Fixed: Prioritize API data, fallback to extracted data, ensure years are valid
+        from_year: gen.from_year && gen.from_year >= 1980 ? gen.from_year : yearData?.from_year,
+        to_year: gen.to_year && gen.to_year <= currentYear + 1 ? gen.to_year : yearData?.to_year,
         cars_qty: gen.cars_qty || yearData?.car_count || 0
       };
     });
@@ -928,6 +933,7 @@ export const useSecureAuctionAPI = () => {
     const generationsMap = new Map<string, { id: number; name: string; car_count: number; from_year?: number; to_year?: number }>();
     let carsWithGenerations = 0;
     let carsWithoutGenerations = 0;
+    const currentYear = new Date().getFullYear();
     
     cars.forEach(car => {
       // Only use generation if it exists in car data
@@ -942,7 +948,8 @@ export const useSecureAuctionAPI = () => {
           
           if (existing) {
             existing.car_count++;
-            if (car.year) {
+            // Fixed: Validate that car year is reasonable before using it
+            if (car.year && car.year >= 1980 && car.year <= currentYear + 1) {
               if (!existing.from_year || car.year < existing.from_year) {
                 existing.from_year = car.year;
               }
@@ -955,8 +962,9 @@ export const useSecureAuctionAPI = () => {
               id: generationId,
               name: generationName,
               car_count: 1,
-              from_year: car.year,
-              to_year: car.year
+              // Fixed: Only set year if it's valid
+              from_year: car.year && car.year >= 1980 && car.year <= currentYear + 1 ? car.year : undefined,
+              to_year: car.year && car.year >= 1980 && car.year <= currentYear + 1 ? car.year : undefined
             });
           }
         }
