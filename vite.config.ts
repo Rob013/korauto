@@ -25,12 +25,21 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
-          // Separate vendor chunks for better caching
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select', '@radix-ui/react-tabs'],
+          // Core React libraries
+          vendor: ['react', 'react-dom'],
+          // Router in separate chunk for better caching
+          router: ['react-router-dom'],
+          // UI libraries split into smaller chunks
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
+          'ui-tabs': ['@radix-ui/react-tabs', '@radix-ui/react-accordion', '@radix-ui/react-alert-dialog'],
+          'ui-form': ['@radix-ui/react-label', '@radix-ui/react-checkbox', '@radix-ui/react-radio-group'],
+          // Backend and data fetching
           supabase: ['@supabase/supabase-js'],
           query: ['@tanstack/react-query'],
+          // Utility libraries
           utils: ['clsx', 'tailwind-merge', 'date-fns', 'zod'],
+          // Charts and visualization (if used heavily)
+          charts: ['recharts'],
         },
       },
     },
@@ -42,8 +51,16 @@ export default defineConfig(({ mode }) => ({
       compress: {
         drop_console: mode === 'production',
         drop_debugger: true,
+        passes: 2, // Multiple passes for better compression
+      },
+      mangle: {
+        safari10: true, // Safari 10 compatibility
       },
     },
+    // Target modern browsers for better optimization
+    target: 'es2020',
+    // Enable source maps for production debugging
+    sourcemap: mode !== 'production',
   },
   // Optimize dependency pre-bundling
   optimizeDeps: {
