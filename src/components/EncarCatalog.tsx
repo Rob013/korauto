@@ -869,13 +869,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     }
                     return;
                   }
-                  // Use manual search if available, otherwise apply filters
-                  if (onManualSearch) {
-                    onManualSearch();
-                  } else if (hasChanges) {
-                    onFiltersChange(pendingFilters);
-                  }
-                  setHasChanges(false);
+                  // Apply filters
+                  handleFiltersChange(filters);
+                  setShowFilters(false);
                 }}
                 data-mobile-apply-button
                 className={`w-full h-12 text-lg font-semibold relative overflow-hidden transition-all duration-300 ${

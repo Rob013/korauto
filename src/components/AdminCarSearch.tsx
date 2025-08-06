@@ -30,7 +30,7 @@ interface CachedCarData {
   year: number;
   vin?: string;
   lot_number?: string;
-  car_data: Record<string, any>;
+  car_data: any; // Change from Record<string, any> to any to match Json type
   price?: number;
   mileage?: string;
   color?: string;
@@ -117,7 +117,7 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
       if (allCachedCars && allCachedCars.length > 0) {
         console.log('✅ Found cached cars:', allCachedCars.length);
         const cachedCarResults = allCachedCars.map((car: CachedCarData) => {
-          const carData = car.car_data as Record<string, any>;
+          const carData = typeof car.car_data === 'string' ? JSON.parse(car.car_data) : car.car_data;
           const lot = carData?.lots?.[0];
           
           return {

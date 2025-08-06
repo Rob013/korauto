@@ -441,7 +441,7 @@ const FilterForm = memo<FilterFormProps>(({
           <Label htmlFor="manufacturer" className="text-xs font-medium truncate">Marka</Label>
           <AdaptiveSelect 
             value={filters.manufacturer_id || 'all'} 
-            onValueChange={handleBrandChange} 
+            onValueChange={handleManufacturerChange} 
             disabled={isLoading}
             placeholder={isLoading ? "Duke ngarkuar..." : "Markat"}
             className="h-7 text-xs"
