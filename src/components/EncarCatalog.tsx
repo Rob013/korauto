@@ -725,7 +725,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       {/* Collapsible Filter Sidebar - Optimized for mobile */}
       <div className={`
         fixed lg:relative z-40 bg-card border-r transition-transform duration-300 ease-in-out
-        ${showFilters ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        ${showFilters ? 'translate-x-0' : '-translate-x-full'}
         ${isMobile ? 'inset-0 w-full h-full' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0'} 
         overflow-y-auto lg:shadow-none shadow-xl
         ${isMobile ? 'safe-area-inset' : ''}
@@ -871,7 +871,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   className="flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   {showFilters ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
-                  <span className="hidden xs:inline">Shfaq Filtrat</span>
+                  <span className="hidden xs:inline">{showFilters ? 'Fshih Filtrat' : 'Shfaq Filtrat'}</span>
                   <span className="xs:hidden">Filtrat</span>
                   {hasSelectedCategories && !showFilters && (
                     <span className="ml-1 text-xs bg-primary-foreground/20 px-2 py-1 rounded-full animate-bounce">
