@@ -80,9 +80,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [allCarsForSorting, setAllCarsForSorting] = useState<any[]>([]);
   const [isSortingGlobal, setIsSortingGlobal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-  const [hasSelectedCategories, setHasSelectedCategories] = useState(false);
   const isMobile = useIsMobile();
+  const [showFilters, setShowFilters] = useState(!isMobile); // Open by default on desktop, closed on mobile
+  const [hasSelectedCategories, setHasSelectedCategories] = useState(false);
 
   // Memoized helper function to extract grades from title
   const extractGradesFromTitle = useCallback((title: string): string[] => {
@@ -760,7 +760,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         className={`
         fixed lg:relative z-40 bg-card border-r transition-transform duration-300 ease-in-out
         ${showFilters ? 'translate-x-0' : '-translate-x-full'}
-        ${isMobile ? 'inset-0 w-full h-full' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0'} 
+        ${isMobile ? 'top-16 left-0 right-0 bottom-0 w-full h-[calc(100vh-4rem)]' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0'} 
         overflow-y-auto lg:shadow-none shadow-xl
         ${isMobile ? 'safe-area-inset' : ''}
       `}>
