@@ -182,8 +182,12 @@ const FilterForm = memo<FilterFormProps>(({
 
 
   const currentYear = useMemo(() => new Date().getFullYear(), []);
-  // Fixed: Enhanced year range - 30 years from current year to 1996, corrected calculation
-  const years = useMemo(() => Array.from({ length: 30 }, (_, i) => Math.max(currentYear - i, 1996)), [currentYear]);
+  // Enhanced year range for automotive data - from current year down to 1980 (45+ years)
+  const years = useMemo(() => {
+    const startYear = 1980;
+    const yearCount = currentYear - startYear + 1;
+    return Array.from({ length: yearCount }, (_, i) => currentYear - i);
+  }, [currentYear]);
 
   // Memoized sorted manufacturers with enhanced API data validation and categorization
   const sortedManufacturers = useMemo(() => {
