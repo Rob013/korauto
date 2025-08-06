@@ -2,6 +2,59 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { findGenerationYears } from "@/data/generationYears";
 
+// Create fallback generation data for testing when API is not available
+export const createFallbackGenerations = (manufacturerName: string): Generation[] => {
+  const generationData: { [key: string]: Generation[] } = {
+    'BMW': [
+      { id: 1001, name: 'E90/E91/E92/E93', from_year: 2005, to_year: 2013, cars_qty: 45, manufacturer_id: 9, model_id: 101 },
+      { id: 1002, name: 'F30/F31/F34/F35', from_year: 2012, to_year: 2019, cars_qty: 67, manufacturer_id: 9, model_id: 101 },
+      { id: 1003, name: 'G20/G21', from_year: 2019, to_year: 2024, cars_qty: 89, manufacturer_id: 9, model_id: 101 },
+      { id: 1004, name: 'E60/E61', from_year: 2003, to_year: 2010, cars_qty: 23, manufacturer_id: 9, model_id: 102 },
+      { id: 1005, name: 'F10/F11/F07/F18', from_year: 2010, to_year: 2017, cars_qty: 56, manufacturer_id: 9, model_id: 102 },
+      { id: 1006, name: 'G30/G31/G38', from_year: 2017, to_year: 2024, cars_qty: 78, manufacturer_id: 9, model_id: 102 }
+    ],
+    'Audi': [
+      { id: 2001, name: 'C7', from_year: 2011, to_year: 2018, cars_qty: 45, manufacturer_id: 1, model_id: 201 },
+      { id: 2002, name: 'C8', from_year: 2018, to_year: 2024, cars_qty: 67, manufacturer_id: 1, model_id: 201 },
+      { id: 2003, name: 'B8', from_year: 2007, to_year: 2015, cars_qty: 34, manufacturer_id: 1, model_id: 202 },
+      { id: 2004, name: 'B9', from_year: 2015, to_year: 2024, cars_qty: 56, manufacturer_id: 1, model_id: 202 }
+    ],
+    'Mercedes-Benz': [
+      { id: 3001, name: 'W204', from_year: 2007, to_year: 2014, cars_qty: 45, manufacturer_id: 16, model_id: 301 },
+      { id: 3002, name: 'W205', from_year: 2014, to_year: 2021, cars_qty: 67, manufacturer_id: 16, model_id: 301 },
+      { id: 3003, name: 'W206', from_year: 2021, to_year: 2024, cars_qty: 23, manufacturer_id: 16, model_id: 301 }
+    ]
+  };
+
+  return generationData[manufacturerName] || [];
+};
+
+// Create fallback model data for testing when API is not available
+export const createFallbackModels = (manufacturerName: string): Model[] => {
+  const modelData: { [key: string]: Model[] } = {
+    'BMW': [
+      { id: 101, name: '3 Series', cars_qty: 201 },
+      { id: 102, name: '5 Series', cars_qty: 157 },
+      { id: 103, name: '7 Series', cars_qty: 89 },
+      { id: 104, name: 'X3', cars_qty: 145 },
+      { id: 105, name: 'X5', cars_qty: 123 }
+    ],
+    'Audi': [
+      { id: 201, name: 'A6', cars_qty: 112 },
+      { id: 202, name: 'A4', cars_qty: 98 },
+      { id: 203, name: 'A3', cars_qty: 76 },
+      { id: 204, name: 'Q7', cars_qty: 45 }
+    ],
+    'Mercedes-Benz': [
+      { id: 301, name: 'C-Class', cars_qty: 134 },
+      { id: 302, name: 'E-Class', cars_qty: 98 },
+      { id: 303, name: 'S-Class', cars_qty: 67 }
+    ]
+  };
+
+  return modelData[manufacturerName] || [];
+};
+
 // Create fallback manufacturer data without logos
 export const createFallbackManufacturers = () => {
   const fallbackData = [
@@ -583,6 +636,15 @@ export const useSecureAuctionAPI = () => {
       return fallbackModels;
     } catch (err) {
       console.error("[fetchModels] Error:", err);
+      console.log(`🔄 Using fallback model data for manufacturer ${manufacturerId}`);
+      
+      // Use fallback model data based on manufacturer name
+      const manufacturers = await fetchManufacturers();
+      const manufacturer = manufacturers.find(m => m.id.toString() === manufacturerId);
+      if (manufacturer) {
+        return createFallbackModels(manufacturer.name);
+      }
+      
       return [];
     }
   };
@@ -632,6 +694,27 @@ export const useSecureAuctionAPI = () => {
       return filteredGenerations;
     } catch (err) {
       console.error('[fetchGenerations] Error:', err);
+      console.log(`🔄 Using fallback generation data for model ${modelId}`);
+      
+      // Use fallback generation data based on manufacturer name
+      const manufacturers = await fetchManufacturers();
+      const models = await Promise.all(
+        manufacturers.map(async m => ({ manufacturer: m, models: await fetchModels(m.id.toString()) }))
+      );
+      
+      // Find the manufacturer for this model
+      let manufacturerName = '';
+      for (const { manufacturer, models: mModels } of models) {
+        if (mModels.some(m => m.id.toString() === modelId)) {
+          manufacturerName = manufacturer.name;
+          break;
+        }
+      }
+      
+      if (manufacturerName) {
+        return createFallbackGenerations(manufacturerName);
+      }
+      
       return [];
     }
   };
