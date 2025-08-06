@@ -1616,7 +1616,7 @@ const CarDetails = memo(() => {
                                           demtime
                                         </span>
                                       </div>
-                                      <p className="text-sm text-gray-600">
+                                      <p className="text-sm text-muted-foreground">
                                         {processFloodDamageText(car.details.insurance.car_info.flood_damage)}
                                       </p>
                                     </div>
@@ -1656,11 +1656,11 @@ const CarDetails = memo(() => {
                                   <div className="p-4 bg-card rounded-lg border border-orange-500/20 hover:shadow-md transition-shadow">
                                     <div className="flex items-center gap-2 mb-2">
                                       <AlertTriangle className="h-4 w-4 text-orange-600" />
-                                      <span className="text-sm font-semibold text-gray-800">
+                                      <span className="text-sm font-semibold text-foreground">
                                         Dëmtimi Dytësor
                                       </span>
                                     </div>
-                                    <p className="text-sm text-gray-600 capitalize">
+                                    <p className="text-sm text-muted-foreground capitalize">
                                       {car.damage.second}
                                     </p>
                                   </div>
@@ -1678,8 +1678,8 @@ const CarDetails = memo(() => {
                                     <Users className="h-6 w-6 text-white" />
                                   </div>
                                   <div>
-                                    <h5 className="text-xl font-bold text-gray-900">Historia e Pronarëve</h5>
-                                    <p className="text-gray-600 text-sm">Ndryshimet e pronësisë përgjatë kohës</p>
+                                    <h5 className="text-xl font-bold text-foreground">Historia e Pronarëve</h5>
+                                    <p className="text-muted-foreground text-sm">Ndryshimet e pronësisë përgjatë kohës</p>
                                   </div>
                                 </div>
                                 <div className="space-y-3">
@@ -1693,17 +1693,17 @@ const CarDetails = memo(() => {
                                           <div className="flex items-center gap-3">
                                             <div className="w-2 h-2 bg-purple-500 rounded-full" />
                                             <div>
-                                              <span className="text-sm font-semibold text-gray-800">
+                                              <span className="text-sm font-semibold text-foreground">
                                                 {change.change_type}
                                               </span>
                                               {change.usage_type && (
-                                                <p className="text-xs text-gray-600 mt-1">
+                                                <p className="text-xs text-muted-foreground mt-1">
                                                   Lloji: {change.usage_type}
                                                 </p>
                                               )}
                                             </div>
                                           </div>
-                                          <span className="text-xs text-gray-500 bg-purple-50 px-2 py-1 rounded">
+                                          <span className="text-xs text-muted-foreground bg-purple-50 dark:bg-purple-900/30 px-2 py-1 rounded">
                                             {change.date}
                                           </span>
                                         </div>
@@ -1723,8 +1723,8 @@ const CarDetails = memo(() => {
                                     <Car className="h-5 w-5 text-white" />
                                   </div>
                                   <div>
-                                    <h5 className="text-lg font-bold text-gray-900">Diagrami i Inspektimit të Automjetit</h5>
-                                    <p className="text-gray-600 text-xs">Gjendja vizuale e pjesëve të jashtme</p>
+                                    <h5 className="text-lg font-bold text-foreground">Diagrami i Inspektimit të Automjetit</h5>
+                                    <p className="text-muted-foreground text-xs">Gjendja vizuale e pjesëve të jashtme</p>
                                   </div>
                                 </div>
                                 <CarInspectionDiagram
@@ -1743,8 +1743,8 @@ const CarDetails = memo(() => {
                                     <Clock className="h-6 w-6 text-white" />
                                   </div>
                                   <div>
-                                    <h5 className="text-xl font-bold text-gray-900">Historia e Mirëmbajtjes</h5>
-                                    <p className="text-gray-600 text-sm">Shërbimet dhe mirëmbajtja e bërë</p>
+                                    <h5 className="text-xl font-bold text-foreground">Historia e Mirëmbajtjes</h5>
+                                    <p className="text-muted-foreground text-sm">Shërbimet dhe mirëmbajtja e bërë</p>
                                   </div>
                                 </div>
                                 <div className="space-y-3">
@@ -1758,26 +1758,26 @@ const CarDetails = memo(() => {
                                           <div className="flex items-center gap-3">
                                             <div className="w-2 h-2 bg-yellow-500 rounded-full" />
                                             <div>
-                                              <span className="text-sm font-semibold text-gray-800">
+                                              <span className="text-sm font-semibold text-foreground">
                                                 {record.service_type ||
                                                   record.type ||
                                                   "Shërbim i Përgjithshëm"}
                                               </span>
                                               {record.description && (
-                                                <p className="text-xs text-gray-600 mt-1">
+                                                <p className="text-xs text-muted-foreground mt-1">
                                                   {record.description}
                                                 </p>
                                               )}
                                             </div>
                                           </div>
                                           {record.date && (
-                                            <span className="text-xs text-gray-500 bg-yellow-50 px-2 py-1 rounded">
+                                            <span className="text-xs text-muted-foreground bg-yellow-50 dark:bg-yellow-900/30 px-2 py-1 rounded">
                                               {record.date}
                                             </span>
                                           )}
                                         </div>
                                         {record.mileage && (
-                                          <span className="text-xs text-gray-600 block mt-2">
+                                          <span className="text-xs text-muted-foreground block mt-2">
                                             Kilometrazh: {record.mileage}
                                           </span>
                                         )}

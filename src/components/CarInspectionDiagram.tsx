@@ -390,12 +390,12 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
             <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-gray-700 dark:to-gray-600 rounded-full flex items-center justify-center mx-auto mb-6">
               <span className="text-blue-500 dark:text-blue-400 text-3xl">🔍</span>
             </div>
-            <h4 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-3">Nuk ka të dhëna inspektimi disponibla</h4>
-            <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
+            <h4 className="text-xl font-bold text-foreground mb-3">Nuk ka të dhëna inspektimi disponibla</h4>
+            <p className="text-muted-foreground max-w-md mx-auto">
               Diagrami do të shfaqë gjendjen e pjesëve të automjetit kur të disponohen të dhënat e inspektimit.
             </p>
             <div className="mt-6 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 max-w-lg mx-auto">
-              <h5 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Kodi i ngjyrave:</h5>
+              <h5 className="font-semibold text-foreground mb-2">Kodi i ngjyrave:</h5>
               <div className="flex flex-wrap justify-center gap-4 text-sm">
                 <div className="flex items-center gap-1">
                   <span>🟢</span>
