@@ -35,6 +35,7 @@ interface APIFilters {
   model_id?: string;
   generation_id?: string;
   grade_iaai?: string;
+  trim_level?: string;
   color?: string;
   fuel_type?: string;
   transmission?: string;
@@ -71,6 +72,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     fetchAllGenerationsForManufacturer, // ✅ Import new function
     fetchFilterCounts,
     fetchGrades,
+    fetchTrimLevels,
     loadMore,
   } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
@@ -875,6 +877,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             showAdvanced={showAdvancedFilters}
             onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
             onFetchGrades={fetchGrades}
+            onFetchTrimLevels={fetchTrimLevels}
             compact={true}
             onSearchCars={() => {
               // Issue #2 FIXED: Hide filter panel after search and mark as explicitly closed

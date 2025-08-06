@@ -51,6 +51,7 @@ const HomeCarsSection = memo(() => {
     fetchGenerations,
     fetchFilterCounts,
     fetchGrades,
+    fetchTrimLevels,
   } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
   const [sortBy, setSortBy] = useState<SortOption>("popular");
@@ -372,6 +373,7 @@ const HomeCarsSection = memo(() => {
                 }
               }}
               onFetchGrades={fetchGrades}
+              onFetchTrimLevels={fetchTrimLevels}
               isHomepage={true}
             />
           </div>
