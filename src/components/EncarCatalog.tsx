@@ -18,6 +18,7 @@ import {
 import LazyCarCard from "@/components/LazyCarCard";
 import { useSecureAuctionAPI, createFallbackManufacturers } from "@/hooks/useSecureAuctionAPI";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
+import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 
 import { useSearchParams } from "react-router-dom";
 import {
@@ -228,6 +229,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const SCROLL_STORAGE_KEY = "encar-catalog-scroll";
 
+  // Refs for swipe gesture detection
+  const mainContentRef = useRef<HTMLDivElement>(null);
+  const filterPanelRef = useRef<HTMLDivElement>(null);
+
   // Save current scroll position
   const saveScrollPosition = () => {
     if (containerRef.current) {
@@ -270,6 +275,33 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       }
     }
   };
+
+  // Swipe gesture handlers
+  const handleSwipeRightToShowFilters = useCallback(() => {
+    if (!showFilters && isMobile) {
+      setShowFilters(true);
+    }
+  }, [showFilters, isMobile]);
+
+  const handleSwipeLeftToCloseFilters = useCallback(() => {
+    if (showFilters && isMobile) {
+      setShowFilters(false);
+    }
+  }, [showFilters, isMobile]);
+
+  // Set up swipe gestures for main content (swipe right to show filters)
+  useSwipeGesture(mainContentRef, {
+    onSwipeRight: handleSwipeRightToShowFilters,
+    minSwipeDistance: 80, // Require a more deliberate swipe
+    maxVerticalDistance: 120
+  });
+
+  // Set up swipe gestures for filter panel (swipe left to close filters)
+  useSwipeGesture(filterPanelRef, {
+    onSwipeLeft: handleSwipeLeftToCloseFilters,
+    minSwipeDistance: 80,
+    maxVerticalDistance: 120
+  });
 
   const handleFiltersChange = useCallback((newFilters: APIFilters) => {
     setFilters(newFilters);
@@ -723,7 +755,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Collapsible Filter Sidebar - Optimized for mobile */}
-      <div className={`
+      <div 
+        ref={filterPanelRef}
+        className={`
         fixed lg:relative z-40 bg-card border-r transition-transform duration-300 ease-in-out
         ${showFilters ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         ${isMobile ? 'inset-0 w-full h-full' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0'} 
@@ -843,7 +877,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       )}
 
       {/* Main Content */}
-      <div className={`flex-1 min-w-0 transition-all duration-300`}>
+      <div ref={mainContentRef} className={`flex-1 min-w-0 transition-all duration-300`}>
         <div className="container-responsive py-3 sm:py-6 mobile-text-optimize">
           {/* Header Section - Mobile optimized */}
           <div className="flex flex-col gap-3 mb-4">
