@@ -123,6 +123,21 @@ const FilterForm = memo<FilterFormProps>(({
   const [hasChanges, setHasChanges] = useState(false);
 
 
+  // Helper function for year range validation
+  const validateYearRange = useCallback((key: string, value: string | undefined, currentFilters: any) => {
+    const fromYear = key === 'from_year' ? value : currentFilters.from_year;
+    const toYear = key === 'to_year' ? value : currentFilters.to_year;
+    
+    if (fromYear && toYear && parseInt(fromYear) > parseInt(toYear)) {
+      if (key === 'from_year') {
+        return { ...currentFilters, from_year: value, to_year: value };
+      } else {
+        return { ...currentFilters, to_year: value, from_year: value };
+      }
+    }
+    return { ...currentFilters, [key]: value };
+  }, []);
+
   const updateFilter = useCallback((key: string, value: string) => {
     // Handle special "all" values by converting them to undefined
     const actualValue = value === 'all' || value === 'any' ? undefined : value;
@@ -148,6 +163,12 @@ const FilterForm = memo<FilterFormProps>(({
         // If generation changes, clear grade filter
         if (key === 'generation_id') {
           updatedFilters.grade_iaai = undefined;
+        }
+        
+        // Year range validation
+        if (key === 'from_year' || key === 'to_year') {
+          const validatedFilters = validateYearRange(key, actualValue, updatedFilters);
+          Object.assign(updatedFilters, validatedFilters);
         }
       }
       
@@ -184,13 +205,19 @@ const FilterForm = memo<FilterFormProps>(({
           updatedFilters.grade_iaai = undefined;
         }
         
+        // Year range validation
+        if (key === 'from_year' || key === 'to_year') {
+          const validatedFilters = validateYearRange(key, actualValue, updatedFilters);
+          Object.assign(updatedFilters, validatedFilters);
+        }
+        
         onFiltersChange(updatedFilters);
       }
       
       // Clear loading state after a short delay
       setTimeout(() => setIsLoading(false), 50);
     }
-  }, [filters, pendingFilters, enableManualSearch, onFiltersChange, onManufacturerChange, onModelChange]);
+  }, [filters, pendingFilters, enableManualSearch, onFiltersChange, onManufacturerChange, onModelChange, validateYearRange]);
 
   // Manual search trigger function
   const handleManualSearch = useCallback(() => {
