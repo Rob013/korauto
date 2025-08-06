@@ -824,15 +824,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           {/* Mobile Apply/Close Filters Button - Enhanced */}
           {isMobile && (
             <div className="mt-6 pt-4 border-t space-y-3">
-              {/* Show current selection status */}
-              <div className="text-center text-sm text-muted-foreground">
-                {filters.manufacturer_id && filters.model_id ? (
-                  <span className="text-green-600 font-medium">✓ Marka dhe modeli të zgjedhur</span>
-                ) : (
-                  <span className="text-blue-600 font-medium">💡 Këshillë: Zgjidhni markën dhe modelin për rezultate më të mira</span>
-                )}
-              </div>
-              
               {/* Apply/Close button */}
               <Button
                 onClick={() => {
@@ -840,23 +831,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   setShowFilters(false);
                 }}
                 data-mobile-apply-button
-                className={`w-full h-12 text-lg font-semibold relative overflow-hidden transition-all duration-300 ${
-                  filters.manufacturer_id && filters.model_id
-                    ? "bg-primary hover:bg-primary/90 text-primary-foreground"
-                    : "bg-muted hover:bg-muted/80 text-muted-foreground border-2 border-dashed border-orange-300"
-                }`}
+                className="w-full h-12 text-lg font-semibold relative overflow-hidden transition-all duration-300 bg-primary hover:bg-primary/90 text-primary-foreground"
                 size="lg"
               >
-                <span className="relative z-10">
-                  {filters.manufacturer_id && filters.model_id
-                    ? `Shfaq Rezultatet (${cars.length} makina)`
-                    : "Mbyll Filtrat"
-                  }
-                </span>
-                {/* Subtle animation background for selected state */}
-                {filters.manufacturer_id && filters.model_id && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-transparent animate-pulse"></div>
-                )}
+                <span className="relative z-10">Mbyll Filtrat</span>
               </Button>
             </div>
           )}
@@ -1006,7 +984,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             <>
               <div
                 ref={containerRef}
-                className="grid mobile-car-grid-compact sm:mobile-car-grid lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 sm:gap-3 lg:gap-4"
+                className={`grid mobile-car-grid-compact sm:mobile-car-grid gap-2 sm:gap-3 lg:gap-4 ${
+                  showFilters 
+                    ? 'lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' 
+                    : 'lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7'
+                }`}
               >
                 {carsForCurrentPage.map((car) => {
                   const lot = car.lots?.[0];
