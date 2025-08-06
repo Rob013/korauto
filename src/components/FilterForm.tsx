@@ -182,7 +182,8 @@ const FilterForm = memo<FilterFormProps>(({
 
 
   const currentYear = useMemo(() => new Date().getFullYear(), []);
-  const years = useMemo(() => Array.from({ length: 25 }, (_, i) => currentYear - i), [currentYear]);
+  // Issue #2: Enhanced year range - 30 years (2025-1995) to 1996
+  const years = useMemo(() => Array.from({ length: 30 }, (_, i) => Math.max(currentYear + 1 - i, 1996)), [currentYear]);
 
   // Memoized sorted manufacturers with enhanced API data validation and categorization
   const sortedManufacturers = useMemo(() => {
@@ -359,18 +360,18 @@ const FilterForm = memo<FilterFormProps>(({
 
 
 
-      {/* Basic Filters - Always 4 columns beside each other */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 sm:gap-2">
+      {/* Basic Filters - Responsive layout to prevent horizontal scrolling */}
+      <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
         <div className="space-y-1">
-          <Label htmlFor="manufacturer" className="text-xs font-medium truncate">Marka</Label>
+          <Label htmlFor="manufacturer" className="text-xs font-medium truncate">Brand</Label>
           <AdaptiveSelect 
             value={filters.manufacturer_id || 'all'} 
             onValueChange={handleBrandChange} 
             disabled={isLoading}
-            placeholder={isLoading ? "Duke ngarkuar..." : "Markat"}
-            className="h-7 text-xs"
+            placeholder={isLoading ? "Loading..." : "All Brands"}
+            className="h-8 text-xs"
             options={[
-              { value: 'all', label: 'Të gjitha Markat' },
+              { value: 'all', label: 'All Brands' },
               ...sortedManufacturers.map((manufacturer) => ({
                 value: manufacturer.id.toString(),
                 label: (
@@ -384,15 +385,15 @@ const FilterForm = memo<FilterFormProps>(({
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="model" className="text-xs font-medium truncate">Modeli</Label>
+          <Label htmlFor="model" className="text-xs font-medium truncate">Model</Label>
           <AdaptiveSelect 
             value={filters.model_id || 'all'} 
             onValueChange={(value) => updateFilter('model_id', value)}
             disabled={!filters.manufacturer_id || isLoading}
-            placeholder={isLoading ? "Duke ngarkuar..." : (filters.manufacturer_id ? "Modelet" : "Markën së pari")}
-            className="h-7 text-xs"
+            placeholder={isLoading ? "Loading..." : (filters.manufacturer_id ? "All Models" : "Select Brand First")}
+            className="h-8 text-xs"
             options={[
-              { value: 'all', label: 'Të gjithë Modelet' },
+              { value: 'all', label: 'All Models' },
               ...(models && models.length > 0 ? 
                 models
                   .filter((model) => model.cars_qty && model.cars_qty > 0)
@@ -407,7 +408,7 @@ const FilterForm = memo<FilterFormProps>(({
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="generation" className="text-xs font-medium truncate">Gjeneratat</Label>
+          <Label htmlFor="generation" className="text-xs font-medium truncate">Generation</Label>
           <AdaptiveSelect
             value={filters.generation_id || 'all'} 
             onValueChange={(value) => {
@@ -419,12 +420,12 @@ const FilterForm = memo<FilterFormProps>(({
               }
             }}
             disabled={!filters.manufacturer_id || !filters.model_id}
-            placeholder={filters.model_id ? "Gjeneratat" : "Zgjidh modelin së pari"}
-            className="h-7 text-xs"
+            placeholder={filters.model_id ? "All Generations" : "Select Model First"}
+            className="h-8 text-xs"
             options={[
               { 
                 value: 'all', 
-                label: filters.model_id ? "Të gjitha Gjeneratat" : "Të gjitha Gjeneratat (të gjitha modelet)"
+                label: filters.model_id ? "All Generations" : "All Generations (all models)"
               },
               ...(generations && generations.length > 0 ? 
                 generations.map((generation) => {
@@ -451,19 +452,19 @@ const FilterForm = memo<FilterFormProps>(({
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="grade" className="text-xs font-medium truncate">Grada/Motorr</Label>
+          <Label htmlFor="grade" className="text-xs font-medium truncate">Grade/Engine</Label>
           <AdaptiveSelect 
             value={filters.grade_iaai || 'all'} 
             onValueChange={(value) => updateFilter('grade_iaai', value)}
             disabled={!filters.manufacturer_id || isLoading}
-            placeholder={filters.manufacturer_id ? "Gradat" : "Markën së pari"}
-            className="h-7 text-xs"
+            placeholder={filters.manufacturer_id ? "All Grades" : "Select Brand First"}
+            className="h-8 text-xs"
             options={[
-              { value: 'all', label: 'Të gjitha Gradat' },
+              { value: 'all', label: 'All Grades' },
               ...(grades.length === 0 && isLoadingGrades ? 
-                [{ value: 'loading', label: 'Duke ngarkuar gradat...', disabled: true }] :
+                [{ value: 'loading', label: 'Loading grades...', disabled: true }] :
                 grades.length === 0 && filters.manufacturer_id ? 
-                [{ value: 'no-grades', label: 'Nuk u gjetën grada', disabled: true }] :
+                [{ value: 'no-grades', label: 'No grades found', disabled: true }] :
                 grades.map((grade) => ({
                   value: grade.value,
                   label: `${grade.label}${grade.count ? ` (${grade.count})` : ''}`
@@ -539,14 +540,14 @@ const FilterForm = memo<FilterFormProps>(({
 
           <div className="space-y-3">{/* Continue vertical layout for remaining filters */}
             <div className="space-y-1">
-              <Label htmlFor="from_year" className="text-xs font-medium">Nga Viti</Label>
+              <Label htmlFor="from_year" className="text-xs font-medium">From Year</Label>
               <AdaptiveSelect 
                 value={filters.from_year || 'any'} 
                 onValueChange={(value) => updateFilter('from_year', value)}
-                placeholder="Çdo vit"
+                placeholder="All years"
                 className="h-8 text-sm"
                 options={[
-                  { value: 'any', label: 'Çdo vit' },
+                  { value: 'any', label: 'All years' },
                   ...years.map((year) => ({
                     value: year.toString(),
                     label: year.toString()
@@ -556,14 +557,14 @@ const FilterForm = memo<FilterFormProps>(({
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="to_year" className="text-xs font-medium">Deri në Vitin</Label>
+              <Label htmlFor="to_year" className="text-xs font-medium">To Year</Label>
               <AdaptiveSelect 
                 value={filters.to_year || 'any'} 
                 onValueChange={(value) => updateFilter('to_year', value)}
-                placeholder="Çdo vit"
+                placeholder="All years"
                 className="h-8 text-sm"
                 options={[
-                  { value: 'any', label: 'Çdo vit' },
+                  { value: 'any', label: 'All years' },
                   ...years.map((year) => ({
                     value: year.toString(),
                     label: year.toString()

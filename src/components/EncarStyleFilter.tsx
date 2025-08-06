@@ -163,7 +163,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   }, [filters, onFiltersChange]);
 
   const currentYear = useMemo(() => new Date().getFullYear(), []);
-  const years = useMemo(() => Array.from({ length: 30 }, (_, i) => currentYear - i), [currentYear]);
+  // Issue #2: Enhanced year range - show years from 2025 to 1996
+  const years = useMemo(() => Array.from({ length: 30 }, (_, i) => Math.max(currentYear + 1 - i, 1996)), [currentYear]);
   
   // Enhanced year range presets with more options
   const yearRangePresets = useMemo(() => [
@@ -258,12 +259,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
             variant="ghost" 
             size="sm" 
             onClick={() => {
-              // Issue #1: Do not allow closing filters until brand and model are selected
-              if (!filters.manufacturer_id || !filters.model_id) {
-                // Don't show toast here as the parent component will handle it
-                // Just return without closing
-                return;
-              }
+              // Issue #1 FIXED: Allow closing filters anytime
               onClearFilters();
             }}
             className="text-muted-foreground hover:text-foreground h-8 w-8 p-0"
