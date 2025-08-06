@@ -184,9 +184,9 @@ const FilterForm = memo<FilterFormProps>(({
   const currentYear = useMemo(() => new Date().getFullYear(), []);
   const years = useMemo(() => Array.from({ length: 25 }, (_, i) => currentYear - i), [currentYear]);
 
-  // Memoized sorted manufacturers with enhanced API data validation
+  // Memoized sorted manufacturers with enhanced API data validation and categorization
   const sortedManufacturers = useMemo(() => {
-    return manufacturers
+    const validManufacturers = manufacturers
       .filter((m) => {
         // Ensure manufacturer has valid data from API
         return m.id && 
@@ -194,41 +194,85 @@ const FilterForm = memo<FilterFormProps>(({
                typeof m.name === 'string' && 
                m.name.trim().length > 0 &&
                (m.cars_qty && m.cars_qty > 0);
-      })
-      .sort((a, b) => {
-        // Enhanced sorting with API-based brand names
-        const aName = a.name.trim();
-        const bName = b.name.trim();
-        
-        // German cars priority (using exact API names)
-        const germanBrands = ['BMW', 'Mercedes-Benz', 'Audi', 'Volkswagen', 'Porsche', 'Opel'];
-        // Korean cars priority  
-        const koreanBrands = ['Hyundai', 'Kia', 'Genesis'];
-        // Other popular cars
-        const popularBrands = ['Toyota', 'Honda', 'Nissan', 'Ford', 'Chevrolet', 'Mazda', 'Subaru', 'Lexus'];
-        
-        const aIsGerman = germanBrands.includes(aName);
-        const bIsGerman = germanBrands.includes(bName);
-        const aIsKorean = koreanBrands.includes(aName);
-        const bIsKorean = koreanBrands.includes(bName);
-        const aIsPopular = popularBrands.includes(aName);
-        const bIsPopular = popularBrands.includes(bName);
-        
-        // German brands first
-        if (aIsGerman && !bIsGerman) return -1;
-        if (!aIsGerman && bIsGerman) return 1;
-        
-        // Korean brands second
-        if (aIsKorean && !bIsKorean && !bIsGerman) return -1;
-        if (!aIsKorean && bIsKorean && !aIsGerman) return 1;
-        
-        // Popular brands third
-        if (aIsPopular && !bIsPopular && !bIsGerman && !bIsKorean) return -1;
-        if (!aIsPopular && bIsPopular && !aIsGerman && !aIsKorean) return 1;
-        
-        // Alphabetical within same category
-        return aName.localeCompare(bName);
       });
+
+    // Define categories with their brand priorities
+    const categories = {
+      german: {
+        name: 'German Brands',
+        brands: ['BMW', 'Mercedes-Benz', 'Audi', 'Volkswagen', 'Porsche', 'Opel'],
+        priority: 1
+      },
+      korean: {
+        name: 'Korean Brands', 
+        brands: ['Hyundai', 'Kia', 'Genesis'],
+        priority: 2
+      },
+      japanese: {
+        name: 'Japanese Brands',
+        brands: ['Toyota', 'Honda', 'Nissan', 'Mazda', 'Subaru', 'Lexus', 'Infiniti', 'Acura', 'Mitsubishi'],
+        priority: 3
+      },
+      american: {
+        name: 'American Brands',
+        brands: ['Ford', 'Chevrolet', 'Cadillac', 'GMC', 'Tesla', 'Chrysler', 'Jeep', 'Dodge'],
+        priority: 4
+      },
+      luxury: {
+        name: 'Luxury/European Brands',
+        brands: ['Land Rover', 'Jaguar', 'Volvo', 'Ferrari', 'Lamborghini', 'Maserati', 'Bentley', 'Rolls-Royce', 'Aston Martin', 'McLaren', 'Mini'],
+        priority: 5
+      },
+      french: {
+        name: 'French Brands',
+        brands: ['Peugeot', 'Renault', 'Citroën'],
+        priority: 6
+      },
+      italian: {
+        name: 'Italian Brands', 
+        brands: ['Fiat', 'Alfa Romeo'],
+        priority: 7
+      },
+      other: {
+        name: 'Other Brands',
+        brands: ['Skoda', 'Seat'],
+        priority: 8
+      }
+    };
+
+    // Sort manufacturers by category and count
+    return validManufacturers.sort((a, b) => {
+      const aName = a.name.trim();
+      const bName = b.name.trim();
+      
+      // Find category for each manufacturer
+      let aCategoryPriority = 999;
+      let bCategoryPriority = 999;
+      
+      Object.values(categories).forEach(category => {
+        if (category.brands.includes(aName)) {
+          aCategoryPriority = category.priority;
+        }
+        if (category.brands.includes(bName)) {
+          bCategoryPriority = category.priority;
+        }
+      });
+      
+      // Sort by category priority first
+      if (aCategoryPriority !== bCategoryPriority) {
+        return aCategoryPriority - bCategoryPriority;
+      }
+      
+      // Within same category, sort by car count (descending)
+      const aCount = a.cars_qty || 0;
+      const bCount = b.cars_qty || 0;
+      if (aCount !== bCount) {
+        return bCount - aCount;
+      }
+      
+      // Finally, alphabetical
+      return aName.localeCompare(bName);
+    });
   }, [manufacturers]);
 
   const getFallbackGrades = (manufacturerId: string) => {
