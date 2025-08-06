@@ -152,74 +152,52 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left side - Statistics */}
         <div className="space-y-4">
-          <h4 className="text-lg font-semibold text-foreground mb-4">Përmbledhje e Gjendjes</h4>
-          
-          {/* Overall Status */}
-          <Card className="border-l-4 border-l-primary">
-            <CardContent className="p-4">
-              {issueCount.critical > 0 ? (
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-destructive rounded-full"></div>
-                  <div>
-                    <div className="font-semibold text-destructive">Gjendje Kritike</div>
-                    <div className="text-sm text-muted-foreground">Ka pjesë të zëvendësuara (të kuqe)</div>
-                  </div>
-                </div>
-              ) : issueCount.major > 0 ? (
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                  <div>
-                    <div className="font-semibold text-orange-700 dark:text-orange-400">Ka Riparime të Mëdha</div>
-                    <div className="text-sm text-muted-foreground">Riparime me saldim ose limari</div>
-                  </div>
-                </div>
-              ) : issueCount.minor > 0 ? (
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                  <div>
-                    <div className="font-semibold text-orange-700 dark:text-orange-400">Ka Pjesë të Ripariara</div>
-                    <div className="text-sm text-muted-foreground">Disa pjesë janë riparuar (portokalli)</div>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <div>
-                    <div className="font-semibold text-green-700 dark:text-green-400">Gjendje e Shkëlqyer</div>
-                    <div className="text-sm text-muted-foreground">Automjeti në gjendje perfekte</div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {selectedPart && (
+            <>
+              <h4 className="text-lg font-semibold text-foreground mb-4">Përmbledhje e Gjendjes</h4>
+              
+              {/* Overall Status */}
+              <Card className="border-l-4 border-l-primary">
+                <CardContent className="p-4">
+                  {issueCount.critical > 0 ? (
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 bg-destructive rounded-full"></div>
+                      <div>
+                        <div className="font-semibold text-destructive">Gjendje Kritike</div>
+                        <div className="text-sm text-muted-foreground">Ka pjesë të zëvendësuara (të kuqe)</div>
+                      </div>
+                    </div>
+                  ) : issueCount.major > 0 ? (
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                      <div>
+                        <div className="font-semibold text-orange-700 dark:text-orange-400">Ka Riparime të Mëdha</div>
+                        <div className="text-sm text-muted-foreground">Riparime me saldim ose limari</div>
+                      </div>
+                    </div>
+                  ) : issueCount.minor > 0 ? (
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                      <div>
+                        <div className="font-semibold text-orange-700 dark:text-orange-400">Ka Pjesë të Ripariara</div>
+                        <div className="text-sm text-muted-foreground">Disa pjesë janë riparuar (portokalli)</div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <div>
+                        <div className="font-semibold text-green-700 dark:text-green-400">Gjendje e Shkëlqyer</div>
+                        <div className="text-sm text-muted-foreground">Automjeti në gjendje perfekte</div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </>
+          )}
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 gap-3">
-            <Card className="bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800">
-              <CardContent className="p-3 text-center">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{issueCount.good}</div>
-                <div className="text-xs text-green-700 dark:text-green-500">Në gjendje të mirë</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800">
-              <CardContent className="p-3 text-center">
-                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{issueCount.minor}</div>
-                <div className="text-xs text-orange-700 dark:text-orange-500">Të ripariara</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
-              <CardContent className="p-3 text-center">
-                <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{issueCount.major}</div>
-                <div className="text-xs text-amber-700 dark:text-amber-500">Riparime të mëdha</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800">
-              <CardContent className="p-3 text-center">
-                <div className="text-2xl font-bold text-red-600 dark:text-red-400">{issueCount.critical}</div>
-                <div className="text-xs text-red-700 dark:text-red-500">Të zëvendësuara</div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Stats Cards - Removed as per requirements */}
 
           {/* Legend */}
           <Card>
@@ -227,20 +205,16 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
               <h5 className="text-sm font-semibold text-foreground mb-3">Legjenda e Ngjyrave</h5>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-green-500 rounded"></div>
-                  <span className="text-sm text-muted-foreground">Në gjendje të mirë</span>
+                  <span className="text-sm">🟢</span>
+                  <span className="text-sm text-muted-foreground">Green parts: Components in good condition</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-orange-500 rounded"></div>
-                  <span className="text-sm text-muted-foreground">E riparuar (Portokalli)</span>
+                  <span className="text-sm">🟠</span>
+                  <span className="text-sm text-muted-foreground">Orange parts: Components that have been repaired</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-amber-600 rounded"></div>
-                  <span className="text-sm text-muted-foreground">Punë limarie</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-red-600 rounded"></div>
-                  <span className="text-sm text-muted-foreground">E zëvendësuar (E kuqe)</span>
+                  <span className="text-sm">🔴</span>
+                  <span className="text-sm text-muted-foreground">Red parts: Components that have been completely replaced</span>
                 </div>
               </div>
             </CardContent>
@@ -424,16 +398,16 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
               <h5 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Kodi i ngjyrave:</h5>
               <div className="flex flex-wrap justify-center gap-4 text-sm">
                 <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span>Në gjendje të mirë</span>
+                  <span>🟢</span>
+                  <span>Green parts: Components in good condition</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                  <span>E riparuar</span>
+                  <span>🟠</span>
+                  <span>Orange parts: Components that have been repaired</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 bg-red-600 rounded-full"></div>
-                  <span>E zëvendësuar</span>
+                  <span>🔴</span>
+                  <span>Red parts: Components that have been completely replaced</span>
                 </div>
               </div>
             </div>
