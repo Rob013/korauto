@@ -562,10 +562,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         }
       }
 
-      // Set default manufacturer_id=9 if no filters in URL
-      if (Object.keys(urlFilters).length === 0) {
-        urlFilters.manufacturer_id = "9";
-      }
+      // Load cars without default filters - show all cars
 
       // Set search term from URL
       if (urlFilters.search) {
@@ -710,8 +707,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
   }, [sortBy, totalPages, totalCount, filters.grade_iaai]);
 
-  // Don't show cars until brand and model are selected
-  const shouldShowCars = filters.manufacturer_id && filters.model_id;
+  // Show cars without requiring brand and model selection
+  const shouldShowCars = true;
 
   // Track when categories are selected 
   useEffect(() => {
@@ -973,7 +970,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             </div>
           )}
 
-          {/* Cars Grid/List - Only show if brand and model are selected */}
+          {/* Cars Grid/List - Show cars without requiring filters */}
           {shouldShowCars && cars.length > 0 && (
             <>
               <div
