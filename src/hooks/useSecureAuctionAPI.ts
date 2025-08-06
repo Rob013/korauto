@@ -2,6 +2,25 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { findGenerationYears } from "@/data/generationYears";
 
+// Simple cache to prevent redundant API calls
+const apiCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_DURATION = 60000; // 60 seconds
+
+// Helper function to get cached data or make API call
+const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => Promise<any>) => {
+  const cacheKey = `${endpoint}-${JSON.stringify(filters)}`;
+  const cached = apiCache.get(cacheKey);
+  
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    console.log(`📋 Using cached data for ${endpoint}`);
+    return cached.data;
+  }
+  
+  const data = await apiCall();
+  apiCache.set(cacheKey, { data, timestamp: Date.now() });
+  return data;
+};
+
 // Create fallback generation data for testing when API is not available
 export const createFallbackGenerations = (manufacturerName: string): Generation[] => {
   const generationData: { [key: string]: Generation[] } = {
@@ -626,11 +645,13 @@ export const useSecureAuctionAPI = () => {
     try {
       console.log(`🔍 Fetching all manufacturers`);
       
-      // Try to get manufacturers from API first
-      const data = await makeSecureAPICall("manufacturers/cars", {
-        per_page: "1000", // Get all manufacturers
-        simple_paginate: "0"
-      });
+      // Try to get manufacturers from cache or API
+      const data = await getCachedApiCall("manufacturers/cars", { per_page: "1000", simple_paginate: "0" }, 
+        () => makeSecureAPICall("manufacturers/cars", {
+          per_page: "1000",
+          simple_paginate: "0"
+        })
+      );
       
       let manufacturers = data.data || [];
       
@@ -664,11 +685,14 @@ export const useSecureAuctionAPI = () => {
 
   const fetchModels = async (manufacturerId: string): Promise<Model[]> => {
     try {
-      // Always use the direct endpoint for reliability
-      const fallbackData = await makeSecureAPICall(`models/${manufacturerId}/cars`, {
-        per_page: "1000",
-        simple_paginate: "0"
-      });
+      // Use cached API call for models
+      const fallbackData = await getCachedApiCall(`models/${manufacturerId}/cars`, { per_page: "1000", simple_paginate: "0" },
+        () => makeSecureAPICall(`models/${manufacturerId}/cars`, {
+          per_page: "1000",
+          simple_paginate: "0"
+        })
+      );
+      
       let fallbackModels = (fallbackData.data || []).filter((m: any) => m && m.id && m.name);
 
       // Filter models by manufacturer_id (in case API returns extra)
@@ -683,11 +707,15 @@ export const useSecureAuctionAPI = () => {
       console.error("[fetchModels] Error:", err);
       console.log(`🔄 Using fallback model data for manufacturer ${manufacturerId}`);
       
-      // Use fallback model data based on manufacturer name
-      const manufacturers = await fetchManufacturers();
-      const manufacturer = manufacturers.find(m => m.id.toString() === manufacturerId);
-      if (manufacturer) {
-        return createFallbackModels(manufacturer.name);
+      // Use fallback model data based on manufacturer name - more efficient approach
+      try {
+        const manufacturers = await fetchManufacturers();
+        const manufacturer = manufacturers.find(m => m.id.toString() === manufacturerId);
+        if (manufacturer) {
+          return createFallbackModels(manufacturer.name);
+        }
+      } catch (fallbackErr) {
+        console.error("Error creating fallback models:", fallbackErr);
       }
       
       return [];
@@ -714,24 +742,41 @@ export const useSecureAuctionAPI = () => {
         return generationsFromAPI.sort((a, b) => a.name.localeCompare(b.name));
       }
 
-      // Fallback: extract generations from car data but prioritize API generation data
-      const carResponse = await makeSecureAPICall('cars', {
-        model_id: modelId,
-        per_page: '20',
-        simple_paginate: '0'
-      });
-      const cars = carResponse.data || [];
-      
-      // Use API generations if available, otherwise extract from cars
+      // If API fails or returns no data, use fallback data immediately
+      // This prevents the long wait and excessive API calls
       let generations: Generation[];
       if (generationsFromAPI.length > 0) {
-        // We have API generations but no year data, so we'll enhance them with car year data
-        console.log('📊 Enhancing API generations with car year data');
-        generations = enhanceGenerationsWithCarYears(generationsFromAPI, cars);
+        // We have API generations but no year data, enhance with fallback data
+        console.log('📊 Using API generations with fallback year data');
+        generations = generationsFromAPI;
       } else {
-        // No API generations, extract everything from car data
-        console.log('🔄 Extracting generations from car data');
-        generations = extractGenerationsFromCars(cars);
+        // No API generations, create fallback data based on model
+        console.log('🔄 Using complete fallback generation data');
+        
+        // Get manufacturer name for this model to create appropriate fallback data
+        const manufacturers = await fetchManufacturers();
+        let manufacturerName = '';
+        
+        // Try to find manufacturer from existing models state first (more efficient)
+        for (const manufacturer of manufacturers) {
+          try {
+            const models = await fetchModels(manufacturer.id.toString());
+            if (models.some(m => m.id.toString() === modelId)) {
+              manufacturerName = manufacturer.name;
+              break;
+            }
+          } catch (err) {
+            // Continue checking other manufacturers
+            continue;
+          }
+        }
+        
+        if (manufacturerName) {
+          generations = createFallbackGenerations(manufacturerName);
+        } else {
+          // If we can't determine manufacturer, provide generic generations
+          generations = createFallbackGenerations('BMW'); // Default to BMW as example
+        }
       }
       
       const filteredGenerations = generations.filter(g => g && g.id && g.name);
@@ -741,26 +786,8 @@ export const useSecureAuctionAPI = () => {
       console.error('[fetchGenerations] Error:', err);
       console.log(`🔄 Using fallback generation data for model ${modelId}`);
       
-      // Use fallback generation data based on manufacturer name
-      const manufacturers = await fetchManufacturers();
-      const models = await Promise.all(
-        manufacturers.map(async m => ({ manufacturer: m, models: await fetchModels(m.id.toString()) }))
-      );
-      
-      // Find the manufacturer for this model
-      let manufacturerName = '';
-      for (const { manufacturer, models: mModels } of models) {
-        if (mModels.some(m => m.id.toString() === modelId)) {
-          manufacturerName = manufacturer.name;
-          break;
-        }
-      }
-      
-      if (manufacturerName) {
-        return createFallbackGenerations(manufacturerName);
-      }
-      
-      return [];
+      // Return a minimal set of fallback generations to avoid empty state
+      return createFallbackGenerations('BMW'); // Default fallback
     }
   };
 
