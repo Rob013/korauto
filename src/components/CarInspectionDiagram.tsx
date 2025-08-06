@@ -110,7 +110,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
     const hasSheetMetal = statuses.some(s => s.code === 'C' || s.title.includes('판금') || s.title.includes('sheet'));
     
     if (hasExchange) return 'E zëvendësuar (E kuqe)';
-    if (hasWelding) return 'Riparim i madh me saldim (Portokalli)';
+    if (hasWelding) return 'Reparime (Portokalli)';
     if (hasSheetMetal) return 'Punë limarie (Ngjyrë kafe)';
     if (hasRepair) return 'E riparuar (Portokalli)';
     
@@ -169,8 +169,8 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
                   <div>
-                    <div className="font-semibold text-orange-700 dark:text-orange-400">Ka Riparime të Mëdha</div>
-                    <div className="text-sm text-muted-foreground">Riparime me saldim ose limari</div>
+                    <div className="font-semibold text-orange-700 dark:text-orange-400">Ka Reparime</div>
+                    <div className="text-sm text-muted-foreground">Reparime</div>
                   </div>
                 </div>
               ) : issueCount.minor > 0 ? (
@@ -210,7 +210,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
             <Card className="bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
               <CardContent className="p-3 text-center">
                 <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{issueCount.major}</div>
-                <div className="text-xs text-amber-700 dark:text-amber-500">Riparime të mëdha</div>
+                <div className="text-xs text-amber-700 dark:text-amber-500">Reparime</div>
               </CardContent>
             </Card>
             <Card className="bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800">
