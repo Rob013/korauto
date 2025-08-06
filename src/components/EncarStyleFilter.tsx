@@ -360,6 +360,33 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
             />
           </div>
 
+          {/* Trim Level Filter */}
+          <div className="space-y-1.5">
+            <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
+              <Cog className="h-3 w-3" />
+              Trim Level
+            </Label>
+            <AdaptiveSelect 
+              value={filters.grade_iaai || 'all'} 
+              onValueChange={(value) => updateFilter('grade_iaai', value)}
+              disabled={!filters.manufacturer_id || isLoadingGrades}
+              placeholder={isLoadingGrades ? "Loading..." : (filters.manufacturer_id ? "Select trim" : "Select brand first")}
+              className="h-9 sm:h-10 text-sm"
+              options={[
+                { value: 'all', label: 'All Trim Levels' },
+                ...(grades.length === 0 && isLoadingGrades ? 
+                  [{ value: 'loading', label: 'Loading trims...', disabled: true }] :
+                  grades.length === 0 && filters.manufacturer_id ? 
+                  [{ value: 'no-grades', label: 'No trims found', disabled: true }] :
+                  grades.map((grade) => ({
+                    value: grade.value,
+                    label: `${grade.label}${grade.count ? ` (${grade.count})` : ''}`
+                  }))
+                )
+              ]}
+            />
+          </div>
+
           {/* Year presets - moved under Generation */}
           <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">Year Range:</Label>
@@ -657,6 +684,33 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 ]}
               />
               
+              {/* Trim Level Filter for Homepage */}
+              <div className="mt-3">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Cog className="h-3 w-3" />
+                  Niveli i Pajisjes
+                </Label>
+                <AdaptiveSelect 
+                  value={filters.grade_iaai || 'all'} 
+                  onValueChange={(value) => updateFilter('grade_iaai', value)}
+                  disabled={!filters.manufacturer_id || isLoadingGrades}
+                  placeholder={isLoadingGrades ? "Loading..." : (filters.manufacturer_id ? "Zgjidhni pajisjen" : "Zgjidhni markën së pari")}
+                  className="h-11"
+                  options={[
+                    { value: 'all', label: 'Të gjitha Nivelet' },
+                    ...(grades.length === 0 && isLoadingGrades ? 
+                      [{ value: 'loading', label: 'Loading...', disabled: true }] :
+                      grades.length === 0 && filters.manufacturer_id ? 
+                      [{ value: 'no-grades', label: 'Nuk u gjetën nivele', disabled: true }] :
+                      grades.map((grade) => ({
+                        value: grade.value,
+                        label: `${grade.label}${grade.count ? ` (${grade.count})` : ''}`
+                      }))
+                    )
+                  ]}
+                />
+              </div>
+              
               {/* Year Range Preset Buttons for Homepage */}
               <div className="mt-3">
                 <Label className="text-xs text-muted-foreground mb-2 block">Vitet:</Label>
@@ -921,19 +975,24 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               <div className="space-y-2">
                 <Label className="text-sm font-medium flex items-center gap-2">
                   <Cog className="h-3 w-3" />
-                  Variants
+                  Trim Level
                 </Label>
                 <AdaptiveSelect 
                   value={filters.grade_iaai || 'all'} 
                   onValueChange={(value) => updateFilter('grade_iaai', value)}
-                  disabled={!filters.generation_id || isLoadingGrades}
-                  placeholder={isLoadingGrades ? "Loading..." : "Select variant"}
+                  disabled={!filters.manufacturer_id || isLoadingGrades}
+                  placeholder={isLoadingGrades ? "Loading..." : (filters.manufacturer_id ? "Select trim level" : "Select brand first")}
                   options={[
-                    { value: 'all', label: 'All Variants' },
-                    ...grades.map((grade) => ({
-                      value: grade.value,
-                      label: grade.label
-                    }))
+                    { value: 'all', label: 'All Trim Levels' },
+                    ...(grades.length === 0 && isLoadingGrades ? 
+                      [{ value: 'loading', label: 'Loading trim levels...', disabled: true }] :
+                      grades.length === 0 && filters.manufacturer_id ? 
+                      [{ value: 'no-grades', label: 'No trim levels found', disabled: true }] :
+                      grades.map((grade) => ({
+                        value: grade.value,
+                        label: `${grade.label}${grade.count ? ` (${grade.count})` : ''}`
+                      }))
+                    )
                   ]}
                 />
               </div>
