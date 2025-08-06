@@ -368,7 +368,7 @@ const CarDetails = memo(() => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { goBack, previousPage, filterState } = useNavigation();
-  const { convertUSDtoEUR } = useCurrencyAPI();
+  const { convertUSDtoEUR, processFloodDamageText } = useCurrencyAPI();
   const [car, setCar] = useState<CarDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1349,7 +1349,7 @@ const CarDetails = memo(() => {
                             car.insurance_v2.floodTotalLossCnt > 0 && (
                               <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
                                 <span className="text-sm">
-                                  Dëmtime nga Përmbytjet:
+                                  demtime:
                                 </span>
                                 <Badge variant="destructive">
                                   {car.insurance_v2.floodTotalLossCnt}
@@ -1613,11 +1613,11 @@ const CarDetails = memo(() => {
                                       <div className="flex items-center gap-2 mb-2">
                                         <Car className="h-4 w-4 text-green-600" />
                                         <span className="text-sm font-semibold text-foreground">
-                                          Dëmtime nga Uji
+                                          demtime
                                         </span>
                                       </div>
                                       <p className="text-sm text-gray-600">
-                                        {car.details.insurance.car_info.flood_damage}
+                                        {processFloodDamageText(car.details.insurance.car_info.flood_damage)}
                                       </p>
                                     </div>
                                   </>
