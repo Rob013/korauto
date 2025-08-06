@@ -36,8 +36,8 @@ const EngineSystemDemo = ({ className = "" }: EngineSystemDemoProps) => {
             <Cog className="h-4 w-4 md:h-6 md:w-6 text-white" />
           </div>
           <div className="text-left">
-            <h5 className="text-lg md:text-xl font-bold text-foreground">Motori dhe Sistemi Mekanik</h5>
-            <p className="text-muted-foreground text-xs md:text-sm">Kontrolli teknik i komponentëve kryesorë</p>
+            <h5 className="text-lg md:text-xl font-bold text-foreground inspection-text-black">Motori dhe Sistemi Mekanik</h5>
+            <p className="text-muted-foreground text-xs md:text-sm inspection-subtext-black">Kontrolli teknik i komponentëve kryesorë</p>
           </div>
         </div>
         <div className="flex items-center gap-2">

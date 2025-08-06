@@ -1476,8 +1476,8 @@ const CarDetails = memo(() => {
                                     <Cog className="h-4 w-4 text-white" />
                                   </div>
                                   <div className="text-left">
-                                    <h5 className="text-base md:text-lg font-bold text-foreground">Motori dhe Sistemi Mekanik</h5>
-                                    <p className="text-muted-foreground text-xs">Kontrolli teknik i komponentëve kryesorë</p>
+                                    <h5 className="text-base md:text-lg font-bold text-foreground inspection-text-black">Motori dhe Sistemi Mekanik</h5>
+                                    <p className="text-muted-foreground text-xs inspection-subtext-black">Kontrolli teknik i komponentëve kryesorë</p>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -1634,8 +1634,8 @@ const CarDetails = memo(() => {
                                   <AlertTriangle className="h-6 w-6 text-white" />
                                 </div>
                                 <div>
-                                  <h5 className="text-xl font-bold text-foreground">Gjendja e Jashtme dhe Karocerisë</h5>
-                                  <p className="text-muted-foreground text-sm">Vlerësimi i dëmtimeve dhe riparime</p>
+                                  <h5 className="text-xl font-bold text-foreground inspection-text-black">Gjendja e Jashtme dhe Karocerisë</h5>
+                                  <p className="text-muted-foreground text-sm inspection-subtext-black">Vlerësimi i dëmtimeve dhe riparime</p>
                                 </div>
                               </div>
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1724,7 +1724,7 @@ const CarDetails = memo(() => {
                                   </div>
                                   <div>
                                     <h5 className="text-lg font-bold text-foreground">Diagrami i Inspektimit të Automjetit</h5>
-                                    <p className="text-muted-foreground text-xs">Gjendja vizuale e pjesëve të jashtme</p>
+                                    <p className="text-muted-foreground text-xs inspection-subtext-black">Gjendja vizuale e pjesëve të jashtme</p>
                                   </div>
                                 </div>
                                 <CarInspectionDiagram
