@@ -110,7 +110,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
     const hasSheetMetal = statuses.some(s => s.code === 'C' || s.title.includes('판금') || s.title.includes('sheet'));
     
     if (hasExchange) return 'E zëvendësuar (E kuqe)';
-    if (hasWelding) return 'Riparim i madh me saldim (Portokalli)';
+    if (hasWelding) return 'Zëvendësim';
     if (hasSheetMetal) return 'Punë limarie (Ngjyrë kafe)';
     if (hasRepair) return 'E riparuar (Portokalli)';
     
@@ -163,7 +163,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
                     <div className="flex items-center gap-3">
                       <div className="w-3 h-3 bg-destructive rounded-full"></div>
                       <div>
-                        <div className="font-semibold text-destructive">Gjendje Kritike</div>
+                        <div className="font-semibold text-destructive">Gjendja</div>
                         <div className="text-sm text-muted-foreground">Ka pjesë të zëvendësuara (të kuqe)</div>
                       </div>
                     </div>
@@ -171,15 +171,15 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
                     <div className="flex items-center gap-3">
                       <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
                       <div>
-                        <div className="font-semibold text-orange-700 dark:text-orange-400">Ka Riparime të Mëdha</div>
-                        <div className="text-sm text-muted-foreground">Riparime me saldim ose limari</div>
+                        <div className="font-semibold text-orange-700 dark:text-orange-400">RIPARIME</div>
+                        <div className="text-sm text-muted-foreground">riparime</div>
                       </div>
                     </div>
                   ) : issueCount.minor > 0 ? (
                     <div className="flex items-center gap-3">
                       <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
                       <div>
-                        <div className="font-semibold text-orange-700 dark:text-orange-400">Ka Pjesë të Ripariara</div>
+                        <div className="font-semibold text-orange-700 dark:text-orange-400">RIPARIME</div>
                         <div className="text-sm text-muted-foreground">Disa pjesë janë riparuar (portokalli)</div>
                       </div>
                     </div>

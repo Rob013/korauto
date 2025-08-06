@@ -434,7 +434,7 @@ const CarDetails = memo(() => {
     "029": "Filteri i Grimcave",
     "030": "Sistemi i Kontrollit të Stabilitetit",
     "031": "Rrota e Rezervës",
-    "032": "Kompleti i Riparimit të Gomas",
+    "032": "Kompleti i RIPARIM të Gomas",
     "033": "Kapaku i Motorit",
     "034": "Spoiler i Prapëm",
     "035": "Rrota Alumini",
@@ -1591,7 +1591,7 @@ const CarDetails = memo(() => {
                                       <div className="flex items-center gap-2 mb-2">
                                         <Settings className="h-4 w-4 text-green-600" />
                                         <span className="text-sm font-semibold text-foreground">
-                                          Numri i Riparimeve
+                                          riparime
                                         </span>
                                       </div>
                                       <p className="text-sm text-muted-foreground">
@@ -1635,7 +1635,7 @@ const CarDetails = memo(() => {
                                 </div>
                                 <div>
                                   <h5 className="text-xl font-bold text-foreground">Gjendja e Jashtme dhe Karocerisë</h5>
-                                  <p className="text-muted-foreground text-sm">Vlerësimi i dëmtimeve dhe riparimeve</p>
+                                  <p className="text-muted-foreground text-sm">Vlerësimi i dëmtimeve dhe riparime</p>
                                 </div>
                               </div>
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
