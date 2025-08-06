@@ -1078,14 +1078,14 @@ const CarDetails = memo(() => {
             <Card className="shadow-md border overflow-hidden">
               <CardContent className="p-0">
                 <div
-                  className="relative h-[200px] sm:h-[250px] md:h-[300px] lg:h-[350px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer"
+                  className="relative h-[400px] sm:h-[500px] md:h-[600px] lg:h-[700px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer"
                   onClick={() => setIsImageZoomOpen(true)}
                 >
                   {images.length > 0 ? (
                     <img
                       src={images[selectedImageIndex]}
                       alt={`${car.year} ${car.make} ${car.model}`}
-                      className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                      className="w-full h-full object-contain transition-transform duration-300 hover:scale-105"
                       onError={(e) => {
                         e.currentTarget.src = "/placeholder.svg";
                       }}
