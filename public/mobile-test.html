@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Car Card Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 10px 0;
+            cursor: pointer;
+            background: #f9f9f9;
+        }
+        .card:hover {
+            background: #f0f0f0;
+        }
+        .mobile-indicator {
+            background: #007bff;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: inline-block;
+            margin: 10px 0;
+        }
+        .desktop-indicator {
+            background: #28a745;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: inline-block;
+            margin: 10px 0;
+        }
+        .info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Mobile Car Card Test</h1>
+    
+    <div class="info">
+        <strong>Test Instructions:</strong>
+        <ol>
+            <li>Resize your browser to mobile width (&lt;768px) to test mobile behavior</li>
+            <li>Click on the car cards below</li>
+            <li>On mobile: Cards should open in new tab</li>
+            <li>On desktop: Cards should open in same tab</li>
+        </ol>
+    </div>
+    
+    <div id="device-indicator"></div>
+    
+    <div class="card" onclick="handleCardClick('car123')">
+        <h3>2023 Hyundai Elantra</h3>
+        <p>Price: €25,000</p>
+        <p>Click to view details</p>
+    </div>
+    
+    <div class="card" onclick="handleCardClick('car456')">
+        <h3>2022 Kia Cerato</h3>
+        <p>Price: €22,000</p>
+        <p>Click to view details</p>
+    </div>
+    
+    <div class="card" onclick="handleCardClick('car789')">
+        <h3>2024 Genesis G70</h3>
+        <p>Price: €45,000</p>
+        <p>Click to view details</p>
+    </div>
+
+    <script>
+        // Mobile detection function similar to useIsMobile hook
+        function isMobile() {
+            return window.innerWidth < 768;
+        }
+        
+        // Update device indicator
+        function updateDeviceIndicator() {
+            const indicator = document.getElementById('device-indicator');
+            if (isMobile()) {
+                indicator.innerHTML = '<div class="mobile-indicator">📱 Mobile Mode - Cards will open in NEW TAB</div>';
+            } else {
+                indicator.innerHTML = '<div class="desktop-indicator">🖥️ Desktop Mode - Cards will open in SAME TAB</div>';
+            }
+        }
+        
+        // Handle car card click with mobile detection
+        function handleCardClick(carId) {
+            // Save current page state (simulated)
+            sessionStorage.setItem('previousPage', window.location.href);
+            
+            // Simulate car details URL
+            const carDetailsUrl = `data:text/html,<html><body><h1>Car Details: ${carId}</h1><p>This would be the car details page.</p><button onclick="window.close()">Close (Mobile)</button><button onclick="window.history.back()">Back (Desktop)</button></body></html>`;
+            
+            if (isMobile()) {
+                // Open in new tab on mobile
+                window.open(carDetailsUrl, '_blank');
+                console.log('Mobile detected: Opening car details in new tab');
+            } else {
+                // Navigate in same tab on desktop
+                window.location.href = carDetailsUrl;
+                console.log('Desktop detected: Opening car details in same tab');
+            }
+        }
+        
+        // Update indicator on load and resize
+        updateDeviceIndicator();
+        window.addEventListener('resize', updateDeviceIndicator);
+        
+        console.log('Mobile car card test loaded. Current width:', window.innerWidth);
+    </script>
+</body>
+</html>
