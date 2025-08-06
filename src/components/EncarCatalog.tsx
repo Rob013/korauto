@@ -747,12 +747,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               variant="ghost" 
               size="sm" 
               onClick={() => {
-                // Issue #1 FIXED: Allow closing filters anytime without restrictions
-                setShowFilters(false);
+                // Issue #2 FIXED: Toggle filters with proper text
+                setShowFilters(!showFilters);
               }}
-              className={`lg:hidden h-8 w-8 p-0 ${isMobile ? 'hover:bg-primary-foreground/20 text-primary-foreground' : ''}`}
+              className={`lg:hidden flex items-center gap-1 h-8 px-2 ${isMobile ? 'hover:bg-primary-foreground/20 text-primary-foreground' : ''}`}
             >
-              <X className="h-4 w-4" />
+              <X className="h-3 w-3" />
+              <span className="text-xs">{showFilters ? 'Close' : 'Open'}</span>
             </Button>
           </div>
         </div>
@@ -775,9 +776,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             onFetchGrades={fetchGrades}
             compact={true}
             onSearchCars={() => {
-              // Force fetch cars when search button is clicked
+              // Issue #1 FIXED: Hide filter panel after search
               if (filters.manufacturer_id && filters.model_id) {
                 fetchCars(1, { ...filters, per_page: "50" }, true);
+                setShowFilters(false); // Hide filter panel after successful search
               }
             }}
             onCloseFilter={() => {

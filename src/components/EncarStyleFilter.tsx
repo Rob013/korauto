@@ -268,9 +268,10 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 onClearFilters();
               }
             }}
-            className="text-muted-foreground hover:text-foreground h-8 w-8 p-0"
+            className="text-muted-foreground hover:text-foreground flex items-center gap-1 h-8 px-2"
           >
-            <X className="h-4 w-4" />
+            <X className="h-3 w-3" />
+            <span className="text-xs">Close</span>
           </Button>
         </div>
         
