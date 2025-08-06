@@ -433,10 +433,10 @@ const FilterForm = memo<FilterFormProps>(({
                 generations.map((generation) => {
                   let yearRange = '';
                   if (generation.from_year) {
-                    const from = generation.from_year.toString().slice(-2);
+                    const from = generation.from_year.toString();
                     const currentYear = new Date().getFullYear();
                     // Show 'present' if to_year is current year or later, or missing
-                    const to = (!generation.to_year || generation.to_year >= currentYear) ? 'present' : generation.to_year.toString().slice(-2);
+                    const to = (!generation.to_year || generation.to_year >= currentYear) ? 'present' : generation.to_year.toString();
                     yearRange = ` (${from}-${to})`;
                   }
                   
