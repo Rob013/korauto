@@ -255,8 +255,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   // Compact mode for sidebar
   if (compact) {
     return (
-      <div className="space-y-3 sm:space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="space-y-3 sm:space-y-4 h-full flex flex-col">
+        <div className="flex items-center justify-between flex-shrink-0">
           <h3 className="text-base sm:text-lg font-semibold">Search Cars</h3>
           <div className="flex items-center gap-2">
             <Button 
@@ -282,8 +282,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           </div>
         </div>
         
-        {/* Basic filters */}
-        <div className="space-y-3">
+        {/* Scrollable filter content */}
+        <div className="flex-1 overflow-y-auto space-y-3 pb-4">
+          <div className="space-y-3">
           <div className="space-y-1.5">
             <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
               <Car className="h-3 w-3" />
@@ -538,7 +539,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
           {/* Search Button */}
           {onSearchCars && (
-            <div className="pt-3 border-t">
+            <div className="pt-3 border-t flex-shrink-0">
               <Button 
                 onClick={onSearchCars} 
                 className="w-full h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
@@ -549,6 +550,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               </Button>
             </div>
           )}
+          </div>
         </div>
       </div>
     );

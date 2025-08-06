@@ -760,11 +760,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         className={`
         fixed lg:relative z-40 bg-card border-r transition-transform duration-300 ease-in-out
         ${showFilters ? 'translate-x-0' : '-translate-x-full'}
-        ${isMobile ? 'top-16 left-0 right-0 bottom-0 w-full h-[calc(100vh-4rem)]' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0'} 
-        overflow-y-auto lg:shadow-none shadow-xl
-        ${isMobile ? 'safe-area-inset' : ''}
+        ${isMobile ? 'top-0 left-0 right-0 bottom-0 w-full h-dvh overflow-y-auto safe-area-inset' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0 overflow-y-auto'} 
+        lg:shadow-none shadow-xl
       `}>
-        <div className={`p-3 sm:p-4 border-b ${isMobile ? 'bg-primary text-primary-foreground' : ''}`}>
+        <div className={`p-3 sm:p-4 border-b flex-shrink-0 ${isMobile ? 'bg-primary text-primary-foreground' : ''}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Filter className={`h-4 w-4 sm:h-5 sm:w-5 ${isMobile ? 'text-primary-foreground' : 'text-primary'}`} />
@@ -798,8 +797,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           </div>
         </div>
         
-        <div className="p-3 sm:p-4">
-          <EncarStyleFilter
+        <div className={`flex-1 overflow-y-auto ${isMobile ? 'mobile-filter-content' : 'p-3 sm:p-4'}`}>
+          <div className={`${isMobile ? 'p-3 sm:p-4' : ''}`}>
+            <EncarStyleFilter
             filters={filters}
             manufacturers={manufacturers}
             models={models}
@@ -816,11 +816,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             onFetchGrades={fetchGrades}
             compact={true}
             onSearchCars={() => {
-              // Issue #1 FIXED: Hide filter panel after search
-              if (filters.manufacturer_id && filters.model_id) {
-                fetchCars(1, { ...filters, per_page: "50" }, true);
-                setShowFilters(false); // Hide filter panel after successful search
-              }
+              // Issue #1 FIXED: Hide filter panel after search - always close panel when search is clicked
+              fetchCars(1, { ...filters, per_page: "50" }, true);
+              setShowFilters(false); // Always hide filter panel when search button is clicked
             }}
             onCloseFilter={() => {
               setShowFilters(false);
@@ -829,10 +827,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           
           {/* Mobile Apply/Close Filters Button - Enhanced */}
           {isMobile && (
-            <div className="mt-6 pt-4 border-t space-y-3">
+            <div className="mt-6 pt-4 border-t space-y-3 flex-shrink-0">
               {/* Apply/Close button removed per Issue #3 */}
             </div>
           )}
+          </div>
         </div>
       </div>
 
