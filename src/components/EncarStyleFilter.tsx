@@ -121,6 +121,15 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   const [isLoadingGrades, setIsLoadingGrades] = useState(false);
   const [expandedSections, setExpandedSections] = useState<string[]>(['basic']);
 
+  // Track if strict filtering mode is enabled
+  const isStrictMode = useMemo(() => {
+    return !!(filters.manufacturer_id || filters.model_id || filters.generation_id || 
+              filters.color || filters.fuel_type || filters.transmission || 
+              filters.from_year || filters.to_year || filters.buy_now_price_from || 
+              filters.buy_now_price_to || filters.odometer_from_km || filters.odometer_to_km ||
+              filters.seats_count || filters.max_accidents || filters.grade_iaai || filters.search);
+  }, [filters]);
+
   const updateFilter = useCallback((key: string, value: string) => {
     const actualValue = value === 'all' || value === 'any' ? undefined : value;
     
@@ -181,14 +190,15 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     { label: '2000+', from: 2000, to: currentYear },
   ], [currentYear]);
 
-  // Year options for dropdowns - "All years" options
+  // Year options for dropdowns - strict mode aware
   const yearOptions = useMemo(() => [
-    { value: 'all', label: 'All years' },
+    // In strict mode, show "All years" only when no specific year is selected or not in strict mode
+    ...(isStrictMode && (filters.from_year || filters.to_year) ? [] : [{ value: 'all', label: 'All years' }]),
     ...years.map(year => ({
       value: year.toString(),
       label: year.toString()
     }))
-  ], [years]);
+  ], [years, isStrictMode, filters.from_year, filters.to_year]);
 
   // Prioritized manufacturer sorting (German, Korean, Popular)
   const sortedManufacturers = useMemo(() => {
@@ -296,7 +306,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               placeholder="Select brand"
               className="h-9 sm:h-10 text-sm"
               options={[
-                { value: 'all', label: 'All Brands' },
+                // In strict mode, show "All Brands" only when no specific brand is selected
+                ...(isStrictMode && filters.manufacturer_id ? [] : [{ value: 'all', label: 'All Brands' }]),
                 ...sortedManufacturers.map((manufacturer) => ({
                   value: manufacturer.id.toString(),
                   label: (
@@ -324,7 +335,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               placeholder={filters.manufacturer_id ? "Select model" : "Select brand first"}
               className="h-9 sm:h-10 text-sm"
               options={[
-                { value: 'all', label: 'All Models' },
+                // In strict mode, show "All Models" only when no specific model is selected or not in strict mode
+                ...(isStrictMode && filters.model_id ? [] : [{ value: 'all', label: 'All Models' }]),
                 ...models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => ({
                   value: model.id.toString(),
                   label: `${model.name} (${model.cars_qty})`
@@ -345,7 +357,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               placeholder={filters.model_id ? "Generations" : "Select model first"}
               className="h-9 sm:h-10 text-sm"
               options={[
-                { value: 'all', label: 'All Generations' },
+                // In strict mode, show "All Generations" only when no specific generation is selected or not in strict mode
+                ...(isStrictMode && filters.generation_id ? [] : [{ value: 'all', label: 'All Generations' }]),
                 ...generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => ({
                   value: generation.id.toString(),
                   label: `${generation.name}${generation.from_year ? (() => {
@@ -462,7 +475,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     placeholder="Any color"
                     className="h-9 sm:h-10 text-sm"
                     options={[
-                      { value: 'all', label: 'Any color' },
+                      // In strict mode, show "Any color" only when no specific color is selected or not in strict mode
+                      ...(isStrictMode && filters.color ? [] : [{ value: 'all', label: 'Any color' }]),
                       ...Object.entries(COLOR_OPTIONS).map(([name, id]) => ({
                         value: id.toString(),
                         label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
@@ -482,7 +496,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     placeholder="Any type"
                     className="h-9 sm:h-10 text-sm"
                     options={[
-                      { value: 'all', label: 'Any type' },
+                      // In strict mode, show "Any type" only when no specific fuel type is selected or not in strict mode
+                      ...(isStrictMode && filters.fuel_type ? [] : [{ value: 'all', label: 'Any type' }]),
                       ...Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => ({
                         value: id.toString(),
                         label: name.charAt(0).toUpperCase() + name.slice(1)
@@ -502,7 +517,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     placeholder="Any type"
                     className="h-9 sm:h-10 text-sm"
                     options={[
-                      { value: 'all', label: 'Any type' },
+                      // In strict mode, show "Any type" only when no specific transmission is selected or not in strict mode
+                      ...(isStrictMode && filters.transmission ? [] : [{ value: 'all', label: 'Any type' }]),
                       ...Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => ({
                         value: id.toString(),
                         label: name.charAt(0).toUpperCase() + name.slice(1)
@@ -590,7 +606,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 placeholder="Zgjidhni markën"
                 className="h-11"
                 options={[
-                  { value: 'all', label: 'Të gjitha Markat' },
+                  // In strict mode, show "Të gjitha Markat" only when no specific brand is selected or not in strict mode
+                  ...(isStrictMode && filters.manufacturer_id ? [] : [{ value: 'all', label: 'Të gjitha Markat' }]),
                   ...sortedManufacturers.map((manufacturer) => ({
                     value: manufacturer.id.toString(),
                     label: (
@@ -618,7 +635,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"}
                 className="h-11"
                 options={[
-                  { value: 'all', label: 'Të gjithë Modelet' },
+                  // In strict mode, show "Të gjithë Modelet" only when no specific model is selected or not in strict mode
+                  ...(isStrictMode && filters.model_id ? [] : [{ value: 'all', label: 'Të gjithë Modelet' }]),
                   ...models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => ({
                     value: model.id.toString(),
                     label: `${model.name} (${model.cars_qty})`
@@ -644,7 +662,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 placeholder={filters.model_id ? "Gjeneratat" : "Zgjidhni modelin së pari"}
                 className="h-11"
                 options={[
-                  { value: 'all', label: 'Të gjitha Gjeneratat' },
+                  // In strict mode, show "Të gjitha Gjeneratat" only when no specific generation is selected or not in strict mode
+                  ...(isStrictMode && filters.generation_id ? [] : [{ value: 'all', label: 'Të gjitha Gjeneratat' }]),
                   ...generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => ({
                     value: generation.id.toString(),
                     label: `${generation.name}${generation.from_year ? (() => {
@@ -745,7 +764,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 onValueChange={(value) => updateFilter('manufacturer_id', value)}
                 placeholder="Zgjidhni markën"
                 options={[
-                  { value: 'all', label: 'Të gjitha Markat' },
+                  // In strict mode, show "Të gjitha Markat" only when no specific brand is selected or not in strict mode
+                  ...(isStrictMode && filters.manufacturer_id ? [] : [{ value: 'all', label: 'Të gjitha Markat' }]),
                   ...sortedManufacturers.map((manufacturer) => ({
                     value: manufacturer.id.toString(),
                     label: (
@@ -769,7 +789,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 disabled={!filters.manufacturer_id}
                 placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"}
                 options={[
-                  { value: 'all', label: 'Të gjithë Modelet' },
+                  // In strict mode, show "Të gjithë Modelet" only when no specific model is selected or not in strict mode
+                  ...(isStrictMode && filters.model_id ? [] : [{ value: 'all', label: 'Të gjithë Modelet' }]),
                   ...models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => ({
                     value: model.id.toString(),
                     label: `${model.name} (${model.cars_qty})`
@@ -839,7 +860,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   disabled={!filters.model_id}
                   placeholder={filters.model_id ? "Gjeneratat" : "Zgjidhni modelin së pari"}
                   options={[
-                    { value: 'all', label: 'Të gjitha Gjeneratat' },
+                    // In strict mode, show "Të gjitha Gjeneratat" only when no specific generation is selected or not in strict mode
+                    ...(isStrictMode && filters.generation_id ? [] : [{ value: 'all', label: 'Të gjitha Gjeneratat' }]),
                     ...generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => ({
                       value: generation.id.toString(),
                       label: `${generation.name}${generation.from_year ? (() => {
@@ -929,7 +951,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   disabled={!filters.generation_id || isLoadingGrades}
                   placeholder={isLoadingGrades ? "Loading..." : "Select variant"}
                   options={[
-                    { value: 'all', label: 'All Variants' },
+                    // In strict mode, show "All Variants" only when no specific variant is selected or not in strict mode
+                    ...(isStrictMode && filters.grade_iaai ? [] : [{ value: 'all', label: 'All Variants' }]),
                     ...grades.map((grade) => ({
                       value: grade.value,
                       label: grade.label
@@ -951,7 +974,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   onValueChange={(value) => updateFilter('color', value)}
                   placeholder="Çdo ngjyrë"
                   options={[
-                    { value: 'all', label: 'Çdo ngjyrë' },
+                    // In strict mode, show "Çdo ngjyrë" only when no specific color is selected or not in strict mode
+                    ...(isStrictMode && filters.color ? [] : [{ value: 'all', label: 'Çdo ngjyrë' }]),
                     ...Object.entries(COLOR_OPTIONS).map(([name, id]) => ({
                       value: id.toString(),
                       label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
@@ -970,7 +994,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   onValueChange={(value) => updateFilter('fuel_type', value)}
                   placeholder="Çdo tip"
                   options={[
-                    { value: 'all', label: 'Çdo tip' },
+                    // In strict mode, show "Çdo tip" only when no specific fuel type is selected or not in strict mode
+                    ...(isStrictMode && filters.fuel_type ? [] : [{ value: 'all', label: 'Çdo tip' }]),
                     ...Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => ({
                       value: id.toString(),
                       label: name.charAt(0).toUpperCase() + name.slice(1)
@@ -989,7 +1014,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   onValueChange={(value) => updateFilter('transmission', value)}
                   placeholder="Çdo tip"
                   options={[
-                    { value: 'all', label: 'Çdo tip' },
+                    // In strict mode, show "Çdo tip" only when no specific transmission is selected or not in strict mode
+                    ...(isStrictMode && filters.transmission ? [] : [{ value: 'all', label: 'Çdo tip' }]),
                     ...Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => ({
                       value: id.toString(),
                       label: name.charAt(0).toUpperCase() + name.slice(1)
