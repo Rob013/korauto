@@ -21,7 +21,7 @@ import {
   DollarSign,
   Cog
 } from "lucide-react";
-import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS } from '@/hooks/useAuctionAPI';
+import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS, BODY_TYPE_OPTIONS } from '@/hooks/useAuctionAPI';
 
 interface Manufacturer {
   id: number;
@@ -67,6 +67,7 @@ interface EncarStyleFilterProps {
     color?: string;
     fuel_type?: string;
     transmission?: string;
+    body_type?: string;
     odometer_from_km?: string;
     odometer_to_km?: string;
     from_year?: string;
@@ -511,6 +512,26 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   />
                 </div>
 
+                <div className="space-y-1.5">
+                  <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
+                    <Car className="h-3 w-3" />
+                    Body Type
+                  </Label>
+                  <AdaptiveSelect 
+                    value={filters.body_type || 'all'} 
+                    onValueChange={(value) => updateFilter('body_type', value)}
+                    placeholder="Any type"
+                    className="h-9 sm:h-10 text-sm"
+                    options={[
+                      { value: 'all', label: 'Any type' },
+                      ...Object.entries(BODY_TYPE_OPTIONS).map(([name, id]) => ({
+                        value: id.toString(),
+                        label: name.charAt(0).toUpperCase() + name.slice(1)
+                      }))
+                    ]}
+                  />
+                </div>
+
                 {/* Mileage */}
                 <div className="space-y-1.5">
                   <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
@@ -939,8 +960,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               </div>
             </div>
 
-            {/* Color, Fuel, Transmission */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Color, Fuel, Transmission, Body Type */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-medium flex items-center gap-2">
                   <Palette className="h-3 w-3" />
@@ -991,6 +1012,25 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   options={[
                     { value: 'all', label: 'Çdo tip' },
                     ...Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => ({
+                      value: id.toString(),
+                      label: name.charAt(0).toUpperCase() + name.slice(1)
+                    }))
+                  ]}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Car className="h-3 w-3" />
+                  Lloji i Trupit
+                </Label>
+                <AdaptiveSelect 
+                  value={filters.body_type || 'all'} 
+                  onValueChange={(value) => updateFilter('body_type', value)}
+                  placeholder="Çdo tip"
+                  options={[
+                    { value: 'all', label: 'Çdo tip' },
+                    ...Object.entries(BODY_TYPE_OPTIONS).map(([name, id]) => ({
                       value: id.toString(),
                       label: name.charAt(0).toUpperCase() + name.slice(1)
                     }))
