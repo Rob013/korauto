@@ -7,7 +7,7 @@ import { Filter, X, Loader2, Search } from "lucide-react";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS } from '@/hooks/useAuctionAPI';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
+import { ManufacturerLogo } from "@/components/ui/manufacturer-logo";
 
 
 // Debounce utility function
@@ -375,6 +375,11 @@ const FilterForm = memo<FilterFormProps>(({
                 value: manufacturer.id.toString(),
                 label: (
                   <div className="flex items-center gap-2">
+                    <ManufacturerLogo 
+                      manufacturerName={manufacturer.name}
+                      size="sm"
+                      className="flex-shrink-0"
+                    />
                     <span className="truncate">{manufacturer.name} ({manufacturer.cars_qty})</span>
                   </div>
                 )
@@ -389,7 +394,7 @@ const FilterForm = memo<FilterFormProps>(({
             value={filters.model_id || 'all'} 
             onValueChange={(value) => updateFilter('model_id', value)}
             disabled={!filters.manufacturer_id || isLoading}
-            placeholder={isLoading ? "Duke ngarkuar..." : (filters.manufacturer_id ? "Modelet" : "Markën së pari")}
+            placeholder={isLoading ? "Duke ngarkuar..." : (filters.manufacturer_id ? "Modelet" : "Marka së pari")}
             className="h-7 text-xs"
             options={[
               { value: 'all', label: 'Të gjithë Modelet' },
@@ -456,7 +461,7 @@ const FilterForm = memo<FilterFormProps>(({
             value={filters.grade_iaai || 'all'} 
             onValueChange={(value) => updateFilter('grade_iaai', value)}
             disabled={!filters.manufacturer_id || isLoading}
-            placeholder={filters.manufacturer_id ? "Gradat" : "Markën së pari"}
+            placeholder={filters.manufacturer_id ? "Gradat" : "Marka së pari"}
             className="h-7 text-xs"
             options={[
               { value: 'all', label: 'Të gjitha Gradat' },
