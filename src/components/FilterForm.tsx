@@ -64,6 +64,7 @@ interface FilterFormProps {
     model_id?: string;
     generation_id?: string;
     grade_iaai?: string;
+    trim_level?: string;
     color?: string;
     fuel_type?: string;
     transmission?: string;
@@ -90,6 +91,7 @@ interface FilterFormProps {
   onToggleAdvanced?: () => void;
   loadingCounts?: boolean;
   onFetchGrades?: (manufacturerId?: string, modelId?: string, generationId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
+  onFetchTrimLevels?: (manufacturerId?: string, modelId?: string, generationId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
 }
 
 const FilterForm = memo<FilterFormProps>(({
@@ -106,9 +108,11 @@ const FilterForm = memo<FilterFormProps>(({
   onGenerationChange,
   showAdvanced = false,
   onToggleAdvanced,
-  onFetchGrades
+  onFetchGrades,
+  onFetchTrimLevels
 }) => {
   const [grades, setGrades] = useState<{ value: string; label: string; count?: number }[]>([]);
+  const [trimLevels, setTrimLevels] = useState<{ value: string; label: string; count?: number }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [modelLoading, setModelLoading] = useState(false);
   const [modelError, setModelError] = useState<string | null>(null);
@@ -328,6 +332,26 @@ const FilterForm = memo<FilterFormProps>(({
     return () => { cancelled = true; };
   }, [filters.manufacturer_id, filters.model_id, filters.generation_id, onFetchGrades]);
 
+  // Fetch trim levels when manufacturer, model, or generation changes
+  useEffect(() => {
+    let cancelled = false;
+    if (filters.manufacturer_id && onFetchTrimLevels) {
+      onFetchTrimLevels(filters.manufacturer_id, filters.model_id, filters.generation_id)
+        .then(trimLevelsData => {
+          if (!cancelled && Array.isArray(trimLevelsData)) {
+            setTrimLevels(trimLevelsData);
+          }
+        })
+        .catch((err) => {
+          console.error('Trim level fetch error:', err);
+          setTrimLevels([]);
+        });
+    } else {
+      setTrimLevels([]);
+    }
+    return () => { cancelled = true; };
+  }, [filters.manufacturer_id, filters.model_id, filters.generation_id, onFetchTrimLevels]);
+
 
   useEffect(() => {
     console.log(`[FilterForm] Rendering model dropdown. Models available: ${models.length}, disabled: ${!filters.manufacturer_id || isLoading}`);
@@ -363,7 +387,7 @@ const FilterForm = memo<FilterFormProps>(({
 
 
       {/* Basic Filters - Optimized mobile layout */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2 sm:gap-3">
         <div className="space-y-1">
           <Label htmlFor="manufacturer" className="text-xs font-medium truncate">Brand</Label>
           <AdaptiveSelect 
@@ -468,6 +492,27 @@ const FilterForm = memo<FilterFormProps>(({
                 grades.map((grade) => ({
                   value: grade.value,
                   label: `${grade.label}${grade.count ? ` (${grade.count})` : ''}`
+                }))
+              )
+            ]}
+          />
+        </div>
+
+        <div className="space-y-1">
+          <Label htmlFor="trim_level" className="text-xs font-medium truncate">Trim Level</Label>
+          <AdaptiveSelect 
+            value={filters.trim_level || 'all'} 
+            onValueChange={(value) => updateFilter('trim_level', value)}
+            disabled={!filters.manufacturer_id || isLoading}
+            placeholder={filters.manufacturer_id ? "All Trim Levels" : "Select Brand First"}
+            className="h-8 text-xs"
+            options={[
+              { value: 'all', label: 'All Trim Levels' },
+              ...(trimLevels.length === 0 && filters.manufacturer_id ? 
+                [{ value: 'no-trims', label: 'No trim levels found', disabled: true }] :
+                trimLevels.map((trim) => ({
+                  value: trim.value,
+                  label: `${trim.label}${trim.count ? ` (${trim.count})` : ''}`
                 }))
               )
             ]}

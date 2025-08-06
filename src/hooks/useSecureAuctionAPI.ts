@@ -337,6 +337,7 @@ interface APIFilters {
   model_id?: string;
   generation_id?: string;
   grade_iaai?: string;
+  trim_level?: string;
   color?: string;
   fuel_type?: string;
   transmission?: string;
@@ -374,6 +375,7 @@ export const useSecureAuctionAPI = () => {
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   const [filters, setFilters] = useState<APIFilters>({});
   const [gradesCache, setGradesCache] = useState<{ [key: string]: { value: string; label: string; count?: number }[] }>({});
+  const [trimLevelsCache, setTrimLevelsCache] = useState<{ [key: string]: { value: string; label: string; count?: number }[] }>({});
 
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
@@ -491,10 +493,12 @@ export const useSecureAuctionAPI = () => {
         simple_paginate: "0",
       };
       
-      // IMPORTANT: Remove grade_iaai from server request - we'll do client-side filtering
+      // IMPORTANT: Remove grade_iaai and trim_level from server request - we'll do client-side filtering
       // This prevents backend errors and ensures we get all cars for client-side filtering
       const selectedVariant = newFilters.grade_iaai;
+      const selectedTrimLevel = newFilters.trim_level;
       delete apiFilters.grade_iaai;
+      delete apiFilters.trim_level;
 
       console.log(`🔄 Fetching cars - Page ${page} with filters:`, apiFilters);
       const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
@@ -537,8 +541,48 @@ export const useSecureAuctionAPI = () => {
         console.log(`✅ Variant filter "${selectedVariant}": ${filteredCars.length} cars match out of ${data.data?.length || 0} total`);
       }
 
+      // Apply client-side trim level filtering if a trim level is selected
+      if (selectedTrimLevel && selectedTrimLevel !== 'all') {
+        console.log(`🔍 Applying client-side trim level filter: "${selectedTrimLevel}"`);
+        
+        filteredCars = filteredCars.filter(car => {
+          // Check if car has the selected trim level in any of its lots or title
+          if (car.lots && Array.isArray(car.lots)) {
+            // Check lots for trim level in badge or grade_iaai
+            const hasMatchInLots = car.lots.some(lot => {
+              // Check badge field for trim level
+              if (lot.details && lot.details.badge && 
+                  lot.details.badge.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
+                return true;
+              }
+              
+              // Check grade_iaai field for trim level
+              if (lot.grade_iaai && 
+                  lot.grade_iaai.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
+                return true;
+              }
+              
+              return false;
+            });
+            
+            if (hasMatchInLots) return true;
+          }
+          
+          // Check title for trim level
+          if (car.title && car.title.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
+            return true;
+          }
+          
+          return false;
+        });
+        
+        console.log(`✅ Trim level filter "${selectedTrimLevel}": ${filteredCars.length} cars match out of ${data.data?.length || 0} total`);
+      }
+
       // Set metadata from response (but adjust total count for client-side filtering)
-      const totalFiltered = selectedVariant && selectedVariant !== 'all' ? filteredCars.length : (data.meta?.total || 0);
+      const totalFiltered = (selectedVariant && selectedVariant !== 'all') || (selectedTrimLevel && selectedTrimLevel !== 'all') 
+        ? filteredCars.length 
+        : (data.meta?.total || 0);
       setTotalCount(totalFiltered);
       setHasMorePages(page < (data.meta?.last_page || 1));
 
@@ -846,6 +890,226 @@ export const useSecureAuctionAPI = () => {
       console.error("❌ Error fetching Korea duplicates:", err);
       return [];
     }
+  };
+
+  const fetchTrimLevels = async (manufacturerId?: string, modelId?: string, generationId?: string): Promise<{ value: string; label: string; count?: number }[]> => {
+    const cacheKey = `trim_${manufacturerId || ''}-${modelId || ''}-${generationId || ''}`;
+    
+    // Use cache if available
+    if (trimLevelsCache[cacheKey]) {
+      return trimLevelsCache[cacheKey];
+    }
+
+    try {
+      // Build filters - only include valid values
+      const filters: any = { per_page: '100' }; // Fetch more cars for better trim coverage
+      if (manufacturerId) filters.manufacturer_id = manufacturerId;
+      if (modelId) filters.model_id = modelId;
+      if (generationId) filters.generation_id = generationId;
+
+      console.log('🔍 Fetching trim levels with filters:', filters);
+      const data = await makeSecureAPICall('cars', filters);
+      
+      const cars = data.data || [];
+      console.log('🔍 Found', cars.length, 'cars for trim level extraction');
+      
+      if (cars.length === 0) {
+        const fallback = getFallbackTrimLevels();
+        setTrimLevelsCache(prev => ({ ...prev, [cacheKey]: fallback }));
+        return fallback;
+      }
+      
+      // Extract unique trim levels from multiple sources
+      const trimLevelsMap = new Map<string, number>();
+      
+      // Define trim level patterns (focusing on actual trim levels, not engine variants)
+      const trimLevelPatterns = [
+        /\b(premium|luxury|sport|exclusive|elite|prestige|comfort|deluxe|base|standard|limited|special|edition)\b/gi,
+        /\b(executive|business|design|style|elegance|dynamic|advance|progressive|sophisticated)\b/gi,
+        /\b(ultimate|signature|platinum|diamond|titanium|carbon|black|white|red|blue)\b/gi
+      ];
+      
+      cars.forEach((car: any) => {
+        // Primary source: badge from lots details (most reliable for trim levels)
+        if (car.lots && Array.isArray(car.lots)) {
+          car.lots.forEach((lot: any) => {
+            if (lot.details && lot.details.badge && typeof lot.details.badge === 'string' && lot.details.badge.trim()) {
+              const badge = lot.details.badge.trim();
+              
+              // Check if badge matches trim level patterns
+              trimLevelPatterns.forEach(pattern => {
+                const matches = badge.toLowerCase().match(pattern);
+                if (matches) {
+                  matches.forEach(match => {
+                    const trimLevel = match.trim().toLowerCase();
+                    if (trimLevel.length > 2) { // Exclude very short matches
+                      const capitalizedTrim = trimLevel.charAt(0).toUpperCase() + trimLevel.slice(1);
+                      trimLevelsMap.set(capitalizedTrim, (trimLevelsMap.get(capitalizedTrim) || 0) + 1);
+                    }
+                  });
+                }
+              });
+            }
+          });
+        }
+        
+        // Secondary source: grade_iaai field (only if it contains trim-like terms)
+        if (car.lots && Array.isArray(car.lots)) {
+          car.lots.forEach((lot: any) => {
+            if (lot.grade_iaai && typeof lot.grade_iaai === 'string' && lot.grade_iaai.trim()) {
+              const grade = lot.grade_iaai.trim();
+              
+              // Check if grade contains trim level terms (but exclude engine codes)
+              trimLevelPatterns.forEach(pattern => {
+                const matches = grade.toLowerCase().match(pattern);
+                if (matches) {
+                  matches.forEach(match => {
+                    const trimLevel = match.trim().toLowerCase();
+                    if (trimLevel.length > 2 && 
+                        !/^[A-Z]{2,4}$/i.test(trimLevel) && // Not engine codes
+                        !/^\d+\.?\d*$/.test(trimLevel)) { // Not just numbers
+                      const capitalizedTrim = trimLevel.charAt(0).toUpperCase() + trimLevel.slice(1);
+                      trimLevelsMap.set(capitalizedTrim, (trimLevelsMap.get(capitalizedTrim) || 0) + 1);
+                    }
+                  });
+                }
+              });
+            }
+          });
+        }
+        
+        // Tertiary source: extract trim levels from car title
+        if (car.title && typeof car.title === 'string') {
+          const title = car.title.toLowerCase();
+          
+          trimLevelPatterns.forEach(pattern => {
+            const matches = title.match(pattern);
+            if (matches) {
+              matches.forEach(match => {
+                const trimLevel = match.trim().toLowerCase();
+                if (trimLevel.length > 2) {
+                  const capitalizedTrim = trimLevel.charAt(0).toUpperCase() + trimLevel.slice(1);
+                  trimLevelsMap.set(capitalizedTrim, (trimLevelsMap.get(capitalizedTrim) || 0) + 1);
+                }
+              });
+            }
+          });
+        }
+      });
+
+      console.log('🔍 Raw trim level values found:', Array.from(trimLevelsMap.keys()));
+
+      const trimLevels = Array.from(trimLevelsMap.entries())
+        .map(([value, count]) => ({
+          value,
+          label: value,
+          count
+        }))
+        .sort((a, b) => b.count - a.count); // Sort by popularity
+
+      console.log('📊 Extracted trim levels:', trimLevels.length, 'unique trim levels:', trimLevels.slice(0, 10).map(t => `${t.value}(${t.count})`));
+      
+      // If no trim levels found from API, use fallback
+      if (trimLevels.length === 0) {
+        console.log('⚠️ No trim levels found from API, using fallback...');
+        const fallback = getFallbackTrimLevels();
+        setTrimLevelsCache(prev => ({ ...prev, [cacheKey]: fallback }));
+        return fallback;
+      }
+      
+      const result = trimLevels;
+      setTrimLevelsCache(prev => ({ ...prev, [cacheKey]: result }));
+      return result;
+    } catch (err) {
+      console.error("❌ Error fetching trim levels:", err);
+      const fallback = getFallbackTrimLevels();
+      setTrimLevelsCache(prev => ({ ...prev, [cacheKey]: fallback }));
+      return fallback;
+    }
+  };
+
+  const getFallbackTrimLevels = (): { value: string; label: string; count?: number }[] => {
+    // Extract trim levels from current cars in memory
+    const currentTrimLevels = new Set<string>();
+    
+    const trimLevelPatterns = [
+      /\b(premium|luxury|sport|exclusive|elite|prestige|comfort|deluxe|base|standard|limited|special|edition)\b/gi,
+      /\b(executive|business|design|style|elegance|dynamic|advance|progressive|sophisticated)\b/gi,
+      /\b(ultimate|signature|platinum|diamond|titanium|carbon|black|white|red|blue)\b/gi
+    ];
+    
+    cars.forEach(car => {
+      // Check lots for trim levels
+      if (car.lots && Array.isArray(car.lots)) {
+        car.lots.forEach((lot: any) => {
+          if (lot.details && lot.details.badge && typeof lot.details.badge === 'string') {
+            const badge = lot.details.badge.toLowerCase();
+            trimLevelPatterns.forEach(pattern => {
+              const matches = badge.match(pattern);
+              if (matches) {
+                matches.forEach(match => {
+                  const trimLevel = match.trim();
+                  if (trimLevel.length > 2) {
+                    currentTrimLevels.add(trimLevel.charAt(0).toUpperCase() + trimLevel.slice(1));
+                  }
+                });
+              }
+            });
+          }
+        });
+      }
+      
+      // Check title for trim levels
+      if (car.title && typeof car.title === 'string') {
+        const title = car.title.toLowerCase();
+        trimLevelPatterns.forEach(pattern => {
+          const matches = title.match(pattern);
+          if (matches) {
+            matches.forEach(match => {
+              const trimLevel = match.trim();
+              if (trimLevel.length > 2) {
+                currentTrimLevels.add(trimLevel.charAt(0).toUpperCase() + trimLevel.slice(1));
+              }
+            });
+          }
+        });
+      }
+    });
+    
+    console.log('🔍 Actual trim levels found in current car data:', Array.from(currentTrimLevels).sort());
+    
+    if (currentTrimLevels.size > 0) {
+      return Array.from(currentTrimLevels)
+        .sort()
+        .map(trim => ({ value: trim, label: trim }));
+    }
+    
+    // If no current data, provide comprehensive trim level fallback
+    console.log('⚠️ No trim levels found in current data, providing fallback');
+    const fallbackTrimLevels = [
+      { value: 'Premium', label: 'Premium' },
+      { value: 'Prestige', label: 'Prestige' },
+      { value: 'Comfort', label: 'Comfort' },
+      { value: 'Luxury', label: 'Luxury' },
+      { value: 'Sport', label: 'Sport' },
+      { value: 'Executive', label: 'Executive' },
+      { value: 'Business', label: 'Business' },
+      { value: 'Exclusive', label: 'Exclusive' },
+      { value: 'Elite', label: 'Elite' },
+      { value: 'Deluxe', label: 'Deluxe' },
+      { value: 'Standard', label: 'Standard' },
+      { value: 'Base', label: 'Base' },
+      { value: 'Limited', label: 'Limited' },
+      { value: 'Special', label: 'Special Edition' },
+      { value: 'Design', label: 'Design' },
+      { value: 'Style', label: 'Style' },
+      { value: 'Elegance', label: 'Elegance' },
+      { value: 'Dynamic', label: 'Dynamic' },
+      { value: 'Advance', label: 'Advance' },
+      { value: 'Progressive', label: 'Progressive' }
+    ];
+    
+    return fallbackTrimLevels;
   };
 
   const fetchGrades = async (manufacturerId?: string, modelId?: string, generationId?: string): Promise<{ value: string; label: string; count?: number }[]> => {
@@ -1321,6 +1585,7 @@ export const useSecureAuctionAPI = () => {
     fetchFilterCounts,
     fetchKoreaDuplicates,
     fetchGrades,
+    fetchTrimLevels,
     loadMore,
   };
 };

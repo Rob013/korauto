@@ -64,6 +64,7 @@ interface EncarStyleFilterProps {
     model_id?: string;
     generation_id?: string;
     grade_iaai?: string;
+    trim_level?: string;
     color?: string;
     fuel_type?: string;
     transmission?: string;
@@ -90,6 +91,7 @@ interface EncarStyleFilterProps {
   onToggleAdvanced?: () => void;
   loadingCounts?: boolean;
   onFetchGrades?: (manufacturerId?: string, modelId?: string, generationId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
+  onFetchTrimLevels?: (manufacturerId?: string, modelId?: string, generationId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
   isHomepage?: boolean;
   compact?: boolean;
   onSearchCars?: () => void;
@@ -111,12 +113,14 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   showAdvanced = false,
   onToggleAdvanced,
   onFetchGrades,
+  onFetchTrimLevels,
   isHomepage = false,
   compact = false,
   onSearchCars,
   onCloseFilter
 }) => {
   const [grades, setGrades] = useState<{ value: string; label: string; count?: number }[]>([]);
+  const [trimLevels, setTrimLevels] = useState<{ value: string; label: string; count?: number }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingGrades, setIsLoadingGrades] = useState(false);
   const [expandedSections, setExpandedSections] = useState<string[]>(['basic']);
@@ -244,6 +248,24 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     }
   }, [filters.manufacturer_id, filters.model_id, filters.generation_id, onFetchGrades]);
 
+  // Fetch trim levels when filters change
+  useEffect(() => {
+    if (filters.manufacturer_id && onFetchTrimLevels) {
+      onFetchTrimLevels(filters.manufacturer_id, filters.model_id, filters.generation_id)
+        .then(trimLevelsData => {
+          if (Array.isArray(trimLevelsData)) {
+            setTrimLevels(trimLevelsData);
+          }
+        })
+        .catch((err) => {
+          console.error('Trim level fetch error:', err);
+          setTrimLevels([]);
+        });
+    } else {
+      setTrimLevels([]);
+    }
+  }, [filters.manufacturer_id, filters.model_id, filters.generation_id, onFetchTrimLevels]);
+
   const toggleSection = (section: string) => {
     setExpandedSections(prev => 
       prev.includes(section) 
@@ -355,6 +377,27 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     const to = (!generation.to_year || generation.to_year >= currentYear) ? 'present' : generation.to_year.toString();
                     return ` (${from}-${to})`;
                   })() : ''}`
+                }))
+              ]}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
+              <Cog className="h-3 w-3" />
+              Trim Level
+            </Label>
+            <AdaptiveSelect 
+              value={filters.trim_level || 'all'} 
+              onValueChange={(value) => updateFilter('trim_level', value)}
+              disabled={!filters.manufacturer_id}
+              placeholder={filters.manufacturer_id ? "All Trim Levels" : "Select brand first"}
+              className="h-9 sm:h-10 text-sm"
+              options={[
+                { value: 'all', label: 'All Trim Levels' },
+                ...trimLevels.map((trim) => ({
+                  value: trim.value,
+                  label: `${trim.label}${trim.count ? ` (${trim.count})` : ''}`
                 }))
               ]}
             />
