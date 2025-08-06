@@ -978,9 +978,10 @@ const CarDetails = memo(() => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       <div className="container-responsive py-6 max-w-7xl">
-        {/* Header with Actions */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+        {/* Header with Actions - Improved Mobile Layout */}
+        <div className="flex flex-col gap-4 mb-6 md:mb-8">
+          {/* Navigation Buttons */}
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <Button
               variant="outline"
               onClick={() => {
@@ -1038,7 +1039,7 @@ const CarDetails = memo(() => {
                 // Last resort - clean catalog
                 navigate("/catalog");
               }}
-              className="shadow-sm border-2 hover:shadow-md transition-all"
+              className="flex-1 sm:flex-none shadow-sm border-2 hover:shadow-md transition-all h-10 px-4"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Kthehu te Makinat
@@ -1046,45 +1047,49 @@ const CarDetails = memo(() => {
             <Button
               variant="outline"
               onClick={() => navigate("/")}
-              className="shadow-sm border-2 hover:shadow-md transition-all"
+              className="flex-1 sm:flex-none shadow-sm border-2 hover:shadow-md transition-all h-10 px-4"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Kryefaqja
             </Button>
           </div>
-          <div className="flex gap-3 w-full sm:w-auto justify-end">
+          
+          {/* Action Buttons */}
+          <div className="flex gap-2 justify-center sm:justify-end">
             <Button
               variant="outline"
               size="sm"
               onClick={handleLike}
-              className="shadow-sm hover:shadow-md transition-all"
+              className="shadow-sm hover:shadow-md transition-all flex-1 sm:flex-none max-w-[120px] h-9"
             >
               <Heart
-                className={`h-4 w-4 ${
+                className={`h-4 w-4 mr-2 ${
                   isLiked ? "fill-red-500 text-red-500" : ""
                 }`}
               />
+              <span className="text-sm">Pëlqej</span>
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={handleShare}
-              className="shadow-sm hover:shadow-md transition-all"
+              className="shadow-sm hover:shadow-md transition-all flex-1 sm:flex-none max-w-[120px] h-9"
             >
-              <Share2 className="h-4 w-4" />
+              <Share2 className="h-4 w-4 mr-2" />
+              <span className="text-sm">Ndaj</span>
             </Button>
           </div>
         </div>
 
-        {/* Compact Main Content - Mobile-First Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4">
+        {/* Compact Main Content - Enhanced Mobile-First Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
           {/* Left Column - Images and Gallery */}
-          <div className="lg:col-span-2 xl:col-span-3 space-y-3">
+          <div className="lg:col-span-2 xl:col-span-3 space-y-4">
             {/* Compact Main Image */}
             <Card className="shadow-md border overflow-hidden">
               <CardContent className="p-0">
                 <div
-                  className="relative h-[400px] sm:h-[500px] md:h-[600px] lg:h-[700px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer"
+                  className="relative h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] xl:h-[700px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer"
                   onClick={() => setIsImageZoomOpen(true)}
                 >
                   {images.length > 0 ? (
@@ -1125,16 +1130,16 @@ const CarDetails = memo(() => {
               </CardContent>
             </Card>
 
-            {/* Compact Image Thumbnails */}
+            {/* Enhanced Image Thumbnails - Better Mobile Layout */}
             {images.length > 1 && (
-              <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-16 gap-1">
+              <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-16 gap-2">
                 {images.slice(0, 24).map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImageIndex(index)}
-                    className={`relative h-10 sm:h-12 bg-muted rounded overflow-hidden border transition-all duration-200 hover:scale-105 ${
+                    className={`relative h-12 sm:h-14 md:h-16 bg-muted rounded-md overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
                       selectedImageIndex === index
-                        ? "border-primary shadow-md ring-1 ring-primary"
+                        ? "border-primary shadow-md ring-2 ring-primary/50"
                         : "border-transparent hover:border-primary/50"
                     }`}
                   >
@@ -1151,33 +1156,33 @@ const CarDetails = memo(() => {
               </div>
             )}
 
-            {/* Compact Vehicle Specifications */}
+            {/* Enhanced Vehicle Specifications */}
             <Card className="shadow-md border">
-              <CardContent className="p-3">
-                <div className="flex flex-col gap-2 mb-3">
-                  <h3 className="text-base font-bold flex items-center text-foreground">
-                    <Settings className="h-4 w-4 mr-2 text-primary" />
+              <CardContent className="p-4">
+                <div className="flex flex-col gap-3 mb-4">
+                  <h3 className="text-lg font-bold flex items-center text-foreground">
+                    <Settings className="h-5 w-5 mr-2 text-primary" />
                     Specifikimet Teknike
                   </h3>
 
-                  {/* Compact Price and action buttons */}
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                    <div className="text-left">
-                      <div className="text-lg font-bold text-primary">
+                  {/* Enhanced Price and action buttons */}
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="text-center sm:text-left">
+                      <div className="text-2xl font-bold text-primary">
                         €{car.price.toLocaleString()}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-sm text-muted-foreground">
                         +350€ deri në Prishtinë
                       </div>
                     </div>
                     <InspectionRequestForm
                       trigger={
                         <Button
-                          size="sm"
+                          size="default"
                           variant="outline"
-                          className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto text-xs"
+                          className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto"
                         >
-                          <FileText className="h-3 w-3 mr-1" />
+                          <FileText className="h-4 w-4 mr-2" />
                           Kërko Inspektim
                         </Button>
                       }
@@ -1189,70 +1194,70 @@ const CarDetails = memo(() => {
                   </div>
                 </div>
 
-                {/* Ultra Compact Specifications Grid */}
-                <div className="grid grid-cols-2 gap-2 text-xs">
+                {/* Enhanced Specifications Grid - Better Mobile Layout */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                   {/* Basic Info */}
-                  <div className="flex items-center justify-between p-2 bg-card border border-border rounded hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center gap-1">
-                      <Car className="h-3 w-3 text-primary" />
+                  <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <Car className="h-4 w-4 text-primary flex-shrink-0" />
                       <span className="font-medium text-foreground">Marka</span>
                     </div>
-                    <span className="text-muted-foreground font-medium text-right truncate">
+                    <span className="text-muted-foreground font-medium text-right">
                       {car.make} {car.model}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between p-2 bg-card border border-border rounded hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3 text-primary" />
+                  <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
                       <span className="font-medium text-foreground">Viti</span>
                     </div>
                     <span className="text-muted-foreground font-medium">{car.year}</span>
                   </div>
 
                   {car.mileage && (
-                    <div className="flex items-center justify-between p-2 bg-card border border-border rounded hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-1">
-                        <Gauge className="h-3 w-3 text-primary" />
-                        <span className="font-medium text-foreground">Km</span>
+                    <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <Gauge className="h-4 w-4 text-primary flex-shrink-0" />
+                        <span className="font-medium text-foreground">Kilometrazh</span>
                       </div>
-                      <span className="text-muted-foreground font-medium truncate">
+                      <span className="text-muted-foreground font-medium">
                         {car.mileage}
                       </span>
                     </div>
                   )}
 
                   {car.transmission && (
-                    <div className="flex items-center justify-between p-2 bg-card border border-border rounded hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-1">
-                        <Settings className="h-3 w-3 text-primary" />
-                        <span className="font-medium text-foreground">Trans.</span>
+                    <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <Settings className="h-4 w-4 text-primary flex-shrink-0" />
+                        <span className="font-medium text-foreground">Transmisioni</span>
                       </div>
-                      <span className="text-muted-foreground font-medium capitalize truncate">
+                      <span className="text-muted-foreground font-medium capitalize">
                         {car.transmission}
                       </span>
                     </div>
                   )}
 
                   {car.fuel && (
-                    <div className="flex items-center justify-between p-2 bg-card border border-border rounded hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-1">
-                        <Fuel className="h-3 w-3 text-primary" />
-                        <span className="font-medium text-foreground">Karb.</span>
+                    <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <Fuel className="h-4 w-4 text-primary flex-shrink-0" />
+                        <span className="font-medium text-foreground">Karburanti</span>
                       </div>
-                      <span className="text-muted-foreground font-medium capitalize truncate">
+                      <span className="text-muted-foreground font-medium capitalize">
                         {car.fuel}
                       </span>
                     </div>
                   )}
 
                   {car.color && (
-                    <div className="flex items-center justify-between p-2 bg-card border border-border rounded hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-1">
-                        <Palette className="h-3 w-3 text-primary" />
+                    <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <Palette className="h-4 w-4 text-primary flex-shrink-0" />
                         <span className="font-medium text-foreground">Ngjyra</span>
                       </div>
-                      <span className="text-muted-foreground font-medium capitalize truncate">
+                      <span className="text-muted-foreground font-medium capitalize">
                         {car.color}
                       </span>
                     </div>
@@ -1261,52 +1266,52 @@ const CarDetails = memo(() => {
               </CardContent>
             </Card>
 
-            {/* Compact Detailed Information Section */}
+            {/* Enhanced Detailed Information Section */}
             <Card className="shadow-lg border-0">
-              <CardContent className="p-3 lg:p-4">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4">
-                  <h3 className="text-base lg:text-lg font-bold flex items-center text-foreground">
-                    <Info className="h-4 w-4 lg:h-5 lg:w-5 mr-2 text-primary" />
+              <CardContent className="p-4 lg:p-6">
+                <div className="flex flex-col gap-3 mb-4">
+                  <h3 className="text-lg lg:text-xl font-bold flex items-center text-foreground">
+                    <Info className="h-5 w-5 lg:h-6 lg:w-6 mr-2 text-primary" />
                     Informacione të Detajuara
                   </h3>
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="default"
                     onClick={() => {
                       setShowDetailedInfo(!showDetailedInfo);
                     }}
-                    className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto text-xs"
+                    className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto"
                   >
                     {showDetailedInfo ? (
                       <>
-                        <ChevronUp className="h-3 w-3 ml-1" />
-                        Fshih
+                        <ChevronUp className="h-4 w-4 mr-2" />
+                        Fshih Detajet
                       </>
                     ) : (
                       <>
-                        <ChevronDown className="h-3 w-3 ml-1" />
-                        Shiko
+                        <ChevronDown className="h-4 w-4 mr-2" />
+                        Shiko Detajet
                       </>
                     )}
                     {/* Show indicators for available detailed data */}
                     {!showDetailedInfo && (
-                      <div className="ml-1 flex gap-1">
+                      <div className="ml-2 flex gap-1">
                         {car.details?.options && (
                           <div
-                            className="w-1.5 h-1.5 bg-green-500 rounded-full"
+                            className="w-2 h-2 bg-green-500 rounded-full"
                             title="Equipment & Options available"
                           />
                         )}
                         {car.insurance_v2 && (
                           <div
-                            className="w-1.5 h-1.5 bg-blue-500 rounded-full"
+                            className="w-2 h-2 bg-blue-500 rounded-full"
                             title="Insurance report available"
                           />
                         )}
                         {(car.details?.inspect_outer ||
                           car.details?.inspect?.inner) && (
                           <div
-                            className="w-1.5 h-1.5 bg-purple-500 rounded-full"
+                            className="w-2 h-2 bg-purple-500 rounded-full"
                             title="Inspection data available"
                           />
                         )}
@@ -1488,16 +1493,16 @@ const CarDetails = memo(() => {
                                 variant="ghost"
                                 className="w-full justify-between p-3 md:p-4 h-auto group hover:bg-blue-100/50 transition-all duration-300"
                               >
-                                <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-700 transition-colors">
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-700 transition-colors flex-shrink-0">
                                     <Cog className="h-4 w-4 text-white" />
                                   </div>
-                                  <div className="text-left">
+                                  <div className="text-left min-w-0 flex-1">
                                     <h5 className="text-base md:text-lg font-bold text-foreground inspection-text-black">Motori dhe Sistemi Mekanik</h5>
                                     <p className="text-muted-foreground text-xs inspection-subtext-black">Kontrolli teknik i komponentëve kryesorë</p>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-shrink-0">
                                   {!showEngineSection && (
                                     <div className="flex gap-1">
                                       {Object.entries(car.details.inspect.inner).slice(0, 3).map(([key, value], index) => {
@@ -1541,7 +1546,7 @@ const CarDetails = memo(() => {
                                         return (
                                           <div
                                             key={key}
-                                            className={`flex items-center justify-between p-2 bg-card rounded-lg border transition-all hover:shadow-sm ${
+                                            className={`flex items-center justify-between p-3 bg-card rounded-lg border transition-all hover:shadow-sm ${
                                               isGood ? 'border-green-200' : 'border-red-200'
                                             }`}
                                           >
@@ -1549,7 +1554,7 @@ const CarDetails = memo(() => {
                                               <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
                                                 isGood ? 'bg-green-500' : 'bg-red-500'
                                               }`} />
-                                              <span className="text-xs font-medium text-foreground truncate">
+                                              <span className="text-sm font-medium text-foreground truncate">
                                                 {label}
                                               </span>
                                             </div>
@@ -1840,52 +1845,52 @@ const CarDetails = memo(() => {
             </Card>
           </div>
 
-          {/* Right Column - Compact Contact Card */}
-          <div className="lg:col-span-1 xl:col-span-1 space-y-3">
-            {/* Compact Contact & Inspection Card */}
-            <Card className="shadow-md border sticky top-4">
-              <CardContent className="p-3">
-                <h3 className="text-base font-bold mb-3 text-center text-foreground">
+          {/* Right Column - Enhanced Contact Card */}
+          <div className="lg:col-span-1 xl:col-span-1 space-y-4">
+            {/* Enhanced Contact & Inspection Card */}
+            <Card className="shadow-lg border sticky top-4">
+              <CardContent className="p-4">
+                <h3 className="text-lg font-bold mb-4 text-center text-foreground">
                   Kontakt & Inspektim
                 </h3>
 
-                {/* Compact Contact Buttons */}
-                <div className="space-y-2 mb-3">
+                {/* Enhanced Contact Buttons */}
+                <div className="space-y-3 mb-4">
                   <Button
                     onClick={handleContactWhatsApp}
-                    className="w-full h-8 text-xs font-medium shadow-md hover:shadow-lg transition-shadow bg-green-600 hover:bg-green-700 text-white"
+                    className="w-full h-10 text-sm font-medium shadow-md hover:shadow-lg transition-shadow bg-green-600 hover:bg-green-700 text-white"
                   >
-                    <MessageCircle className="h-3 w-3 mr-2" />
+                    <MessageCircle className="h-4 w-4 mr-2" />
                     WhatsApp
                   </Button>
 
                   <Button
                     variant="outline"
-                    className="w-full h-8 text-xs font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
+                    className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
                     onClick={() => window.open("tel:+38348181116", "_self")}
                   >
-                    <Phone className="h-3 w-3 mr-2" />
+                    <Phone className="h-4 w-4 mr-2" />
                     +383 48 181 116
                   </Button>
 
                   <Button
                     variant="outline"
-                    className="w-full h-8 text-xs font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
+                    className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
                     onClick={() =>
                       window.open("mailto:info@korauto.com", "_self")
                     }
                   >
-                    <Mail className="h-3 w-3 mr-2" />
+                    <Mail className="h-4 w-4 mr-2" />
                     info@korauto.com
                   </Button>
                 </div>
 
-                {/* Compact Inspection Request Button */}
-                <div className="border-t border-border pt-3">
+                {/* Enhanced Inspection Request Button */}
+                <div className="border-t border-border pt-4">
                   <InspectionRequestForm
                     trigger={
-                      <Button className="w-full h-8 text-xs font-medium bg-primary hover:bg-primary/90 text-primary-foreground">
-                        <FileText className="h-3 w-3 mr-2" />
+                      <Button className="w-full h-10 text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground">
+                        <FileText className="h-4 w-4 mr-2" />
                         Kërko Inspektim
                       </Button>
                     }
@@ -1896,17 +1901,17 @@ const CarDetails = memo(() => {
                   />
                 </div>
 
-                {/* Compact Location */}
-                <div className="mt-3 pt-3 border-t border-border">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <MapPin className="h-3 w-3" />
+                {/* Enhanced Location */}
+                <div className="mt-4 pt-4 border-t border-border">
+                  <div className="flex items-start gap-3 text-muted-foreground">
+                    <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
                     <a
                       href="https://maps.google.com/?q=KORAUTO,Rr.+Ilaz+Kodra+70,Prishtinë,Kosovo"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs hover:text-primary transition-colors cursor-pointer"
+                      className="text-sm hover:text-primary transition-colors cursor-pointer leading-relaxed"
                     >
-                      Rr. Ilaz Kodra 70, Prishtinë
+                      Rr. Ilaz Kodra 70, Prishtinë, Kosovo
                     </a>
                   </div>
                 </div>
