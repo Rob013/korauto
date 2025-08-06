@@ -241,6 +241,12 @@ const AdminDashboard = () => {
       });
 
       setCarDetails(carDetailsMap);
+
+      // For car IDs that didn't match cached data, mark them for potential API search
+      const missingCarIds = uniqueCarIds.filter(id => !carDetailsMap[id]);
+      if (missingCarIds.length > 0) {
+        console.log(`📋 ${missingCarIds.length} cars need lot number lookup from API:`, missingCarIds);
+      }
     } catch (error) {
       console.error("Error fetching car details:", error);
     }
@@ -610,26 +616,26 @@ const AdminDashboard = () => {
           if (carData) {
             setFoundCars((prev) => ({ ...prev, [requestId]: carData }));
 
-            // Create detailed car info for the toast
+            // Create detailed car info for the toast with emphasis on lot number
             const lot = carData.lots?.[0];
-            const carInfoText = `${carData.year} ${carData.manufacturer?.name} ${carData.model?.name}`;
-            const lotInfo = `Lot: ${lot?.lot} | Price: $${
-              lot?.buy_now?.toLocaleString() || "N/A"
-            }`;
+            const lotNumber = lot?.lot || carData.lot_number || 'N/A';
+            const carInfoText = `${carData.year} ${carData.manufacturer?.name || carData.make} ${carData.model?.name || carData.model}`;
+            const lotInfo = `🏷️ Lot: ${lotNumber}`;
+            const priceInfo = lot?.buy_now ? `💰 Price: $${lot.buy_now.toLocaleString()}` : '';
             const mileageInfo = lot?.odometer?.km
-              ? `| ${lot.odometer.km.toLocaleString()} km`
-              : "";
+              ? `📊 ${lot.odometer.km.toLocaleString()} km`
+              : '';
 
             toast({
               title: `✅ Car Found via ${searchMethod.method}!`,
-              description: `${carInfoText}\n${lotInfo} ${mileageInfo}\nOpening car page...`,
-              duration: 3000,
+              description: `${carInfoText}\n${lotInfo}\n${priceInfo} ${mileageInfo}\n🔍 Opening car details...`,
+              duration: 4000,
             });
 
-            // Open car details page in new tab
+            // Open car details page in new tab, prioritizing lot number for URL
             setTimeout(() => {
-              const foundCarId = carData.id || lot?.lot || searchTerm;
-              console.log("🚗 Opening car page with ID:", foundCarId);
+              const foundCarId = lotNumber !== 'N/A' ? lotNumber : (carData.id || searchTerm);
+              console.log("🚗 Opening car page with Lot Number/ID:", foundCarId);
               window.open(`/car/${foundCarId}`, "_blank");
             }, 1000); // Small delay to show the toast
 
@@ -1171,7 +1177,7 @@ const AdminDashboard = () => {
                         <tr className="bg-muted/50">
                           <th className="border border-border px-3 py-2 text-left text-xs font-medium">Customer</th>
                           <th className="border border-border px-3 py-2 text-left text-xs font-medium">Contact</th>
-                          <th className="border border-border px-3 py-2 text-left text-xs font-medium">Car Details</th>
+                          <th className="border border-border px-3 py-2 text-left text-xs font-medium">Car Details & Lot #</th>
                           <th className="border border-border px-3 py-2 text-left text-xs font-medium">Status</th>
                           <th className="border border-border px-3 py-2 text-left text-xs font-medium">Date</th>
                           <th className="border border-border px-3 py-2 text-left text-xs font-medium">Actions</th>
@@ -1206,22 +1212,39 @@ const AdminDashboard = () => {
                                       className="w-10 h-8 object-cover rounded"
                                     />
                                   )}
-                                  <div>
+                                  <div className="flex-1">
                                     <div className="text-sm font-medium">
                                       {carDetails[request.car_id].year} {carDetails[request.car_id].make} {carDetails[request.car_id].model}
                                     </div>
                                     <div className="text-xs text-muted-foreground">ID: {request.car_id}</div>
-                                    {carDetails[request.car_id].lot_number && (
-                                      <div className="text-xs lot-number-highlight mt-1">
-                                        Lot: {carDetails[request.car_id].lot_number}
-                                      </div>
-                                    )}
+                                    {/* Always show lot number section with fallback */}
+                                    <div className="mt-1">
+                                      {carDetails[request.car_id].lot_number ? (
+                                        <div className="lot-number-highlight">
+                                          Lot: {carDetails[request.car_id].lot_number}
+                                        </div>
+                                      ) : (
+                                        <div className="text-xs text-amber-600 font-medium">
+                                          Lot: Searching...
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               ) : request.car_id ? (
-                                <div className="text-sm text-muted-foreground">Car ID: {request.car_id}</div>
+                                <div className="space-y-1">
+                                  <div className="text-sm text-muted-foreground">Car ID: {request.car_id}</div>
+                                  <div className="text-xs text-amber-600 font-medium">
+                                    Lot: Need to search
+                                  </div>
+                                </div>
                               ) : (
-                                <div className="text-sm text-muted-foreground">General request</div>
+                                <div className="space-y-1">
+                                  <div className="text-sm text-muted-foreground">General request</div>
+                                  <div className="text-xs text-gray-500">
+                                    No specific car ID
+                                  </div>
+                                </div>
                               )}
                             </td>
                             <td className="border border-border px-3 py-2">
@@ -1266,9 +1289,10 @@ const AdminDashboard = () => {
                                     variant="default"
                                     onClick={() => window.open(`/car/${carDetails[request.car_id]?.lot_number || request.car_id}`, "_blank")}
                                     className="h-7 px-2 text-xs"
+                                    title={`View car details${carDetails[request.car_id]?.lot_number ? ` (Lot: ${carDetails[request.car_id].lot_number})` : ''}`}
                                   >
                                     <Car className="h-3 w-3 mr-1" />
-                                    View Car
+                                    {carDetails[request.car_id]?.lot_number ? `Lot ${carDetails[request.car_id].lot_number}` : 'View Car'}
                                   </Button>
                                 ) : request.car_id ? (
                                   // Car ID exists but details not cached - search and redirect
@@ -1278,13 +1302,14 @@ const AdminDashboard = () => {
                                     onClick={() => findCarByLotNumber(request.id, request.car_id)}
                                     disabled={searchingCars[request.id]}
                                     className="h-7 px-2 text-xs"
+                                    title="Find car and lot number from API"
                                   >
                                     {searchingCars[request.id] ? (
                                       <div className="h-3 w-3 mr-1 animate-spin rounded-full border border-current border-t-transparent" />
                                     ) : (
                                       <Search className="h-3 w-3 mr-1" />
                                     )}
-                                    {searchingCars[request.id] ? "Finding..." : "Find Car"}
+                                    {searchingCars[request.id] ? "Finding Lot..." : "Find Lot #"}
                                   </Button>
                                 ) : (
                                   // No car ID - search based on notes or general search
@@ -1294,6 +1319,7 @@ const AdminDashboard = () => {
                                     onClick={() => findCarByLotNumber(request.id, request.notes || "general inspection")}
                                     disabled={searchingCars[request.id]}
                                     className="h-7 px-2 text-xs"
+                                    title="Search for car information from request details"
                                   >
                                     {searchingCars[request.id] ? (
                                       <div className="h-3 w-3 mr-1 animate-spin rounded-full border border-current border-t-transparent" />
@@ -1359,16 +1385,36 @@ const AdminDashboard = () => {
                             </div>
 
                             {/* Car Info */}
-                            {car && (
-                              <div className="mb-2">
+                            {car ? (
+                              <div className="mb-2 space-y-1">
                                 <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
                                   <span>{car.year} {car.make} {car.model}</span>
-                                  {car.lot_number && (
-                                    <span className="lot-number-highlight ml-2">
+                                </div>
+                                {/* Always show lot number section */}
+                                <div>
+                                  {car.lot_number ? (
+                                    <span className="lot-number-highlight">
                                       Lot: {car.lot_number}
+                                    </span>
+                                  ) : (
+                                    <span className="text-xs text-amber-600 font-medium px-2 py-1 bg-amber-50 rounded">
+                                      Lot: Searching...
                                     </span>
                                   )}
                                 </div>
+                              </div>
+                            ) : request.car_id ? (
+                              <div className="mb-2">
+                                <div className="text-xs text-muted-foreground mb-1">Car ID: {request.car_id}</div>
+                                <span className="text-xs text-amber-600 font-medium px-2 py-1 bg-amber-50 rounded">
+                                  Lot: Need to search
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="mb-2">
+                                <span className="text-xs text-gray-500 px-2 py-1 bg-gray-50 rounded">
+                                  No specific car ID
+                                </span>
                               </div>
                             )}
 
@@ -1405,9 +1451,10 @@ const AdminDashboard = () => {
                                     variant="default"
                                     onClick={() => window.open(`/car/${car.lot_number || request.car_id}`, "_blank")}
                                     className="h-6 px-2 text-xs"
+                                    title={`View car details${car.lot_number ? ` (Lot: ${car.lot_number})` : ''}`}
                                   >
                                     <Car className="h-3 w-3 mr-1" />
-                                    View Car
+                                    {car.lot_number ? `Lot ${car.lot_number}` : 'View Car'}
                                   </Button>
                                 ) : request.car_id ? (
                                   // Car ID exists but details not cached - search and redirect
@@ -1417,13 +1464,14 @@ const AdminDashboard = () => {
                                     onClick={() => findCarByLotNumber(request.id, request.car_id)}
                                     disabled={searchingCars[request.id]}
                                     className="h-6 px-2 text-xs"
+                                    title="Find car and lot number from API"
                                   >
                                     {searchingCars[request.id] ? (
                                       <div className="h-3 w-3 mr-1 animate-spin rounded-full border border-current border-t-transparent" />
                                     ) : (
                                       <Search className="h-3 w-3 mr-1" />
                                     )}
-                                    {searchingCars[request.id] ? "Finding..." : "Find Car"}
+                                    {searchingCars[request.id] ? "Finding..." : "Find Lot"}
                                   </Button>
                                 ) : (
                                   // No car ID - search based on notes or general search
@@ -1433,13 +1481,14 @@ const AdminDashboard = () => {
                                     onClick={() => findCarByLotNumber(request.id, request.notes || "general inspection")}
                                     disabled={searchingCars[request.id]}
                                     className="h-6 px-2 text-xs"
+                                    title="Search for car information"
                                   >
                                     {searchingCars[request.id] ? (
                                       <div className="h-3 w-3 mr-1 animate-spin rounded-full border border-current border-t-transparent" />
                                     ) : (
                                       <Search className="h-3 w-3 mr-1" />
                                     )}
-                                    {searchingCars[request.id] ? "Searching..." : "Search Car"}
+                                    {searchingCars[request.id] ? "Searching..." : "Search"}
                                   </Button>
                                 )}
                               </div>
