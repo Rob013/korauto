@@ -90,7 +90,7 @@ export const isFastConnection = (): boolean => {
 };
 
 /**
- * Optimize images based on device capabilities
+ * Optimize images based on device capabilities and connection
  */
 export const getOptimizedImageUrl = (url: string, width: number, quality = 80): string => {
   if (!url) return '';
@@ -100,9 +100,85 @@ export const getOptimizedImageUrl = (url: string, width: number, quality = 80): 
     return url;
   }
   
+  // Adjust quality based on connection speed
+  const effectiveQuality = isFastConnection() ? quality : Math.min(quality, 60);
+  
   // For external images, you could add query parameters for optimization
   // This is a placeholder - adjust based on your image service
-  return `${url}?w=${width}&q=${quality}`;
+  return `${url}?w=${width}&q=${effectiveQuality}&auto=format,compress`;
+};
+
+/**
+ * Memoization utility for expensive computations
+ */
+export const memoize = <T extends (...args: any[]) => any>(fn: T): T => {
+  const cache = new Map();
+  
+  return ((...args: Parameters<T>) => {
+    const key = JSON.stringify(args);
+    
+    if (cache.has(key)) {
+      return cache.get(key);
+    }
+    
+    const result = fn(...args);
+    cache.set(key, result);
+    
+    // Limit cache size to prevent memory leaks
+    if (cache.size > 100) {
+      const firstKey = cache.keys().next().value;
+      cache.delete(firstKey);
+    }
+    
+    return result;
+  }) as T;
+};
+
+/**
+ * Virtual scrolling utility for large lists
+ */
+export const createVirtualScrollConfig = (itemHeight: number, containerHeight: number) => {
+  const visibleCount = Math.ceil(containerHeight / itemHeight);
+  const bufferSize = Math.min(5, Math.ceil(visibleCount * 0.3));
+  
+  return {
+    itemHeight,
+    visibleCount,
+    bufferSize,
+    overscan: bufferSize
+  };
+};
+
+/**
+ * Performance measurement utility
+ */
+export const measurePerformance = (name: string, fn: () => void | Promise<void>) => {
+  return async () => {
+    const startTime = performance.now();
+    
+    try {
+      const result = fn();
+      if (result instanceof Promise) {
+        await result;
+      }
+    } finally {
+      const endTime = performance.now();
+      const duration = endTime - startTime;
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`⏱️ ${name}: ${duration.toFixed(2)}ms`);
+      }
+      
+      // Report to analytics in production
+      if (process.env.NODE_ENV === 'production' && 'analytics' in window) {
+        (window as any).analytics?.track('Performance Metric', {
+          name,
+          duration,
+          timestamp: Date.now()
+        });
+      }
+    }
+  };
 };
 
 export default {
@@ -112,5 +188,8 @@ export default {
   preloadResource,
   batchDOMUpdates,
   isFastConnection,
-  getOptimizedImageUrl
+  getOptimizedImageUrl,
+  memoize,
+  createVirtualScrollConfig,
+  measurePerformance
 };

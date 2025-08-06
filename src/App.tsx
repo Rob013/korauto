@@ -7,6 +7,7 @@ import { lazy, Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InstallPrompt } from "./components/InstallPrompt";
 import FloatingPerformanceWidget from "./components/FloatingPerformanceWidget";
+import { useResourcePreloader } from "./hooks/useResourcePreloader";
 
 // Lazy load all pages for better code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -75,110 +76,125 @@ const AdminSyncSkeleton = () => (
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Cache for 5 minutes by default
-      staleTime: 5 * 60 * 1000,
-      // Keep data for 10 minutes
-      gcTime: 10 * 60 * 1000,
+      // Cache for 10 minutes by default (increased from 5)
+      staleTime: 10 * 60 * 1000,
+      // Keep data for 30 minutes (increased from 10)
+      gcTime: 30 * 60 * 1000,
       // Refetch on window focus for critical data only
       refetchOnWindowFocus: false,
       // Retry failed requests up to 2 times
       retry: 2,
-      // Use network first strategy
-      refetchOnMount: 'always',
+      // Only refetch if data is stale (improved from 'always')
+      refetchOnMount: 'if-stale',
+      // Enable background refetching for better UX
+      refetchInterval: false,
+      // Network mode optimizations
+      networkMode: 'online',
+    },
+    mutations: {
+      // Retry mutations once on failure
+      retry: 1,
+      // Network mode for mutations
+      networkMode: 'online',
     },
   },
 });
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={
-            <Suspense fallback={<PageSkeleton />}>
-              <Index />
-            </Suspense>
-          } />
-          <Route path="/catalog" element={
-            <Suspense fallback={<PageSkeleton />}>
-              <Catalog />
-            </Suspense>
-          } />
-          <Route path="/car/:id" element={
-            <Suspense fallback={<PageSkeleton />}>
-              <CarDetails />
-            </Suspense>
-          } />
-          <Route path="/admin" element={
-            <Suspense fallback={<PageSkeleton />}>
-              <AdminDashboard />
-            </Suspense>
-          } />
-          <Route path="/admin/sync" element={
-            <Suspense fallback={<AdminSyncSkeleton />}>
-              <AdminSyncDashboard />
-            </Suspense>
-          } />
-          <Route path="/auth" element={
-            <Suspense fallback={<PageSkeleton />}>
-              <AuthPage />
-            </Suspense>
-          } />
-          <Route path="/account" element={
-            <Suspense fallback={<PageSkeleton />}>
-              <MyAccount />
-            </Suspense>
-          } />
-          <Route path="/favorites" element={
-            <Suspense fallback={<PageSkeleton />}>
-              <FavoritesPage />
-            </Suspense>
-          } />
-          <Route path="/inspections" element={
-            <Suspense fallback={<PageSkeleton />}>
-              <InspectionServices />
-            </Suspense>
-          } />
-          <Route path="/contacts" element={
-            <Suspense fallback={<PageSkeleton />}>
-              <Contacts />
-            </Suspense>
-          } />
-          <Route path="/demo" element={
-            <Suspense fallback={<PageSkeleton />}>
-              <ComponentDemo />
-            </Suspense>
-          } />
-          <Route path="/diagram-demo" element={
-            <Suspense fallback={<PageSkeleton />}>
-              <DiagramDemo />
-            </Suspense>
-          } />
+const App = () => {
+  // Initialize resource preloading for better performance
+  const { preloadRouteResources } = useResourcePreloader();
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <Index />
+              </Suspense>
+            } />
+            <Route path="/catalog" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <Catalog />
+              </Suspense>
+            } />
+            <Route path="/car/:id" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <CarDetails />
+              </Suspense>
+            } />
+            <Route path="/admin" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <AdminDashboard />
+              </Suspense>
+            } />
+            <Route path="/admin/sync" element={
+              <Suspense fallback={<AdminSyncSkeleton />}>
+                <AdminSyncDashboard />
+              </Suspense>
+            } />
+            <Route path="/auth" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <AuthPage />
+              </Suspense>
+            } />
+            <Route path="/account" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <MyAccount />
+              </Suspense>
+            } />
+            <Route path="/favorites" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <FavoritesPage />
+              </Suspense>
+            } />
+            <Route path="/inspections" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <InspectionServices />
+              </Suspense>
+            } />
+            <Route path="/contacts" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <Contacts />
+              </Suspense>
+            } />
+            <Route path="/demo" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <ComponentDemo />
+              </Suspense>
+            } />
+            <Route path="/diagram-demo" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <DiagramDemo />
+              </Suspense>
+            } />
 // Remove the demo route since it was just for testing
-          <Route path="/admin-search-demo" element={
-            <Suspense fallback={<PageSkeleton />}>
-              <AdminCarSearchDemo />
-            </Suspense>
-          } />
-          <Route path="/performance" element={
-            <Suspense fallback={<PageSkeleton />}>
-              <PerformanceDashboard />
-            </Suspense>
-          } />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={
-            <Suspense fallback={<PageSkeleton />}>
-              <NotFound />
-            </Suspense>
-          } />
-        </Routes>
-      </BrowserRouter>
-      <InstallPrompt />
-      <FloatingPerformanceWidget />
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+            <Route path="/admin-search-demo" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <AdminCarSearchDemo />
+              </Suspense>
+            } />
+            <Route path="/performance" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <PerformanceDashboard />
+              </Suspense>
+            } />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <NotFound />
+              </Suspense>
+            } />
+          </Routes>
+        </BrowserRouter>
+        <InstallPrompt />
+        <FloatingPerformanceWidget />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

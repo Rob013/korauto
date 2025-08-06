@@ -19,6 +19,8 @@ import LazyCarCard from "@/components/LazyCarCard";
 import { useSecureAuctionAPI, createFallbackManufacturers } from "@/hooks/useSecureAuctionAPI";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
+import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
+import { useResourcePreloader } from "@/hooks/useResourcePreloader";
 
 import { useSearchParams } from "react-router-dom";
 import {

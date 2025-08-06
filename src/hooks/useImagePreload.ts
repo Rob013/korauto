@@ -1,5 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { createIntersectionObserver, getOptimizedImageUrl, preloadResource } from '@/utils/performance';
+
+// Image cache to prevent redundant loads
+const imageCache = new Map<string, boolean>();
 
 interface UseImagePreloadOptions {
   priority?: boolean;
@@ -24,30 +27,38 @@ export const useImagePreload = (
   const [isLoaded, setIsLoaded] = useState(false);
   const [isError, setIsError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [optimizedSrc, setOptimizedSrc] = useState<string>('');
   const imgRef = useRef<HTMLImageElement | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
-  // Optimize image URL based on device capabilities
+  // Memoize optimized URL to prevent recalculation
+  const optimizedSrc = useMemo(() => {
+    if (!imageSrc) return '';
+    return getOptimizedImageUrl(imageSrc, width, quality);
+  }, [imageSrc, width, quality]);
+
+  // Check cache first
   useEffect(() => {
-    if (!imageSrc) {
+    if (!optimizedSrc) {
       setIsLoaded(true);
       return;
     }
 
-    // Get optimized URL based on viewport and device
-    const optimized = getOptimizedImageUrl(imageSrc, width, quality);
-    setOptimizedSrc(optimized);
+    // If image is already cached, mark as loaded immediately
+    if (imageCache.has(optimizedSrc)) {
+      setIsLoaded(true);
+      setIsError(false);
+      return;
+    }
 
     // Preload critical images immediately
     if (priority) {
-      preloadResource(optimized, 'image');
+      preloadResource(optimizedSrc, 'image');
     }
-  }, [imageSrc, width, quality, priority]);
+  }, [optimizedSrc, priority]);
 
   // Set up lazy loading with Intersection Observer
   useEffect(() => {
-    if (!optimizedSrc || !enableLazyLoad || priority) return;
+    if (!optimizedSrc || !enableLazyLoad || priority || imageCache.has(optimizedSrc)) return;
 
     const loadImage = () => {
       setIsLoading(true);
@@ -73,6 +84,7 @@ export const useImagePreload = (
         setIsLoaded(true);
         setIsLoading(false);
         setIsError(false);
+        imageCache.set(optimizedSrc, true); // Cache successful load
         
         if (imgRef.current) {
           imgRef.current.src = optimizedSrc;
@@ -85,6 +97,7 @@ export const useImagePreload = (
         setIsError(true);
         setIsLoading(false);
         setIsLoaded(false);
+        imageCache.set(optimizedSrc, false); // Cache failed load
       };
 
       img.addEventListener('load', handleLoad);
@@ -124,7 +137,7 @@ export const useImagePreload = (
 
   // Load immediately if priority or lazy loading disabled
   useEffect(() => {
-    if (!optimizedSrc || (!priority && enableLazyLoad)) return;
+    if (!optimizedSrc || (!priority && enableLazyLoad) || imageCache.has(optimizedSrc)) return;
 
     setIsLoading(true);
     setIsError(false);
@@ -135,12 +148,14 @@ export const useImagePreload = (
       setIsLoaded(true);
       setIsLoading(false);
       setIsError(false);
+      imageCache.set(optimizedSrc, true); // Cache successful load
     };
     
     const handleError = () => {
       setIsError(true);
       setIsLoading(false);
       setIsLoaded(false);
+      imageCache.set(optimizedSrc, false); // Cache failed load
     };
 
     img.addEventListener('load', handleLoad);
