@@ -146,7 +146,7 @@ export const CookieManagementDashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatBytes(stats.largestCookie.size)}</div>
-            <p className="text-xs text-muted-foreground">{String(stats.largestCookie.name || 'None')}</p>
+            <p className="text-xs text-muted-foreground">{stats.largestCookie.name || 'None'}</p>
             <Progress 
               value={maxCookieUsagePercentage} 
               className={`mt-2 ${getUsageColor(stats.largestCookie.size, 1024)}`}
@@ -193,21 +193,21 @@ export const CookieManagementDashboard: React.FC = () => {
                 </TableHeader>
                 <TableBody>
                   {stats.cookies.map((cookie) => (
-                    <TableRow key={String(cookie.name)}>
-                      <TableCell className="font-medium">{String(cookie.name)}</TableCell>
+                    <TableRow key={cookie.name}>
+                      <TableCell className="font-medium">{cookie.name}</TableCell>
                       <TableCell>
                         <Badge variant={getSizeWarningLevel(cookie.size, 1024)}>
                           {formatBytes(cookie.size)}
                         </Badge>
                       </TableCell>
                       <TableCell className="max-w-xs truncate">
-                        {String(cookie.value).length > 50 ? `${String(cookie.value).substring(0, 50)}...` : String(cookie.value)}
+                        {cookie.value.length > 50 ? `${cookie.value.substring(0, 50)}...` : cookie.value}
                       </TableCell>
                       <TableCell>
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={() => handleDeleteCookie(String(cookie.name))}
+                          onClick={() => handleDeleteCookie(cookie.name)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
