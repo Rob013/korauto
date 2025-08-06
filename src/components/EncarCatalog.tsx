@@ -875,27 +875,27 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         ${isMobile ? 'top-0 left-0 right-0 bottom-0 w-full h-dvh overflow-y-auto safe-area-inset' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0 overflow-y-auto'} 
         lg:shadow-none shadow-xl
       `}>
-        <div className={`p-3 sm:p-4 border-b flex-shrink-0 ${isMobile ? 'bg-primary text-primary-foreground' : ''}`}>
+        <div className={`${isMobile ? 'mobile-filter-compact filter-header bg-primary text-primary-foreground' : 'p-3 sm:p-4 border-b flex-shrink-0'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Filter className={`h-4 w-4 sm:h-5 sm:w-5 ${isMobile ? 'text-primary-foreground' : 'text-primary'}`} />
-              <h3 className={`font-semibold text-sm sm:text-base ${isMobile ? 'text-lg text-primary-foreground' : ''}`}>
+              <h3 className={`font-semibold ${isMobile ? 'text-sm text-primary-foreground' : 'text-sm sm:text-base'}`}>
                 {isMobile ? 'Filtrat e Kërkimit' : 'Filters'}
               </h3>
               {hasSelectedCategories && isMobile && (
-                <Badge variant="secondary" className="ml-2 bg-primary-foreground/20 text-primary-foreground">
+                <Badge variant="secondary" className="ml-2 bg-primary-foreground/20 text-primary-foreground text-xs px-1.5 py-0">
                   {Object.values(filters).filter(Boolean).length} aktiv
                 </Badge>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={handleClearFilters}
-                className={`lg:hidden flex items-center gap-1 h-8 px-2 ${isMobile ? 'hover:bg-primary-foreground/20 text-primary-foreground' : ''}`}
+                className={`lg:hidden flex items-center gap-1 ${isMobile ? 'h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground text-xs' : 'h-8 px-2'}`}
               >
-                <span className="text-xs">Clear Filters</span>
+                <span className="text-xs">Clear</span>
               </Button>
               <Button 
                 variant="ghost" 
@@ -904,7 +904,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   setShowFilters(false);
                   setHasExplicitlyClosed(true); // Mark as explicitly closed
                 }}
-                className={`lg:hidden flex items-center gap-1 h-8 px-2 ${isMobile ? 'hover:bg-primary-foreground/20 text-primary-foreground' : ''}`}
+                className={`lg:hidden flex items-center gap-1 ${isMobile ? 'h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground' : 'h-8 px-2'}`}
               >
                 <X className="h-3 w-3" />
               </Button>
@@ -912,8 +912,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           </div>
         </div>
         
-        <div className={`flex-1 overflow-y-auto ${isMobile ? 'mobile-filter-content' : 'p-3 sm:p-4'}`}>
-          <div className={`${isMobile ? 'p-3 sm:p-4' : ''}`}>
+        <div className={`flex-1 overflow-y-auto ${isMobile ? 'mobile-filter-content mobile-filter-compact' : 'p-3 sm:p-4'}`}>
+          <div className={`${isMobile ? '' : ''}`}>
             <EncarStyleFilter
             filters={filters}
             manufacturers={manufacturers}
@@ -946,7 +946,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           
           {/* Mobile Apply/Close Filters Button - Enhanced */}
           {isMobile && (
-            <div className="mt-6 pt-4 border-t space-y-3 flex-shrink-0">
+            <div className="mt-4 pt-3 border-t space-y-2 flex-shrink-0">
               {/* Apply/Close button removed per Issue #3 */}
             </div>
           )}
