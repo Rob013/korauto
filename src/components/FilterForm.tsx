@@ -349,10 +349,7 @@ const FilterForm = memo<FilterFormProps>(({
             {isLoading ? (
               <Loader2 className="h-3 w-3 animate-spin" />
             ) : (
-              <>
-                <X className="h-3 w-3 mr-1" />
-                Pastro
-              </>
+              <X className="h-3 w-3" />
             )}
           </Button>
         </div>

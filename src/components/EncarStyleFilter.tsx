@@ -266,7 +266,6 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               className="text-muted-foreground hover:text-destructive flex items-center gap-1 h-8 px-2"
             >
               <X className="h-3 w-3" />
-              <span className="text-xs">Clear</span>
             </Button>
             {onCloseFilter && (
               <Button 
@@ -714,8 +713,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           disabled={isLoading}
           className="text-xs"
         >
-          {isLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <X className="h-3 w-3 mr-1" />}
-          Pastro të gjitha
+          {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
         </Button>
       </div>
 
