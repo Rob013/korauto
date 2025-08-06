@@ -777,19 +777,24 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 </Badge>
               )}
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => {
-                // Issue #1 FIXED: Clear filters instead of just closing
-                handleClearFilters();
-                setShowFilters(false);
-              }}
-              className={`lg:hidden flex items-center gap-1 h-8 px-2 ${isMobile ? 'hover:bg-primary-foreground/20 text-primary-foreground' : ''}`}
-            >
-              <X className="h-3 w-3" />
-              <span className="text-xs">Clear Filters</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleClearFilters}
+                className={`lg:hidden flex items-center gap-1 h-8 px-2 ${isMobile ? 'hover:bg-primary-foreground/20 text-primary-foreground' : ''}`}
+              >
+                <span className="text-xs">Clear Filters</span>
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowFilters(false)}
+                className={`lg:hidden flex items-center gap-1 h-8 px-2 ${isMobile ? 'hover:bg-primary-foreground/20 text-primary-foreground' : ''}`}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
         </div>
         
