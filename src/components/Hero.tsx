@@ -19,11 +19,11 @@ const Hero = () => {
       <div className="container mx-auto px-3 sm:px-6 relative z-10 text-center text-white">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold mb-3 sm:mb-6 leading-tight">
-            Car Auctions
+            Premium Car Auctions
             <span className="block text-accent">Redefined</span>
           </h1>
           <p className="text-sm xs:text-base sm:text-lg md:text-xl lg:text-2xl mb-4 sm:mb-8 text-gray-200 max-w-2xl mx-auto px-2">
-            Discover exceptional vehicles, bid with confidence, and drive away with your dream car from South Korea's most trusted auction platform.
+            Discover exceptional vehicles, bid with confidence, and drive away with your dream car from Europe's most trusted auction platform.
           </p>
           
           <div className="flex flex-col xs:flex-row gap-2 xs:gap-3 sm:gap-4 justify-center items-center mb-6 sm:mb-12 px-2">

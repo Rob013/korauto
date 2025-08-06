@@ -61,9 +61,9 @@ const InspectionServices = () => {
     title: "Ekspertizë 10+ Vjetëshe",
     description: "Mekanikë të certifikuar dhe të trajnuar për të gjitha markat e makinave"
   }];
-  return <div className="min-h-screen bg-background text-foreground">
+  return <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       {/* Header */}
-      <div className="bg-foreground text-background py-16">
+      <div className="bg-primary text-primary-foreground py-16">
         <div className="container-responsive">
           <div className="flex items-center gap-4 mb-8">
             <Button variant="secondary" onClick={() => navigate('/')} className="flex items-center gap-2">
@@ -105,12 +105,12 @@ const InspectionServices = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {benefits.map((benefit, index) => <Card key={index} className="text-center border-border bg-card shadow-lg">
+            {benefits.map((benefit, index) => <Card key={index} className="text-center card-enhanced">
                 <CardHeader>
-                  <div className="mx-auto w-16 h-16 bg-foreground rounded-full flex items-center justify-center mb-4">
-                    <benefit.icon className="h-8 w-8 text-background" />
+                  <div className="mx-auto w-16 h-16 bg-primary rounded-full flex items-center justify-center mb-4">
+                    <benefit.icon className="h-8 w-8 text-primary-foreground" />
                   </div>
-                  <CardTitle className="text-xl text-foreground">{benefit.title}</CardTitle>
+                  <CardTitle className="text-xl">{benefit.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">{benefit.description}</p>
@@ -131,15 +131,15 @@ const InspectionServices = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {inspectionSteps.map((step, index) => <Card key={index} className="border-border bg-card shadow-lg">
+            {inspectionSteps.map((step, index) => <Card key={index} className="card-enhanced">
                 <CardHeader>
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-12 bg-foreground rounded-lg flex items-center justify-center">
-                      <step.icon className="h-6 w-6 text-background" />
+                    <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
+                      <step.icon className="h-6 w-6 text-primary-foreground" />
                     </div>
                     <div>
-                      <Badge variant="secondary" className="mb-2 bg-secondary text-secondary-foreground">Hapi {index + 1}</Badge>
-                      <CardTitle className="text-xl text-foreground">{step.title}</CardTitle>
+                      <Badge variant="secondary" className="mb-2">Hapi {index + 1}</Badge>
+                      <CardTitle className="text-xl">{step.title}</CardTitle>
                     </div>
                   </div>
                 </CardHeader>
@@ -147,8 +147,8 @@ const InspectionServices = () => {
                   <p className="text-muted-foreground">{step.description}</p>
                   <ul className="space-y-2">
                     {step.details.map((detail, idx) => <li key={idx} className="flex items-center gap-2 text-sm">
-                        <CheckCircle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        <span className="text-muted-foreground">{detail}</span>
+                        <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                        <span>{detail}</span>
                       </li>)}
                   </ul>
                 </CardContent>
@@ -157,7 +157,7 @@ const InspectionServices = () => {
         </section>
 
         {/* CTA Section */}
-        <section className="text-center bg-foreground text-background rounded-2xl p-12">
+        <section className="text-center bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-2xl p-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Gati për Inspektim FALAS?
           </h2>

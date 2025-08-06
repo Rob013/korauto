@@ -38,7 +38,7 @@ interface AdaptiveSelectItemProps {
   className?: string;
 }
 
-// Enhanced device detection utility with comprehensive Apple device support
+// Enhanced device detection utility
 const useDeviceDetection = () => {
   const [deviceInfo, setDeviceInfo] = useState({
     isIOS: false,
@@ -55,12 +55,11 @@ const useDeviceDetection = () => {
     // Enhanced iOS detection (includes iPhone, iPad, iPod)
     const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !(window as any).MSStream;
     
-    // iPad specific detection (including iPad Pro running iPadOS)
+    // iPad specific detection
     const isPad = /iPad/.test(userAgent) || 
                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     
-    // Enhanced Mac detection (Mac, Mac Mini, iMac, MacBook, Mac Pro, Mac Studio)
-    // Includes all Apple desktop and laptop computers
+    // Mac detection (excluding iPads)
     const isMac = /Macintosh|Mac OS X|MacIntel/.test(userAgent) && !isIOS && !isPad;
     
     // Android detection
@@ -334,10 +333,10 @@ export const AdaptiveSelect: React.FC<AdaptiveSelectProps> = (props) => {
   const { isIOS, isMac, isAndroid, isMobile, isTouch, isPad } = useDeviceDetection();
 
   // Enhanced logic for when to use native select:
-  // 1. ALL Apple devices (iPhone, iPad, Mac, Mac Mini) - always use native for best UX
+  // 1. iOS devices (iPhone, iPad) - always use native for best UX
   // 2. Android mobile devices - use native
   // 3. Touch devices with small screens - use native
-  // 4. Other desktop devices - use custom select for better styling control
+  // 4. Desktop (including Mac) - use custom select for better styling control
   const shouldUseNative = useMemo(() => {
     // Always use native on iOS (iPhone, iPad, iPod)
     if (isIOS) return true;
@@ -345,18 +344,15 @@ export const AdaptiveSelect: React.FC<AdaptiveSelectProps> = (props) => {
     // Always use native on iPad (even when not detected as iOS)
     if (isPad) return true;
     
-    // Always use native on Mac devices (Mac, Mac Mini, iMac, MacBook)
-    if (isMac) return true;
-    
     // Use native on Android mobile devices
     if (isAndroid && isMobile) return true;
     
     // Use native on small touch screens
     if (isTouch && isMobile) return true;
     
-    // Use custom select for non-Apple desktop devices
+    // Use custom select for desktop (including Mac desktop)
     return false;
-  }, [isIOS, isPad, isMac, isAndroid, isMobile, isTouch]);
+  }, [isIOS, isPad, isAndroid, isMobile, isTouch]);
 
   if (shouldUseNative) {
     return <NativeSelect {...props} />;
@@ -370,9 +366,9 @@ export const AdaptiveSelectValue: React.FC<{ placeholder?: string }> = ({ placeh
   return <span className="placeholder">{placeholder}</span>;
 };
 
-// CSS styles for enhanced mobile and cross-device optimization with Apple device focus
+// CSS styles for enhanced mobile and cross-device optimization
 export const adaptiveSelectStyles = `
-/* Base responsive optimizations for all devices */
+/* Base responsive optimizations */
 .adaptive-select-trigger {
   min-height: 44px; /* iOS and Android friendly touch target */
   transition: all 0.2s ease;
@@ -407,48 +403,23 @@ export const adaptiveSelectStyles = `
   }
 }
 
-/* Enhanced macOS optimization for all Mac devices (iMac, MacBook, Mac Mini, Mac Pro, Mac Studio) */
+/* iOS Safari specific optimizations */
 @supports (-webkit-touch-callout: none) {
   .adaptive-select select {
     font-size: 16px; /* Prevent zoom */
-    border-radius: 8px; /* macOS-style corners */
+    border-radius: 8px; /* iOS-style corners */
     -webkit-appearance: none;
     appearance: none;
-    background-color: var(--background);
-    border-color: var(--border);
   }
   
-  /* Enhanced focus styling for macOS Safari */
+  /* Fix for iOS select styling */
   .adaptive-select select:focus {
     outline: none;
     box-shadow: 0 0 0 2px hsl(var(--ring));
-    border-color: hsl(var(--ring));
   }
 }
 
-/* macOS Safari specific native select optimizations */
-@media (min-width: 1024px) and (-webkit-min-device-pixel-ratio: 1) {
-  .adaptive-select select {
-    min-height: 40px;
-    font-size: 14px;
-    padding: 8px 12px;
-    background-color: hsl(var(--background));
-    border: 1px solid hsl(var(--border));
-    border-radius: 6px;
-  }
-  
-  .adaptive-select select:hover {
-    border-color: hsl(var(--ring));
-  }
-  
-  .adaptive-select select:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px hsl(var(--ring));
-    border-color: hsl(var(--ring));
-  }
-}
-
-/* Dark mode specific styling for native select elements on Apple devices */
+/* Dark mode specific styling for native select elements */
 .dark .adaptive-select select {
   background-color: hsl(var(--background));
   border-color: hsl(var(--border));
@@ -465,7 +436,7 @@ export const adaptiveSelectStyles = `
   color: hsl(var(--foreground));
 }
 
-/* Enhanced hover states for non-touch devices (desktop Macs with mouse) */
+/* macOS Safari optimizations */
 @media (hover: hover) and (pointer: fine) {
   .adaptive-select-trigger:hover {
     background-color: hsl(var(--accent));
@@ -474,19 +445,11 @@ export const adaptiveSelectStyles = `
   .adaptive-select-item:hover {
     background-color: hsl(var(--accent));
   }
-  
-  .adaptive-select select:hover {
-    border-color: hsl(var(--ring));
-  }
 }
 
-/* High DPI display optimizations for Retina displays (Mac devices) */
+/* High DPI display optimizations */
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
   .adaptive-select-trigger {
-    border-width: 0.5px;
-  }
-  
-  .adaptive-select select {
     border-width: 0.5px;
   }
 }

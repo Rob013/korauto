@@ -7,11 +7,11 @@ import { Filter, X, Loader2, Search } from "lucide-react";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS } from '@/hooks/useAuctionAPI';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
+import { ManufacturerLogo } from "@/components/ui/manufacturer-logo";
 
 
 // Debounce utility function
-const debounce = <T extends (...args: unknown[]) => unknown>(
+const debounce = <T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): ((...args: Parameters<T>) => void) => {
@@ -81,7 +81,7 @@ interface FilterFormProps {
   models?: Model[];
   generations?: Generation[];
   filterCounts?: FilterCounts;
-  onFiltersChange: (filters: FilterFormProps['filters']) => void;
+  onFiltersChange: (filters: any) => void;
   onClearFilters: () => void;
   onManufacturerChange?: (manufacturerId: string) => void;
   onModelChange?: (modelId: string) => void;
@@ -90,7 +90,6 @@ interface FilterFormProps {
   onToggleAdvanced?: () => void;
   loadingCounts?: boolean;
   onFetchGrades?: (manufacturerId?: string, modelId?: string, generationId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
-  enableManualSearch?: boolean; // New prop to enable manual search mode
 }
 
 const FilterForm = memo<FilterFormProps>(({
@@ -107,8 +106,7 @@ const FilterForm = memo<FilterFormProps>(({
   onGenerationChange,
   showAdvanced = false,
   onToggleAdvanced,
-  onFetchGrades,
-  enableManualSearch = false
+  onFetchGrades
 }) => {
   const [grades, setGrades] = useState<{ value: string; label: string; count?: number }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -117,101 +115,50 @@ const FilterForm = memo<FilterFormProps>(({
   const [gradeLoading, setGradeLoading] = useState(false);
   const [isLoadingGrades, setIsLoadingGrades] = useState(false);
   const latestGradeRequest = useRef(0);
-  
-  // Local state for pending filters when manual search is enabled
-  const [pendingFilters, setPendingFilters] = useState(filters);
-  const [hasChanges, setHasChanges] = useState(false);
 
 
   const updateFilter = useCallback((key: string, value: string) => {
     // Handle special "all" values by converting them to undefined
     const actualValue = value === 'all' || value === 'any' ? undefined : value;
     
-    if (enableManualSearch) {
-      // In manual search mode, update pending filters without triggering search
-      const updatedFilters = { ...pendingFilters };
-      
-      // Handle cascading filters
-      if (key === 'manufacturer_id') {
-        onManufacturerChange?.(actualValue || '');
-        updatedFilters[key] = actualValue;
-        updatedFilters.model_id = undefined;
-        updatedFilters.generation_id = undefined;
-        updatedFilters.grade_iaai = undefined;
-      } else if (key === 'model_id') {
-        onModelChange?.(actualValue || '');
-        updatedFilters[key] = actualValue;
-        updatedFilters.generation_id = undefined;
-        updatedFilters.grade_iaai = undefined;
-      } else {
-        updatedFilters[key] = actualValue;
-        // If generation changes, clear grade filter
-        if (key === 'generation_id') {
-          updatedFilters.grade_iaai = undefined;
-        }
-      }
-      
-      setPendingFilters(updatedFilters);
-      setHasChanges(true);
+    // Set loading state for better UX
+    setIsLoading(true);
+    
+    // Handle cascading filters
+    if (key === 'manufacturer_id') {
+      onManufacturerChange?.(actualValue || '');
+      onFiltersChange({
+        ...filters,
+        [key]: actualValue,
+        model_id: undefined,
+        generation_id: undefined,
+        grade_iaai: undefined // Clear grade when manufacturer changes
+      });
+    } else if (key === 'model_id') {
+      onModelChange?.(actualValue || '');
+      onFiltersChange({
+        ...filters,
+        [key]: actualValue,
+        generation_id: undefined,
+        grade_iaai: undefined // Clear grade when model changes
+      });
     } else {
-      // Original immediate search behavior
-      setIsLoading(true);
+      // For other filters, preserve existing values but update the changed one
+      const updatedFilters = { ...filters, [key]: actualValue };
       
-      // Handle cascading filters
-      if (key === 'manufacturer_id') {
-        onManufacturerChange?.(actualValue || '');
-        onFiltersChange({
-          ...filters,
-          [key]: actualValue,
-          model_id: undefined,
-          generation_id: undefined,
-          grade_iaai: undefined // Clear grade when manufacturer changes
-        });
-      } else if (key === 'model_id') {
-        onModelChange?.(actualValue || '');
-        onFiltersChange({
-          ...filters,
-          [key]: actualValue,
-          generation_id: undefined,
-          grade_iaai: undefined // Clear grade when model changes
-        });
-      } else {
-        // For other filters, preserve existing values but update the changed one
-        const updatedFilters = { ...filters, [key]: actualValue };
-        
-        // If generation changes, clear grade filter
-        if (key === 'generation_id') {
-          updatedFilters.grade_iaai = undefined;
-        }
-        
-        onFiltersChange(updatedFilters);
+      // If generation changes, clear grade filter
+      if (key === 'generation_id') {
+        updatedFilters.grade_iaai = undefined;
       }
       
-      // Clear loading state after a short delay
-      setTimeout(() => setIsLoading(false), 50);
+      onFiltersChange(updatedFilters);
     }
-  }, [filters, pendingFilters, enableManualSearch, onFiltersChange, onManufacturerChange, onModelChange]);
+    
+    // Clear loading state after a short delay
+    setTimeout(() => setIsLoading(false), 50);
+  }, [filters, onFiltersChange, onManufacturerChange, onModelChange]);
 
-  // Manual search trigger function
-  const handleManualSearch = useCallback(() => {
-    if (enableManualSearch && hasChanges) {
-      setIsLoading(true);
-      onFiltersChange(pendingFilters);
-      setHasChanges(false);
-      setTimeout(() => setIsLoading(false), 100);
-    }
-  }, [enableManualSearch, hasChanges, pendingFilters, onFiltersChange]);
-
-  // Reset pending filters when external filters change
-  useEffect(() => {
-    if (enableManualSearch) {
-      setPendingFilters(filters);
-      setHasChanges(false);
-    }
-  }, [filters, enableManualSearch]);
-
-  // Handle manufacturer change with loading states
-  const handleManufacturerChange = async (value: string) => {
+  const handleBrandChange = async (value: string) => {
     setModelLoading(true);
     setModelError(null);
     updateFilter('manufacturer_id', value);
@@ -237,9 +184,9 @@ const FilterForm = memo<FilterFormProps>(({
   const currentYear = useMemo(() => new Date().getFullYear(), []);
   const years = useMemo(() => Array.from({ length: 25 }, (_, i) => currentYear - i), [currentYear]);
 
-  // Memoized sorted manufacturers with enhanced API data validation and categorization
+  // Memoized sorted manufacturers with enhanced API data validation
   const sortedManufacturers = useMemo(() => {
-    const validManufacturers = manufacturers
+    return manufacturers
       .filter((m) => {
         // Ensure manufacturer has valid data from API
         return m.id && 
@@ -247,85 +194,41 @@ const FilterForm = memo<FilterFormProps>(({
                typeof m.name === 'string' && 
                m.name.trim().length > 0 &&
                (m.cars_qty && m.cars_qty > 0);
+      })
+      .sort((a, b) => {
+        // Enhanced sorting with API-based brand names
+        const aName = a.name.trim();
+        const bName = b.name.trim();
+        
+        // German cars priority (using exact API names)
+        const germanBrands = ['BMW', 'Mercedes-Benz', 'Audi', 'Volkswagen', 'Porsche', 'Opel'];
+        // Korean cars priority  
+        const koreanBrands = ['Hyundai', 'Kia', 'Genesis'];
+        // Other popular cars
+        const popularBrands = ['Toyota', 'Honda', 'Nissan', 'Ford', 'Chevrolet', 'Mazda', 'Subaru', 'Lexus'];
+        
+        const aIsGerman = germanBrands.includes(aName);
+        const bIsGerman = germanBrands.includes(bName);
+        const aIsKorean = koreanBrands.includes(aName);
+        const bIsKorean = koreanBrands.includes(bName);
+        const aIsPopular = popularBrands.includes(aName);
+        const bIsPopular = popularBrands.includes(bName);
+        
+        // German brands first
+        if (aIsGerman && !bIsGerman) return -1;
+        if (!aIsGerman && bIsGerman) return 1;
+        
+        // Korean brands second
+        if (aIsKorean && !bIsKorean && !bIsGerman) return -1;
+        if (!aIsKorean && bIsKorean && !aIsGerman) return 1;
+        
+        // Popular brands third
+        if (aIsPopular && !bIsPopular && !bIsGerman && !bIsKorean) return -1;
+        if (!aIsPopular && bIsPopular && !aIsGerman && !aIsKorean) return 1;
+        
+        // Alphabetical within same category
+        return aName.localeCompare(bName);
       });
-
-    // Define categories with their brand priorities
-    const categories = {
-      german: {
-        name: 'German Brands',
-        brands: ['BMW', 'Mercedes-Benz', 'Audi', 'Volkswagen', 'Porsche', 'Opel'],
-        priority: 1
-      },
-      korean: {
-        name: 'Korean Brands', 
-        brands: ['Hyundai', 'Kia', 'Genesis'],
-        priority: 2
-      },
-      japanese: {
-        name: 'Japanese Brands',
-        brands: ['Toyota', 'Honda', 'Nissan', 'Mazda', 'Subaru', 'Lexus', 'Infiniti', 'Acura', 'Mitsubishi'],
-        priority: 3
-      },
-      american: {
-        name: 'American Brands',
-        brands: ['Ford', 'Chevrolet', 'Cadillac', 'GMC', 'Tesla', 'Chrysler', 'Jeep', 'Dodge'],
-        priority: 4
-      },
-      luxury: {
-        name: 'Luxury/European Brands',
-        brands: ['Land Rover', 'Jaguar', 'Volvo', 'Ferrari', 'Lamborghini', 'Maserati', 'Bentley', 'Rolls-Royce', 'Aston Martin', 'McLaren', 'Mini'],
-        priority: 5
-      },
-      french: {
-        name: 'French Brands',
-        brands: ['Peugeot', 'Renault', 'Citroën'],
-        priority: 6
-      },
-      italian: {
-        name: 'Italian Brands', 
-        brands: ['Fiat', 'Alfa Romeo'],
-        priority: 7
-      },
-      other: {
-        name: 'Other Brands',
-        brands: ['Skoda', 'Seat'],
-        priority: 8
-      }
-    };
-
-    // Sort manufacturers by category and count
-    return validManufacturers.sort((a, b) => {
-      const aName = a.name.trim();
-      const bName = b.name.trim();
-      
-      // Find category for each manufacturer
-      let aCategoryPriority = 999;
-      let bCategoryPriority = 999;
-      
-      Object.values(categories).forEach(category => {
-        if (category.brands.includes(aName)) {
-          aCategoryPriority = category.priority;
-        }
-        if (category.brands.includes(bName)) {
-          bCategoryPriority = category.priority;
-        }
-      });
-      
-      // Sort by category priority first
-      if (aCategoryPriority !== bCategoryPriority) {
-        return aCategoryPriority - bCategoryPriority;
-      }
-      
-      // Within same category, sort by car count (descending)
-      const aCount = a.cars_qty || 0;
-      const bCount = b.cars_qty || 0;
-      if (aCount !== bCount) {
-        return bCount - aCount;
-      }
-      
-      // Finally, alphabetical
-      return aName.localeCompare(bName);
-    });
   }, [manufacturers]);
 
   const getFallbackGrades = (manufacturerId: string) => {
@@ -391,44 +294,21 @@ const FilterForm = memo<FilterFormProps>(({
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-primary" />
           <h3 className="text-sm sm:text-base font-semibold">Kërkim i mençur</h3>
-          {enableManualSearch && hasChanges && (
-            <Badge variant="secondary" className="text-xs">
-              Ka ndryshime
-            </Badge>
-          )}
         </div>
-        <div className="flex items-center gap-2">
-          {enableManualSearch && (
-            <Button 
-              variant="default"
-              size="sm" 
-              onClick={handleManualSearch}
-              disabled={!hasChanges || isLoading}
-              className="text-xs px-3 py-1 h-7 bg-primary hover:bg-primary/90"
-            >
-              {isLoading ? (
-                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-              ) : (
-                <Search className="h-3 w-3 mr-1" />
-              )}
-              Kërko
-            </Button>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={onClearFilters} 
+          disabled={isLoading}
+          className="text-xs px-2 py-1 h-7"
+        >
+          {isLoading ? (
+            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+          ) : (
+            <X className="h-3 w-3 mr-1" />
           )}
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onClearFilters} 
-            disabled={isLoading}
-            className="text-xs px-2 py-1 h-7"
-          >
-            {isLoading ? (
-              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-            ) : (
-              <X className="h-3 w-3 mr-1" />
-            )}
-            Pastro
-          </Button>
-        </div>
+          Pastro
+        </Button>
       </div>
 
 
@@ -441,7 +321,7 @@ const FilterForm = memo<FilterFormProps>(({
           <Label htmlFor="manufacturer" className="text-xs font-medium truncate">Marka</Label>
           <AdaptiveSelect 
             value={filters.manufacturer_id || 'all'} 
-            onValueChange={handleManufacturerChange} 
+            onValueChange={handleBrandChange} 
             disabled={isLoading}
             placeholder={isLoading ? "Duke ngarkuar..." : "Markat"}
             className="h-7 text-xs"
@@ -451,6 +331,11 @@ const FilterForm = memo<FilterFormProps>(({
                 value: manufacturer.id.toString(),
                 label: (
                   <div className="flex items-center gap-2">
+                    <ManufacturerLogo 
+                      manufacturerName={manufacturer.name}
+                      size="sm"
+                      className="flex-shrink-0"
+                    />
                     <span className="truncate">{manufacturer.name} ({manufacturer.cars_qty})</span>
                   </div>
                 )
@@ -465,7 +350,7 @@ const FilterForm = memo<FilterFormProps>(({
             value={filters.model_id || 'all'} 
             onValueChange={(value) => updateFilter('model_id', value)}
             disabled={!filters.manufacturer_id || isLoading}
-            placeholder={isLoading ? "Duke ngarkuar..." : (filters.manufacturer_id ? "Modelet" : "Markën së pari")}
+            placeholder={isLoading ? "Duke ngarkuar..." : (filters.manufacturer_id ? "Modelet" : "Marka së pari")}
             className="h-7 text-xs"
             options={[
               { value: 'all', label: 'Të gjithë Modelet' },
@@ -532,7 +417,7 @@ const FilterForm = memo<FilterFormProps>(({
             value={filters.grade_iaai || 'all'} 
             onValueChange={(value) => updateFilter('grade_iaai', value)}
             disabled={!filters.manufacturer_id || isLoading}
-            placeholder={filters.manufacturer_id ? "Gradat" : "Markën së pari"}
+            placeholder={filters.manufacturer_id ? "Gradat" : "Marka së pari"}
             className="h-7 text-xs"
             options={[
               { value: 'all', label: 'Të gjitha Gradat' },
