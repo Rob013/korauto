@@ -31,6 +31,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 interface CarCardProps {
   id: string;
   make: string;
@@ -135,9 +136,18 @@ interface CarCardProps {
     }>;
     carInfoUse1s?: string[];
     carInfoUse2s?: string[];
-    ownerChanges?: any[];
+    ownerChanges?: Array<{
+      date?: string;
+      ownerType?: string;
+      [key: string]: unknown;
+    }>;
     accidentCnt?: number;
-    accidents?: any[];
+    accidents?: Array<{
+      date?: string;
+      damage?: string;
+      cost?: number;
+      [key: string]: unknown;
+    }>;
   };
   // Location details
   location?: {
@@ -186,7 +196,7 @@ interface CarCardProps {
     description_en?: string;
     is_leasing?: boolean;
     sell_type?: string;
-    equipment?: any;
+    equipment?: Record<string, unknown>;
     options?: {
       type?: string;
       standard?: string[];
@@ -258,7 +268,7 @@ const CarCard = ({
   const { setPreviousPage } = useNavigation();
   const { toast } = useToast();
   const [isFavorite, setIsFavorite] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => {
     const getUser = async () => {

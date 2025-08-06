@@ -37,9 +37,7 @@ import AdminCarSearch from "@/components/AdminCarSearch";
 
 // Lazy load heavy admin components
 const AdminSyncDashboard = lazy(() => 
-  import("@/components/AdminSyncDashboard").then(module => ({ 
-    default: module.AdminSyncDashboard 
-  }))
+  import("@/components/AdminSyncDashboard")
 );
 
 const AdminSyncSkeleton = () => (

@@ -90,7 +90,7 @@ const FeaturedAuctions = () => {
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold mb-4">Featured Auctions</h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Discover premium vehicles from trusted sellers. Each car includes detailed inspection reports and comprehensive documentation.
+            Discover quality vehicles from trusted sellers. Each car includes detailed inspection reports and comprehensive documentation.
           </p>
         </div>
 
