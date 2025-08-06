@@ -25,7 +25,7 @@ const EngineSystemDemo = ({ className = "" }: EngineSystemDemoProps) => {
   };
 
   return (
-    <div className={`overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 ${className}`}>
+    <div className={`overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 inspection-section-black ${className}`}>
       <Button
         onClick={() => setShowEngineSection(!showEngineSection)}
         variant="ghost"

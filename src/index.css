@@ -629,4 +629,59 @@ All colors MUST be HSL.
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+/* Black background sections for inspection reports */
+.inspection-section-black {
+  background: #000000 !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  border-color: #333333 !important;
+}
+
+.inspection-section-black h5,
+.inspection-section-black h4,
+.inspection-section-black h3,
+.inspection-section-black .text-foreground {
+  color: #ffffff !important;
+}
+
+.inspection-section-black .text-muted-foreground {
+  color: #cccccc !important;
+}
+
+.inspection-section-black .bg-card {
+  background-color: #1a1a1a !important;
+  border-color: #333333 !important;
+}
+
+.inspection-section-black .border-border {
+  border-color: #333333 !important;
+}
+
+/* Ensure button styling remains readable in black sections */
+.inspection-section-black .bg-primary {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+.inspection-section-black .text-primary {
+  color: #ffffff !important;
+}
+
+/* Icon containers in black sections */
+.inspection-section-black .bg-blue-600,
+.inspection-section-black .bg-green-600,
+.inspection-section-black .bg-orange-600,
+.inspection-section-black .bg-purple-600,
+.inspection-section-black .bg-yellow-600 {
+  background-color: #ffffff !important;
+}
+
+.inspection-section-black .bg-blue-600 svg,
+.inspection-section-black .bg-green-600 svg,
+.inspection-section-black .bg-orange-600 svg,
+.inspection-section-black .bg-purple-600 svg,
+.inspection-section-black .bg-yellow-600 svg {
+  color: #000000 !important;
+}
+
 }

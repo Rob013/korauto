@@ -1482,7 +1482,7 @@ const CarDetails = memo(() => {
                           
                           {/* Technical Inspection - Engine & Mechanical - Collapsible */}
                           {car.details?.inspect?.inner && (
-                            <div className="overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                            <div className="overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200 inspection-section-black">
                               <Button
                                 onClick={() => setShowEngineSection(!showEngineSection)}
                                 variant="ghost"
@@ -1580,7 +1580,7 @@ const CarDetails = memo(() => {
 
                           {/* Insurance & Safety History */}
                           {car.details?.insurance && (
-                            <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200">
+                            <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200 inspection-section-black">
                               <div className="flex items-center gap-3 mb-6">
                                 <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
                                   <Shield className="h-6 w-6 text-white" />
@@ -1645,7 +1645,7 @@ const CarDetails = memo(() => {
 
                           {/* Exterior & Body Condition */}
                           {car.damage && (
-                            <div className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl border border-orange-200">
+                            <div className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl border border-orange-200 inspection-section-black">
                               <div className="flex items-center gap-3 mb-6">
                                 <div className="w-12 h-12 bg-orange-600 rounded-lg flex items-center justify-center">
                                   <AlertTriangle className="h-6 w-6 text-white" />
@@ -1689,7 +1689,7 @@ const CarDetails = memo(() => {
                           {/* Owner History */}
                           {car.details?.insurance?.owner_changes &&
                             car.details.insurance.owner_changes.length > 0 && (
-                              <div className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200">
+                              <div className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200 inspection-section-black">
                                 <div className="flex items-center gap-3 mb-6">
                                   <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center">
                                     <Users className="h-6 w-6 text-white" />
@@ -1734,7 +1734,7 @@ const CarDetails = memo(() => {
                           {/* Visual Inspection Diagram */}
                           {car.details?.inspect_outer &&
                             car.details.inspect_outer.length > 0 && (
-                              <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200">
+                              <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200 inspection-section-black">
                                 <div className="flex items-center gap-3 mb-4">
                                   <div className="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center">
                                     <Car className="h-5 w-5 text-white" />
@@ -1754,7 +1754,7 @@ const CarDetails = memo(() => {
                           {/* Maintenance History */}
                           {car.details?.maintenance_history &&
                             car.details.maintenance_history.length > 0 && (
-                              <div className="p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl border border-yellow-200">
+                              <div className="p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl border border-yellow-200 inspection-section-black">
                                 <div className="flex items-center gap-3 mb-6">
                                   <div className="w-12 h-12 bg-yellow-600 rounded-lg flex items-center justify-center">
                                     <Clock className="h-6 w-6 text-white" />

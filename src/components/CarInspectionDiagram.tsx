@@ -142,7 +142,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
   };
 
   return (
-    <div className={`w-full max-w-6xl mx-auto p-6 bg-card border border-border rounded-2xl shadow-lg ${className}`}>
+    <div className={`w-full max-w-6xl mx-auto p-6 bg-card border border-border rounded-2xl shadow-lg inspection-section-black ${className}`}>
       {/* Header */}
       <div className="text-center mb-8">
         <h3 className="text-2xl font-bold text-foreground mb-3 inspection-text-black">Diagrami i Inspektimit të Automjetit</h3>
