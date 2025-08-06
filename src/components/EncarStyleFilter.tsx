@@ -168,8 +168,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   
   // Enhanced year range presets with more options
   const yearRangePresets = useMemo(() => [
-    { label: '2024+', from: 2024, to: currentYear },
-    { label: '2023+', from: 2023, to: currentYear },
+    { label: '2022+', from: 2022, to: currentYear },
     { label: '2020+', from: 2020, to: currentYear },
     { label: '2018+', from: 2018, to: currentYear },
     { label: '2015+', from: 2015, to: currentYear },
