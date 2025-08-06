@@ -28,12 +28,14 @@ import {
   FileText,
   Search,
   Shield,
+  Cookie,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import AuthLogin from "@/components/AuthLogin";
 import { CarsSyncButton } from "@/components/CarsSyncButton";
 import AdminCarSearch from "@/components/AdminCarSearch";
+import { CookieManagementDashboard } from "@/components/CookieManagementDashboard";
 
 // Lazy load heavy admin components
 const AdminSyncDashboard = lazy(() => 
@@ -747,11 +749,12 @@ const AdminDashboard = () => {
           onValueChange={setActiveTab}
           className="space-y-3 sm:space-y-4"
         >
-          <TabsList className="grid w-full grid-cols-4 h-auto">
+          <TabsList className="grid w-full grid-cols-5 h-auto">
             <TabsTrigger value="overview" className="text-xs sm:text-sm p-2 sm:p-3">Overview</TabsTrigger>
             <TabsTrigger value="inspections" className="text-xs sm:text-sm p-2 sm:p-3">Inspections</TabsTrigger>
             <TabsTrigger value="analytics" className="text-xs sm:text-sm p-2 sm:p-3">Analytics</TabsTrigger>
             <TabsTrigger value="performance" className="text-xs sm:text-sm p-2 sm:p-3">Performance</TabsTrigger>
+            <TabsTrigger value="cookies" className="text-xs sm:text-sm p-2 sm:p-3">Cookies</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-3 sm:space-y-4">
@@ -1870,6 +1873,29 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="cookies" className="space-y-3 sm:space-y-4">
+            {/* Cookie Management Dashboard */}
+            <Card className="p-4 sm:p-6">
+              <CardHeader className="p-0 pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
+                    <Cookie className="h-5 w-5" />
+                    Cookie Management Dashboard
+                  </CardTitle>
+                  <Badge variant="secondary" className="text-xs">
+                    Real-time Monitoring
+                  </Badge>
+                </div>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                  Monitor and manage all website cookies with size validation and security controls
+                </p>
+              </CardHeader>
+              <CardContent className="p-0">
+                <CookieManagementDashboard />
               </CardContent>
             </Card>
           </TabsContent>
