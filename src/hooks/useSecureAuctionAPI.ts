@@ -571,13 +571,29 @@ export const useSecureAuctionAPI = () => {
           filters,
           carId
         });
-        throw new Error(functionError.message || "API call failed");
+        
+        // Provide more user-friendly error messages
+        let userMessage = "Failed to send request to the server.";
+        if (functionError.message?.includes('timeout')) {
+          userMessage = "Request timed out. Please try again.";
+        } else if (functionError.message?.includes('network')) {
+          userMessage = "Network error. Please check your connection.";
+        } else if (functionError.message?.includes('401') || functionError.message?.includes('unauthorized')) {
+          userMessage = "Authentication error. Please refresh the page.";
+        } else if (functionError.message?.includes('404')) {
+          userMessage = "No data found for your search criteria.";
+        } else if (functionError.message?.includes('429') || functionError.message?.includes('rate limit')) {
+          userMessage = "Too many requests. Please wait a moment and try again.";
+        }
+        
+        throw new Error(userMessage);
       }
 
       if (data?.error) {
         console.error("❌ API returned error:", data.error);
         console.error("❌ Error details:", {
           error: data.error,
+          details: data.details,
           endpoint,
           filters,
           carId,
@@ -589,13 +605,23 @@ export const useSecureAuctionAPI = () => {
           await delay(data.retryAfter);
           throw new Error("RATE_LIMITED");
         }
-        throw new Error(data.error);
+        
+        // Use the improved error message from the edge function if available
+        const errorMessage = data.error || "An error occurred while fetching data";
+        throw new Error(errorMessage);
       }
 
       return data;
     } catch (err) {
       console.error("❌ Secure API call error:", err);
-      throw err;
+      
+      // If it's already a processed error with a user-friendly message, re-throw it
+      if (err instanceof Error && err.message && !err.message.includes('Error:')) {
+        throw err;
+      }
+      
+      // Otherwise, provide a generic user-friendly message
+      throw new Error("Unable to connect to the server. Please check your internet connection and try again.");
     }
   };
 
