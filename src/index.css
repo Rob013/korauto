@@ -446,6 +446,22 @@ All colors MUST be HSL.
     padding-right: env(safe-area-inset-right);
   }
 
+  /* Dynamic viewport height support for mobile browsers */
+  .mobile-full-height {
+    height: 100vh; /* Fallback for older browsers */
+    height: 100dvh; /* Dynamic viewport height for modern browsers */
+    min-height: -webkit-fill-available; /* iOS Safari compatibility */
+  }
+
+  /* Filter panel specific optimizations */
+  .mobile-filter-panel {
+    height: 100vh; /* Fallback */
+    height: 100dvh; /* Dynamic viewport height */
+    min-height: -webkit-fill-available; /* iOS Safari */
+    max-height: 100vh; /* Prevent overflow on some devices */
+    max-height: 100dvh;
+  }
+
   /* Optimized container spacing for mobile */
   .container-responsive {
     padding-left: max(16px, env(safe-area-inset-left));
@@ -498,6 +514,13 @@ All colors MUST be HSL.
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  /* Ensure filter content is properly scrollable */
+  .mobile-filter-content {
+    height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 

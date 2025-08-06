@@ -30,6 +30,21 @@ export default {
       fontFamily: {
         'sans': ['Noto Sans', 'system-ui', 'sans-serif'],
       },
+      height: {
+        'dvh': '100dvh',
+        'svh': '100svh',
+        'lvh': '100lvh',
+      },
+      minHeight: {
+        'dvh': '100dvh',
+        'svh': '100svh', 
+        'lvh': '100lvh',
+      },
+      maxHeight: {
+        'dvh': '100dvh',
+        'svh': '100svh',
+        'lvh': '100lvh',
+      },
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
