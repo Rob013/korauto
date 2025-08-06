@@ -976,7 +976,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 <Button
                   variant="outline"
                   onClick={() => setShowFilters(true)}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 mx-auto"
                 >
                   <Filter className="h-4 w-4" />
                   Open Filters
