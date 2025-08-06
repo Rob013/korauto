@@ -431,20 +431,18 @@ const FilterForm = memo<FilterFormProps>(({
               },
               ...(generations && generations.length > 0 ? 
                 generations.map((generation) => {
-                  const displayCount = generation.cars_qty || 0;
                   let yearRange = '';
                   if (generation.from_year) {
                     const from = generation.from_year.toString().slice(-2);
                     const currentYear = new Date().getFullYear();
-                    // Fixed: Consistent logic - show 'present' if to_year is current year or later, or missing
+                    // Show 'present' if to_year is current year or later, or missing
                     const to = (!generation.to_year || generation.to_year >= currentYear) ? 'present' : generation.to_year.toString().slice(-2);
                     yearRange = ` (${from}-${to})`;
                   }
-                  const countText = displayCount > 0 ? ` (${displayCount})` : '';
                   
                   return {
                     value: generation.id.toString(),
-                    label: `${generation.name}${yearRange}${countText}`
+                    label: `${generation.name}${yearRange}`
                   };
                 })
                 : []

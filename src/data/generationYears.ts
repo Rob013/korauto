@@ -20,7 +20,7 @@ export const GENERATION_YEARS: GenerationYearData = {
       "E46": { from_year: 1998, to_year: 2006 },
       "E90/E91/E92/E93": { from_year: 2005, to_year: 2013 },
       "F30/F31/F34/F35": { from_year: 2012, to_year: 2019 },
-      "G20/G21": { from_year: 2019, to_year: 2024 }
+      "G20/G21": { from_year: 2019, to_year: 2025 }
     },
     "5 Series": {
       "E12": { from_year: 1972, to_year: 1981 },
@@ -29,7 +29,7 @@ export const GENERATION_YEARS: GenerationYearData = {
       "E39": { from_year: 1995, to_year: 2003 },
       "E60/E61": { from_year: 2003, to_year: 2010 },
       "F10/F11/F07/F18": { from_year: 2010, to_year: 2017 },
-      "G30/G31/G38": { from_year: 2017, to_year: 2024 }
+      "G30/G31/G38": { from_year: 2017, to_year: 2025 }
     },
     "7 Series": {
       "E23": { from_year: 1977, to_year: 1986 },
@@ -38,7 +38,7 @@ export const GENERATION_YEARS: GenerationYearData = {
       "E65/E66/E67/E68": { from_year: 2001, to_year: 2008 },
       "F01/F02/F03/F04": { from_year: 2008, to_year: 2015 },
       "G11/G12": { from_year: 2015, to_year: 2022 },
-      "G70": { from_year: 2022, to_year: 2024 }
+      "G70": { from_year: 2022, to_year: 2025 }
     },
     "X3": {
       "E83": { from_year: 2003, to_year: 2010 },
@@ -58,7 +58,7 @@ export const GENERATION_YEARS: GenerationYearData = {
       "W203": { from_year: 2000, to_year: 2007 },
       "W204": { from_year: 2007, to_year: 2014 },
       "W205": { from_year: 2014, to_year: 2021 },
-      "W206": { from_year: 2021, to_year: 2024 }
+      "W206": { from_year: 2021, to_year: 2025 }
     },
     "E-Class": {
       "W124": { from_year: 1984, to_year: 1995 },
@@ -87,7 +87,7 @@ export const GENERATION_YEARS: GenerationYearData = {
       "8L": { from_year: 1996, to_year: 2003 },
       "8P": { from_year: 2003, to_year: 2012 },
       "8V": { from_year: 2012, to_year: 2020 },
-      "8Y": { from_year: 2020, to_year: 2024 }
+      "8Y": { from_year: 2020, to_year: 2025 }
     },
     "A4": {
       "B5": { from_year: 1994, to_year: 2001 },
@@ -101,7 +101,7 @@ export const GENERATION_YEARS: GenerationYearData = {
       "C5": { from_year: 1997, to_year: 2004 },
       "C6": { from_year: 2004, to_year: 2011 },
       "C7": { from_year: 2011, to_year: 2018 },
-      "C8": { from_year: 2018, to_year: 2024 }
+      "C8": { from_year: 2020, to_year: 2025 }
     },
     "Q7": {
       "4L": { from_year: 2005, to_year: 2015 },
