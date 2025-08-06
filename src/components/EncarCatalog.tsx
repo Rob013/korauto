@@ -781,47 +781,75 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       <div className={`
         fixed lg:relative z-40 bg-card border-r transition-transform duration-300 ease-in-out
         ${showFilters ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        ${isMobile ? 'inset-0 w-full h-full' : 'w-full sm:w-80 lg:w-72 h-full'} 
+        ${isMobile ? 'inset-0 w-full h-full max-w-full' : 'w-full sm:w-80 lg:w-72 h-full'} 
         overflow-y-auto lg:shadow-none shadow-xl
         ${isMobile ? 'safe-area-inset' : ''}
       `}>
-        <div className={`p-3 sm:p-4 border-b ${isMobile ? 'bg-primary text-primary-foreground' : ''}`}>
+        <div className={`sticky top-0 z-10 p-3 sm:p-4 border-b ${isMobile ? 'bg-primary text-primary-foreground' : 'bg-background/95 backdrop-blur-sm'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Filter className={`h-4 w-4 sm:h-5 sm:w-5 ${isMobile ? 'text-primary-foreground' : 'text-primary'}`} />
               <h3 className={`font-semibold text-sm sm:text-base ${isMobile ? 'text-lg text-primary-foreground' : ''}`}>
                 {isMobile ? 'Filtrat e Kërkimit' : 'Filters'}
               </h3>
-              {hasSelectedCategories && isMobile && (
-                <Badge variant="secondary" className="ml-2 bg-primary-foreground/20 text-primary-foreground">
+              {hasSelectedCategories && (
+                <Badge variant={isMobile ? "secondary" : "outline"} className={`ml-2 ${isMobile ? 'bg-primary-foreground/20 text-primary-foreground' : ''}`}>
                   {Object.values(filters).filter(Boolean).length} aktiv
                 </Badge>
               )}
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => {
-                // Issue #1: Do not allow closing filters until brand and model are selected
-                if (!filters.manufacturer_id || !filters.model_id) {
-                  toast({
-                    title: "Zgjidhni markën dhe modelin",
-                    description: "Për të mbyllur filtrat, së pari duhet të zgjidhni markën dhe modelin e makinës.",
-                    variant: "destructive",
-                    duration: 3000,
-                  });
-                  return;
+            
+            {/* Enhanced X button - always visible but with validation */}
+            <div className="flex items-center gap-2">
+              {/* Clear filters button */}
+              {Object.values(filters).filter(Boolean).length > 0 && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleClearFilters}
+                  className={`h-8 w-8 p-0 ${isMobile ? 'hover:bg-primary-foreground/20 text-primary-foreground' : 'hover:bg-muted'}`}
+                  title="Clear all filters"
+                >
+                  <Loader2 className="h-4 w-4 rotate-180" />
+                </Button>
+              )}
+              
+              {/* Close filters button - enhanced */}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => {
+                  if (isMobile && (!filters.manufacturer_id || !filters.model_id)) {
+                    toast({
+                      title: "Zgjidhni markën dhe modelin",
+                      description: "Për të mbyllur filtrat, së pari duhet të zgjidhni markën dhe modelin e makinës.",
+                      variant: "destructive",
+                      duration: 3000,
+                    });
+                    return;
+                  }
+                  setShowFilters(false);
+                }}
+                className={`h-8 w-8 p-0 transition-colors ${
+                  isMobile ? 'hover:bg-primary-foreground/20 text-primary-foreground' : 'hover:bg-muted'
+                } ${
+                  isMobile && (!filters.manufacturer_id || !filters.model_id) 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : 'hover:text-destructive hover:bg-destructive/10'
+                }`}
+                title={
+                  isMobile && (!filters.manufacturer_id || !filters.model_id) 
+                    ? "Select brand and model first" 
+                    : "Close filters"
                 }
-                setShowFilters(false);
-              }}
-              className={`lg:hidden h-8 w-8 p-0 ${isMobile ? 'hover:bg-primary-foreground/20 text-primary-foreground' : ''}`}
-            >
-              <X className="h-4 w-4" />
-            </Button>
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
         
-        <div className="p-3 sm:p-4">
+        <div className={`${isMobile ? 'p-3 max-w-full overflow-hidden' : 'p-3 sm:p-4'}`}>
           <EncarStyleFilter
             filters={filters}
             manufacturers={manufacturers}
@@ -842,56 +870,75 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             onManualSearch={handleManualSearch}
           />
           
-          {/* Mobile Apply/Close Filters Button - Enhanced */}
+          {/* Mobile Apply/Close Filters Section - Enhanced */}
           {isMobile && (
-            <div className="mt-6 pt-4 border-t space-y-3">
+            <div className="sticky bottom-0 bg-card border-t mt-6 pt-4 pb-2 space-y-3 -mx-3 -mb-4 px-3">
               {/* Show current selection status */}
-              <div className="text-center text-sm text-muted-foreground">
+              <div className="text-center text-sm">
                 {filters.manufacturer_id && filters.model_id ? (
-                  <span className="text-green-600 font-medium">✓ Marka dhe modeli të zgjedhur</span>
+                  <div className="flex items-center justify-center gap-2 text-green-700 bg-green-50 px-3 py-2 rounded-lg">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="font-medium">Ready to search</span>
+                  </div>
                 ) : (
-                  <span className="text-orange-600 font-medium">⚠ Zgjidhni markën dhe modelin</span>
+                  <div className="flex items-center justify-center gap-2 text-orange-700 bg-orange-50 px-3 py-2 rounded-lg">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <span className="font-medium">Select brand & model</span>
+                  </div>
                 )}
               </div>
               
-              {/* Apply/Close button */}
+              {/* Enhanced Search Button */}
               <Button
                 onClick={() => {
-                  // Issue #2: Enhanced mobile filter close button
                   if (!filters.manufacturer_id || !filters.model_id) {
-                    // Show a visual feedback but don't close
-                    const button = document.querySelector('[data-mobile-apply-button]');
-                    if (button) {
-                      button.classList.add('animate-pulse');
-                      setTimeout(() => {
-                        button?.classList.remove('animate-pulse');
-                      }, 1000);
-                    }
+                    toast({
+                      title: "Zgjidhni markën dhe modelin",
+                      description: "Së pari zgjidhni markën dhe modelin për të kërkuar makina.",
+                      variant: "destructive",
+                      duration: 2000,
+                    });
                     return;
                   }
-                  // Apply filters
+                  // Apply filters and close
                   handleFiltersChange(filters);
                   setShowFilters(false);
                 }}
                 data-mobile-apply-button
-                className={`w-full h-12 text-lg font-semibold relative overflow-hidden transition-all duration-300 ${
+                className={`w-full h-14 text-lg font-bold relative overflow-hidden transition-all duration-300 rounded-xl shadow-lg ${
                   filters.manufacturer_id && filters.model_id
-                    ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                    ? "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-primary/25"
                     : "bg-muted hover:bg-muted/80 text-muted-foreground border-2 border-dashed border-orange-300"
                 }`}
                 size="lg"
               >
-                <span className="relative z-10">
-                  {filters.manufacturer_id && filters.model_id
-                    ? `Search Cars`
-                    : "Select Brand & Model"
-                  }
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  {filters.manufacturer_id && filters.model_id ? (
+                    <>
+                      <Search className="h-5 w-5" />
+                      Search Cars
+                    </>
+                  ) : (
+                    <>
+                      <Filter className="h-5 w-5" />
+                      Select Brand & Model
+                    </>
+                  )}
                 </span>
-                {/* Subtle animation background for selected state */}
+                
+                {/* Animated background for ready state */}
                 {filters.manufacturer_id && filters.model_id && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-transparent animate-pulse"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent animate-pulse"></div>
                 )}
               </Button>
+              
+              {/* Quick tip */}
+              <p className="text-xs text-center text-muted-foreground px-2">
+                {filters.manufacturer_id && filters.model_id 
+                  ? "Tap to search and close filters" 
+                  : "Choose your preferred brand and model first"
+                }
+              </p>
             </div>
           )}
         </div>
@@ -919,13 +966,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         />
       )}
 
-      {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 ${showFilters ? 'lg:ml-0' : 'lg:ml-0'}`}>
-        <div className="container-responsive py-3 sm:py-4 lg:py-6 mobile-text-optimize">
+      {/* Main Content - Enhanced mobile layout */}
+      <div className={`flex-1 transition-all duration-300 ${showFilters ? 'lg:ml-0' : 'lg:ml-0'} ${isMobile ? 'w-full max-w-full min-w-0 overflow-hidden' : ''}`}>
+        <div className={`${isMobile ? 'px-2 py-3 max-w-full overflow-hidden' : 'container-responsive py-3 sm:py-4 lg:py-6'} mobile-text-optimize`}>
           {/* Header Section - Mobile optimized */}
-          <div className="flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-6">{/* Mobile header - stacked layout */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-6 max-w-full">{/* Mobile header - stacked layout */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 max-w-full min-w-0">
+              <div className="flex items-center gap-2 w-full sm:w-auto min-w-0">
                 <Button
                   variant="ghost"
                   size="sm"

@@ -303,151 +303,154 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   // Compact mode for sidebar
   if (compact) {
     return (
-      <div className="space-y-4 p-4 bg-card/50 border border-border/50 rounded-lg backdrop-blur-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-primary/10 rounded-full">
-              <Filter className="h-4 w-4 text-primary" />
-            </div>
-            <h3 className="text-lg font-semibold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              Smart Search
-            </h3>
-            {enableManualSearch && hasChanges && (
-              <Badge variant="secondary" className="text-xs animate-pulse">
-                Changes pending
-              </Badge>
-            )}
-          </div>
-        </div>
-        
-        {/* Search Button - Professional styling */}
+      <div className="space-y-3 max-w-full overflow-hidden">
+        {/* Enhanced Search Button - Always at top */}
         {enableManualSearch && (
-          <div className="mb-6">
+          <div className="mb-4">
             <Button 
               variant="default"
               size="lg" 
               onClick={handleManualSearch}
-              disabled={!hasChanges || isLoading}
-              className="w-full h-12 text-base font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200"
+              disabled={!hasChanges || isLoading || !filters.manufacturer_id || !filters.model_id}
+              className={`w-full h-12 text-base font-semibold transition-all duration-200 ${
+                filters.manufacturer_id && filters.model_id
+                  ? 'bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-lg hover:shadow-xl'
+                  : 'bg-muted hover:bg-muted/80 text-muted-foreground border-2 border-dashed border-orange-300'
+              }`}
             >
               {isLoading ? (
                 <>
                   <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                   Searching...
                 </>
+              ) : !filters.manufacturer_id || !filters.model_id ? (
+                <>
+                  <Filter className="h-5 w-5 mr-2" />
+                  Select Brand & Model
+                </>
               ) : (
                 <>
                   <Search className="h-5 w-5 mr-2" />
                   Search Cars
+                  {hasChanges && (
+                    <Badge variant="secondary" className="ml-2 text-xs bg-white/20">
+                      Updated
+                    </Badge>
+                  )}
                 </>
               )}
             </Button>
           </div>
         )}
         
-        {/* Professional Filter Cards */}
-        <div className="space-y-4">
-          {/* Primary Filters Card */}
-          <Card className="p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Car className="h-4 w-4 text-primary" />
-                <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Vehicle Selection</h4>
+        {/* Compact Filter Cards */}
+        <div className="space-y-3 max-w-full">
+          {/* Primary Selection Card - More compact */}
+          <div className="p-3 bg-card/50 border border-border/50 rounded-lg backdrop-blur-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-1.5 bg-primary/10 rounded-md">
+                <Car className="h-3 w-3 text-primary" />
               </div>
-              
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium flex items-center gap-2">
-                    <div className="w-2 h-2 bg-primary rounded-full"></div>
-                    Brand
-                  </Label>
-                  <AdaptiveSelect 
-                    value={filters.manufacturer_id || 'all'} 
-                    onValueChange={(value) => updateFilter('manufacturer_id', value)}
-                    placeholder="Select brand"
-                    className="h-11 text-sm border-2 hover:border-primary/50 focus:border-primary transition-colors"
-                    options={[
-                      { value: 'all', label: 'All Brands' },
-                      ...sortedManufacturers.map((manufacturer) => ({
-                        value: manufacturer.id.toString(),
-                        label: (
-                          <div className="flex items-center gap-2">
-                            {manufacturer.image && (
-                              <img src={manufacturer.image} alt={manufacturer.name} className="w-5 h-5 object-contain" />
-                            )}
-                            <span>{manufacturer.name}</span>
-                            <Badge variant="secondary" className="ml-auto text-xs">{manufacturer.cars_qty}</Badge>
-                          </div>
-                        )
-                      }))
-                    ]}
-                  />
-                </div>
+              <h4 className="font-medium text-xs text-muted-foreground uppercase tracking-wider">Vehicle</h4>
+              {enableManualSearch && hasChanges && (
+                <Badge variant="secondary" className="text-xs animate-pulse bg-orange-100 text-orange-800">
+                  Pending
+                </Badge>
+              )}
+            </div>
+            
+            <div className="space-y-2.5 max-w-full">
+              <div className="space-y-1">
+                <Label className="text-xs font-medium flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                  Brand
+                </Label>
+                <AdaptiveSelect 
+                  value={filters.manufacturer_id || 'all'} 
+                  onValueChange={(value) => updateFilter('manufacturer_id', value)}
+                  placeholder="Select brand"
+                  className="h-9 text-xs border hover:border-primary/50 focus:border-primary transition-colors w-full min-w-0"
+                  options={[
+                    { value: 'all', label: 'All Brands' },
+                    ...sortedManufacturers.map((manufacturer) => ({
+                      value: manufacturer.id.toString(),
+                      label: (
+                        <div className="flex items-center gap-2 truncate">
+                          {manufacturer.image && (
+                            <img src={manufacturer.image} alt={manufacturer.name} className="w-4 h-4 object-contain flex-shrink-0" />
+                          )}
+                          <span className="truncate">{manufacturer.name}</span>
+                          <Badge variant="secondary" className="ml-auto text-xs flex-shrink-0">{manufacturer.cars_qty}</Badge>
+                        </div>
+                      )
+                    }))
+                  ]}
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium flex items-center gap-2">
-                    <div className="w-2 h-2 bg-primary/70 rounded-full"></div>
-                    Model
-                  </Label>
-                  <AdaptiveSelect 
-                    value={filters.model_id || 'all'} 
-                    onValueChange={(value) => updateFilter('model_id', value)}
-                    disabled={!filters.manufacturer_id}
-                    placeholder={!filters.manufacturer_id ? "Select brand first" : "Select model"}
-                    className="h-11 text-sm border-2 hover:border-primary/50 focus:border-primary transition-colors disabled:opacity-50"
-                    options={[
-                      { value: 'all', label: 'All Models' },
-                      ...models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => ({
-                        value: model.id.toString(),
-                        label: (
-                          <div className="flex items-center justify-between">
-                            <span>{model.name}</span>
-                            <Badge variant="secondary" className="text-xs">{model.cars_qty}</Badge>
-                          </div>
-                        )
-                      }))
-                    ]}
-                  />
-                </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-medium flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 bg-primary/70 rounded-full"></div>
+                  Model
+                </Label>
+                <AdaptiveSelect 
+                  value={filters.model_id || 'all'} 
+                  onValueChange={(value) => updateFilter('model_id', value)}
+                  disabled={!filters.manufacturer_id}
+                  placeholder={!filters.manufacturer_id ? "Select brand first" : "Select model"}
+                  className="h-9 text-xs border hover:border-primary/50 focus:border-primary transition-colors disabled:opacity-50 w-full min-w-0"
+                  options={[
+                    { value: 'all', label: 'All Models' },
+                    ...models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => ({
+                      value: model.id.toString(),
+                      label: (
+                        <div className="flex items-center justify-between gap-2 truncate">
+                          <span className="truncate">{model.name}</span>
+                          <Badge variant="secondary" className="text-xs flex-shrink-0">{model.cars_qty}</Badge>
+                        </div>
+                      )
+                    }))
+                  ]}
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium flex items-center gap-2">
-                    <div className="w-2 h-2 bg-primary/50 rounded-full"></div>
-                    Generation
-                  </Label>
-                  <AdaptiveSelect 
-                    value={filters.generation_id || 'all'} 
-                    onValueChange={(value) => updateFilter('generation_id', value)}
-                    disabled={!filters.model_id}
-                    placeholder={!filters.model_id ? "Select model first" : "Select generation"}
-                    className="h-11 text-sm border-2 hover:border-primary/50 focus:border-primary transition-colors disabled:opacity-50"
-                    options={[
-                      { value: 'all', label: 'All Generations' },
-                      ...generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => ({
-                        value: generation.id.toString(),
-                        label: (
-                          <div className="flex flex-col">
-                            <span className="font-medium">{generation.name}</span>
-                            <div className="flex items-center justify-between text-xs text-muted-foreground">
-                              <span>
-                                {generation.from_year ? (() => {
-                                  const from = generation.from_year.toString();
-                                  const currentYear = new Date().getFullYear();
-                                  const to = (!generation.to_year || generation.to_year >= currentYear) ? 'now' : generation.to_year.toString();
-                                  return `${from}-${to}`;
-                                })() : 'All years'}
-                              </span>
-                              <Badge variant="secondary" className="text-xs">{generation.cars_qty}</Badge>
-                            </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-medium flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 bg-primary/50 rounded-full"></div>
+                  Generation
+                </Label>
+                <AdaptiveSelect 
+                  value={filters.generation_id || 'all'} 
+                  onValueChange={(value) => updateFilter('generation_id', value)}
+                  disabled={!filters.model_id}
+                  placeholder={!filters.model_id ? "Select model first" : "Select generation"}
+                  className="h-9 text-xs border hover:border-primary/50 focus:border-primary transition-colors disabled:opacity-50 w-full min-w-0"
+                  options={[
+                    { value: 'all', label: 'All Generations' },
+                    ...generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => ({
+                      value: generation.id.toString(),
+                      label: (
+                        <div className="flex flex-col">
+                          <span className="font-medium text-xs truncate">{generation.name}</span>
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span className="truncate">
+                              {generation.from_year ? (() => {
+                                const from = generation.from_year.toString();
+                                const currentYear = new Date().getFullYear();
+                                const to = (!generation.to_year || generation.to_year >= currentYear) ? 'now' : generation.to_year.toString();
+                                return `${from}-${to}`;
+                              })() : 'All years'}
+                            </span>
+                            <Badge variant="secondary" className="text-xs flex-shrink-0">{generation.cars_qty}</Badge>
                           </div>
-                        )
-                      }))
-                    ]}
-                  />
-                </div>
+                        </div>
+                      )
+                    }))
+                  ]}
+                />
               </div>
             </div>
-          </Card>
+          </div>
 
           {/* Year and Price Filter Card */}
           <Card className="p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
