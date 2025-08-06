@@ -1445,39 +1445,39 @@ const CarDetails = memo(() => {
                       </div>
                     )}
 
-                    {/* Modern Inspection Report Section - Triggered by Raporti Button */}
+                    {/* Compact Modern Inspection Report Section - Triggered by Raporti Button */}
                     {showInspectionReport && (
-                      <div className="space-y-8 p-8 bg-card rounded-2xl border border-border shadow-lg">
-                        <div className="text-center mb-8">
-                          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <FileText className="h-8 w-8 text-blue-600" />
+                      <div className="space-y-4 p-4 lg:p-6 bg-card rounded-xl border border-border shadow-md">
+                        <div className="text-center mb-4">
+                          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <FileText className="h-6 w-6 text-blue-600" />
                           </div>
-                          <h4 className="text-3xl font-bold text-foreground mb-3">
+                          <h4 className="text-xl lg:text-2xl font-bold text-foreground mb-2">
                             Raporti i Inspektimit të Plotë
                           </h4>
-                          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                            Analiza e detajuar profesionale e gjendjes së automjetit në të gjitha aspektet
+                          <p className="text-muted-foreground text-sm lg:text-base max-w-xl mx-auto">
+                            Analiza e detajuar profesionale e gjendjes së automjetit
                           </p>
                         </div>
 
-                        {/* Inspection Groups - Modern Cards Layout */}
-                        <div className="grid gap-8">
+                        {/* Inspection Groups - Compact Modern Cards Layout */}
+                        <div className="grid gap-4">
                           
                           {/* Technical Inspection - Engine & Mechanical - Collapsible */}
                           {car.details?.inspect?.inner && (
-                            <div className="overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200">
+                            <div className="overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
                               <Button
                                 onClick={() => setShowEngineSection(!showEngineSection)}
                                 variant="ghost"
-                                className="w-full justify-between p-4 md:p-6 h-auto group hover:bg-blue-100/50 transition-all duration-300"
+                                className="w-full justify-between p-3 md:p-4 h-auto group hover:bg-blue-100/50 transition-all duration-300"
                               >
                                 <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 md:w-12 md:h-12 bg-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-700 transition-colors">
-                                    <Cog className="h-4 w-4 md:h-6 md:w-6 text-white" />
+                                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-700 transition-colors">
+                                    <Cog className="h-4 w-4 text-white" />
                                   </div>
                                   <div className="text-left">
-                                    <h5 className="text-lg md:text-xl font-bold text-foreground">Motori dhe Sistemi Mekanik</h5>
-                                    <p className="text-muted-foreground text-xs md:text-sm">Kontrolli teknik i komponentëve kryesorë</p>
+                                    <h5 className="text-base md:text-lg font-bold text-foreground">Motori dhe Sistemi Mekanik</h5>
+                                    <p className="text-muted-foreground text-xs">Kontrolli teknik i komponentëve kryesorë</p>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -1509,8 +1509,8 @@ const CarDetails = memo(() => {
                               </Button>
 
                               {showEngineSection && (
-                                <div className="px-3 md:px-6 pb-3 md:pb-6 space-y-3 animate-fade-in">
-                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 md:gap-4">
+                                <div className="px-3 pb-3 space-y-2 animate-fade-in">
+                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                                     {Object.entries(car.details.inspect.inner).map(
                                       ([key, value]: [string, any]) => {
                                         const isGood =
@@ -1524,21 +1524,21 @@ const CarDetails = memo(() => {
                                         return (
                                           <div
                                             key={key}
-                                            className={`flex items-center justify-between p-2 md:p-4 bg-card rounded-lg border transition-all hover:shadow-md ${
+                                            className={`flex items-center justify-between p-2 bg-card rounded-lg border transition-all hover:shadow-sm ${
                                               isGood ? 'border-green-200' : 'border-red-200'
                                             }`}
                                           >
-                                            <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
-                                              <div className={`w-2 h-2 md:w-3 md:h-3 rounded-full flex-shrink-0 ${
+                                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                                              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
                                                 isGood ? 'bg-green-500' : 'bg-red-500'
                                               }`} />
-                                              <span className="text-xs md:text-sm font-medium text-foreground truncate">
+                                              <span className="text-xs font-medium text-foreground truncate">
                                                 {label}
                                               </span>
                                             </div>
                                             <Badge
                                               variant={isGood ? "default" : "destructive"}
-                                              className={`text-xs font-semibold flex-shrink-0 ml-2 ${
+                                              className={`text-xs font-medium flex-shrink-0 ml-2 px-2 py-1 ${
                                                 isGood ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                                               }`}
                                             >
@@ -1717,19 +1717,19 @@ const CarDetails = memo(() => {
                           {/* Visual Inspection Diagram */}
                           {car.details?.inspect_outer &&
                             car.details.inspect_outer.length > 0 && (
-                              <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200">
-                                <div className="flex items-center gap-3 mb-6">
-                                  <div className="w-12 h-12 bg-gray-600 rounded-lg flex items-center justify-center">
-                                    <Car className="h-6 w-6 text-white" />
+                              <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200">
+                                <div className="flex items-center gap-3 mb-4">
+                                  <div className="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center">
+                                    <Car className="h-5 w-5 text-white" />
                                   </div>
                                   <div>
-                                    <h5 className="text-xl font-bold text-gray-900">Diagrami i Inspektimit Vizual</h5>
-                                    <p className="text-gray-600 text-sm">Gjendja vizuale e pjesëve të jashtme</p>
+                                    <h5 className="text-lg font-bold text-gray-900">Diagrami i Inspektimit të Automjetit</h5>
+                                    <p className="text-gray-600 text-xs">Gjendja vizuale e pjesëve të jashtme</p>
                                   </div>
                                 </div>
                                 <CarInspectionDiagram
                                   inspectionData={car.details.inspect_outer}
-                                  className="mt-4"
+                                  className="mt-3"
                                 />
                               </div>
                             )}

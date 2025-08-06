@@ -92,6 +92,8 @@ interface EncarStyleFilterProps {
   onFetchGrades?: (manufacturerId?: string, modelId?: string, generationId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
   isHomepage?: boolean;
   compact?: boolean;
+  onSearchCars?: () => void;
+  onCloseFilter?: () => void;
 }
 
 const EncarStyleFilter = memo<EncarStyleFilterProps>(({
@@ -110,7 +112,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   onToggleAdvanced,
   onFetchGrades,
   isHomepage = false,
-  compact = false
+  compact = false,
+  onSearchCars,
+  onCloseFilter
 }) => {
   const [grades, setGrades] = useState<{ value: string; label: string; count?: number }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -259,8 +263,11 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
             variant="ghost" 
             size="sm" 
             onClick={() => {
-              // Issue #1 FIXED: Allow closing filters anytime
-              onClearFilters();
+              if (onCloseFilter) {
+                onCloseFilter();
+              } else {
+                onClearFilters();
+              }
             }}
             className="text-muted-foreground hover:text-foreground h-8 w-8 p-0"
           >
@@ -519,6 +526,20 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Search Button */}
+          {onSearchCars && (
+            <div className="pt-3 border-t">
+              <Button 
+                onClick={onSearchCars} 
+                className="w-full h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+                size="sm"
+              >
+                <Search className="h-4 w-4 mr-2" />
+                Search Cars
+              </Button>
             </div>
           )}
         </div>

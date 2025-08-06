@@ -7,8 +7,6 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Loader2,
   Search,
-  Grid,
-  List,
   ArrowLeft,
   ArrowUpDown,
   Car,
@@ -74,7 +72,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     loadMore,
   } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState<SortOption>("price_low");
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentPage, setCurrentPage] = useState(1);
@@ -284,18 +281,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     
     // Clear previous data immediately to show loading state
     setCars([]);
-    
-    // Auto-hide filters on mobile after applying filters, and on all devices when categories are selected
-    if (isMobile && Object.keys(newFilters).length > 0) {
-      setShowFilters(false);
-    } else if (newFilters.manufacturer_id && newFilters.model_id) {
-      // Auto-hide filters on all devices when both manufacturer and model are selected
-      // This will be enhanced by the useEffect that waits for cars to load
-      const hasFilters = Object.values(newFilters).some(value => value !== undefined && value !== "" && value !== null);
-      if (hasFilters) {
-        setTimeout(() => setShowFilters(false), 1000); // Hide after data loads
-      }
-    }
     
     // Use 50 cars per page for proper pagination
     const filtersWithPagination = {
@@ -696,21 +681,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Don't show cars until brand and model are selected
   const shouldShowCars = filters.manufacturer_id && filters.model_id;
 
-  // Track when categories are selected to auto-hide filters
+  // Track when categories are selected 
   useEffect(() => {
     const hasCategories = filters.manufacturer_id && filters.model_id;
     setHasSelectedCategories(!!hasCategories);
-    
-    // Issue #4: Auto-hide filters when categories are selected and cars are loaded (for both mobile and non-mobile)
-    if (hasCategories && !isRestoringState && cars.length > 0 && !loading) {
-      // Auto-hide filters after cars are successfully loaded
-      const hideTimeout = setTimeout(() => {
-        setShowFilters(false);
-      }, 800); // Slightly faster hide for better UX
-      
-      return () => clearTimeout(hideTimeout);
-    }
-  }, [filters.manufacturer_id, filters.model_id, isRestoringState, cars.length, loading]);
+  }, [filters.manufacturer_id, filters.model_id]);
 
   // Effect to highlight and scroll to specific car by lot number
   useEffect(() => {
@@ -799,6 +774,15 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
             onFetchGrades={fetchGrades}
             compact={true}
+            onSearchCars={() => {
+              // Force fetch cars when search button is clicked
+              if (filters.manufacturer_id && filters.model_id) {
+                fetchCars(1, { ...filters, per_page: "50" }, true);
+              }
+            }}
+            onCloseFilter={() => {
+              setShowFilters(false);
+            }}
           />
           
           {/* Mobile Apply/Close Filters Button - Enhanced */}
@@ -913,23 +897,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     }))}
                   />
                 </div>
-                
-                <Button
-                  variant={viewMode === "grid" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setViewMode("grid")}
-                  className="h-7 w-7 p-0"
-                >
-                  <Grid className="h-3 w-3" />
-                </Button>
-                <Button
-                  variant={viewMode === "list" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setViewMode("list")}
-                  className="h-7 w-7 p-0"
-                >
-                  <List className="h-3 w-3" />
-                </Button>
               </div>
             </div>
             
@@ -1003,11 +970,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             <>
               <div
                 ref={containerRef}
-                className={
-                  viewMode === "grid"
-                    ? "grid mobile-car-grid-compact sm:mobile-car-grid lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 sm:gap-3 lg:gap-4"
-                    : "space-y-2 sm:space-y-3"
-                }
+                className="grid mobile-car-grid-compact sm:mobile-car-grid lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 sm:gap-3 lg:gap-4"
               >
                 {carsForCurrentPage.map((car) => {
                   const lot = car.lots?.[0];
