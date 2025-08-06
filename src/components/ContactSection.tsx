@@ -154,7 +154,7 @@ const ContactSection = () => {
                   href="tel:+38348181117" 
                   className="block text-primary hover:text-primary/80 transition-colors font-medium"
                 >
-                  +38348181117
+                  +38346181117
                 </a>
                 <div className="flex gap-2 justify-center">
                   <a 

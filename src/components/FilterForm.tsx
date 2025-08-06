@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 
 
 // Debounce utility function
-const debounce = <T extends (...args: unknown[]) => unknown>(
+const debounce = <T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): ((...args: Parameters<T>) => void) => {
@@ -81,7 +81,7 @@ interface FilterFormProps {
   models?: Model[];
   generations?: Generation[];
   filterCounts?: FilterCounts;
-  onFiltersChange: (filters: FilterFormProps['filters']) => void;
+  onFiltersChange: (filters: any) => void;
   onClearFilters: () => void;
   onManufacturerChange?: (manufacturerId: string) => void;
   onModelChange?: (modelId: string) => void;
@@ -209,9 +209,6 @@ const FilterForm = memo<FilterFormProps>(({
       setHasChanges(false);
     }
   }, [filters, enableManualSearch]);
-
-  // Handle manufacturer change with loading states
-  const handleManufacturerChange = async (value: string) => {
     setModelLoading(true);
     setModelError(null);
     updateFilter('manufacturer_id', value);

@@ -303,41 +303,36 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   // Compact mode for sidebar
   if (compact) {
     return (
-      <div className="space-y-4 p-4 bg-card/50 border border-border/50 rounded-lg backdrop-blur-sm">
-        <div className="flex items-center justify-between mb-4">
+      <div className="space-y-3 sm:space-y-4">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-primary/10 rounded-full">
-              <Filter className="h-4 w-4 text-primary" />
-            </div>
-            <h3 className="text-lg font-semibold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              Smart Search
-            </h3>
+            <h3 className="text-base sm:text-lg font-semibold">Search Cars</h3>
             {enableManualSearch && hasChanges && (
-              <Badge variant="secondary" className="text-xs animate-pulse">
+              <Badge variant="secondary" className="text-xs">
                 Changes pending
               </Badge>
             )}
           </div>
         </div>
         
-        {/* Search Button - Professional styling */}
+        {/* Search Button - Moved inside filters */}
         {enableManualSearch && (
-          <div className="mb-6">
+          <div className="mb-4">
             <Button 
               variant="default"
               size="lg" 
               onClick={handleManualSearch}
-              disabled={!hasChanges || isLoading}
-              className="w-full h-12 text-base font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200"
+              disabled={!hasChanges || isLoading || !pendingFilters.manufacturer_id || !pendingFilters.model_id}
+              className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Searching...
                 </>
               ) : (
                 <>
-                  <Search className="h-5 w-5 mr-2" />
+                  <Search className="h-4 w-4 mr-2" />
                   Search Cars
                 </>
               )}
@@ -345,122 +340,338 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           </div>
         )}
         
-        {/* Professional Filter Cards */}
-        <div className="space-y-4">
-          {/* Primary Filters Card */}
-          <Card className="p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Car className="h-4 w-4 text-primary" />
-                <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Vehicle Selection</h4>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium flex items-center gap-2">
-                    <div className="w-2 h-2 bg-primary rounded-full"></div>
-                    Brand
+        {/* Basic filters */}
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
+              <Car className="h-3 w-3" />
+              Brand
+            </Label>
+            <AdaptiveSelect 
+              value={filters.manufacturer_id || 'all'} 
+              onValueChange={(value) => updateFilter('manufacturer_id', value)}
+              placeholder="Select brand"
+              className="h-9 sm:h-10 text-sm"
+              options={[
+                { value: 'all', label: 'All Brands' },
+                ...sortedManufacturers.map((manufacturer) => ({
+                  value: manufacturer.id.toString(),
+                  label: (
+                    <div className="flex items-center gap-2">
+                      {manufacturer.image && (
+                        <img src={manufacturer.image} alt={manufacturer.name} className="w-4 h-4 object-contain" />
+                      )}
+                      <span className="text-sm">{manufacturer.name} ({manufacturer.cars_qty})</span>
+                    </div>
+                  )
+                }))
+              ]}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
+              <Settings className="h-3 w-3" />
+              Model
+            </Label>
+            <AdaptiveSelect 
+              value={filters.model_id || 'all'} 
+              onValueChange={(value) => updateFilter('model_id', value)}
+              disabled={!filters.manufacturer_id}
+              placeholder="Select model"
+              className="h-9 sm:h-10 text-sm"
+              options={[
+                { value: 'all', label: 'All Models' },
+                ...models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => ({
+                  value: model.id.toString(),
+                  label: `${model.name} (${model.cars_qty})`
+                }))
+              ]}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
+              <Calendar className="h-3 w-3" />
+              Generation
+            </Label>
+            <AdaptiveSelect 
+              value={filters.generation_id || 'all'} 
+              onValueChange={(value) => updateFilter('generation_id', value)}
+              disabled={!filters.model_id}
+              placeholder="Select generation"
+              className="h-9 sm:h-10 text-sm"
+              options={[
+                { value: 'all', label: 'All Generations' },
+                ...generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => ({
+                  value: generation.id.toString(),
+                  label: `${generation.name}${generation.from_year ? (() => {
+                    const from = generation.from_year.toString();
+                    const currentYear = new Date().getFullYear();
+                    const to = (!generation.to_year || generation.to_year >= currentYear) ? 'now' : generation.to_year.toString();
+                    return ` (${from}-${to})`;
+                  })() : ''} • ${generation.cars_qty} cars`
+                }))
+              ]}
+            />
+          </div>
+
+          {/* Year presets - moved under Generation */}
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Year Range:</Label>
+            <div className="flex flex-wrap gap-1">
+              {yearRangePresets.slice(0, 4).map((preset) => (
+                <Button
+                  key={preset.label}
+                  variant={
+                    filters.from_year === preset.from.toString() && 
+                    filters.to_year === preset.to.toString() 
+                      ? "default" 
+                      : "outline"
+                  }
+                  size="sm"
+                  className="h-7 sm:h-8 px-2 text-xs"
+                  onClick={() => handleYearRangePreset(preset)}
+                >
+                  {preset.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Price Range */}
+          <div className="space-y-1.5">
+            <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
+              <DollarSign className="h-3 w-3" />
+              Price (EUR)
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                type="number"
+                placeholder="From"
+                value={filters.buy_now_price_from || ''}
+                onChange={(e) => updateFilter('buy_now_price_from', e.target.value)}
+                className="h-9 sm:h-10 text-sm"
+              />
+              <Input
+                type="number"
+                placeholder="To"
+                value={filters.buy_now_price_to || ''}
+                onChange={(e) => updateFilter('buy_now_price_to', e.target.value)}
+                className="h-9 sm:h-10 text-sm"
+              />
+            </div>
+          </div>
+
+          {/* Additional Filters Toggle */}
+          <Button
+            variant="ghost"
+            onClick={() => toggleSection('more')}
+            className="w-full justify-between text-xs sm:text-sm h-8 sm:h-9"
+          >
+            More Filters
+            {expandedSections.includes('more') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+
+          {expandedSections.includes('more') && (
+            <div className="space-y-2.5 pt-2 border-t">
+              {/* Color, Fuel, Transmission in compact layout */}
+              <div className="space-y-2.5">
+                <div className="space-y-1.5">
+                  <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
+                    <Palette className="h-3 w-3" />
+                    Color
                   </Label>
                   <AdaptiveSelect 
-                    value={filters.manufacturer_id || 'all'} 
-                    onValueChange={(value) => updateFilter('manufacturer_id', value)}
-                    placeholder="Select brand"
-                    className="h-11 text-sm border-2 hover:border-primary/50 focus:border-primary transition-colors"
+                    value={filters.color || 'all'} 
+                    onValueChange={(value) => updateFilter('color', value)}
+                    placeholder="Any color"
+                    className="h-9 sm:h-10 text-sm"
                     options={[
-                      { value: 'all', label: 'All Brands' },
-                      ...sortedManufacturers.map((manufacturer) => ({
-                        value: manufacturer.id.toString(),
-                        label: (
-                          <div className="flex items-center gap-2">
-                            {manufacturer.image && (
-                              <img src={manufacturer.image} alt={manufacturer.name} className="w-5 h-5 object-contain" />
-                            )}
-                            <span>{manufacturer.name}</span>
-                            <Badge variant="secondary" className="ml-auto text-xs">{manufacturer.cars_qty}</Badge>
-                          </div>
-                        )
+                      { value: 'all', label: 'Any color' },
+                      ...Object.entries(COLOR_OPTIONS).map(([value, label]) => ({
+                        value,
+                        label
                       }))
                     ]}
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium flex items-center gap-2">
-                    <div className="w-2 h-2 bg-primary/70 rounded-full"></div>
-                    Model
+                <div className="space-y-1.5">
+                  <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
+                    <Fuel className="h-3 w-3" />
+                    Fuel
                   </Label>
                   <AdaptiveSelect 
-                    value={filters.model_id || 'all'} 
-                    onValueChange={(value) => updateFilter('model_id', value)}
-                    disabled={!filters.manufacturer_id}
-                    placeholder={!filters.manufacturer_id ? "Select brand first" : "Select model"}
-                    className="h-11 text-sm border-2 hover:border-primary/50 focus:border-primary transition-colors disabled:opacity-50"
+                    value={filters.fuel_type || 'all'} 
+                    onValueChange={(value) => updateFilter('fuel_type', value)}
+                    placeholder="Any type"
+                    className="h-9 sm:h-10 text-sm"
                     options={[
-                      { value: 'all', label: 'All Models' },
-                      ...models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => ({
-                        value: model.id.toString(),
-                        label: (
-                          <div className="flex items-center justify-between">
-                            <span>{model.name}</span>
-                            <Badge variant="secondary" className="text-xs">{model.cars_qty}</Badge>
-                          </div>
-                        )
+                      { value: 'all', label: 'Any type' },
+                      ...Object.entries(FUEL_TYPE_OPTIONS).map(([value, label]) => ({
+                        value,
+                        label
                       }))
                     ]}
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium flex items-center gap-2">
-                    <div className="w-2 h-2 bg-primary/50 rounded-full"></div>
-                    Generation
+                <div className="space-y-1.5">
+                  <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
+                    <Settings className="h-3 w-3" />
+                    Transmission
                   </Label>
                   <AdaptiveSelect 
-                    value={filters.generation_id || 'all'} 
-                    onValueChange={(value) => updateFilter('generation_id', value)}
-                    disabled={!filters.model_id}
-                    placeholder={!filters.model_id ? "Select model first" : "Select generation"}
-                    className="h-11 text-sm border-2 hover:border-primary/50 focus:border-primary transition-colors disabled:opacity-50"
+                    value={filters.transmission || 'all'} 
+                    onValueChange={(value) => updateFilter('transmission', value)}
+                    placeholder="Any type"
+                    className="h-9 sm:h-10 text-sm"
                     options={[
-                      { value: 'all', label: 'All Generations' },
-                      ...generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => ({
-                        value: generation.id.toString(),
-                        label: (
-                          <div className="flex flex-col">
-                            <span className="font-medium">{generation.name}</span>
-                            <div className="flex items-center justify-between text-xs text-muted-foreground">
-                              <span>
-                                {generation.from_year ? (() => {
-                                  const from = generation.from_year.toString();
-                                  const currentYear = new Date().getFullYear();
-                                  const to = (!generation.to_year || generation.to_year >= currentYear) ? 'now' : generation.to_year.toString();
-                                  return `${from}-${to}`;
-                                })() : 'All years'}
-                              </span>
-                              <Badge variant="secondary" className="text-xs">{generation.cars_qty}</Badge>
-                            </div>
-                          </div>
-                        )
+                      { value: 'all', label: 'Any type' },
+                      ...Object.entries(TRANSMISSION_OPTIONS).map(([value, label]) => ({
+                        value,
+                        label
                       }))
                     ]}
                   />
+                </div>
+
+                {/* Mileage */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
+                    <MapPin className="h-3 w-3" />
+                    Mileage (km)
+                  </Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      type="number"
+                      placeholder="From"
+                      value={filters.odometer_from_km || ''}
+                      onChange={(e) => updateFilter('odometer_from_km', e.target.value)}
+                      className="h-9 sm:h-10 text-sm"
+                    />
+                    <Input
+                      type="number"
+                      placeholder="To"
+                      value={filters.odometer_to_km || ''}
+                      onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
+                      className="h-9 sm:h-10 text-sm"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
-          </Card>
+          )}
+        </div>
+      </div>
+    );
+  }
 
-          {/* Year and Price Filter Card */}
-          <Card className="p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Calendar className="h-4 w-4 text-primary" />
-                <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Year & Price</h4>
-              </div>
+  // Homepage style - compact single row
+  if (isHomepage) {
+    return (
+      <Card className="p-4 bg-gradient-to-r from-card via-card/95 to-card border-border/50 shadow-sm">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Car className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold">Kërko Makinën</h3>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onClearFilters}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          {/* Main filters in single row */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Car className="h-3 w-3" />
+                Marka
+              </Label>
+              <AdaptiveSelect 
+                value={filters.manufacturer_id || 'all'} 
+                onValueChange={(value) => updateFilter('manufacturer_id', value)}
+                placeholder="Zgjidhni markën"
+                className="h-11"
+                options={[
+                  { value: 'all', label: 'Të gjitha Markat' },
+                  ...sortedManufacturers.map((manufacturer) => ({
+                    value: manufacturer.id.toString(),
+                    label: (
+                      <div className="flex items-center gap-2">
+                        {manufacturer.image && (
+                          <img src={manufacturer.image} alt={manufacturer.name} className="w-5 h-5 object-contain" />
+                        )}
+                        <span>{manufacturer.name} ({manufacturer.cars_qty})</span>
+                      </div>
+                    )
+                  }))
+                ]}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Settings className="h-3 w-3" />
+                Modeli
+              </Label>
+              <AdaptiveSelect 
+                value={filters.model_id || 'all'} 
+                onValueChange={(value) => updateFilter('model_id', value)}
+                disabled={!filters.manufacturer_id}
+                placeholder="Zgjidhni modelin"
+                className="h-11"
+                options={[
+                  { value: 'all', label: 'Të gjithë Modelet' },
+                  ...models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => ({
+                    value: model.id.toString(),
+                    label: `${model.name} (${model.cars_qty})`
+                  }))
+                ]}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Calendar className="h-3 w-3" />
+                Gjenerata
+                {(filters.from_year || filters.to_year) && (
+                  <Badge variant="secondary" className="text-xs">
+                    {filters.from_year || 'Çdo vit'} - {filters.to_year || 'sot'}
+                  </Badge>
+                )}
+              </Label>
+              <AdaptiveSelect 
+                value={filters.generation_id || 'all'} 
+                onValueChange={(value) => updateFilter('generation_id', value)}
+                disabled={!filters.model_id}
+                placeholder="Gjeneratat"
+                className="h-11"
+                options={[
+                  { value: 'all', label: 'Të gjitha Gjeneratat' },
+                  ...generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => ({
+                    value: generation.id.toString(),
+                    label: `${generation.name}${generation.from_year ? (() => {
+                      const from = generation.from_year.toString();
+                      const currentYear = new Date().getFullYear();
+                      const to = (!generation.to_year || generation.to_year >= currentYear) ? 'sot' : generation.to_year.toString();
+                      return ` (${from}-${to})`;
+                    })() : ''} • ${generation.cars_qty} makina`
+                  }))
+                ]}
+              />
               
-              {/* Year presets */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Year Range:</Label>
-                <div className="grid grid-cols-2 gap-2">
+              {/* Year Range Preset Buttons for Homepage */}
+              <div className="mt-3">
+                <Label className="text-xs text-muted-foreground mb-2 block">Vitet:</Label>
+                <div className="flex flex-wrap gap-1">
                   {yearRangePresets.slice(0, 4).map((preset) => (
                     <Button
                       key={preset.label}
@@ -471,343 +682,32 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                           : "outline"
                       }
                       size="sm"
-                      className="h-9 text-xs font-medium"
+                      className="h-8 px-3 text-xs"
                       onClick={() => handleYearRangePreset(preset)}
                     >
                       {preset.label}
                     </Button>
                   ))}
-                </div>
-              </div>
-
-              {/* Price Range */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center gap-2">
-                  <DollarSign className="h-3 w-3" />
-                  Price Range (EUR)
-                </Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.buy_now_price_from || ''}
-                    onChange={(e) => updateFilter('buy_now_price_from', e.target.value)}
-                    className="h-10 text-sm border-2 hover:border-primary/50 focus:border-primary transition-colors"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.buy_now_price_to || ''}
-                    onChange={(e) => updateFilter('buy_now_price_to', e.target.value)}
-                    className="h-10 text-sm border-2 hover:border-primary/50 focus:border-primary transition-colors"
-                  />
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          {/* Advanced Filters Expandable */}
-          <Card className="shadow-sm hover:shadow-md transition-shadow duration-200">
-            <Button
-              variant="ghost"
-              onClick={() => toggleSection('more')}
-              className="w-full justify-between p-4 h-auto rounded-lg"
-            >
-              <div className="flex items-center gap-2">
-                <Settings className="h-4 w-4 text-primary" />
-                <span className="font-medium">Advanced Filters</span>
-                {(filters.color || filters.fuel_type || filters.transmission || filters.odometer_from_km || filters.odometer_to_km) && (
-                  <Badge variant="secondary" className="text-xs">Active</Badge>
-                )}
-              </div>
-              {expandedSections.includes('more') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-
-            {expandedSections.includes('more') && (
-              <div className="px-4 pb-4 space-y-4 border-t">
-                <div className="pt-4 space-y-4">
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium flex items-center gap-2">
-                        <Palette className="h-3 w-3" />
-                        Color
-                      </Label>
-                      <AdaptiveSelect 
-                        value={filters.color || 'all'} 
-                        onValueChange={(value) => updateFilter('color', value)}
-                        placeholder="Any color"
-                        className="h-10 text-sm border-2 hover:border-primary/50 focus:border-primary transition-colors"
-                        options={[
-                          { value: 'all', label: 'Any color' },
-                          ...Object.entries(COLOR_OPTIONS).map(([value, label]) => ({
-                            value,
-                            label
-                          }))
-                        ]}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium flex items-center gap-2">
-                        <Fuel className="h-3 w-3" />
-                        Fuel Type
-                      </Label>
-                      <AdaptiveSelect 
-                        value={filters.fuel_type || 'all'} 
-                        onValueChange={(value) => updateFilter('fuel_type', value)}
-                        placeholder="Any type"
-                        className="h-10 text-sm border-2 hover:border-primary/50 focus:border-primary transition-colors"
-                        options={[
-                          { value: 'all', label: 'Any type' },
-                          ...Object.entries(FUEL_TYPE_OPTIONS).map(([value, label]) => ({
-                            value,
-                            label
-                          }))
-                        ]}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium flex items-center gap-2">
-                        <Cog className="h-3 w-3" />
-                        Transmission
-                      </Label>
-                      <AdaptiveSelect 
-                        value={filters.transmission || 'all'} 
-                        onValueChange={(value) => updateFilter('transmission', value)}
-                        placeholder="Any type"
-                        className="h-10 text-sm border-2 hover:border-primary/50 focus:border-primary transition-colors"
-                        options={[
-                          { value: 'all', label: 'Any type' },
-                          ...Object.entries(TRANSMISSION_OPTIONS).map(([value, label]) => ({
-                            value,
-                            label
-                          }))
-                        ]}
-                      />
-                    </div>
-
-                    {/* Mileage */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium flex items-center gap-2">
-                        <MapPin className="h-3 w-3" />
-                        Mileage Range (km)
-                      </Label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          type="number"
-                          placeholder="Min km"
-                          value={filters.odometer_from_km || ''}
-                          onChange={(e) => updateFilter('odometer_from_km', e.target.value)}
-                          className="h-10 text-sm border-2 hover:border-primary/50 focus:border-primary transition-colors"
-                        />
-                        <Input
-                          type="number"
-                          placeholder="Max km"
-                          value={filters.odometer_to_km || ''}
-                          onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
-                          className="h-10 text-sm border-2 hover:border-primary/50 focus:border-primary transition-colors"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  // Homepage style - compact single row
-  if (isHomepage) {
-    return (
-      <Card className="p-6 bg-gradient-to-br from-card via-card/95 to-card/90 border-2 border-primary/20 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm">
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-gradient-to-br from-primary to-primary/80 rounded-xl shadow-md">
-                <Car className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                  Kërko Makinën Ideale
-                </h3>
-                <p className="text-sm text-muted-foreground">Filtrat e avancuar për gjetjen e makinës perfekte</p>
-              </div>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onClearFilters}
-              className="text-muted-foreground hover:text-foreground hover:bg-destructive/10 rounded-lg p-2"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          
-          {/* Main filters in responsive grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="p-4 bg-background/60 border border-border/50 rounded-lg hover:bg-background/80 transition-colors">
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold flex items-center gap-2 text-primary">
-                  <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  Marka
-                </Label>
-                <AdaptiveSelect 
-                  value={filters.manufacturer_id || 'all'} 
-                  onValueChange={(value) => updateFilter('manufacturer_id', value)}
-                  placeholder="Zgjidhni markën"
-                  className="h-12 text-base border-2 hover:border-primary/50 focus:border-primary transition-all"
-                  options={[
-                    { value: 'all', label: 'Të gjitha Markat' },
-                    ...sortedManufacturers.map((manufacturer) => ({
-                      value: manufacturer.id.toString(),
-                      label: (
-                        <div className="flex items-center justify-between p-1">
-                          <div className="flex items-center gap-3">
-                            {manufacturer.image && (
-                              <img src={manufacturer.image} alt={manufacturer.name} className="w-6 h-6 object-contain" />
-                            )}
-                            <span className="font-medium">{manufacturer.name}</span>
-                          </div>
-                          <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
-                            {manufacturer.cars_qty}
-                          </Badge>
-                        </div>
-                      )
-                    }))
-                  ]}
-                />
-              </div>
-            </Card>
-
-            <Card className="p-4 bg-background/60 border border-border/50 rounded-lg hover:bg-background/80 transition-colors">
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold flex items-center gap-2 text-primary">
-                  <div className="w-2 h-2 bg-primary/70 rounded-full"></div>
-                  Modeli
-                </Label>
-                <AdaptiveSelect 
-                  value={filters.model_id || 'all'} 
-                  onValueChange={(value) => updateFilter('model_id', value)}
-                  disabled={!filters.manufacturer_id}
-                  placeholder={!filters.manufacturer_id ? "Zgjidhni markën së pari" : "Zgjidhni modelin"}
-                  className="h-12 text-base border-2 hover:border-primary/50 focus:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  options={[
-                    { value: 'all', label: 'Të gjithë Modelet' },
-                    ...models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => ({
-                      value: model.id.toString(),
-                      label: (
-                        <div className="flex items-center justify-between p-1">
-                          <span className="font-medium">{model.name}</span>
-                          <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
-                            {model.cars_qty}
-                          </Badge>
-                        </div>
-                      )
-                    }))
-                  ]}
-                />
-              </div>
-            </Card>
-
-            <Card className="p-4 bg-background/60 border border-border/50 rounded-lg hover:bg-background/80 transition-colors">
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold flex items-center gap-2 text-primary">
-                  <div className="w-2 h-2 bg-primary/50 rounded-full"></div>
-                  Gjenerata
                   {(filters.from_year || filters.to_year) && (
-                    <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
-                      {filters.from_year || 'Çdo vit'} - {filters.to_year || 'sot'}
-                    </Badge>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-2 text-xs text-muted-foreground"
+                      onClick={() => onFiltersChange({
+                        ...filters,
+                        from_year: undefined,
+                        to_year: undefined
+                      })}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
                   )}
-                </Label>
-                <AdaptiveSelect 
-                  value={filters.generation_id || 'all'} 
-                  onValueChange={(value) => updateFilter('generation_id', value)}
-                  disabled={!filters.model_id}
-                  placeholder={!filters.model_id ? "Zgjidhni modelin së pari" : "Gjeneratat"}
-                  className="h-12 text-base border-2 hover:border-primary/50 focus:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  options={[
-                    { value: 'all', label: 'Të gjitha Gjeneratat' },
-                    ...generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => ({
-                      value: generation.id.toString(),
-                      label: (
-                        <div className="flex flex-col p-1">
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium">{generation.name}</span>
-                            <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
-                              {generation.cars_qty}
-                            </Badge>
-                          </div>
-                          {generation.from_year && (
-                            <span className="text-xs text-muted-foreground">
-                              {(() => {
-                                const from = generation.from_year.toString();
-                                const currentYear = new Date().getFullYear();
-                                const to = (!generation.to_year || generation.to_year >= currentYear) ? 'sot' : generation.to_year.toString();
-                                return `${from}-${to}`;
-                              })()}
-                            </span>
-                          )}
-                        </div>
-                      )
-                    }))
-                  ]}
-                />
-              </div>
-            </Card>
-          </div>
-
-          {/* Year Range Preset Buttons - Enhanced design */}
-          <Card className="p-4 bg-background/40 border border-border/30 rounded-lg">
-            <div className="space-y-3">
-              <Label className="text-sm font-semibold flex items-center gap-2 text-primary">
-                <Calendar className="h-4 w-4" />
-                Filtrimet e Shpejta për Vitet:
-              </Label>
-              <div className="flex flex-wrap gap-2">
-                {yearRangePresets.slice(0, 6).map((preset) => (
-                  <Button
-                    key={preset.label}
-                    variant={
-                      filters.from_year === preset.from.toString() && 
-                      filters.to_year === preset.to.toString() 
-                        ? "default" 
-                        : "outline"
-                    }
-                    size="sm"
-                    className={`h-10 px-4 text-sm font-medium transition-all duration-200 ${
-                      filters.from_year === preset.from.toString() && 
-                      filters.to_year === preset.to.toString()
-                        ? "bg-primary text-primary-foreground shadow-md hover:bg-primary/90"
-                        : "hover:bg-primary/10 hover:text-primary hover:border-primary/50"
-                    }`}
-                    onClick={() => handleYearRangePreset(preset)}
-                  >
-                    {preset.label}
-                  </Button>
-                ))}
-                {(filters.from_year || filters.to_year) && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-10 px-3 text-sm text-muted-foreground hover:text-destructive hover:border-destructive/50 hover:bg-destructive/10"
-                    onClick={() => onFiltersChange({
-                      ...filters,
-                      from_year: undefined,
-                      to_year: undefined
-                    })}
-                  >
-                    <X className="h-4 w-4" />
-                    <span className="ml-1">Pastro Vitet</span>
-                  </Button>
-                )}
+                </div>
               </div>
             </div>
-          </Card>
+
+
+          </div>
         </div>
       </Card>
     );
