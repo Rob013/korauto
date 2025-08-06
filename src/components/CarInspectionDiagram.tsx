@@ -89,32 +89,32 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
     const hasRepair = statuses.some(s => s.code === 'A' || s.title.includes('수리') || s.title.includes('repair'));
     const hasSheetMetal = statuses.some(s => s.code === 'C' || s.title.includes('판금') || s.title.includes('sheet'));
     
-    // Red for exchange/replacement - highest priority
-    if (hasExchange) return '#dc2626'; // Bright red for critical issues
-    // Orange for welding/major repair
-    if (hasWelding) return '#ea580c'; // Orange-red for serious repairs
-    // Yellow for sheet metal work
+    // Red for exchange/replacement - highest priority (as required)
+    if (hasExchange) return '#dc2626'; // Bright red for replaced parts
+    // Orange for welding/major repair 
+    if (hasWelding) return '#ea580c'; // Orange for major repairs
+    // Orange for general repair (as required - changed from yellow)
+    if (hasRepair) return '#ea580c'; // Orange for repaired parts
+    // Amber for sheet metal work
     if (hasSheetMetal) return '#d97706'; // Amber for moderate repairs
-    // Light orange for general repair
-    if (hasRepair) return '#f59e0b'; // Yellow for minor repairs
     
     return '#10b981'; // Green for good condition
   };
 
   const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
-    if (statuses.length === 0) return 'Në rregull';
+    if (statuses.length === 0) return 'Në gjendje të mirë';
     
     const hasExchange = statuses.some(s => s.code === 'X' || s.title.includes('교환') || s.title.includes('exchange'));
     const hasWelding = statuses.some(s => s.code === 'W' || s.title.includes('용접') || s.title.includes('weld'));
     const hasRepair = statuses.some(s => s.code === 'A' || s.title.includes('수리') || s.title.includes('repair'));
     const hasSheetMetal = statuses.some(s => s.code === 'C' || s.title.includes('판금') || s.title.includes('sheet'));
     
-    if (hasExchange) return 'Nevojitet zëvendësim';
-    if (hasWelding) return 'Riparim i madh (saldim)';
-    if (hasSheetMetal) return 'Punë limarie';
-    if (hasRepair) return 'Riparim i vogël';
+    if (hasExchange) return 'E zëvendësuar (E kuqe)';
+    if (hasWelding) return 'Riparim i madh me saldim (Portokalli)';
+    if (hasSheetMetal) return 'Punë limarie (Ngjyrë kafe)';
+    if (hasRepair) return 'E riparuar (Portokalli)';
     
-    return 'Në rregull';
+    return 'Në gjendje të mirë';
   };
 
   // Count issues by type
@@ -162,31 +162,31 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
                   <div className="w-3 h-3 bg-destructive rounded-full"></div>
                   <div>
                     <div className="font-semibold text-destructive">Gjendje Kritike</div>
-                    <div className="text-sm text-muted-foreground">Nevojiten riparime të rëndësishme</div>
+                    <div className="text-sm text-muted-foreground">Ka pjesë të zëvendësuara (të kuqe)</div>
                   </div>
                 </div>
               ) : issueCount.major > 0 ? (
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
                   <div>
-                    <div className="font-semibold text-orange-700 dark:text-orange-400">Nevojiten Riparime</div>
-                    <div className="text-sm text-muted-foreground">Disa probleme të rëndësishme</div>
+                    <div className="font-semibold text-orange-700 dark:text-orange-400">Ka Riparime të Mëdha</div>
+                    <div className="text-sm text-muted-foreground">Riparime me saldim ose limari</div>
                   </div>
                 </div>
               ) : issueCount.minor > 0 ? (
                 <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
                   <div>
-                    <div className="font-semibold text-yellow-700 dark:text-yellow-400">Riparime të Vogla</div>
-                    <div className="text-sm text-muted-foreground">Probleme të lehta</div>
+                    <div className="font-semibold text-orange-700 dark:text-orange-400">Ka Pjesë të Ripariara</div>
+                    <div className="text-sm text-muted-foreground">Disa pjesë janë riparuar (portokalli)</div>
                   </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                   <div>
-                    <div className="font-semibold text-green-700 dark:text-green-400">Gjendje e Mirë</div>
-                    <div className="text-sm text-muted-foreground">Automjeti në rregull</div>
+                    <div className="font-semibold text-green-700 dark:text-green-400">Gjendje e Shkëlqyer</div>
+                    <div className="text-sm text-muted-foreground">Automjeti në gjendje perfekte</div>
                   </div>
                 </div>
               )}
@@ -198,25 +198,25 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
             <Card className="bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800">
               <CardContent className="p-3 text-center">
                 <div className="text-2xl font-bold text-green-600 dark:text-green-400">{issueCount.good}</div>
-                <div className="text-xs text-green-700 dark:text-green-500">Në rregull</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-yellow-50 dark:bg-yellow-950/30 border-yellow-200 dark:border-yellow-800">
-              <CardContent className="p-3 text-center">
-                <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{issueCount.minor}</div>
-                <div className="text-xs text-yellow-700 dark:text-yellow-500">Riparime të vogla</div>
+                <div className="text-xs text-green-700 dark:text-green-500">Në gjendje të mirë</div>
               </CardContent>
             </Card>
             <Card className="bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800">
               <CardContent className="p-3 text-center">
-                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{issueCount.major}</div>
-                <div className="text-xs text-orange-700 dark:text-orange-500">Riparime të mëdha</div>
+                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{issueCount.minor}</div>
+                <div className="text-xs text-orange-700 dark:text-orange-500">Të ripariara</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
+              <CardContent className="p-3 text-center">
+                <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{issueCount.major}</div>
+                <div className="text-xs text-amber-700 dark:text-amber-500">Riparime të mëdha</div>
               </CardContent>
             </Card>
             <Card className="bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800">
               <CardContent className="p-3 text-center">
                 <div className="text-2xl font-bold text-red-600 dark:text-red-400">{issueCount.critical}</div>
-                <div className="text-xs text-red-700 dark:text-red-500">Kritike</div>
+                <div className="text-xs text-red-700 dark:text-red-500">Të zëvendësuara</div>
               </CardContent>
             </Card>
           </div>
@@ -224,23 +224,23 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
           {/* Legend */}
           <Card>
             <CardContent className="p-4">
-              <h5 className="text-sm font-semibold text-foreground mb-3">Legjenda</h5>
+              <h5 className="text-sm font-semibold text-foreground mb-3">Legjenda e Ngjyrave</h5>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 bg-green-500 rounded"></div>
-                  <span className="text-sm text-muted-foreground">Në rregull</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-                  <span className="text-sm text-muted-foreground">Riparim i vogël</span>
+                  <span className="text-sm text-muted-foreground">Në gjendje të mirë</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 bg-orange-500 rounded"></div>
-                  <span className="text-sm text-muted-foreground">Riparim i madh</span>
+                  <span className="text-sm text-muted-foreground">E riparuar (Portokalli)</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-red-500 rounded"></div>
-                  <span className="text-sm text-muted-foreground">Kritike / Zëvendësim</span>
+                  <div className="w-4 h-4 bg-amber-600 rounded"></div>
+                  <span className="text-sm text-muted-foreground">Punë limarie</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-red-600 rounded"></div>
+                  <span className="text-sm text-muted-foreground">E zëvendësuar (E kuqe)</span>
                 </div>
               </div>
             </CardContent>
@@ -249,17 +249,36 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
 
         {/* Center - Car Diagram */}
         <div className="lg:col-span-2 flex justify-center">
-          <div className="relative">
+          <div className="relative w-full max-w-2xl">
             <svg 
-              width="600" 
+              width="100%" 
               height="500" 
               viewBox="0 0 600 500" 
-              className="max-w-full h-auto border border-border rounded-lg bg-card shadow-inner"
+              className="border border-border rounded-xl bg-gradient-to-b from-blue-50 to-blue-100 dark:from-gray-800 dark:to-gray-900 shadow-lg"
+              preserveAspectRatio="xMidYMid meet"
             >
-              {/* Car outline */}
-              <rect x="200" y="40" width="200" height="420" rx="20" fill="none" stroke="hsl(var(--border))" strokeWidth="2" strokeDasharray="5,5"/>
+              {/* Background pattern */}
+              <defs>
+                <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                  <path d="M 20 0 L 0 0 0 20" fill="none" stroke="hsl(var(--border))" strokeWidth="0.5" opacity="0.2"/>
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#grid)" />
               
-              {/* Car parts */}
+              {/* Car shadow */}
+              <ellipse cx="300" cy="470" rx="120" ry="20" fill="rgba(0,0,0,0.1)" />
+              
+              {/* Car main outline with improved design */}
+              <path 
+                d="M 220 60 L 380 60 Q 390 60 390 70 L 390 430 Q 390 440 380 440 L 220 440 Q 210 440 210 430 L 210 70 Q 210 60 220 60 Z" 
+                fill="none" 
+                stroke="hsl(var(--border))" 
+                strokeWidth="3" 
+                strokeDasharray="8,4"
+                opacity="0.6"
+              />
+              
+              {/* Car parts with improved positioning */}
               {carParts.map((part) => {
                 const statuses = getPartStatus(part.id);
                 const color = getStatusColor(statuses);
@@ -267,41 +286,79 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
                 const isSelected = selectedPart === part.id;
                 
                 return (
-                  <rect
-                    key={part.id}
-                    x={part.x}
-                    y={part.y}
-                    width={part.width}
-                    height={part.height}
-                    rx={part.rx || 0}
-                    fill={color}
-                    stroke={isSelected ? "hsl(var(--foreground))" : isHovered ? "hsl(var(--muted-foreground))" : color}
-                    strokeWidth={isSelected ? 3 : isHovered ? 2 : 1}
-                    opacity={isHovered || isSelected ? 0.9 : 0.7}
-                    className="cursor-pointer transition-all duration-200 hover:opacity-90"
-                    onMouseEnter={() => handlePartHover(part.id)}
-                    onMouseLeave={() => handlePartHover(null)}
-                    onClick={() => handlePartClick(part.id)}
-                  />
+                  <g key={part.id}>
+                    {/* Part shadow for depth */}
+                    <rect
+                      x={part.x + 2}
+                      y={part.y + 2}
+                      width={part.width}
+                      height={part.height}
+                      rx={part.rx || 0}
+                      fill="rgba(0,0,0,0.1)"
+                      opacity="0.3"
+                    />
+                    {/* Main part */}
+                    <rect
+                      x={part.x}
+                      y={part.y}
+                      width={part.width}
+                      height={part.height}
+                      rx={part.rx || 0}
+                      fill={color}
+                      stroke={isSelected ? "hsl(var(--foreground))" : isHovered ? "hsl(var(--ring))" : "white"}
+                      strokeWidth={isSelected ? 4 : isHovered ? 3 : 2}
+                      opacity={isHovered || isSelected ? 0.95 : 0.8}
+                      className="cursor-pointer transition-all duration-300 hover:opacity-95 drop-shadow-sm"
+                      onMouseEnter={() => handlePartHover(part.id)}
+                      onMouseLeave={() => handlePartHover(null)}
+                      onClick={() => handlePartClick(part.id)}
+                    />
+                    {/* Part label for better identification */}
+                    {(isHovered || isSelected) && (
+                      <text
+                        x={part.x + part.width / 2}
+                        y={part.y + part.height / 2}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        fontSize="8"
+                        fill="white"
+                        fontWeight="bold"
+                        className="pointer-events-none drop-shadow-sm"
+                      >
+                        {part.name.split(' ')[0]}
+                      </text>
+                    )}
+                  </g>
                 );
               })}
               
-              {/* Car center line */}
-              <line x1="300" y1="50" x2="300" y2="450" stroke="hsl(var(--border))" strokeWidth="1" strokeDasharray="3,3" opacity="0.5"/>
+              {/* Enhanced center line */}
+              <line x1="300" y1="60" x2="300" y2="440" stroke="hsl(var(--border))" strokeWidth="2" strokeDasharray="6,4" opacity="0.4"/>
               
-              {/* Direction indicator */}
-              <polygon points="300,30 310,50 290,50" fill="hsl(var(--muted-foreground))" opacity="0.6"/>
-              <text x="320" y="45" className="text-xs fill-muted-foreground" fontSize="12">Përpara</text>
+              {/* Direction indicators with improved design */}
+              <g>
+                <polygon points="300,35 315,55 285,55" fill="hsl(var(--primary))" opacity="0.8"/>
+                <text x="325" y="50" className="text-sm font-semibold fill-primary" fontSize="14">Përpara</text>
+              </g>
+              <g>
+                <polygon points="300,465 285,445 315,445" fill="hsl(var(--muted-foreground))" opacity="0.6"/>
+                <text x="325" y="460" className="text-sm fill-muted-foreground" fontSize="12">Prapa</text>
+              </g>
+              
+              {/* Car brand/model placeholder */}
+              <text x="300" y="250" textAnchor="middle" className="text-xs fill-muted-foreground" fontSize="10" opacity="0.5">
+                Model Automjeti
+              </text>
             </svg>
             
-            {/* Hover tooltip */}
+            {/* Enhanced hover tooltip */}
             {hoveredPart && (
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-foreground text-background px-3 py-2 rounded-lg text-sm shadow-lg z-10">
-                {carParts.find(p => p.id === hoveredPart)?.name}
-                <br />
-                <span className="opacity-80">
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-foreground text-background px-4 py-3 rounded-xl text-sm shadow-xl z-10 border border-border">
+                <div className="font-semibold">{carParts.find(p => p.id === hoveredPart)?.name}</div>
+                <div className="text-xs opacity-90 mt-1">
                   {getStatusText(getPartStatus(hoveredPart))}
-                </span>
+                </div>
+                <div className="text-xs opacity-70 mt-1">Kliko për detaje të plota</div>
               </div>
             )}
           </div>
@@ -354,19 +411,32 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
 
       {/* No data message */}
       {inspectionData.length === 0 && (
-        <Card className="mt-6 border-gray-200 bg-gray-50">
+        <Card className="mt-6 border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900">
           <CardContent className="p-8 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-gray-400 text-2xl">🔍</span>
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-gray-700 dark:to-gray-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <span className="text-blue-500 dark:text-blue-400 text-3xl">🔍</span>
             </div>
-            <h4 className="text-lg font-semibold text-gray-700 mb-2">Nuk ka të dhëna inspektimi</h4>
-            <p className="text-sm text-gray-500">
-              Diagrami do të shfaqë gjendjen e pjesëve kur të disponohen të dhënat e inspektimit.
-              <br />
-              Ngjyrat e pjesëve do të tregojnë gjendjen: e gjelbër (mirë), e verdhë (riparime të vogla),
-              <br />
-              portokalli (riparime të mëdha), dhe e kuqe (kritike/zëvendësim).
+            <h4 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-3">Nuk ka të dhëna inspektimi disponibla</h4>
+            <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
+              Diagrami do të shfaqë gjendjen e pjesëve të automjetit kur të disponohen të dhënat e inspektimit.
             </p>
+            <div className="mt-6 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 max-w-lg mx-auto">
+              <h5 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Kodi i ngjyrave:</h5>
+              <div className="flex flex-wrap justify-center gap-4 text-sm">
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span>Në gjendje të mirë</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                  <span>E riparuar</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 bg-red-600 rounded-full"></div>
+                  <span>E zëvendësuar</span>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
