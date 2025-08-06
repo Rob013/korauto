@@ -1,3 +1,4 @@
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { InstallPrompt } from "./components/InstallPrompt";
 import FloatingPerformanceWidget from "./components/FloatingPerformanceWidget";
 import { useResourcePreloader } from "./hooks/useResourcePreloader";
+import { usePerformanceMonitor } from "./hooks/usePerformanceMonitor";
 
 // Lazy load all pages for better code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -103,6 +105,24 @@ const queryClient = new QueryClient({
 const App = () => {
   // Initialize resource preloading for better performance
   const { preloadRouteResources } = useResourcePreloader();
+  
+  // Initialize performance monitoring
+  const { startTimer, endTimer } = usePerformanceMonitor();
+  
+  // Track app initialization time
+  React.useEffect(() => {
+    const appStartTime = startTimer('app-initialization');
+    
+    // Preload critical routes
+    preloadRouteResources();
+    
+    // End timing when app is fully loaded
+    const timeoutId = setTimeout(() => {
+      endTimer('app-initialization');
+    }, 100);
+    
+    return () => clearTimeout(timeoutId);
+  }, [startTimer, endTimer, preloadRouteResources]);
 
   return (
     <QueryClientProvider client={queryClient}>
