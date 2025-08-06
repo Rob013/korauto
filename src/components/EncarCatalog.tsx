@@ -274,7 +274,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
   };
 
-  const handleFiltersChange = useCallback((newFilters: APIFilters, shouldAutoSearch = false) => {
+  const handleFiltersChange = useCallback((newFilters: APIFilters) => {
     setFilters(newFilters);
     setCurrentPage(1); // Reset to first page when filters change
     
@@ -282,6 +282,29 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setIsSortingGlobal(false);
     setAllCarsForSorting([]);
     
+    // Clear previous data immediately to show loading state
+    setCars([]);
+    
+    // Auto-hide filters on mobile after applying filters, and on all devices when categories are selected
+    if (isMobile && Object.keys(newFilters).length > 0) {
+      setShowFilters(false);
+    } else if (newFilters.manufacturer_id && newFilters.model_id) {
+      // Auto-hide filters on all devices when both manufacturer and model are selected
+      // This will be enhanced by the useEffect that waits for cars to load
+      const hasFilters = Object.values(newFilters).some(value => value !== undefined && value !== "" && value !== null);
+      if (hasFilters) {
+        setTimeout(() => setShowFilters(false), 1000); // Hide after data loads
+      }
+    }
+    
+    // Use 50 cars per page for proper pagination
+    const filtersWithPagination = {
+      ...newFilters,
+      per_page: "50" // Show 50 cars per page
+    };
+    
+    fetchCars(1, filtersWithPagination, true);
+
     // Update URL with all non-empty filter values - properly encode grade filter
     const paramsToSet: any = {};
     Object.entries(newFilters).forEach(([key, value]) => {
@@ -292,53 +315,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     });
     paramsToSet.page = "1";
     setSearchParams(paramsToSet);
-
-    // Only auto-search if explicitly requested (for initial load or clear filters)
-    if (shouldAutoSearch) {
-      // Clear previous data immediately to show loading state
-      setCars([]);
-      
-      // Use 50 cars per page for proper pagination
-      const filtersWithPagination = {
-        ...newFilters,
-        per_page: "50" // Show 50 cars per page
-      };
-      
-      fetchCars(1, filtersWithPagination, true);
-      
-      // Auto-hide filters on mobile after applying filters, and on all devices when categories are selected
-      if (isMobile && Object.keys(newFilters).length > 0) {
-        setShowFilters(false);
-      } else if (newFilters.manufacturer_id && newFilters.model_id) {
-        const hasFilters = Object.values(newFilters).some(value => value !== undefined && value !== "" && value !== null);
-        if (hasFilters) {
-          setTimeout(() => setShowFilters(false), 1000); // Hide after data loads
-        }
-      }
-    }
-  }, [fetchCars, setSearchParams, isMobile, setCars]);
-
-  // New manual search function
-  const handleManualSearch = useCallback(() => {
-    // Clear previous data immediately to show loading state
-    setCars([]);
-    
-    // Use 50 cars per page for proper pagination
-    const filtersWithPagination = {
-      ...filters,
-      per_page: "50" // Show 50 cars per page
-    };
-    
-    fetchCars(1, filtersWithPagination, true);
-    
-    // Auto-hide filters on mobile after searching
-    if (isMobile) {
-      setShowFilters(false);
-    } else if (filters.manufacturer_id && filters.model_id) {
-      // Auto-hide filters on all devices when both manufacturer and model are selected
-      setTimeout(() => setShowFilters(false), 800);
-    }
-  }, [filters, fetchCars, setCars, isMobile, setShowFilters]);
+  }, [fetchCars, setSearchParams, isMobile]);
 
   const handleClearFilters = useCallback(() => {
     setFilters({});
@@ -346,17 +323,16 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setLoadedPages(1);
     setModels([]);
     setGenerations([]);
-    // Auto-search when clearing filters to reset to initial state
-    handleFiltersChange({}, true);
-  }, [handleFiltersChange]);
+    fetchCars(1, {}, true);
+    setSearchParams({});
+  }, [fetchCars, setSearchParams]);
 
   const handleSearch = useCallback(() => {
     const newFilters = {
       ...filters,
       search: searchTerm.trim() || undefined,
     };
-    // Auto-search when explicitly searching by text
-    handleFiltersChange(newFilters, true);
+    handleFiltersChange(newFilters);
   }, [filters, searchTerm, handleFiltersChange]);
 
   const handlePageChange = useCallback((page: number) => {
@@ -467,8 +443,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         search: filters.search,
       };
       setLoadedPages(1);
-      // Don't auto-search when changing manufacturer - require manual search
-      handleFiltersChange(newFilters, false);
+      handleFiltersChange(newFilters);
     } catch (error) {
       console.error('[handleManufacturerChange] Error:', error);
       setModels([]);
@@ -495,8 +470,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           grade_iaai: undefined,
         };
         setLoadedPages(1);
-        // Don't auto-search when clearing model
-        handleFiltersChange(newFilters, false);
+        handleFiltersChange(newFilters);
         setIsLoading(false);
         return;
       }
@@ -509,8 +483,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         grade_iaai: undefined,
       };
       setLoadedPages(1);
-      // Don't auto-search when changing model - require manual search
-      handleFiltersChange(newFilters, false);
+      handleFiltersChange(newFilters);
     } catch (error) {
       setGenerations([]);
     } finally {
@@ -528,8 +501,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           grade_iaai: undefined,
         };
         setLoadedPages(1);
-        // Don't auto-search when clearing generation
-        handleFiltersChange(newFilters, false);
+        handleFiltersChange(newFilters);
         setIsLoading(false);
         return;
       }
@@ -539,8 +511,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         grade_iaai: undefined,
       };
       setLoadedPages(1);
-      // Don't auto-search when changing generation - require manual search
-      handleFiltersChange(newFilters, false);
+      handleFiltersChange(newFilters);
     } catch (error) {
       // nothing
     } finally {
@@ -615,8 +586,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         per_page: "50"
       };
       
-      // Auto-search for initial load
-      await handleFiltersChange(urlFilters, true);
+      await fetchCars(1, initialFilters, true);
 
       setIsRestoringState(false);
 
@@ -829,7 +799,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             generations={generations}
             filterCounts={filterCounts}
             loadingCounts={loadingCounts}
-            onFiltersChange={(newFilters) => handleFiltersChange(newFilters, false)}
+            onFiltersChange={handleFiltersChange}
             onClearFilters={handleClearFilters}
             onManufacturerChange={handleManufacturerChange}
             onModelChange={handleModelChange}
@@ -838,8 +808,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
             onFetchGrades={fetchGrades}
             compact={true}
-            enableManualSearch={true}
-            onManualSearch={handleManualSearch}
           />
           
           {/* Mobile Apply/Close Filters Button - Enhanced */}
@@ -869,13 +837,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     }
                     return;
                   }
-                  // Use manual search if available, otherwise apply filters
-                  if (onManualSearch) {
-                    onManualSearch();
-                  } else if (hasChanges) {
-                    onFiltersChange(pendingFilters);
-                  }
-                  setHasChanges(false);
+                  setShowFilters(false);
                 }}
                 data-mobile-apply-button
                 className={`w-full h-12 text-lg font-semibold relative overflow-hidden transition-all duration-300 ${
@@ -887,8 +849,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               >
                 <span className="relative z-10">
                   {filters.manufacturer_id && filters.model_id
-                    ? `Search Cars`
-                    : "Select Brand & Model"
+                    ? `Shfaq Rezultatet (${cars.length} makina)`
+                    : "Zgjidhni markën dhe modelin"
                   }
                 </span>
                 {/* Subtle animation background for selected state */}
@@ -925,22 +887,23 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
       {/* Main Content */}
       <div className={`flex-1 transition-all duration-300 ${showFilters ? 'lg:ml-0' : 'lg:ml-0'}`}>
-        <div className="container-responsive py-3 sm:py-4 lg:py-6 mobile-text-optimize">
+        <div className="container-responsive py-3 sm:py-6 mobile-text-optimize">
           {/* Header Section - Mobile optimized */}
-          <div className="flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-6">{/* Mobile header - stacked layout */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex flex-col gap-3 mb-4">
+            {/* Mobile header - stacked layout */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => window.history.back()}
-                  className="flex items-center gap-1 hover:bg-primary hover:text-primary-foreground transition-colors h-10 px-3 flex-shrink-0"
+                  className="flex items-center gap-1 hover:bg-primary hover:text-primary-foreground transition-colors h-8 px-2"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  <span className="hidden xs:inline text-sm">Back</span>
+                  <span className="hidden xs:inline text-xs">Back</span>
                 </Button>
                 
-                {/* Filter Toggle Button - Solid styling without animations */}
+                {/* Filter Toggle Button - Enhanced styling and feedback */}
                 <Button
                   variant={showFilters ? "default" : hasSelectedCategories ? "default" : "outline"}
                   size="lg"
@@ -957,9 +920,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     }
                     setShowFilters(!showFilters);
                   }}
-                  className={`flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base flex-1 sm:flex-initial ${
+                  className={`flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base transition-all duration-200 ${
                     hasSelectedCategories 
-                      ? "bg-primary hover:bg-primary/90 text-primary-foreground border-2 border-primary"
+                      ? showFilters 
+                        ? "bg-primary hover:bg-primary/90 text-primary-foreground border-2 border-primary shadow-lg" 
+                        : "bg-primary hover:bg-primary/90 text-primary-foreground border-2 border-primary shadow-lg scale-105 animate-pulse" 
                       : "bg-primary/10 hover:bg-primary hover:text-primary-foreground border-2 border-primary/20 hover:border-primary"
                   }`}
                 >
@@ -967,31 +932,17 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   <span className="hidden xs:inline">Shfaq Filtrat</span>
                   <span className="xs:hidden">Filtrat</span>
                   {hasSelectedCategories && !showFilters && (
-                    <span className="ml-1 text-xs bg-primary-foreground/20 px-2 py-1 rounded-full">
+                    <span className="ml-1 text-xs bg-primary-foreground/20 px-2 py-1 rounded-full animate-bounce">
                       {Object.values(filters).filter(Boolean).length}
                     </span>
                   )}
                 </Button>
-
-                {/* Prominent Clear All Filters Button */}
-                {Object.values(filters).some(Boolean) && (
-                  <Button
-                    variant="destructive"
-                    size="lg"
-                    onClick={handleClearFilters}
-                    className="flex items-center gap-2 h-12 px-3 sm:px-4 lg:px-6 font-semibold text-sm sm:text-base transition-all duration-200 hover:bg-destructive/90 flex-shrink-0"
-                  >
-                    <X className="h-4 w-4" />
-                    <span className="hidden sm:inline">Pastro Filtrat</span>
-                    <span className="sm:hidden">Pastro</span>
-                  </Button>
-                )}
               </div>
               
               {/* View mode and sort - mobile optimized */}
-              <div className="flex gap-2 items-center justify-end w-full sm:w-auto">
+              <div className="flex gap-1 items-center">
                 {/* Sort Control - smaller on mobile */}
-                <div className="relative flex-1 sm:flex-initial">
+                <div className="relative">
                   <ArrowUpDown className="h-3 w-3 absolute left-2 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none" />
                   <AdaptiveSelect
                     value={sortBy}
@@ -999,7 +950,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                       setSortBy(value);
                     }}
                     placeholder="Sort"
-                    className="w-full sm:w-32 h-10 text-sm pl-6"
+                    className="w-24 sm:w-32 h-7 text-xs pl-6"
                     options={getSortOptions().map((option) => ({
                       value: option.value,
                       label: option.label
@@ -1007,39 +958,35 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   />
                 </div>
                 
-                <div className="flex gap-1">
-                  <Button
-                    variant={viewMode === "grid" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setViewMode("grid")}
-                    className="h-10 w-10 p-0"
-                  >
-                    <Grid className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === "list" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setViewMode("list")}
-                    className="h-10 w-10 p-0"
-                  >
-                    <List className="h-4 w-4" />
-                  </Button>
-                </div>
+                <Button
+                  variant={viewMode === "grid" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setViewMode("grid")}
+                  className="h-7 w-7 p-0"
+                >
+                  <Grid className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant={viewMode === "list" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setViewMode("list")}
+                  className="h-7 w-7 p-0"
+                >
+                  <List className="h-3 w-3" />
+                </Button>
               </div>
             </div>
             
             {/* Title and stats - separate row for better mobile layout */}
-            <div className="space-y-2">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            <div className="space-y-1">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 Car Catalog
               </h1>
-              <p className="text-muted-foreground text-sm sm:text-base">
+              <p className="text-muted-foreground text-xs sm:text-sm">
                 {totalCount.toLocaleString()} cars {filters.grade_iaai && filters.grade_iaai !== 'all' ? `filtered by ${filters.grade_iaai}` : 'total'} • Page {currentPage} of {totalPages} • Showing {carsForCurrentPage.length} cars
               </p>
             </div>
           </div>
-
-
 
           {/* Error State */}
           {error && (
@@ -1102,8 +1049,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 ref={containerRef}
                 className={
                   viewMode === "grid"
-                    ? "grid grid-cols-1 xs:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6"
-                    : "space-y-3 sm:space-y-4"
+                    ? "grid mobile-car-grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4"
+                    : "space-y-3"
                 }
               >
                 {carsForCurrentPage.map((car) => {
@@ -1155,19 +1102,18 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex justify-center mt-8">
-                  <div className="flex items-center gap-2 flex-wrap justify-center">
+                <div className="flex justify-center mt-6">
+                  <div className="flex items-center gap-2">
                     <Button
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1 || loading}
                       variant="outline"
                       size="sm"
-                      className="h-10 px-4"
                     >
                       Previous
                     </Button>
                     
-                    <div className="flex items-center gap-1 flex-wrap">
+                    <div className="flex items-center gap-1">
                       {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                         let pageNum;
                         if (totalPages <= 5) {
@@ -1186,7 +1132,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                             onClick={() => handlePageChange(pageNum)}
                             variant={currentPage === pageNum ? "default" : "outline"}
                             size="sm"
-                            className="w-10 h-10"
+                            className="w-10 h-8"
                             disabled={loading}
                           >
                             {pageNum}
@@ -1200,7 +1146,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                       disabled={currentPage === totalPages || loading}
                       variant="outline"
                       size="sm"
-                      className="h-10 px-4"
                     >
                       Next
                     </Button>

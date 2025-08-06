@@ -90,7 +90,6 @@ interface FilterFormProps {
   onToggleAdvanced?: () => void;
   loadingCounts?: boolean;
   onFetchGrades?: (manufacturerId?: string, modelId?: string, generationId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
-  enableManualSearch?: boolean; // New prop to enable manual search mode
 }
 
 const FilterForm = memo<FilterFormProps>(({
@@ -107,8 +106,7 @@ const FilterForm = memo<FilterFormProps>(({
   onGenerationChange,
   showAdvanced = false,
   onToggleAdvanced,
-  onFetchGrades,
-  enableManualSearch = false
+  onFetchGrades
 }) => {
   const [grades, setGrades] = useState<{ value: string; label: string; count?: number }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -117,98 +115,50 @@ const FilterForm = memo<FilterFormProps>(({
   const [gradeLoading, setGradeLoading] = useState(false);
   const [isLoadingGrades, setIsLoadingGrades] = useState(false);
   const latestGradeRequest = useRef(0);
-  
-  // Local state for pending filters when manual search is enabled
-  const [pendingFilters, setPendingFilters] = useState(filters);
-  const [hasChanges, setHasChanges] = useState(false);
 
 
   const updateFilter = useCallback((key: string, value: string) => {
     // Handle special "all" values by converting them to undefined
     const actualValue = value === 'all' || value === 'any' ? undefined : value;
     
-    if (enableManualSearch) {
-      // In manual search mode, update pending filters without triggering search
-      const updatedFilters = { ...pendingFilters };
-      
-      // Handle cascading filters
-      if (key === 'manufacturer_id') {
-        onManufacturerChange?.(actualValue || '');
-        updatedFilters[key] = actualValue;
-        updatedFilters.model_id = undefined;
-        updatedFilters.generation_id = undefined;
-        updatedFilters.grade_iaai = undefined;
-      } else if (key === 'model_id') {
-        onModelChange?.(actualValue || '');
-        updatedFilters[key] = actualValue;
-        updatedFilters.generation_id = undefined;
-        updatedFilters.grade_iaai = undefined;
-      } else {
-        updatedFilters[key] = actualValue;
-        // If generation changes, clear grade filter
-        if (key === 'generation_id') {
-          updatedFilters.grade_iaai = undefined;
-        }
-      }
-      
-      setPendingFilters(updatedFilters);
-      setHasChanges(true);
+    // Set loading state for better UX
+    setIsLoading(true);
+    
+    // Handle cascading filters
+    if (key === 'manufacturer_id') {
+      onManufacturerChange?.(actualValue || '');
+      onFiltersChange({
+        ...filters,
+        [key]: actualValue,
+        model_id: undefined,
+        generation_id: undefined,
+        grade_iaai: undefined // Clear grade when manufacturer changes
+      });
+    } else if (key === 'model_id') {
+      onModelChange?.(actualValue || '');
+      onFiltersChange({
+        ...filters,
+        [key]: actualValue,
+        generation_id: undefined,
+        grade_iaai: undefined // Clear grade when model changes
+      });
     } else {
-      // Original immediate search behavior
-      setIsLoading(true);
+      // For other filters, preserve existing values but update the changed one
+      const updatedFilters = { ...filters, [key]: actualValue };
       
-      // Handle cascading filters
-      if (key === 'manufacturer_id') {
-        onManufacturerChange?.(actualValue || '');
-        onFiltersChange({
-          ...filters,
-          [key]: actualValue,
-          model_id: undefined,
-          generation_id: undefined,
-          grade_iaai: undefined // Clear grade when manufacturer changes
-        });
-      } else if (key === 'model_id') {
-        onModelChange?.(actualValue || '');
-        onFiltersChange({
-          ...filters,
-          [key]: actualValue,
-          generation_id: undefined,
-          grade_iaai: undefined // Clear grade when model changes
-        });
-      } else {
-        // For other filters, preserve existing values but update the changed one
-        const updatedFilters = { ...filters, [key]: actualValue };
-        
-        // If generation changes, clear grade filter
-        if (key === 'generation_id') {
-          updatedFilters.grade_iaai = undefined;
-        }
-        
-        onFiltersChange(updatedFilters);
+      // If generation changes, clear grade filter
+      if (key === 'generation_id') {
+        updatedFilters.grade_iaai = undefined;
       }
       
-      // Clear loading state after a short delay
-      setTimeout(() => setIsLoading(false), 50);
+      onFiltersChange(updatedFilters);
     }
-  }, [filters, pendingFilters, enableManualSearch, onFiltersChange, onManufacturerChange, onModelChange]);
+    
+    // Clear loading state after a short delay
+    setTimeout(() => setIsLoading(false), 50);
+  }, [filters, onFiltersChange, onManufacturerChange, onModelChange]);
 
-  // Manual search trigger function
-  const handleManualSearch = useCallback(() => {
-    if (enableManualSearch && hasChanges) {
-      setIsLoading(true);
-      onFiltersChange(pendingFilters);
-      setHasChanges(false);
-      setTimeout(() => setIsLoading(false), 100);
-    }
-  }, [enableManualSearch, hasChanges, pendingFilters, onFiltersChange]);
-
-  // Reset pending filters when external filters change
-  useEffect(() => {
-    if (enableManualSearch) {
-      setPendingFilters(filters);
-      setHasChanges(false);
-    }
-  }, [filters, enableManualSearch]);
+  const handleBrandChange = async (value: string) => {
     setModelLoading(true);
     setModelError(null);
     updateFilter('manufacturer_id', value);
@@ -388,44 +338,21 @@ const FilterForm = memo<FilterFormProps>(({
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-primary" />
           <h3 className="text-sm sm:text-base font-semibold">Kërkim i mençur</h3>
-          {enableManualSearch && hasChanges && (
-            <Badge variant="secondary" className="text-xs">
-              Ka ndryshime
-            </Badge>
-          )}
         </div>
-        <div className="flex items-center gap-2">
-          {enableManualSearch && (
-            <Button 
-              variant="default"
-              size="sm" 
-              onClick={handleManualSearch}
-              disabled={!hasChanges || isLoading}
-              className="text-xs px-3 py-1 h-7 bg-primary hover:bg-primary/90"
-            >
-              {isLoading ? (
-                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-              ) : (
-                <Search className="h-3 w-3 mr-1" />
-              )}
-              Kërko
-            </Button>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={onClearFilters} 
+          disabled={isLoading}
+          className="text-xs px-2 py-1 h-7"
+        >
+          {isLoading ? (
+            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+          ) : (
+            <X className="h-3 w-3 mr-1" />
           )}
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onClearFilters} 
-            disabled={isLoading}
-            className="text-xs px-2 py-1 h-7"
-          >
-            {isLoading ? (
-              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-            ) : (
-              <X className="h-3 w-3 mr-1" />
-            )}
-            Pastro
-          </Button>
-        </div>
+          Pastro
+        </Button>
       </div>
 
 
