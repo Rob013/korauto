@@ -781,13 +781,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               variant="ghost" 
               size="sm" 
               onClick={() => {
-                // Issue #2 FIXED: Toggle filters with proper text
-                setShowFilters(!showFilters);
+                // Issue #1 FIXED: Clear filters instead of just closing
+                handleClearFilters();
+                setShowFilters(false);
               }}
               className={`lg:hidden flex items-center gap-1 h-8 px-2 ${isMobile ? 'hover:bg-primary-foreground/20 text-primary-foreground' : ''}`}
             >
               <X className="h-3 w-3" />
-              <span className="text-xs">{showFilters ? 'Close' : 'Open'}</span>
+              <span className="text-xs">Clear Filters</span>
             </Button>
           </div>
         </div>
@@ -824,18 +825,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           {/* Mobile Apply/Close Filters Button - Enhanced */}
           {isMobile && (
             <div className="mt-6 pt-4 border-t space-y-3">
-              {/* Apply/Close button */}
-              <Button
-                onClick={() => {
-                  // Issue #1 FIXED: Allow closing filters anytime
-                  setShowFilters(false);
-                }}
-                data-mobile-apply-button
-                className="w-full h-12 text-lg font-semibold relative overflow-hidden transition-all duration-300 bg-primary hover:bg-primary/90 text-primary-foreground"
-                size="lg"
-              >
-                <span className="relative z-10">Mbyll Filtrat</span>
-              </Button>
+              {/* Apply/Close button removed per Issue #3 */}
             </div>
           )}
         </div>
@@ -984,7 +974,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             <>
               <div
                 ref={containerRef}
-                className={`grid mobile-car-grid-compact sm:mobile-car-grid gap-2 sm:gap-3 lg:gap-4 ${
+                className={`grid mobile-car-grid-compact sm:mobile-car-grid gap-2 sm:gap-3 lg:gap-4 transition-all duration-300 ${
                   showFilters 
                     ? 'lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' 
                     : 'lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7'
