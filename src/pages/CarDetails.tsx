@@ -1493,37 +1493,37 @@ const CarDetails = memo(() => {
                                 variant="ghost"
                                 className="w-full justify-between p-3 md:p-4 h-auto group hover:bg-blue-100/50 transition-all duration-300"
                               >
-                                <div className="flex items-center gap-3 min-w-0 flex-1">
-                                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-700 transition-colors flex-shrink-0">
-                                    <Cog className="h-4 w-4 text-white" />
+                                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 pr-2">
+                                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-700 transition-colors flex-shrink-0">
+                                    <Cog className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
                                   </div>
                                   <div className="text-left min-w-0 flex-1">
-                                    <h5 className="text-base md:text-lg font-bold text-foreground inspection-text-black">Motori dhe Sistemi Mekanik</h5>
-                                    <p className="text-muted-foreground text-xs inspection-subtext-black">Kontrolli teknik i komponentëve kryesorë</p>
+                                    <h5 className="text-sm sm:text-base md:text-lg font-bold text-foreground inspection-text-black leading-tight">Motori dhe Sistemi Mekanik</h5>
+                                    <p className="text-muted-foreground text-xs inspection-subtext-black leading-tight hidden sm:block">Kontrolli teknik i komponentëve kryesorë</p>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-2 flex-shrink-0">
+                                <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                                   {!showEngineSection && (
-                                    <div className="flex gap-1">
+                                    <div className="flex gap-0.5 sm:gap-1">
                                       {Object.entries(car.details.inspect.inner).slice(0, 3).map(([key, value], index) => {
                                         const isGood = value === "goodness" || value === "proper" || value === "doesn't exist";
                                         return (
                                           <div
                                             key={index}
-                                            className={`w-2 h-2 rounded-full ${isGood ? 'bg-green-500' : 'bg-red-500'}`}
+                                            className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isGood ? 'bg-green-500' : 'bg-red-500'}`}
                                             title={`${key}: ${value}`}
                                           />
                                         );
                                       })}
                                       {Object.entries(car.details.inspect.inner).length > 3 && (
-                                        <span className="text-xs text-muted-foreground ml-1">
+                                        <span className="text-xs text-muted-foreground ml-0.5 sm:ml-1 hidden xs:inline">
                                           +{Object.entries(car.details.inspect.inner).length - 3}
                                         </span>
                                       )}
                                     </div>
                                   )}
                                   <ChevronDown
-                                    className={`h-4 w-4 md:h-5 md:w-5 text-muted-foreground transition-all duration-300 ${
+                                    className={`h-4 w-4 md:h-5 md:w-5 text-muted-foreground transition-all duration-300 flex-shrink-0 ${
                                       showEngineSection ? "rotate-180 text-primary" : ""
                                     }`}
                                   />
