@@ -109,19 +109,28 @@ const handler = async (req: Request): Promise<Response> => {
       // Add filters to params with validation
       Object.entries(filters).forEach(([key, value]) => {
         if (value && typeof value === 'string' && value.trim()) {
-          let sanitizedValue = value.trim();
+          const originalValue = value.trim();
+          let sanitizedValue = originalValue;
           
-          // Special handling for grade_iaai to preserve spaces and special characters
-          if (key === 'grade_iaai') {
-            // Allow spaces, dots, and common grade characters
-            sanitizedValue = value.trim().replace(/[^\w\-_.@\s]/g, '');
+          // Special handling for grade_iaai to preserve spaces and special characters common in car grades
+          if (key === 'grade_iaai' || key === 'trim_level') {
+            // Allow spaces, dots, parentheses, plus signs, and common grade characters
+            // This preserves values like "M4(+)", "35 TDI", "AMG 63S+", "2.0 TDI", etc.
+            sanitizedValue = originalValue.replace(/[^\w\-_.@\s()+]/g, '');
           } else {
-            // Sanitize other parameter values
-            sanitizedValue = value.trim().replace(/[^\w\-_.@]/g, '');
+            // Sanitize other parameter values more restrictively
+            sanitizedValue = originalValue.replace(/[^\w\-_.@]/g, '');
+          }
+          
+          // Log if value was changed during sanitization
+          if (sanitizedValue !== originalValue) {
+            console.log(`🔍 Sanitized ${key}: "${originalValue}" -> "${sanitizedValue}"`);
           }
           
           if (sanitizedValue) {
             params.append(key, sanitizedValue);
+          } else {
+            console.warn(`⚠️ Parameter ${key} was completely removed during sanitization: "${originalValue}"`);
           }
         }
       });
@@ -161,12 +170,28 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     if (!response.ok) {
-      console.error('❌ API error:', response.status, response.statusText);
+      console.error('❌ API error:', response.status, response.statusText, 'URL:', url);
+      
+      // Provide more specific error messages based on status codes
+      let errorMessage = `API request failed`;
+      if (response.status === 400) {
+        errorMessage = `Invalid request parameters. Please check your filter values.`;
+      } else if (response.status === 401) {
+        errorMessage = `Authentication failed. API key may be invalid.`;
+      } else if (response.status === 404) {
+        errorMessage = `No cars found matching your criteria.`;
+      } else if (response.status === 429) {
+        errorMessage = `Too many requests. Please wait a moment and try again.`;
+      } else if (response.status >= 500) {
+        errorMessage = `Server error. Please try again later.`;
+      }
+      
       return new Response(
         JSON.stringify({ 
-          error: `Upstream API returned ${response.status}: ${response.statusText}`,
+          error: errorMessage,
+          details: `${response.status}: ${response.statusText}`,
           endpoint,
-          url,
+          url: url.replace(/X-API-Key=[^&]+/, 'X-API-Key=***'), // Hide API key in logs
           filters
         }), 
         {
@@ -186,10 +211,23 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error('❌ Error in secure-cars-api function:', error);
     
+    // Provide more helpful error messages based on error type
+    let errorMessage = 'Failed to process request';
+    if (error.name === 'TimeoutError' || error.message?.includes('timeout')) {
+      errorMessage = 'Request timed out. Please try again.';
+    } else if (error.name === 'TypeError' && error.message?.includes('fetch')) {
+      errorMessage = 'Network error. Please check your connection and try again.';
+    } else if (error.message?.includes('JSON')) {
+      errorMessage = 'Invalid response format from API. Please try again.';
+    } else if (error.message) {
+      errorMessage = `Request failed: ${error.message}`;
+    }
+    
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Internal server error',
-        stack: error.stack || null
+        error: errorMessage,
+        type: error.name || 'Unknown',
+        details: error.message || 'Internal server error'
       }), 
       {
         status: 500,
