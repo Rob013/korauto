@@ -97,6 +97,16 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     return true;
   });
   
+  // Track if user has explicitly closed the filter panel to prevent auto-reopening
+  const [hasExplicitlyClosed, setHasExplicitlyClosed] = useState(() => {
+    if (isMobile) {
+      const savedFilterState = sessionStorage.getItem('mobile-filter-panel-state');
+      // If state is explicitly false, user has closed it
+      return savedFilterState === 'false';
+    }
+    return false;
+  });
+  
   const [hasSelectedCategories, setHasSelectedCategories] = useState(false);
 
   // Memoized helper function to extract grades from title
@@ -295,12 +305,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const handleSwipeRightToShowFilters = useCallback(() => {
     if (!showFilters && isMobile) {
       setShowFilters(true);
+      setHasExplicitlyClosed(false); // Reset explicit close flag when opening via swipe
     }
   }, [showFilters, isMobile]);
 
   const handleSwipeLeftToCloseFilters = useCallback(() => {
     if (showFilters && isMobile) {
       setShowFilters(false);
+      setHasExplicitlyClosed(true); // Mark as explicitly closed
     }
   }, [showFilters, isMobile]);
 
@@ -768,8 +780,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   useEffect(() => {
     if (isMobile) {
       sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(showFilters));
+      // Also save explicit close state to maintain consistency
+      sessionStorage.setItem('mobile-filter-explicit-close', JSON.stringify(hasExplicitlyClosed));
     }
-  }, [showFilters, isMobile]);
+  }, [showFilters, hasExplicitlyClosed, isMobile]);
 
   // Clear filter panel state when actually navigating away from catalog
   useEffect(() => {
@@ -777,10 +791,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       // Only clear if we're navigating to a different page (not opening new tabs)
       if (!window.location.pathname.includes('/catalog')) {
         sessionStorage.removeItem('mobile-filter-panel-state');
+        sessionStorage.removeItem('mobile-filter-explicit-close');
       }
     };
 
-    // Clear state when page is refreshed or closed
     const clearStateOnUnload = () => {
       // Don't clear on beforeunload as it might interfere with new tab opening
       // The state will be useful for back navigation
@@ -831,7 +845,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => setShowFilters(false)}
+                onClick={() => {
+                  setShowFilters(false);
+                  setHasExplicitlyClosed(true); // Mark as explicitly closed
+                }}
                 className={`lg:hidden flex items-center gap-1 h-8 px-2 ${isMobile ? 'hover:bg-primary-foreground/20 text-primary-foreground' : ''}`}
               >
                 <X className="h-3 w-3" />
@@ -859,12 +876,15 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             onFetchGrades={fetchGrades}
             compact={true}
             onSearchCars={() => {
-              // Issue #1 FIXED: Hide filter panel after search - always close panel when search is clicked
+              // Issue #2 FIXED: Hide filter panel after search and mark as explicitly closed
+              // This prevents the panel from reopening until user manually opens it
               fetchCars(1, { ...filters, per_page: "50" }, true);
               setShowFilters(false); // Always hide filter panel when search button is clicked
+              setHasExplicitlyClosed(true); // Mark as explicitly closed to prevent auto-reopening
             }}
             onCloseFilter={() => {
               setShowFilters(false);
+              setHasExplicitlyClosed(true); // Mark as explicitly closed
             }}
           />
           
@@ -885,8 +905,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             isMobile ? 'bg-black/70 backdrop-blur-md' : 'bg-black/50 backdrop-blur-sm'
           }`}
           onClick={() => {
-            // Issue #1 FIXED: Allow closing filters anytime via overlay click
+            // Issue #2 FIXED: Allow closing filters anytime via overlay click and mark as explicitly closed
             setShowFilters(false);
+            setHasExplicitlyClosed(true); // Mark as explicitly closed
           }}
         />
       )}
@@ -914,8 +935,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   variant="default"
                   size="lg"
                   onClick={() => {
-                    // Issue #1 FIXED: Allow toggling filters anytime
-                    setShowFilters(!showFilters);
+                    // Issue #2 FIXED: Allow toggling filters manually and reset explicit close flag
+                    const newShowState = !showFilters;
+                    setShowFilters(newShowState);
+                    if (newShowState) {
+                      setHasExplicitlyClosed(false); // Reset explicit close flag when manually opening
+                    } else {
+                      setHasExplicitlyClosed(true); // Mark as explicitly closed when manually closing
+                    }
                   }}
                   className="flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
