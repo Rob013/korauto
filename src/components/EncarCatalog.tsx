@@ -81,7 +81,22 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [isSortingGlobal, setIsSortingGlobal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const isMobile = useIsMobile();
-  const [showFilters, setShowFilters] = useState(!isMobile); // Open by default on desktop, closed on mobile
+  
+  // Initialize showFilters with preserved state for mobile users returning from car details
+  const [showFilters, setShowFilters] = useState(() => {
+    if (isMobile) {
+      // On mobile, try to restore the previous filter panel state
+      const savedFilterState = sessionStorage.getItem('mobile-filter-panel-state');
+      if (savedFilterState !== null) {
+        return JSON.parse(savedFilterState);
+      }
+      // Default to closed on mobile
+      return false;
+    }
+    // Default to open on desktop
+    return true;
+  });
+  
   const [hasSelectedCategories, setHasSelectedCategories] = useState(false);
 
   // Memoized helper function to extract grades from title
@@ -748,6 +763,37 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       }, 1000);
     }
   }, [highlightCarId, cars]);
+
+  // Save filter panel state to sessionStorage on mobile when it changes
+  useEffect(() => {
+    if (isMobile) {
+      sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(showFilters));
+    }
+  }, [showFilters, isMobile]);
+
+  // Clear filter panel state when actually navigating away from catalog
+  useEffect(() => {
+    const clearStateOnNavigation = () => {
+      // Only clear if we're navigating to a different page (not opening new tabs)
+      if (!window.location.pathname.includes('/catalog')) {
+        sessionStorage.removeItem('mobile-filter-panel-state');
+      }
+    };
+
+    // Clear state when page is refreshed or closed
+    const clearStateOnUnload = () => {
+      // Don't clear on beforeunload as it might interfere with new tab opening
+      // The state will be useful for back navigation
+    };
+
+    window.addEventListener('beforeunload', clearStateOnUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', clearStateOnUnload);
+      // Clear state when navigating away from catalog page
+      clearStateOnNavigation();
+    };
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-background">

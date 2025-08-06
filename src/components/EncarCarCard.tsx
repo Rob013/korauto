@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -110,6 +111,7 @@ const EncarCarCard = ({
   const navigate = useNavigate();
   const { setPreviousPage } = useNavigation();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [isLiked, setIsLiked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -133,7 +135,16 @@ const EncarCarCard = ({
   const handleCardClick = () => {
     // Save current page and any filter state before navigating
     setPreviousPage(window.location.pathname + window.location.search);
-    navigate(`/car/${id}`);
+    
+    // On mobile, open in new tab to preserve the current catalog state
+    // On desktop, navigate in the same tab for better user experience
+    if (isMobile) {
+      // Open in new tab on mobile to preserve filter state and scroll position
+      window.open(`/car/${id}`, '_blank');
+    } else {
+      // Navigate in same tab on desktop
+      navigate(`/car/${id}`);
+    }
   };
 
   const handleLikeClick = (e: React.MouseEvent) => {
