@@ -55,7 +55,7 @@ export function InstallPrompt() {
           <div className="flex-1 space-y-2">
             <h3 className="font-semibold text-sm">Install KORAUTO App</h3>
             <p className="text-xs text-muted-foreground">
-              Add KORAUTO to your home screen for quick access to quality cars.
+              Add KORAUTO to your home screen for quick access to premium cars.
             </p>
             <div className="flex gap-2">
               <Button size="sm" onClick={handleInstall} className="flex-1">

@@ -577,7 +577,7 @@ const ModernEncarCatalog = ({ highlightCarId }: ModernEncarCatalogProps = {}) =>
               variant="ghost" 
               size="sm" 
               onClick={() => setShowFilters(false)}
-              className={`h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive transition-colors ${isMobile ? 'text-primary-foreground' : 'text-muted-foreground'}`}
+              className={`lg:hidden h-8 w-8 p-0 ${isMobile ? 'hover:bg-primary-foreground/20 text-primary-foreground' : ''}`}
             >
               <X className="h-4 w-4" />
             </Button>
@@ -721,7 +721,7 @@ const ModernEncarCatalog = ({ highlightCarId }: ModernEncarCatalogProps = {}) =>
                 </div>
                 <div>
                   <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary/70 bg-clip-text text-transparent">
-                    Car Catalog
+                    Premium Car Catalog
                   </h1>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                     <BarChart3 className="h-4 w-4" />
@@ -809,7 +809,7 @@ const ModernEncarCatalog = ({ highlightCarId }: ModernEncarCatalogProps = {}) =>
                 {isRestoringState 
                   ? "We're bringing back your previous search results and position."
                   : isInitialLoad 
-                  ? "Setting up the car catalog with the latest inventory."
+                  ? "Setting up the premium car catalog with the latest inventory."
                   : "Finding the perfect cars that match your criteria."
                 }
               </p>
@@ -826,7 +826,7 @@ const ModernEncarCatalog = ({ highlightCarId }: ModernEncarCatalogProps = {}) =>
                 <div className="space-y-3">
                   <h3 className="text-2xl font-bold">Select Your Dream Car</h3>
                   <p className="text-muted-foreground max-w-md mx-auto">
-                    Choose a brand and model to explore our collection of high-quality vehicles with professional inspection services.
+                    Choose a brand and model to explore our premium collection of high-quality vehicles with professional inspection services.
                   </p>
                 </div>
                 <Button
@@ -884,7 +884,7 @@ const ModernEncarCatalog = ({ highlightCarId }: ModernEncarCatalogProps = {}) =>
                 ref={containerRef}
                 className={
                   viewMode === "grid"
-                    ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 px-2 sm:px-0"
+                    ? "grid grid-cols-1 xs:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 lg:gap-6"
                     : "space-y-4"
                 }
               >

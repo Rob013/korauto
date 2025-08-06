@@ -36,7 +36,7 @@ const HomeSection = () => {
           </h1>
           <p className="text-lg md:text-xl mb-8 text-muted-foreground max-w-3xl mx-auto leading-relaxed animate-fade-in-up delay-100">
             Find your perfect car from South Korea with best price and quality. 
-            Professional inspection services and quality vehicle imports.
+            Professional inspection services and premium vehicle imports.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-10">
