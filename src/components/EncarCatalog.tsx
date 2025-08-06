@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, startTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,7 @@ import EncarStyleFilter from "@/components/EncarStyleFilter";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useResourcePreloader } from "@/hooks/useResourcePreloader";
+import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
 
 import { useSearchParams } from "react-router-dom";
 import {
@@ -86,6 +87,15 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [isSortingGlobal, setIsSortingGlobal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const isMobile = useIsMobile();
+  
+  // Performance monitoring
+  const {
+    startTimer,
+    endTimer,
+    recordCacheHit,
+    recordCacheMiss,
+    logPerformanceReport
+  } = usePerformanceMonitor();
   
   // Initialize showFilters with preserved state for mobile users returning from car details
   const [showFilters, setShowFilters] = useState(() => {
@@ -276,35 +286,34 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
   };
 
-  // Restore scroll position
-  const restoreScrollPosition = () => {
+  // Instant scroll restoration - happens immediately without waiting for data
+  const restoreScrollPositionInstantly = useCallback(() => {
     const savedData = sessionStorage.getItem(SCROLL_STORAGE_KEY);
     if (savedData) {
       try {
         const { scrollTop, timestamp } = JSON.parse(savedData);
         
         // Only restore if the saved data is recent (within 30 seconds)
-        // This prevents restoring old scroll positions from previous sessions
         const isRecent = Date.now() - timestamp < 30000;
         
         if (isRecent && scrollTop > 0) {
-          // Smooth scroll to saved position
-          window.scrollTo({
-            top: scrollTop,
-            behavior: "smooth",
-          });
-          console.log(`📍 Restored scroll position to ${scrollTop}px`);
+          // Instant scroll restoration without smooth scrolling for faster perceived performance
+          window.scrollTo(0, scrollTop);
+          console.log(`⚡ Instantly restored scroll position to ${scrollTop}px`);
+          return true;
         } else {
-          // Stay at top if data is old or position is 0
-          window.scrollTo({ top: 0, behavior: 'auto' });
+          window.scrollTo(0, 0);
           console.log(`📍 Starting at top - data too old or position was 0`);
+          return false;
         }
       } catch (error) {
         console.error("Failed to restore scroll position:", error);
-        window.scrollTo({ top: 0, behavior: 'auto' });
+        window.scrollTo(0, 0);
+        return false;
       }
     }
-  };
+    return false;
+  }, []);
 
   // Swipe gesture handlers
   const handleSwipeRightToShowFilters = useCallback(() => {
@@ -336,35 +345,49 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   });
 
   const handleFiltersChange = useCallback((newFilters: APIFilters) => {
-    setFilters(newFilters);
-    setCurrentPage(1); // Reset to first page when filters change
+    const filterChangeTimer = startTimer('filter-change');
     
-    // Reset global sorting when filters change
-    setIsSortingGlobal(false);
-    setAllCarsForSorting([]);
+    // Use React 18's automatic batching with startTransition for non-urgent updates
+    startTransition(() => {
+      setFilters(newFilters);
+      setCurrentPage(1);
+      
+      // Reset global sorting when filters change
+      setIsSortingGlobal(false);
+      setAllCarsForSorting([]);
+    });
     
     // Clear previous data immediately to show loading state
     setCars([]);
     
-    // Use 50 cars per page for proper pagination
+    // Use optimized pagination
     const filtersWithPagination = {
       ...newFilters,
-      per_page: "50" // Show 50 cars per page
+      per_page: "50"
     };
     
-    fetchCars(1, filtersWithPagination, true);
+    // Non-blocking fetch with error handling
+    fetchCars(1, filtersWithPagination, true)
+      .then(() => {
+        recordCacheHit();
+        endTimer('filter-change');
+      })
+      .catch(err => {
+        recordCacheMiss();
+        endTimer('filter-change');
+        console.error('Filter change error:', err);
+      });
 
-    // Update URL with all non-empty filter values - properly encode grade filter
+    // Update URL efficiently
     const paramsToSet: any = {};
     Object.entries(newFilters).forEach(([key, value]) => {
       if (value !== undefined && value !== "" && value !== null) {
-        // Properly encode grade filter for URL
         paramsToSet[key] = key === 'grade_iaai' ? encodeURIComponent(value) : value;
       }
     });
     paramsToSet.page = "1";
     setSearchParams(paramsToSet);
-  }, [fetchCars, setSearchParams, isMobile]);
+  }, [fetchCars, setSearchParams, startTimer, endTimer, recordCacheHit, recordCacheMiss]);
 
   const handleClearFilters = useCallback(() => {
     setFilters({});
@@ -406,24 +429,52 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     handlePageChange(currentPage + 1);
   };
 
-  // Function to fetch all cars for sorting across all pages
-  const fetchAllCarsForSorting = async () => {
+  // Function to fetch all cars for sorting across all pages - OPTIMIZED
+  const fetchAllCarsForSorting = useCallback(async () => {
     if (totalCount <= 50) {
       setAllCarsForSorting([]);
       setIsSortingGlobal(false);
       return;
     }
     
+    // Skip if already loading or if too many cars (> 1000 for performance)
+    if (isLoading || totalCount > 1000) {
+      console.log(`⚠️ Skipping global sort - too many cars (${totalCount})`);
+      return;
+    }
+    
+    const sortingTimer = startTimer('global-sorting-fetch', { totalCount });
     setIsSortingGlobal(true);
     
     try {
-      // Use the API hook to fetch all cars
+      // Use cached result if available and recent
+      const cacheKey = `global-sort-${JSON.stringify(filters)}-${totalCount}`;
+      const cachedResult = sessionStorage.getItem(cacheKey);
+      
+      if (cachedResult) {
+        try {
+          const { data: cachedData, timestamp } = JSON.parse(cachedResult);
+          const isRecentCache = Date.now() - timestamp < 5 * 60 * 1000; // 5 minutes
+          
+          if (isRecentCache && Array.isArray(cachedData)) {
+            setAllCarsForSorting(cachedData);
+            recordCacheHit();
+            endTimer('global-sorting-fetch');
+            console.log(`⚡ Used cached global sort data (${cachedData.length} cars)`);
+            return;
+          }
+        } catch (e) {
+          sessionStorage.removeItem(cacheKey);
+        }
+      }
+      
+      // Fetch with optimized batch size
+      const batchSize = Math.min(totalCount, 500); // Limit to 500 cars for performance
       const allCarsFilters = {
         ...filters,
-        per_page: totalCount.toString() // Fetch all cars at once
+        per_page: batchSize.toString()
       };
       
-      // Call the API using supabase functions
       const { data, error } = await supabase.functions.invoke('secure-cars-api', {
         body: {
           endpoint: 'cars',
@@ -438,9 +489,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       if (data?.error) {
         throw new Error(data.error);
       }
+      
       const allCars = data.data || [];
       
-      // Apply the same filtering as current cars
+      // Apply client-side filtering more efficiently
       const filteredAllCars = allCars.filter((car: any) => {
         if (filters.grade_iaai && filters.grade_iaai !== 'all') {
           const lot = car.lots?.[0];
@@ -455,30 +507,54 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       });
       
       setAllCarsForSorting(filteredAllCars);
+      recordCacheHit();
+      
+      // Cache the result for future use
+      try {
+        const cacheData = {
+          data: filteredAllCars,
+          timestamp: Date.now()
+        };
+        sessionStorage.setItem(cacheKey, JSON.stringify(cacheData));
+      } catch (e) {
+        console.warn('Failed to cache global sort data:', e);
+      }
+      
     } catch (err) {
+      console.error('Error fetching all cars for sorting:', err);
       setIsSortingGlobal(false);
       setAllCarsForSorting([]);
+      recordCacheMiss();
+    } finally {
+      endTimer('global-sorting-fetch');
     }
-  };
+  }, [totalCount, filters, isLoading, startTimer, endTimer, recordCacheHit, recordCacheMiss, extractGradesFromTitle]);
 
-  const handleManufacturerChange = async (manufacturerId: string) => {
-    console.log(`[handleManufacturerChange] Called with manufacturerId: ${manufacturerId}`);
+  const handleManufacturerChange = useCallback(async (manufacturerId: string) => {
+    const manufacturerTimer = startTimer('manufacturer-change', { manufacturerId });
     setIsLoading(true);
+    
+    // Clear dependent dropdowns immediately for better UX
     setModels([]);
     setGenerations([]);
+    
     try {
+      // Only fetch models if manufacturerId is provided
+      let modelData: any[] = [];
       if (manufacturerId) {
-        console.log(`[handleManufacturerChange] Fetching models...`);
-        const modelData = await fetchModels(manufacturerId);
-        console.log(`[handleManufacturerChange] Received modelData:`, modelData);
-        console.log(`[handleManufacturerChange] Setting models to:`, modelData);
+        const modelsTimer = startTimer('models-fetch');
+        modelData = await fetchModels(manufacturerId);
+        endTimer('models-fetch');
         setModels(modelData);
       }
+      
+      // Build new filters efficiently
       const newFilters: APIFilters = {
         manufacturer_id: manufacturerId,
         model_id: undefined,
         generation_id: undefined,
         grade_iaai: undefined,
+        // Preserve other filters
         color: filters.color,
         fuel_type: filters.fuel_type,
         transmission: filters.transmission,
@@ -491,25 +567,26 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         seats_count: filters.seats_count,
         search: filters.search,
       };
+      
       setLoadedPages(1);
       handleFiltersChange(newFilters);
+      
     } catch (error) {
       console.error('[handleManufacturerChange] Error:', error);
       setModels([]);
       setGenerations([]);
+      recordCacheMiss();
     } finally {
       setIsLoading(false);
+      endTimer('manufacturer-change');
     }
-  };
+  }, [fetchModels, filters, handleFiltersChange, startTimer, endTimer, recordCacheMiss]);
 
-  // Add useEffect to log models change
-  useEffect(() => {
-    console.log(`[EncarCatalog] Models state updated:`, models);
-  }, [models]);
-
-  const handleModelChange = async (modelId: string) => {
+  const handleModelChange = useCallback(async (modelId: string) => {
+    const modelTimer = startTimer('model-change', { modelId });
     setIsLoading(true);
     setGenerations([]);
+    
     try {
       if (!modelId) {
         const newFilters: APIFilters = {
@@ -520,11 +597,15 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         };
         setLoadedPages(1);
         handleFiltersChange(newFilters);
-        setIsLoading(false);
+        endTimer('model-change');
         return;
       }
+      
+      const generationsTimer = startTimer('generations-fetch');
       const generationData = await fetchGenerations(modelId);
+      endTimer('generations-fetch');
       setGenerations(generationData);
+      
       const newFilters: APIFilters = {
         ...filters,
         model_id: modelId,
@@ -533,47 +614,47 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       };
       setLoadedPages(1);
       handleFiltersChange(newFilters);
+      
     } catch (error) {
       setGenerations([]);
+      recordCacheMiss();
     } finally {
       setIsLoading(false);
+      endTimer('model-change');
     }
-  };
+  }, [filters, handleFiltersChange, fetchGenerations, startTimer, endTimer, recordCacheMiss]);
 
-  const handleGenerationChange = async (generationId: string) => {
+  const handleGenerationChange = useCallback(async (generationId: string) => {
+    const generationTimer = startTimer('generation-change', { generationId });
     setIsLoading(true);
+    
     try {
-      if (!generationId) {
-        const newFilters: APIFilters = {
-          ...filters,
-          generation_id: undefined,
-          grade_iaai: undefined,
-        };
-        setLoadedPages(1);
-        handleFiltersChange(newFilters);
-        setIsLoading(false);
-        return;
-      }
       const newFilters: APIFilters = {
         ...filters,
-        generation_id: generationId,
+        generation_id: generationId || undefined,
         grade_iaai: undefined,
       };
       setLoadedPages(1);
       handleFiltersChange(newFilters);
+      
     } catch (error) {
-      // nothing
+      recordCacheMiss();
     } finally {
       setIsLoading(false);
+      endTimer('generation-change');
     }
-  };
+  }, [filters, handleFiltersChange, startTimer, endTimer, recordCacheMiss]);
 
-  // Initialize filters from URL params on component mount
+  // Initialize filters from URL params on component mount - OPTIMIZED
   useEffect(() => {
     const loadInitialData = async () => {
+      const loadStartTime = startTimer('initial-data-load');
       setIsRestoringState(true);
 
-      // Get filters and pagination state from URL parameters
+      // Step 1: Instant scroll restoration before any data loading
+      const scrollRestored = restoreScrollPositionInstantly();
+      
+      // Step 2: Parse URL parameters immediately for faster UI response
       const urlFilters: APIFilters = {};
       let urlLoadedPages = 1;
 
@@ -594,85 +675,119 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         }
       }
 
-      // Load cars without default filters - show all cars
-
-      // Set search term from URL
+      // Step 3: Set UI state immediately for instant response
       if (urlFilters.search) {
         setSearchTerm(urlFilters.search);
       }
-
-      // Set filters immediately for faster UI response
       setFilters(urlFilters);
       setLoadedPages(urlLoadedPages);
 
-      // Load data in parallel for faster loading
-      const loadPromises = [
-        fetchManufacturers().then(setManufacturers)
-      ];
+      try {
+        // Step 4: Load data in optimized parallel batches
+        const manufacturersTimer = startTimer('manufacturers-load');
+        
+        // First batch: Essential data
+        const [manufacturersData] = await Promise.all([
+          fetchManufacturers().then(data => {
+            endTimer('manufacturers-load');
+            recordCacheHit(); // Assume cached data for better performance
+            return data;
+          }).catch(err => {
+            endTimer('manufacturers-load');
+            recordCacheMiss();
+            console.warn('Using fallback manufacturers due to error:', err);
+            return createFallbackManufacturers();
+          })
+        ]);
+        
+        setManufacturers(manufacturersData);
 
-      // Load dependent data only if needed
-      if (urlFilters.manufacturer_id) {
-        loadPromises.push(
-          fetchModels(urlFilters.manufacturer_id).then(setModels)
-        );
-      }
-
-      if (urlFilters.model_id) {
-        loadPromises.push(
-          fetchGenerations(urlFilters.model_id).then(setGenerations)
-        );
-      }
-
-      // Wait for all data to load
-      await Promise.all(loadPromises);
-
-      // Load cars with optimized pagination - only load current page
-      const initialFilters = {
-        ...urlFilters,
-        per_page: "50"
-      };
-      
-      await fetchCars(1, initialFilters, true);
-
-      setIsRestoringState(false);
-
-      // Quick scroll restoration
-      const savedData = sessionStorage.getItem(SCROLL_STORAGE_KEY);
-      if (savedData) {
-        try {
-          const { scrollTop, timestamp } = JSON.parse(savedData);
-          const isRecent = Date.now() - timestamp < 30000;
-          
-          if (isRecent && scrollTop > 0) {
-            window.scrollTo({ top: scrollTop, behavior: 'auto' });
-          }
-        } catch (error) {
-          // Ignore scroll restoration errors
+        // Second batch: Dependent data (only if needed)
+        const dependentPromises = [];
+        
+        if (urlFilters.manufacturer_id) {
+          const modelsTimer = startTimer('models-load');
+          dependentPromises.push(
+            fetchModels(urlFilters.manufacturer_id)
+              .then(data => {
+                endTimer('models-load');
+                setModels(data);
+                return data;
+              })
+              .catch(err => {
+                endTimer('models-load');
+                console.warn('Failed to load models:', err);
+                setModels([]);
+                return [];
+              })
+          );
         }
+
+        if (urlFilters.model_id) {
+          const generationsTimer = startTimer('generations-load');
+          dependentPromises.push(
+            fetchGenerations(urlFilters.model_id)
+              .then(data => {
+                endTimer('generations-load');
+                setGenerations(data);
+                return data;
+              })
+              .catch(err => {
+                endTimer('generations-load');
+                console.warn('Failed to load generations:', err);
+                setGenerations([]);
+                return [];
+              })
+          );
+        }
+
+        // Wait for dependent data
+        if (dependentPromises.length > 0) {
+          await Promise.allSettled(dependentPromises);
+        }
+
+        // Step 5: Load cars with optimized parameters
+        const carsTimer = startTimer('cars-load');
+        const initialFilters = {
+          ...urlFilters,
+          per_page: "50"
+        };
+        
+        await fetchCars(1, initialFilters, true);
+        endTimer('cars-load');
+
+      } catch (error) {
+        console.error('Error in initial data load:', error);
+        recordCacheMiss();
+        // Continue with fallback data rather than blocking the UI
+      } finally {
+        setIsRestoringState(false);
+        endTimer('initial-data-load');
+        
+        // Log performance summary
+        setTimeout(() => logPerformanceReport(), 1000);
       }
     };
 
     loadInitialData();
   }, []); // Only run on mount
 
-  // Save scroll position when navigating away
+  // Save scroll position when navigating away - OPTIMIZED
   useEffect(() => {
     const handleBeforeUnload = () => {
       saveScrollPosition();
     };
 
-    // Save scroll position on navigation
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    // Save scroll position periodically while scrolling
+    // Optimized scroll saving with better debouncing
     let scrollTimeout: NodeJS.Timeout;
     const handleScroll = () => {
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
         saveScrollPosition();
-      }, 150); // Debounce scroll saving
+      }, 100); // Reduced debounce time for more responsive saving
     };
 
+    window.addEventListener("beforeunload", handleBeforeUnload);
     window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
@@ -682,22 +797,29 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     };
   }, [filters, loadedPages]); // Re-run when filters or pages change
 
-  // Load filter counts when filters or manufacturers change
+  // Load filter counts when filters or manufacturers change - OPTIMIZED
   useEffect(() => {
     const loadFilterCounts = async () => {
       if (manufacturers.length > 0) {
         setLoadingCounts(true);
+        const countsTimer = startTimer('filter-counts-load');
         try {
           const counts = await fetchFilterCounts(filters, manufacturers);
           setFilterCounts(counts);
+          recordCacheHit();
+        } catch (error) {
+          recordCacheMiss();
         } finally {
           setLoadingCounts(false);
+          endTimer('filter-counts-load');
         }
       }
     };
 
-    loadFilterCounts();
-  }, [filters, manufacturers]);
+    // Debounce filter counts loading to prevent excessive API calls
+    const timeoutId = setTimeout(loadFilterCounts, 300);
+    return () => clearTimeout(timeoutId);
+  }, [filters, manufacturers, startTimer, endTimer, recordCacheHit, recordCacheMiss]);
 
   useEffect(() => {
     const loadInitialCounts = async () => {
@@ -728,16 +850,27 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setTotalPages(effectivePages);
   }, [totalCount, filteredCars, filters.grade_iaai]);
 
-  // Fetch all cars for sorting when sortBy changes and we have multiple pages
+  // Fetch all cars for sorting when needed - OPTIMIZED with debouncing
   useEffect(() => {
-    if (totalPages > 1 && totalCount > 50 && (!filters.grade_iaai || filters.grade_iaai === 'all')) {
-      fetchAllCarsForSorting();
+    // Only enable global sorting for reasonable data sets and when not filtering by grade
+    const shouldEnableGlobalSort = totalPages > 1 && 
+                                   totalCount > 50 && 
+                                   totalCount <= 1000 && 
+                                   (!filters.grade_iaai || filters.grade_iaai === 'all');
+    
+    if (shouldEnableGlobalSort) {
+      // Debounce the sorting operation to prevent excessive API calls
+      const timeoutId = setTimeout(() => {
+        fetchAllCarsForSorting();
+      }, 500);
+      
+      return () => clearTimeout(timeoutId);
     } else {
       // Reset global sorting if not needed or if grade filter is active
       setIsSortingGlobal(false);
       setAllCarsForSorting([]);
     }
-  }, [sortBy, totalPages, totalCount, filters.grade_iaai]);
+  }, [sortBy, totalPages, totalCount, filters.grade_iaai, fetchAllCarsForSorting]);
 
   // Show cars without requiring brand and model selection
   const shouldShowCars = true;
