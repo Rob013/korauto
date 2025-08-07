@@ -576,8 +576,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       // Removed duplicate car fetches to optimize performance
       const promises = [
         fetchGenerations(modelId).then(generationData => {
+          console.log(`[handleModelChange] Fetched ${generationData.length} generations for model ${modelId}:`, 
+            generationData.map(g => `${g.name} (${g.cars_qty || 0} cars)`));
           setGenerations(generationData);
           return generationData;
+        }).catch(err => {
+          console.error(`[handleModelChange] Error fetching generations for model ${modelId}:`, err);
+          setGenerations([]);
+          return [];
         }),
         fetchCars(1, { ...newFilters, per_page: "50" }, true)
       ];

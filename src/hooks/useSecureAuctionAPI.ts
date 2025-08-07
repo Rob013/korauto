@@ -1315,8 +1315,13 @@ export const useSecureAuctionAPI = () => {
       }
       
       const filteredGenerations = generations.filter(g => g && g.id && g.name);
-      filteredGenerations.sort((a, b) => a.name.localeCompare(b.name));
-      return filteredGenerations;
+      // Ensure cars_qty is always present for proper display
+      const normalizedGenerations = filteredGenerations.map(gen => ({
+        ...gen,
+        cars_qty: gen.cars_qty || 0 // Default to 0 if not provided
+      }));
+      normalizedGenerations.sort((a, b) => a.name.localeCompare(b.name));
+      return normalizedGenerations;
     } catch (err) {
       console.error('[fetchGenerations] Error:', err);
       console.log(`🔄 Using fallback generation data for model ${modelId}`);
