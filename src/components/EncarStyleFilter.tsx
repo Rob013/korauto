@@ -144,7 +144,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
       onFiltersChange(updatedFilters);
     }
     
-    setTimeout(() => setIsLoading(false), 50);
+    // Reduced timeout for better responsiveness
+    setTimeout(() => setIsLoading(false), 100);
   }, [filters, onFiltersChange, onManufacturerChange, onModelChange]);
 
   // Enhanced search handler for consistent catalog navigation
@@ -174,18 +175,18 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   }, [filters, onFiltersChange]);
 
   const currentYear = useMemo(() => new Date().getFullYear(), []);
-  // Fixed: Enhanced year range - show years from current year to 1996, corrected range calculation
-  const years = useMemo(() => Array.from({ length: 30 }, (_, i) => Math.max(currentYear - i, 1996)), [currentYear]);
+  // Fixed: Enhanced year range - show years from current year + 2 to 1996, corrected range calculation  
+  const years = useMemo(() => Array.from({ length: 32 }, (_, i) => Math.max(currentYear + 2 - i, 1996)), [currentYear]);
   
-  // Enhanced year range presets with more options
+  // Enhanced year range presets with more options - Fixed "present" to include future model years
   const yearRangePresets = useMemo(() => [
-    { label: '2022+', from: 2022, to: currentYear },
-    { label: '2020+', from: 2020, to: currentYear },
-    { label: '2018+', from: 2018, to: currentYear },
-    { label: '2015+', from: 2015, to: currentYear },
-    { label: '2010+', from: 2010, to: currentYear },
-    { label: '2005+', from: 2005, to: currentYear },
-    { label: '2000+', from: 2000, to: currentYear },
+    { label: '2022+', from: 2022, to: currentYear + 2 }, // Include future model years
+    { label: '2020+', from: 2020, to: currentYear + 2 },
+    { label: '2018+', from: 2018, to: currentYear + 2 },
+    { label: '2015+', from: 2015, to: currentYear + 2 },
+    { label: '2010+', from: 2010, to: currentYear + 2 },
+    { label: '2005+', from: 2005, to: currentYear + 2 },
+    { label: '2000+', from: 2000, to: currentYear + 2 },
   ], [currentYear]);
 
   // Year options for dropdowns - strict mode aware
@@ -377,6 +378,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   size="sm"
                   className="h-6 px-2 text-xs"
                   onClick={() => handleYearRangePreset(preset)}
+                  title={`From ${preset.from} to present (${preset.to})`} // Added tooltip for clarity
                 >
                   {preset.label}
                 </Button>
@@ -745,6 +747,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                       size="sm"
                       className="h-8 px-3 text-xs"
                       onClick={() => handleYearRangePreset(preset)}
+                      title={`From ${preset.from} to present (${preset.to})`} // Added tooltip for clarity
                     >
                       {preset.label}
                     </Button>
@@ -935,6 +938,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                         size="sm"
                         className="h-7 px-2 text-xs"
                         onClick={() => handleYearRangePreset(preset)}
+                        title={`From ${preset.from} to present (${preset.to})`} // Added tooltip for clarity
                       >
                         {preset.label}
                       </Button>
