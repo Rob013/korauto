@@ -263,48 +263,37 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const mainContentRef = useRef<HTMLDivElement>(null);
   const filterPanelRef = useRef<HTMLDivElement>(null);
 
-  // Save current scroll position
-  const saveScrollPosition = () => {
+  // SIMPLIFIED: More efficient scroll position saving
+  const saveScrollPosition = useCallback(() => {
     if (containerRef.current) {
       const scrollData = {
         scrollTop: window.scrollY,
         timestamp: Date.now(),
-        filters: filters,
-        loadedPages: loadedPages,
       };
       sessionStorage.setItem(SCROLL_STORAGE_KEY, JSON.stringify(scrollData));
     }
-  };
+  }, []);
 
-  // Restore scroll position
-  const restoreScrollPosition = () => {
+  // SIMPLIFIED: Basic scroll restoration without complex timing checks
+  const restoreScrollPosition = useCallback(() => {
     const savedData = sessionStorage.getItem(SCROLL_STORAGE_KEY);
     if (savedData) {
       try {
         const { scrollTop, timestamp } = JSON.parse(savedData);
         
-        // Only restore if the saved data is recent (within 30 seconds)
-        // This prevents restoring old scroll positions from previous sessions
-        const isRecent = Date.now() - timestamp < 30000;
+        // Only restore recent scroll positions (within 10 minutes)
+        const isRecent = Date.now() - timestamp < 600000;
         
         if (isRecent && scrollTop > 0) {
-          // Smooth scroll to saved position
-          window.scrollTo({
-            top: scrollTop,
-            behavior: "smooth",
-          });
-          console.log(`📍 Restored scroll position to ${scrollTop}px`);
+          window.scrollTo({ top: scrollTop, behavior: 'auto' });
         } else {
-          // Stay at top if data is old or position is 0
           window.scrollTo({ top: 0, behavior: 'auto' });
-          console.log(`📍 Starting at top - data too old or position was 0`);
         }
       } catch (error) {
-        console.error("Failed to restore scroll position:", error);
         window.scrollTo({ top: 0, behavior: 'auto' });
       }
     }
-  };
+  }, []);
 
   // Swipe gesture handlers
   const handleSwipeRightToShowFilters = useCallback(() => {
@@ -600,7 +589,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
   };
 
-  // Initialize filters from URL params on component mount
+  // Initialize filters from URL params on component mount - OPTIMIZED
   useEffect(() => {
     const loadInitialData = async () => {
       setIsRestoringState(true);
@@ -630,52 +619,49 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         }
       }
 
-      // Load cars without default filters - show all cars
-
       // Set search term from URL
       if (urlFilters.search) {
         setSearchTerm(urlFilters.search);
       }
 
-      // Set filters immediately for faster UI response
+      // Set filters and pagination immediately for faster UI response
       setFilters(urlFilters);
       setLoadedPages(urlLoadedPages);
 
-      // Load data in parallel for faster loading
-      const loadPromises = [
-        fetchManufacturers().then(setManufacturers)
-      ];
+      try {
+        // PERFORMANCE OPTIMIZATION: Load only essential data first
+        // Load manufacturers immediately (they're cached)
+        const manufacturersData = await fetchManufacturers();
+        setManufacturers(manufacturersData);
 
-      // Load dependent data only if needed
-      if (urlFilters.manufacturer_id) {
-        loadPromises.push(
-          fetchModels(urlFilters.manufacturer_id).then(setModels)
-        );
+        // Load dependent data only if filters exist, in sequence to avoid race conditions
+        if (urlFilters.manufacturer_id) {
+          const modelsData = await fetchModels(urlFilters.manufacturer_id);
+          setModels(modelsData);
+          
+          if (urlFilters.model_id) {
+            const generationsData = await fetchGenerations(urlFilters.model_id);
+            setGenerations(generationsData);
+          }
+        }
+
+        // Load cars last - this is the most expensive operation
+        const initialFilters = {
+          ...urlFilters,
+          per_page: "50"
+        };
+        
+        await fetchCars(1, initialFilters, true);
+
+      } catch (error) {
+        console.error('Error loading initial data:', error);
+      } finally {
+        setIsRestoringState(false);
       }
 
-      if (urlFilters.model_id) {
-        loadPromises.push(
-          fetchGenerations(urlFilters.model_id).then(setGenerations)
-        );
-      }
-
-      // Wait for all data to load
-      await Promise.all(loadPromises);
-
-      // Load cars with optimized pagination - only load current page
-      const initialFilters = {
-        ...urlFilters,
-        per_page: "50"
-      };
-      
-      await fetchCars(1, initialFilters, true);
-
-      setIsRestoringState(false);
-
-      // Handle scrolling based on navigation source
+      // SIMPLIFIED SCROLL RESTORATION for better performance
       if (isFromHomepage) {
         // Always scroll to top when coming from homepage filters
-        console.log('🚀 Catalog: Coming from homepage, scrolling to top');
         window.scrollTo({ top: 0, behavior: 'auto' });
         
         // Remove the fromHomepage flag from URL without causing re-render
@@ -683,44 +669,42 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         newSearchParams.delete('fromHomepage');
         window.history.replaceState({}, '', `${window.location.pathname}?${newSearchParams.toString()}`);
       } else {
-        // Regular scroll restoration for normal catalog usage
-        const savedData = sessionStorage.getItem(SCROLL_STORAGE_KEY);
-        if (savedData) {
-          try {
-            const { scrollTop, timestamp } = JSON.parse(savedData);
-            const isRecent = Date.now() - timestamp < 30000;
-            
-            if (isRecent && scrollTop > 0) {
-              window.scrollTo({ top: scrollTop, behavior: 'auto' });
+        // Quick scroll restoration without complex timing checks
+        setTimeout(() => {
+          const savedData = sessionStorage.getItem(SCROLL_STORAGE_KEY);
+          if (savedData) {
+            try {
+              const { scrollTop } = JSON.parse(savedData);
+              if (scrollTop > 0) {
+                window.scrollTo({ top: scrollTop, behavior: 'auto' });
+              }
+            } catch (error) {
+              // Ignore scroll restoration errors
             }
-          } catch (error) {
-            // Ignore scroll restoration errors
           }
-        }
+        }, 100); // Small delay to ensure DOM is ready
       }
     };
 
     loadInitialData();
   }, []); // Only run on mount
 
-  // Save scroll position when navigating away
+  // OPTIMIZED: Simplified scroll position saving with less frequent updates
   useEffect(() => {
     const handleBeforeUnload = () => {
       saveScrollPosition();
     };
 
-    // Save scroll position on navigation
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    // Save scroll position periodically while scrolling
+    // PERFORMANCE: Less frequent scroll position saving
     let scrollTimeout: NodeJS.Timeout;
     const handleScroll = () => {
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
         saveScrollPosition();
-      }, 150); // Debounce scroll saving
+      }, 500); // Increased debounce time for better performance
     };
 
+    window.addEventListener("beforeunload", handleBeforeUnload);
     window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
@@ -728,9 +712,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       window.removeEventListener("scroll", handleScroll);
       clearTimeout(scrollTimeout);
     };
-  }, [filters, loadedPages]); // Re-run when filters or pages change
+  }, []); // Remove dependencies to prevent unnecessary re-binding
 
-  // Load filter counts when filters or manufacturers change - with debouncing
+  // OPTIMIZED: Load filter counts with reduced API calls and better debouncing
   useEffect(() => {
     const loadFilterCounts = async () => {
       if (manufacturers.length > 0) {
@@ -738,24 +722,29 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         try {
           const counts = await fetchFilterCounts(filters, manufacturers);
           setFilterCounts(counts);
+        } catch (error) {
+          console.error('Error loading filter counts:', error);
         } finally {
           setLoadingCounts(false);
         }
       }
     };
 
-    // Debounce filter counts loading to avoid excessive API calls
-    const timeoutId = setTimeout(loadFilterCounts, 300);
+    // PERFORMANCE: Longer debounce and only load when necessary
+    const timeoutId = setTimeout(loadFilterCounts, 500);
     return () => clearTimeout(timeoutId);
-  }, [filters, manufacturers]);
+  }, [filters, manufacturers.length]); // Only depend on manufacturers.length, not the full array
 
+  // OPTIMIZED: Load initial counts only once when manufacturers are first loaded
   useEffect(() => {
     const loadInitialCounts = async () => {
-      if (manufacturers.length > 0) {
+      if (manufacturers.length > 0 && !filterCounts) { // Only load if not already loaded
         setLoadingCounts(true);
         try {
           const counts = await fetchFilterCounts({}, manufacturers);
           setFilterCounts(counts);
+        } catch (error) {
+          console.error('Error loading initial filter counts:', error);
         } finally {
           setLoadingCounts(false);
         }
@@ -763,7 +752,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     };
 
     loadInitialCounts();
-  }, [manufacturers]);
+  }, [manufacturers.length]); // Only run when manufacturers are first loaded
 
   // Calculate total pages when totalCount or filteredCars changes
   useEffect(() => {
