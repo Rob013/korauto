@@ -170,6 +170,22 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     setTimeout(() => setIsLoading(false), 50);
   }, [filters, onFiltersChange, onManufacturerChange, onModelChange]);
 
+  // Enhanced search handler for consistent catalog navigation
+  const handleSearchClick = useCallback(() => {
+    if (onSearchCars) {
+      onSearchCars();
+    } else if (isHomepage) {
+      // Fallback: if no search handler provided but we're on homepage, redirect to catalog
+      const searchParams = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== '') {
+          searchParams.set(key, value);
+        }
+      });
+      window.location.href = `/catalog?${searchParams.toString()}`;
+    }
+  }, [onSearchCars, isHomepage, filters]);
+
   // Handle year range preset selection
   const handleYearRangePreset = useCallback((preset: { label: string; from: number; to: number }) => {
     const updatedFilters = {
@@ -619,18 +635,16 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           )}
 
           {/* Search Button */}
-          {onSearchCars && (
-            <div className="pt-2 border-t flex-shrink-0">
-              <Button 
-                onClick={onSearchCars} 
-                className="w-full h-8 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs"
-                size="sm"
-              >
-                <Search className="h-3 w-3 mr-1.5" />
-                Search Cars
-              </Button>
-            </div>
-          )}
+          <div className="pt-2 border-t flex-shrink-0">
+            <Button 
+              onClick={handleSearchClick} 
+              className="w-full h-8 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs"
+              size="sm"
+            >
+              <Search className="h-3 w-3 mr-1.5" />
+              Search Cars
+            </Button>
+          </div>
           </div>
         </div>
       </div>
@@ -667,8 +681,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               <AdaptiveSelect 
                 value={filters.manufacturer_id || 'all'} 
                 onValueChange={(value) => updateFilter('manufacturer_id', value)}
-                placeholder="Zgjidhni markën"
+                placeholder={isLoading ? "Loading..." : "Zgjidhni markën"}
                 className="h-11"
+                disabled={isLoading}
                 options={[
                   // In strict mode, show "Të gjitha Markat" only when no specific brand is selected or not in strict mode
                   ...(isStrictMode && filters.manufacturer_id ? [] : [{ value: 'all', label: 'Të gjitha Markat' }]),
@@ -781,19 +796,16 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
           </div>
 
-          {/* Search Button for Homepage */}
-          {onSearchCars && (
-            <div className="mt-4 flex justify-center">
-              <Button 
-                onClick={onSearchCars} 
-                className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-8 py-3 h-12 text-base"
-                size="lg"
-              >
-                <Search className="h-5 w-5 mr-2" />
-                Kërko Makinat
-              </Button>
-            </div>
-          )}
+          <div className="mt-4 flex justify-center">
+            <Button 
+              onClick={handleSearchClick} 
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-8 py-3 h-12 text-base"
+              size="lg"
+            >
+              <Search className="h-5 w-5 mr-2" />
+              Kërko Makinat
+            </Button>
+          </div>
         </div>
       </Card>
     );
