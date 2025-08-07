@@ -793,9 +793,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setTotalPages(effectivePages);
   }, [totalCount, filteredCars, filters.grade_iaai]);
 
-  // Fetch all cars for sorting when sortBy changes - always enable global sorting for accurate results
+  // Fetch all cars for sorting when sortBy changes OR when totalCount first becomes available
+  // This ensures global sorting works on initial load and when sort options change
   useEffect(() => {
     if (totalCount > 50) {
+      console.log(`🔄 Triggering global sorting: totalCount=${totalCount}, sortBy=${sortBy}`);
       fetchAllCarsForSorting();
     } else {
       // Reset global sorting if not needed (small dataset)
