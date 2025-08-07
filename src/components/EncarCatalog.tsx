@@ -213,7 +213,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     return isSortingGlobal && allCarsForSorting.length > 0 ? allCarsForSorting : carsForSorting;
   }, [isSortingGlobal, allCarsForSorting, carsForSorting]);
   
-  // Only apply sorting when filters are selected or sortBy is not 'default'
+  // Apply sorting when filters are selected, otherwise keep natural order
   const effectiveSortBy = useMemo(() => {
     return hasSelectedCategories ? sortBy : 'default';
   }, [hasSelectedCategories, sortBy]);
@@ -1070,11 +1070,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     }}
                     placeholder="Sort"
                     className={`w-24 sm:w-32 h-7 text-xs pl-6 ${!hasSelectedCategories ? 'opacity-60' : ''}`}
-                    disabled={!hasSelectedCategories && sortBy === 'default'}
+                    disabled={false} // Always enable the sorting control
                     options={getSortOptions().map((option) => ({
                       value: option.value,
                       label: option.label,
-                      disabled: !hasSelectedCategories && option.value !== 'default'
+                      disabled: false // Always allow selection, but sorting logic handles when to apply
                     }))}
                   />
                 </div>
@@ -1089,10 +1089,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               <p className="text-muted-foreground text-xs sm:text-sm">
                 {totalCount.toLocaleString()} cars {filters.grade_iaai && filters.grade_iaai !== 'all' ? `filtered by ${filters.grade_iaai}` : 'total'} • Page {currentPage} of {totalPages} • Showing {carsForCurrentPage.length} cars
                 {!hasSelectedCategories && (
-                  <span className="ml-2 text-amber-600 dark:text-amber-400">• Natural order (no sorting)</span>
+                  <span className="ml-2 text-amber-600 dark:text-amber-400">• Natural order (sorting disabled)</span>
                 )}
                 {hasSelectedCategories && sortBy !== 'default' && (
                   <span className="ml-2 text-green-600 dark:text-green-400">• Sorted by {getSortOptions().find(opt => opt.value === sortBy)?.label}</span>
+                )}
+                {hasSelectedCategories && sortBy === 'default' && (
+                  <span className="ml-2 text-blue-600 dark:text-blue-400">• Filtered, no sorting applied</span>
                 )}
               </p>
             </div>
