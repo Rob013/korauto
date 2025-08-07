@@ -22,7 +22,6 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const Contacts = lazy(() => import("./pages/Contacts"));
 const ComponentDemo = lazy(() => import("./pages/ComponentDemo"));
 const DiagramDemo = lazy(() => import("./pages/DiagramDemo"));
-// Removed demo import - was only for testing layout improvements
 const AdminCarSearchDemo = lazy(() => import("./pages/AdminCarSearchDemo"));
 const PerformanceDashboard = lazy(() => import("./components/PerformanceDashboard"));
 
@@ -172,7 +171,6 @@ const App = () => {
                 <DiagramDemo />
               </Suspense>
             } />
-// Remove the demo route since it was just for testing
             <Route path="/admin-search-demo" element={
               <Suspense fallback={<PageSkeleton />}>
                 <AdminCarSearchDemo />
