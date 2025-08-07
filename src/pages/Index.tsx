@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 // Lazy load components for better initial load performance
 const HomeSection = lazy(() => import("@/components/HomeSection"));
-const HomeCarsSection = lazy(() => import("@/components/HomeCarsSection"));
+const SimpleHomeCarsSection = lazy(() => import("@/components/SimpleHomeCarsSection"));
 const InspectionSection = lazy(() => import("@/components/InspectionSection"));
 const ContactSection = lazy(() => import("@/components/ContactSection"));
 const Footer = lazy(() => import("@/components/Footer"));
@@ -79,7 +79,7 @@ const Index = () => {
       </Suspense>
       
       <Suspense fallback={<CarsSectionSkeleton />}>
-        <HomeCarsSection />
+        <SimpleHomeCarsSection />
       </Suspense>
       
       <Suspense fallback={<SectionSkeleton />}>

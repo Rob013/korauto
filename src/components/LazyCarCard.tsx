@@ -2,7 +2,7 @@ import React, { memo, useState, useCallback, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-// import { useNavigation } from "@/contexts/NavigationContext";
+import { useNavigation } from "@/contexts/NavigationContext";
 import { Car, Gauge, Settings, Fuel, Palette, Shield, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -52,7 +52,7 @@ const LazyCarCard = memo(({
   details
 }: LazyCarCardProps) => {
   const navigate = useNavigate();
-  // const { setPreviousPage } = useNavigation();
+  const { setPreviousPage } = useNavigation();
   const { toast } = useToast();
   const [isFavorite, setIsFavorite] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -178,26 +178,26 @@ const LazyCarCard = memo(({
   const handleCardClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // setPreviousPage(window.location.pathname + window.location.search);
+    setPreviousPage(window.location.pathname + window.location.search);
     
     // Issue #1 FIXED: Save filter panel as closed when navigating to car details
     // This prevents the filter panel from reopening when user returns to catalog
     sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
     
     navigate(`/car/${lot}`);
-  }, [lot, navigate]);
+  }, [setPreviousPage, lot, navigate]);
 
   const handleDetailsClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // setPreviousPage(window.location.pathname + window.location.search);
+    setPreviousPage(window.location.pathname + window.location.search);
     
     // Issue #1 FIXED: Save filter panel as closed when navigating to car details
     // This prevents the filter panel from reopening when user returns to catalog
     sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
     
     navigate(`/car/${lot}`);
-  }, [lot, navigate]);
+  }, [setPreviousPage, lot, navigate]);
 
   // Don't render content until intersection
   if (!isIntersecting) {
