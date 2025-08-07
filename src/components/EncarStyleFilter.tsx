@@ -780,6 +780,20 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
 
           </div>
+
+          {/* Search Button for Homepage */}
+          {onSearchCars && (
+            <div className="mt-4 flex justify-center">
+              <Button 
+                onClick={onSearchCars} 
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-8 py-3 h-12 text-base"
+                size="lg"
+              >
+                <Search className="h-5 w-5 mr-2" />
+                Kërko Makinat
+              </Button>
+            </div>
+          )}
         </div>
       </Card>
     );
