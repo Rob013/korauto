@@ -705,7 +705,31 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 )}
               </Label>
               
-              {/* Year Range Preset Buttons for Homepage */}
+              {/* Year Range Dropdowns - moved to top */}
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Nga viti</Label>
+                  <AdaptiveSelect 
+                    value={filters.from_year || 'all'} 
+                    onValueChange={(value) => updateFilter('from_year', value)}
+                    placeholder="Çdo vit"
+                    className="h-9 text-sm"
+                    options={yearOptions}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Deri në vitin</Label>
+                  <AdaptiveSelect 
+                    value={filters.to_year || 'all'} 
+                    onValueChange={(value) => updateFilter('to_year', value)}
+                    placeholder="Çdo vit"
+                    className="h-9 text-sm"
+                    options={yearOptions}
+                  />
+                </div>
+              </div>
+
+              {/* Year Range Preset Buttons for Homepage - moved below dropdowns */}
               <div className="mt-3">
                 <Label className="text-xs text-muted-foreground mb-2 block">Zgjidhni vitet:</Label>
                 <div className="flex flex-wrap gap-1">
@@ -739,30 +763,6 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                       <X className="h-3 w-3" />
                     </Button>
                   )}
-                </div>
-              </div>
-
-              {/* Year Range Dropdowns */}
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Nga viti</Label>
-                  <AdaptiveSelect 
-                    value={filters.from_year || 'all'} 
-                    onValueChange={(value) => updateFilter('from_year', value)}
-                    placeholder="Çdo vit"
-                    className="h-9 text-sm"
-                    options={yearOptions}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Deri në vitin</Label>
-                  <AdaptiveSelect 
-                    value={filters.to_year || 'all'} 
-                    onValueChange={(value) => updateFilter('to_year', value)}
-                    placeholder="Çdo vit"
-                    className="h-9 text-sm"
-                    options={yearOptions}
-                  />
                 </div>
               </div>
             </div>
