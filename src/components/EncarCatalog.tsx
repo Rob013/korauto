@@ -66,6 +66,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     totalCount,
     hasMorePages,
     fetchCars,
+    fetchAllCars, // ✅ Import new function for global sorting
     filters,
     setFilters,
     fetchManufacturers,
@@ -391,7 +392,16 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
     
-    // Fetch cars for the specific page
+    // If global sorting is active, don't fetch new cars - just update the page for slicing
+    if (isSortingGlobal && allCarsForSorting.length > 0) {
+      // Update URL with new page
+      const currentParams = Object.fromEntries(searchParams.entries());
+      currentParams.page = page.toString();
+      setSearchParams(currentParams);
+      return;
+    }
+    
+    // Fetch cars for the specific page (only when not using global sorting)
     const filtersWithPagination = {
       ...filters,
       per_page: "50"
@@ -403,7 +413,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     const currentParams = Object.fromEntries(searchParams.entries());
     currentParams.page = page.toString();
     setSearchParams(currentParams);
-  }, [filters, fetchCars, setSearchParams]);
+  }, [filters, fetchCars, setSearchParams, isSortingGlobal, allCarsForSorting.length]);
 
   const handleLoadMore = () => {
     // For backward compatibility, load next page
@@ -422,37 +432,57 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setIsLoading(true);
     
     try {
-      // Use the existing API hook's createFallbackCars function with no pagination
-      // This will get all cars for the current filters
-      const allCarsFilters = {
-        ...filters,
-        // Remove pagination to get all cars
-      };
+      console.log(`🔄 Global sorting: Fetching all cars for sorting across ${totalPages} pages`);
       
-      // Since we know the API is failing and using fallback data,
-      // we can directly access the fallback cars from the hook
-      // by simulating what the createFallbackCars function does
-      const { createFallbackCars } = await import('../hooks/useSecureAuctionAPI');
-      const allCars = createFallbackCars(allCarsFilters);
+      // Use the new fetchAllCars function to get all cars with current filters
+      const allCars = await fetchAllCars(filters);
       
-      // Apply the same filtering as current cars
+      // Apply the same client-side filtering as the current filtered cars
       const filteredAllCars = allCars.filter((car: any) => {
         if (filters.grade_iaai && filters.grade_iaai !== 'all') {
-          const lot = car.lots?.[0];
-          const grade = lot?.grade_iaai;
-          const title = car.title || lot?.detailed_title || '';
-          const extractedGrades = grade ? [grade] : extractGradesFromTitle(title);
-          return extractedGrades.some(g => 
-            g.toLowerCase().includes(filters.grade_iaai.toLowerCase())
-          );
+          const filterGrade = filters.grade_iaai.toLowerCase().trim();
+          const carGrades: string[] = [];
+          
+          // Extract grades from lots (primary source)
+          if (car.lots && Array.isArray(car.lots)) {
+            car.lots.forEach((lot: any) => {
+              if (lot.grade_iaai) carGrades.push(lot.grade_iaai.trim().toLowerCase());
+            });
+          }
+          
+          // Extract grades from title
+          if (car.title) {
+            const titleGrades = extractGradesFromTitle(car.title);
+            carGrades.push(...titleGrades.map(g => g.toLowerCase()));
+          }
+          
+          // Extract grades from engine field
+          if (car.engine && car.engine.name) {
+            carGrades.push(car.engine.name.trim().toLowerCase());
+          }
+          
+          // Check if any grade matches the filter
+          const matches = carGrades.some(grade => {
+            if (grade === filterGrade) return true;
+            if (grade.includes(filterGrade) || filterGrade.includes(grade)) return true;
+            const gradeNoSpaces = grade.replace(/\s+/g, '');
+            const filterNoSpaces = filterGrade.replace(/\s+/g, '');
+            if (gradeNoSpaces === filterNoSpaces) return true;
+            const gradeParts = grade.split(/\s+/);
+            const filterParts = filterGrade.split(/\s+/);
+            if (gradeParts.some(part => filterParts.includes(part))) return true;
+            return false;
+          });
+          
+          return matches;
         }
         return true;
       });
       
       setAllCarsForSorting(filteredAllCars);
-      console.log(`🔄 Global sorting: Loaded ${filteredAllCars.length} cars for sorting across all pages`);
+      console.log(`✅ Global sorting: Loaded ${filteredAllCars.length} cars for sorting across all pages`);
     } catch (err) {
-      console.error('❌ Error fetching all cars for sorting:', err);
+      console.error('❌ Error fetching all cars for global sorting:', err);
       setIsSortingGlobal(false);
       setAllCarsForSorting([]);
     } finally {
