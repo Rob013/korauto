@@ -458,12 +458,20 @@ export const createFallbackGenerations = (manufacturerName: string): Generation[
       { id: 10006, name: '2nd Gen', from_year: 2010, to_year: 2017, cars_qty: 18, manufacturer_id: 6, model_id: 1003 }
     ],
     'Volkswagen': [
+      // Golf (model_id: 1101)
       { id: 11001, name: 'Mk8', from_year: 2020, to_year: 2024, cars_qty: 34, manufacturer_id: 147, model_id: 1101 },
       { id: 11002, name: 'Mk7', from_year: 2013, to_year: 2019, cars_qty: 23, manufacturer_id: 147, model_id: 1101 },
+      // Jetta (model_id: 1102)
       { id: 11003, name: '7th Gen', from_year: 2019, to_year: 2024, cars_qty: 23, manufacturer_id: 147, model_id: 1102 },
       { id: 11004, name: '6th Gen', from_year: 2011, to_year: 2018, cars_qty: 18, manufacturer_id: 147, model_id: 1102 },
+      // Passat (model_id: 1103)
       { id: 11005, name: 'B8', from_year: 2015, to_year: 2024, cars_qty: 18, manufacturer_id: 147, model_id: 1103 },
-      { id: 11006, name: 'B7', from_year: 2011, to_year: 2014, cars_qty: 12, manufacturer_id: 147, model_id: 1103 }
+      { id: 11006, name: 'B7', from_year: 2011, to_year: 2014, cars_qty: 12, manufacturer_id: 147, model_id: 1103 },
+      // Tiguan (model_id: 1104) - FIX: Add Tiguan-specific generations
+      { id: 11007, name: '2nd Gen', from_year: 2017, to_year: 2024, cars_qty: 15, manufacturer_id: 147, model_id: 1104 },
+      { id: 11008, name: '1st Gen', from_year: 2008, to_year: 2016, cars_qty: 8, manufacturer_id: 147, model_id: 1104 },
+      // Atlas (model_id: 1105)
+      { id: 11009, name: '1st Gen', from_year: 2018, to_year: 2024, cars_qty: 12, manufacturer_id: 147, model_id: 1105 }
     ],
     'Mazda': [
       { id: 12001, name: '4th Gen', from_year: 2019, to_year: 2024, cars_qty: 18, manufacturer_id: 10, model_id: 1201 },
@@ -1259,6 +1267,8 @@ export const useSecureAuctionAPI = () => {
 
   const fetchGenerations = async (modelId: string): Promise<Generation[]> => {
     try {
+      console.log(`🔍 Fetching generations for model ID: ${modelId}`);
+      
       // First try to fetch generations from a dedicated endpoint
       let generationsFromAPI: Generation[] = [];
       try {
@@ -1268,7 +1278,7 @@ export const useSecureAuctionAPI = () => {
           console.log(`🎯 Found ${generationsFromAPI.length} generations from dedicated API endpoint`);
         }
       } catch (err) {
-        console.log('📍 No dedicated generations endpoint, falling back to car data extraction');
+        console.log('📍 No dedicated generations endpoint, using optimized fallback approach');
       }
 
       // If we have API generations with proper year data, use them
@@ -1277,52 +1287,85 @@ export const useSecureAuctionAPI = () => {
         return generationsFromAPI.sort((a, b) => a.name.localeCompare(b.name));
       }
 
-      // If API fails or returns no data, use fallback data immediately
-      // This prevents the long wait and excessive API calls
-      let generations: Generation[];
-      if (generationsFromAPI.length > 0) {
-        // We have API generations but no year data, enhance with fallback data
-        console.log('📊 Using API generations with fallback year data');
-        generations = generationsFromAPI;
-      } else {
-        // No API generations, create fallback data based on model
-        console.log('🔄 Using complete fallback generation data');
+      // OPTIMIZED: Use model-specific fallback approach instead of calling all manufacturer APIs
+      console.log('🚀 Using optimized model-specific fallback generation data');
+      
+      // Get model-specific generations by creating a lookup and filtering
+      const modelIdNum = parseInt(modelId);
+      let generations: Generation[] = [];
+      
+      // Create a comprehensive fallback generation list and filter by model_id
+      const allManufacturerNames = ['BMW', 'Audi', 'Mercedes-Benz', 'Toyota', 'Honda', 'Hyundai', 'Kia', 'Nissan', 'Ford', 'Chevrolet', 'Volkswagen', 'Mazda'];
+      
+      for (const manufacturerName of allManufacturerNames) {
+        const manufacturerGenerations = createFallbackGenerations(manufacturerName);
+        const modelSpecificGenerations = manufacturerGenerations.filter(gen => 
+          gen.model_id === modelIdNum
+        );
         
-        // Get manufacturer name for this model to create appropriate fallback data
-        const manufacturers = await fetchManufacturers();
-        let manufacturerName = '';
-        
-        // Try to find manufacturer from existing models state first (more efficient)
-        for (const manufacturer of manufacturers) {
-          try {
-            const models = await fetchModels(manufacturer.id.toString());
-            if (models.some(m => m.id.toString() === modelId)) {
-              manufacturerName = manufacturer.name;
-              break;
-            }
-          } catch (err) {
-            // Continue checking other manufacturers
-            continue;
+        if (modelSpecificGenerations.length > 0) {
+          console.log(`✅ Found ${modelSpecificGenerations.length} generations for model ${modelId} from ${manufacturerName}`);
+          generations = modelSpecificGenerations;
+          break;
+        }
+      }
+      
+      // If no model-specific generations found, return a minimal fallback
+      if (generations.length === 0) {
+        console.log(`⚠️ No specific generations found for model ${modelId}, using generic fallback`);
+        generations = [
+          { 
+            id: parseInt(modelId) * 1000 + 1, 
+            name: '1st Generation', 
+            from_year: 2010, 
+            to_year: 2018, 
+            cars_qty: 10, 
+            manufacturer_id: undefined, 
+            model_id: modelIdNum 
+          },
+          { 
+            id: parseInt(modelId) * 1000 + 2, 
+            name: '2nd Generation', 
+            from_year: 2018, 
+            to_year: 2024, 
+            cars_qty: 15, 
+            manufacturer_id: undefined, 
+            model_id: modelIdNum 
           }
-        }
-        
-        if (manufacturerName) {
-          generations = createFallbackGenerations(manufacturerName);
-        } else {
-          // If we can't determine manufacturer, provide generic generations
-          generations = createFallbackGenerations('BMW'); // Default to BMW as example
-        }
+        ];
       }
       
       const filteredGenerations = generations.filter(g => g && g.id && g.name);
       filteredGenerations.sort((a, b) => a.name.localeCompare(b.name));
+      console.log(`📊 Returning ${filteredGenerations.length} filtered generations for model ${modelId}`);
       return filteredGenerations;
+      
     } catch (err) {
       console.error('[fetchGenerations] Error:', err);
-      console.log(`🔄 Using fallback generation data for model ${modelId}`);
+      console.log(`🔄 Using minimal fallback generation data for model ${modelId}`);
       
       // Return a minimal set of fallback generations to avoid empty state
-      return createFallbackGenerations('BMW'); // Default fallback
+      const modelIdNum = parseInt(modelId);
+      return [
+        { 
+          id: modelIdNum * 1000 + 1, 
+          name: '1st Generation', 
+          from_year: 2010, 
+          to_year: 2018, 
+          cars_qty: 5, 
+          manufacturer_id: undefined, 
+          model_id: modelIdNum 
+        },
+        { 
+          id: modelIdNum * 1000 + 2, 
+          name: '2nd Generation', 
+          from_year: 2018, 
+          to_year: 2024, 
+          cars_qty: 8, 
+          manufacturer_id: undefined, 
+          model_id: modelIdNum 
+        }
+      ];
     }
   };
 
