@@ -384,29 +384,6 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
             </div>
           </div>
 
-          {/* Year presets - moved under Model */}
-          <div className="space-y-1 filter-section">
-            <Label className="filter-label text-xs text-muted-foreground">Year Range:</Label>
-            <div className="year-buttons flex flex-wrap gap-1">
-              {yearRangePresets.slice(0, 4).map((preset) => (
-                <Button
-                  key={preset.label}
-                  variant={
-                    filters.from_year === preset.from.toString() && 
-                    filters.to_year === preset.to.toString() 
-                      ? "default" 
-                      : "outline"
-                  }
-                  size="sm"
-                  className="h-6 px-2 text-xs"
-                  onClick={() => handleYearRangePreset(preset)}
-                >
-                  {preset.label}
-                </Button>
-              ))}
-            </div>
-          </div>
-
           {/* Enhanced Year Filter - From/To dropdowns */}
           <div className="space-y-1 filter-section">
             <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
