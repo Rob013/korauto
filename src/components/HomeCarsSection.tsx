@@ -23,7 +23,6 @@ import EncarStyleFilter from "@/components/EncarStyleFilter";
 interface APIFilters {
   manufacturer_id?: string;
   model_id?: string;
-  generation_id?: string;
   grade_iaai?: string;
   color?: string;
   fuel_type?: string;
@@ -473,7 +472,6 @@ const HomeCarsSection = memo(() => {
               filters={pendingFilters}
               manufacturers={manufacturers}
               models={models}
-              generations={generations}
               filterCounts={filterCounts}
               onFiltersChange={handleFiltersChange}
               onClearFilters={handleClearFilters}
