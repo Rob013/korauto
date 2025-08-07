@@ -273,6 +273,7 @@ const FilterForm = memo<FilterFormProps>(({
       '16': ['220d', '250', '300', '350', '400', '450', '500', 'AMG'], // Mercedes-Benz
       '1': ['30 TDI', '35 TDI', '40 TDI', '45 TDI', '50 TDI', '55 TFSI', '30 TFSI', '35 TFSI', '40 TFSI', '45 TFSI', '30', '35', '40', '45', '50', '55', 'RS', 'S'], // Audi
       '147': ['1.4 TSI', '1.6 TDI', '1.8 TSI', '2.0 TDI', '2.0 TSI', 'GTI', 'R'], // Volkswagen
+      '148': ['2.0T', '2.5L', '1.8L Hybrid', 'Electric Motor', 'Elite', 'Premium', 'Sport', 'Comfort'], // gjenarta
       '2': ['Civic', 'Accord', 'CR-V', 'HR-V'], // Honda
       '3': ['Corolla', 'Camry', 'RAV4', 'Highlander'], // Toyota
       '4': ['Altima', 'Maxima', 'Rogue', 'Murano'], // Nissan

@@ -346,6 +346,147 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       }],
       status: 1,
       lot_number: 'VW1013'
+    },
+    // Add gjenarta cars
+    {
+      id: 2001,
+      manufacturer: { id: 148, name: 'gjenarta' },
+      model: { id: 2001, name: 'Elite' },
+      generation: { id: 20001, name: 'G1' },
+      year: 2020,
+      title: '2020 gjenarta Elite G1',
+      vin: 'GJN1A7AX1LK123456',
+      color: { name: 'Black' },
+      fuel: { name: 'Gasoline' },
+      transmission: { name: 'Automatic' },
+      engine: { name: '2.0T' },
+      lots: [{
+        buy_now: 22000,
+        odometer: { km: 35000 },
+        images: { normal: ['/images/gjenarta-elite-demo.jpg'] },
+        status: 'Available',
+        lot: 'GJN2001',
+        grade_iaai: 'A',
+        details: {
+          seats_count: 5,
+          year: 2020,
+          badge: 'Elite'
+        }
+      }],
+      status: 1,
+      lot_number: 'GJN2001'
+    },
+    {
+      id: 2002,
+      manufacturer: { id: 148, name: 'gjenarta' },
+      model: { id: 2002, name: 'Premium' },
+      generation: { id: 20002, name: 'P1' },
+      year: 2021,
+      title: '2021 gjenarta Premium P1',
+      vin: 'GJN2B7AX2MK234567',
+      color: { name: 'White' },
+      fuel: { name: 'Gasoline' },
+      transmission: { name: 'Automatic' },
+      engine: { name: '2.5L' },
+      lots: [{
+        buy_now: 25000,
+        odometer: { km: 28000 },
+        images: { normal: ['/images/gjenarta-premium-demo.jpg'] },
+        status: 'Available',
+        lot: 'GJN2002',
+        grade_iaai: 'A',
+        details: {
+          seats_count: 5,
+          year: 2021,
+          badge: 'Premium'
+        }
+      }],
+      status: 1,
+      lot_number: 'GJN2002'
+    },
+    {
+      id: 2003,
+      manufacturer: { id: 148, name: 'gjenarta' },
+      model: { id: 2003, name: 'Sport' },
+      generation: { id: 20003, name: 'S1' },
+      year: 2019,
+      title: '2019 gjenarta Sport S1',
+      vin: 'GJN3C7AX0KK345678',
+      color: { name: 'Red' },
+      fuel: { name: 'Gasoline' },
+      transmission: { name: 'Manual' },
+      engine: { name: '2.0T' },
+      lots: [{
+        buy_now: 19500,
+        odometer: { km: 42000 },
+        images: { normal: ['/images/gjenarta-sport-demo.jpg'] },
+        status: 'Available',
+        lot: 'GJN2003',
+        grade_iaai: 'B',
+        details: {
+          seats_count: 4,
+          year: 2019,
+          badge: 'Sport'
+        }
+      }],
+      status: 1,
+      lot_number: 'GJN2003'
+    },
+    {
+      id: 2004,
+      manufacturer: { id: 148, name: 'gjenarta' },
+      model: { id: 2004, name: 'Comfort' },
+      generation: { id: 20004, name: 'C1' },
+      year: 2022,
+      title: '2022 gjenarta Comfort C1',
+      vin: 'GJN4D7AX3NK456789',
+      color: { name: 'Blue' },
+      fuel: { name: 'Hybrid' },
+      transmission: { name: 'Automatic' },
+      engine: { name: '1.8L Hybrid' },
+      lots: [{
+        buy_now: 27000,
+        odometer: { km: 15000 },
+        images: { normal: ['/images/gjenarta-comfort-demo.jpg'] },
+        status: 'Available',
+        lot: 'GJN2004',
+        grade_iaai: 'A',
+        details: {
+          seats_count: 5,
+          year: 2022,
+          badge: 'Comfort'
+        }
+      }],
+      status: 1,
+      lot_number: 'GJN2004'
+    },
+    {
+      id: 2005,
+      manufacturer: { id: 148, name: 'gjenarta' },
+      model: { id: 2001, name: 'Elite' },
+      generation: { id: 20005, name: 'G2' },
+      year: 2023,
+      title: '2023 gjenarta Elite G2',
+      vin: 'GJN5E7AX4OK567890',
+      color: { name: 'Silver' },
+      fuel: { name: 'Electric' },
+      transmission: { name: 'Automatic' },
+      engine: { name: 'Electric Motor' },
+      lots: [{
+        buy_now: 32000,
+        odometer: { km: 8000 },
+        images: { normal: ['/images/gjenarta-elite-2023-demo.jpg'] },
+        status: 'Available',
+        lot: 'GJN2005',
+        grade_iaai: 'A',
+        details: {
+          seats_count: 5,
+          year: 2023,
+          badge: 'Elite EV'
+        }
+      }],
+      status: 1,
+      lot_number: 'GJN2005'
     }
   ];
 
@@ -473,6 +614,17 @@ export const createFallbackGenerations = (manufacturerName: string): Generation[
       // Atlas (model_id: 1105)
       { id: 11009, name: '1st Gen', from_year: 2018, to_year: 2024, cars_qty: 12, manufacturer_id: 147, model_id: 1105 }
     ],
+    'gjenarta': [
+      // Elite (model_id: 2001)
+      { id: 20001, name: 'G1', from_year: 2018, to_year: 2022, cars_qty: 8, manufacturer_id: 148, model_id: 2001 },
+      { id: 20005, name: 'G2', from_year: 2023, to_year: 2024, cars_qty: 7, manufacturer_id: 148, model_id: 2001 },
+      // Premium (model_id: 2002)
+      { id: 20002, name: 'P1', from_year: 2020, to_year: 2024, cars_qty: 12, manufacturer_id: 148, model_id: 2002 },
+      // Sport (model_id: 2003)
+      { id: 20003, name: 'S1', from_year: 2019, to_year: 2023, cars_qty: 8, manufacturer_id: 148, model_id: 2003 },
+      // Comfort (model_id: 2004)
+      { id: 20004, name: 'C1', from_year: 2021, to_year: 2024, cars_qty: 7, manufacturer_id: 148, model_id: 2004 }
+    ],
     'Mazda': [
       { id: 12001, name: '4th Gen', from_year: 2019, to_year: 2024, cars_qty: 18, manufacturer_id: 10, model_id: 1201 },
       { id: 12002, name: '3rd Gen', from_year: 2014, to_year: 2018, cars_qty: 12, manufacturer_id: 10, model_id: 1201 },
@@ -563,6 +715,12 @@ export const createFallbackModels = (manufacturerName: string): Model[] => {
       { id: 1104, name: 'Tiguan', cars_qty: 23 },
       { id: 1105, name: 'Atlas', cars_qty: 12 }
     ],
+    'gjenarta': [
+      { id: 2001, name: 'Elite', cars_qty: 15 },
+      { id: 2002, name: 'Premium', cars_qty: 12 },
+      { id: 2003, name: 'Sport', cars_qty: 8 },
+      { id: 2004, name: 'Comfort', cars_qty: 7 }
+    ],
     'Mazda': [
       { id: 1201, name: 'Mazda3', cars_qty: 34 },
       { id: 1202, name: 'Mazda6', cars_qty: 23 },
@@ -583,6 +741,7 @@ export const createFallbackManufacturers = () => {
     { id: 16, name: 'Mercedes-Benz', cars_qty: 189 },
     { id: 1, name: 'Audi', cars_qty: 167 },
     { id: 147, name: 'Volkswagen', cars_qty: 134 },
+    { id: 148, name: 'gjenarta', cars_qty: 42 },
     { id: 13, name: 'Porsche', cars_qty: 27 },
     { id: 22, name: 'Opel', cars_qty: 45 },
     
@@ -1295,7 +1454,7 @@ export const useSecureAuctionAPI = () => {
       let generations: Generation[] = [];
       
       // Create a comprehensive fallback generation list and filter by model_id
-      const allManufacturerNames = ['BMW', 'Audi', 'Mercedes-Benz', 'Toyota', 'Honda', 'Hyundai', 'Kia', 'Nissan', 'Ford', 'Chevrolet', 'Volkswagen', 'Mazda'];
+      const allManufacturerNames = ['BMW', 'Audi', 'Mercedes-Benz', 'Toyota', 'Honda', 'Hyundai', 'Kia', 'Nissan', 'Ford', 'Chevrolet', 'Volkswagen', 'gjenarta', 'Mazda'];
       
       for (const manufacturerName of allManufacturerNames) {
         const manufacturerGenerations = createFallbackGenerations(manufacturerName);
