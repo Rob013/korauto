@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -21,7 +22,7 @@ import EncarStyleFilter from "@/components/EncarStyleFilter";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useResourcePreloader } from "@/hooks/useResourcePreloader";
-import { debounce } from "@/utils/performance";
+import { debounce, throttle } from "@/utils/performance";
 
 import { useSearchParams } from "react-router-dom";
 import {
@@ -372,13 +373,17 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   );
 
   const handleFiltersChange = useCallback((newFilters: APIFilters) => {
-    // Update UI immediately for responsiveness
-    setFilters(newFilters);
+    // Use React's concurrent features for better performance
+    React.startTransition(() => {
+      setFilters(newFilters);
+    });
     
     // Clear previous data immediately to show loading state
-    setCars([]);
+    React.startTransition(() => {
+      setCars([]);
+    });
     
-    // Apply filters with debouncing to reduce API calls
+    // Apply filters with optimized debouncing
     debouncedApplyFilters(newFilters);
   }, [debouncedApplyFilters]);
 
@@ -480,10 +485,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const handleManufacturerChange = async (manufacturerId: string) => {
     console.log(`[handleManufacturerChange] Called with manufacturerId: ${manufacturerId}`);
     setIsLoading(true);
-    setModels([]);
-    setGenerations([]);
     
-    // Create new filters immediately for faster UI response
+    // Batch state updates to reduce re-renders
     const newFilters: APIFilters = {
       manufacturer_id: manufacturerId,
       model_id: undefined,
@@ -501,33 +504,44 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       seats_count: filters.seats_count,
       search: filters.search,
     };
-    setFilters(newFilters);
-    setLoadedPages(1);
+    
+    // Update state in a single batch
+    React.startTransition(() => {
+      setFilters(newFilters);
+      setLoadedPages(1);
+      setModels([]);
+      setGenerations([]);
+    });
     
     try {
-      // Only fetch models and cars, skip duplicate calls for grades/trim levels
-      const promises = [];
+      const tasks: Promise<any>[] = [];
       
       if (manufacturerId) {
         console.log(`[handleManufacturerChange] Fetching models...`);
-        promises.push(
+        tasks.push(
           fetchModels(manufacturerId).then(modelData => {
-            console.log(`[handleManufacturerChange] Received modelData:`, modelData);
-            console.log(`[handleManufacturerChange] Setting models to:`, modelData);
-            setModels(modelData);
+            React.startTransition(() => {
+              setModels(modelData);
+            });
             return modelData;
           })
         );
       }
       
-      // Fetch cars with new filters - remove per_page duplicates
-      promises.push(
+      // Fetch cars in parallel with models
+      tasks.push(
         fetchCars(1, { ...newFilters, per_page: "50" }, true)
       );
       
-      await Promise.all(promises);
+      // Wait for all tasks but handle errors gracefully
+      const results = await Promise.allSettled(tasks);
+      const hasErrors = results.some(result => result.status === 'rejected');
       
-      // Update URL after successful data fetch
+      if (hasErrors) {
+        console.warn('[handleManufacturerChange] Some requests failed but continuing with partial data');
+      }
+      
+      // Update URL after data operations
       const paramsToSet: any = {};
       Object.entries(newFilters).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
@@ -538,8 +552,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       
     } catch (error) {
       console.error('[handleManufacturerChange] Error:', error);
-      setModels([]);
-      setGenerations([]);
+      React.startTransition(() => {
+        setModels([]);
+        setGenerations([]);
+      });
     } finally {
       setIsLoading(false);
     }
@@ -552,39 +568,46 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
   const handleModelChange = async (modelId: string) => {
     setIsLoading(true);
-    setGenerations([]);
     
-    // Create new filters immediately for faster UI response
+    // Create new filters and batch state updates
     const newFilters: APIFilters = {
       ...filters,
       model_id: modelId,
       generation_id: undefined,
       grade_iaai: undefined,
     };
-    setFilters(newFilters);
-    setLoadedPages(1);
+    
+    React.startTransition(() => {
+      setFilters(newFilters);
+      setLoadedPages(1);
+      setGenerations([]);
+    });
     
     try {
       if (!modelId) {
-        // Fetch cars with cleared model filter
         await fetchCars(1, { ...newFilters, per_page: "50" }, true);
-        setIsLoading(false);
         return;
       }
       
-      // Fetch generations and cars in parallel for better performance
-      // Removed duplicate car fetches to optimize performance
-      const promises = [
+      // Parallel execution of generations and cars loading
+      const tasks = [
         fetchGenerations(modelId).then(generationData => {
-          setGenerations(generationData);
+          React.startTransition(() => {
+            setGenerations(generationData);
+          });
           return generationData;
         }),
         fetchCars(1, { ...newFilters, per_page: "50" }, true)
       ];
       
-      await Promise.all(promises);
+      const results = await Promise.allSettled(tasks);
+      const hasErrors = results.some(result => result.status === 'rejected');
       
-      // Update URL after successful data fetch
+      if (hasErrors) {
+        console.warn('[handleModelChange] Some requests failed but continuing with partial data');
+      }
+      
+      // Update URL after successful operations
       const paramsToSet: any = {};
       Object.entries(newFilters).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
@@ -595,7 +618,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       
     } catch (error) {
       console.error('[handleModelChange] Error:', error);
-      setGenerations([]);
+      React.startTransition(() => {
+        setGenerations([]);
+      });
     } finally {
       setIsLoading(false);
     }
@@ -604,17 +629,20 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const handleGenerationChange = async (generationId: string) => {
     setIsLoading(true);
     
-    // Create new filters immediately for faster UI response
+    // Create new filters and batch state updates
     const newFilters: APIFilters = {
       ...filters,
       generation_id: generationId,
       grade_iaai: undefined,
     };
-    setFilters(newFilters);
-    setLoadedPages(1);
+    
+    React.startTransition(() => {
+      setFilters(newFilters);
+      setLoadedPages(1);
+    });
     
     try {
-      // Only fetch cars with new generation filter - avoid duplicate API calls
+      // Single optimized API call for cars
       await fetchCars(1, { ...newFilters, per_page: "50" }, true);
       
       // Update URL after successful data fetch
@@ -659,62 +687,73 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         }
       }
 
-      // Load cars without default filters - show all cars
-
-      // Set search term from URL
+      // Set initial state immediately for faster UI response
       if (urlFilters.search) {
         setSearchTerm(urlFilters.search);
       }
-
-      // Set filters immediately for faster UI response
       setFilters(urlFilters);
       setLoadedPages(urlLoadedPages);
 
-      // Load data in parallel for faster loading
-      const loadPromises = [
-        fetchManufacturers().then(setManufacturers)
-      ];
+      // Start with manufacturers loading immediately
+      const manufacturersPromise = fetchManufacturers().then(setManufacturers);
 
-      // Load dependent data only if needed
-      if (urlFilters.manufacturer_id) {
-        loadPromises.push(
-          fetchModels(urlFilters.manufacturer_id).then(setModels)
-        );
-      }
+      // Create optimized loading strategy based on what filters are present
+      const loadingTasks: Promise<any>[] = [manufacturersPromise];
 
-      if (urlFilters.model_id) {
-        loadPromises.push(
+      // Only load dependent data if we have the required parent filters
+      if (urlFilters.manufacturer_id && urlFilters.model_id) {
+        // If we have both manufacturer and model, load them in parallel
+        loadingTasks.push(
+          fetchModels(urlFilters.manufacturer_id).then(setModels),
           fetchGenerations(urlFilters.model_id).then(setGenerations)
         );
+      } else if (urlFilters.manufacturer_id) {
+        // If we only have manufacturer, load models after manufacturers
+        loadingTasks.push(
+          manufacturersPromise.then(() => 
+            fetchModels(urlFilters.manufacturer_id!).then(setModels)
+          )
+        );
       }
 
-      // Wait for all data to load
-      await Promise.all(loadPromises);
-
-      // Load cars with optimized pagination - only load current page
+      // Start loading cars immediately while other data loads
       const initialFilters = {
         ...urlFilters,
         per_page: "50"
       };
       
-      await fetchCars(1, initialFilters, true);
+      const carsPromise = fetchCars(1, initialFilters, true);
+      loadingTasks.push(carsPromise);
+
+      // Load all data in parallel and handle errors gracefully
+      try {
+        await Promise.allSettled(loadingTasks);
+      } catch (error) {
+        console.warn('Some data failed to load during restoration:', error);
+        // Continue with partial data rather than failing completely
+      }
 
       setIsRestoringState(false);
 
-      // Quick scroll restoration
-      const savedData = sessionStorage.getItem(SCROLL_STORAGE_KEY);
-      if (savedData) {
-        try {
-          const { scrollTop, timestamp } = JSON.parse(savedData);
-          const isRecent = Date.now() - timestamp < 30000;
-          
-          if (isRecent && scrollTop > 0) {
-            window.scrollTo({ top: scrollTop, behavior: 'auto' });
+      // Defer scroll restoration to not block the UI
+      setTimeout(() => {
+        const savedData = sessionStorage.getItem(SCROLL_STORAGE_KEY);
+        if (savedData) {
+          try {
+            const { scrollTop, timestamp } = JSON.parse(savedData);
+            const isRecent = Date.now() - timestamp < 30000;
+            
+            if (isRecent && scrollTop > 0) {
+              window.scrollTo({ 
+                top: scrollTop, 
+                behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+              });
+            }
+          } catch (error) {
+            // Ignore scroll restoration errors silently
           }
-        } catch (error) {
-          // Ignore scroll restoration errors
         }
-      }
+      }, 100); // Small delay to ensure DOM is ready
     };
 
     loadInitialData();
@@ -726,18 +765,16 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       saveScrollPosition();
     };
 
-    // Save scroll position on navigation
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    // Save scroll position periodically while scrolling
+    // Optimized scroll position saving with throttling
     let scrollTimeout: NodeJS.Timeout;
-    const handleScroll = () => {
+    const handleScroll = throttle(() => {
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
         saveScrollPosition();
-      }, 150); // Debounce scroll saving
-    };
+      }, 300); // Reduced frequency for better performance
+    }, 150); // Throttle scroll events
 
+    window.addEventListener("beforeunload", handleBeforeUnload);
     window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
@@ -747,7 +784,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     };
   }, [filters, loadedPages]); // Re-run when filters or pages change
 
-  // Load filter counts when filters or manufacturers change - with debouncing
+  // Load filter counts when filters or manufacturers change - with optimized debouncing
   useEffect(() => {
     const loadFilterCounts = async () => {
       if (manufacturers.length > 0) {
@@ -761,8 +798,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       }
     };
 
-    // Debounce filter counts loading to avoid excessive API calls
-    const timeoutId = setTimeout(loadFilterCounts, 300);
+    // Increased debounce time to reduce API calls during rapid filter changes
+    const timeoutId = setTimeout(loadFilterCounts, 500);
     return () => clearTimeout(timeoutId);
   }, [filters, manufacturers]);
 
@@ -1069,13 +1106,18 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             </div>
           )}
 
-          {/* Loading State */}
+          {/* Loading State - Enhanced for restoration */}
           {(loading && cars.length === 0) || isRestoringState ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin mr-2" />
-              <span>
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin mr-2 mb-2" />
+              <span className="text-base font-medium">
                 {isRestoringState ? "Restoring your view..." : "Loading cars..."}
               </span>
+              {isRestoringState && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Applying your previous filters and settings
+                </p>
+              )}
             </div>
           ) : null}
 
