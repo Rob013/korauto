@@ -157,18 +157,18 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
         generation_id: undefined,
         grade_iaai: undefined
       });
+    } else if (key === 'generation_id') {
+      // Enhanced: Call onGenerationChange for proper generation handling
+      onGenerationChange?.(actualValue || '');
+      const updatedFilters = { ...filters, [key]: actualValue, grade_iaai: undefined };
+      onFiltersChange(updatedFilters);
     } else {
       const updatedFilters = { ...filters, [key]: actualValue };
-      
-      if (key === 'generation_id') {
-        updatedFilters.grade_iaai = undefined;
-      }
-      
       onFiltersChange(updatedFilters);
     }
     
     setTimeout(() => setIsLoading(false), 50);
-  }, [filters, onFiltersChange, onManufacturerChange, onModelChange]);
+  }, [filters, onFiltersChange, onManufacturerChange, onModelChange, onGenerationChange]);
 
   // Enhanced search handler for consistent catalog navigation
   const handleSearchClick = useCallback(() => {
@@ -398,7 +398,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               options={[
                 // In strict mode, show "All Generations" only when no specific generation is selected or not in strict mode
                 ...(isStrictMode && filters.generation_id ? [] : [{ value: 'all', label: 'All Generations' }]),
-                ...generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => ({
+                // Enhanced: Show all generations, don't filter by cars_qty as it may be inaccurate or missing
+                ...generations.map((generation) => ({
                   value: generation.id.toString(),
                   label: `${generation.name}${generation.from_year ? (() => {
                     const from = generation.from_year.toString();
@@ -406,7 +407,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     // Show 'present' if to_year is current year or later, or missing
                     const to = (!generation.to_year || generation.to_year >= currentYear) ? 'present' : generation.to_year.toString();
                     return ` (${from}-${to})`;
-                  })() : ''}`
+                  })() : ''}${generation.cars_qty ? ` (${generation.cars_qty})` : ''}`
                 }))
               ]}
             />
@@ -743,14 +744,15 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 options={[
                   // In strict mode, show "Të gjitha Gjeneratat" only when no specific generation is selected or not in strict mode
                   ...(isStrictMode && filters.generation_id ? [] : [{ value: 'all', label: 'Të gjitha Gjeneratat' }]),
-                  ...generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => ({
+                  // Enhanced: Show all generations, don't filter by cars_qty as it may be inaccurate or missing
+                  ...generations.map((generation) => ({
                     value: generation.id.toString(),
                     label: `${generation.name}${generation.from_year ? (() => {
                       const from = generation.from_year.toString();
                       const currentYear = new Date().getFullYear();
                       const to = (!generation.to_year || generation.to_year >= currentYear) ? 'present' : generation.to_year.toString();
                       return ` (${from}-${to})`;
-                    })() : ''}`
+                    })() : ''}${generation.cars_qty ? ` (${generation.cars_qty})` : ''}`
                   }))
                 ]}
               />
@@ -952,7 +954,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   options={[
                     // In strict mode, show "Të gjitha Gjeneratat" only when no specific generation is selected or not in strict mode
                     ...(isStrictMode && filters.generation_id ? [] : [{ value: 'all', label: 'Të gjitha Gjeneratat' }]),
-                    ...generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => ({
+                    // Enhanced: Show all generations, don't filter by cars_qty as it may be inaccurate or missing
+                    ...generations.map((generation) => ({
                       value: generation.id.toString(),
                       label: `${generation.name}${generation.from_year ? (() => {
                         const from = generation.from_year.toString();
@@ -960,7 +963,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                         // Show 'present' if to_year is current year or later, or missing
                         const to = (!generation.to_year || generation.to_year >= currentYear) ? 'present' : generation.to_year.toString();
                         return ` (${from}-${to})`;
-                      })() : ''}`
+                      })() : ''}${generation.cars_qty ? ` (${generation.cars_qty})` : ''}`
                     }))
                   ]}
                 />

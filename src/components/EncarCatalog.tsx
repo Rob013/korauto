@@ -603,18 +603,20 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
   const handleGenerationChange = async (generationId: string) => {
     setIsLoading(true);
+    console.log(`🎯 Generation changed to: ${generationId}`);
     
     // Create new filters immediately for faster UI response
     const newFilters: APIFilters = {
       ...filters,
-      generation_id: generationId,
+      generation_id: generationId === 'all' ? undefined : generationId,
       grade_iaai: undefined,
     };
     setFilters(newFilters);
     setLoadedPages(1);
     
     try {
-      // Only fetch cars with new generation filter - avoid duplicate API calls
+      // Enhanced: fetch cars with generation filtering for immediate response
+      console.log(`🔄 Fetching cars for generation: ${generationId || 'all'}`);
       await fetchCars(1, { ...newFilters, per_page: "50" }, true);
       
       // Update URL after successful data fetch
@@ -626,8 +628,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       });
       setSearchParams(paramsToSet);
       
+      console.log(`✅ Successfully loaded cars for generation: ${generationId || 'all'}`);
+      
     } catch (error) {
       console.error('[handleGenerationChange] Error:', error);
+      setError(`Failed to load cars for selected generation: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
     }

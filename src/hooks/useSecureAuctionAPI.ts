@@ -1201,10 +1201,16 @@ export const useSecureAuctionAPI = () => {
       
       // IMPORTANT: Remove grade_iaai and trim_level from server request - we'll do client-side filtering
       // This prevents backend errors and ensures we get all cars for client-side filtering
+      // BUT keep generation_id for server-side filtering to improve performance
       const selectedVariant = newFilters.grade_iaai;
       const selectedTrimLevel = newFilters.trim_level;
       delete apiFilters.grade_iaai;
       delete apiFilters.trim_level;
+      
+      // Enhanced logging for generation filtering
+      if (apiFilters.generation_id) {
+        console.log(`🎯 Server-side generation filtering for generation ID: ${apiFilters.generation_id}`);
+      }
 
       console.log(`🔄 Fetching cars - Page ${page} with filters:`, apiFilters);
       const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
@@ -1428,7 +1434,65 @@ export const useSecureAuctionAPI = () => {
     try {
       console.log(`🔍 Fetching generations for model ID: ${modelId}`);
       
-      // First try to fetch generations from a dedicated endpoint
+      // ENHANCED: First try to get generations by fetching actual cars and extracting unique generations
+      let generationsFromCars: Generation[] = [];
+      try {
+        console.log(`📊 Fetching cars to extract real generation data for model ${modelId}`);
+        const carsResponse = await makeSecureAPICall('cars', {
+          model_id: modelId,
+          per_page: '1000', // Get enough cars to find all generations
+          simple_paginate: '0'
+        });
+        
+        if (carsResponse.data && Array.isArray(carsResponse.data)) {
+          const cars = carsResponse.data;
+          console.log(`🎯 Found ${cars.length} cars for model ${modelId}`);
+          
+          // Extract unique generations from actual cars
+          const generationMap = new Map<number, Generation>();
+          
+          cars.forEach(car => {
+            if (car.generation && car.generation.id && car.generation.name) {
+              const genId = car.generation.id;
+              if (!generationMap.has(genId)) {
+                generationMap.set(genId, {
+                  id: genId,
+                  name: car.generation.name,
+                  model_id: parseInt(modelId),
+                  manufacturer_id: car.manufacturer?.id,
+                  from_year: car.year,
+                  to_year: car.year,
+                  cars_qty: 1
+                });
+              } else {
+                const existing = generationMap.get(genId)!;
+                existing.cars_qty! += 1;
+                // Update year range
+                if (car.year && car.year < (existing.from_year || 9999)) {
+                  existing.from_year = car.year;
+                }
+                if (car.year && car.year > (existing.to_year || 0)) {
+                  existing.to_year = car.year;
+                }
+              }
+            }
+          });
+          
+          generationsFromCars = Array.from(generationMap.values());
+          console.log(`✅ Extracted ${generationsFromCars.length} real generations from cars: ${generationsFromCars.map(g => g.name).join(', ')}`);
+        }
+      } catch (err) {
+        console.log('📍 Could not extract generations from cars, trying dedicated endpoint');
+      }
+
+      // If we found real generations from cars, use them
+      if (generationsFromCars.length > 0) {
+        console.log('🎯 Using real generations extracted from actual car data');
+        generationsFromCars.sort((a, b) => a.name.localeCompare(b.name));
+        return generationsFromCars;
+      }
+      
+      // Fallback: try to fetch generations from a dedicated endpoint
       let generationsFromAPI: Generation[] = [];
       try {
         const generationResponse = await makeSecureAPICall(`generations/${modelId}`, {});
@@ -1441,8 +1505,8 @@ export const useSecureAuctionAPI = () => {
       }
 
       // If we have API generations with proper year data, use them
-      if (generationsFromAPI.length > 0 && generationsFromAPI.some(g => g.from_year || g.to_year)) {
-        console.log('✅ Using generations with real API year data');
+      if (generationsFromAPI.length > 0) {
+        console.log('✅ Using generations from API endpoint');
         return generationsFromAPI.sort((a, b) => a.name.localeCompare(b.name));
       }
 
@@ -1454,7 +1518,7 @@ export const useSecureAuctionAPI = () => {
       let generations: Generation[] = [];
       
       // Create a comprehensive fallback generation list and filter by model_id
-      const allManufacturerNames = ['BMW', 'Audi', 'Mercedes-Benz', 'Toyota', 'Honda', 'Hyundai', 'Kia', 'Nissan', 'Ford', 'Chevrolet', 'Volkswagen', 'gjenarta', 'Mazda'];
+      const allManufacturerNames = ['BMW', 'Audi', 'Mercedes-Benz', 'Toyota', 'Honda', 'Hyundai', 'Kia', 'Nissan', 'Ford', 'Chevrolet', 'Volkswagen', 'Mazda'];
       
       for (const manufacturerName of allManufacturerNames) {
         const manufacturerGenerations = createFallbackGenerations(manufacturerName);
@@ -1478,7 +1542,7 @@ export const useSecureAuctionAPI = () => {
             name: '1st Generation', 
             from_year: 2010, 
             to_year: 2018, 
-            cars_qty: 10, 
+            cars_qty: 5, 
             manufacturer_id: undefined, 
             model_id: modelIdNum 
           },
@@ -1487,7 +1551,7 @@ export const useSecureAuctionAPI = () => {
             name: '2nd Generation', 
             from_year: 2018, 
             to_year: 2024, 
-            cars_qty: 15, 
+            cars_qty: 8, 
             manufacturer_id: undefined, 
             model_id: modelIdNum 
           }
