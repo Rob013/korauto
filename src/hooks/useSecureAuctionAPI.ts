@@ -149,6 +149,203 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       grade_iaai: 'A',
       seats_count: 5,
       accidents_count: 0
+    },
+    // Add Volkswagen cars to fix filter issue
+    {
+      id: 1007,
+      manufacturer: { id: 147, name: 'Volkswagen' },
+      model: { id: 1104, name: 'Tiguan' },
+      generation: { id: 11001, name: '2nd Gen (5N)' },
+      year: 2019,
+      title: '2019 Volkswagen Tiguan 2nd Gen',
+      vin: 'WVGBV7AX9KW123456',
+      color: { name: 'White' },
+      fuel: { name: 'Gasoline' },
+      transmission: { name: 'Automatic' },
+      engine: { name: '2.0T' },
+      lots: [{
+        buy_now: 18500,
+        odometer: { km: 48000 },
+        images: { normal: ['/images/vw-tiguan-demo.jpg'] },
+        status: 'Available',
+        lot: 'VW1007',
+        grade_iaai: 'A',
+        details: {
+          seats_count: 5,
+          year: 2019,
+          badge: 'SEL'
+        }
+      }],
+      status: 1,
+      lot_number: 'VW1007'
+    },
+    {
+      id: 1008,
+      manufacturer: { id: 147, name: 'Volkswagen' },
+      model: { id: 1104, name: 'Tiguan' },
+      generation: { id: 11002, name: '2nd Gen (5N)' },
+      year: 2020,
+      title: '2020 Volkswagen Tiguan SEL Premium',
+      vin: 'WVGBV7AX1LW234567',
+      color: { name: 'Black' },
+      fuel: { name: 'Gasoline' },
+      transmission: { name: 'Automatic' },
+      engine: { name: '2.0T' },
+      lots: [{
+        buy_now: 21000,
+        odometer: { km: 35000 },
+        images: { normal: ['/images/vw-tiguan-2020-demo.jpg'] },
+        status: 'Available',
+        lot: 'VW1008',
+        grade_iaai: 'A',
+        details: {
+          seats_count: 7,
+          year: 2020,
+          badge: 'SEL Premium'
+        }
+      }],
+      status: 1,
+      lot_number: 'VW1008'
+    },
+    {
+      id: 1009,
+      manufacturer: { id: 147, name: 'Volkswagen' },
+      model: { id: 1103, name: 'Passat' },
+      generation: { id: 11003, name: 'B8' },
+      year: 2017,
+      title: '2017 Volkswagen Passat B8',
+      vin: 'WVGAV7A37HC123789',
+      color: { name: 'Silver' },
+      fuel: { name: 'Gasoline' },
+      transmission: { name: 'Automatic' },
+      engine: { name: '1.8T' },
+      lots: [{
+        buy_now: 15500,
+        odometer: { km: 62000 },
+        images: { normal: ['/images/vw-passat-demo.jpg'] },
+        status: 'Available',
+        lot: 'VW1009',
+        grade_iaai: 'B',
+        details: {
+          seats_count: 5,
+          year: 2017,
+          badge: 'SE'
+        }
+      }],
+      status: 1,
+      lot_number: 'VW1009'
+    },
+    {
+      id: 1010,
+      manufacturer: { id: 147, name: 'Volkswagen' },
+      model: { id: 1103, name: 'Passat' },
+      generation: { id: 11004, name: 'B8' },
+      year: 2021,
+      title: '2021 Volkswagen Passat R-Line',
+      vin: 'WVGAV7A35MC456890',
+      color: { name: 'Blue' },
+      fuel: { name: 'Gasoline' },
+      transmission: { name: 'Automatic' },
+      engine: { name: '2.0T' },
+      lots: [{
+        buy_now: 19000,
+        odometer: { km: 28000 },
+        images: { normal: ['/images/vw-passat-2021-demo.jpg'] },
+        status: 'Available',
+        lot: 'VW1010',
+        grade_iaai: 'A',
+        details: {
+          seats_count: 5,
+          year: 2021,
+          badge: 'R-Line'
+        }
+      }],
+      status: 1,
+      lot_number: 'VW1010'
+    },
+    {
+      id: 1011,
+      manufacturer: { id: 147, name: 'Volkswagen' },
+      model: { id: 1101, name: 'Golf' },
+      generation: { id: 11005, name: 'Mk8' },
+      year: 2022,
+      title: '2022 Volkswagen Golf GTI Mk8',
+      vin: 'WVWZZZ1KZ5W567123',
+      color: { name: 'Red' },
+      fuel: { name: 'Gasoline' },
+      transmission: { name: 'Manual' },
+      engine: { name: '2.0T' },
+      lots: [{
+        buy_now: 24000,
+        odometer: { km: 15000 },
+        images: { normal: ['/images/vw-golf-gti-demo.jpg'] },
+        status: 'Available',
+        lot: 'VW1011',
+        grade_iaai: 'A',
+        details: {
+          seats_count: 5,
+          year: 2022,
+          badge: 'GTI'
+        }
+      }],
+      status: 1,
+      lot_number: 'VW1011'
+    },
+    {
+      id: 1012,
+      manufacturer: { id: 147, name: 'Volkswagen' },
+      model: { id: 1102, name: 'Jetta' },
+      generation: { id: 11006, name: 'A7' },
+      year: 2020,
+      title: '2020 Volkswagen Jetta SEL',
+      vin: 'WVWDB4A69LK789456',
+      color: { name: 'Gray' },
+      fuel: { name: 'Gasoline' },
+      transmission: { name: 'Automatic' },
+      engine: { name: '1.4T' },
+      lots: [{
+        buy_now: 16500,
+        odometer: { km: 40000 },
+        images: { normal: ['/images/vw-jetta-demo.jpg'] },
+        status: 'Available',
+        lot: 'VW1012',
+        grade_iaai: 'B',
+        details: {
+          seats_count: 5,
+          year: 2020,
+          badge: 'SEL'
+        }
+      }],
+      status: 1,
+      lot_number: 'VW1012'
+    },
+    {
+      id: 1013,
+      manufacturer: { id: 147, name: 'Volkswagen' },
+      model: { id: 1105, name: 'Atlas' },
+      generation: { id: 11007, name: '1st Gen' },
+      year: 2021,
+      title: '2021 Volkswagen Atlas SEL Premium',
+      vin: 'WVGBR7AX4MK890567',
+      color: { name: 'White' },
+      fuel: { name: 'Gasoline' },
+      transmission: { name: 'Automatic' },
+      engine: { name: '3.6L VR6' },
+      lots: [{
+        buy_now: 28000,
+        odometer: { km: 32000 },
+        images: { normal: ['/images/vw-atlas-demo.jpg'] },
+        status: 'Available',
+        lot: 'VW1013',
+        grade_iaai: 'A',
+        details: {
+          seats_count: 8,
+          year: 2021,
+          badge: 'SEL Premium'
+        }
+      }],
+      status: 1,
+      lot_number: 'VW1013'
     }
   ];
 
