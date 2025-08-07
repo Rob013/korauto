@@ -2,8 +2,8 @@ import React, { memo, useState, useCallback, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
-import { CarBadges, CarDetails, CarCardActions } from "@/components/shared";
-import { BaseCarProps } from "@/types/car";
+import { CarBadges, CarDetails, CarCardActions, CarIcons } from "@/components/shared";
+import { BaseCarProps, formatPrice } from "@/types/car";
 import { OptimizedImage } from "@/components/OptimizedImage";
 
 interface LazyCarCardProps extends BaseCarProps {
@@ -37,7 +37,7 @@ const LazyCarCard = memo(({
   const { setPreviousPage } = useNavigation();
   const { toast } = useToast();
   const [isFavorite, setIsFavorite] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ id: string } | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isIntersecting, setIsIntersecting] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -223,7 +223,7 @@ const LazyCarCard = memo(({
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-muted">
-            <Car className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
+            <CarIcons.Car className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
           </div>
         )}
         
@@ -246,7 +246,7 @@ const LazyCarCard = memo(({
             onClick={handleFavoriteToggle}
             className="absolute top-1 sm:top-2 left-1 sm:left-2 p-1.5 sm:p-2 bg-black/50 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
           >
-            <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+            <CarIcons.Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
           </button>
         )}
       </div>
@@ -261,48 +261,36 @@ const LazyCarCard = memo(({
           )}
         </div>
 
-        {/* Vehicle Info - More compact */}
-        <div className="space-y-0.5 sm:space-y-1 mb-2 sm:mb-3 card-details text-xs">
-          {mileage && (
-            <div className="flex items-center gap-1">
-              <Gauge className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
-              <span className="truncate">{mileage}</span>
-            </div>
-          )}
-          {transmission && (
-            <div className="flex items-center gap-1">
-              <Settings className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate">{transmission}</span>
-            </div>
-          )}
-          {fuel && (
-            <div className="flex items-center gap-1">
-              <Fuel className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate">{fuel}</span>
-            </div>
-          )}
-          {color && (
-            <div className="flex items-center gap-1">
-              <Palette className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate">{color}</span>
-            </div>
-          )}
+        {/* Vehicle Info using shared CarDetails component */}
+        <div className="mb-2 sm:mb-3">
+          <CarDetails
+            price={price}
+            final_price={final_price}
+            year={year}
+            mileage={mileage}
+            transmission={transmission}
+            fuel={fuel}
+            color={color}
+            layout="vertical"
+            showIcons={true}
+            className="text-xs card-details"
+          />
         </div>
 
-        {/* Status Indicators - More compact */}
-        {insurance_v2?.accidentCnt === 0 && (
-          <div className="mb-1.5 sm:mb-2">
-            <Badge variant="secondary" className="text-xs px-1.5 sm:px-2 py-0">
-              <Shield className="h-2 w-2 mr-1" />
-              Clean Record
-            </Badge>
-          </div>
-        )}
+        {/* Status Indicators using shared badges */}
+        <div className="mb-1.5 sm:mb-2">
+          <CarBadges 
+            status={status}
+            sale_status={sale_status}
+            accidentCount={insurance_v2?.accidentCnt}
+            className="text-xs"
+          />
+        </div>
 
-        {/* Pricing - More compact */}
+        {/* Pricing using shared formatter */}
         <div className="flex flex-col gap-0.5 sm:gap-1 mb-1.5 sm:mb-2">
           <span className="card-price text-base sm:text-lg lg:text-xl font-bold text-primary">
-            €{price.toLocaleString()}
+            €{formatPrice(price, final_price)}
           </span>
           <span className="text-xs text-muted-foreground">
             Deri ne portin e Durresit
