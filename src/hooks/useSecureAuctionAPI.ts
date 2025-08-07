@@ -517,6 +517,36 @@ export const createFallbackCars = (filters: any = {}): any[] => {
     filteredCars = filteredCars.filter(car => car.color.toLowerCase() === filters.color.toLowerCase());
   }
 
+  // Create additional cars programmatically for testing multi-page sorting
+  const baseLength = filteredCars.length;
+  if (baseLength > 0 && baseLength < 100) {
+    // Duplicate and modify existing cars to create 100+ cars for testing
+    const additionalCars = [];
+    for (let i = 0; i < 85; i++) {
+      const baseCar = filteredCars[i % baseLength];
+      const newId = 2000 + i;
+      const priceVariation = Math.floor(Math.random() * 10000) + 10000; // Random price between 10k-20k
+      const yearVariation = 2015 + (i % 9); // Years 2015-2023
+      const mileageVariation = Math.floor(Math.random() * 80000) + 20000; // Random mileage
+      
+      const newCar = {
+        ...baseCar,
+        id: newId, // Ensure unique ID
+        year: yearVariation,
+        title: `${yearVariation} ${baseCar.manufacturer.name} ${baseCar.model.name} Test ${i + 1}`,
+        lots: baseCar.lots ? [{
+          ...baseCar.lots[0],
+          buy_now: priceVariation,
+          odometer: { km: mileageVariation },
+          lot: `TEST${newId}`,
+        }] : undefined,
+        lot_number: `TEST${newId}`
+      };
+      additionalCars.push(newCar);
+    }
+    filteredCars = [...filteredCars, ...additionalCars];
+  }
+
   return filteredCars;
 };
 
@@ -1319,20 +1349,27 @@ export const useSecureAuctionAPI = () => {
       
       // Use fallback car data when API fails
       console.log("🔄 Using fallback car data due to API failure");
-      const fallbackCars = createFallbackCars(newFilters);
+      const allFallbackCars = createFallbackCars(newFilters);
       
-      console.log(`✅ Loaded ${fallbackCars.length} fallback cars with filters:`, 
+      // Enable pagination for fallback data to test multi-page sorting
+      const perPage = parseInt(newFilters.per_page || '50');
+      const startIndex = (page - 1) * perPage;
+      const endIndex = startIndex + perPage;
+      const paginatedCars = allFallbackCars.slice(startIndex, endIndex);
+      const totalPages = Math.ceil(allFallbackCars.length / perPage);
+      
+      console.log(`✅ Loaded ${paginatedCars.length} fallback cars from page ${page} (${allFallbackCars.length} total) with filters:`, 
         Object.entries(newFilters).filter(([key, value]) => value !== undefined).map(([key, value]) => `${key}=${value}`).join(', '));
       
-      // Set fallback cars with proper metadata
-      setTotalCount(fallbackCars.length);
-      setHasMorePages(false); // No pagination for fallback data
+      // Set fallback cars with proper pagination metadata
+      setTotalCount(allFallbackCars.length);
+      setHasMorePages(page < totalPages);
       
       if (resetList || page === 1) {
-        setCars(fallbackCars);
+        setCars(paginatedCars);
         setCurrentPage(1);
       } else {
-        setCars((prev) => [...prev, ...fallbackCars]);
+        setCars((prev) => [...prev, ...paginatedCars]);
         setCurrentPage(page);
       }
       
