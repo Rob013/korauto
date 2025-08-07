@@ -36,6 +36,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface APIFilters {
   manufacturer_id?: string;
   model_id?: string;
+  generation_id?: string;
   grade_iaai?: string;
   trim_level?: string;
   color?: string;
@@ -50,6 +51,7 @@ interface APIFilters {
   buy_now_price_to?: string;
   search?: string;
   seats_count?: string;
+  max_accidents?: string;
 }
 
 interface EncarCatalogProps {

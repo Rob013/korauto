@@ -514,7 +514,10 @@ export const createFallbackCars = (filters: any = {}): any[] => {
   }
   
   if (filters.color) {
-    filteredCars = filteredCars.filter(car => car.color.toLowerCase() === filters.color.toLowerCase());
+    filteredCars = filteredCars.filter(car => {
+      const colorName = typeof (car as any).color === 'string' ? (car as any).color : (car as any).color?.name;
+      return colorName && colorName.toLowerCase() === filters.color!.toLowerCase();
+    });
   }
 
   // Create additional cars programmatically for testing multi-page sorting
@@ -1028,6 +1031,7 @@ interface Model {
   id: number;
   name: string;
   car_count?: number;
+  cars_qty?: number;
 }
 
 interface Generation {
@@ -2357,44 +2361,60 @@ export const useSecureAuctionAPI = () => {
     newFilters: APIFilters = filters
   ): Promise<any[]> => {
     try {
-      // Create API filters without pagination to get all cars
-      const apiFilters = {
-        ...newFilters,
-        // Remove pagination parameters to get all cars
-        page: undefined,
-        per_page: undefined,
-        simple_paginate: "0",
-      };
-      
-      // Remove grade_iaai and trim_level from server request for client-side filtering
+      // Build base filters and remove client-only fields
+      const baseFilters: any = { ...newFilters };
       const selectedVariant = newFilters.grade_iaai;
       const selectedTrimLevel = newFilters.trim_level;
-      delete apiFilters.grade_iaai;
-      delete apiFilters.trim_level;
+      delete baseFilters.grade_iaai;
+      delete baseFilters.trim_level;
 
-      console.log(`🔄 Fetching ALL cars for global sorting with filters:`, apiFilters);
-      const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
+      const perPage = '100';
 
-      // Apply client-side variant filtering if a variant is selected
-      let filteredCars = data.data || [];
+      // 1) Fetch first page to discover pagination
+      const firstPageFilters = {
+        ...baseFilters,
+        page: '1',
+        per_page: perPage,
+        simple_paginate: '0',
+      };
+
+      console.log(`🔄 Fetching ALL cars (page 1) for global sorting with filters:`, firstPageFilters);
+      const first: APIResponse = await makeSecureAPICall('cars', firstPageFilters);
+
+      let allCars = first.data || [];
+      const lastPage = first.meta?.last_page || 1;
+
+      // 2) If more pages, fetch the rest in parallel
+      if (lastPage > 1) {
+        const pageNumbers = Array.from({ length: lastPage - 1 }, (_, i) => i + 2);
+        const responses = await Promise.all(
+          pageNumbers.map((p) =>
+            makeSecureAPICall('cars', {
+              ...baseFilters,
+              page: p.toString(),
+              per_page: perPage,
+              simple_paginate: '0',
+            }) as Promise<APIResponse>
+          )
+        );
+
+        responses.forEach((r) => {
+          if (r?.data?.length) allCars = allCars.concat(r.data);
+        });
+      }
+
+      // 3) Apply client-side variant and trim filters
+      let filteredCars = allCars;
+
       if (selectedVariant && selectedVariant !== 'all') {
         console.log(`🔍 Applying client-side variant filter: "${selectedVariant}"`);
-        
-        filteredCars = filteredCars.filter(car => {
+        filteredCars = filteredCars.filter((car) => {
           if (car.lots && Array.isArray(car.lots)) {
-            return car.lots.some(lot => {
-              if (lot.grade_iaai && lot.grade_iaai.trim() === selectedVariant) {
-                return true;
-              }
-              if (lot.details && lot.details.badge && lot.details.badge.trim() === selectedVariant) {
-                return true;
-              }
-              if (car.engine && car.engine.name && car.engine.name.trim() === selectedVariant) {
-                return true;
-              }
-              if (car.title && car.title.toLowerCase().includes(selectedVariant.toLowerCase())) {
-                return true;
-              }
+            return car.lots.some((lot) => {
+              if (lot.grade_iaai && lot.grade_iaai.trim() === selectedVariant) return true;
+              if (lot.details && lot.details.badge && lot.details.badge.trim() === selectedVariant) return true;
+              if (car.engine && car.engine.name && car.engine.name.trim() === selectedVariant) return true;
+              if (car.title && car.title.toLowerCase().includes(selectedVariant.toLowerCase())) return true;
               return false;
             });
           }
@@ -2402,50 +2422,37 @@ export const useSecureAuctionAPI = () => {
         });
       }
 
-      // Apply client-side trim level filtering if a trim level is selected
       if (selectedTrimLevel && selectedTrimLevel !== 'all') {
         console.log(`🔍 Applying client-side trim level filter: "${selectedTrimLevel}"`);
-        
-        filteredCars = filteredCars.filter(car => {
+        filteredCars = filteredCars.filter((car) => {
           if (car.lots && Array.isArray(car.lots)) {
-            const hasMatchInLots = car.lots.some(lot => {
-              if (lot.details && lot.details.badge && 
-                  lot.details.badge.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
-                return true;
-              }
-              if (lot.grade_iaai && 
-                  lot.grade_iaai.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
-                return true;
-              }
+            const hasMatchInLots = car.lots.some((lot) => {
+              if (lot.details && lot.details.badge && lot.details.badge.toLowerCase().includes(selectedTrimLevel.toLowerCase())) return true;
+              if (lot.grade_iaai && lot.grade_iaai.toLowerCase().includes(selectedTrimLevel.toLowerCase())) return true;
               return false;
             });
             if (hasMatchInLots) return true;
           }
-          if (car.title && car.title.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
-            return true;
-          }
+          if (car.title && car.title.toLowerCase().includes(selectedTrimLevel.toLowerCase())) return true;
           return false;
         });
       }
 
-      console.log(`✅ Fetched ${filteredCars.length} cars for global sorting`);
+      console.log(`✅ Fetched ${filteredCars.length} cars for global sorting (aggregated across ${lastPage} pages)`);
       return filteredCars;
-      
     } catch (err: any) {
-      console.error("❌ API Error fetching all cars:", err);
-      
-      if (err.message === "RATE_LIMITED") {
-        // Retry once after rate limit
+      console.error('❌ API Error fetching all cars:', err);
+
+      if (err.message === 'RATE_LIMITED') {
         try {
           await delay(2000);
           return fetchAllCars(newFilters);
         } catch (retryErr) {
-          console.error("❌ Retry failed:", retryErr);
+          console.error('❌ Retry failed:', retryErr);
         }
       }
-      
-      // Use fallback car data when API fails
-      console.log("🔄 Using fallback car data for global sorting due to API failure");
+
+      console.log('🔄 Using fallback car data for global sorting due to API failure');
       return createFallbackCars(newFilters);
     }
   };

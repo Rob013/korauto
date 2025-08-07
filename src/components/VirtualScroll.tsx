@@ -14,7 +14,7 @@ interface VirtualScrollProps<T> {
 /**
  * Virtual scrolling component for performance with large lists
  */
-export function VirtualScroll<T>({
+export function VirtualScroll<T,>({
   items,
   itemHeight,
   containerHeight,
@@ -100,7 +100,7 @@ export function VirtualScroll<T>({
 /**
  * Hook for managing virtual scroll state
  */
-export const useVirtualScroll = <T>(
+export const useVirtualScroll = <T,>(
   items: T[],
   itemHeight: number,
   containerHeight: number
@@ -165,7 +165,7 @@ interface VirtualGridProps<T> {
   gap?: number;
 }
 
-export function VirtualGrid<T>({
+export function VirtualGrid<T,>({
   items,
   itemHeight,
   itemWidth,
