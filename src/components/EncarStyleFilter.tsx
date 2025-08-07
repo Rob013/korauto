@@ -38,20 +38,9 @@ interface Model {
   cars_qty?: number;
 }
 
-interface Generation {
-  cars_qty?: number;
-  from_year?: number;
-  id: number;
-  manufacturer_id?: number;
-  model_id?: number;
-  name: string;
-  to_year?: number;
-}
-
 interface FilterCounts {
   manufacturers: { [key: string]: number };
   models: { [key: string]: number };
-  generations: { [key: string]: number };
   colors: { [key: string]: number };
   fuelTypes: { [key: string]: number };
   transmissions: { [key: string]: number };
@@ -62,7 +51,6 @@ interface EncarStyleFilterProps {
   filters: {
     manufacturer_id?: string;
     model_id?: string;
-    generation_id?: string;
     grade_iaai?: string;
     trim_level?: string;
     color?: string;
@@ -81,18 +69,16 @@ interface EncarStyleFilterProps {
   };
   manufacturers: Manufacturer[];
   models?: Model[];
-  generations?: Generation[];
   filterCounts?: FilterCounts;
   onFiltersChange: (filters: any) => void;
   onClearFilters: () => void;
   onManufacturerChange?: (manufacturerId: string) => void;
   onModelChange?: (modelId: string) => void;
-  onGenerationChange?: (generationId: string) => void;
   showAdvanced?: boolean;
   onToggleAdvanced?: () => void;
   loadingCounts?: boolean;
-  onFetchGrades?: (manufacturerId?: string, modelId?: string, generationId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
-  onFetchTrimLevels?: (manufacturerId?: string, modelId?: string, generationId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
+  onFetchGrades?: (manufacturerId?: string, modelId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
+  onFetchTrimLevels?: (manufacturerId?: string, modelId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
   isHomepage?: boolean;
   compact?: boolean;
   onSearchCars?: () => void;
@@ -103,14 +89,12 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   filters,
   manufacturers,
   models = [],
-  generations = [],
   filterCounts,
   loadingCounts = false,
   onFiltersChange,
   onClearFilters,
   onManufacturerChange,
   onModelChange,
-  onGenerationChange,
   showAdvanced = false,
   onToggleAdvanced,
   onFetchGrades,
@@ -128,7 +112,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
   // Track if strict filtering mode is enabled
   const isStrictMode = useMemo(() => {
-    return !!(filters.manufacturer_id || filters.model_id || filters.generation_id || 
+    return !!(filters.manufacturer_id || filters.model_id || 
               filters.color || filters.fuel_type || filters.transmission || 
               filters.from_year || filters.to_year || filters.buy_now_price_from || 
               filters.buy_now_price_to || filters.odometer_from_km || filters.odometer_to_km ||
@@ -146,7 +130,6 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
         ...filters,
         [key]: actualValue,
         model_id: undefined,
-        generation_id: undefined,
         grade_iaai: undefined
       });
     } else if (key === 'model_id') {
@@ -154,16 +137,10 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
       onFiltersChange({
         ...filters,
         [key]: actualValue,
-        generation_id: undefined,
         grade_iaai: undefined
       });
     } else {
       const updatedFilters = { ...filters, [key]: actualValue };
-      
-      if (key === 'generation_id') {
-        updatedFilters.grade_iaai = undefined;
-      }
-      
       onFiltersChange(updatedFilters);
     }
     
@@ -258,7 +235,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   useEffect(() => {
     if (filters.manufacturer_id && onFetchGrades) {
       setIsLoadingGrades(true);
-      onFetchGrades(filters.manufacturer_id, filters.model_id, filters.generation_id)
+      onFetchGrades(filters.manufacturer_id, filters.model_id)
         .then(gradesData => {
           if (Array.isArray(gradesData)) {
             setGrades(gradesData);
@@ -273,12 +250,12 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
       setGrades([]);
       setIsLoadingGrades(false);
     }
-  }, [filters.manufacturer_id, filters.model_id, filters.generation_id, onFetchGrades]);
+  }, [filters.manufacturer_id, filters.model_id, onFetchGrades]);
 
   // Fetch trim levels when filters change
   useEffect(() => {
     if (filters.manufacturer_id && onFetchTrimLevels) {
-      onFetchTrimLevels(filters.manufacturer_id, filters.model_id, filters.generation_id)
+      onFetchTrimLevels(filters.manufacturer_id, filters.model_id)
         .then(trimLevelsData => {
           if (Array.isArray(trimLevelsData)) {
             setTrimLevels(trimLevelsData);
@@ -291,7 +268,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     } else {
       setTrimLevels([]);
     }
-  }, [filters.manufacturer_id, filters.model_id, filters.generation_id, onFetchTrimLevels]);
+  }, [filters.manufacturer_id, filters.model_id, onFetchTrimLevels]);
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => 
@@ -384,56 +361,30 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
             />
           </div>
 
+          {/* Year presets - Fast year selections under model */}
           <div className="space-y-1 filter-section">
-            <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-              <Calendar className="h-2.5 w-2.5" />
-              Generation
-            </Label>
-            <AdaptiveSelect 
-              value={filters.generation_id || 'all'} 
-              onValueChange={(value) => updateFilter('generation_id', value)}
-              disabled={!filters.model_id}
-              placeholder={filters.model_id ? "Generations" : "Select model first"}
-              className="filter-control h-8 text-xs"
-              options={[
-                // In strict mode, show "All Generations" only when no specific generation is selected or not in strict mode
-                ...(isStrictMode && filters.generation_id ? [] : [{ value: 'all', label: 'All Generations' }]),
-                ...generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => ({
-                  value: generation.id.toString(),
-                  label: `${generation.name}${generation.from_year ? (() => {
-                    const from = generation.from_year.toString();
-                    const currentYear = new Date().getFullYear();
-                    // Show 'present' if to_year is current year or later, or missing
-                    const to = (!generation.to_year || generation.to_year >= currentYear) ? 'present' : generation.to_year.toString();
-                    return ` (${from}-${to})`;
-                  })() : ''}`
-                }))
-              ]}
-            />
+            <Label className="filter-label text-xs text-muted-foreground">Year Range:</Label>
+            <div className="year-buttons flex flex-wrap gap-1">
+              {yearRangePresets.slice(0, 4).map((preset) => (
+                <Button
+                  key={preset.label}
+                  variant={
+                    filters.from_year === preset.from.toString() && 
+                    filters.to_year === preset.to.toString() 
+                      ? "default" 
+                      : "outline"
+                  }
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={() => handleYearRangePreset(preset)}
+                >
+                  {preset.label}
+                </Button>
+              ))}
+            </div>
           </div>
 
-          <div className="space-y-1 filter-section">
-            <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-              <Cog className="h-2.5 w-2.5" />
-              Trim Level
-            </Label>
-            <AdaptiveSelect 
-              value={filters.trim_level || 'all'} 
-              onValueChange={(value) => updateFilter('trim_level', value)}
-              disabled={!filters.manufacturer_id}
-              placeholder={filters.manufacturer_id ? "All Trim Levels" : "Select brand first"}
-              className="filter-control h-8 text-xs"
-              options={[
-                { value: 'all', label: 'All Trim Levels' },
-                ...trimLevels.map((trim) => ({
-                  value: trim.value,
-                  label: `${trim.label}${trim.count ? ` (${trim.count})` : ''}`
-                }))
-              ]}
-            />
-          </div>
-
-          {/* Year presets - moved under Generation */}
+          {/* Year presets - moved under Model */}
           <div className="space-y-1 filter-section">
             <Label className="filter-label text-xs text-muted-foreground">Year Range:</Label>
             <div className="year-buttons flex flex-wrap gap-1">
@@ -522,8 +473,50 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
           {expandedSections.includes('more') && (
             <div className="space-y-2 pt-2 border-t">
-              {/* Color, Fuel, Transmission in compact layout */}
+              {/* Grade/Engine and Trim Level first */}
               <div className="space-y-2">
+                <div className="space-y-1 filter-section">
+                  <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+                    <Cog className="h-2.5 w-2.5" />
+                    Grade/Engine
+                  </Label>
+                  <AdaptiveSelect 
+                    value={filters.grade_iaai || 'all'} 
+                    onValueChange={(value) => updateFilter('grade_iaai', value)}
+                    disabled={!filters.manufacturer_id}
+                    placeholder={filters.manufacturer_id ? "All Grades" : "Select brand first"}
+                    className="filter-control h-8 text-xs"
+                    options={[
+                      { value: 'all', label: 'All Grades' },
+                      ...grades.map((grade) => ({
+                        value: grade.value,
+                        label: `${grade.label}${grade.count ? ` (${grade.count})` : ''}`
+                      }))
+                    ]}
+                  />
+                </div>
+
+                <div className="space-y-1 filter-section">
+                  <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+                    <Cog className="h-2.5 w-2.5" />
+                    Trim Level
+                  </Label>
+                  <AdaptiveSelect 
+                    value={filters.trim_level || 'all'} 
+                    onValueChange={(value) => updateFilter('trim_level', value)}
+                    disabled={!filters.manufacturer_id}
+                    placeholder={filters.manufacturer_id ? "All Trim Levels" : "Select brand first"}
+                    className="filter-control h-8 text-xs"
+                    options={[
+                      { value: 'all', label: 'All Trim Levels' },
+                      ...trimLevels.map((trim) => ({
+                        value: trim.value,
+                        label: `${trim.label}${trim.count ? ` (${trim.count})` : ''}`
+                      }))
+                    ]}
+                  />
+                </div>
+
                 <div className="space-y-1 filter-section">
                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
                     <Palette className="h-2.5 w-2.5" />
@@ -727,37 +720,17 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
             <div className="space-y-2">
               <Label className="text-sm font-medium flex items-center gap-2">
                 <Calendar className="h-3 w-3" />
-                Gjenerata
+                Vitet
                 {(filters.from_year || filters.to_year) && (
                   <Badge variant="secondary" className="text-xs">
                     {filters.from_year || 'Çdo vit'} - {filters.to_year || 'sot'}
                   </Badge>
                 )}
               </Label>
-              <AdaptiveSelect 
-                value={filters.generation_id || 'all'} 
-                onValueChange={(value) => updateFilter('generation_id', value)}
-                disabled={!filters.model_id}
-                placeholder={filters.model_id ? "Gjeneratat" : "Zgjidhni modelin së pari"}
-                className="h-11"
-                options={[
-                  // In strict mode, show "Të gjitha Gjeneratat" only when no specific generation is selected or not in strict mode
-                  ...(isStrictMode && filters.generation_id ? [] : [{ value: 'all', label: 'Të gjitha Gjeneratat' }]),
-                  ...generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => ({
-                    value: generation.id.toString(),
-                    label: `${generation.name}${generation.from_year ? (() => {
-                      const from = generation.from_year.toString();
-                      const currentYear = new Date().getFullYear();
-                      const to = (!generation.to_year || generation.to_year >= currentYear) ? 'present' : generation.to_year.toString();
-                      return ` (${from}-${to})`;
-                    })() : ''}`
-                  }))
-                ]}
-              />
               
               {/* Year Range Preset Buttons for Homepage */}
               <div className="mt-3">
-                <Label className="text-xs text-muted-foreground mb-2 block">Vitet:</Label>
+                <Label className="text-xs text-muted-foreground mb-2 block">Zgjidhni vitet:</Label>
                 <div className="flex flex-wrap gap-1">
                   {yearRangePresets.slice(0, 4).map((preset) => (
                     <Button
@@ -789,6 +762,30 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                       <X className="h-3 w-3" />
                     </Button>
                   )}
+                </div>
+              </div>
+
+              {/* Year Range Dropdowns */}
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Nga viti</Label>
+                  <AdaptiveSelect 
+                    value={filters.from_year || 'all'} 
+                    onValueChange={(value) => updateFilter('from_year', value)}
+                    placeholder="Çdo vit"
+                    className="h-9 text-sm"
+                    options={yearOptions}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Deri në vitin</Label>
+                  <AdaptiveSelect 
+                    value={filters.to_year || 'all'} 
+                    onValueChange={(value) => updateFilter('to_year', value)}
+                    placeholder="Çdo vit"
+                    className="h-9 text-sm"
+                    options={yearOptions}
+                  />
                 </div>
               </div>
             </div>
@@ -932,38 +929,18 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               </div>
             </div>
 
-            {/* Generation and Variants */}
+            {/* Year Selection and Variants */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-medium flex items-center gap-2">
                   <Calendar className="h-3 w-3" />
-                  Gjenerata
+                  Vitet
                   {(filters.from_year || filters.to_year) && (
                     <Badge variant="secondary" className="text-xs">
                       {filters.from_year || 'Çdo vit'} - {filters.to_year || 'sot'}
                     </Badge>
                   )}
                 </Label>
-                <AdaptiveSelect 
-                  value={filters.generation_id || 'all'} 
-                  onValueChange={(value) => updateFilter('generation_id', value)}
-                  disabled={!filters.model_id}
-                  placeholder={filters.model_id ? "Gjeneratat" : "Zgjidhni modelin së pari"}
-                  options={[
-                    // In strict mode, show "Të gjitha Gjeneratat" only when no specific generation is selected or not in strict mode
-                    ...(isStrictMode && filters.generation_id ? [] : [{ value: 'all', label: 'Të gjitha Gjeneratat' }]),
-                    ...generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => ({
-                      value: generation.id.toString(),
-                      label: `${generation.name}${generation.from_year ? (() => {
-                        const from = generation.from_year.toString();
-                        const currentYear = new Date().getFullYear();
-                        // Show 'present' if to_year is current year or later, or missing
-                        const to = (!generation.to_year || generation.to_year >= currentYear) ? 'present' : generation.to_year.toString();
-                        return ` (${from}-${to})`;
-                      })() : ''}`
-                    }))
-                  ]}
-                />
                 
                 {/* Year Range Preset Buttons - Compact layout */}
                 <div className="mt-2">
@@ -1033,16 +1010,16 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               <div className="space-y-2">
                 <Label className="text-sm font-medium flex items-center gap-2">
                   <Cog className="h-3 w-3" />
-                  Variants
+                  Grade/Engine
                 </Label>
                 <AdaptiveSelect 
                   value={filters.grade_iaai || 'all'} 
                   onValueChange={(value) => updateFilter('grade_iaai', value)}
-                  disabled={!filters.generation_id || isLoadingGrades}
-                  placeholder={isLoadingGrades ? "Loading..." : "Select variant"}
+                  disabled={!filters.manufacturer_id || isLoadingGrades}
+                  placeholder={isLoadingGrades ? "Loading..." : "Select grade"}
                   options={[
-                    // In strict mode, show "All Variants" only when no specific variant is selected or not in strict mode
-                    ...(isStrictMode && filters.grade_iaai ? [] : [{ value: 'all', label: 'All Variants' }]),
+                    // In strict mode, show "All Grades" only when no specific grade is selected or not in strict mode
+                    ...(isStrictMode && filters.grade_iaai ? [] : [{ value: 'all', label: 'All Grades' }]),
                     ...grades.map((grade) => ({
                       value: grade.value,
                       label: grade.label

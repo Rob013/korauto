@@ -38,20 +38,9 @@ interface Model {
   cars_qty?:number;
 }
 
-interface Generation {
-  cars_qty?:number;
-  from_year?:number;
-  id:number;
-  manufacturer_id?:number;
-  model_id?:number;
-  name:string;
-  to_year?:number;
-}
-
 interface FilterCounts {
   manufacturers: { [key: string]: number };
   models: { [key: string]: number };
-  generations: { [key: string]: number };
   colors: { [key: string]: number };
   fuelTypes: { [key: string]: number };
   transmissions: { [key: string]: number };
@@ -62,7 +51,6 @@ interface FilterFormProps {
   filters: {
     manufacturer_id?: string;
     model_id?: string;
-    generation_id?: string;
     grade_iaai?: string;
     trim_level?: string;
     color?: string;
@@ -81,32 +69,28 @@ interface FilterFormProps {
   };
   manufacturers: Manufacturer[];
   models?: Model[];
-  generations?: Generation[];
   filterCounts?: FilterCounts;
   onFiltersChange: (filters: any) => void;
   onClearFilters: () => void;
   onManufacturerChange?: (manufacturerId: string) => void;
   onModelChange?: (modelId: string) => void;
-  onGenerationChange?: (generationId: string) => void;
   showAdvanced?: boolean;
   onToggleAdvanced?: () => void;
   loadingCounts?: boolean;
-  onFetchGrades?: (manufacturerId?: string, modelId?: string, generationId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
-  onFetchTrimLevels?: (manufacturerId?: string, modelId?: string, generationId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
+  onFetchGrades?: (manufacturerId?: string, modelId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
+  onFetchTrimLevels?: (manufacturerId?: string, modelId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
 }
 
 const FilterForm = memo<FilterFormProps>(({
   filters,
   manufacturers,
   models = [],
-  generations = [],
   filterCounts,
   loadingCounts = false,
   onFiltersChange,
   onClearFilters,
   onManufacturerChange,
   onModelChange,
-  onGenerationChange,
   showAdvanced = false,
   onToggleAdvanced,
   onFetchGrades,
@@ -136,9 +120,6 @@ const FilterForm = memo<FilterFormProps>(({
     } else if (key === 'model_id') {
       // Only call the specialized handler, not onFiltersChange to avoid duplicate calls
       onModelChange?.(actualValue || '');
-    } else if (key === 'generation_id') {
-      // Call the specialized handler for generation changes
-      onGenerationChange?.(actualValue || '');
     } else {
       // For other filters, use the standard filter change handler
       const updatedFilters = { ...filters, [key]: actualValue };
@@ -147,7 +128,7 @@ const FilterForm = memo<FilterFormProps>(({
     
     // Clear loading state after a short delay
     setTimeout(() => setIsLoading(false), 50);
-  }, [filters, onFiltersChange, onManufacturerChange, onModelChange, onGenerationChange]);
+  }, [filters, onFiltersChange, onManufacturerChange, onModelChange]);
 
   const handleBrandChange = async (value: string) => {
     setModelLoading(true);
@@ -283,7 +264,7 @@ const FilterForm = memo<FilterFormProps>(({
     return (fallbacks[manufacturerId] || []).map(grade => ({ value: grade, label: grade }));
   };
 
-  // Debounced fetch grades when manufacturer, model, or generation changes
+  // Debounced fetch grades when manufacturer or model changes
   useEffect(() => {
     let cancelled = false;
     let timeoutId: NodeJS.Timeout;
@@ -299,7 +280,7 @@ const FilterForm = memo<FilterFormProps>(({
         const requestId = Date.now();
         latestGradeRequest.current = requestId;
         
-        onFetchGrades(filters.manufacturer_id, filters.model_id, filters.generation_id)
+        onFetchGrades(filters.manufacturer_id, filters.model_id)
           .then(gradesData => {
             // Only update if this is the latest request and we have better data
             if (!cancelled && latestGradeRequest.current === requestId && Array.isArray(gradesData)) {
@@ -327,9 +308,9 @@ const FilterForm = memo<FilterFormProps>(({
       cancelled = true; 
       clearTimeout(timeoutId);
     };
-  }, [filters.manufacturer_id, filters.model_id, filters.generation_id, onFetchGrades]);
+  }, [filters.manufacturer_id, filters.model_id, onFetchGrades]);
 
-  // Debounced fetch trim levels when manufacturer, model, or generation changes
+  // Debounced fetch trim levels when manufacturer or model changes
   useEffect(() => {
     let cancelled = false;
     let timeoutId: NodeJS.Timeout;
@@ -337,7 +318,7 @@ const FilterForm = memo<FilterFormProps>(({
     // Debounce to avoid excessive API calls
     timeoutId = setTimeout(() => {
       if (filters.manufacturer_id && onFetchTrimLevels && !cancelled) {
-        onFetchTrimLevels(filters.manufacturer_id, filters.model_id, filters.generation_id)
+        onFetchTrimLevels(filters.manufacturer_id, filters.model_id)
           .then(trimLevelsData => {
             if (!cancelled && Array.isArray(trimLevelsData)) {
               setTrimLevels(trimLevelsData);
@@ -356,7 +337,7 @@ const FilterForm = memo<FilterFormProps>(({
       cancelled = true; 
       clearTimeout(timeoutId);
     };
-  }, [filters.manufacturer_id, filters.model_id, filters.generation_id, onFetchTrimLevels]);
+  }, [filters.manufacturer_id, filters.model_id, onFetchTrimLevels]);
 
 
   useEffect(() => {
@@ -393,7 +374,7 @@ const FilterForm = memo<FilterFormProps>(({
 
 
       {/* Basic Filters - Optimized mobile layout */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2 sm:gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
         <div className="space-y-1">
           <Label htmlFor="manufacturer" className="text-xs font-medium truncate">Brand</Label>
           <AdaptiveSelect 
@@ -440,87 +421,87 @@ const FilterForm = memo<FilterFormProps>(({
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="generation" className="text-xs font-medium truncate">Generation</Label>
-          <AdaptiveSelect
-            value={filters.generation_id || 'all'} 
-            onValueChange={(value) => {
-              console.log(`🎯 ULTRA PRECISE: Generation select changed to ${value}`);
-              if (onGenerationChange) {
-                onGenerationChange(value);
-              } else {
-                updateFilter('generation_id', value);
-              }
-            }}
-            disabled={!filters.manufacturer_id || !filters.model_id}
-            placeholder={filters.model_id ? "All Generations" : "Select Model First"}
-            className="h-8 text-xs"
-            options={[
-              { 
-                value: 'all', 
-                label: filters.model_id ? "All Generations" : "All Generations (all models)"
-              },
-              ...(generations && generations.length > 0 ? 
-                generations.map((generation) => {
-                  let yearRange = '';
-                  if (generation.from_year) {
-                    const from = generation.from_year.toString();
-                    const currentYear = new Date().getFullYear();
-                    // Show 'present' if to_year is current year or later, or missing
-                    const to = (!generation.to_year || generation.to_year >= currentYear) ? 'present' : generation.to_year.toString();
-                    yearRange = ` (${from}-${to})`;
-                  }
-                  
-                  return {
-                    value: generation.id.toString(),
-                    label: `${generation.name}${yearRange}`
+          <Label htmlFor="year_presets" className="text-xs font-medium truncate">Quick Year Selection</Label>
+          <div className="flex flex-wrap gap-1">
+            {[
+              { label: '2022+', from: 2022, to: currentYear },
+              { label: '2020+', from: 2020, to: currentYear },
+              { label: '2018+', from: 2018, to: currentYear },
+              { label: '2015+', from: 2015, to: currentYear },
+              { label: '2010+', from: 2010, to: currentYear }
+            ].map((preset) => (
+              <Button
+                key={preset.label}
+                variant={
+                  filters.from_year === preset.from.toString() && 
+                  filters.to_year === preset.to.toString() 
+                    ? "default" 
+                    : "outline"
+                }
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={() => {
+                  const updatedFilters = {
+                    ...filters,
+                    from_year: preset.from.toString(),
+                    to_year: preset.to.toString()
                   };
-                })
-                : []
-              )
+                  onFiltersChange(updatedFilters);
+                }}
+              >
+                {preset.label}
+              </Button>
+            ))}
+            {(filters.from_year || filters.to_year) && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-6 px-2 text-xs text-muted-foreground"
+                onClick={() => {
+                  const updatedFilters = {
+                    ...filters,
+                    from_year: undefined,
+                    to_year: undefined
+                  };
+                  onFiltersChange(updatedFilters);
+                }}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <Label htmlFor="from_year" className="text-xs font-medium truncate">From Year</Label>
+          <AdaptiveSelect 
+            value={filters.from_year || 'any'} 
+            onValueChange={(value) => updateFilter('from_year', value)}
+            placeholder="All years"
+            className="h-8 text-xs"
+            options={[
+              { value: 'any', label: 'All years' },
+              ...years.map((year) => ({
+                value: year.toString(),
+                label: year.toString()
+              }))
             ]}
           />
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="grade" className="text-xs font-medium truncate">Grade/Engine</Label>
+          <Label htmlFor="to_year" className="text-xs font-medium truncate">To Year</Label>
           <AdaptiveSelect 
-            value={filters.grade_iaai || 'all'} 
-            onValueChange={(value) => updateFilter('grade_iaai', value)}
-            disabled={!filters.manufacturer_id || isLoading}
-            placeholder={filters.manufacturer_id ? "All Grades" : "Select Brand First"}
+            value={filters.to_year || 'any'} 
+            onValueChange={(value) => updateFilter('to_year', value)}
+            placeholder="All years"
             className="h-8 text-xs"
             options={[
-              { value: 'all', label: 'All Grades' },
-              ...(grades.length === 0 && isLoadingGrades ? 
-                [{ value: 'loading', label: 'Loading grades...', disabled: true }] :
-                grades.length === 0 && filters.manufacturer_id ? 
-                [{ value: 'no-grades', label: 'No grades found', disabled: true }] :
-                grades.map((grade) => ({
-                  value: grade.value,
-                  label: `${grade.label}${grade.count ? ` (${grade.count})` : ''}`
-                }))
-              )
-            ]}
-          />
-        </div>
-
-        <div className="space-y-1">
-          <Label htmlFor="trim_level" className="text-xs font-medium truncate">Trim Level</Label>
-          <AdaptiveSelect 
-            value={filters.trim_level || 'all'} 
-            onValueChange={(value) => updateFilter('trim_level', value)}
-            disabled={!filters.manufacturer_id || isLoading}
-            placeholder={filters.manufacturer_id ? "All Trim Levels" : "Select Brand First"}
-            className="h-8 text-xs"
-            options={[
-              { value: 'all', label: 'All Trim Levels' },
-              ...(trimLevels.length === 0 && filters.manufacturer_id ? 
-                [{ value: 'no-trims', label: 'No trim levels found', disabled: true }] :
-                trimLevels.map((trim) => ({
-                  value: trim.value,
-                  label: `${trim.label}${trim.count ? ` (${trim.count})` : ''}`
-                }))
-              )
+              { value: 'any', label: 'All years' },
+              ...years.map((year) => ({
+                value: year.toString(),
+                label: year.toString()
+              }))
             ]}
           />
         </div>
@@ -537,6 +518,50 @@ const FilterForm = memo<FilterFormProps>(({
       {showAdvanced && (
         <div className="border-t pt-3 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="grade" className="text-xs font-medium">Grade/Engine</Label>
+              <AdaptiveSelect 
+                value={filters.grade_iaai || 'all'} 
+                onValueChange={(value) => updateFilter('grade_iaai', value)}
+                disabled={!filters.manufacturer_id || isLoading}
+                placeholder={filters.manufacturer_id ? "All Grades" : "Select Brand First"}
+                className="h-8 text-xs sm:text-sm"
+                options={[
+                  { value: 'all', label: 'All Grades' },
+                  ...(grades.length === 0 && isLoadingGrades ? 
+                    [{ value: 'loading', label: 'Loading grades...', disabled: true }] :
+                    grades.length === 0 && filters.manufacturer_id ? 
+                    [{ value: 'no-grades', label: 'No grades found', disabled: true }] :
+                    grades.map((grade) => ({
+                      value: grade.value,
+                      label: `${grade.label}${grade.count ? ` (${grade.count})` : ''}`
+                    }))
+                  )
+                ]}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="trim_level" className="text-xs font-medium">Trim Level</Label>
+              <AdaptiveSelect 
+                value={filters.trim_level || 'all'} 
+                onValueChange={(value) => updateFilter('trim_level', value)}
+                disabled={!filters.manufacturer_id || isLoading}
+                placeholder={filters.manufacturer_id ? "All Trim Levels" : "Select Brand First"}
+                className="h-8 text-xs sm:text-sm"
+                options={[
+                  { value: 'all', label: 'All Trim Levels' },
+                  ...(trimLevels.length === 0 && filters.manufacturer_id ? 
+                    [{ value: 'no-trims', label: 'No trim levels found', disabled: true }] :
+                    trimLevels.map((trim) => ({
+                      value: trim.value,
+                      label: `${trim.label}${trim.count ? ` (${trim.count})` : ''}`
+                    }))
+                  )
+                ]}
+              />
+            </div>
+
             <div className="space-y-1">
               <Label htmlFor="color" className="text-xs font-medium">Ngjyra</Label>
               <AdaptiveSelect 
@@ -570,7 +595,9 @@ const FilterForm = memo<FilterFormProps>(({
                 ]}
               />
             </div>
+          </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
             <div className="space-y-1">
               <Label htmlFor="transmission" className="text-xs font-medium">Transmisioni</Label>
               <AdaptiveSelect 
@@ -600,42 +627,6 @@ const FilterForm = memo<FilterFormProps>(({
                   ...Object.entries(BODY_TYPE_OPTIONS).map(([name, id]) => ({
                     value: id.toString(),
                     label: name.charAt(0).toUpperCase() + name.slice(1)
-                  }))
-                ]}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
-            <div className="space-y-1">
-              <Label htmlFor="from_year" className="text-xs font-medium">From Year</Label>
-              <AdaptiveSelect 
-                value={filters.from_year || 'any'} 
-                onValueChange={(value) => updateFilter('from_year', value)}
-                placeholder="All years"
-                className="h-8 text-xs sm:text-sm"
-                options={[
-                  { value: 'any', label: 'All years' },
-                  ...years.map((year) => ({
-                    value: year.toString(),
-                    label: year.toString()
-                  }))
-                ]}
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="to_year" className="text-xs font-medium">To Year</Label>
-              <AdaptiveSelect 
-                value={filters.to_year || 'any'} 
-                onValueChange={(value) => updateFilter('to_year', value)}
-                placeholder="All years"
-                className="h-8 text-xs sm:text-sm"
-                options={[
-                  { value: 'any', label: 'All years' },
-                  ...years.map((year) => ({
-                    value: year.toString(),
-                    label: year.toString()
                   }))
                 ]}
               />

@@ -36,7 +36,6 @@ import { supabase } from "@/integrations/supabase/client";
 interface APIFilters {
   manufacturer_id?: string;
   model_id?: string;
-  generation_id?: string;
   grade_iaai?: string;
   trim_level?: string;
   color?: string;
@@ -601,38 +600,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
   };
 
-  const handleGenerationChange = async (generationId: string) => {
-    setIsLoading(true);
-    
-    // Create new filters immediately for faster UI response
-    const newFilters: APIFilters = {
-      ...filters,
-      generation_id: generationId,
-      grade_iaai: undefined,
-    };
-    setFilters(newFilters);
-    setLoadedPages(1);
-    
-    try {
-      // Only fetch cars with new generation filter - avoid duplicate API calls
-      await fetchCars(1, { ...newFilters, per_page: "50" }, true);
-      
-      // Update URL after successful data fetch
-      const paramsToSet: any = {};
-      Object.entries(newFilters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          paramsToSet[key] = value.toString();
-        }
-      });
-      setSearchParams(paramsToSet);
-      
-    } catch (error) {
-      console.error('[handleGenerationChange] Error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // Initialize filters from URL params on component mount
   useEffect(() => {
     const loadInitialData = async () => {
@@ -951,14 +918,12 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             filters={filters}
             manufacturers={manufacturers}
             models={models}
-            generations={generations}
             filterCounts={filterCounts}
             loadingCounts={loadingCounts}
             onFiltersChange={handleFiltersChange}
             onClearFilters={handleClearFilters}
             onManufacturerChange={handleManufacturerChange}
             onModelChange={handleModelChange}
-            onGenerationChange={handleGenerationChange}
             showAdvanced={showAdvancedFilters}
             onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
             onFetchGrades={fetchGrades}
