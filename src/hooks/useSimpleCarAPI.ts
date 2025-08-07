@@ -1,6 +1,5 @@
-import { useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAPIState, makeAPIRequest, delay, apiCache } from '@/utils/apiUtils';
 
 interface SimpleCar {
   id: string;
@@ -19,7 +18,7 @@ interface SimpleCar {
   status?: number;
   sale_status?: string;
   final_price?: number;
-  lots?: unknown[];
+  lots?: any[];
 }
 
 interface SimpleAPIResponse {
@@ -33,83 +32,88 @@ interface SimpleAPIResponse {
 }
 
 export const useSimpleCarAPI = () => {
-  const {
-    data: cars,
-    setData: setCars,
-    loading,
-    setLoading,
-    error,
-    setError,
-    shouldSkipRequest,
-    updateLastFetchTime
-  } = useAPIState<SimpleCar>();
+  const [cars, setCars] = useState<SimpleCar[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
+
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   const fetchCars = useCallback(async (resetList: boolean = true) => {
     // Prevent too frequent API calls
-    if (shouldSkipRequest()) {
+    const now = Date.now();
+    if (now - lastFetchTime < 2000) { // 2 second minimum between calls
       console.log('🚫 Skipping API call - too frequent');
       return;
     }
 
-    // Check cache first
-    const cacheKey = apiCache.createKey('simple-cars', { page: 1, per_page: 36 });
-    const cachedData = apiCache.get(cacheKey);
-    if (cachedData) {
-      console.log('📋 Using cached cars data');
-      setCars(cachedData);
-      return;
+    if (resetList) {
+      setLoading(true);
     }
+    setError(null);
 
-    const result = await makeAPIRequest(
-      async () => {
-        console.log('🔄 Fetching cars from API');
-        updateLastFetchTime();
+    try {
+      console.log('🔄 Fetching cars from API');
+      setLastFetchTime(now);
 
-        const { data, error: functionError } = await supabase.functions.invoke('secure-cars-api', {
-          body: { 
-            endpoint: 'cars',
-            filters: {
-              page: '1',
-              per_page: '36',
-              simple_paginate: '0'
-            }
+      const { data, error: functionError } = await supabase.functions.invoke('secure-cars-api', {
+        body: { 
+          endpoint: 'cars',
+          filters: {
+            page: '1',
+            per_page: '36', // Get enough cars for homepage display
+            simple_paginate: '0'
           }
-        });
-
-        if (functionError) {
-          console.error('❌ Edge function error:', functionError);
-          throw new Error(functionError.message || 'API call failed');
         }
+      });
 
-        if (data?.error) {
-          if (data.retryAfter) {
-            console.log('⏳ Rate limited, waiting...');
-            await delay(data.retryAfter);
-            throw new Error('RATE_LIMITED');
-          }
-          throw new Error(data.error);
+      if (functionError) {
+        console.error('❌ Edge function error:', functionError);
+        throw new Error(functionError.message || 'API call failed');
+      }
+
+      if (data?.error) {
+        if (data.retryAfter) {
+          console.log('⏳ Rate limited, waiting...');
+          await delay(data.retryAfter);
+          throw new Error('RATE_LIMITED');
         }
+        throw new Error(data.error);
+      }
 
-        return data as SimpleAPIResponse;
-      },
-      setLoading,
-      setError
-    );
+      const response: SimpleAPIResponse = data;
+      
+      if (response.data && response.data.length > 0) {
+        setCars(response.data);
+        console.log(`✅ Fetched ${response.data.length} cars successfully`);
+      } else {
+        console.log('⚠️ No cars returned from API');
+        setCars([]);
+      }
 
-    if (result?.data && result.data.length > 0) {
-      setCars(result.data);
-      apiCache.set(cacheKey, result.data);
-      console.log(`✅ Fetched ${result.data.length} cars successfully`);
-    } else {
-      console.log('⚠️ No cars returned from API');
-      setCars([]);
+    } catch (err: any) {
+      if (err.message === 'RATE_LIMITED') {
+        // Retry once after rate limit
+        try {
+          await delay(3000);
+          return fetchCars(resetList);
+        } catch (retryErr) {
+          console.error('❌ Retry failed:', retryErr);
+          setError('Rate limited - please try again later');
+        }
+      } else {
+        console.error('❌ Fetch cars error:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch cars');
+      }
+    } finally {
+      setLoading(false);
     }
-  }, [shouldSkipRequest, updateLastFetchTime, setCars, setLoading, setError]);
+  }, [lastFetchTime]);
 
   // Auto-fetch cars on mount
   useEffect(() => {
     fetchCars(true);
-  }, [fetchCars]);
+  }, []);
 
   return {
     cars,
