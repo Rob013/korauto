@@ -12,11 +12,23 @@ import { useResourcePreloader } from "./hooks/useResourcePreloader";
 // Lazy load all pages for better code splitting
 const Index = lazy(() => import("./pages/Index"));
 const Catalog = lazy(() => import("./pages/Catalog"));
-
-
+const CarDetails = lazy(() => import("./pages/CarDetails"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AuthPage = lazy(() => import("./pages/AuthPage"));
+const FavoritesPage = lazy(() => import("./pages/FavoritesPage"));
+const InspectionServices = lazy(() => import("./pages/InspectionServices"));
+const MyAccount = lazy(() => import("./pages/MyAccount"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Contacts = lazy(() => import("./pages/Contacts"));
+const ComponentDemo = lazy(() => import("./pages/ComponentDemo"));
+const DiagramDemo = lazy(() => import("./pages/DiagramDemo"));
+// Removed demo import - was only for testing layout improvements
+const AdminCarSearchDemo = lazy(() => import("./pages/AdminCarSearchDemo"));
+const PerformanceDashboard = lazy(() => import("./components/PerformanceDashboard"));
+
+// Lazy load admin components for better code splitting
+const AdminSyncDashboard = lazy(() => import("./components/AdminSyncDashboard"));
+const CookieManagementDashboard = lazy(() => import("./components/CookieManagementDashboard"));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-background">
@@ -74,7 +86,7 @@ const queryClient = new QueryClient({
       // Retry failed requests up to 2 times
       retry: 2,
       // Only refetch if data is stale (improved from 'always')
-      refetchOnMount: true,
+      refetchOnMount: 'if-stale',
       // Enable background refetching for better UX
       refetchInterval: false,
       // Network mode optimizations
@@ -110,14 +122,70 @@ const App = () => {
                 <Catalog />
               </Suspense>
             } />
+            <Route path="/car/:id" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <CarDetails />
+              </Suspense>
+            } />
+            <Route path="/admin" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <AdminDashboard />
+              </Suspense>
+            } />
+            <Route path="/admin/sync" element={
+              <Suspense fallback={<AdminSyncSkeleton />}>
+                <AdminSyncDashboard />
+              </Suspense>
+            } />
             <Route path="/auth" element={
               <Suspense fallback={<PageSkeleton />}>
                 <AuthPage />
               </Suspense>
             } />
+            <Route path="/account" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <MyAccount />
+              </Suspense>
+            } />
+            <Route path="/favorites" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <FavoritesPage />
+              </Suspense>
+            } />
+            <Route path="/inspections" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <InspectionServices />
+              </Suspense>
+            } />
             <Route path="/contacts" element={
               <Suspense fallback={<PageSkeleton />}>
                 <Contacts />
+              </Suspense>
+            } />
+            <Route path="/demo" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <ComponentDemo />
+              </Suspense>
+            } />
+            <Route path="/diagram-demo" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <DiagramDemo />
+              </Suspense>
+            } />
+// Remove the demo route since it was just for testing
+            <Route path="/admin-search-demo" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <AdminCarSearchDemo />
+              </Suspense>
+            } />
+            <Route path="/performance" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <PerformanceDashboard />
+              </Suspense>
+            } />
+            <Route path="/cookie-management" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <CookieManagementDashboard />
               </Suspense>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

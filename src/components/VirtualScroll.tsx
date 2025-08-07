@@ -100,7 +100,7 @@ export function VirtualScroll<T>({
 /**
  * Hook for managing virtual scroll state
  */
-export const useVirtualScroll = <T,>(
+export const useVirtualScroll = <T>(
   items: T[],
   itemHeight: number,
   containerHeight: number
