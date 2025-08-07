@@ -129,39 +129,25 @@ const FilterForm = memo<FilterFormProps>(({
     // Set loading state for better UX
     setIsLoading(true);
     
-    // Handle cascading filters
+    // Handle cascading filters - avoid duplicate API calls
     if (key === 'manufacturer_id') {
+      // Only call the specialized handler, not onFiltersChange to avoid duplicate calls
       onManufacturerChange?.(actualValue || '');
-      onFiltersChange({
-        ...filters,
-        [key]: actualValue,
-        model_id: undefined,
-        generation_id: undefined,
-        grade_iaai: undefined // Clear grade when manufacturer changes
-      });
     } else if (key === 'model_id') {
+      // Only call the specialized handler, not onFiltersChange to avoid duplicate calls
       onModelChange?.(actualValue || '');
-      onFiltersChange({
-        ...filters,
-        [key]: actualValue,
-        generation_id: undefined,
-        grade_iaai: undefined // Clear grade when model changes
-      });
+    } else if (key === 'generation_id') {
+      // Call the specialized handler for generation changes
+      onGenerationChange?.(actualValue || '');
     } else {
-      // For other filters, preserve existing values but update the changed one
+      // For other filters, use the standard filter change handler
       const updatedFilters = { ...filters, [key]: actualValue };
-      
-      // If generation changes, clear grade filter
-      if (key === 'generation_id') {
-        updatedFilters.grade_iaai = undefined;
-      }
-      
       onFiltersChange(updatedFilters);
     }
     
     // Clear loading state after a short delay
     setTimeout(() => setIsLoading(false), 50);
-  }, [filters, onFiltersChange, onManufacturerChange, onModelChange]);
+  }, [filters, onFiltersChange, onManufacturerChange, onModelChange, onGenerationChange]);
 
   const handleBrandChange = async (value: string) => {
     setModelLoading(true);
@@ -296,61 +282,79 @@ const FilterForm = memo<FilterFormProps>(({
     return (fallbacks[manufacturerId] || []).map(grade => ({ value: grade, label: grade }));
   };
 
-  // Fetch grades when manufacturer, model, or generation changes
+  // Debounced fetch grades when manufacturer, model, or generation changes
   useEffect(() => {
     let cancelled = false;
-    if (filters.manufacturer_id && onFetchGrades) {
-      // Set fallback immediately for instant response
-      const fallback = getFallbackGrades(filters.manufacturer_id);
-      setGrades(fallback);
-      setIsLoadingGrades(true);
-      
-      const requestId = Date.now();
-      latestGradeRequest.current = requestId;
-      
-      onFetchGrades(filters.manufacturer_id, filters.model_id, filters.generation_id)
-        .then(gradesData => {
-          // Only update if this is the latest request and we have better data
-          if (!cancelled && latestGradeRequest.current === requestId && Array.isArray(gradesData)) {
-            // If we got real data with more variety than fallback, use it
-            if (gradesData.length > fallback.length || 
-                (gradesData.length > 0 && gradesData.some(g => g.count && g.count > 0))) {
-              setGrades(gradesData);
+    let timeoutId: NodeJS.Timeout;
+    
+    // Debounce to avoid excessive API calls
+    timeoutId = setTimeout(() => {
+      if (filters.manufacturer_id && onFetchGrades && !cancelled) {
+        // Set fallback immediately for instant response
+        const fallback = getFallbackGrades(filters.manufacturer_id);
+        setGrades(fallback);
+        setIsLoadingGrades(true);
+        
+        const requestId = Date.now();
+        latestGradeRequest.current = requestId;
+        
+        onFetchGrades(filters.manufacturer_id, filters.model_id, filters.generation_id)
+          .then(gradesData => {
+            // Only update if this is the latest request and we have better data
+            if (!cancelled && latestGradeRequest.current === requestId && Array.isArray(gradesData)) {
+              // If we got real data with more variety than fallback, use it
+              if (gradesData.length > fallback.length || 
+                  (gradesData.length > 0 && gradesData.some(g => g.count && g.count > 0))) {
+                setGrades(gradesData);
+              }
+              // If gradesData is empty or worse than fallback, keep fallback
             }
-            // If gradesData is empty or worse than fallback, keep fallback
-          }
-          setIsLoadingGrades(false);
-        })
-        .catch((err) => {
-          console.error('Grade fetch error:', err);
-          setIsLoadingGrades(false);
-          // Keep fallback on error
-        });
-    } else {
-      setGrades([]);
-      setIsLoadingGrades(false);
-    }
-    return () => { cancelled = true; };
+            setIsLoadingGrades(false);
+          })
+          .catch((err) => {
+            console.error('Grade fetch error:', err);
+            setIsLoadingGrades(false);
+            // Keep fallback on error
+          });
+      } else {
+        setGrades([]);
+        setIsLoadingGrades(false);
+      }
+    }, 300); // 300ms debounce
+    
+    return () => { 
+      cancelled = true; 
+      clearTimeout(timeoutId);
+    };
   }, [filters.manufacturer_id, filters.model_id, filters.generation_id, onFetchGrades]);
 
-  // Fetch trim levels when manufacturer, model, or generation changes
+  // Debounced fetch trim levels when manufacturer, model, or generation changes
   useEffect(() => {
     let cancelled = false;
-    if (filters.manufacturer_id && onFetchTrimLevels) {
-      onFetchTrimLevels(filters.manufacturer_id, filters.model_id, filters.generation_id)
-        .then(trimLevelsData => {
-          if (!cancelled && Array.isArray(trimLevelsData)) {
-            setTrimLevels(trimLevelsData);
-          }
-        })
-        .catch((err) => {
-          console.error('Trim level fetch error:', err);
-          setTrimLevels([]);
-        });
-    } else {
-      setTrimLevels([]);
-    }
-    return () => { cancelled = true; };
+    let timeoutId: NodeJS.Timeout;
+    
+    // Debounce to avoid excessive API calls
+    timeoutId = setTimeout(() => {
+      if (filters.manufacturer_id && onFetchTrimLevels && !cancelled) {
+        onFetchTrimLevels(filters.manufacturer_id, filters.model_id, filters.generation_id)
+          .then(trimLevelsData => {
+            if (!cancelled && Array.isArray(trimLevelsData)) {
+              setTrimLevels(trimLevelsData);
+            }
+          })
+          .catch((err) => {
+            console.error('Trim level fetch error:', err);
+            setTrimLevels([]);
+          });
+      } else {
+        setTrimLevels([]);
+      }
+    }, 300); // 300ms debounce
+    
+    return () => { 
+      cancelled = true; 
+      clearTimeout(timeoutId);
+    };
   }, [filters.manufacturer_id, filters.model_id, filters.generation_id, onFetchTrimLevels]);
 
 

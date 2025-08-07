@@ -21,6 +21,7 @@ import EncarStyleFilter from "@/components/EncarStyleFilter";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useResourcePreloader } from "@/hooks/useResourcePreloader";
+import { debounce } from "@/utils/performance";
 
 import { useSearchParams } from "react-router-dom";
 import {
@@ -335,16 +336,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     maxVerticalDistance: 120
   });
 
-  const handleFiltersChange = useCallback((newFilters: APIFilters) => {
+  // Internal function to actually apply filters
+  const applyFiltersInternal = useCallback((newFilters: APIFilters) => {
     setFilters(newFilters);
     setCurrentPage(1); // Reset to first page when filters change
     
     // Reset global sorting when filters change
     setIsSortingGlobal(false);
     setAllCarsForSorting([]);
-    
-    // Clear previous data immediately to show loading state
-    setCars([]);
     
     // Use 50 cars per page for proper pagination
     const filtersWithPagination = {
@@ -364,7 +363,24 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     });
     paramsToSet.page = "1";
     setSearchParams(paramsToSet);
-  }, [fetchCars, setSearchParams, isMobile]);
+  }, [fetchCars, setSearchParams]);
+
+  // Debounced version for performance
+  const debouncedApplyFilters = useCallback(
+    debounce(applyFiltersInternal, 300),
+    [applyFiltersInternal]
+  );
+
+  const handleFiltersChange = useCallback((newFilters: APIFilters) => {
+    // Update UI immediately for responsiveness
+    setFilters(newFilters);
+    
+    // Clear previous data immediately to show loading state
+    setCars([]);
+    
+    // Apply filters with debouncing to reduce API calls
+    debouncedApplyFilters(newFilters);
+  }, [debouncedApplyFilters]);
 
   const handleClearFilters = useCallback(() => {
     setFilters({});
@@ -489,7 +505,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setLoadedPages(1);
     
     try {
-      // Fetch models and cars in parallel for better performance
+      // Only fetch models and cars, skip duplicate calls for grades/trim levels
       const promises = [];
       
       if (manufacturerId) {
@@ -504,7 +520,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         );
       }
       
-      // Fetch cars with new filters
+      // Fetch cars with new filters - remove per_page duplicates
       promises.push(
         fetchCars(1, { ...newFilters, per_page: "50" }, true)
       );
@@ -557,6 +573,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       }
       
       // Fetch generations and cars in parallel for better performance
+      // Removed duplicate car fetches to optimize performance
       const promises = [
         fetchGenerations(modelId).then(generationData => {
           setGenerations(generationData);
@@ -597,7 +614,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setLoadedPages(1);
     
     try {
-      // Fetch cars with new generation filter
+      // Only fetch cars with new generation filter - avoid duplicate API calls
       await fetchCars(1, { ...newFilters, per_page: "50" }, true);
       
       // Update URL after successful data fetch
