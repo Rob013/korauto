@@ -1,30 +1,12 @@
 import React, { memo, useState, useCallback, useRef, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
-import { Car, Gauge, Settings, Fuel, Palette, Shield, Heart } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { CarBadges, CarDetails, CarCardActions } from "@/components/shared";
+import { BaseCarProps } from "@/types/car";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
-interface LazyCarCardProps {
-  id: string;
-  make: string;
-  model: string;
-  year: number;
-  price: number;
-  image?: string;
-  vin?: string;
-  mileage?: string;
-  transmission?: string;
-  fuel?: string;
-  color?: string;
-  condition?: string;
-  lot?: string;
-  title?: string;
-  status?: number;
-  sale_status?: string;
-  final_price?: number;
+interface LazyCarCardProps extends BaseCarProps {
   insurance_v2?: {
     accidentCnt?: number;
   };
