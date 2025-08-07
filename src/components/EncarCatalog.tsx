@@ -114,6 +114,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   });
   
   const [hasSelectedCategories, setHasSelectedCategories] = useState(false);
+  
+  // Use ref for tracking fetch progress to avoid triggering re-renders
+  const fetchingSortRef = useRef(false);
+  const lastSortParamsRef = useRef('');
 
   // Memoized helper function to extract grades from title
   const extractGradesFromTitle = useCallback((title: string): string[] => {
@@ -421,13 +425,24 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   };
 
   // Function to fetch all cars for sorting across all pages
-  const fetchAllCarsForSorting = async () => {
+  const fetchAllCarsForSorting = useCallback(async () => {
+    // Create a unique key for current sort parameters to prevent duplicate calls
+    const sortKey = `${totalCount}-${sortBy}-${filters.grade_iaai || ''}-${filters.manufacturer_id || ''}-${filters.model_id || ''}`;
+    
+    if (fetchingSortRef.current || sortKey === lastSortParamsRef.current) {
+      console.log(`⏭️ Skipping duplicate sort request: ${sortKey}`);
+      return;
+    }
+
     if (totalCount <= 50) {
-      setAllCarsForSorting([]);
-      setIsSortingGlobal(false);
+      // For small datasets, use current filtered cars instead of fetching
+      setAllCarsForSorting(filteredCars);
+      setIsSortingGlobal(true);
+      lastSortParamsRef.current = sortKey;
       return;
     }
     
+    fetchingSortRef.current = true;
     setIsSortingGlobal(true);
     setIsLoading(true);
     
@@ -480,6 +495,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       });
       
       setAllCarsForSorting(filteredAllCars);
+      lastSortParamsRef.current = sortKey;
       console.log(`✅ Global sorting: Loaded ${filteredAllCars.length} cars for sorting across all pages`);
     } catch (err) {
       console.error('❌ Error fetching all cars for global sorting:', err);
@@ -487,8 +503,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       setAllCarsForSorting([]);
     } finally {
       setIsLoading(false);
+      fetchingSortRef.current = false;
     }
-  };
+  }, [totalCount, fetchAllCars, filters.grade_iaai, filters.manufacturer_id, filters.model_id, filters.generation_id, filters.from_year, filters.to_year, sortBy, extractGradesFromTitle, filteredCars, totalPages]);
 
   const handleManufacturerChange = async (manufacturerId: string) => {
     console.log(`[handleManufacturerChange] Called with manufacturerId: ${manufacturerId}`);
@@ -792,16 +809,18 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setTotalPages(effectivePages);
   }, [totalCount, filteredCars, filters.grade_iaai]);
 
-  // Fetch all cars for sorting when sortBy changes and we have multiple pages
+  // Fetch all cars for sorting when sortBy changes OR when totalCount first becomes available
+  // This ensures global sorting works on initial load and when sort options change
   useEffect(() => {
-    if (totalPages > 1 && totalCount > 50 && (!filters.grade_iaai || filters.grade_iaai === 'all')) {
+    if (totalCount > 50 && !fetchingSortRef.current) {
+      console.log(`🔄 Triggering global sorting: totalCount=${totalCount}, sortBy=${sortBy}`);
       fetchAllCarsForSorting();
-    } else {
-      // Reset global sorting if not needed or if grade filter is active
+    } else if (totalCount <= 50) {
+      // Reset global sorting if not needed (small dataset)
       setIsSortingGlobal(false);
       setAllCarsForSorting([]);
     }
-  }, [sortBy, totalPages, totalCount, filters.grade_iaai]);
+  }, [sortBy, totalCount, fetchAllCarsForSorting]);
 
   // Show cars without requiring brand and model selection
   const shouldShowCars = true;
