@@ -8,6 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { InstallPrompt } from "./components/InstallPrompt";
 import FloatingPerformanceWidget from "./components/FloatingPerformanceWidget";
 import { useResourcePreloader } from "./hooks/useResourcePreloader";
+import { AuthProvider } from "./contexts/AuthContext";
+import { FilterProvider } from "./contexts/FilterContext";
 
 // Lazy load all pages for better code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -107,10 +109,12 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+      <AuthProvider>
+        <FilterProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
           <Routes>
             <Route path="/" element={
               <Suspense fallback={<PageSkeleton />}>
@@ -199,7 +203,9 @@ const App = () => {
         <InstallPrompt />
         <FloatingPerformanceWidget />
       </TooltipProvider>
-    </QueryClientProvider>
+    </FilterProvider>
+  </AuthProvider>
+</QueryClientProvider>
   );
 };
 

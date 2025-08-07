@@ -4,6 +4,7 @@ import { User } from "@supabase/supabase-js";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -29,6 +30,7 @@ import {
   Search,
   Shield,
   Cookie,
+  Filter,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -36,6 +38,8 @@ import AuthLogin from "@/components/AuthLogin";
 import { CarsSyncButton } from "@/components/CarsSyncButton";
 import AdminCarSearch from "@/components/AdminCarSearch";
 import { CookieManagementDashboard } from "@/components/CookieManagementDashboard";
+import { useAuth } from "@/contexts/AuthContext";
+import RoleAwareFilterPanel from "@/components/RoleAwareFilterPanel";
 
 // Lazy load heavy admin components
 const AdminSyncDashboard = lazy(() => 
@@ -96,6 +100,7 @@ interface AdminStats {
 }
 
 const AdminDashboard = () => {
+  const { user, role, permissions, isLoading: authLoading, logout } = useAuth();
   const [requests, setRequests] = useState<InspectionRequest[]>([]);
   const [carDetails, setCarDetails] = useState<{ [key: string]: CarData }>({});
   const [searchingCars, setSearchingCars] = useState<{
@@ -131,53 +136,14 @@ const AdminDashboard = () => {
     userAgents: {} as Record<string, number>,
   });
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [authLoading, setAuthLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Check authentication and admin status
-  useEffect(() => {
-    const checkAuth = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-
-      if (user) {
-        try {
-          const { data: adminCheck, error } = await supabase.rpc("is_admin");
-
-          if (error) throw error;
-          setIsAdmin(adminCheck || false);
-        } catch (error) {
-          console.error("Admin check failed:", error);
-          setIsAdmin(false);
-        }
-      }
-
-      setAuthLoading(false);
-    };
-
-    checkAuth();
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-      if (!session?.user) {
-        setIsAdmin(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  const isAdmin = role === 'admin';
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await logout();
     toast({
       title: "Logged out",
       description: "Successfully logged out of admin dashboard",
@@ -185,23 +151,11 @@ const AdminDashboard = () => {
   };
 
   const handleLoginSuccess = () => {
-    setAuthLoading(true);
-    // Re-check auth status after login
-    const recheckAuth = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-
-      if (user) {
-        const { data: adminCheck } = await supabase.rpc("is_admin");
-        setIsAdmin(adminCheck || false);
-      }
-
-      setAuthLoading(false);
-    };
-
-    recheckAuth();
+    // The auth context will handle the state update automatically
+    toast({
+      title: "Logged in",
+      description: "Welcome to the admin dashboard",
+    });
   };
 
   const fetchCarDetails = async (carIds: string[]) => {
@@ -749,9 +703,10 @@ const AdminDashboard = () => {
           onValueChange={setActiveTab}
           className="space-y-3 sm:space-y-4"
         >
-          <TabsList className="grid w-full grid-cols-5 h-auto">
+          <TabsList className="grid w-full grid-cols-6 h-auto">
             <TabsTrigger value="overview" className="text-xs sm:text-sm p-2 sm:p-3">Overview</TabsTrigger>
             <TabsTrigger value="inspections" className="text-xs sm:text-sm p-2 sm:p-3">Inspections</TabsTrigger>
+            <TabsTrigger value="filters" className="text-xs sm:text-sm p-2 sm:p-3">Filters</TabsTrigger>
             <TabsTrigger value="analytics" className="text-xs sm:text-sm p-2 sm:p-3">Analytics</TabsTrigger>
             <TabsTrigger value="performance" className="text-xs sm:text-sm p-2 sm:p-3">Performance</TabsTrigger>
             <TabsTrigger value="cookies" className="text-xs sm:text-sm p-2 sm:p-3">Cookies</TabsTrigger>
@@ -1466,6 +1421,153 @@ const AdminDashboard = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="filters" className="space-y-3 sm:space-y-4">
+            <div className="space-y-4">
+              <Card className="p-4">
+                <CardHeader className="p-0 pb-4">
+                  <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                    <Filter className="h-5 w-5" />
+                    Role-Based Filter Panel Demo
+                  </CardTitle>
+                  <div className="text-sm text-muted-foreground">
+                    This demonstrates how filter panels adapt based on user roles and permissions.
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="space-y-4">
+                    {/* User role info */}
+                    <div className="bg-muted/30 p-4 rounded-lg">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <Label className="text-sm font-medium">Current Role</Label>
+                          <div className="flex items-center gap-2 mt-1">
+                            {role === 'admin' && <Shield className="h-4 w-4 text-red-500" />}
+                            {role === 'user' && <UserCheck className="h-4 w-4 text-blue-500" />}
+                            {role === 'anonymous' && <UserIcon className="h-4 w-4 text-gray-500" />}
+                            <Badge variant={role === 'admin' ? 'destructive' : role === 'user' ? 'default' : 'secondary'}>
+                              {role}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium">Advanced Filters</Label>
+                          <div className="flex items-center gap-2 mt-1">
+                            {permissions.canAccessAdvancedFilters ? (
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <AlertCircle className="h-4 w-4 text-red-500" />
+                            )}
+                            <span className="text-sm">
+                              {permissions.canAccessAdvancedFilters ? 'Enabled' : 'Disabled'}
+                            </span>
+                          </div>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium">API Call Limit</Label>
+                          <div className="text-sm mt-1">
+                            {permissions.maxFilterApiCalls} calls/hour
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Filter panel demos */}
+                    <div className="space-y-6">
+                      <div>
+                        <h4 className="text-md font-semibold mb-3">Compact Filter Panel (Sidebar Style)</h4>
+                        <div className="border rounded-lg p-4 bg-muted/10">
+                          <RoleAwareFilterPanel 
+                            compact 
+                            onSearch={() => toast({ title: "Search triggered", description: "Filter search would be executed here" })}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="text-md font-semibold mb-3">Full Filter Panel (Main Page Style)</h4>
+                        <div className="border rounded-lg p-4 bg-muted/10">
+                          <RoleAwareFilterPanel 
+                            onSearch={() => toast({ title: "Search triggered", description: "Filter search would be executed here" })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Permission details */}
+                    <Card className="p-4">
+                      <CardHeader className="p-0 pb-3">
+                        <CardTitle className="text-base">Your Current Permissions</CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-0">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                          <div className="flex items-center gap-2">
+                            {permissions.canAccessAdvancedFilters ? (
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <X className="h-4 w-4 text-red-500" />
+                            )}
+                            <span>Advanced filters</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {permissions.canAccessBulkOperations ? (
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <X className="h-4 w-4 text-red-500" />
+                            )}
+                            <span>Bulk operations</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {permissions.canViewAllCars ? (
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <X className="h-4 w-4 text-red-500" />
+                            )}
+                            <span>View all cars</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {permissions.canExportData ? (
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <X className="h-4 w-4 text-red-500" />
+                            )}
+                            <span>Export data</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Test different roles (admin only) */}
+                    {role === 'admin' && (
+                      <Card className="p-4 border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+                        <CardHeader className="p-0 pb-3">
+                          <CardTitle className="text-base text-amber-800 dark:text-amber-200">
+                            Admin Testing Tools
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                          <div className="text-sm text-amber-700 dark:text-amber-300 mb-3">
+                            In a full implementation, you could test how filters appear for different user roles.
+                            This would include permission simulation and role switching for testing purposes.
+                          </div>
+                          <div className="space-y-2">
+                            <Button size="sm" variant="outline" disabled>
+                              <Eye className="h-3 w-3 mr-1" />
+                              View as Anonymous User
+                            </Button>
+                            <Button size="sm" variant="outline" disabled>
+                              <UserCheck className="h-3 w-3 mr-1" />
+                              View as Regular User
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-3 sm:space-y-4">
