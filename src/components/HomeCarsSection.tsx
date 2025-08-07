@@ -59,6 +59,7 @@ const HomeCarsSection = memo(() => {
   const [showFilters, setShowFilters] = useState(true);
 
   const [filters, setFilters] = useState<APIFilters>({});
+  const [pendingFilters, setPendingFilters] = useState<APIFilters>({});
   const [manufacturers, setManufacturers] = useState<
     {
       id: number;
@@ -310,15 +311,23 @@ const HomeCarsSection = memo(() => {
       });
       navigate(`/catalog?${searchParams.toString()}`);
     } else {
-      // Apply filters locally for manufacturer and model selection
-      setFilters(newFilters);
-      console.log('Applied filters:', newFilters);
+      // Store filters as pending for basic filters (manufacturer, model)
+      // Don't apply them immediately - wait for search button click
+      setPendingFilters(newFilters);
+      console.log('Stored pending filters:', newFilters);
     }
+  };
+
+  const handleSearchCars = () => {
+    // Apply the pending filters when search button is clicked
+    setFilters(pendingFilters);
+    console.log('Applied pending filters:', pendingFilters);
   };
 
   const handleClearFilters = () => {
     // Frontend-only filter clearing - no API calls needed
     setFilters({});
+    setPendingFilters({});
   };
 
   return (
@@ -354,7 +363,7 @@ const HomeCarsSection = memo(() => {
         {showFilters && (
           <div className="mb-6 sm:mb-8">
             <EncarStyleFilter
-              filters={filters}
+              filters={pendingFilters}
               manufacturers={manufacturers}
               models={models}
               generations={generations}
@@ -375,6 +384,7 @@ const HomeCarsSection = memo(() => {
               onFetchGrades={fetchGrades}
               onFetchTrimLevels={fetchTrimLevels}
               isHomepage={true}
+              onSearchCars={handleSearchCars}
             />
           </div>
         )}
