@@ -638,6 +638,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     const loadInitialData = async () => {
       setIsRestoringState(true);
 
+      // Check if we're coming from homepage filter
+      const fromHomepage = searchParams.get('fromHomepage');
+      const isFromHomepage = fromHomepage === 'true';
+
       // Get filters and pagination state from URL parameters
       const urlFilters: APIFilters = {};
       let urlLoadedPages = 1;
@@ -645,7 +649,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       for (const [key, value] of searchParams.entries()) {
         if (key === "loadedPages") {
           urlLoadedPages = parseInt(value) || 1;
-        } else if (value && key !== "loadedPages") {
+        } else if (value && key !== "loadedPages" && key !== "fromHomepage") {
           let decodedValue = value;
           try {
             decodedValue = decodeURIComponent(value);
@@ -701,18 +705,30 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
       setIsRestoringState(false);
 
-      // Quick scroll restoration
-      const savedData = sessionStorage.getItem(SCROLL_STORAGE_KEY);
-      if (savedData) {
-        try {
-          const { scrollTop, timestamp } = JSON.parse(savedData);
-          const isRecent = Date.now() - timestamp < 30000;
-          
-          if (isRecent && scrollTop > 0) {
-            window.scrollTo({ top: scrollTop, behavior: 'auto' });
+      // Handle scrolling based on navigation source
+      if (isFromHomepage) {
+        // Always scroll to top when coming from homepage filters
+        console.log('🚀 Catalog: Coming from homepage, scrolling to top');
+        window.scrollTo({ top: 0, behavior: 'auto' });
+        
+        // Remove the fromHomepage flag from URL without causing re-render
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete('fromHomepage');
+        window.history.replaceState({}, '', `${window.location.pathname}?${newSearchParams.toString()}`);
+      } else {
+        // Regular scroll restoration for normal catalog usage
+        const savedData = sessionStorage.getItem(SCROLL_STORAGE_KEY);
+        if (savedData) {
+          try {
+            const { scrollTop, timestamp } = JSON.parse(savedData);
+            const isRecent = Date.now() - timestamp < 30000;
+            
+            if (isRecent && scrollTop > 0) {
+              window.scrollTo({ top: scrollTop, behavior: 'auto' });
+            }
+          } catch (error) {
+            // Ignore scroll restoration errors
           }
-        } catch (error) {
-          // Ignore scroll restoration errors
         }
       }
     };
