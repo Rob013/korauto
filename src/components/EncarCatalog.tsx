@@ -353,9 +353,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setSearchParams(paramsToSet);
   }, [fetchCars, setSearchParams]);
 
-  // Debounced version for performance
+  // Debounced version for performance - Reduced debounce time for year filters
   const debouncedApplyFilters = useCallback(
-    debounce(applyFiltersInternal, 300),
+    debounce(applyFiltersInternal, 150), // Reduced from 300ms for faster response
     [applyFiltersInternal]
   );
 
