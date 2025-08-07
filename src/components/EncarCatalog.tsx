@@ -348,7 +348,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Use 50 cars per page for proper pagination
     const filtersWithPagination = {
       ...newFilters,
-      per_page: "50" // Show 50 cars per page
+      per_page: "100" // Show 100 cars per page for faster loading
     };
     
     fetchCars(1, filtersWithPagination, true);
@@ -406,7 +406,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Fetch cars for the specific page
     const filtersWithPagination = {
       ...filters,
-      per_page: "50"
+      per_page: "100"
     };
     
     fetchCars(page, filtersWithPagination, true); // Reset list for new page
@@ -522,7 +522,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       
       // Fetch cars with new filters - remove per_page duplicates
       promises.push(
-        fetchCars(1, { ...newFilters, per_page: "50" }, true)
+        fetchCars(1, { ...newFilters, per_page: "100" }, true)
       );
       
       await Promise.all(promises);
@@ -567,7 +567,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     try {
       if (!modelId) {
         // Fetch cars with cleared model filter
-        await fetchCars(1, { ...newFilters, per_page: "50" }, true);
+        await fetchCars(1, { ...newFilters, per_page: "100" }, true);
         setIsLoading(false);
         return;
       }
@@ -579,7 +579,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           setGenerations(generationData);
           return generationData;
         }),
-        fetchCars(1, { ...newFilters, per_page: "50" }, true)
+        fetchCars(1, { ...newFilters, per_page: "100" }, true)
       ];
       
       await Promise.all(promises);
@@ -604,6 +604,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const handleGenerationChange = async (generationId: string) => {
     setIsLoading(true);
     
+    // Show immediate feedback by clearing current cars
+    setCars([]);
+    
     // Create new filters immediately for faster UI response
     const newFilters: APIFilters = {
       ...filters,
@@ -614,8 +617,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setLoadedPages(1);
     
     try {
-      // Only fetch cars with new generation filter - avoid duplicate API calls
-      await fetchCars(1, { ...newFilters, per_page: "50" }, true);
+      // Optimized: Use higher per_page and leverage caching
+      await fetchCars(1, { ...newFilters, per_page: "100" }, true);
       
       // Update URL after successful data fetch
       const paramsToSet: any = {};
@@ -698,7 +701,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       // Load cars with optimized pagination - only load current page
       const initialFilters = {
         ...urlFilters,
-        per_page: "50"
+        per_page: "100"
       };
       
       await fetchCars(1, initialFilters, true);
@@ -967,7 +970,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             onSearchCars={() => {
               // Issue #2 FIXED: Hide filter panel after search and mark as explicitly closed
               // This prevents the panel from reopening until user manually opens it
-              fetchCars(1, { ...filters, per_page: "50" }, true);
+              fetchCars(1, { ...filters, per_page: "100" }, true);
               setShowFilters(false); // Always hide filter panel when search button is clicked
               setHasExplicitlyClosed(true); // Mark as explicitly closed to prevent auto-reopening
             }}

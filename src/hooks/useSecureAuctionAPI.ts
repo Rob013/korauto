@@ -4,7 +4,11 @@ import { findGenerationYears } from "@/data/generationYears";
 
 // Simple cache to prevent redundant API calls
 const apiCache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_DURATION = 60000; // 60 seconds
+const CACHE_DURATION = 120000; // 2 minutes for better performance
+
+// Special cache for generation-based car searches (longer duration for better UX)
+const generationCarsCache = new Map<string, { data: any; timestamp: number }>();
+const GENERATION_CACHE_DURATION = 300000; // 5 minutes for generation searches
 
 // Helper function to get cached data or make API call
 const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => Promise<any>) => {
@@ -911,9 +915,9 @@ export const useSecureAuctionAPI = () => {
 
       // Add a minimal delay to prevent rapid successive calls
       const now = Date.now();
-      if (now - lastFetchTime < 50) {
-        // 50ms minimum between calls (optimized for faster loading)
-        await delay(50 - (now - lastFetchTime));
+      if (now - lastFetchTime < 10) {
+        // 10ms minimum between calls (optimized for faster loading)
+        await delay(10 - (now - lastFetchTime));
       }
       setLastFetchTime(Date.now());
 
@@ -1036,7 +1040,7 @@ export const useSecureAuctionAPI = () => {
       const apiFilters = {
         ...newFilters,
         page: page.toString(),
-        per_page: newFilters.per_page || "50", // Show 50 cars per page
+        per_page: newFilters.per_page || "100", // Show 100 cars per page for faster loading
         simple_paginate: "0",
       };
       
@@ -1048,76 +1052,79 @@ export const useSecureAuctionAPI = () => {
       delete apiFilters.trim_level;
 
       console.log(`🔄 Fetching cars - Page ${page} with filters:`, apiFilters);
-      const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
+      
+      // Use special caching for generation-based searches
+      let data: APIResponse;
+      if (apiFilters.generation_id && page === 1) {
+        const cacheKey = `generation-cars-${JSON.stringify(apiFilters)}`;
+        const cached = generationCarsCache.get(cacheKey);
+        
+        if (cached && Date.now() - cached.timestamp < GENERATION_CACHE_DURATION) {
+          console.log(`📋 Using cached generation data for ${apiFilters.generation_id}`);
+          data = cached.data;
+        } else {
+          data = await makeSecureAPICall("cars", apiFilters);
+          generationCarsCache.set(cacheKey, { data, timestamp: Date.now() });
+          console.log(`💾 Cached generation data for ${apiFilters.generation_id}`);
+        }
+      } else {
+        data = await makeSecureAPICall("cars", apiFilters);
+      }
 
-      // Apply client-side variant filtering if a variant is selected
+      // Apply optimized client-side variant filtering if a variant is selected
       let filteredCars = data.data || [];
       if (selectedVariant && selectedVariant !== 'all') {
-        console.log(`🔍 Applying client-side variant filter: "${selectedVariant}"`);
+        console.log(`🔍 Applying optimized variant filter: "${selectedVariant}"`);
+        const variantLower = selectedVariant.toLowerCase().trim();
         
         filteredCars = filteredCars.filter(car => {
-          // Check if car has the selected variant in any of its lots
+          // Fast path: Check title first (most common match)
+          if (car.title && car.title.toLowerCase().includes(variantLower)) {
+            return true;
+          }
+          
+          // Check engine name (second most common)
+          if (car.engine?.name && car.engine.name.toLowerCase().includes(variantLower)) {
+            return true;
+          }
+          
+          // Check lots only if necessary (more expensive)
           if (car.lots && Array.isArray(car.lots)) {
             return car.lots.some(lot => {
-              // Check grade_iaai field
-              if (lot.grade_iaai && lot.grade_iaai.trim() === selectedVariant) {
-                return true;
-              }
+              // Use includes for more flexible matching
+              const grade = lot.grade_iaai?.toLowerCase().trim();
+              const badge = lot.details?.badge?.toLowerCase().trim();
               
-              // Check badge field
-              if (lot.details && lot.details.badge && lot.details.badge.trim() === selectedVariant) {
-                return true;
-              }
-              
-              // Check engine name
-              if (car.engine && car.engine.name && car.engine.name.trim() === selectedVariant) {
-                return true;
-              }
-              
-              // Check title for variant
-              if (car.title && car.title.toLowerCase().includes(selectedVariant.toLowerCase())) {
-                return true;
-              }
-              
-              return false;
+              return (grade && grade.includes(variantLower)) || 
+                     (badge && badge.includes(variantLower));
             });
           }
           return false;
         });
         
-        console.log(`✅ Variant filter "${selectedVariant}": ${filteredCars.length} cars match out of ${data.data?.length || 0} total`);
+        console.log(`✅ Optimized variant filter "${selectedVariant}": ${filteredCars.length} cars match out of ${data.data?.length || 0} total`);
       }
 
-      // Apply client-side trim level filtering if a trim level is selected
+      // Apply optimized client-side trim level filtering if a trim level is selected
       if (selectedTrimLevel && selectedTrimLevel !== 'all') {
-        console.log(`🔍 Applying client-side trim level filter: "${selectedTrimLevel}"`);
+        console.log(`🔍 Applying optimized trim level filter: "${selectedTrimLevel}"`);
+        const trimLevelLower = selectedTrimLevel.toLowerCase().trim();
         
         filteredCars = filteredCars.filter(car => {
-          // Check if car has the selected trim level in any of its lots or title
-          if (car.lots && Array.isArray(car.lots)) {
-            // Check lots for trim level in badge or grade_iaai
-            const hasMatchInLots = car.lots.some(lot => {
-              // Check badge field for trim level
-              if (lot.details && lot.details.badge && 
-                  lot.details.badge.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
-                return true;
-              }
-              
-              // Check grade_iaai field for trim level
-              if (lot.grade_iaai && 
-                  lot.grade_iaai.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
-                return true;
-              }
-              
-              return false;
-            });
-            
-            if (hasMatchInLots) return true;
+          // Fast path: Check title first
+          if (car.title && car.title.toLowerCase().includes(trimLevelLower)) {
+            return true;
           }
           
-          // Check title for trim level
-          if (car.title && car.title.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
-            return true;
+          // Check lots only if necessary
+          if (car.lots && Array.isArray(car.lots)) {
+            return car.lots.some(lot => {
+              const badge = lot.details?.badge?.toLowerCase();
+              const grade = lot.grade_iaai?.toLowerCase();
+              
+              return (badge && badge.includes(trimLevelLower)) || 
+                     (grade && grade.includes(trimLevelLower));
+            });
           }
           
           return false;
@@ -1140,6 +1147,19 @@ export const useSecureAuctionAPI = () => {
       if (resetList || page === 1) {
         setCars(filteredCars);
         setCurrentPage(1);
+        
+        // Preload next page for better UX if there are more pages
+        if (data.meta?.last_page && data.meta.last_page > 1) {
+          setTimeout(() => {
+            console.log(`🚀 Preloading page 2 for better UX`);
+            // Use the same cache logic for preloading
+            const nextPageFilters = { ...apiFilters, page: "2" };
+            makeSecureAPICall("cars", nextPageFilters).catch(() => {
+              // Silent fail for preloading
+              console.log(`📥 Preload page 2 failed silently`);
+            });
+          }, 500); // Preload after 500ms
+        }
       } else {
         setCars((prev) => [...prev, ...filteredCars]);
         setCurrentPage(page);
