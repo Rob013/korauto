@@ -89,6 +89,19 @@ const HomeCarsSection = memo(() => {
   >([]);
   const [filterCounts, setFilterCounts] = useState<any>(null);
 
+  // Cache for API data to improve performance
+  const [dataCache, setDataCache] = useState<{
+    manufacturers?: { id: number; name: string; car_count?: number; cars_qty?: number; }[];
+    models?: { [manufacturerId: string]: { id: number; name: string; car_count?: number; cars_qty?: number; }[] };
+    generations?: { [modelId: string]: { id: number; name: string; manufacturer_id?: number; model_id?: number; from_year?: number; to_year?: number; cars_qty?: number; }[] };
+    lastUpdated?: number;
+  }>({});
+
+  // Performance optimization: debounced API calls
+  const [isLoadingManufacturers, setIsLoadingManufacturers] = useState(false);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
+  const [isLoadingGenerations, setIsLoadingGenerations] = useState(false);
+
   // Frontend filtering function
   const applyFrontendFilters = (cars: any[], filters: APIFilters) => {
     return cars.filter((car) => {
@@ -262,7 +275,34 @@ const HomeCarsSection = memo(() => {
 
     // Load initial data with 50 cars from daily page
     fetchCars(dailyPage, { per_page: "50" }, true);
-    fetchManufacturers().then(setManufacturers);
+    
+    // Load manufacturers with caching
+    const loadManufacturers = async () => {
+      setIsLoadingManufacturers(true);
+      try {
+        // Check cache first (cache for 5 minutes)
+        const cacheAge = Date.now() - (dataCache.lastUpdated || 0);
+        if (dataCache.manufacturers && cacheAge < 5 * 60 * 1000) {
+          setManufacturers(dataCache.manufacturers);
+          setIsLoadingManufacturers(false);
+          return;
+        }
+
+        const manufacturersData = await fetchManufacturers();
+        setManufacturers(manufacturersData);
+        setDataCache(prev => ({
+          ...prev,
+          manufacturers: manufacturersData,
+          lastUpdated: Date.now()
+        }));
+      } catch (error) {
+        console.error('Failed to load manufacturers:', error);
+      } finally {
+        setIsLoadingManufacturers(false);
+      }
+    };
+
+    loadManufacturers();
   }, []);
 
   const handleFiltersChange = (newFilters: APIFilters) => {
@@ -315,9 +355,80 @@ const HomeCarsSection = memo(() => {
   };
 
   const handleSearchCars = () => {
-    // Apply the pending filters when search button is clicked
-    setFilters(pendingFilters);
-    console.log('Applied pending filters:', pendingFilters);
+    // Always redirect to catalog with current pending filters
+    const searchParams = new URLSearchParams();
+    Object.entries(pendingFilters).forEach(([key, value]) => {
+      if (value && value !== '') {
+        searchParams.set(key, value);
+      }
+    });
+    
+    // Add flag to indicate navigation from homepage search
+    searchParams.set('fromHomepage', 'true');
+    
+    navigate(`/catalog?${searchParams.toString()}`);
+  };
+
+  // Optimized manufacturer change handler with caching
+  const handleManufacturerChange = async (manufacturerId: string) => {
+    setIsLoadingModels(true);
+    try {
+      // Check cache first
+      if (dataCache.models && dataCache.models[manufacturerId]) {
+        setModels(dataCache.models[manufacturerId]);
+        setGenerations([]);
+        setIsLoadingModels(false);
+        return;
+      }
+
+      // Fetch from API
+      const modelsData = await fetchModels(manufacturerId);
+      setModels(modelsData);
+      setGenerations([]);
+      
+      // Update cache
+      setDataCache(prev => ({
+        ...prev,
+        models: {
+          ...prev.models,
+          [manufacturerId]: modelsData
+        }
+      }));
+    } catch (error) {
+      console.error('Failed to load models:', error);
+    } finally {
+      setIsLoadingModels(false);
+    }
+  };
+
+  // Optimized model change handler with caching
+  const handleModelChange = async (modelId: string) => {
+    setIsLoadingGenerations(true);
+    try {
+      // Check cache first
+      if (dataCache.generations && dataCache.generations[modelId]) {
+        setGenerations(dataCache.generations[modelId]);
+        setIsLoadingGenerations(false);
+        return;
+      }
+
+      // Fetch from API
+      const generationsData = await fetchGenerations(modelId);
+      setGenerations(generationsData);
+      
+      // Update cache
+      setDataCache(prev => ({
+        ...prev,
+        generations: {
+          ...prev.generations,
+          [modelId]: generationsData
+        }
+      }));
+    } catch (error) {
+      console.error('Failed to load generations:', error);
+    } finally {
+      setIsLoadingGenerations(false);
+    }
   };
 
   const handleClearFilters = () => {
@@ -366,17 +477,8 @@ const HomeCarsSection = memo(() => {
               filterCounts={filterCounts}
               onFiltersChange={handleFiltersChange}
               onClearFilters={handleClearFilters}
-              onManufacturerChange={(manufacturerId) => {
-                if (manufacturerId) {
-                  fetchModels(manufacturerId).then(setModels);
-                  setGenerations([]);
-                }
-              }}
-              onModelChange={(modelId) => {
-                if (modelId) {
-                  fetchGenerations(modelId).then(setGenerations);
-                }
-              }}
+              onManufacturerChange={handleManufacturerChange}
+              onModelChange={handleModelChange}
               onFetchGrades={fetchGrades}
               onFetchTrimLevels={fetchTrimLevels}
               isHomepage={true}
