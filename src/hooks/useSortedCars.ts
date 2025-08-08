@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-export type SortOption = 'default' | 'price_low' | 'price_high' | 'year_new' | 'year_old' | 'mileage_low' | 'mileage_high' | 'make_az' | 'make_za' | 'popular';
+export type SortOption = 'price_low' | 'price_high' | 'year_new' | 'year_old' | 'mileage_low' | 'mileage_high' | 'make_az' | 'make_za' | 'popular';
 
 // Use a generic type that works with both secure API cars and other car types
 interface FlexibleCar {
@@ -69,10 +69,6 @@ export const useSortedCars = (cars: FlexibleCar[], sortBy: SortOption) => {
       const bPrice = bLot?.buy_now ? Math.round(bLot.buy_now + 2200) : 25000;
 
       switch (sortBy) {
-        case 'default':
-          // Return cars in their natural order (no sorting)
-          return 0;
-          
         case 'price_low':
           return aPrice - bPrice;
         
@@ -120,7 +116,6 @@ export const useSortedCars = (cars: FlexibleCar[], sortBy: SortOption) => {
 };
 
 export const getSortOptions = () => [
-  { value: 'default', label: 'Rendi Origjinal' },
   { value: 'price_low', label: 'Çmimi: Nga më i ulet' },
   { value: 'price_high', label: 'Çmimi: Nga më i larti' },
   { value: 'year_new', label: 'Viti: Nga më i ri' },

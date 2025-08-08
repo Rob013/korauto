@@ -79,7 +79,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     loadMore,
   } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
-  const [sortBy, setSortBy] = useState<SortOption>("default");
+  const [sortBy, setSortBy] = useState<SortOption>("price_low");
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -213,12 +213,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     return isSortingGlobal && allCarsForSorting.length > 0 ? allCarsForSorting : carsForSorting;
   }, [isSortingGlobal, allCarsForSorting, carsForSorting]);
   
-  // Only apply sorting when filters are selected or sortBy is not 'default'
-  const effectiveSortBy = useMemo(() => {
-    return hasSelectedCategories ? sortBy : 'default';
-  }, [hasSelectedCategories, sortBy]);
-  
-  const sortedCars = useSortedCars(carsToSort, effectiveSortBy);
+  const sortedCars = useSortedCars(carsToSort, sortBy);
   
   // Memoized current page cars from sorted results
   const carsForCurrentPage = useMemo(() => {
@@ -820,30 +815,25 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
   // Fetch all cars for sorting when sortBy changes OR when totalCount first becomes available
   // This ensures global sorting works on initial load and when sort options change
-  // BUT only apply sorting when filters are selected and sortBy is not default
   useEffect(() => {
-    if (totalCount > 50 && !fetchingSortRef.current && hasSelectedCategories && sortBy !== 'default') {
-      console.log(`🔄 Triggering global sorting: totalCount=${totalCount}, sortBy=${sortBy}, hasFilters=${hasSelectedCategories}`);
+    if (totalCount > 50 && !fetchingSortRef.current) {
+      console.log(`🔄 Triggering global sorting: totalCount=${totalCount}, sortBy=${sortBy}`);
       fetchAllCarsForSorting();
-    } else {
-      // Reset global sorting if not needed (small dataset, no filters, or default sort)
+    } else if (totalCount <= 50) {
+      // Reset global sorting if not needed (small dataset)
       setIsSortingGlobal(false);
       setAllCarsForSorting([]);
     }
-  }, [sortBy, totalCount, fetchAllCarsForSorting, hasSelectedCategories]);
+  }, [sortBy, totalCount, fetchAllCarsForSorting]);
 
   // Show cars without requiring brand and model selection
   const shouldShowCars = true;
 
   // Track when categories are selected 
   useEffect(() => {
-    const hasCategories = !!(filters.manufacturer_id || filters.model_id || 
-                             filters.color || filters.fuel_type || filters.transmission || 
-                             filters.from_year || filters.to_year || filters.buy_now_price_from || 
-                             filters.buy_now_price_to || filters.odometer_from_km || filters.odometer_to_km ||
-                             filters.seats_count || filters.max_accidents || filters.grade_iaai || filters.search);
-    setHasSelectedCategories(hasCategories);
-  }, [filters]);
+    const hasCategories = filters.manufacturer_id && filters.model_id;
+    setHasSelectedCategories(!!hasCategories);
+  }, [filters.manufacturer_id, filters.model_id]);
 
   // Effect to highlight and scroll to specific car by lot number
   useEffect(() => {
@@ -1062,19 +1052,17 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               <div className="flex gap-1 items-center">
                 {/* Sort Control - smaller on mobile */}
                 <div className="relative">
-                  <ArrowUpDown className={`h-3 w-3 absolute left-2 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none ${!hasSelectedCategories ? 'text-muted-foreground/50' : ''}`} />
+                  <ArrowUpDown className="h-3 w-3 absolute left-2 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none" />
                   <AdaptiveSelect
                     value={sortBy}
                     onValueChange={(value: SortOption) => {
                       setSortBy(value);
                     }}
                     placeholder="Sort"
-                    className={`w-24 sm:w-32 h-7 text-xs pl-6 ${!hasSelectedCategories ? 'opacity-60' : ''}`}
-                    disabled={!hasSelectedCategories && sortBy === 'default'}
+                    className="w-24 sm:w-32 h-7 text-xs pl-6"
                     options={getSortOptions().map((option) => ({
                       value: option.value,
-                      label: option.label,
-                      disabled: !hasSelectedCategories && option.value !== 'default'
+                      label: option.label
                     }))}
                   />
                 </div>
@@ -1088,12 +1076,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               </h1>
               <p className="text-muted-foreground text-xs sm:text-sm">
                 {totalCount.toLocaleString()} cars {filters.grade_iaai && filters.grade_iaai !== 'all' ? `filtered by ${filters.grade_iaai}` : 'total'} • Page {currentPage} of {totalPages} • Showing {carsForCurrentPage.length} cars
-                {!hasSelectedCategories && (
-                  <span className="ml-2 text-amber-600 dark:text-amber-400">• Natural order (no sorting)</span>
-                )}
-                {hasSelectedCategories && sortBy !== 'default' && (
-                  <span className="ml-2 text-green-600 dark:text-green-400">• Sorted by {getSortOptions().find(opt => opt.value === sortBy)?.label}</span>
-                )}
               </p>
             </div>
           </div>
