@@ -22,6 +22,7 @@ import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useResourcePreloader } from "@/hooks/useResourcePreloader";
 import { debounce } from "@/utils/performance";
+import { useOptimizedYearFilter } from "@/hooks/useOptimizedYearFilter";
 
 import { useSearchParams } from "react-router-dom";
 import {
@@ -64,6 +65,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     loading,
     error,
     totalCount,
+    setTotalCount, // ✅ Import setTotalCount for optimized filtering
     hasMorePages,
     fetchCars,
     fetchAllCars, // ✅ Import new function for global sorting
@@ -358,33 +360,60 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setSearchParams(paramsToSet);
   }, [fetchCars, setSearchParams]);
 
+  // Optimized year filtering hook for better performance
+  const {
+    handleOptimizedYearFilter,
+    isLoadingYearFilter,
+    yearFilterProgress,
+    clearYearFilterCache,
+    instantFilteredCars,
+    cacheYearResults
+  } = useOptimizedYearFilter({
+    currentCars: cars,
+    totalCount,
+    onApiCall: applyFiltersInternal,
+    filters
+  });
+
   // Debounced version for performance - Reduced debounce time for year filters
   const debouncedApplyFilters = useCallback(
     debounce(applyFiltersInternal, 150), // Reduced from 300ms for faster response
     [applyFiltersInternal]
   );
 
-  const handleFiltersChange = useCallback((newFilters: APIFilters) => {
+  const handleFiltersChange = useCallback(async (newFilters: APIFilters) => {
     // Update UI immediately for responsiveness
     setFilters(newFilters);
     
-    // Clear previous data immediately to show loading state
-    setCars([]);
-    
-    // Check if this is a year range change - apply immediately for better UX
+    // Check if this is a year range change - use optimized filtering for better UX
     const isYearRangeChange = (
       newFilters.from_year !== filters.from_year || 
       newFilters.to_year !== filters.to_year
     ) && (newFilters.from_year || newFilters.to_year);
     
     if (isYearRangeChange) {
-      // Apply year range filters immediately without debouncing
-      applyFiltersInternal(newFilters);
+      console.log('🚀 Using optimized year filtering for instant response');
+      
+      // Use optimized year filtering for instant feedback
+      const result = await handleOptimizedYearFilter(
+        newFilters.from_year, 
+        newFilters.to_year, 
+        newFilters
+      );
+      
+      // If we got instant results, temporarily show them
+      if (result && result.data.length > 0) {
+        setCars(result.data);
+        setTotalCount(result.totalCount);
+      }
     } else {
+      // Clear previous data immediately to show loading state for non-year filters
+      setCars([]);
+      
       // Apply other filters with debouncing to reduce API calls
       debouncedApplyFilters(newFilters);
     }
-  }, [debouncedApplyFilters, applyFiltersInternal, filters.from_year, filters.to_year]);
+  }, [debouncedApplyFilters, handleOptimizedYearFilter, filters.from_year, filters.to_year]);
 
   const handleClearFilters = useCallback(() => {
     setFilters({});
@@ -1087,6 +1116,12 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               </h1>
               <p className="text-muted-foreground text-xs sm:text-sm">
                 {totalCount.toLocaleString()} cars {filters.grade_iaai && filters.grade_iaai !== 'all' ? `filtered by ${filters.grade_iaai}` : 'total'} • Page {currentPage} of {totalPages} • Showing {carsForCurrentPage.length} cars
+                {yearFilterProgress === 'instant' && (
+                  <span className="ml-2 text-primary text-xs">⚡ Instant results</span>
+                )}
+                {yearFilterProgress === 'loading' && (
+                  <span className="ml-2 text-primary text-xs">🔄 Loading complete results...</span>
+                )}
               </p>
             </div>
           </div>

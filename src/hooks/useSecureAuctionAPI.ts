@@ -2470,6 +2470,7 @@ export const useSecureAuctionAPI = () => {
     error,
     currentPage,
     totalCount,
+    setTotalCount, // ✅ Export setTotalCount for optimized filtering
     hasMorePages,
     fetchCars,
     fetchAllCars, // ✅ Export new function for global sorting

@@ -367,7 +367,10 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
           {/* Year presets - Fast year selections under model */}
           <div className="space-y-1 filter-section">
-            <Label className="filter-label text-xs text-muted-foreground">Year Range:</Label>
+            <Label className="filter-label text-xs text-muted-foreground flex items-center gap-1">
+              Year Range: 
+              <span className="text-xs text-primary bg-primary/10 px-1 rounded" title="Optimized for instant results">⚡</span>
+            </Label>
             <div className="year-buttons flex flex-wrap gap-1">
               {yearRangePresets.slice(0, 4).map((preset) => (
                 <Button
@@ -381,7 +384,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   size="sm"
                   className="h-6 px-2 text-xs"
                   onClick={() => handleYearRangePreset(preset)}
-                  title={`From ${preset.from} to present (${preset.to})`} // Added tooltip for clarity
+                  title={`⚡ Instant filter: From ${preset.from} to present (${preset.to})`} // Added optimization indicator
                 >
                   {preset.label}
                 </Button>
@@ -750,7 +753,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                       size="sm"
                       className="h-8 px-3 text-xs"
                       onClick={() => handleYearRangePreset(preset)}
-                      title={`From ${preset.from} to present (${preset.to})`} // Added tooltip for clarity
+                      title={`⚡ Instant filter: From ${preset.from} to present (${preset.to})`} // Added optimization indicator
                     >
                       {preset.label}
                     </Button>
@@ -941,7 +944,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                         size="sm"
                         className="h-7 px-2 text-xs"
                         onClick={() => handleYearRangePreset(preset)}
-                        title={`From ${preset.from} to present (${preset.to})`} // Added tooltip for clarity
+                        title={`⚡ Instant filter: From ${preset.from} to present (${preset.to})`} // Added optimization indicator
                       >
                         {preset.label}
                       </Button>
