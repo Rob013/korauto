@@ -1247,77 +1247,51 @@ export const useSecureAuctionAPI = () => {
       // Apply client-side variant filtering if a variant is selected
       let filteredCars = data.data || [];
       if (selectedVariant && selectedVariant !== 'all') {
-        console.log(`🔍 Applying client-side variant filter: "${selectedVariant}"`);
+        console.log(`🔍 Applying client-side variant filter (strict): "${selectedVariant}"`);
+        const norm = (s: string) => s.toLowerCase().trim().replace(/\s+/g, '');
+        const selectedNorm = norm(selectedVariant);
         
-        filteredCars = filteredCars.filter(car => {
-          // Check if car has the selected variant in any of its lots
+        filteredCars = filteredCars.filter((car) => {
           if (car.lots && Array.isArray(car.lots)) {
-            return car.lots.some(lot => {
-              // Check grade_iaai field
-              if (lot.grade_iaai && lot.grade_iaai.trim() === selectedVariant) {
-                return true;
-              }
-              
-              // Check badge field
-              if (lot.details && lot.details.badge && lot.details.badge.trim() === selectedVariant) {
-                return true;
-              }
-              
-              // Check engine name
-              if (car.engine && car.engine.name && car.engine.name.trim() === selectedVariant) {
-                return true;
-              }
-              
-              // Check title for variant
-              if (car.title && car.title.toLowerCase().includes(selectedVariant.toLowerCase())) {
-                return true;
-              }
-              
+            return car.lots.some((lot) => {
+              if (lot.grade_iaai && norm(lot.grade_iaai) === selectedNorm) return true;
+              if (lot.details && lot.details.badge && norm(lot.details.badge) === selectedNorm) return true;
+              if (car.engine && car.engine.name && norm(car.engine.name) === selectedNorm) return true;
+              // No fuzzy title matching – enforce strict equality only
               return false;
             });
           }
           return false;
         });
         
-        console.log(`✅ Variant filter "${selectedVariant}": ${filteredCars.length} cars match out of ${data.data?.length || 0} total`);
+        console.log(`✅ Variant filter (strict) "${selectedVariant}": ${filteredCars.length} cars match out of ${data.data?.length || 0} total`);
       }
 
       // Apply client-side trim level filtering if a trim level is selected
       if (selectedTrimLevel && selectedTrimLevel !== 'all') {
-        console.log(`🔍 Applying client-side trim level filter: "${selectedTrimLevel}"`);
+        console.log(`🔍 Applying client-side trim level filter (strict): "${selectedTrimLevel}"`);
+        const norm = (s: string) => s.toLowerCase().trim().replace(/\s+/g, '');
+        const selectedTrimNorm = norm(selectedTrimLevel);
         
-        filteredCars = filteredCars.filter(car => {
-          // Check if car has the selected trim level in any of its lots or title
+        filteredCars = filteredCars.filter((car) => {
+          // Strict match in lots (badge or grade)
           if (car.lots && Array.isArray(car.lots)) {
-            // Check lots for trim level in badge or grade_iaai
-            const hasMatchInLots = car.lots.some(lot => {
-              // Check badge field for trim level
-              if (lot.details && lot.details.badge && 
-                  lot.details.badge.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
-                return true;
-              }
-              
-              // Check grade_iaai field for trim level
-              if (lot.grade_iaai && 
-                  lot.grade_iaai.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
-                return true;
-              }
-              
+            const hasMatchInLots = car.lots.some((lot) => {
+              if (lot.details && lot.details.badge && norm(lot.details.badge) === selectedTrimNorm) return true;
+              if (lot.grade_iaai && norm(lot.grade_iaai) === selectedTrimNorm) return true;
               return false;
             });
-            
             if (hasMatchInLots) return true;
           }
           
-          // Check title for trim level
-          if (car.title && car.title.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
-            return true;
-          }
+          // Strict match in engine name
+          if (car.engine && car.engine.name && norm(car.engine.name) === selectedTrimNorm) return true;
           
+          // No fuzzy title matching – enforce strict equality only
           return false;
         });
         
-        console.log(`✅ Trim level filter "${selectedTrimLevel}": ${filteredCars.length} cars match out of ${data.data?.length || 0} total`);
+        console.log(`✅ Trim level filter (strict) "${selectedTrimLevel}": ${filteredCars.length} cars match out of ${data.data?.length || 0} total`);
       }
 
       // Set metadata from response (but adjust total count for client-side filtering)

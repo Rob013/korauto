@@ -175,25 +175,12 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         carGrades.push(car.engine.name.trim().toLowerCase());
       }
       
-      // More comprehensive matching for grades
-      return carGrades.some(grade => {
-        // Exact match
-        if (grade === filterGrade) return true;
-        
-        // Partial match - both directions
-        if (grade.includes(filterGrade) || filterGrade.includes(grade)) return true;
-        
-        // Remove spaces and try again
-        const gradeNoSpaces = grade.replace(/\s+/g, '');
+      // Strict matching for grades (case-insensitive, ignore spaces)
+      return carGrades.some((grade) => {
+        const g = grade.toLowerCase().trim();
         const filterNoSpaces = filterGrade.replace(/\s+/g, '');
-        if (gradeNoSpaces === filterNoSpaces) return true;
-        
-        // Handle special cases like "30 TDI" vs "30"
-        const gradeParts = grade.split(/\s+/);
-        const filterParts = filterGrade.split(/\s+/);
-        if (gradeParts.some(part => filterParts.includes(part))) return true;
-        
-        return false;
+        const gNoSpaces = g.replace(/\s+/g, '');
+        return g === filterGrade || gNoSpaces === filterNoSpaces;
       });
     });
   }, [cars, filters.grade_iaai, extractGradesFromTitle]);
@@ -483,17 +470,12 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             carGrades.push(car.engine.name.trim().toLowerCase());
           }
           
-          // Check if any grade matches the filter
-          const matches = carGrades.some(grade => {
-            if (grade === filterGrade) return true;
-            if (grade.includes(filterGrade) || filterGrade.includes(grade)) return true;
-            const gradeNoSpaces = grade.replace(/\s+/g, '');
+          // Check if any grade matches the filter (strict)
+          const matches = carGrades.some((grade) => {
+            const g = grade.toLowerCase().trim();
+            const gNoSpaces = g.replace(/\s+/g, '');
             const filterNoSpaces = filterGrade.replace(/\s+/g, '');
-            if (gradeNoSpaces === filterNoSpaces) return true;
-            const gradeParts = grade.split(/\s+/);
-            const filterParts = filterGrade.split(/\s+/);
-            if (gradeParts.some(part => filterParts.includes(part))) return true;
-            return false;
+            return g === filterGrade || gNoSpaces === filterNoSpaces;
           });
           
           return matches;
