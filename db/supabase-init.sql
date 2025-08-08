@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS public.cars (
   
   -- Status and metadata
   status TEXT DEFAULT 'active',
+  is_active BOOLEAN DEFAULT true,
   is_live BOOLEAN DEFAULT false,
   is_archived BOOLEAN DEFAULT false,
   keys_available BOOLEAN DEFAULT true,
@@ -69,7 +70,54 @@ CREATE TABLE IF NOT EXISTS public.cars (
   last_synced_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 4. CARS CACHE TABLE (For raw API data)
+-- 4. CARS STAGING TABLE (For new API data before merging)
+CREATE TABLE IF NOT EXISTS public.cars_staging (
+  id TEXT PRIMARY KEY,
+  external_id TEXT,
+  make TEXT NOT NULL,
+  model TEXT NOT NULL,
+  year INTEGER NOT NULL,
+  price NUMERIC NOT NULL DEFAULT 0,
+  mileage INTEGER DEFAULT 0,
+  
+  -- Basic car info
+  title TEXT,
+  vin TEXT,
+  color TEXT,
+  fuel TEXT,
+  transmission TEXT,
+  condition TEXT DEFAULT 'good',
+  location TEXT DEFAULT 'South Korea',
+  
+  -- Auction/Sale info
+  lot_number TEXT,
+  current_bid NUMERIC DEFAULT 0,
+  buy_now_price NUMERIC DEFAULT 0,
+  final_bid NUMERIC DEFAULT 0,
+  sale_date TIMESTAMPTZ,
+  
+  -- Images and media
+  image_url TEXT,
+  images JSONB DEFAULT '[]',
+  
+  -- Source tracking
+  source_api TEXT DEFAULT 'external',
+  domain_name TEXT DEFAULT 'external_api',
+  
+  -- Status and metadata
+  status TEXT DEFAULT 'active',
+  is_active BOOLEAN DEFAULT true,
+  is_live BOOLEAN DEFAULT false,
+  is_archived BOOLEAN DEFAULT false,
+  keys_available BOOLEAN DEFAULT true,
+  
+  -- Timestamps
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_synced_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 5. CARS CACHE TABLE (For raw API data)
 CREATE TABLE IF NOT EXISTS public.cars_cache (
   id TEXT PRIMARY KEY,
   api_id TEXT NOT NULL,
@@ -180,6 +228,12 @@ CREATE INDEX IF NOT EXISTS idx_cars_source ON public.cars(source_api);
 CREATE INDEX IF NOT EXISTS idx_cars_updated ON public.cars(last_synced_at);
 CREATE INDEX IF NOT EXISTS idx_cars_external_id ON public.cars(external_id);
 CREATE INDEX IF NOT EXISTS idx_cars_is_archived ON public.cars(is_archived);
+CREATE INDEX IF NOT EXISTS idx_cars_is_active ON public.cars(is_active);
+
+CREATE INDEX IF NOT EXISTS idx_cars_staging_make_model ON public.cars_staging(make, model);
+CREATE INDEX IF NOT EXISTS idx_cars_staging_year_price ON public.cars_staging(year, price);
+CREATE INDEX IF NOT EXISTS idx_cars_staging_external_id ON public.cars_staging(external_id);
+CREATE INDEX IF NOT EXISTS idx_cars_staging_updated ON public.cars_staging(last_synced_at);
 
 CREATE INDEX IF NOT EXISTS idx_cars_cache_api_id ON public.cars_cache(api_id);
 CREATE INDEX IF NOT EXISTS idx_cars_cache_make_model ON public.cars_cache(make, model);
@@ -198,6 +252,7 @@ CREATE INDEX IF NOT EXISTS idx_website_analytics_user ON public.website_analytic
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.cars ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.cars_staging ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.cars_cache ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sync_status ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.favorite_cars ENABLE ROW LEVEL SECURITY;
@@ -419,3 +474,131 @@ CREATE POLICY "Service role can manage analytics" ON public.website_analytics
 DROP POLICY IF EXISTS "Admins can view analytics" ON public.website_analytics;
 CREATE POLICY "Admins can view analytics" ON public.website_analytics
   FOR SELECT USING (public.is_admin());
+
+-- Cars staging policies
+DROP POLICY IF EXISTS "Service role can manage cars staging" ON public.cars_staging;
+CREATE POLICY "Service role can manage cars staging" ON public.cars_staging
+  FOR ALL USING (auth.role() = 'service_role');
+
+-- RPC FUNCTIONS FOR CAR SYNC
+
+-- Function to bulk merge cars from staging to main table
+CREATE OR REPLACE FUNCTION public.bulk_merge_from_staging()
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+DECLARE
+  inserted_count INTEGER := 0;
+  updated_count INTEGER := 0;
+  result JSONB;
+BEGIN
+  -- Insert new cars (cars that don't exist in main table)
+  WITH new_cars AS (
+    INSERT INTO public.cars (
+      id, external_id, make, model, year, price, mileage,
+      title, vin, color, fuel, transmission, condition, location,
+      lot_number, current_bid, buy_now_price, final_bid, sale_date,
+      image_url, images, source_api, domain_name, status, is_active,
+      is_live, is_archived, keys_available, created_at, updated_at, last_synced_at
+    )
+    SELECT 
+      s.id, s.external_id, s.make, s.model, s.year, s.price, s.mileage,
+      s.title, s.vin, s.color, s.fuel, s.transmission, s.condition, s.location,
+      s.lot_number, s.current_bid, s.buy_now_price, s.final_bid, s.sale_date,
+      s.image_url, s.images, s.source_api, s.domain_name, s.status, s.is_active,
+      s.is_live, s.is_archived, s.keys_available, s.created_at, s.updated_at, s.last_synced_at
+    FROM public.cars_staging s
+    LEFT JOIN public.cars c ON c.id = s.id
+    WHERE c.id IS NULL
+    RETURNING 1
+  )
+  SELECT COUNT(*) INTO inserted_count FROM new_cars;
+
+  -- Update existing cars
+  WITH updated_cars AS (
+    UPDATE public.cars SET
+      external_id = s.external_id,
+      make = s.make,
+      model = s.model,
+      year = s.year,
+      price = s.price,
+      mileage = s.mileage,
+      title = s.title,
+      vin = s.vin,
+      color = s.color,
+      fuel = s.fuel,
+      transmission = s.transmission,
+      condition = s.condition,
+      location = s.location,
+      lot_number = s.lot_number,
+      current_bid = s.current_bid,
+      buy_now_price = s.buy_now_price,
+      final_bid = s.final_bid,
+      sale_date = s.sale_date,
+      image_url = s.image_url,
+      images = s.images,
+      source_api = s.source_api,
+      domain_name = s.domain_name,
+      status = s.status,
+      is_active = s.is_active,
+      is_live = s.is_live,
+      is_archived = s.is_archived,
+      keys_available = s.keys_available,
+      updated_at = s.updated_at,
+      last_synced_at = s.last_synced_at
+    FROM public.cars_staging s
+    WHERE public.cars.id = s.id
+    RETURNING 1
+  )
+  SELECT COUNT(*) INTO updated_count FROM updated_cars;
+
+  -- Build result
+  result := jsonb_build_object(
+    'success', true,
+    'inserted_count', inserted_count,
+    'updated_count', updated_count,
+    'total_processed', inserted_count + updated_count,
+    'timestamp', NOW()
+  );
+
+  RETURN result;
+END;
+$$;
+
+-- Function to mark cars as inactive if they're missing from staging
+CREATE OR REPLACE FUNCTION public.mark_missing_inactive()
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+DECLARE
+  inactive_count INTEGER := 0;
+  result JSONB;
+BEGIN
+  -- Mark cars as inactive if they don't exist in staging and are currently active
+  WITH marked_inactive AS (
+    UPDATE public.cars SET
+      is_active = false,
+      status = 'inactive',
+      updated_at = NOW()
+    WHERE 
+      is_active = true 
+      AND id NOT IN (SELECT id FROM public.cars_staging)
+      AND source_api = 'external'  -- Only mark external API cars as inactive
+    RETURNING 1
+  )
+  SELECT COUNT(*) INTO inactive_count FROM marked_inactive;
+
+  -- Build result
+  result := jsonb_build_object(
+    'success', true,
+    'marked_inactive_count', inactive_count,
+    'timestamp', NOW()
+  );
+
+  RETURN result;
+END;
+$$;
