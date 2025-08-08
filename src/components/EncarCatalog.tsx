@@ -23,6 +23,17 @@ import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useResourcePreloader } from "@/hooks/useResourcePreloader";
 import { debounce } from "@/utils/performance";
 import { useOptimizedYearFilter } from "@/hooks/useOptimizedYearFilter";
+import {
+  APIFilters,
+  extractGradesFromTitle,
+  applyGradeFilter,
+  matchesGradeFilter,
+  normalizeFilters,
+  filtersToURLParams,
+  isYearRangeChange,
+  addPaginationToFilters,
+  debounce as catalogDebounce
+} from "@/utils/catalog-filter";
 
 import { useSearchParams } from "react-router-dom";
 import {
@@ -33,25 +44,6 @@ import {
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
-
-interface APIFilters {
-  manufacturer_id?: string;
-  model_id?: string;
-  grade_iaai?: string;
-  trim_level?: string;
-  color?: string;
-  fuel_type?: string;
-  transmission?: string;
-  body_type?: string;
-  odometer_from_km?: string;
-  odometer_to_km?: string;
-  from_year?: string;
-  to_year?: string;
-  buy_now_price_from?: string;
-  buy_now_price_to?: string;
-  search?: string;
-  seats_count?: string;
-}
 
 interface EncarCatalogProps {
   highlightCarId?: string | null;
@@ -121,82 +113,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const fetchingSortRef = useRef(false);
   const lastSortParamsRef = useRef('');
 
-  // Memoized helper function to extract grades from title
-  const extractGradesFromTitle = useCallback((title: string): string[] => {
-    const grades: string[] = [];
-    const patterns = [
-      /\b(\d+\.?\d*\s?(?:TDI|TFSI|FSI|TSI|CDI|T|D|I|E|H))\b/gi, // Include all engine types
-      /\b(\d+\.?\d*)\s*l?i?t?e?r?\s*(?:TDI|TFSI|FSI|TSI|CDI|T|D|I|E|H)\b/gi,
-      /\b(\d+\.?\d*[iIdDeEhH])\b/gi, // Specific patterns for all engine types: 520i, 530d, 530e, etc.
-      /\b(\d+\.?\d*)\s*(?:hybrid|electric|diesel|petrol|gasoline)\b/gi, // Full word variants
-    ];
-    
-    patterns.forEach(pattern => {
-      const matches = title.match(pattern);
-      if (matches) {
-        matches.forEach(match => {
-          const cleaned = match.trim();
-          if (cleaned && !grades.includes(cleaned)) {
-            grades.push(cleaned);
-          }
-        });
-      }
-    });
-    
-    return grades;
-  }, []);
+  // Memoized helper function to extract grades from title - now using utility
+  const extractGradesFromTitleCallback = useCallback(extractGradesFromTitle, []);
 
-  // Memoized client-side grade filtering for better performance
+  // Memoized client-side grade filtering for better performance - now using utility
   const filteredCars = useMemo(() => {
-    if (!filters.grade_iaai || filters.grade_iaai === 'all') {
-      return cars;
-    }
-
-    const filterGrade = filters.grade_iaai.toLowerCase().trim();
-    
-    return cars.filter((car) => {
-      const carGrades: string[] = [];
-      
-      // Extract grades from lots (primary source)
-      if (car.lots && Array.isArray(car.lots)) {
-        car.lots.forEach((lot: any) => {
-          if (lot.grade_iaai) carGrades.push(lot.grade_iaai.trim().toLowerCase());
-        });
-      }
-      
-      // Extract grades from title
-      if (car.title) {
-        const titleGrades = extractGradesFromTitle(car.title);
-        carGrades.push(...titleGrades.map(g => g.toLowerCase()));
-      }
-      
-      // Extract grades from engine field
-      if (car.engine && car.engine.name) {
-        carGrades.push(car.engine.name.trim().toLowerCase());
-      }
-      
-      // More comprehensive matching for grades
-      return carGrades.some(grade => {
-        // Exact match
-        if (grade === filterGrade) return true;
-        
-        // Partial match - both directions
-        if (grade.includes(filterGrade) || filterGrade.includes(grade)) return true;
-        
-        // Remove spaces and try again
-        const gradeNoSpaces = grade.replace(/\s+/g, '');
-        const filterNoSpaces = filterGrade.replace(/\s+/g, '');
-        if (gradeNoSpaces === filterNoSpaces) return true;
-        
-        // Handle special cases like "30 TDI" vs "30"
-        const gradeParts = grade.split(/\s+/);
-        const filterParts = filterGrade.split(/\s+/);
-        if (gradeParts.some(part => filterParts.includes(part))) return true;
-        
-        return false;
-      });
-    });
-  }, [cars, filters.grade_iaai, extractGradesFromTitle]);
+    return applyGradeFilter(cars, filters.grade_iaai);
+  }, [cars, filters.grade_iaai]);
   
   // console.log(`📊 Filter Results: ${filteredCars.length} cars match (total loaded: ${cars.length}, total count from API: ${totalCount}, grade filter: ${filters.grade_iaai || 'none'})`);
 
@@ -331,7 +254,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     maxVerticalDistance: 120
   });
 
-  // Internal function to actually apply filters
+  // Internal function to actually apply filters - now using utilities
   const applyFiltersInternal = useCallback((newFilters: APIFilters) => {
     setFilters(newFilters);
     setCurrentPage(1); // Reset to first page when filters change
@@ -341,23 +264,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setAllCarsForSorting([]);
     
     // Use 50 cars per page for proper pagination
-    const filtersWithPagination = {
-      ...newFilters,
-      per_page: "50" // Show 50 cars per page
-    };
+    const filtersWithPagination = addPaginationToFilters(newFilters, 50);
     
     fetchCars(1, filtersWithPagination, true);
 
-    // Update URL with all non-empty filter values - properly encode grade filter
-    const paramsToSet: any = {};
-    Object.entries(newFilters).forEach(([key, value]) => {
-      if (value !== undefined && value !== "" && value !== null) {
-        // Properly encode grade filter for URL
-        paramsToSet[key] = key === 'grade_iaai' ? encodeURIComponent(value) : value;
-      }
-    });
-    paramsToSet.page = "1";
-    setSearchParams(paramsToSet);
+    // Update URL with all non-empty filter values - now using utility
+    const searchParams = filtersToURLParams(newFilters);
+    searchParams.set('page', '1');
+    setSearchParams(searchParams);
   }, [fetchCars, setSearchParams]);
 
   // Optimized year filtering hook for better performance
@@ -375,9 +289,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     filters
   });
 
-  // Debounced version for performance - Reduced debounce time for year filters
+  // Debounced version for performance - Reduced debounce time for year filters - using catalog utility
   const debouncedApplyFilters = useCallback(
-    debounce(applyFiltersInternal, 150), // Reduced from 300ms for faster response
+    catalogDebounce(applyFiltersInternal, 150), // Reduced from 300ms for faster response
     [applyFiltersInternal]
   );
 
@@ -385,13 +299,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Update UI immediately for responsiveness
     setFilters(newFilters);
     
-    // Check if this is a year range change - use optimized filtering for better UX
-    const isYearRangeChange = (
-      newFilters.from_year !== filters.from_year || 
-      newFilters.to_year !== filters.to_year
-    ) && (newFilters.from_year || newFilters.to_year);
+    // Check if this is a year range change - use optimized filtering for better UX - using utility
+    const isYearChange = isYearRangeChange(newFilters, filters);
     
-    if (isYearRangeChange) {
+    if (isYearChange) {
       console.log('🚀 Using optimized year filtering for instant response');
       
       // Use optimized year filtering for instant feedback
@@ -413,7 +324,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       // Apply other filters with debouncing to reduce API calls
       debouncedApplyFilters(newFilters);
     }
-  }, [debouncedApplyFilters, handleOptimizedYearFilter, filters.from_year, filters.to_year]);
+  }, [debouncedApplyFilters, handleOptimizedYearFilter, filters]);
 
   const handleClearFilters = useCallback(() => {
     setFilters({});
@@ -446,10 +357,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
     
     // Fetch cars for the specific page (only when not using global sorting)
-    const filtersWithPagination = {
-      ...filters,
-      per_page: "50"
-    };
+    const filtersWithPagination = addPaginationToFilters(filters, 50);
     
     fetchCars(page, filtersWithPagination, true); // Reset list for new page
     
@@ -492,46 +400,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       // Use the new fetchAllCars function to get all cars with current filters
       const allCars = await fetchAllCars(filters);
       
-      // Apply the same client-side filtering as the current filtered cars
+      // Apply the same client-side filtering as the current filtered cars - using utility
       const filteredAllCars = allCars.filter((car: any) => {
-        if (filters.grade_iaai && filters.grade_iaai !== 'all') {
-          const filterGrade = filters.grade_iaai.toLowerCase().trim();
-          const carGrades: string[] = [];
-          
-          // Extract grades from lots (primary source)
-          if (car.lots && Array.isArray(car.lots)) {
-            car.lots.forEach((lot: any) => {
-              if (lot.grade_iaai) carGrades.push(lot.grade_iaai.trim().toLowerCase());
-            });
-          }
-          
-          // Extract grades from title
-          if (car.title) {
-            const titleGrades = extractGradesFromTitle(car.title);
-            carGrades.push(...titleGrades.map(g => g.toLowerCase()));
-          }
-          
-          // Extract grades from engine field
-          if (car.engine && car.engine.name) {
-            carGrades.push(car.engine.name.trim().toLowerCase());
-          }
-          
-          // Check if any grade matches the filter
-          const matches = carGrades.some(grade => {
-            if (grade === filterGrade) return true;
-            if (grade.includes(filterGrade) || filterGrade.includes(grade)) return true;
-            const gradeNoSpaces = grade.replace(/\s+/g, '');
-            const filterNoSpaces = filterGrade.replace(/\s+/g, '');
-            if (gradeNoSpaces === filterNoSpaces) return true;
-            const gradeParts = grade.split(/\s+/);
-            const filterParts = filterGrade.split(/\s+/);
-            if (gradeParts.some(part => filterParts.includes(part))) return true;
-            return false;
-          });
-          
-          return matches;
-        }
-        return true;
+        return matchesGradeFilter(car, filters.grade_iaai);
       });
       
       setAllCarsForSorting(filteredAllCars);
@@ -545,7 +416,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       setIsLoading(false);
       fetchingSortRef.current = false;
     }
-  }, [totalCount, fetchAllCars, filters.grade_iaai, filters.manufacturer_id, filters.model_id, filters.generation_id, filters.from_year, filters.to_year, sortBy, extractGradesFromTitle, filteredCars, totalPages]);
+  }, [totalCount, fetchAllCars, filters.grade_iaai, filters.manufacturer_id, filters.model_id, filters.generation_id, filters.from_year, filters.to_year, sortBy, filteredCars, totalPages]);
 
   const handleManufacturerChange = async (manufacturerId: string) => {
     console.log(`[handleManufacturerChange] Called with manufacturerId: ${manufacturerId}`);

@@ -7,20 +7,14 @@ import { Filter, X, Loader2, Search } from "lucide-react";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS, BODY_TYPE_OPTIONS } from '@/hooks/useAuctionAPI';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-
-
-// Debounce utility function
-const debounce = <T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): ((...args: Parameters<T>) => void) => {
-  let timeout: NodeJS.Timeout;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-};
+import {
+  APIFilters,
+  sortManufacturers,
+  generateYearRange,
+  generateYearPresets,
+  getFallbackGrades,
+  debounce as catalogDebounce
+} from '@/utils/catalog-filter';
 
 interface Manufacturer {
   id: number;
@@ -48,25 +42,7 @@ interface FilterCounts {
 }
 
 interface FilterFormProps {
-  filters: {
-    manufacturer_id?: string;
-    model_id?: string;
-    grade_iaai?: string;
-    trim_level?: string;
-    color?: string;
-    fuel_type?: string;
-    transmission?: string;
-    body_type?: string;
-    odometer_from_km?: string;
-    odometer_to_km?: string;
-    from_year?: string;
-    to_year?: string;
-    buy_now_price_from?: string;
-    buy_now_price_to?: string;
-    seats_count?: string;
-    search?: string;
-    max_accidents?: string;
-  };
+  filters: APIFilters;
   manufacturers: Manufacturer[];
   models?: Model[];
   filterCounts?: FilterCounts;
@@ -155,115 +131,16 @@ const FilterForm = memo<FilterFormProps>(({
 
 
   const currentYear = useMemo(() => new Date().getFullYear(), []);
-  // Fixed: Enhanced year range - 30 years from current year to 1996, corrected calculation
-  const years = useMemo(() => Array.from({ length: 30 }, (_, i) => Math.max(currentYear - i, 1996)), [currentYear]);
+  // Enhanced year range using utility
+  const years = useMemo(() => generateYearRange(currentYear), [currentYear]);
 
-  // Memoized sorted manufacturers with enhanced API data validation and categorization
-  const sortedManufacturers = useMemo(() => {
-    const validManufacturers = manufacturers
-      .filter((m) => {
-        // Ensure manufacturer has valid data from API
-        return m.id && 
-               m.name && 
-               typeof m.name === 'string' && 
-               m.name.trim().length > 0 &&
-               (m.cars_qty && m.cars_qty > 0);
-      });
+  // Memoized sorted manufacturers using utility
+  const sortedManufacturers = useMemo(() => sortManufacturers(manufacturers), [manufacturers]);
 
-    // Define categories with their brand priorities
-    const categories = {
-      german: {
-        name: 'German Brands',
-        brands: ['BMW', 'Mercedes-Benz', 'Audi', 'Volkswagen', 'Porsche', 'Opel'],
-        priority: 1
-      },
-      korean: {
-        name: 'Korean Brands', 
-        brands: ['Hyundai', 'Kia', 'Genesis'],
-        priority: 2
-      },
-      japanese: {
-        name: 'Japanese Brands',
-        brands: ['Toyota', 'Honda', 'Nissan', 'Mazda', 'Subaru', 'Lexus', 'Infiniti', 'Acura', 'Mitsubishi'],
-        priority: 3
-      },
-      american: {
-        name: 'American Brands',
-        brands: ['Ford', 'Chevrolet', 'Cadillac', 'GMC', 'Tesla', 'Chrysler', 'Jeep', 'Dodge'],
-        priority: 4
-      },
-      luxury: {
-        name: 'Luxury/European Brands',
-        brands: ['Land Rover', 'Jaguar', 'Volvo', 'Ferrari', 'Lamborghini', 'Maserati', 'Bentley', 'Rolls-Royce', 'Aston Martin', 'McLaren', 'Mini'],
-        priority: 5
-      },
-      french: {
-        name: 'French Brands',
-        brands: ['Peugeot', 'Renault', 'Citroën'],
-        priority: 6
-      },
-      italian: {
-        name: 'Italian Brands', 
-        brands: ['Fiat', 'Alfa Romeo'],
-        priority: 7
-      },
-      other: {
-        name: 'Other Brands',
-        brands: ['Skoda', 'Seat'],
-        priority: 8
-      }
-    };
-
-    // Sort manufacturers by category and count
-    return validManufacturers.sort((a, b) => {
-      const aName = a.name.trim();
-      const bName = b.name.trim();
-      
-      // Find category for each manufacturer
-      let aCategoryPriority = 999;
-      let bCategoryPriority = 999;
-      
-      Object.values(categories).forEach(category => {
-        if (category.brands.includes(aName)) {
-          aCategoryPriority = category.priority;
-        }
-        if (category.brands.includes(bName)) {
-          bCategoryPriority = category.priority;
-        }
-      });
-      
-      // Sort by category priority first
-      if (aCategoryPriority !== bCategoryPriority) {
-        return aCategoryPriority - bCategoryPriority;
-      }
-      
-      // Within same category, sort by car count (descending)
-      const aCount = a.cars_qty || 0;
-      const bCount = b.cars_qty || 0;
-      if (aCount !== bCount) {
-        return bCount - aCount;
-      }
-      
-      // Finally, alphabetical
-      return aName.localeCompare(bName);
-    });
-  }, [manufacturers]);
-
-  const getFallbackGrades = (manufacturerId: string) => {
-    const fallbacks = {
-      '9': ['320d', '320i', '325d', '330d', '330i', '335d', '335i', 'M3', 'M5', 'X3', 'X5'], // BMW
-      '16': ['220d', '250', '300', '350', '400', '450', '500', 'AMG'], // Mercedes-Benz
-      '1': ['30 TDI', '35 TDI', '40 TDI', '45 TDI', '50 TDI', '55 TFSI', '30 TFSI', '35 TFSI', '40 TFSI', '45 TFSI', '30', '35', '40', '45', '50', '55', 'RS', 'S'], // Audi
-      '147': ['1.4 TSI', '1.6 TDI', '1.8 TSI', '2.0 TDI', '2.0 TSI', 'GTI', 'R'], // Volkswagen
-      '148': ['2.0T', '2.5L', '1.8L Hybrid', 'Electric Motor', 'Elite', 'Premium', 'Sport', 'Comfort'], // gjenarta
-      '2': ['Civic', 'Accord', 'CR-V', 'HR-V'], // Honda
-      '3': ['Corolla', 'Camry', 'RAV4', 'Highlander'], // Toyota
-      '4': ['Altima', 'Maxima', 'Rogue', 'Murano'], // Nissan
-      '5': ['Focus', 'Fiesta', 'Mondeo', 'Kuga'], // Ford
-      '6': ['Cruze', 'Malibu', 'Equinox', 'Tahoe'], // Chevrolet
-    };
-    return (fallbacks[manufacturerId] || []).map(grade => ({ value: grade, label: grade }));
-  };
+  // Using utility for fallback grades
+  const getFallbackGradesForManufacturer = useCallback((manufacturerId: string) => {
+    return getFallbackGrades(manufacturerId);
+  }, []);
 
   // Debounced fetch grades when manufacturer or model changes
   useEffect(() => {
@@ -274,7 +151,7 @@ const FilterForm = memo<FilterFormProps>(({
     timeoutId = setTimeout(() => {
       if (filters.manufacturer_id && onFetchGrades && !cancelled) {
         // Set fallback immediately for instant response
-        const fallback = getFallbackGrades(filters.manufacturer_id);
+        const fallback = getFallbackGradesForManufacturer(filters.manufacturer_id);
         setGrades(fallback);
         setIsLoadingGrades(true);
         
@@ -427,13 +304,7 @@ const FilterForm = memo<FilterFormProps>(({
             <span className="text-xs text-primary bg-primary/10 px-1 rounded" title="Optimized for instant results">⚡</span>
           </Label>
           <div className="flex flex-wrap gap-1">
-            {[
-              { label: '2022+', from: 2022, to: currentYear },
-              { label: '2020+', from: 2020, to: currentYear },
-              { label: '2018+', from: 2018, to: currentYear },
-              { label: '2015+', from: 2015, to: currentYear },
-              { label: '2010+', from: 2010, to: currentYear }
-            ].map((preset) => (
+            {generateYearPresets(currentYear).slice(0, 5).map((preset) => (
               <Button
                 key={preset.label}
                 variant={
