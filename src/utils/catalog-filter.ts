@@ -30,9 +30,9 @@ export interface APIFilters {
 export interface Car {
   id: string;
   title?: string;
-  lots?: Array<{ grade_iaai?: string }>;
+  lots?: Array<{ grade_iaai?: string; [key: string]: unknown }>;
   engine?: { name?: string };
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface FilterCounts {
@@ -79,7 +79,7 @@ export const extractCarGrades = (car: Car): string[] => {
   
   // Extract grades from lots (primary source)
   if (car.lots && Array.isArray(car.lots)) {
-    car.lots.forEach((lot: any) => {
+    car.lots.forEach((lot: { grade_iaai?: string; [key: string]: unknown }) => {
       if (lot.grade_iaai) {
         carGrades.push(lot.grade_iaai.trim().toLowerCase());
       }
@@ -379,7 +379,7 @@ export const isStrictFilterMode = (filters: APIFilters): boolean => {
 /**
  * Debounce utility function for filter operations
  */
-export const debounce = <T extends (...args: any[]) => any>(
+export const debounce = <T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): ((...args: Parameters<T>) => void) => {
