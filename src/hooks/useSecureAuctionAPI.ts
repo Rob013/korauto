@@ -2353,103 +2353,6 @@ export const useSecureAuctionAPI = () => {
     }
   };
 
-  const fetchAllCars = async (
-    newFilters: APIFilters = filters
-  ): Promise<any[]> => {
-    try {
-      // Create API filters without pagination to get all cars
-      const apiFilters = {
-        ...newFilters,
-        // Remove pagination parameters to get all cars
-        page: undefined,
-        per_page: undefined,
-        simple_paginate: "0",
-      };
-      
-      // Remove grade_iaai and trim_level from server request for client-side filtering
-      const selectedVariant = newFilters.grade_iaai;
-      const selectedTrimLevel = newFilters.trim_level;
-      delete apiFilters.grade_iaai;
-      delete apiFilters.trim_level;
-
-      console.log(`🔄 Fetching ALL cars for global sorting with filters:`, apiFilters);
-      const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
-
-      // Apply client-side variant filtering if a variant is selected
-      let filteredCars = data.data || [];
-      if (selectedVariant && selectedVariant !== 'all') {
-        console.log(`🔍 Applying client-side variant filter: "${selectedVariant}"`);
-        
-        filteredCars = filteredCars.filter(car => {
-          if (car.lots && Array.isArray(car.lots)) {
-            return car.lots.some(lot => {
-              if (lot.grade_iaai && lot.grade_iaai.trim() === selectedVariant) {
-                return true;
-              }
-              if (lot.details && lot.details.badge && lot.details.badge.trim() === selectedVariant) {
-                return true;
-              }
-              if (car.engine && car.engine.name && car.engine.name.trim() === selectedVariant) {
-                return true;
-              }
-              if (car.title && car.title.toLowerCase().includes(selectedVariant.toLowerCase())) {
-                return true;
-              }
-              return false;
-            });
-          }
-          return false;
-        });
-      }
-
-      // Apply client-side trim level filtering if a trim level is selected
-      if (selectedTrimLevel && selectedTrimLevel !== 'all') {
-        console.log(`🔍 Applying client-side trim level filter: "${selectedTrimLevel}"`);
-        
-        filteredCars = filteredCars.filter(car => {
-          if (car.lots && Array.isArray(car.lots)) {
-            const hasMatchInLots = car.lots.some(lot => {
-              if (lot.details && lot.details.badge && 
-                  lot.details.badge.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
-                return true;
-              }
-              if (lot.grade_iaai && 
-                  lot.grade_iaai.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
-                return true;
-              }
-              return false;
-            });
-            if (hasMatchInLots) return true;
-          }
-          if (car.title && car.title.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
-            return true;
-          }
-          return false;
-        });
-      }
-
-      console.log(`✅ Fetched ${filteredCars.length} cars for global sorting`);
-      return filteredCars;
-      
-    } catch (err: any) {
-      console.error("❌ API Error fetching all cars:", err);
-      
-      if (err.message === "RATE_LIMITED") {
-        // Retry once after rate limit
-        try {
-          await delay(2000);
-          return fetchAllCars(newFilters);
-        } catch (retryErr) {
-          console.error("❌ Retry failed:", retryErr);
-        }
-      }
-      
-      // Use fallback car data when API fails
-      console.log("🔄 Using fallback car data for global sorting due to API failure");
-      return createFallbackCars(newFilters);
-    }
-  };
-
   const loadMore = async () => {
     if (!hasMorePages || loading) return;
 
@@ -2472,7 +2375,6 @@ export const useSecureAuctionAPI = () => {
     totalCount,
     hasMorePages,
     fetchCars,
-    fetchAllCars, // ✅ Export new function for global sorting
     filters,
     setFilters,
     fetchManufacturers,
