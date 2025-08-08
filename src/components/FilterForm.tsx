@@ -422,7 +422,10 @@ const FilterForm = memo<FilterFormProps>(({
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="year_presets" className="text-xs font-medium truncate">Quick Year Selection</Label>
+          <Label htmlFor="year_presets" className="text-xs font-medium truncate flex items-center gap-1">
+            Quick Year Selection 
+            <span className="text-xs text-primary bg-primary/10 px-1 rounded" title="Optimized for instant results">⚡</span>
+          </Label>
           <div className="flex flex-wrap gap-1">
             {[
               { label: '2022+', from: 2022, to: currentYear },
