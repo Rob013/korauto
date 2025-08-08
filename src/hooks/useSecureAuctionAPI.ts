@@ -1241,8 +1241,11 @@ export const useSecureAuctionAPI = () => {
 
       // Apply client-side variant filtering if a variant is selected
       let filteredCars = data.data || [];
+      let isClientFiltering = false;
+      
       if (selectedVariant && selectedVariant !== 'all') {
         console.log(`🔍 Applying client-side variant filter: "${selectedVariant}"`);
+        isClientFiltering = true;
         
         filteredCars = filteredCars.filter(car => {
           // Check if car has the selected variant in any of its lots
@@ -1280,6 +1283,7 @@ export const useSecureAuctionAPI = () => {
       // Apply client-side trim level filtering if a trim level is selected
       if (selectedTrimLevel && selectedTrimLevel !== 'all') {
         console.log(`🔍 Applying client-side trim level filter: "${selectedTrimLevel}"`);
+        isClientFiltering = true;
         
         filteredCars = filteredCars.filter(car => {
           // Check if car has the selected trim level in any of its lots or title
@@ -1315,12 +1319,18 @@ export const useSecureAuctionAPI = () => {
         console.log(`✅ Trim level filter "${selectedTrimLevel}": ${filteredCars.length} cars match out of ${data.data?.length || 0} total`);
       }
 
-      // Set metadata from response (but adjust total count for client-side filtering)
-      const totalFiltered = (selectedVariant && selectedVariant !== 'all') || (selectedTrimLevel && selectedTrimLevel !== 'all') 
-        ? filteredCars.length 
-        : (data.meta?.total || 0);
-      setTotalCount(totalFiltered);
-      setHasMorePages(page < (data.meta?.last_page || 1));
+      // Set metadata from response - when client-side filtering is applied, we need to adjust counts
+      if (isClientFiltering) {
+        // For client-side filtering, we can only show what we've filtered from this page
+        // The total count should reflect only the filtered results we can see
+        setTotalCount(filteredCars.length);
+        setHasMorePages(false); // Can't reliably paginate when client-side filtering
+        console.log(`📊 Client-side filtering applied: showing ${filteredCars.length} filtered cars (pagination disabled)`);
+      } else {
+        // Use server metadata when no client-side filtering
+        setTotalCount(data.meta?.total || 0);
+        setHasMorePages(page < (data.meta?.last_page || 1));
+      }
 
       console.log(
         `✅ API Success - Fetched ${filteredCars.length} cars from page ${page}, total: ${totalFiltered}`
@@ -1349,28 +1359,84 @@ export const useSecureAuctionAPI = () => {
       
       // Use fallback car data when API fails
       console.log("🔄 Using fallback car data due to API failure");
-      const allFallbackCars = createFallbackCars(newFilters);
+      let allFallbackCars = createFallbackCars(newFilters);
       
-      // Enable pagination for fallback data to test multi-page sorting
-      const perPage = parseInt(newFilters.per_page || '50');
-      const startIndex = (page - 1) * perPage;
-      const endIndex = startIndex + perPage;
-      const paginatedCars = allFallbackCars.slice(startIndex, endIndex);
-      const totalPages = Math.ceil(allFallbackCars.length / perPage);
+      // Apply client-side filtering to fallback cars too
+      let isClientFilteringFallback = false;
       
-      console.log(`✅ Loaded ${paginatedCars.length} fallback cars from page ${page} (${allFallbackCars.length} total) with filters:`, 
-        Object.entries(newFilters).filter(([key, value]) => value !== undefined).map(([key, value]) => `${key}=${value}`).join(', '));
+      if (selectedVariant && selectedVariant !== 'all') {
+        console.log(`🔍 Applying variant filter to fallback cars: "${selectedVariant}"`);
+        isClientFilteringFallback = true;
+        
+        allFallbackCars = allFallbackCars.filter(car => {
+          if (car.lots && Array.isArray(car.lots)) {
+            return car.lots.some(lot => {
+              if (lot.grade_iaai && lot.grade_iaai.trim() === selectedVariant) return true;
+              if (lot.details && lot.details.badge && lot.details.badge.trim() === selectedVariant) return true;
+              if (car.engine && car.engine.name && car.engine.name.trim() === selectedVariant) return true;
+              if (car.title && car.title.toLowerCase().includes(selectedVariant.toLowerCase())) return true;
+              return false;
+            });
+          }
+          return false;
+        });
+      }
       
-      // Set fallback cars with proper pagination metadata
-      setTotalCount(allFallbackCars.length);
-      setHasMorePages(page < totalPages);
+      if (selectedTrimLevel && selectedTrimLevel !== 'all') {
+        console.log(`🔍 Applying trim level filter to fallback cars: "${selectedTrimLevel}"`);
+        isClientFilteringFallback = true;
+        
+        allFallbackCars = allFallbackCars.filter(car => {
+          if (car.lots && Array.isArray(car.lots)) {
+            const hasMatchInLots = car.lots.some(lot => {
+              if (lot.details && lot.details.badge && 
+                  lot.details.badge.toLowerCase().includes(selectedTrimLevel.toLowerCase())) return true;
+              if (lot.grade_iaai && 
+                  lot.grade_iaai.toLowerCase().includes(selectedTrimLevel.toLowerCase())) return true;
+              return false;
+            });
+            if (hasMatchInLots) return true;
+          }
+          if (car.title && car.title.toLowerCase().includes(selectedTrimLevel.toLowerCase())) return true;
+          return false;
+        });
+      }
       
-      if (resetList || page === 1) {
-        setCars(paginatedCars);
-        setCurrentPage(1);
+      // Enable pagination for fallback data, but disable if client-side filtering is applied
+      if (isClientFilteringFallback) {
+        // When client-side filtering is applied to fallback, show all filtered results
+        console.log(`✅ Loaded ${allFallbackCars.length} filtered fallback cars (pagination disabled due to client-side filtering)`);
+        setTotalCount(allFallbackCars.length);
+        setHasMorePages(false);
+        
+        if (resetList || page === 1) {
+          setCars(allFallbackCars);
+          setCurrentPage(1);
+        } else {
+          setCars((prev) => [...prev, ...allFallbackCars]);
+          setCurrentPage(page);
+        }
       } else {
-        setCars((prev) => [...prev, ...paginatedCars]);
-        setCurrentPage(page);
+        // Normal pagination when no client-side filtering
+        const perPage = parseInt(newFilters.per_page || '50');
+        const startIndex = (page - 1) * perPage;
+        const endIndex = startIndex + perPage;
+        const paginatedCars = allFallbackCars.slice(startIndex, endIndex);
+        const totalPages = Math.ceil(allFallbackCars.length / perPage);
+        
+        console.log(`✅ Loaded ${paginatedCars.length} fallback cars from page ${page} (${allFallbackCars.length} total) with filters:`, 
+          Object.entries(newFilters).filter(([key, value]) => value !== undefined).map(([key, value]) => `${key}=${value}`).join(', '));
+        
+        setTotalCount(allFallbackCars.length);
+        setHasMorePages(page < totalPages);
+        
+        if (resetList || page === 1) {
+          setCars(paginatedCars);
+          setCurrentPage(1);
+        } else {
+          setCars((prev) => [...prev, ...paginatedCars]);
+          setCurrentPage(page);
+        }
       }
       
       // Clear error since we're showing fallback data
@@ -2377,24 +2443,17 @@ export const useSecureAuctionAPI = () => {
 
       // Apply client-side variant filtering if a variant is selected
       let filteredCars = data.data || [];
+      
       if (selectedVariant && selectedVariant !== 'all') {
-        console.log(`🔍 Applying client-side variant filter: "${selectedVariant}"`);
+        console.log(`🔍 Applying client-side variant filter to all cars: "${selectedVariant}"`);
         
         filteredCars = filteredCars.filter(car => {
           if (car.lots && Array.isArray(car.lots)) {
             return car.lots.some(lot => {
-              if (lot.grade_iaai && lot.grade_iaai.trim() === selectedVariant) {
-                return true;
-              }
-              if (lot.details && lot.details.badge && lot.details.badge.trim() === selectedVariant) {
-                return true;
-              }
-              if (car.engine && car.engine.name && car.engine.name.trim() === selectedVariant) {
-                return true;
-              }
-              if (car.title && car.title.toLowerCase().includes(selectedVariant.toLowerCase())) {
-                return true;
-              }
+              if (lot.grade_iaai && lot.grade_iaai.trim() === selectedVariant) return true;
+              if (lot.details && lot.details.badge && lot.details.badge.trim() === selectedVariant) return true;
+              if (car.engine && car.engine.name && car.engine.name.trim() === selectedVariant) return true;
+              if (car.title && car.title.toLowerCase().includes(selectedVariant.toLowerCase())) return true;
               return false;
             });
           }
@@ -2404,26 +2463,20 @@ export const useSecureAuctionAPI = () => {
 
       // Apply client-side trim level filtering if a trim level is selected
       if (selectedTrimLevel && selectedTrimLevel !== 'all') {
-        console.log(`🔍 Applying client-side trim level filter: "${selectedTrimLevel}"`);
+        console.log(`🔍 Applying client-side trim level filter to all cars: "${selectedTrimLevel}"`);
         
         filteredCars = filteredCars.filter(car => {
           if (car.lots && Array.isArray(car.lots)) {
             const hasMatchInLots = car.lots.some(lot => {
               if (lot.details && lot.details.badge && 
-                  lot.details.badge.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
-                return true;
-              }
+                  lot.details.badge.toLowerCase().includes(selectedTrimLevel.toLowerCase())) return true;
               if (lot.grade_iaai && 
-                  lot.grade_iaai.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
-                return true;
-              }
+                  lot.grade_iaai.toLowerCase().includes(selectedTrimLevel.toLowerCase())) return true;
               return false;
             });
             if (hasMatchInLots) return true;
           }
-          if (car.title && car.title.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
-            return true;
-          }
+          if (car.title && car.title.toLowerCase().includes(selectedTrimLevel.toLowerCase())) return true;
           return false;
         });
       }
@@ -2446,7 +2499,42 @@ export const useSecureAuctionAPI = () => {
       
       // Use fallback car data when API fails
       console.log("🔄 Using fallback car data for global sorting due to API failure");
-      return createFallbackCars(newFilters);
+      let fallbackCars = createFallbackCars(newFilters);
+      
+      // Apply the same client-side filtering to fallback cars
+      if (selectedVariant && selectedVariant !== 'all') {
+        fallbackCars = fallbackCars.filter(car => {
+          if (car.lots && Array.isArray(car.lots)) {
+            return car.lots.some(lot => {
+              if (lot.grade_iaai && lot.grade_iaai.trim() === selectedVariant) return true;
+              if (lot.details && lot.details.badge && lot.details.badge.trim() === selectedVariant) return true;
+              if (car.engine && car.engine.name && car.engine.name.trim() === selectedVariant) return true;
+              if (car.title && car.title.toLowerCase().includes(selectedVariant.toLowerCase())) return true;
+              return false;
+            });
+          }
+          return false;
+        });
+      }
+      
+      if (selectedTrimLevel && selectedTrimLevel !== 'all') {
+        fallbackCars = fallbackCars.filter(car => {
+          if (car.lots && Array.isArray(car.lots)) {
+            const hasMatchInLots = car.lots.some(lot => {
+              if (lot.details && lot.details.badge && 
+                  lot.details.badge.toLowerCase().includes(selectedTrimLevel.toLowerCase())) return true;
+              if (lot.grade_iaai && 
+                  lot.grade_iaai.toLowerCase().includes(selectedTrimLevel.toLowerCase())) return true;
+              return false;
+            });
+            if (hasMatchInLots) return true;
+          }
+          if (car.title && car.title.toLowerCase().includes(selectedTrimLevel.toLowerCase())) return true;
+          return false;
+        });
+      }
+      
+      return fallbackCars;
     }
   };
 
