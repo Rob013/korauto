@@ -371,9 +371,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Clear previous data immediately to show loading state
     setCars([]);
     
+    // Reset global sorting data when filters change to ensure fresh results
+    setIsSortingGlobal(false);
+    setAllCarsForSorting([]);
+    
     // Apply filters with debouncing to reduce API calls
     debouncedApplyFilters(newFilters);
-  }, [debouncedApplyFilters]);
+  }, [debouncedApplyFilters, setCars, setFilters]);
 
   const handleClearFilters = useCallback(() => {
     setFilters({});
@@ -427,15 +431,15 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Function to fetch all cars for sorting across all pages
   const fetchAllCarsForSorting = useCallback(async () => {
     // Create a unique key for current sort parameters to prevent duplicate calls
-    const sortKey = `${totalCount}-${sortBy}-${filters.grade_iaai || ''}-${filters.manufacturer_id || ''}-${filters.model_id || ''}`;
+    const sortKey = `${totalCount}-${sortBy}-${filters.grade_iaai || ''}-${filters.manufacturer_id || ''}-${filters.model_id || ''}-${totalPages}`;
     
     if (fetchingSortRef.current || sortKey === lastSortParamsRef.current) {
       console.log(`⏭️ Skipping duplicate sort request: ${sortKey}`);
       return;
     }
 
-    if (totalCount <= 50) {
-      // For small datasets, use current filtered cars instead of fetching
+    // For single page results, use current filtered cars instead of fetching all
+    if (totalPages <= 1) {
       setAllCarsForSorting(filteredCars);
       setIsSortingGlobal(true);
       lastSortParamsRef.current = sortKey;
@@ -812,15 +816,36 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Fetch all cars for sorting when sortBy changes OR when totalCount first becomes available
   // This ensures global sorting works on initial load and when sort options change
   useEffect(() => {
-    if (totalCount > 50 && !fetchingSortRef.current) {
-      console.log(`🔄 Triggering global sorting: totalCount=${totalCount}, sortBy=${sortBy}`);
+    // Always enable global sorting if there are multiple pages OR if total count is significant
+    // This ensures sorting works across all filtered results, not just current page
+    if (totalCount > 0 && totalPages > 1 && !fetchingSortRef.current) {
+      console.log(`🔄 Triggering global sorting: totalCount=${totalCount}, totalPages=${totalPages}, sortBy=${sortBy}`);
       fetchAllCarsForSorting();
-    } else if (totalCount <= 50) {
-      // Reset global sorting if not needed (small dataset)
+    } else if (totalPages <= 1) {
+      // For single page results, use current filtered cars for sorting (more efficient)
       setIsSortingGlobal(false);
       setAllCarsForSorting([]);
     }
-  }, [sortBy, totalCount, fetchAllCarsForSorting]);
+  }, [sortBy, totalCount, totalPages, fetchAllCarsForSorting]);
+
+  // Re-trigger global sorting when key filters change to ensure correct sorting across all filtered results
+  useEffect(() => {
+    // When filters change significantly, reset and re-trigger global sorting if needed
+    if (totalPages > 1 && !fetchingSortRef.current) {
+      console.log(`🔄 Re-triggering global sorting due to filter change`);
+      setAllCarsForSorting([]); // Clear previous cached data
+      setIsSortingGlobal(false); // Reset state
+      
+      // Trigger new global sorting after a short delay to allow new data to load
+      const timer = setTimeout(() => {
+        if (totalPages > 1) {
+          fetchAllCarsForSorting();
+        }
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [filters.manufacturer_id, filters.model_id, filters.grade_iaai, totalPages, fetchAllCarsForSorting]);
 
   // Show cars without requiring brand and model selection
   const shouldShowCars = true;
