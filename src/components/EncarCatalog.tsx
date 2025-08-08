@@ -643,14 +643,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       // Get filters and pagination state from URL parameters
       const urlFilters: APIFilters = {};
       let urlLoadedPages = 1;
-      let urlCurrentPage = 1;
 
       for (const [key, value] of searchParams.entries()) {
         if (key === "loadedPages") {
           urlLoadedPages = parseInt(value) || 1;
-        } else if (key === "page") {
-          urlCurrentPage = parseInt(value) || 1;
-        } else if (value && key !== "loadedPages" && key !== "fromHomepage" && key !== "page") {
+        } else if (value && key !== "loadedPages" && key !== "fromHomepage") {
           let decodedValue = value;
           try {
             decodedValue = decodeURIComponent(value);
@@ -672,7 +669,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       // Set filters and pagination immediately for faster UI response
       setFilters(urlFilters);
       setLoadedPages(urlLoadedPages);
-      setCurrentPage(urlCurrentPage);
 
       try {
         // PERFORMANCE OPTIMIZATION: Load only essential data first
@@ -697,7 +693,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           per_page: "50"
         };
         
-        await fetchCars(urlCurrentPage, initialFilters, true);
+        await fetchCars(1, initialFilters, true);
 
       } catch (error) {
         console.error('Error loading initial data:', error);
