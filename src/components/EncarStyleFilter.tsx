@@ -22,6 +22,13 @@ import {
   Cog
 } from "lucide-react";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS, BODY_TYPE_OPTIONS } from '@/hooks/useAuctionAPI';
+import {
+  APIFilters,
+  sortManufacturers,
+  generateYearRange,
+  generateYearPresets,
+  isStrictFilterMode
+} from '@/utils/catalog-filter';
 
 interface Manufacturer {
   id: number;
@@ -48,25 +55,7 @@ interface FilterCounts {
 }
 
 interface EncarStyleFilterProps {
-  filters: {
-    manufacturer_id?: string;
-    model_id?: string;
-    grade_iaai?: string;
-    trim_level?: string;
-    color?: string;
-    fuel_type?: string;
-    transmission?: string;
-    body_type?: string;
-    odometer_from_km?: string;
-    odometer_to_km?: string;
-    from_year?: string;
-    to_year?: string;
-    buy_now_price_from?: string;
-    buy_now_price_to?: string;
-    seats_count?: string;
-    search?: string;
-    max_accidents?: string;
-  };
+  filters: APIFilters;
   manufacturers: Manufacturer[];
   models?: Model[];
   filterCounts?: FilterCounts;
@@ -110,14 +99,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   const [isLoadingGrades, setIsLoadingGrades] = useState(false);
   const [expandedSections, setExpandedSections] = useState<string[]>(['basic']);
 
-  // Track if strict filtering mode is enabled
-  const isStrictMode = useMemo(() => {
-    return !!(filters.manufacturer_id || filters.model_id || 
-              filters.color || filters.fuel_type || filters.transmission || 
-              filters.from_year || filters.to_year || filters.buy_now_price_from || 
-              filters.buy_now_price_to || filters.odometer_from_km || filters.odometer_to_km ||
-              filters.seats_count || filters.max_accidents || filters.grade_iaai || filters.search);
-  }, [filters]);
+  // Track if strict filtering mode is enabled - using utility
+  const isStrictMode = useMemo(() => isStrictFilterMode(filters), [filters]);
 
   const updateFilter = useCallback((key: string, value: string) => {
     const actualValue = value === 'all' || value === 'any' ? undefined : value;
@@ -178,19 +161,11 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   }, [filters, onFiltersChange]);
 
   const currentYear = useMemo(() => new Date().getFullYear(), []);
-  // Fixed: Enhanced year range - show years from current year + 2 to 1996, corrected range calculation  
-  const years = useMemo(() => Array.from({ length: 32 }, (_, i) => Math.max(currentYear + 2 - i, 1996)), [currentYear]);
+  // Enhanced year range using utility  
+  const years = useMemo(() => generateYearRange(currentYear), [currentYear]);
   
-  // Enhanced year range presets with more options - Fixed "present" to include future model years
-  const yearRangePresets = useMemo(() => [
-    { label: '2022+', from: 2022, to: currentYear + 2 }, // Include future model years
-    { label: '2020+', from: 2020, to: currentYear + 2 },
-    { label: '2018+', from: 2018, to: currentYear + 2 },
-    { label: '2015+', from: 2015, to: currentYear + 2 },
-    { label: '2010+', from: 2010, to: currentYear + 2 },
-    { label: '2005+', from: 2005, to: currentYear + 2 },
-    { label: '2000+', from: 2000, to: currentYear + 2 },
-  ], [currentYear]);
+  // Enhanced year range presets using utility
+  const yearRangePresets = useMemo(() => generateYearPresets(currentYear), [currentYear]);
 
   // Year options for dropdowns - strict mode aware
   const yearOptions = useMemo(() => [
@@ -202,38 +177,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     }))
   ], [years, isStrictMode, filters.from_year, filters.to_year]);
 
-  // Prioritized manufacturer sorting (German, Korean, Popular)
-  const sortedManufacturers = useMemo(() => {
-    return manufacturers
-      .sort((a, b) => {
-        const germanBrands = ['BMW', 'Mercedes-Benz', 'Audi', 'Volkswagen', 'Porsche', 'Opel'];
-        const luxuryBrands = ['Land Rover', 'Volvo', 'Aston Martin', 'Bentley'];
-        const koreanBrands = ['Hyundai', 'Kia', 'Genesis'];
-        const popularBrands = ['Toyota', 'Honda', 'Nissan', 'Ford', 'Chevrolet', 'Mazda', 'Subaru', 'Lexus'];
-        
-        const aIsGerman = germanBrands.includes(a.name);
-        const bIsGerman = germanBrands.includes(b.name);
-        const aIsLuxury = luxuryBrands.includes(a.name);
-        const bIsLuxury = luxuryBrands.includes(b.name);
-        const aIsKorean = koreanBrands.includes(a.name);
-        const bIsKorean = koreanBrands.includes(b.name);
-        const aIsPopular = popularBrands.includes(a.name);
-        const bIsPopular = popularBrands.includes(b.name);
-        
-        // Prioritize German brands first, then luxury brands, then Korean, then popular
-        if (aIsGerman && !bIsGerman) return -1;
-        if (!aIsGerman && bIsGerman) return 1;
-        if (aIsLuxury && !bIsLuxury && !bIsGerman) return -1;
-        if (!aIsLuxury && bIsLuxury && !aIsGerman) return 1;
-        if (aIsKorean && !bIsKorean && !bIsGerman && !bIsLuxury) return -1;
-        if (!aIsKorean && bIsKorean && !aIsGerman && !aIsLuxury) return 1;
-        if (aIsPopular && !bIsPopular && !bIsGerman && !bIsKorean && !bIsLuxury) return -1;
-        if (!aIsPopular && bIsPopular && !aIsGerman && !aIsKorean && !aIsLuxury) return 1;
-        
-        return a.name.localeCompare(b.name);
-      })
-      .filter((m) => m.cars_qty && m.cars_qty > 0);
-  }, [manufacturers]);
+  // Prioritized manufacturer sorting using utility
+  const sortedManufacturers = useMemo(() => sortManufacturers(manufacturers), [manufacturers]);
 
   // Fetch grades when filters change
   useEffect(() => {
