@@ -126,8 +126,9 @@ const FilterForm = memo<FilterFormProps>(({
       onFiltersChange(updatedFilters);
     }
     
-    // Clear loading state after a short delay
-    setTimeout(() => setIsLoading(false), 50);
+    // Clear loading state after a shorter delay for year filters
+    const delay = (key === 'from_year' || key === 'to_year') ? 25 : 50;
+    setTimeout(() => setIsLoading(false), delay);
   }, [filters, onFiltersChange, onManufacturerChange, onModelChange]);
 
   const handleBrandChange = async (value: string) => {
@@ -441,6 +442,7 @@ const FilterForm = memo<FilterFormProps>(({
                 size="sm"
                 className="h-6 px-2 text-xs"
                 onClick={() => {
+                  // Apply year range presets immediately for instant response
                   const updatedFilters = {
                     ...filters,
                     from_year: preset.from.toString(),

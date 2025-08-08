@@ -371,9 +371,20 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Clear previous data immediately to show loading state
     setCars([]);
     
-    // Apply filters with debouncing to reduce API calls
-    debouncedApplyFilters(newFilters);
-  }, [debouncedApplyFilters]);
+    // Check if this is a year range change - apply immediately for better UX
+    const isYearRangeChange = (
+      newFilters.from_year !== filters.from_year || 
+      newFilters.to_year !== filters.to_year
+    ) && (newFilters.from_year || newFilters.to_year);
+    
+    if (isYearRangeChange) {
+      // Apply year range filters immediately without debouncing
+      applyFiltersInternal(newFilters);
+    } else {
+      // Apply other filters with debouncing to reduce API calls
+      debouncedApplyFilters(newFilters);
+    }
+  }, [debouncedApplyFilters, applyFiltersInternal, filters.from_year, filters.to_year]);
 
   const handleClearFilters = useCallback(() => {
     setFilters({});

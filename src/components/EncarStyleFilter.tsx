@@ -144,8 +144,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
       onFiltersChange(updatedFilters);
     }
     
-    // Reduced timeout for better responsiveness
-    setTimeout(() => setIsLoading(false), 100);
+    // Faster response for year filters - reduced timeout for better responsiveness
+    const timeout = (key === 'from_year' || key === 'to_year') ? 25 : 100;
+    setTimeout(() => setIsLoading(false), timeout);
   }, [filters, onFiltersChange, onManufacturerChange, onModelChange]);
 
   // Enhanced search handler for consistent catalog navigation
@@ -164,13 +165,15 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     }
   }, [onSearchCars, isHomepage, filters]);
 
-  // Handle year range preset selection
+  // Handle year range preset selection - immediate application for better UX
   const handleYearRangePreset = useCallback((preset: { label: string; from: number; to: number }) => {
     const updatedFilters = {
       ...filters,
       from_year: preset.from.toString(),
       to_year: preset.to.toString()
     };
+    
+    // Apply year range presets immediately without debouncing for instant response
     onFiltersChange(updatedFilters);
   }, [filters, onFiltersChange]);
 
