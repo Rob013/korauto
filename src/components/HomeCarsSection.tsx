@@ -1,5 +1,5 @@
 import LazyCarCard from "./LazyCarCard";
-import { memo, useState, useEffect } from "react";
+import { memo, useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { AlertCircle } from "lucide-react";
@@ -260,11 +260,33 @@ const HomeCarsSection = memo(() => {
   // Don't filter homepage cars - always show original cars
   const sortedCars = useSortedCars(carsForSorting, sortBy);
 
-  // Show 50 cars by default (daily rotation)
-  const defaultDisplayCount = 50;
-  const displayedCars = showAllCars
-    ? sortedCars
-    : sortedCars.slice(0, defaultDisplayCount);
+  // Show 30 cars by default (daily rotation) - optimized for better loading performance
+  const defaultDisplayCount = 30;
+
+  // Memoize displayed cars to prevent unnecessary re-renders
+  const displayedCars = useMemo(() => {
+    return showAllCars ? sortedCars : sortedCars.slice(0, defaultDisplayCount);
+  }, [showAllCars, sortedCars, defaultDisplayCount]);
+
+  // Preload first 6 car images for better initial loading performance
+  useEffect(() => {
+    const preloadImages = () => {
+      const firstSixCars = displayedCars.slice(0, 6);
+      firstSixCars.forEach((car) => {
+        const lot = car.lots?.[0];
+        const imageUrl = lot?.images?.normal?.[0] || lot?.images?.big?.[0];
+        if (imageUrl) {
+          const img = new Image();
+          img.src = imageUrl;
+        }
+      });
+    };
+
+    if (displayedCars.length > 0) {
+      // Delay preloading to not interfere with critical resources
+      setTimeout(preloadImages, 100);
+    }
+  }, [displayedCars]);
 
   useEffect(() => {
     // Calculate daily page based on day of month (1-31)
@@ -272,8 +294,8 @@ const HomeCarsSection = memo(() => {
     const dayOfMonth = today.getDate(); // 1-31
     const dailyPage = ((dayOfMonth - 1) % 10) + 1; // Cycle through pages 1-10
 
-    // Load initial data with 50 cars from daily page
-    fetchCars(dailyPage, { per_page: "50" }, true);
+    // Load initial data with 30 cars from daily page - optimized for faster loading
+    fetchCars(dailyPage, { per_page: "30" }, true);
     
     // Load manufacturers with caching
     const loadManufacturers = async () => {
@@ -571,9 +593,9 @@ const HomeCarsSection = memo(() => {
               })}
             </div>
 
-            {/* Show More Button and Browse All Cars Button */}
-            <div className="text-center mt-8 space-y-6">
-              {sortedCars.length > 50 && !showAllCars && (
+            {/* Show More Button */}
+            <div className="text-center mt-8">
+              {sortedCars.length > 30 && !showAllCars && (
                 <Button
                   onClick={() => setShowAllCars(true)}
                   variant="outline"
@@ -583,14 +605,6 @@ const HomeCarsSection = memo(() => {
                   Shiko të gjitha ({sortedCars.length} makina)
                 </Button>
               )}
-
-              <Button
-                onClick={() => navigate("/catalog")}
-                size="lg"
-                className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3"
-              >
-                Shfleto të gjitha makinat
-              </Button>
             </div>
           </>
         )}
