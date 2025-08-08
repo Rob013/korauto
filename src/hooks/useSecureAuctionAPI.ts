@@ -1062,6 +1062,7 @@ interface APIFilters {
   buy_now_price_from?: string;
   buy_now_price_to?: string;
   seats_count?: string;
+  max_accidents?: string;
   search?: string;
   per_page?: string;
   sort_by?: string;

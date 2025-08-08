@@ -39,9 +39,7 @@ import { CookieManagementDashboard } from "@/components/CookieManagementDashboar
 
 // Lazy load heavy admin components
 const AdminSyncDashboard = lazy(() => 
-  import("@/components/AdminSyncDashboard").then(module => ({ 
-    default: module.AdminSyncDashboard 
-  }))
+  import("@/components/AdminSyncDashboard")
 );
 
 const AdminSyncSkeleton = () => (

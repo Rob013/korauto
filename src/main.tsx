@@ -2,7 +2,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 import { ThemeProvider } from "@/components/ThemeProvider"
-import { NavigationProvider } from './contexts/NavigationContext.tsx'
+import { NavigationProvider } from "@/contexts/NavigationContext"
 
 // Register service worker for caching
 if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
