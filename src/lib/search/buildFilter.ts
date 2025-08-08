@@ -96,10 +96,7 @@ export function normalizeFilters(filters: any): SearchReq['filters'] {
     const value = filters[field];
     if (value !== undefined && value !== null) {
       if (Array.isArray(value)) {
-        const filtered = value.filter(v => v != null && v !== '');
-        if (filtered.length > 0) {
-          normalized[field] = filtered;
-        }
+        normalized[field] = value.filter(v => v != null && v !== '');
       } else if (typeof value === 'string' && value.trim()) {
         normalized[field] = [value.trim()];
       }
@@ -112,10 +109,7 @@ export function normalizeFilters(filters: any): SearchReq['filters'] {
     const value = filters[field];
     if (value !== undefined && value !== null) {
       if (Array.isArray(value)) {
-        const filtered = value.map(Number).filter(n => !isNaN(n));
-        if (filtered.length > 0) {
-          normalized[field] = filtered;
-        }
+        normalized[field] = value.map(Number).filter(n => !isNaN(n));
       } else if (!isNaN(Number(value))) {
         normalized[field] = [Number(value)];
       }
@@ -153,9 +147,6 @@ export function createFiltersHash(filters: SearchReq['filters']): string {
   
   const normalized = normalizeFilters(filters);
   const sortedKeys = Object.keys(normalized).sort();
-  
-  if (sortedKeys.length === 0) return 'empty';
-  
   const pairs = sortedKeys.map(key => `${key}:${JSON.stringify(normalized[key])}`);
   
   return btoa(pairs.join('|')).replace(/[+/=]/g, '').slice(0, 16);
