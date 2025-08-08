@@ -115,85 +115,47 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   
   const [hasSelectedCategories, setHasSelectedCategories] = useState(false);
   
-  // Use ref for tracking fetch progress to avoid triggering re-renders
+  // Use ref for tracking state
   const lastSortParamsRef = useRef('');
 
-  // Memoized helper function to extract grades from title
-  const extractGradesFromTitle = useCallback((title: string): string[] => {
-    const grades: string[] = [];
-    const patterns = [
-      /\b(\d+\.?\d*\s?(?:TDI|TFSI|FSI|TSI|CDI|T|D|I|E|H))\b/gi, // Include all engine types
-      /\b(\d+\.?\d*)\s*l?i?t?e?r?\s*(?:TDI|TFSI|FSI|TSI|CDI|T|D|I|E|H)\b/gi,
-      /\b(\d+\.?\d*[iIdDeEhH])\b/gi, // Specific patterns for all engine types: 520i, 530d, 530e, etc.
-      /\b(\d+\.?\d*)\s*(?:hybrid|electric|diesel|petrol|gasoline)\b/gi, // Full word variants
-    ];
-    
-    patterns.forEach(pattern => {
-      const matches = title.match(pattern);
-      if (matches) {
-        matches.forEach(match => {
-          const cleaned = match.trim();
-          if (cleaned && !grades.includes(cleaned)) {
-            grades.push(cleaned);
-          }
-        });
-      }
-    });
-    
-    return grades;
-  }, []);
-
-  // Memoized client-side grade filtering for better performance
+  // Memoized client-side grade filtering - STRICT matching only
   const filteredCars = useMemo(() => {
     if (!filters.grade_iaai || filters.grade_iaai === 'all') {
       return cars;
     }
 
-    const filterGrade = filters.grade_iaai.toLowerCase().trim();
+    const selectedVariant = filters.grade_iaai;
     
     return cars.filter((car) => {
-      const carGrades: string[] = [];
-      
-      // Extract grades from lots (primary source)
+      // Use exact same filtering logic as in useSecureAuctionAPI for consistency
       if (car.lots && Array.isArray(car.lots)) {
-        car.lots.forEach((lot: any) => {
-          if (lot.grade_iaai) carGrades.push(lot.grade_iaai.trim().toLowerCase());
+        return car.lots.some(lot => {
+          // Check grade_iaai field (exact match)
+          if (lot.grade_iaai && lot.grade_iaai.trim() === selectedVariant) {
+            return true;
+          }
+          
+          // Check badge field (exact match)
+          if (lot.details && lot.details.badge && lot.details.badge.trim() === selectedVariant) {
+            return true;
+          }
+          
+          // Check engine name (exact match)
+          if (car.engine && car.engine.name && car.engine.name.trim() === selectedVariant) {
+            return true;
+          }
+          
+          // Check title for variant (case-insensitive contains)
+          if (car.title && car.title.toLowerCase().includes(selectedVariant.toLowerCase())) {
+            return true;
+          }
+          
+          return false;
         });
       }
-      
-      // Extract grades from title
-      if (car.title) {
-        const titleGrades = extractGradesFromTitle(car.title);
-        carGrades.push(...titleGrades.map(g => g.toLowerCase()));
-      }
-      
-      // Extract grades from engine field
-      if (car.engine && car.engine.name) {
-        carGrades.push(car.engine.name.trim().toLowerCase());
-      }
-      
-      // More comprehensive matching for grades
-      return carGrades.some(grade => {
-        // Exact match
-        if (grade === filterGrade) return true;
-        
-        // Partial match - both directions
-        if (grade.includes(filterGrade) || filterGrade.includes(grade)) return true;
-        
-        // Remove spaces and try again
-        const gradeNoSpaces = grade.replace(/\s+/g, '');
-        const filterNoSpaces = filterGrade.replace(/\s+/g, '');
-        if (gradeNoSpaces === filterNoSpaces) return true;
-        
-        // Handle special cases like "30 TDI" vs "30"
-        const gradeParts = grade.split(/\s+/);
-        const filterParts = filterGrade.split(/\s+/);
-        if (gradeParts.some(part => filterParts.includes(part))) return true;
-        
-        return false;
-      });
+      return false;
     });
-  }, [cars, filters.grade_iaai, extractGradesFromTitle]);
+  }, [cars, filters.grade_iaai]);
   
   // console.log(`📊 Filter Results: ${filteredCars.length} cars match (total loaded: ${cars.length}, total count from API: ${totalCount}, grade filter: ${filters.grade_iaai || 'none'})`);
 
