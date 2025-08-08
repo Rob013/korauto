@@ -13,6 +13,7 @@ import { useResourcePreloader } from "./hooks/useResourcePreloader";
 const Index = lazy(() => import("./pages/Index"));
 const Catalog = lazy(() => import("./pages/Catalog"));
 const NewCatalog = lazy(() => import("./pages/NewCatalog"));
+const EncarOptimizedCatalog = lazy(() => import("./pages/EncarOptimizedCatalog"));
 const CarDetails = lazy(() => import("./pages/CarDetails"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AuthPage = lazy(() => import("./pages/AuthPage"));
@@ -126,6 +127,11 @@ const App = () => {
             <Route path="/catalog-new" element={
               <Suspense fallback={<PageSkeleton />}>
                 <NewCatalog />
+              </Suspense>
+            } />
+            <Route path="/catalog-optimized" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <EncarOptimizedCatalog />
               </Suspense>
             } />
             <Route path="/car/:id" element={

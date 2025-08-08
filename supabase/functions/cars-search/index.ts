@@ -4,47 +4,98 @@ import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Cache-Control': 'public, s-maxage=60',
 };
 
-// Zod schema for request validation
+// Enhanced Zod schema with better validation and coercion
 const SearchReqSchema = z.object({
-  q: z.string().optional(),
+  q: z.string().trim().optional(),
   filters: z.object({
-    country: z.array(z.string()).optional(),
-    make: z.array(z.string()).optional(),
-    model: z.array(z.string()).optional(),
-    trim: z.array(z.string()).optional(),
-    fuel: z.array(z.string()).optional(),
-    transmission: z.array(z.string()).optional(),
-    body: z.array(z.string()).optional(),
-    drive: z.array(z.string()).optional(),
-    owners: z.array(z.number()).optional(),
-    accident: z.array(z.enum(['none', 'minor', 'accident'])).optional(),
-    use_type: z.array(z.string()).optional(),
-    exterior_color: z.array(z.string()).optional(),
-    interior_color: z.array(z.string()).optional(),
-    region: z.array(z.string()).optional(),
-    seats: z.array(z.number()).optional(),
-    options: z.array(z.string()).optional(),
-    year: z.object({ min: z.number(), max: z.number() }).partial().optional(),
-    price_eur: z.object({ min: z.number(), max: z.number() }).partial().optional(),
-    mileage_km: z.object({ min: z.number(), max: z.number() }).partial().optional(),
-    engine_cc: z.object({ min: z.number(), max: z.number() }).partial().optional(),
-  }).optional(),
+    // Categorical filters - ensure arrays
+    country: z.array(z.string().trim()).min(0).optional(),
+    make: z.array(z.string().trim()).min(0).optional(),
+    model: z.array(z.string().trim()).min(0).optional(),
+    trim: z.array(z.string().trim()).min(0).optional(),
+    fuel: z.array(z.string().trim()).min(0).optional(),
+    transmission: z.array(z.string().trim()).min(0).optional(),
+    body: z.array(z.string().trim()).min(0).optional(),
+    drive: z.array(z.string().trim()).min(0).optional(),
+    use_type: z.array(z.string().trim()).min(0).optional(),
+    exterior_color: z.array(z.string().trim()).min(0).optional(),
+    interior_color: z.array(z.string().trim()).min(0).optional(),
+    region: z.array(z.string().trim()).min(0).optional(),
+    options: z.array(z.string().trim()).min(0).optional(),
+    
+    // Numeric array filters - coerce strings to numbers
+    owners: z.array(z.coerce.number().int().min(0)).min(0).optional(),
+    seats: z.array(z.coerce.number().int().min(1)).min(0).optional(),
+    
+    // Enum array filters
+    accident: z.array(z.enum(['none', 'minor', 'accident'])).min(0).optional(),
+    
+    // Range filters with coercion and validation
+    year: z.object({ 
+      min: z.coerce.number().int().min(1900).max(2030).optional(), 
+      max: z.coerce.number().int().min(1900).max(2030).optional() 
+    }).refine(data => !data.min || !data.max || data.min <= data.max, {
+      message: "Year min must be less than or equal to max"
+    }).optional(),
+    
+    price_eur: z.object({ 
+      min: z.coerce.number().min(0).optional(), 
+      max: z.coerce.number().min(0).optional() 
+    }).refine(data => !data.min || !data.max || data.min <= data.max, {
+      message: "Price min must be less than or equal to max"
+    }).optional(),
+    
+    mileage_km: z.object({ 
+      min: z.coerce.number().min(0).optional(), 
+      max: z.coerce.number().min(0).optional() 
+    }).refine(data => !data.min || !data.max || data.min <= data.max, {
+      message: "Mileage min must be less than or equal to max"
+    }).optional(),
+    
+    engine_cc: z.object({ 
+      min: z.coerce.number().min(0).optional(), 
+      max: z.coerce.number().min(0).optional() 
+    }).refine(data => !data.min || !data.max || data.min <= data.max, {
+      message: "Engine CC min must be less than or equal to max"
+    }).optional(),
+  }).strict().optional(), // Reject unknown filter keys
+  
   sort: z.object({
     field: z.enum(['listed_at', 'price_eur', 'mileage_km', 'year']),
     dir: z.enum(['asc', 'desc']),
   }).optional(),
-  page: z.number().int().min(1).default(1),
-  pageSize: z.number().int().min(1).max(100).default(20),
+  
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
   mode: z.enum(['full', 'results', 'facets']).default('full'),
-  facets: z.array(z.string()).optional(),
-});
+  facets: z.array(z.string().trim()).min(0).optional(),
+}).strict(); // Reject unknown top-level keys
 
 const LISTING_FIELDS = ['id', 'make', 'model', 'year', 'price_eur', 'mileage_km', 'thumbnail', 'listed_at'];
 
 const API_BASE_URL = 'https://auctionsapi.com/api';
+
+// Create optimized filters hash for cache key
+function createFiltersHash(filters: any): string {
+  if (!filters || Object.keys(filters).length === 0) return 'empty';
+  
+  // Sort keys for consistent hashing
+  const sortedKeys = Object.keys(filters).sort();
+  const pairs = sortedKeys.map(key => `${key}:${JSON.stringify(filters[key])}`);
+  const hashString = pairs.join('|');
+  
+  // Create a simple hash (in production, consider using crypto.subtle.digest)
+  let hash = 0;
+  for (let i = 0; i < hashString.length; i++) {
+    const char = hashString.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  
+  return Math.abs(hash).toString(36).slice(0, 16);
+}
 
 function buildFilter(filters: any): Record<string, any> {
   if (!filters) return {};
@@ -87,9 +138,9 @@ function buildFilter(filters: any): Record<string, any> {
   return apiFilters;
 }
 
-function transformCarData(car: any): any {
+function transformCarData(car: any, listingFieldsOnly: boolean = false): any {
   // Transform the external API format to our listing format
-  return {
+  const transformed = {
     id: car.id?.toString() || car.lot_number || Math.random().toString(),
     make: car.manufacturer?.name || car.make || 'Unknown',
     model: car.model?.name || car.model || 'Unknown',
@@ -99,11 +150,25 @@ function transformCarData(car: any): any {
     thumbnail: car.images?.normal?.[0] || car.image_url || '',
     listed_at: car.created_at || car.listed_at || new Date().toISOString(),
   };
+
+  // For results-only mode, return minimal data for performance
+  if (listingFieldsOnly) {
+    return transformed;
+  }
+
+  // For full mode, include additional fields if needed
+  return {
+    ...transformed,
+    // Add any additional fields for full car details
+    // These would only be included in full mode or detail views
+  };
 }
 
-function generateMockFacets(filters: any): Record<string, Record<string, number>> {
+function generateMockFacets(filters: any, facetsToCompute?: string[]): Record<string, Record<string, number>> {
   // Generate mock facet data - in a real implementation this would come from the API
-  return {
+  // Only compute requested facets for performance
+  
+  const allFacets = {
     make: {
       'BMW': 150,
       'Mercedes-Benz': 120,
@@ -117,6 +182,13 @@ function generateMockFacets(filters: any): Record<string, Record<string, number>
       'A4': 35,
       'Golf': 30,
       '911': 25,
+    },
+    trim: {
+      'Base': 80,
+      'Sport': 60,
+      'Luxury': 45,
+      'Premium': 40,
+      'Performance': 30,
     },
     fuel: {
       'Gasoline': 200,
@@ -136,7 +208,32 @@ function generateMockFacets(filters: any): Record<string, Record<string, number>
       'Coupe': 80,
       'Convertible': 40,
     },
+    drive: {
+      'FWD': 200,
+      'RWD': 150,
+      'AWD': 120,
+    },
+    region: {
+      'North': 150,
+      'South': 120,
+      'East': 100,
+      'West': 80,
+      'Central': 60,
+    },
   };
+
+  // If specific facets are requested, return only those
+  if (facetsToCompute && facetsToCompute.length > 0) {
+    const result: Record<string, Record<string, number>> = {};
+    facetsToCompute.forEach(facet => {
+      if (allFacets[facet]) {
+        result[facet] = allFacets[facet];
+      }
+    });
+    return result;
+  }
+
+  return allFacets;
 }
 
 async function fetchCarsData(req: any): Promise<any> {
@@ -192,41 +289,49 @@ const handler = async (req: Request): Promise<Response> => {
       facetsRequested: validatedReq.facets?.length || 0
     });
 
-    // Generate cache key
-    const filtersHash = validatedReq.filters ? 
-      btoa(JSON.stringify(validatedReq.filters)).slice(0, 16) : 'empty';
-    const cacheKey = `${filtersHash}-${validatedReq.page}-${JSON.stringify(validatedReq.sort)}-${validatedReq.mode}`;
+    // Generate optimized cache key
+    const filtersHash = createFiltersHash(validatedReq.filters);
+    const sortKey = validatedReq.sort ? `${validatedReq.sort.field}:${validatedReq.sort.dir}` : 'default';
+    const cacheKey = `${filtersHash}-${validatedReq.page}-${sortKey}-${validatedReq.mode}`;
+    
+    // Determine cache duration based on data type
+    const cacheDuration = validatedReq.mode === 'facets' ? 300 : 60; // Facets can be cached longer
     
     const responseHeaders = {
       ...corsHeaders,
-      'Cache-Control': `public, s-maxage=60, stale-while-revalidate=300`,
+      'Cache-Control': `public, s-maxage=${cacheDuration}, stale-while-revalidate=900`,
       'Vary': 'Authorization, Content-Type',
       'X-Cache-Key': cacheKey,
+      'X-Filters-Hash': filtersHash,
     };
 
     let result: any = {};
 
     if (validatedReq.mode === 'facets') {
-      // Return only facets
-      result.facets = generateMockFacets(validatedReq.filters);
-      console.log('📊 Returning facets only');
+      // Return only facets - optimized for filter UI updates
+      const facetsToCompute = validatedReq.facets || ['model', 'trim', 'fuel', 'transmission', 'body', 'drive', 'region'];
+      result.facets = generateMockFacets(validatedReq.filters, facetsToCompute);
+      console.log(`📊 Returning facets only: ${facetsToCompute.join(', ')}`);
       
     } else if (validatedReq.mode === 'results') {
-      // Return only results with listing fields
+      // Return only results with listing fields - optimized for fast pagination/filtering
       const apiData = await fetchCarsData(validatedReq);
       
-      result.hits = (apiData.data || []).map(transformCarData);
+      result.hits = (apiData.data || []).map(car => transformCarData(car, true)); // true = listing fields only
       result.total = apiData.meta?.total || result.hits.length;
       
-      console.log(`📋 Returning ${result.hits.length} results (total: ${result.total})`);
+      console.log(`📋 Returning ${result.hits.length} results only (total: ${result.total})`);
       
     } else {
-      // mode === 'full' - return both results and facets
+      // mode === 'full' - return both results and facets (initial page load)
       const apiData = await fetchCarsData(validatedReq);
       
-      result.hits = (apiData.data || []).map(transformCarData);
+      result.hits = (apiData.data || []).map(car => transformCarData(car, true));
       result.total = apiData.meta?.total || result.hits.length;
-      result.facets = generateMockFacets(validatedReq.filters);
+      
+      // Include all facets for initial load
+      const allFacets = ['model', 'trim', 'fuel', 'transmission', 'body', 'drive', 'region'];
+      result.facets = generateMockFacets(validatedReq.filters, allFacets);
       
       console.log(`📋 Returning full data: ${result.hits.length} results + facets`);
     }
@@ -242,7 +347,12 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(
         JSON.stringify({ 
           error: 'Invalid request format',
-          details: error.errors 
+          message: 'Request validation failed',
+          details: error.errors.map(e => ({
+            field: e.path.join('.'),
+            message: e.message,
+            received: e.received
+          }))
         }), 
         {
           status: 400,
@@ -254,7 +364,7 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({ 
         error: 'Failed to process search request',
-        details: error.message 
+        message: error.message || 'Internal server error'
       }), 
       {
         status: 500,

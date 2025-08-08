@@ -66,6 +66,7 @@ export const useCarsSearch = (
 
 /**
  * Hook for results-only search (for fast filtering and pagination)
+ * Optimized for no-flicker experience
  */
 export const useCarsResults = (
   request: Omit<SearchReq, 'mode'>,
@@ -73,12 +74,13 @@ export const useCarsResults = (
 ) => {
   return useCarsSearch(
     { ...request, mode: 'results' },
-    options
+    { keepPreviousData: true, ...options }
   );
 };
 
 /**
  * Hook for facets-only search (for filter options)
+ * Optimized for filter UI updates
  */
 export const useCarsFacets = (
   request: Omit<SearchReq, 'mode' | 'page' | 'pageSize'>,
@@ -98,7 +100,7 @@ export const useCarsFacets = (
 };
 
 /**
- * Prefetch hook for pagination and dropdowns
+ * Enhanced prefetch hook for pagination and dropdowns
  */
 export const useCarsSearchPrefetch = () => {
   const queryClient = useQueryClient();
@@ -130,6 +132,18 @@ export const useCarsSearchPrefetch = () => {
       staleTime: STALE_TIME,
       gcTime: CACHE_TIME,
     });
+  };
+
+  const prefetchNextPage = async (currentRequest: SearchReq) => {
+    if (currentRequest.page) {
+      await prefetchPage(currentRequest, currentRequest.page + 1);
+    }
+  };
+
+  const prefetchPrevPage = async (currentRequest: SearchReq) => {
+    if (currentRequest.page && currentRequest.page > 1) {
+      await prefetchPage(currentRequest, currentRequest.page - 1);
+    }
   };
 
   const prefetchMakeResults = async (make: string, currentRequest: SearchReq) => {
@@ -204,10 +218,27 @@ export const useCarsSearchPrefetch = () => {
     });
   };
 
+  // Prefetch popular makes on dropdown hover/open
+  const prefetchPopularMakes = async (currentRequest: SearchReq) => {
+    const popularMakes = ['BMW', 'Mercedes-Benz', 'Audi', 'Volkswagen', 'Porsche'];
+    
+    // Prefetch results for each popular make
+    const prefetchPromises = popularMakes.map(make => 
+      prefetchMakeResults(make, currentRequest).catch(err => {
+        console.warn(`Failed to prefetch make ${make}:`, err);
+      })
+    );
+
+    await Promise.allSettled(prefetchPromises);
+  };
+
   return {
     prefetchPage,
+    prefetchNextPage,
+    prefetchPrevPage,
     prefetchMakeResults,
     prefetchFacets,
+    prefetchPopularMakes,
   };
 };
 

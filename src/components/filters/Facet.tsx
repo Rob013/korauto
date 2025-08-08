@@ -18,6 +18,7 @@ interface FacetProps {
   searchable?: boolean;
   disabled?: boolean;
   className?: string;
+  onDropdownOpen?: () => void; // New prop for prefetching
 }
 
 export const Facet = ({
@@ -30,6 +31,7 @@ export const Facet = ({
   searchable = true,
   disabled = false,
   className = '',
+  onDropdownOpen,
 }: FacetProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [showAll, setShowAll] = useState(false);
@@ -83,13 +85,21 @@ export const Facet = ({
     setSearchTerm('');
   };
 
+  // Handle expanding the facet and trigger prefetch
+  const handleExpand = () => {
+    setIsExpanded(true);
+    if (onDropdownOpen) {
+      onDropdownOpen();
+    }
+  };
+
   if (!isExpanded) {
     return (
       <div className={`border rounded-lg p-3 ${className}`}>
         <Button
           variant="ghost"
           className="w-full justify-between p-0 h-auto"
-          onClick={() => setIsExpanded(true)}
+          onClick={handleExpand}
           disabled={disabled}
         >
           <div className="flex items-center gap-2">
