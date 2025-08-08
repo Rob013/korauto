@@ -80,6 +80,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [allCarsForSorting, setAllCarsForSorting] = useState<any[]>([]);
   const [isSortingGlobal, setIsSortingGlobal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFilterLoading, setIsFilterLoading] = useState(false);
   const isMobile = useIsMobile();
   
   // Initialize showFilters with preserved state for mobile users returning from car details
@@ -296,6 +297,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   );
 
   const handleFiltersChange = useCallback(async (newFilters: APIFilters) => {
+    // Set filter loading state immediately for better UX
+    setIsFilterLoading(true);
+    
     // Update UI immediately for responsiveness
     setFilters(newFilters);
     
@@ -324,7 +328,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       // Apply other filters with debouncing to reduce API calls
       debouncedApplyFilters(newFilters);
     }
-  }, [debouncedApplyFilters, handleOptimizedYearFilter, filters]);
+  }, [debouncedApplyFilters, handleOptimizedYearFilter, filters, setCars, setFilters, setTotalCount]);
 
   const handleClearFilters = useCallback(() => {
     setFilters({});
@@ -421,6 +425,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const handleManufacturerChange = async (manufacturerId: string) => {
     console.log(`[handleManufacturerChange] Called with manufacturerId: ${manufacturerId}`);
     setIsLoading(true);
+    setIsFilterLoading(true);
     setModels([]);
     setGenerations([]);
     
@@ -483,6 +488,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       setGenerations([]);
     } finally {
       setIsLoading(false);
+      setIsFilterLoading(false);
     }
   };
 
@@ -493,6 +499,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
   const handleModelChange = async (modelId: string) => {
     setIsLoading(true);
+    setIsFilterLoading(true);
     setGenerations([]);
     
     // Create new filters immediately for faster UI response
@@ -510,6 +517,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         // Fetch cars with cleared model filter
         await fetchCars(1, { ...newFilters, per_page: "50" }, true);
         setIsLoading(false);
+        setIsFilterLoading(false);
         return;
       }
       
@@ -539,6 +547,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       setGenerations([]);
     } finally {
       setIsLoading(false);
+      setIsFilterLoading(false);
     }
   };
 
@@ -778,6 +787,17 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       }, 1000);
     }
   }, [highlightCarId, cars]);
+
+  // Clear filter loading state when main loading completes
+  useEffect(() => {
+    if (!loading) {
+      // Add a small delay to ensure smooth UX transition
+      const timer = setTimeout(() => {
+        setIsFilterLoading(false);
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
 
   // Save filter panel state to sessionStorage on mobile when it changes
   useEffect(() => {
@@ -1036,7 +1056,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           )}
 
           {/* No Results State */}
-          {shouldShowCars && !loading && !isRestoringState && cars.length === 0 && (
+          {shouldShowCars && !loading && !isRestoringState && !isFilterLoading && cars.length === 0 && (
             <div className="text-center py-12">
               <p className="text-muted-foreground">
                 No cars found matching your filters.
@@ -1051,16 +1071,36 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             </div>
           )}
 
+          {/* Filter Loading State */}
+          {isFilterLoading && cars.length === 0 && (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin mr-3" />
+              <span className="text-lg font-medium">Applying filters...</span>
+            </div>
+          )}
+
           {/* Cars Grid/List - Show cars without requiring filters */}
           {shouldShowCars && cars.length > 0 && (
-            <>
+            <div className="relative">
+              {/* Loading Overlay for Cars Grid */}
+              {isFilterLoading && (
+                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
+                  <div className="bg-card border border-border rounded-lg p-6 shadow-lg">
+                    <div className="flex items-center gap-3">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      <span className="text-sm font-medium text-foreground">Applying filters...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <div
                 ref={containerRef}
                 className={`grid mobile-car-grid-compact sm:mobile-car-grid gap-2 sm:gap-3 lg:gap-4 transition-all duration-300 ${
                   showFilters 
                     ? 'lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' 
                     : 'lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7'
-                }`}
+                } ${isFilterLoading ? 'opacity-50' : ''}`}
               >
                 {carsForCurrentPage.map((car) => {
                   const lot = car.lots?.[0];
@@ -1161,7 +1201,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   </div>
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
