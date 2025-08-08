@@ -115,47 +115,86 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   
   const [hasSelectedCategories, setHasSelectedCategories] = useState(false);
   
-  // Use ref for tracking state
+  // Use ref for tracking fetch progress to avoid triggering re-renders
+  const fetchingSortRef = useRef(false);
   const lastSortParamsRef = useRef('');
 
-  // Memoized client-side grade filtering - STRICT matching only
+  // Memoized helper function to extract grades from title
+  const extractGradesFromTitle = useCallback((title: string): string[] => {
+    const grades: string[] = [];
+    const patterns = [
+      /\b(\d+\.?\d*\s?(?:TDI|TFSI|FSI|TSI|CDI|T|D|I|E|H))\b/gi, // Include all engine types
+      /\b(\d+\.?\d*)\s*l?i?t?e?r?\s*(?:TDI|TFSI|FSI|TSI|CDI|T|D|I|E|H)\b/gi,
+      /\b(\d+\.?\d*[iIdDeEhH])\b/gi, // Specific patterns for all engine types: 520i, 530d, 530e, etc.
+      /\b(\d+\.?\d*)\s*(?:hybrid|electric|diesel|petrol|gasoline)\b/gi, // Full word variants
+    ];
+    
+    patterns.forEach(pattern => {
+      const matches = title.match(pattern);
+      if (matches) {
+        matches.forEach(match => {
+          const cleaned = match.trim();
+          if (cleaned && !grades.includes(cleaned)) {
+            grades.push(cleaned);
+          }
+        });
+      }
+    });
+    
+    return grades;
+  }, []);
+
+  // Memoized client-side grade filtering for better performance
   const filteredCars = useMemo(() => {
     if (!filters.grade_iaai || filters.grade_iaai === 'all') {
       return cars;
     }
 
-    const selectedVariant = filters.grade_iaai;
+    const filterGrade = filters.grade_iaai.toLowerCase().trim();
     
     return cars.filter((car) => {
-      // Use exact same filtering logic as in useSecureAuctionAPI for consistency
+      const carGrades: string[] = [];
+      
+      // Extract grades from lots (primary source)
       if (car.lots && Array.isArray(car.lots)) {
-        return car.lots.some(lot => {
-          // Check grade_iaai field (exact match)
-          if (lot.grade_iaai && lot.grade_iaai.trim() === selectedVariant) {
-            return true;
-          }
-          
-          // Check badge field (exact match)
-          if (lot.details && lot.details.badge && lot.details.badge.trim() === selectedVariant) {
-            return true;
-          }
-          
-          // Check engine name (exact match)
-          if (car.engine && car.engine.name && car.engine.name.trim() === selectedVariant) {
-            return true;
-          }
-          
-          // Check title for variant (case-insensitive contains)
-          if (car.title && car.title.toLowerCase().includes(selectedVariant.toLowerCase())) {
-            return true;
-          }
-          
-          return false;
+        car.lots.forEach((lot: any) => {
+          if (lot.grade_iaai) carGrades.push(lot.grade_iaai.trim().toLowerCase());
         });
       }
-      return false;
+      
+      // Extract grades from title
+      if (car.title) {
+        const titleGrades = extractGradesFromTitle(car.title);
+        carGrades.push(...titleGrades.map(g => g.toLowerCase()));
+      }
+      
+      // Extract grades from engine field
+      if (car.engine && car.engine.name) {
+        carGrades.push(car.engine.name.trim().toLowerCase());
+      }
+      
+      // More comprehensive matching for grades
+      return carGrades.some(grade => {
+        // Exact match
+        if (grade === filterGrade) return true;
+        
+        // Partial match - both directions
+        if (grade.includes(filterGrade) || filterGrade.includes(grade)) return true;
+        
+        // Remove spaces and try again
+        const gradeNoSpaces = grade.replace(/\s+/g, '');
+        const filterNoSpaces = filterGrade.replace(/\s+/g, '');
+        if (gradeNoSpaces === filterNoSpaces) return true;
+        
+        // Handle special cases like "30 TDI" vs "30"
+        const gradeParts = grade.split(/\s+/);
+        const filterParts = filterGrade.split(/\s+/);
+        if (gradeParts.some(part => filterParts.includes(part))) return true;
+        
+        return false;
+      });
     });
-  }, [cars, filters.grade_iaai]);
+  }, [cars, filters.grade_iaai, extractGradesFromTitle]);
   
   // console.log(`📊 Filter Results: ${filteredCars.length} cars match (total loaded: ${cars.length}, total count from API: ${totalCount}, grade filter: ${filters.grade_iaai || 'none'})`);
 
@@ -332,13 +371,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Clear previous data immediately to show loading state
     setCars([]);
     
-    // Reset global sorting data when filters change to ensure fresh results
-    setIsSortingGlobal(false);
-    setAllCarsForSorting([]);
-    
     // Apply filters with debouncing to reduce API calls
     debouncedApplyFilters(newFilters);
-  }, [debouncedApplyFilters, setCars, setFilters]);
+  }, [debouncedApplyFilters]);
 
   const handleClearFilters = useCallback(() => {
     setFilters({});
@@ -391,34 +426,86 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
   // Function to fetch all cars for sorting across all pages
   const fetchAllCarsForSorting = useCallback(async () => {
-    // For single page results, use current filtered cars instead of fetching all
-    if (totalPages <= 1) {
+    // Create a unique key for current sort parameters to prevent duplicate calls
+    const sortKey = `${totalCount}-${sortBy}-${filters.grade_iaai || ''}-${filters.manufacturer_id || ''}-${filters.model_id || ''}`;
+    
+    if (fetchingSortRef.current || sortKey === lastSortParamsRef.current) {
+      console.log(`⏭️ Skipping duplicate sort request: ${sortKey}`);
+      return;
+    }
+
+    if (totalCount <= 50) {
+      // For small datasets, use current filtered cars instead of fetching
       setAllCarsForSorting(filteredCars);
       setIsSortingGlobal(true);
-      console.log(`✅ Single page sorting: Using ${filteredCars.length} filtered cars`);
+      lastSortParamsRef.current = sortKey;
       return;
     }
     
-    // For multiple pages, we need to fetch all cars to sort them properly
+    fetchingSortRef.current = true;
     setIsSortingGlobal(true);
     setIsLoading(true);
     
     try {
       console.log(`🔄 Global sorting: Fetching all cars for sorting across ${totalPages} pages`);
       
-      // Use the fetchAllCars function to get all cars with current filters
+      // Use the new fetchAllCars function to get all cars with current filters
       const allCars = await fetchAllCars(filters);
       
-      setAllCarsForSorting(allCars);
-      console.log(`✅ Global sorting: Loaded ${allCars.length} cars for sorting across all pages`);
+      // Apply the same client-side filtering as the current filtered cars
+      const filteredAllCars = allCars.filter((car: any) => {
+        if (filters.grade_iaai && filters.grade_iaai !== 'all') {
+          const filterGrade = filters.grade_iaai.toLowerCase().trim();
+          const carGrades: string[] = [];
+          
+          // Extract grades from lots (primary source)
+          if (car.lots && Array.isArray(car.lots)) {
+            car.lots.forEach((lot: any) => {
+              if (lot.grade_iaai) carGrades.push(lot.grade_iaai.trim().toLowerCase());
+            });
+          }
+          
+          // Extract grades from title
+          if (car.title) {
+            const titleGrades = extractGradesFromTitle(car.title);
+            carGrades.push(...titleGrades.map(g => g.toLowerCase()));
+          }
+          
+          // Extract grades from engine field
+          if (car.engine && car.engine.name) {
+            carGrades.push(car.engine.name.trim().toLowerCase());
+          }
+          
+          // Check if any grade matches the filter
+          const matches = carGrades.some(grade => {
+            if (grade === filterGrade) return true;
+            if (grade.includes(filterGrade) || filterGrade.includes(grade)) return true;
+            const gradeNoSpaces = grade.replace(/\s+/g, '');
+            const filterNoSpaces = filterGrade.replace(/\s+/g, '');
+            if (gradeNoSpaces === filterNoSpaces) return true;
+            const gradeParts = grade.split(/\s+/);
+            const filterParts = filterGrade.split(/\s+/);
+            if (gradeParts.some(part => filterParts.includes(part))) return true;
+            return false;
+          });
+          
+          return matches;
+        }
+        return true;
+      });
+      
+      setAllCarsForSorting(filteredAllCars);
+      lastSortParamsRef.current = sortKey;
+      console.log(`✅ Global sorting: Loaded ${filteredAllCars.length} cars for sorting across all pages`);
     } catch (err) {
       console.error('❌ Error fetching all cars for global sorting:', err);
       setIsSortingGlobal(false);
       setAllCarsForSorting([]);
     } finally {
       setIsLoading(false);
+      fetchingSortRef.current = false;
     }
-  }, [totalPages, fetchAllCars, filters, filteredCars]);
+  }, [totalCount, fetchAllCars, filters.grade_iaai, filters.manufacturer_id, filters.model_id, filters.generation_id, filters.from_year, filters.to_year, sortBy, extractGradesFromTitle, filteredCars, totalPages]);
 
   const handleManufacturerChange = async (manufacturerId: string) => {
     console.log(`[handleManufacturerChange] Called with manufacturerId: ${manufacturerId}`);
@@ -556,11 +643,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       // Get filters and pagination state from URL parameters
       const urlFilters: APIFilters = {};
       let urlLoadedPages = 1;
+      let urlCurrentPage = 1;
 
       for (const [key, value] of searchParams.entries()) {
         if (key === "loadedPages") {
           urlLoadedPages = parseInt(value) || 1;
-        } else if (value && key !== "loadedPages" && key !== "fromHomepage") {
+        } else if (key === "page") {
+          urlCurrentPage = parseInt(value) || 1;
+        } else if (value && key !== "loadedPages" && key !== "fromHomepage" && key !== "page") {
           let decodedValue = value;
           try {
             decodedValue = decodeURIComponent(value);
@@ -582,6 +672,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       // Set filters and pagination immediately for faster UI response
       setFilters(urlFilters);
       setLoadedPages(urlLoadedPages);
+      setCurrentPage(urlCurrentPage);
 
       try {
         // PERFORMANCE OPTIMIZATION: Load only essential data first
@@ -606,7 +697,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           per_page: "50"
         };
         
-        await fetchCars(1, initialFilters, true);
+        await fetchCars(urlCurrentPage, initialFilters, true);
 
       } catch (error) {
         console.error('Error loading initial data:', error);
@@ -725,40 +816,15 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Fetch all cars for sorting when sortBy changes OR when totalCount first becomes available
   // This ensures global sorting works on initial load and when sort options change
   useEffect(() => {
-    // Enable global sorting when we have data and multiple pages, or when sort changes
-    if (totalCount > 0 && totalPages > 1) {
-      console.log(`🔄 Triggering global sorting: totalCount=${totalCount}, totalPages=${totalPages}, sortBy=${sortBy}`);
+    if (totalCount > 50 && !fetchingSortRef.current) {
+      console.log(`🔄 Triggering global sorting: totalCount=${totalCount}, sortBy=${sortBy}`);
       fetchAllCarsForSorting();
-    } else if (totalPages <= 1 && filteredCars.length > 0) {
-      // For single page results, use current filtered cars for sorting (more efficient)
-      setIsSortingGlobal(true);
-      setAllCarsForSorting(filteredCars);
-      console.log(`✅ Single page sorting: Using ${filteredCars.length} current cars`);
-    } else {
-      // No data or no need for global sorting
+    } else if (totalCount <= 50) {
+      // Reset global sorting if not needed (small dataset)
       setIsSortingGlobal(false);
       setAllCarsForSorting([]);
     }
-  }, [sortBy, totalCount, totalPages, filteredCars.length, fetchAllCarsForSorting]);
-
-  // Re-trigger global sorting when key filters change to ensure correct sorting across all filtered results
-  useEffect(() => {
-    // When filters change significantly, reset and re-trigger global sorting if needed
-    if (totalPages > 1) {
-      console.log(`🔄 Re-triggering global sorting due to filter change`);
-      setAllCarsForSorting([]); // Clear previous cached data
-      setIsSortingGlobal(false); // Reset state
-      
-      // Trigger new global sorting after a short delay to allow new data to load
-      const timer = setTimeout(() => {
-        if (totalPages > 1) {
-          fetchAllCarsForSorting();
-        }
-      }, 300);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [filters.manufacturer_id, filters.model_id, filters.grade_iaai, totalPages, fetchAllCarsForSorting]);
+  }, [sortBy, totalCount, fetchAllCarsForSorting]);
 
   // Show cars without requiring brand and model selection
   const shouldShowCars = true;
@@ -1010,7 +1076,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               </h1>
               <p className="text-muted-foreground text-xs sm:text-sm">
                 {totalCount.toLocaleString()} cars {filters.grade_iaai && filters.grade_iaai !== 'all' ? `filtered by ${filters.grade_iaai}` : 'total'} • Page {currentPage} of {totalPages} • Showing {carsForCurrentPage.length} cars
-                {isSortingGlobal ? ' (sorted globally)' : ''}
               </p>
             </div>
           </div>
