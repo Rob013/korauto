@@ -23,23 +23,15 @@ interface NavigationContextType {
   goBack: () => void;
 }
 
-const defaultNavigation: NavigationContextType = {
-  previousPage: null,
-  filterState: null,
-  setPreviousPage: () => {},
-  clearPreviousPage: () => {},
-  goBack: () => {
-    if (typeof window !== 'undefined' && window.history.length > 1) {
-      window.history.back();
-    } else if (typeof window !== 'undefined') {
-      window.location.href = '/';
-    }
-  },
+const NavigationContext = createContext<NavigationContextType | undefined>(undefined);
+
+export const useNavigation = () => {
+  const context = useContext(NavigationContext);
+  if (!context) {
+    throw new Error('useNavigation must be used within a NavigationProvider');
+  }
+  return context;
 };
-
-const NavigationContext = createContext<NavigationContextType>(defaultNavigation);
-
-export const useNavigation = () => useContext(NavigationContext);
 
 interface NavigationProviderProps {
   children: ReactNode;

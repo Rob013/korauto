@@ -30,7 +30,7 @@ interface CachedCarData {
   year: number;
   vin?: string;
   lot_number?: string;
-  car_data: any;
+  car_data: Record<string, any>;
   price?: number;
   mileage?: string;
   color?: string;
