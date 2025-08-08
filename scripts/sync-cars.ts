@@ -297,8 +297,8 @@ async function syncCars() {
   }
 }
 
-// Run the sync
-if (require.main === module) {
+// Run the sync when script is executed directly
+if (process.argv[1] && process.argv[1].includes('sync-cars.ts')) {
   syncCars().catch(error => {
     console.error('💥 Unhandled error:', error)
     process.exit(1)
