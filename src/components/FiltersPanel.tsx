@@ -70,7 +70,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   // Update search filter when debounced term changes
   useEffect(() => {
     if (debouncedSearchTerm !== filters.search) {
-      onFiltersChange({ search: debouncedSearchTerm || undefined });
+      onFiltersChange({ search: debouncedSearchTerm || undefined, page: 1 });
     }
   }, [debouncedSearchTerm, filters.search, onFiltersChange]);
 
@@ -84,6 +84,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       onFiltersChange({
         yearMin: debouncedYearRange[0] !== data.yearRange.min ? debouncedYearRange[0] : undefined,
         yearMax: debouncedYearRange[1] !== data.yearRange.max ? debouncedYearRange[1] : undefined,
+        page: 1,
       });
     }
   }, [debouncedYearRange, filters.yearMin, filters.yearMax, data.yearRange, onFiltersChange]);
@@ -93,6 +94,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       onFiltersChange({
         priceMin: debouncedPriceRange[0] !== data.priceRange.min ? debouncedPriceRange[0] : undefined,
         priceMax: debouncedPriceRange[1] !== data.priceRange.max ? debouncedPriceRange[1] : undefined,
+        page: 1,
       });
     }
   }, [debouncedPriceRange, filters.priceMin, filters.priceMax, data.priceRange, onFiltersChange]);
@@ -102,6 +104,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       onFiltersChange({
         mileageMin: debouncedMileageRange[0] !== data.mileageRange.min ? debouncedMileageRange[0] : undefined,
         mileageMax: debouncedMileageRange[1] !== data.mileageRange.max ? debouncedMileageRange[1] : undefined,
+        page: 1,
       });
     }
   }, [debouncedMileageRange, filters.mileageMin, filters.mileageMax, data.mileageRange, onFiltersChange]);
@@ -168,8 +171,8 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   }, [filters, data, availableModels]);
 
   const handleBrandChange = (brandId: string) => {
-    // When brand changes, reset model as specified in requirements
-    onFiltersChange({ brand: brandId, model: undefined });
+    // When brand changes, reset model and pagination
+    onFiltersChange({ brand: brandId, model: undefined, page: 1 });
   };
 
   const removeFilter = (key: string) => {
@@ -342,7 +345,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
           {/* Fuel Type */}
           <div className="space-y-2">
             <Label>Fuel Type</Label>
-            <Select value={filters.fuel || ''} onValueChange={(value) => onFiltersChange({ fuel: value })}>
+            <Select value={filters.fuel || ''} onValueChange={(value) => onFiltersChange({ fuel: value, page: 1 })}>
               <SelectTrigger>
                 <SelectValue placeholder="Select fuel type" />
               </SelectTrigger>
@@ -359,7 +362,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
           {/* Transmission */}
           <div className="space-y-2">
             <Label>Transmission</Label>
-            <Select value={filters.transmission || ''} onValueChange={(value) => onFiltersChange({ transmission: value })}>
+            <Select value={filters.transmission || ''} onValueChange={(value) => onFiltersChange({ transmission: value, page: 1 })}>
               <SelectTrigger>
                 <SelectValue placeholder="Select transmission" />
               </SelectTrigger>
@@ -395,7 +398,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
           {/* Body Type */}
           <div className="space-y-2">
             <Label>Body Type</Label>
-            <Select value={filters.bodyType || ''} onValueChange={(value) => onFiltersChange({ bodyType: value })}>
+            <Select value={filters.bodyType || ''} onValueChange={(value) => onFiltersChange({ bodyType: value, page: 1 })}>
               <SelectTrigger>
                 <SelectValue placeholder="Select body type" />
               </SelectTrigger>
@@ -412,7 +415,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
           {/* Color */}
           <div className="space-y-2">
             <Label>Color</Label>
-            <Select value={filters.color || ''} onValueChange={(value) => onFiltersChange({ color: value })}>
+            <Select value={filters.color || ''} onValueChange={(value) => onFiltersChange({ color: value, page: 1 })}>
               <SelectTrigger>
                 <SelectValue placeholder="Select color" />
               </SelectTrigger>
