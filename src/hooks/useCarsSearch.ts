@@ -31,33 +31,30 @@ export const useCarsSearch = (
     facets: request.facets,
   }];
 
-  // Query function
   const queryFn = async ({ signal }: { signal?: AbortSignal }): Promise<SearchRes> => {
-    console.log('🔍 Fetching cars with request:', request);
-    
-    const { data, error } = await supabase.functions.invoke('cars-search', {
-      body: request,
-      signal,
+    console.log('🔍 Fetching cars with request (RPC sorted):', request);
+
+    const { data, error } = await (supabase as any).rpc('cars_search_sorted', {
+      req: request as any,
     });
 
     if (error) {
-      console.error('❌ Cars search error:', error);
-      throw new Error(error.message || 'Failed to search cars');
+      console.error('❌ Cars search RPC error:', error);
+      throw new Error((error as any).message || 'Failed to search cars');
     }
 
-    return data as SearchRes;
+    return data as unknown as SearchRes;
   };
 
-  return useQuery({
+  return useQuery<SearchRes, Error>({
     queryKey,
     queryFn,
     enabled,
     staleTime: STALE_TIME,
-    gcTime: CACHE_TIME, // Updated from cacheTime
-    keepPreviousData,
-    retry: (failureCount, error) => {
-      // Don't retry on validation errors
-      if (error.message?.includes('Invalid request')) return false;
+    gcTime: CACHE_TIME,
+    placeholderData: keepPreviousData ? (prev) => prev : undefined,
+    retry: (failureCount, error: any) => {
+      if (error?.message?.includes('Invalid request')) return false;
       return failureCount < 2;
     },
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
@@ -117,15 +114,15 @@ export const useCarsSearchPrefetch = () => {
         facets: prefetchRequest.facets,
       }],
       queryFn: async () => {
-        const { data, error } = await supabase.functions.invoke('cars-search', {
-          body: prefetchRequest,
+        const { data, error } = await (supabase as any).rpc('cars_search_keyset', {
+          req: prefetchRequest as any,
         });
 
         if (error) {
-          throw new Error(error.message || 'Failed to prefetch cars');
+          throw new Error((error as any).message || 'Failed to prefetch cars');
         }
 
-        return data as SearchRes;
+        return data as unknown as SearchRes;
       },
       staleTime: STALE_TIME,
       gcTime: CACHE_TIME,
@@ -154,15 +151,15 @@ export const useCarsSearchPrefetch = () => {
         facets: prefetchRequest.facets,
       }],
       queryFn: async () => {
-        const { data, error } = await supabase.functions.invoke('cars-search', {
-          body: prefetchRequest,
+        const { data, error } = await (supabase as any).rpc('cars_search_sorted', {
+          req: prefetchRequest as any,
         });
 
         if (error) {
-          throw new Error(error.message || 'Failed to prefetch cars');
+          throw new Error((error as any).message || 'Failed to prefetch cars');
         }
 
-        return data as SearchRes;
+        return data as unknown as SearchRes;
       },
       staleTime: STALE_TIME,
       gcTime: CACHE_TIME,
@@ -189,15 +186,15 @@ export const useCarsSearchPrefetch = () => {
         facets: prefetchRequest.facets,
       }],
       queryFn: async () => {
-        const { data, error } = await supabase.functions.invoke('cars-search', {
-          body: prefetchRequest,
+        const { data, error } = await (supabase as any).rpc('cars_search_sorted', {
+          req: prefetchRequest as any,
         });
 
         if (error) {
-          throw new Error(error.message || 'Failed to prefetch facets');
+          throw new Error((error as any).message || 'Failed to prefetch facets');
         }
 
-        return data as SearchRes;
+        return data as unknown as SearchRes;
       },
       staleTime: STALE_TIME,
       gcTime: CACHE_TIME,

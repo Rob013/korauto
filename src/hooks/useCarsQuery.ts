@@ -90,7 +90,7 @@ export const useCarsQuery = (filters: FilterState) => {
   }, []);
 
   // Main cars query
-  const carsQuery = useQuery({
+  const carsQuery = useQuery<CarsResponse, Error>({
     queryKey,
     queryFn: async ({ signal }) => {
       cancelPreviousRequest();
@@ -120,9 +120,9 @@ export const useCarsQuery = (filters: FilterState) => {
         abortControllerRef.current = null;
       }
     },
-    staleTime: 45000, // 45 seconds as specified (30-60s range)
-    keepPreviousData: true, // Keep list visible while fetching next page
-    enabled: true, // Always enabled since we show all cars by default
+    staleTime: 45000,
+    placeholderData: (prev) => prev,
+    enabled: true,
     retry: (failureCount, error) => {
       // Don't retry if request was aborted
       if (error instanceof Error && error.name === 'AbortError') {
@@ -145,7 +145,7 @@ export const useCarsQuery = (filters: FilterState) => {
 
   // Prefetch next page when current data is available
   const prefetchNextPage = useCallback(() => {
-    if (carsQuery.data && carsQuery.data.hasMore) {
+    if (carsQuery.data && (carsQuery.data as CarsResponse).hasMore) {
       const nextPageFilters = { ...filters, page: (filters.page || 1) + 1 };
       const nextPageQueryKey = ['cars', buildQueryParams(nextPageFilters)];
       
@@ -166,10 +166,10 @@ export const useCarsQuery = (filters: FilterState) => {
 
   return {
     // Data
-    cars: carsQuery.data?.cars || [],
-    total: carsQuery.data?.total || 0,
-    totalPages: carsQuery.data?.totalPages || 0,
-    hasMore: carsQuery.data?.hasMore || false,
+    cars: (carsQuery.data as CarsResponse | undefined)?.cars || [],
+    total: (carsQuery.data as CarsResponse | undefined)?.total || 0,
+    totalPages: (carsQuery.data as CarsResponse | undefined)?.totalPages || 0,
+    hasMore: (carsQuery.data as CarsResponse | undefined)?.hasMore || false,
     models: modelsQuery.data || [],
     
     // Loading states
