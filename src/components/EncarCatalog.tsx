@@ -118,9 +118,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const extractGradesFromTitleCallback = useCallback(extractGradesFromTitle, []);
 
   // Memoized client-side grade filtering for better performance - now using utility
-  const filteredCars = useMemo(() => {
-    return applyGradeFilter(cars, filters.grade_iaai);
-  }, [cars, filters.grade_iaai]);
+const filteredCars = useMemo(() => {
+  return applyGradeFilter(cars as any[], filters.grade_iaai);
+}, [cars, filters.grade_iaai]);
   
   // console.log(`📊 Filter Results: ${filteredCars.length} cars match (total loaded: ${cars.length}, total count from API: ${totalCount}, grade filter: ${filters.grade_iaai || 'none'})`);
 

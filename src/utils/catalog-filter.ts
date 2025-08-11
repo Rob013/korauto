@@ -9,6 +9,7 @@
 export interface APIFilters {
   manufacturer_id?: string;
   model_id?: string;
+  generation_id?: string;
   grade_iaai?: string;
   trim_level?: string;
   color?: string;
@@ -30,7 +31,7 @@ export interface APIFilters {
 export interface Car {
   id: string;
   title?: string;
-  lots?: Array<{ grade_iaai?: string; [key: string]: unknown }>;
+  lots?: any[];
   engine?: { name?: string };
   [key: string]: unknown;
 }
@@ -204,10 +205,11 @@ export const hasActiveFilters = (filters: APIFilters): boolean => {
  * Checks if this is a year range filter change
  */
 export const isYearRangeChange = (newFilters: APIFilters, currentFilters: APIFilters): boolean => {
-  return (
-    newFilters.from_year !== currentFilters.from_year || 
-    newFilters.to_year !== currentFilters.to_year
-  ) && (newFilters.from_year || newFilters.to_year);
+  return !!(
+    (newFilters.from_year !== currentFilters.from_year || 
+     newFilters.to_year !== currentFilters.to_year) && 
+    (newFilters.from_year != null || newFilters.to_year != null)
+  );
 };
 
 /**
@@ -304,8 +306,9 @@ export const sortManufacturers = (manufacturers: Array<{
   id: number; 
   name: string; 
   cars_qty?: number; 
-  car_count?: number 
-}>): Array<{ id: number; name: string; cars_qty?: number; car_count?: number }> => {
+  car_count?: number; 
+  image?: string;
+}>): Array<{ id: number; name: string; cars_qty?: number; car_count?: number; image?: string }> => {
   return manufacturers
     .filter(m => {
       // Ensure manufacturer has valid data from API

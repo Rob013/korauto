@@ -513,9 +513,12 @@ export const createFallbackCars = (filters: any = {}): any[] => {
     filteredCars = filteredCars.filter(car => car.year <= parseInt(filters.to_year));
   }
   
-  if (filters.color) {
-    filteredCars = filteredCars.filter(car => car.color.toLowerCase() === filters.color.toLowerCase());
-  }
+if (filters.color) {
+  filteredCars = filteredCars.filter(car => {
+    const colorName = typeof car.color === 'string' ? car.color : (car.color?.name || '');
+    return colorName.toLowerCase() === filters.color!.toLowerCase();
+  });
+}
 
   // Create additional cars programmatically for testing multi-page sorting
   const baseLength = filteredCars.length;
@@ -1028,6 +1031,7 @@ interface Model {
   id: number;
   name: string;
   car_count?: number;
+  cars_qty?: number;
 }
 
 interface Generation {
