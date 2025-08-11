@@ -1,180 +1,188 @@
-// Service Worker for caching and offline functionality
+// Service Worker for caching API responses and static assets
 const CACHE_NAME = 'korauto-v1';
-const STATIC_CACHE = 'korauto-static-v1';
-const API_CACHE = 'korauto-api-v1';
+const STATIC_CACHE_NAME = 'korauto-static-v1';
 
-// Files to cache immediately
-const STATIC_FILES = [
+// Static assets to cache
+const STATIC_ASSETS = [
   '/',
-  '/index.html',
   '/manifest.json',
-  '/placeholder.svg',
-  '/favicon.ico',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png'
 ];
 
 // API endpoints to cache
-const API_ENDPOINTS = [
-  '/api/cars',
-  '/api/catalog',
+const API_CACHE_PATTERNS = [
+  /\/api\/manufacturers/,
+  /\/api\/models/,
+  /\/api\/generations/,
+  /\/api\/cars\?/
 ];
 
-// Install event - cache static files
+// Cache duration in milliseconds
+const CACHE_DURATION = {
+  API: 5 * 60 * 1000, // 5 minutes for API responses
+  STATIC: 24 * 60 * 60 * 1000, // 24 hours for static assets
+  IMAGES: 60 * 60 * 1000 // 1 hour for images
+};
+
+// Install event - cache static assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => {
-      return cache.addAll(STATIC_FILES);
-    })
+    caches.open(STATIC_CACHE_NAME)
+      .then((cache) => cache.addAll(STATIC_ASSETS))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== STATIC_CACHE && cacheName !== API_CACHE) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    caches.keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== CACHE_NAME && cacheName !== STATIC_CACHE_NAME) {
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      })
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Fetch event - serve from cache or network
+// Fetch event - serve from cache with fallback to network
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // Skip non-GET requests
+  if (request.method !== 'GET') {
+    return;
+  }
+
   // Handle API requests
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(handleApiRequest(request));
+  if (API_CACHE_PATTERNS.some(pattern => pattern.test(url.pathname))) {
+    event.respondWith(handleAPIRequest(request));
+    return;
+  }
+
+  // Handle image requests
+  if (request.destination === 'image') {
+    event.respondWith(handleImageRequest(request));
     return;
   }
 
   // Handle static assets
-  if (request.method === 'GET') {
+  if (STATIC_ASSETS.includes(url.pathname)) {
     event.respondWith(handleStaticRequest(request));
     return;
   }
+
+  // Default: network first, cache fallback
+  event.respondWith(
+    fetch(request)
+      .catch(() => caches.match(request))
+  );
 });
 
-// Handle API requests with cache-first strategy
-async function handleApiRequest(request) {
-  const cache = await caches.open(API_CACHE);
-  
-  try {
-    // Try network first
-    const response = await fetch(request);
+// Handle API requests with cache-first strategy for GET requests
+async function handleAPIRequest(request) {
+  const cache = await caches.open(CACHE_NAME);
+  const cachedResponse = await cache.match(request);
+
+  // Check if cached response is still fresh
+  if (cachedResponse) {
+    const cacheDate = new Date(cachedResponse.headers.get('sw-cache-date'));
+    const now = new Date();
     
-    // Cache successful responses
-    if (response.ok) {
-      const responseClone = response.clone();
-      cache.put(request, responseClone);
+    if (now - cacheDate < CACHE_DURATION.API) {
+      return cachedResponse;
+    }
+  }
+
+  try {
+    // Fetch fresh data
+    const networkResponse = await fetch(request);
+    
+    if (networkResponse.ok) {
+      // Clone response and add cache date
+      const responseToCache = networkResponse.clone();
+      const headers = new Headers(responseToCache.headers);
+      headers.set('sw-cache-date', new Date().toISOString());
+      
+      const cachedResponse = new Response(responseToCache.body, {
+        status: responseToCache.status,
+        statusText: responseToCache.statusText,
+        headers: headers
+      });
+      
+      cache.put(request, cachedResponse);
     }
     
-    return response;
+    return networkResponse;
   } catch (error) {
-    // Fallback to cache
-    const cachedResponse = await cache.match(request);
+    // Return stale cache if network fails
     if (cachedResponse) {
       return cachedResponse;
     }
-    
-    // Return offline response
-    return new Response(
-      JSON.stringify({ error: 'Offline - No cached data available' }),
-      {
-        status: 503,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
-  }
-}
-
-// Handle static requests with cache-first strategy
-async function handleStaticRequest(request) {
-  const cache = await caches.open(STATIC_CACHE);
-  
-  // Check cache first
-  const cachedResponse = await cache.match(request);
-  if (cachedResponse) {
-    return cachedResponse;
-  }
-  
-  try {
-    // Try network
-    const response = await fetch(request);
-    
-    // Cache successful responses
-    if (response.ok) {
-      const responseClone = response.clone();
-      cache.put(request, responseClone);
-    }
-    
-    return response;
-  } catch (error) {
-    // Return offline page for navigation requests
-    if (request.mode === 'navigate') {
-      return cache.match('/');
-    }
-    
     throw error;
   }
 }
 
-// Background sync for offline actions
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'background-sync') {
-    event.waitUntil(doBackgroundSync());
-  }
-});
+// Handle image requests with cache-first strategy
+async function handleImageRequest(request) {
+  const cache = await caches.open(CACHE_NAME);
+  const cachedResponse = await cache.match(request);
 
-async function doBackgroundSync() {
-  // Handle any pending offline actions
-  console.log('Background sync triggered');
+  if (cachedResponse) {
+    const cacheDate = new Date(cachedResponse.headers.get('sw-cache-date'));
+    const now = new Date();
+    
+    if (now - cacheDate < CACHE_DURATION.IMAGES) {
+      return cachedResponse;
+    }
+  }
+
+  try {
+    const networkResponse = await fetch(request);
+    
+    if (networkResponse.ok) {
+      const responseToCache = networkResponse.clone();
+      const headers = new Headers(responseToCache.headers);
+      headers.set('sw-cache-date', new Date().toISOString());
+      
+      const cachedResponse = new Response(responseToCache.body, {
+        status: responseToCache.status,
+        statusText: responseToCache.statusText,
+        headers: headers
+      });
+      
+      cache.put(request, cachedResponse);
+    }
+    
+    return networkResponse;
+  } catch (error) {
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    throw error;
+  }
 }
 
-// Push notification handling
-self.addEventListener('push', (event) => {
-  const options = {
-    body: event.data ? event.data.text() : 'New update available',
-    icon: '/favicon.ico',
-    badge: '/favicon.ico',
-    vibrate: [100, 50, 100],
-    data: {
-      dateOfArrival: Date.now(),
-      primaryKey: 1,
-    },
-    actions: [
-      {
-        action: 'explore',
-        title: 'View',
-        icon: '/favicon.ico',
-      },
-      {
-        action: 'close',
-        title: 'Close',
-        icon: '/favicon.ico',
-      },
-    ],
-  };
+// Handle static assets with cache-first strategy
+async function handleStaticRequest(request) {
+  const cache = await caches.open(STATIC_CACHE_NAME);
+  const cachedResponse = await cache.match(request);
 
-  event.waitUntil(
-    self.registration.showNotification('KorAuto', options)
-  );
-});
-
-// Notification click handling
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-
-  if (event.action === 'explore') {
-    event.waitUntil(
-      clients.openWindow('/')
-    );
+  if (cachedResponse) {
+    return cachedResponse;
   }
-}); 
+
+  const networkResponse = await fetch(request);
+  if (networkResponse.ok) {
+    cache.put(request, networkResponse.clone());
+  }
+  
+  return networkResponse;
+}

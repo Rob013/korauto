@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   RefreshCw,
   Mail,
@@ -26,13 +27,33 @@ import {
   User as UserIcon,
   FileText,
   Search,
+  Shield,
+  Cookie,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import AuthLogin from "@/components/AuthLogin";
 import { CarsSyncButton } from "@/components/CarsSyncButton";
-import { AdminSyncDashboard } from "@/components/AdminSyncDashboard";
-import { AnalyticsDemo } from "@/components/AnalyticsDemo";
+import AdminCarSearch from "@/components/AdminCarSearch";
+import { CookieManagementDashboard } from "@/components/CookieManagementDashboard";
+
+// Lazy load heavy admin components
+const AdminSyncDashboard = lazy(() => 
+  import("@/components/AdminSyncDashboard").then(module => ({ 
+    default: module.default 
+  }))
+);
+
+const AdminSyncSkeleton = () => (
+  <div className="space-y-4">
+    <Skeleton className="h-8 w-64" />
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {[...Array(6)].map((_, i) => (
+        <Skeleton key={i} className="h-32 w-full" />
+      ))}
+    </div>
+  </div>
+);
 
 interface InspectionRequest {
   id: string;
@@ -76,8 +97,6 @@ interface AdminStats {
 
 const AdminDashboard = () => {
   const [requests, setRequests] = useState<InspectionRequest[]>([]);
-  const [filteredRequests, setFilteredRequests] = useState<InspectionRequest[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
   const [carDetails, setCarDetails] = useState<{ [key: string]: CarData }>({});
   const [searchingCars, setSearchingCars] = useState<{
     [key: string]: boolean;
@@ -240,7 +259,6 @@ const AdminDashboard = () => {
 
       if (requestsError) throw requestsError;
       setRequests(requestsData || []);
-      setFilteredRequests(requestsData || []);
 
       // Fetch car details for requests that have car_id
       const carIds = requestsData?.map((r) => r.car_id).filter(Boolean) || [];
@@ -721,128 +739,137 @@ const AdminDashboard = () => {
           </div>
         </div>
 
+        {/* Car Search Section */}
+        <div className="mb-6">
+          <AdminCarSearch />
+        </div>
+
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
           className="space-y-3 sm:space-y-4"
         >
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+          <TabsList className="grid w-full grid-cols-5 h-auto">
             <TabsTrigger value="overview" className="text-xs sm:text-sm p-2 sm:p-3">Overview</TabsTrigger>
             <TabsTrigger value="inspections" className="text-xs sm:text-sm p-2 sm:p-3">Inspections</TabsTrigger>
-            <TabsTrigger value="traffic" className="text-xs sm:text-sm p-2 sm:p-3">Analytics</TabsTrigger>
-            <TabsTrigger value="system" className="text-xs sm:text-sm p-2 sm:p-3">System</TabsTrigger>
+            <TabsTrigger value="analytics" className="text-xs sm:text-sm p-2 sm:p-3">Analytics</TabsTrigger>
+            <TabsTrigger value="performance" className="text-xs sm:text-sm p-2 sm:p-3">Performance</TabsTrigger>
+            <TabsTrigger value="cookies" className="text-xs sm:text-sm p-2 sm:p-3">Cookies</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-3 sm:space-y-4">
-            {/* Key Metrics */}
-            <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
-              <Card className="p-3">
+            {/* Enhanced Key Metrics - More prominent display */}
+            <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+              <Card className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/50 border-blue-200 dark:border-blue-800">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
-                  <CardTitle className="text-xs font-medium truncate">
-                    Users
+                  <CardTitle className="text-xs font-medium truncate text-blue-900 dark:text-blue-100">
+                    Total Users
                   </CardTitle>
-                  <Users className="h-3 w-3 text-muted-foreground shrink-0" />
+                  <Users className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="text-lg sm:text-xl font-bold">{stats.totalUsers}</div>
-                  <p className="text-[10px] text-muted-foreground">
-                    +{stats.recentSignups} this week
+                  <div className="text-xl sm:text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.totalUsers.toLocaleString()}</div>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    +{stats.recentSignups} new this week
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="p-3">
+              <Card className="p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/50 dark:to-green-900/50 border-green-200 dark:border-green-800">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
-                  <CardTitle className="text-xs font-medium truncate">
-                    Cars
+                  <CardTitle className="text-xs font-medium truncate text-green-900 dark:text-green-100">
+                    Cars Available
                   </CardTitle>
-                  <Car className="h-3 w-3 text-muted-foreground shrink-0" />
+                  <Car className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0" />
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="text-lg sm:text-xl font-bold">
-                    {stats.totalCachedCars}
+                  <div className="text-xl sm:text-2xl font-bold text-green-900 dark:text-green-100">
+                    {stats.totalCachedCars.toLocaleString()}
                   </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    +{stats.recentCarSyncs} synced
+                  <p className="text-xs text-green-700 dark:text-green-300">
+                    +{stats.recentCarSyncs} recently synced
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="p-3">
+              <Card className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/50 dark:to-purple-900/50 border-purple-200 dark:border-purple-800">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
-                  <CardTitle className="text-xs font-medium truncate">
+                  <CardTitle className="text-xs font-medium truncate text-purple-900 dark:text-purple-100">
                     Requests
                   </CardTitle>
-                  <Activity className="h-3 w-3 text-muted-foreground shrink-0" />
+                  <Activity className="h-4 w-4 text-purple-600 dark:text-purple-400 shrink-0" />
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="text-lg sm:text-xl font-bold">
-                    {stats.totalInspectionRequests}
+                  <div className="text-xl sm:text-2xl font-bold text-purple-900 dark:text-purple-100">
+                    {stats.totalInspectionRequests.toLocaleString()}
                   </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    {stats.pendingRequests} pending
+                  <p className="text-xs text-purple-700 dark:text-purple-300">
+                    {stats.pendingRequests} pending review
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="p-3">
+              <Card className="p-4 bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-950/50 dark:to-pink-900/50 border-pink-200 dark:border-pink-800">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
-                  <CardTitle className="text-xs font-medium truncate">
+                  <CardTitle className="text-xs font-medium truncate text-pink-900 dark:text-pink-100">
                     Favorites
                   </CardTitle>
-                  <Heart className="h-3 w-3 text-muted-foreground shrink-0" />
+                  <Heart className="h-4 w-4 text-pink-600 dark:text-pink-400 shrink-0" />
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="text-lg sm:text-xl font-bold">
-                    {stats.totalFavorites}
+                  <div className="text-xl sm:text-2xl font-bold text-pink-900 dark:text-pink-100">
+                    {stats.totalFavorites.toLocaleString()}
                   </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    User saves
+                  <p className="text-xs text-pink-700 dark:text-pink-300">
+                    User bookmarks
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="p-3">
+              <Card className="p-4 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/50 dark:to-orange-900/50 border-orange-200 dark:border-orange-800">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
-                  <CardTitle className="text-xs font-medium truncate">
-                    Week
+                  <CardTitle className="text-xs font-medium truncate text-orange-900 dark:text-orange-100">
+                    This Week
                   </CardTitle>
-                  <TrendingUp className="h-3 w-3 text-muted-foreground shrink-0" />
+                  <TrendingUp className="h-4 w-4 text-orange-600 dark:text-orange-400 shrink-0" />
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="text-lg sm:text-xl font-bold">
-                    {stats.requestsThisWeek}
+                  <div className="text-xl sm:text-2xl font-bold text-orange-900 dark:text-orange-100">
+                    {stats.requestsThisWeek.toLocaleString()}
                   </div>
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-xs text-orange-700 dark:text-orange-300">
                     New requests
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="p-3">
+              <Card className="p-4 bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-950/50 dark:to-teal-900/50 border-teal-200 dark:border-teal-800">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
-                  <CardTitle className="text-xs font-medium truncate">
-                    Month
+                  <CardTitle className="text-xs font-medium truncate text-teal-900 dark:text-teal-100">
+                    This Month
                   </CardTitle>
-                  <Database className="h-3 w-3 text-muted-foreground shrink-0" />
+                  <Calendar className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0" />
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="text-lg sm:text-xl font-bold">
-                    {stats.requestsThisMonth}
+                  <div className="text-xl sm:text-2xl font-bold text-teal-900 dark:text-teal-100">
+                    {stats.requestsThisMonth.toLocaleString()}
                   </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    This month
+                  <p className="text-xs text-teal-700 dark:text-teal-300">
+                    Total requests
                   </p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Recent Activity - Modern Layout */}
-            <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-2">
+            {/* Recent Activity and System Health - Enhanced Layout */}
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-3">
               <Card className="p-4 sm:p-6">
                 <CardHeader className="p-0 pb-4">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-base sm:text-lg font-semibold">Recent Requests</CardTitle>
+                    <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
+                      <Clock className="h-5 w-5" />
+                      Recent Requests
+                    </CardTitle>
                     <Badge variant="secondary" className="text-xs">
                       {requests.length} total
                     </Badge>
@@ -850,7 +877,7 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="space-y-3">
-                    {requests.slice(0, 5).map((request) => {
+                    {requests.slice(0, 4).map((request) => {
                       const car = request.car_id ? carDetails[request.car_id] : null;
                       return (
                         <div
@@ -859,7 +886,7 @@ const AdminDashboard = () => {
                         >
                           <div className="flex items-start gap-3">
                             {/* Car Image or Fallback */}
-                            <div className="shrink-0 w-12 h-9 sm:w-16 sm:h-12 rounded-md overflow-hidden bg-muted flex items-center justify-center">
+                            <div className="shrink-0 w-10 h-8 rounded-md overflow-hidden bg-muted flex items-center justify-center">
                               {car?.image ? (
                                 <img
                                   src={car.image}
@@ -867,23 +894,23 @@ const AdminDashboard = () => {
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
-                                <Car className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+                                <Car className="h-3 w-3 text-muted-foreground" />
                               )}
                             </div>
 
                             {/* Content */}
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between gap-2 mb-2">
+                              <div className="flex items-start justify-between gap-2 mb-1">
                                 <div className="min-w-0 flex-1">
-                                  <h4 className="font-medium text-sm sm:text-base text-foreground truncate">
+                                  <h4 className="font-medium text-sm text-foreground truncate">
                                     {request.customer_name}
                                   </h4>
-                                  <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                                  <p className="text-xs text-muted-foreground truncate">
                                     {request.customer_email}
                                   </p>
                                 </div>
                                 <Badge 
-                                  className={`${getStatusColor(request.status)} text-[10px] sm:text-xs shrink-0`}
+                                  className={`${getStatusColor(request.status)} text-[10px] shrink-0`}
                                 >
                                   {request.status}
                                 </Badge>
@@ -891,38 +918,17 @@ const AdminDashboard = () => {
 
                               {/* Car Info */}
                               {car && (
-                                <div className="mb-2">
-                                  <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
+                                <div className="mb-1">
+                                  <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-medium">
                                     <span>{car.year} {car.make} {car.model}</span>
                                   </div>
-                                  {car.lot_number && (
-                                    <div className="mt-1">
-                                      <div className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
-                                        <span>Lot: {car.lot_number}</span>
-                                      </div>
-                                    </div>
-                                  )}
                                 </div>
                               )}
 
                               {/* Footer */}
                               <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                <span>{formatDate(request.created_at)}</span>
-                                <div className="flex items-center gap-2">
-                                  {request.car_id && car && (
-                                    <button
-                                      onClick={() => {
-                                        if (car?.lot_number) {
-                                          window.open(`/car/${car.lot_number}`, "_blank");
-                                        } else {
-                                          window.location.href = `/catalog?highlight=${request.car_id}`;
-                                        }
-                                      }}
-                                      className="text-primary hover:text-primary/80 font-medium transition-colors"
-                                    >
-                                      View Car →
-                                    </button>
-                                  )}
+                                <span>{new Date(request.created_at).toLocaleDateString()}</span>
+                                <div className="flex items-center gap-1">
                                   {request.customer_phone && (
                                     <a
                                       href={`https://wa.me/${request.customer_phone.replace(/[^0-9]/g, "")}`}
@@ -938,9 +944,6 @@ const AdminDashboard = () => {
                               </div>
                             </div>
                           </div>
-
-                          {/* Hover overlay */}
-                          <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
                         </div>
                       );
                     })}
@@ -957,10 +960,100 @@ const AdminDashboard = () => {
 
               <Card className="p-4 sm:p-6">
                 <CardHeader className="p-0 pb-4">
-                  <CardTitle className="text-base sm:text-lg font-semibold">System Health</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
+                      <Activity className="h-5 w-5" />
+                      Real-time Analytics
+                    </CardTitle>
+                    <Badge variant="secondary" className="text-xs animate-pulse">
+                      Live Data
+                    </Badge>
+                  </div>
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="space-y-4">
+                    {/* Quick Analytics Overview */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-3 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Eye className="h-3 w-3 text-blue-600" />
+                          <span className="text-xs font-medium text-blue-900 dark:text-blue-100">Page Views</span>
+                        </div>
+                        <div className="text-lg font-bold text-blue-900 dark:text-blue-100">{analytics.totalPageViews.toLocaleString()}</div>
+                        <div className="text-xs text-blue-700 dark:text-blue-300">24h: {analytics.viewsLast24h.toLocaleString()}</div>
+                      </div>
+                      
+                      <div className="p-3 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/30 rounded-lg border border-green-200 dark:border-green-800">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Users className="h-3 w-3 text-green-600" />
+                          <span className="text-xs font-medium text-green-900 dark:text-green-100">Visitors</span>
+                        </div>
+                        <div className="text-lg font-bold text-green-900 dark:text-green-100">{analytics.uniqueVisitors.toLocaleString()}</div>
+                        <div className="text-xs text-green-700 dark:text-green-300">7d: {analytics.viewsLast7Days.toLocaleString()}</div>
+                      </div>
+                    </div>
+
+                    {/* Top Pages Preview */}
+                    <div>
+                      <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
+                        <TrendingUp className="h-3 w-3" />
+                        Top Pages
+                      </h4>
+                      <div className="space-y-1">
+                        {analytics.topPages.slice(0, 3).map((page, index) => (
+                          <div key={index} className="flex justify-between items-center text-xs p-2 bg-muted/30 rounded">
+                            <span className="truncate max-w-[120px] font-mono" title={page.page}>
+                              {page.page}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <Badge variant="outline" className="text-[10px] px-1 py-0">
+                                {page.percentage}%
+                              </Badge>
+                              <span className="text-muted-foreground">{page.views}</span>
+                            </div>
+                          </div>
+                        ))}
+                        {analytics.topPages.length === 0 && (
+                          <div className="text-xs text-muted-foreground text-center py-2">
+                            No analytics data yet
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Traffic Sources Preview */}
+                    <div>
+                      <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
+                        <Database className="h-3 w-3" />
+                        Traffic Sources
+                      </h4>
+                      <div className="grid grid-cols-2 gap-1">
+                        {analytics.trafficSources.slice(0, 4).map((source, index) => (
+                          <div key={index} className="text-xs p-2 bg-muted/20 rounded text-center">
+                            <div className="font-medium">{source.source}</div>
+                            <div className="text-muted-foreground">{source.percentage}%</div>
+                          </div>
+                        ))}
+                        {analytics.trafficSources.length === 0 && (
+                          <div className="text-xs text-muted-foreground text-center py-2 col-span-2">
+                            No traffic data yet
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="p-4 sm:p-6">
+                <CardHeader className="p-0 pb-4">
+                  <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
+                    <Shield className="h-5 w-5" />
+                    System Health
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="space-y-3">
                     <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
                       <div className="flex items-center space-x-3">
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -969,7 +1062,7 @@ const AdminDashboard = () => {
                           <p className="text-xs text-green-700 dark:text-green-300">Connected & Active</p>
                         </div>
                       </div>
-                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <CheckCircle className="h-4 w-4 text-green-600" />
                     </div>
 
                     <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
@@ -980,28 +1073,28 @@ const AdminDashboard = () => {
                           <p className="text-xs text-blue-700 dark:text-blue-300">Real-time updates</p>
                         </div>
                       </div>
-                      <Activity className="h-5 w-5 text-blue-600" />
+                      <Activity className="h-4 w-4 text-blue-600" />
                     </div>
 
                     <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
                       <div className="flex items-center space-x-3">
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                         <div>
-                          <span className="text-sm font-medium text-green-900 dark:text-green-100">Authentication</span>
-                          <p className="text-xs text-green-700 dark:text-green-300">All systems operational</p>
+                          <span className="text-sm font-medium text-green-900 dark:text-green-100">Analytics</span>
+                          <p className="text-xs text-green-700 dark:text-green-300">Real-time tracking</p>
                         </div>
                       </div>
-                      <UserCheck className="h-5 w-5 text-green-600" />
+                      <UserCheck className="h-4 w-4 text-green-600" />
                     </div>
 
-                    {/* Quick Stats */}
-                    <div className="pt-4 border-t border-border">
-                      <div className="grid grid-cols-2 gap-4 text-center">
-                        <div>
+                    {/* Quick System Stats */}
+                    <div className="pt-3 border-t border-border">
+                      <div className="grid grid-cols-1 gap-3 text-center">
+                        <div className="p-2 bg-gradient-to-r from-primary/10 to-primary/5 rounded">
                           <div className="text-lg font-bold text-foreground">{stats.totalCachedCars.toLocaleString()}</div>
-                          <div className="text-xs text-muted-foreground">Cars in DB</div>
+                          <div className="text-xs text-muted-foreground">Cars in Database</div>
                         </div>
-                        <div>
+                        <div className="p-2 bg-gradient-to-r from-secondary/10 to-secondary/5 rounded">
                           <div className="text-lg font-bold text-foreground">{stats.totalUsers}</div>
                           <div className="text-xs text-muted-foreground">Active Users</div>
                         </div>
@@ -1065,55 +1158,12 @@ const AdminDashboard = () => {
                     Inspection Requests
                   </CardTitle>
                   <Badge variant="secondary" className="text-xs">
-                    {filteredRequests.length} of {requests.length} records
+                    {requests.length} records
                   </Badge>
                 </div>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                   Manage all customer inspection requests
                 </p>
-                <div className="mt-3 flex gap-2">
-                  <div className="relative flex-1 max-w-sm">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <input
-                      type="text"
-                      placeholder="Search by customer name, email, or lot number..."
-                      value={searchTerm}
-                      className="w-full pl-10 pr-4 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      onChange={(e) => {
-                        const term = e.target.value;
-                        setSearchTerm(term);
-                        
-                        if (!term.trim()) {
-                          setFilteredRequests(requests);
-                          return;
-                        }
-                        
-                        const filtered = requests.filter(request => {
-                          const car = request.car_id ? carDetails[request.car_id] : null;
-                          return (
-                            request.customer_name.toLowerCase().includes(term.toLowerCase()) ||
-                            request.customer_email.toLowerCase().includes(term.toLowerCase()) ||
-                            request.customer_phone.includes(term) ||
-                            (car?.lot_number && car.lot_number.toLowerCase().includes(term.toLowerCase())) ||
-                            (request.car_id && request.car_id.toLowerCase().includes(term.toLowerCase()))
-                          );
-                        });
-                        setFilteredRequests(filtered);
-                      }}
-                    />
-                    {searchTerm && (
-                      <button
-                        onClick={() => {
-                          setSearchTerm("");
-                          setFilteredRequests(requests);
-                        }}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                </div>
               </CardHeader>
               <CardContent className="p-0">
                 {/* Desktop Table View */}
@@ -1125,14 +1175,13 @@ const AdminDashboard = () => {
                           <th className="border border-border px-3 py-2 text-left text-xs font-medium">Customer</th>
                           <th className="border border-border px-3 py-2 text-left text-xs font-medium">Contact</th>
                           <th className="border border-border px-3 py-2 text-left text-xs font-medium">Car Details</th>
-                          <th className="border border-border px-3 py-2 text-left text-xs font-medium">Lot Number</th>
                           <th className="border border-border px-3 py-2 text-left text-xs font-medium">Status</th>
                           <th className="border border-border px-3 py-2 text-left text-xs font-medium">Date</th>
                           <th className="border border-border px-3 py-2 text-left text-xs font-medium">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredRequests.map((request) => (
+                        {requests.map((request) => (
                           <tr key={request.id} className="hover:bg-muted/30 transition-colors">
                             <td className="border border-border px-3 py-2">
                               <div>
@@ -1164,29 +1213,18 @@ const AdminDashboard = () => {
                                     <div className="text-sm font-medium">
                                       {carDetails[request.car_id].year} {carDetails[request.car_id].make} {carDetails[request.car_id].model}
                                     </div>
-                                    <div className="text-xs text-muted-foreground">
-                                      ID: {request.car_id}
-                                      {carDetails[request.car_id].lot_number && (
-                                        <span className="ml-2 text-blue-600 font-medium">
-                                          • Lot: {carDetails[request.car_id].lot_number}
-                                        </span>
-                                      )}
-                                    </div>
+                                    <div className="text-xs text-muted-foreground">ID: {request.car_id}</div>
+                                    {carDetails[request.car_id].lot_number && (
+                                      <div className="text-xs lot-number-highlight mt-1">
+                                        Lot: {carDetails[request.car_id].lot_number}
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               ) : request.car_id ? (
                                 <div className="text-sm text-muted-foreground">Car ID: {request.car_id}</div>
                               ) : (
                                 <div className="text-sm text-muted-foreground">General request</div>
-                              )}
-                            </td>
-                            <td className="border border-border px-3 py-2">
-                              {request.car_id && carDetails[request.car_id]?.lot_number ? (
-                                <div className="text-sm font-medium text-blue-600">
-                                  {carDetails[request.car_id].lot_number}
-                                </div>
-                              ) : (
-                                <div className="text-sm text-muted-foreground">N/A</div>
                               )}
                             </td>
                             <td className="border border-border px-3 py-2">
@@ -1223,7 +1261,9 @@ const AdminDashboard = () => {
                                 >
                                   <Phone className="h-3 w-3" />
                                 </Button>
-                                {request.car_id && carDetails[request.car_id] && (
+                                {/* Always show car-related button for every inspection */}
+                                {request.car_id && carDetails[request.car_id] ? (
+                                  // Car details are available - direct view
                                   <Button
                                     size="sm"
                                     variant="default"
@@ -1231,7 +1271,39 @@ const AdminDashboard = () => {
                                     className="h-7 px-2 text-xs"
                                   >
                                     <Car className="h-3 w-3 mr-1" />
-                                    View
+                                    View Car
+                                  </Button>
+                                ) : request.car_id ? (
+                                  // Car ID exists but details not cached - search and redirect
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => findCarByLotNumber(request.id, request.car_id)}
+                                    disabled={searchingCars[request.id]}
+                                    className="h-7 px-2 text-xs"
+                                  >
+                                    {searchingCars[request.id] ? (
+                                      <div className="h-3 w-3 mr-1 animate-spin rounded-full border border-current border-t-transparent" />
+                                    ) : (
+                                      <Search className="h-3 w-3 mr-1" />
+                                    )}
+                                    {searchingCars[request.id] ? "Finding..." : "Find Car"}
+                                  </Button>
+                                ) : (
+                                  // No car ID - search based on notes or general search
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    onClick={() => findCarByLotNumber(request.id, request.notes || "general inspection")}
+                                    disabled={searchingCars[request.id]}
+                                    className="h-7 px-2 text-xs"
+                                  >
+                                    {searchingCars[request.id] ? (
+                                      <div className="h-3 w-3 mr-1 animate-spin rounded-full border border-current border-t-transparent" />
+                                    ) : (
+                                      <Search className="h-3 w-3 mr-1" />
+                                    )}
+                                    {searchingCars[request.id] ? "Searching..." : "Search Car"}
                                   </Button>
                                 )}
                               </div>
@@ -1245,7 +1317,7 @@ const AdminDashboard = () => {
 
                 {/* Mobile Card View */}
                 <div className="lg:hidden space-y-3">
-                  {filteredRequests.map((request) => {
+                  {requests.map((request) => {
                     const car = request.car_id ? carDetails[request.car_id] : null;
                     return (
                       <div
@@ -1294,14 +1366,12 @@ const AdminDashboard = () => {
                               <div className="mb-2">
                                 <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
                                   <span>{car.year} {car.make} {car.model}</span>
+                                  {car.lot_number && (
+                                    <span className="lot-number-highlight ml-2">
+                                      Lot: {car.lot_number}
+                                    </span>
+                                  )}
                                 </div>
-                                {car.lot_number && (
-                                  <div className="mt-1">
-                                    <div className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
-                                      <span>Lot: {car.lot_number}</span>
-                                    </div>
-                                  </div>
-                                )}
                               </div>
                             )}
 
@@ -1330,7 +1400,9 @@ const AdminDashboard = () => {
                                 >
                                   <Mail className="h-3 w-3" />
                                 </Button>
-                                {car && (
+                                {/* Always show car-related button for every inspection */}
+                                {car ? (
+                                  // Car details are available - direct view
                                   <Button
                                     size="sm"
                                     variant="default"
@@ -1338,7 +1410,39 @@ const AdminDashboard = () => {
                                     className="h-6 px-2 text-xs"
                                   >
                                     <Car className="h-3 w-3 mr-1" />
-                                    View
+                                    View Car
+                                  </Button>
+                                ) : request.car_id ? (
+                                  // Car ID exists but details not cached - search and redirect
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => findCarByLotNumber(request.id, request.car_id)}
+                                    disabled={searchingCars[request.id]}
+                                    className="h-6 px-2 text-xs"
+                                  >
+                                    {searchingCars[request.id] ? (
+                                      <div className="h-3 w-3 mr-1 animate-spin rounded-full border border-current border-t-transparent" />
+                                    ) : (
+                                      <Search className="h-3 w-3 mr-1" />
+                                    )}
+                                    {searchingCars[request.id] ? "Finding..." : "Find Car"}
+                                  </Button>
+                                ) : (
+                                  // No car ID - search based on notes or general search
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    onClick={() => findCarByLotNumber(request.id, request.notes || "general inspection")}
+                                    disabled={searchingCars[request.id]}
+                                    className="h-6 px-2 text-xs"
+                                  >
+                                    {searchingCars[request.id] ? (
+                                      <div className="h-3 w-3 mr-1 animate-spin rounded-full border border-current border-t-transparent" />
+                                    ) : (
+                                      <Search className="h-3 w-3 mr-1" />
+                                    )}
+                                    {searchingCars[request.id] ? "Searching..." : "Search Car"}
                                   </Button>
                                 )}
                               </div>
@@ -1353,39 +1457,33 @@ const AdminDashboard = () => {
                   })}
                 </div>
 
-                {filteredRequests.length === 0 && (
+                {requests.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
                     <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <h3 className="text-lg font-medium mb-2">
-                      {searchTerm ? "No matching inspection requests" : "No inspection requests"}
-                    </h3>
-                    <p className="text-sm">
-                      {searchTerm 
-                        ? `No inspection requests found matching "${searchTerm}"`
-                        : "No inspection requests found in the database"
-                      }
-                    </p>
+                    <h3 className="text-lg font-medium mb-2">No inspection requests</h3>
+                    <p className="text-sm">No inspection requests found in the database</p>
                   </div>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="traffic" className="space-y-3 sm:space-y-4">
+          <TabsContent value="analytics" className="space-y-3 sm:space-y-4">
+            {/* Real-time Analytics Section */}
             <div className="grid gap-2 sm:gap-3 grid-cols-2 lg:grid-cols-4">
               <Card className="p-3">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
                   <CardTitle className="text-xs sm:text-sm font-medium">
-                    Views
+                    Page Views
                   </CardTitle>
                   <Eye className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="text-lg sm:text-xl font-bold">
-                    {analytics.totalPageViews}
+                    {analytics.totalPageViews.toLocaleString()}
                   </div>
                   <p className="text-[10px] sm:text-xs text-muted-foreground">
-                    24h: {analytics.viewsLast24h}
+                    24h: {analytics.viewsLast24h.toLocaleString()}
                   </p>
                 </CardContent>
               </Card>
@@ -1393,16 +1491,16 @@ const AdminDashboard = () => {
               <Card className="p-3">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
                   <CardTitle className="text-xs sm:text-sm font-medium">
-                    Visitors
+                    Unique Visitors
                   </CardTitle>
                   <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="text-lg sm:text-xl font-bold">
-                    {analytics.uniqueVisitors}
+                    {analytics.uniqueVisitors.toLocaleString()}
                   </div>
                   <p className="text-[10px] sm:text-xs text-muted-foreground">
-                    7d: {analytics.viewsLast7Days}
+                    7d: {analytics.viewsLast7Days.toLocaleString()}
                   </p>
                 </CardContent>
               </Card>
@@ -1410,7 +1508,7 @@ const AdminDashboard = () => {
               <Card className="p-3">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
                   <CardTitle className="text-xs sm:text-sm font-medium">
-                    Contact
+                    Bounce Rate
                   </CardTitle>
                   <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                 </CardHeader>
@@ -1419,7 +1517,7 @@ const AdminDashboard = () => {
                     {analytics.bounceRate}%
                   </div>
                   <p className="text-[10px] sm:text-xs text-muted-foreground">
-                    Rate
+                    Engagement
                   </p>
                 </CardContent>
               </Card>
@@ -1427,7 +1525,7 @@ const AdminDashboard = () => {
               <Card className="p-3">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
                   <CardTitle className="text-xs sm:text-sm font-medium">
-                    Session
+                    Session Time
                   </CardTitle>
                   <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                 </CardHeader>
@@ -1436,131 +1534,188 @@ const AdminDashboard = () => {
                     {analytics.avgSessionTime}
                   </div>
                   <p className="text-[10px] sm:text-xs text-muted-foreground">
-                    Avg time
+                    Average
                   </p>
                 </CardContent>
               </Card>
             </div>
 
-            <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-2">
-              <Card className="p-3">
-                <CardHeader className="p-0 pb-3">
-                  <CardTitle className="text-sm sm:text-base">Website Analytics</CardTitle>
-                  <p className="text-xs sm:text-sm text-muted-foreground">
-                    Live data ({analytics.totalPageViews} records)
-                  </p>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-medium mb-2">
-                        Top Pages ({analytics.topPages.length} unique)
-                      </h4>
-                      <div className="space-y-2 max-h-40 overflow-y-auto">
-                        {analytics.topPages.length > 0 ? (
-                          analytics.topPages.map((page, index) => (
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-3">
+              {/* Analytics Details - 2/3 width */}
+              <div className="lg:col-span-2 space-y-4">
+                <Card className="p-3">
+                  <CardHeader className="p-0 pb-3">
+                    <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4" />
+                      Website Traffic Analytics
+                    </CardTitle>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      Real-time data from {analytics.totalPageViews.toLocaleString()} page views
+                    </p>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-medium mb-2 text-sm">
+                          Top Pages ({analytics.topPages.length} tracked)
+                        </h4>
+                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                          {analytics.topPages.length > 0 ? (
+                            analytics.topPages.map((page, index) => (
+                              <div
+                                key={index}
+                                className="flex justify-between items-center text-sm p-2 bg-muted/30 rounded"
+                              >
+                                <span
+                                  className="truncate font-mono text-xs max-w-[200px]"
+                                  title={page.page}
+                                >
+                                  {page.page}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary" className="text-xs">
+                                    {page.percentage}%
+                                  </Badge>
+                                  <span className="text-xs text-muted-foreground">
+                                    {page.views.toLocaleString()} views
+                                  </span>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="text-sm text-muted-foreground">
+                              No page view data available
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium mb-2 text-sm">Traffic Sources</h4>
+                        <div className="space-y-2">
+                          {analytics.trafficSources.map((source, index) => (
                             <div
                               key={index}
-                              className="flex justify-between text-sm"
+                              className="flex justify-between items-center text-sm p-2 bg-muted/30 rounded"
                             >
-                              <span
-                                className="truncate font-mono text-xs bg-muted px-2 py-1 rounded max-w-[200px]"
-                                title={page.page}
-                              >
-                                {page.page}
-                              </span>
-                              <span className="ml-2 font-medium">
-                                {page.percentage}% ({page.views})
-                              </span>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="text-sm text-muted-foreground">
-                            No page view data yet
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="font-medium mb-2">User Actions</h4>
-                      <div className="space-y-1">
-                        {Object.entries(analytics.actionTypes).length > 0 ? (
-                          Object.entries(analytics.actionTypes).map(
-                            ([action, count]) => (
-                              <div
-                                key={action}
-                                className="flex justify-between text-sm"
-                              >
-                                <span className="capitalize">
-                                  {action.replace("_", " ")}
+                              <span className="font-medium">{source.source}</span>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-xs">
+                                  {source.percentage}%
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {source.count.toLocaleString()}
                                 </span>
-                                <span>{count}</span>
                               </div>
-                            )
-                          )
-                        ) : (
-                          <div className="text-sm text-muted-foreground">
-                            No action data yet
-                          </div>
-                        )}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
-              <Card className="p-3">
-                <CardHeader className="p-0 pb-3">
-                  <CardTitle className="text-sm sm:text-base">Traffic Sources</CardTitle>
-                  <p className="text-xs sm:text-sm text-muted-foreground">
-                    Traffic analysis from referrer data
-                  </p>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-medium mb-2">Traffic Sources</h4>
-                      <div className="space-y-2">
-                        {analytics.trafficSources.map((source, index) => (
-                          <div
-                            key={index}
-                            className="flex justify-between text-sm"
-                          >
-                            <span>{source.source}</span>
-                            <span>
-                              {source.percentage}% ({source.count})
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="font-medium mb-2">Browser Distribution</h4>
-                      <div className="space-y-1">
-                        {Object.entries(analytics.userAgents).length > 0 ? (
-                          Object.entries(analytics.userAgents).map(
-                            ([browser, count]) => (
-                              <div
-                                key={browser}
-                                className="flex justify-between text-sm"
-                              >
-                                <span>{browser}</span>
-                                <span>{count}</span>
-                              </div>
+                      <div>
+                        <h4 className="font-medium mb-2 text-sm">User Actions</h4>
+                        <div className="grid grid-cols-2 gap-2">
+                          {Object.entries(analytics.actionTypes).length > 0 ? (
+                            Object.entries(analytics.actionTypes).map(
+                              ([action, count]) => (
+                                <div
+                                  key={action}
+                                  className="flex justify-between text-sm p-2 bg-muted/20 rounded"
+                                >
+                                  <span className="capitalize">
+                                    {action.replace("_", " ")}
+                                  </span>
+                                  <span className="font-medium">{count.toLocaleString()}</span>
+                                </div>
+                              )
                             )
-                          )
-                        ) : (
-                          <div className="text-sm text-muted-foreground">
-                            No browser data yet
-                          </div>
-                        )}
+                          ) : (
+                            <div className="text-sm text-muted-foreground col-span-2">
+                              No action data available
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* System Management - 1/3 width */}
+              <div className="space-y-4">
+                <Card className="p-3">
+                  <CardHeader className="p-0 pb-3">
+                    <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                      <Database className="h-4 w-4" />
+                      System Management
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <Suspense fallback={<AdminSyncSkeleton />}>
+                      <AdminSyncDashboard />
+                    </Suspense>
+                  </CardContent>
+                </Card>
+
+                <Card className="p-3">
+                  <CardHeader className="p-0 pb-3">
+                    <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                      <Activity className="h-4 w-4" />
+                      System Health
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                          <div>
+                            <span className="text-xs font-medium text-green-900 dark:text-green-100">Database</span>
+                            <p className="text-[10px] text-green-700 dark:text-green-300">Connected</p>
+                          </div>
+                        </div>
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                      </div>
+
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                          <div>
+                            <span className="text-xs font-medium text-blue-900 dark:text-blue-100">API Sync</span>
+                            <p className="text-[10px] text-blue-700 dark:text-blue-300">Active</p>
+                          </div>
+                        </div>
+                        <Activity className="h-4 w-4 text-blue-600" />
+                      </div>
+
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                          <div>
+                            <span className="text-xs font-medium text-green-900 dark:text-green-100">Analytics</span>
+                            <p className="text-[10px] text-green-700 dark:text-green-300">Real-time</p>
+                          </div>
+                        </div>
+                        <UserCheck className="h-4 w-4 text-green-600" />
+                      </div>
+
+                      {/* Quick Stats */}
+                      <div className="pt-3 border-t border-border">
+                        <div className="grid grid-cols-1 gap-2 text-center">
+                          <div>
+                            <div className="text-sm font-bold text-foreground">{stats.totalCachedCars.toLocaleString()}</div>
+                            <div className="text-[10px] text-muted-foreground">Cars in Database</div>
+                          </div>
+                          <div>
+                            <div className="text-sm font-bold text-foreground">{stats.totalUsers}</div>
+                            <div className="text-[10px] text-muted-foreground">Active Users</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
 
             {analytics.totalPageViews === 0 && (
@@ -1568,11 +1723,9 @@ const AdminDashboard = () => {
                 <CardContent className="py-6">
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                     <p className="text-sm text-yellow-800">
-                      <strong>📊 Analytics Setup Required:</strong> No analytics
-                      data found in website_analytics table. To track real
-                      website analytics, implement tracking in your application
-                      that writes to the website_analytics table. The dashboard
-                      is ready to show real data once tracking is implemented.
+                      <strong>📊 Analytics Setup:</strong> No analytics data found. 
+                      Analytics tracking is configured and ready to capture real user data 
+                      as visitors interact with the website.
                     </p>
                   </div>
                 </CardContent>
@@ -1580,15 +1733,171 @@ const AdminDashboard = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="system" className="space-y-3 sm:space-y-4">
-            <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-3">
-              <div className="lg:col-span-2">
-                <AdminSyncDashboard />
-              </div>
-              <div>
-                <AnalyticsDemo />
-              </div>
+          <TabsContent value="performance" className="space-y-3 sm:space-y-4">
+            {/* Performance Section */}
+            <div className="grid gap-2 sm:gap-3 grid-cols-2 lg:grid-cols-4">
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Overall Score
+                  </CardTitle>
+                  <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="text-lg sm:text-xl font-bold">-</div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">
+                    Run audit to check
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Layout Shifts
+                  </CardTitle>
+                  <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="text-lg sm:text-xl font-bold">-</div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">
+                    Stability check
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Animation
+                  </CardTitle>
+                  <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="text-lg sm:text-xl font-bold">-</div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">
+                    Smoothness
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Issues Found
+                  </CardTitle>
+                  <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="text-lg sm:text-xl font-bold">-</div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">
+                    Run audit to check
+                  </p>
+                </CardContent>
+              </Card>
             </div>
+
+            {/* Performance Dashboard Integration */}
+            <Card className="p-4 sm:p-6">
+              <CardHeader className="p-0 pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Website Performance Monitor
+                  </CardTitle>
+                  <Button 
+                    onClick={() => window.open('/performance', '_blank')}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <TrendingUp className="h-4 w-4" />
+                    Full Dashboard
+                  </Button>
+                </div>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                  Monitor website alignment, smoothness, and performance metrics
+                </p>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-800 p-6">
+                  <div className="text-center space-y-4">
+                    <div className="flex justify-center">
+                      <div className="relative">
+                        <Activity className="h-16 w-16 text-blue-600 dark:text-blue-400" />
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                        Real-time Performance Monitoring
+                      </h3>
+                      <p className="text-sm text-blue-700 dark:text-blue-300 mb-4">
+                        Advanced performance auditing system is active and monitoring your website's 
+                        alignment, smoothness, and user experience in real-time.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                      <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3">
+                        <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-1" />
+                        <div className="text-sm font-medium text-blue-900 dark:text-blue-100">Layout Tracking</div>
+                        <div className="text-xs text-blue-700 dark:text-blue-300">Real-time shifts detection</div>
+                      </div>
+                      
+                      <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3">
+                        <Activity className="h-6 w-6 text-blue-600 mx-auto mb-1" />
+                        <div className="text-sm font-medium text-blue-900 dark:text-blue-100">Animation Monitor</div>
+                        <div className="text-xs text-blue-700 dark:text-blue-300">Smoothness analysis</div>
+                      </div>
+                      
+                      <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3">
+                        <TrendingUp className="h-6 w-6 text-green-600 mx-auto mb-1" />
+                        <div className="text-sm font-medium text-blue-900 dark:text-blue-100">Auto-Optimization</div>
+                        <div className="text-xs text-blue-700 dark:text-blue-300">Continuous improvements</div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Button 
+                        onClick={() => window.open('/performance', '_blank')}
+                        className="w-full sm:w-auto"
+                      >
+                        <Activity className="h-4 w-4 mr-2" />
+                        Open Performance Dashboard
+                      </Button>
+                      <p className="text-xs text-blue-600 dark:text-blue-400">
+                        View detailed metrics, run audits, and apply optimizations
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="cookies" className="space-y-3 sm:space-y-4">
+            {/* Cookie Management Dashboard */}
+            <Card className="p-4 sm:p-6">
+              <CardHeader className="p-0 pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
+                    <Cookie className="h-5 w-5" />
+                    Cookie Management Dashboard
+                  </CardTitle>
+                  <Badge variant="secondary" className="text-xs">
+                    Real-time Monitoring
+                  </Badge>
+                </div>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                  Monitor and manage all website cookies with size validation and security controls
+                </p>
+              </CardHeader>
+              <CardContent className="p-0">
+                <CookieManagementDashboard />
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

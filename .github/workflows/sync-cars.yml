@@ -1,0 +1,112 @@
+---
+name: Daily Car Sync
+
+on:
+  schedule:
+    # Run daily at 03:00 Europe/Belgrade (UTC+1 in winter, UTC+2 in summer)
+    # Using UTC+1 (02:00 UTC) as base time - GitHub Actions uses UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  sync-cars:
+    runs-on: ubuntu-latest
+
+    environment: production
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install tsx globally
+        run: npm install -g tsx
+
+      - name: Run car sync script
+        env:
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          API_KEY: ${{ secrets.API_KEY }}
+        run: |
+          echo "🚀 Starting car sync from external API..."
+
+          # Set timezone for logging
+          export TZ='Europe/Belgrade'
+          echo "⏰ Current time in Belgrade: $(date)"
+
+          # Run the sync script
+          echo "📋 Running car sync script..."
+          tsx scripts/sync-cars.ts
+
+          echo "✅ Car sync completed successfully!"
+
+      - name: Verify sync results
+        env:
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+        run: |
+          echo "🔍 Verifying sync results..."
+
+          # Install PostgreSQL client
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+          # Check total car counts
+          DB_URL="postgresql://postgres:$SUPABASE_DB_PASSWORD@db.$SUPABASE_PROJECT_ID.supabase.co:5432/postgres"
+          psql "$DB_URL" -c "
+            SELECT
+              'Total cars' as metric,
+              COUNT(*) as count
+            FROM public.cars
+            UNION ALL
+            SELECT
+              'Active cars' as metric,
+              COUNT(*) as count
+            FROM public.cars
+            WHERE is_active = true
+            UNION ALL
+            SELECT
+              'Inactive cars' as metric,
+              COUNT(*) as count
+            FROM public.cars
+            WHERE is_active = false
+            UNION ALL
+            SELECT
+              'External API cars' as metric,
+              COUNT(*) as count
+            FROM public.cars
+            WHERE source_api = 'external'
+            ORDER BY metric;
+          "
+
+          echo "✅ Sync verification completed!"
+
+      - name: Cleanup on failure
+        if: failure()
+        env:
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+        run: |
+          echo "🧹 Cleaning up staging table after failure..."
+
+          # Install PostgreSQL client if not already installed
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+          # Clear staging table
+          DB_URL="postgresql://postgres:$SUPABASE_DB_PASSWORD@db.$SUPABASE_PROJECT_ID.supabase.co:5432/postgres"
+          psql "$DB_URL" -c "DELETE FROM public.cars_staging;"
+
+          echo "✅ Cleanup completed!"

@@ -1,0 +1,122 @@
+name: Daily Database Initialization
+
+on:
+  schedule:
+    # Run daily at 03:00 Europe/Belgrade (UTC+1 in winter, UTC+2 in summer)
+    # Using UTC+1 (02:00 UTC) as base time - GitHub Actions uses UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  run-db-init:
+    runs-on: ubuntu-latest
+    
+    environment: production
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+      
+      - name: Run database initialization script
+        env:
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+        run: |
+          echo "🚀 Starting daily database maintenance..."
+          
+          # Set timezone for logging
+          export TZ='Europe/Belgrade'
+          echo "⏰ Current time in Belgrade: $(date)"
+          
+          # Run the initialization script (idempotent - safe to run daily)
+          echo "📋 Running database initialization script..."
+          psql "postgresql://postgres:$SUPABASE_DB_PASSWORD@db.$SUPABASE_PROJECT_ID.supabase.co:5432/postgres" -f db/supabase-init.sql
+          
+          echo "✅ Database initialization completed successfully!"
+          
+      - name: Verify database state
+        env:
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+        run: |
+          echo "🔍 Verifying database tables exist..."
+          
+          # Check if main tables exist
+          psql "postgresql://postgres:$SUPABASE_DB_PASSWORD@db.$SUPABASE_PROJECT_ID.supabase.co:5432/postgres" -c "
+            SELECT 
+              schemaname,
+              tablename,
+              tableowner 
+            FROM pg_tables 
+            WHERE schemaname = 'public' 
+              AND tablename IN ('cars', 'cars_cache', 'sync_status', 'profiles', 'user_roles')
+            ORDER BY tablename;
+          "
+          
+          echo "📊 Checking table row counts..."
+          psql "postgresql://postgres:$SUPABASE_DB_PASSWORD@db.$SUPABASE_PROJECT_ID.supabase.co:5432/postgres" -c "
+            SELECT 
+              'cars' as table_name, 
+              COUNT(*) as row_count 
+            FROM public.cars
+            UNION ALL
+            SELECT 
+              'cars_cache' as table_name, 
+              COUNT(*) as row_count 
+            FROM public.cars_cache
+            UNION ALL
+            SELECT 
+              'sync_status' as table_name, 
+              COUNT(*) as row_count 
+            FROM public.sync_status;
+          "
+          
+      - name: Trigger sync after initialization
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          echo "🔄 Triggering car sync after database initialization..."
+          
+          # Call the cars sync function
+          curl -X POST \
+            "$SUPABASE_URL/functions/v1/encar-sync" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"type": "incremental"}' \
+            --max-time 30 || echo "⚠️ Sync trigger failed or timed out (this is expected for long-running syncs)"
+          
+          echo "✅ Daily maintenance completed!"
+          
+      - name: Cleanup old sync records
+        env:
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+        run: |
+          echo "🧹 Cleaning up old sync records..."
+          
+          # Clean up sync records older than 30 days
+          psql "postgresql://postgres:$SUPABASE_DB_PASSWORD@db.$SUPABASE_PROJECT_ID.supabase.co:5432/postgres" -c "
+            DELETE FROM public.sync_status 
+            WHERE created_at < NOW() - INTERVAL '30 days';
+            
+            DELETE FROM public.rate_limits 
+            WHERE created_at < NOW() - INTERVAL '7 days';
+            
+            DELETE FROM public.website_analytics 
+            WHERE created_at < NOW() - INTERVAL '90 days';
+          "
+          
+          echo "✅ Cleanup completed!"

@@ -111,6 +111,33 @@ export const useCurrencyAPI = () => {
     [exchangeRate.rate]
   );
 
+  // Convert Korean won to EUR (approximate rate: 1 EUR = 1400 KRW)
+  const convertKRWtoEUR = useCallback(
+    (krwAmount: number): number => {
+      const KRW_TO_EUR_RATE = 0.00071; // 1 KRW = 0.00071 EUR (approximate)
+      return Math.round(krwAmount * KRW_TO_EUR_RATE);
+    },
+    []
+  );
+
+  // Process flood damage text to replace Korean won with EUR
+  const processFloodDamageText = useCallback(
+    (text: string): string => {
+      if (!text) return text;
+      
+      // Look for Korean won patterns like "1,528,909 won" or "1528909 won"
+      const wonPattern = /(\d{1,3}(?:,\d{3})*|\d+)\s*won/gi;
+      
+      return text.replace(wonPattern, (match, amount) => {
+        // Remove commas and convert to number
+        const krwAmount = parseInt(amount.replace(/,/g, ''));
+        const eurAmount = convertKRWtoEUR(krwAmount);
+        return `€${eurAmount.toLocaleString()}`;
+      });
+    },
+    [convertKRWtoEUR]
+  );
+
   useEffect(() => {
     fetchExchangeRate();
   }, []);
@@ -120,6 +147,8 @@ export const useCurrencyAPI = () => {
     loading,
     error,
     convertUSDtoEUR,
+    convertKRWtoEUR,
+    processFloodDamageText,
     refreshRate: fetchExchangeRate,
   };
 };

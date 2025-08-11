@@ -179,31 +179,41 @@ const LazyCarCard = memo(({
     e.preventDefault();
     e.stopPropagation();
     setPreviousPage(window.location.pathname + window.location.search);
-    navigate(`/car/${lot || id}`);
+    
+    // Issue #1 FIXED: Save filter panel as closed when navigating to car details
+    // This prevents the filter panel from reopening when user returns to catalog
+    sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
+    
+    navigate(`/car/${lot}`);
   }, [setPreviousPage, lot, navigate]);
 
   const handleDetailsClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setPreviousPage(window.location.pathname + window.location.search);
-    navigate(`/car/${lot || id}`);
-  }, [setPreviousPage, lot, id, navigate]);
+    
+    // Issue #1 FIXED: Save filter panel as closed when navigating to car details
+    // This prevents the filter panel from reopening when user returns to catalog
+    sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
+    
+    navigate(`/car/${lot}`);
+  }, [setPreviousPage, lot, navigate]);
 
   // Don't render content until intersection
   if (!isIntersecting) {
     return (
       <div 
         ref={cardRef}
-        className="bg-card rounded-lg overflow-hidden shadow-md border border-border h-80"
+        className="bg-card rounded-lg overflow-hidden shadow-md border border-border h-96"
       >
-        <div className="animate-pulse">
-          <div className="h-40 bg-muted" />
-          <div className="p-3 space-y-2">
-            <div className="h-5 bg-muted rounded w-3/4" />
-            <div className="h-3 bg-muted rounded w-1/2" />
-            <div className="h-6 bg-muted rounded w-2/3" />
+          <div className="animate-pulse">
+            <div className="h-52 bg-muted" />
+            <div className="p-3 space-y-2">
+              <div className="h-5 bg-muted rounded w-3/4" />
+              <div className="h-3 bg-muted rounded w-1/2" />
+              <div className="h-6 bg-muted rounded w-2/3" />
+            </div>
           </div>
-        </div>
       </div>
     );
   }
@@ -211,10 +221,10 @@ const LazyCarCard = memo(({
   return (
     <div 
       ref={cardRef}
-      className="bg-card rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border border-border cursor-pointer group touch-manipulation"
+      className="bg-card rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border border-border cursor-pointer group touch-manipulation mobile-card-compact"
       onClick={handleCardClick}
     >
-      <div className="relative h-40 sm:h-44 bg-muted overflow-hidden">
+      <div className="relative h-40 sm:h-52 lg:h-56 bg-muted overflow-hidden">
         {image ? (
           <img 
             src={image} 
@@ -231,19 +241,19 @@ const LazyCarCard = memo(({
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-muted">
-            <Car className="h-16 w-16 text-muted-foreground" />
+            <Car className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
           </div>
         )}
         
-        {/* Status Badge */}
+        {/* Status Badge - More compact on mobile */}
         {(status === 3 || sale_status === 'sold') ? (
-          <div className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded text-xs font-bold shadow-lg z-10">
+          <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-red-600 text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded text-xs font-bold shadow-lg z-10">
             SOLD OUT
           </div>
         ) : (
           lot && (
-            <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-semibold">
-              Kodi #{lot}
+            <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-primary text-primary-foreground px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs font-semibold">
+              #{lot}
             </div>
           )
         )}
@@ -252,16 +262,16 @@ const LazyCarCard = memo(({
         {user && (
           <button
             onClick={handleFavoriteToggle}
-            className="absolute top-2 left-2 p-2 bg-black/50 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+            className="absolute top-1 sm:top-2 left-1 sm:left-2 p-1.5 sm:p-2 bg-black/50 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
           >
-            <Heart className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+            <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
           </button>
         )}
       </div>
       
-      <div className="p-3 sm:p-4">
-        <div className="mb-2">
-          <h3 className="text-base sm:text-lg font-semibold text-foreground line-clamp-2">
+      <div className="p-2 sm:p-3 lg:p-4">
+        <div className="mb-1.5 sm:mb-2">
+          <h3 className="card-title text-sm sm:text-base lg:text-lg font-semibold text-foreground line-clamp-2">
             {year} {make} {model}
           </h3>
           {title && title !== `${make} ${model}` && (
@@ -270,28 +280,28 @@ const LazyCarCard = memo(({
         </div>
 
         {/* Vehicle Info - More compact */}
-        <div className="space-y-1 mb-3 text-xs">
+        <div className="space-y-0.5 sm:space-y-1 mb-2 sm:mb-3 card-details text-xs">
           {mileage && (
             <div className="flex items-center gap-1">
-              <Gauge className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <Gauge className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
               <span className="truncate">{mileage}</span>
             </div>
           )}
           {transmission && (
             <div className="flex items-center gap-1">
-              <Settings className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <Settings className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
               <span className="capitalize truncate">{transmission}</span>
             </div>
           )}
           {fuel && (
             <div className="flex items-center gap-1">
-              <Fuel className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <Fuel className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
               <span className="capitalize truncate">{fuel}</span>
             </div>
           )}
           {color && (
             <div className="flex items-center gap-1">
-              <Palette className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <Palette className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
               <span className="capitalize truncate">{color}</span>
             </div>
           )}
@@ -299,8 +309,8 @@ const LazyCarCard = memo(({
 
         {/* Status Indicators - More compact */}
         {insurance_v2?.accidentCnt === 0 && (
-          <div className="mb-2">
-            <Badge variant="secondary" className="text-xs px-2 py-0">
+          <div className="mb-1.5 sm:mb-2">
+            <Badge variant="secondary" className="text-xs px-1.5 sm:px-2 py-0">
               <Shield className="h-2 w-2 mr-1" />
               Clean Record
             </Badge>
@@ -308,8 +318,8 @@ const LazyCarCard = memo(({
         )}
 
         {/* Pricing - More compact */}
-        <div className="flex flex-col gap-1 mb-2">
-          <span className="text-lg sm:text-xl font-bold text-primary">
+        <div className="flex flex-col gap-0.5 sm:gap-1 mb-1.5 sm:mb-2">
+          <span className="card-price text-base sm:text-lg lg:text-xl font-bold text-primary">
             €{price.toLocaleString()}
           </span>
           <span className="text-xs text-muted-foreground">

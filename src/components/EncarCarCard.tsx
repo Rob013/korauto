@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -110,6 +111,7 @@ const EncarCarCard = ({
   const navigate = useNavigate();
   const { setPreviousPage } = useNavigation();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [isLiked, setIsLiked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -133,8 +135,16 @@ const EncarCarCard = ({
   const handleCardClick = () => {
     // Save current page and any filter state before navigating
     setPreviousPage(window.location.pathname + window.location.search);
-    // Prefer lot number if present; fall back to id
-    navigate(`/car/${lot || id}`);
+    
+    // On mobile, open in new tab to preserve the current catalog state
+    // On desktop, navigate in the same tab for better user experience
+    if (isMobile) {
+      // Open in new tab on mobile to preserve filter state and scroll position
+      window.open(`/car/${id}`, '_blank');
+    } else {
+      // Navigate in same tab on desktop
+      navigate(`/car/${id}`);
+    }
   };
 
   const handleLikeClick = (e: React.MouseEvent) => {
@@ -159,46 +169,52 @@ const EncarCarCard = ({
 
   return (
     <Card 
-      className="group cursor-pointer bg-white border border-gray-200 hover:border-primary/30 hover:shadow-lg transition-all duration-300 overflow-hidden"
+      className="group cursor-pointer bg-white border border-gray-200 hover:border-primary/50 hover:shadow-xl transition-all duration-300 overflow-hidden rounded-xl"
       onClick={handleCardClick}
     >
-      {/* Image Section */}
-      <div className="relative h-48 bg-gray-100 overflow-hidden">
+      {/* Large Image Section - 60-70% of card height */}
+      <div className="relative h-56 bg-gray-100 overflow-hidden">
         {image ? (
           <img
             src={image}
             alt={`${year} ${make} ${model}`}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
             onError={(e) => {
-              e.currentTarget.src = "https://via.placeholder.com/300x200/f5f5f5/999999?text=No+Image";
+              e.currentTarget.src = "https://via.placeholder.com/400x300/f5f5f5/999999?text=No+Image";
             }}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-100">
-            <Car className="h-12 w-12 text-gray-400" />
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+            <Car className="h-16 w-16 text-gray-400" />
           </div>
         )}
 
-        {/* Badges */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1">
+        {/* Modern Badges */}
+        <div className="absolute top-3 left-3 flex flex-col gap-2">
           {isNew && (
-            <Badge className="bg-red-500 text-white text-xs px-2 py-1">
+            <Badge className="bg-red-600 text-white text-xs px-3 py-1 font-semibold shadow-lg">
               NEW
             </Badge>
           )}
           {isCertified && (
-            <Badge className="bg-blue-500 text-white text-xs px-2 py-1">
+            <Badge className="bg-blue-600 text-white text-xs px-3 py-1 font-semibold shadow-lg">
               CERTIFIED
+            </Badge>
+          )}
+          {insurance_v2?.accidentCnt === 0 && (
+            <Badge className="bg-green-600 text-white text-xs px-3 py-1 font-semibold shadow-lg flex items-center gap-1">
+              <Shield className="h-3 w-3" />
+              CLEAN
             </Badge>
           )}
         </div>
 
-        {/* Action buttons */}
-        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Modern Action buttons */}
+        <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
           <Button
             size="sm"
             variant="secondary"
-            className="h-8 w-8 p-0 bg-white/90 hover:bg-white"
+            className="h-9 w-9 p-0 bg-white/95 hover:bg-white shadow-lg backdrop-blur-sm"
             onClick={handleLikeClick}
           >
             <Heart className={`h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} />
@@ -206,119 +222,112 @@ const EncarCarCard = ({
           <Button
             size="sm"
             variant="secondary"
-            className="h-8 w-8 p-0 bg-white/90 hover:bg-white"
+            className="h-9 w-9 p-0 bg-white/95 hover:bg-white shadow-lg backdrop-blur-sm"
             onClick={handleShareClick}
           >
             <Share2 className="h-4 w-4 text-gray-600" />
           </Button>
         </div>
 
-        {/* View count */}
-        <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+        {/* View count badge */}
+        <div className="absolute bottom-3 right-3 bg-black/70 text-white text-xs px-3 py-1 rounded-full flex items-center gap-1 backdrop-blur-sm">
           <Eye className="h-3 w-3" />
           <span>{Math.floor(Math.random() * 500) + 50}</span>
         </div>
+
+        {/* Lot number */}
+        {lot && (
+          <div className="absolute bottom-3 left-3 bg-primary/90 text-white text-xs px-3 py-1 rounded-full font-semibold backdrop-blur-sm">
+            Lot #{lot}
+          </div>
+        )}
       </div>
 
       <CardContent className="p-4">
-        {/* Car Title */}
+        {/* Car Title - More prominent */}
         <div className="mb-3">
-          <h3 className="font-semibold text-gray-900 text-base leading-tight">
+          <h3 className="font-bold text-gray-900 text-lg leading-tight mb-1">
             {year} {typeof make === 'object' ? (make as any)?.name || '' : make || ''} {typeof model === 'object' ? (model as any)?.name || '' : model || ''}
           </h3>
           {location && (
-            <div className="flex items-center text-xs text-gray-500 mt-1">
+            <div className="flex items-center text-sm text-gray-500">
               <MapPin className="h-3 w-3 mr-1" />
               {location}
             </div>
           )}
         </div>
 
-        {/* Specs */}
-        <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-3">
+        {/* Compact Specs Grid */}
+        <div className="grid grid-cols-2 gap-3 text-sm text-gray-600 mb-4">
           {mileage && (
-            <div className="flex items-center gap-1">
-              <Gauge className="h-3 w-3" />
-              <span>{mileage}</span>
+            <div className="flex items-center gap-2">
+              <Gauge className="h-4 w-4 text-primary" />
+              <span className="font-medium">{mileage}</span>
             </div>
           )}
           {fuel && (
-            <div className="flex items-center gap-1">
-              <Fuel className="h-3 w-3" />
-              <span className="capitalize">{typeof fuel === 'object' ? (fuel as any)?.name || '' : fuel || ''}</span>
+            <div className="flex items-center gap-2">
+              <Fuel className="h-4 w-4 text-primary" />
+              <span className="font-medium capitalize">{typeof fuel === 'object' ? (fuel as any)?.name || '' : fuel || ''}</span>
             </div>
           )}
           {transmission && (
-            <div className="flex items-center gap-1">
-              <Settings className="h-3 w-3" />
-              <span className="capitalize">{typeof transmission === 'object' ? (transmission as any)?.name || '' : transmission || ''}</span>
+            <div className="flex items-center gap-2">
+              <Settings className="h-4 w-4 text-primary" />
+              <span className="font-medium capitalize">{typeof transmission === 'object' ? (transmission as any)?.name || '' : transmission || ''}</span>
             </div>
           )}
-          <div className="flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            <span>{year}</span>
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-primary" />
+            <span className="font-medium">{year}</span>
           </div>
         </div>
 
-        {/* Quick Status Indicators */}
-        <div className="flex flex-wrap gap-1 mb-3">
-          {insurance_v2?.accidentCnt === 0 && (
-            <Badge variant="secondary" className="text-xs px-1 py-0">
-              <Shield className="h-3 w-3 mr-1" />
-              Clean
-            </Badge>
-          )}
-          {lot && (
-            <Badge variant="outline" className="text-xs px-1 py-0">
-              Lot: {lot}
-            </Badge>
-          )}
-        </div>
-
-        {/* Price */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-lg font-bold text-primary">
-            {price ? (
-              <>€{price.toLocaleString()}</>
-            ) : (
-              <span className="text-muted-foreground">Çmimi në kërkesë</span>
-            )}
-          </div>
-          <div className="text-xs text-gray-500">
-            KORAUTO Price
+        {/* Price - More prominent */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="text-2xl font-bold text-primary">
+              {price ? (
+                <>€{price.toLocaleString()}</>
+              ) : (
+                <span className="text-muted-foreground text-lg">Çmimi në kërkesë</span>
+              )}
+            </div>
+            <div className="text-xs text-gray-500 font-medium">
+              Çmimi KORAUTO
+            </div>
           </div>
         </div>
 
-        {/* Action buttons */}
-        <div className="space-y-2">
-          <div className="flex gap-2">
-            <InspectionRequestForm
-              trigger={
-                <Button 
-                  size="sm"
-                  className="flex-1 bg-primary hover:bg-primary/90 text-white text-xs h-6"
-                  onClick={(e) => e.stopPropagation()}
-                  aria-label={`Kërkoni inspektim për ${year} ${make} ${model}`}
-                >
-                  Inspektim (€50)
-                </Button>
-              }
-              carId={id}
-              carMake={make}
-              carModel={model}
-              carYear={year}
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 text-xs h-6 border-primary text-primary hover:bg-primary hover:text-white"
-              onClick={handleContactWhatsApp}
-              aria-label={`Kontaktoni për më shumë informacion rreth ${year} ${make} ${model}`}
-            >
-              <MessageCircle className="h-3 w-3 mr-1" />
-              Kontakt
-            </Button>
-          </div>
+        {/* Modern Action buttons */}
+        <div className="flex gap-3">
+          <InspectionRequestForm
+            trigger={
+              <Button 
+                size="sm"
+                className="flex-1 bg-primary hover:bg-primary/90 text-white font-semibold h-10 shadow-md hover:shadow-lg transition-all"
+                onClick={(e) => e.stopPropagation()}
+                aria-label={`Kërkoni inspektim për ${year} ${make} ${model}`}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Inspektim €50
+              </Button>
+            }
+            carId={id}
+            carMake={make}
+            carModel={model}
+            carYear={year}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 border-2 border-primary text-primary hover:bg-primary hover:text-white font-semibold h-10 transition-all"
+            onClick={handleContactWhatsApp}
+            aria-label={`Kontaktoni për më shumë informacion rreth ${year} ${make} ${model}`}
+          >
+            <MessageCircle className="h-4 w-4 mr-2" />
+            Kontakt
+          </Button>
         </div>
       </CardContent>
     </Card>
