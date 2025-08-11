@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { AdaptiveSelect } from "@/components/ui/adaptive-select";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Loader2,
   Search,
   ArrowLeft,
   ArrowUpDown,
@@ -1027,7 +1026,6 @@ const filteredCars = useMemo(() => {
           {/* Loading State */}
           {(loading && cars.length === 0) || isRestoringState ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin mr-2" />
               <span>
                 {isRestoringState ? "Restoring your view..." : "Loading cars..."}
               </span>
@@ -1073,9 +1071,7 @@ const filteredCars = useMemo(() => {
 
           {/* Filter Loading State */}
           {isFilterLoading && cars.length === 0 && (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin" />
-              </div>
+              <div className="py-12" />
           )}
 
           {/* Cars Grid/List - Show cars without requiring filters */}
@@ -1083,13 +1079,7 @@ const filteredCars = useMemo(() => {
             <div className="relative">
               {/* Loading Overlay for Cars Grid */}
               {isFilterLoading && (
-                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
-                  <div className="bg-card border border-border rounded-lg p-6 shadow-lg">
-                    <div className="flex items-center justify-center">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    </div>
-                  </div>
-                </div>
+                <div className="absolute inset-0 bg-background/60 backdrop-blur-sm z-10 rounded-lg" />
               )}
               
               <div
