@@ -1073,10 +1073,9 @@ const filteredCars = useMemo(() => {
 
           {/* Filter Loading State */}
           {isFilterLoading && cars.length === 0 && (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin mr-3" />
-              <span className="text-lg font-medium">Applying filters...</span>
-            </div>
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
           )}
 
           {/* Cars Grid/List - Show cars without requiring filters */}
@@ -1086,9 +1085,8 @@ const filteredCars = useMemo(() => {
               {isFilterLoading && (
                 <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
                   <div className="bg-card border border-border rounded-lg p-6 shadow-lg">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center">
                       <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                      <span className="text-sm font-medium text-foreground">Applying filters...</span>
                     </div>
                   </div>
                 </div>
