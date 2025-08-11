@@ -30,6 +30,7 @@ import {
 } from "@/hooks/useSortedCars";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerCatalog, ServerSort } from "@/hooks/useServerCatalog";
 
 interface APIFilters {
   manufacturer_id?: string;
@@ -82,6 +83,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [allCarsForSorting, setAllCarsForSorting] = useState<any[]>([]);
   const [isSortingGlobal, setIsSortingGlobal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [useServerSide, setUseServerSide] = useState(() =>
+    typeof window !== 'undefined' && window.location.hostname === 'localhost' ? false : true
+  );
+  const { cars: serverCars, totalCount: serverTotal, loading: serverLoading, error: serverError, fetchServerCars } = useServerCatalog();
 
   // Memoized helper function to extract grades from title
   const extractGradesFromTitle = useCallback((title: string): string[] => {
@@ -178,6 +183,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   }, [isSortingGlobal, allCarsForSorting, carsForSorting]);
   
   const sortedCars = useSortedCars(carsToSort, sortBy);
+  const serverSortedCars = serverCars; // Server returns sorted already
   
   // Memoized current page cars from sorted results
   const carsForCurrentPage = useMemo(() => {
@@ -185,6 +191,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       ? sortedCars.slice((currentPage - 1) * 50, currentPage * 50)
       : sortedCars;
   }, [isSortingGlobal, allCarsForSorting.length, sortedCars, currentPage]);
+
+  const effectiveCars = useMemo(() => useServerSide ? serverSortedCars : carsForCurrentPage, [useServerSide, serverSortedCars, carsForCurrentPage]);
+  const effectiveTotal = useServerSide ? serverTotal : totalCount;
 
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -288,7 +297,25 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       per_page: "50" // Show 50 cars per page
     };
     
-    fetchCars(1, filtersWithPagination, true);
+    if (useServerSide) {
+      const serverFilters = {
+        make_name: undefined as string | undefined,
+        model_name: undefined as string | undefined,
+        from_year: newFilters.from_year,
+        to_year: newFilters.to_year,
+        buy_now_price_from: newFilters.buy_now_price_from,
+        buy_now_price_to: newFilters.buy_now_price_to,
+        odometer_from_km: newFilters.odometer_from_km,
+        odometer_to_km: newFilters.odometer_to_km,
+        color_name: undefined as string | undefined,
+        fuel_name: undefined as string | undefined,
+        transmission_name: undefined as string | undefined,
+        search: newFilters.search,
+      };
+      fetchServerCars(1, 50, sortBy as ServerSort, serverFilters);
+    } else {
+      fetchCars(1, filtersWithPagination, true);
+    }
 
     // Update URL with all non-empty filter values - properly encode grade filter
     const paramsToSet: any = {};
@@ -300,7 +327,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     });
     paramsToSet.page = "1";
     setSearchParams(paramsToSet);
-  }, [fetchCars, setSearchParams]);
+  }, [fetchCars, setSearchParams, useServerSide, fetchServerCars, sortBy]);
 
   const handleClearFilters = useCallback(() => {
     setFilters({});
@@ -329,13 +356,31 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       per_page: "50"
     };
     
-    fetchCars(page, filtersWithPagination, true); // Reset list for new page
+    if (useServerSide) {
+      const serverFilters = {
+        make_name: undefined as string | undefined,
+        model_name: undefined as string | undefined,
+        from_year: filters.from_year,
+        to_year: filters.to_year,
+        buy_now_price_from: filters.buy_now_price_from,
+        buy_now_price_to: filters.buy_now_price_to,
+        odometer_from_km: filters.odometer_from_km,
+        odometer_to_km: filters.odometer_to_km,
+        color_name: undefined as string | undefined,
+        fuel_name: undefined as string | undefined,
+        transmission_name: undefined as string | undefined,
+        search: filters.search,
+      };
+      fetchServerCars(page, 50, sortBy as ServerSort, serverFilters);
+    } else {
+      fetchCars(page, filtersWithPagination, true); // Reset list for new page
+    }
     
     // Update URL with new page
     const currentParams = Object.fromEntries(searchParams.entries());
     currentParams.page = page.toString();
     setSearchParams(currentParams);
-  }, [filters, fetchCars, setSearchParams]);
+  }, [filters, fetchCars, setSearchParams, useServerSide, fetchServerCars, sortBy]);
 
   const handleLoadMore = () => {
     // For backward compatibility, load next page
@@ -350,13 +395,22 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       return;
     }
     
+    // Safety cap to prevent huge blocking fetches that slow down the catalog
+    const MAX_GLOBAL_SORT_CARS = 500;
+    if (totalCount > MAX_GLOBAL_SORT_CARS) {
+      setAllCarsForSorting([]);
+      setIsSortingGlobal(false);
+      return;
+    }
+
     setIsSortingGlobal(true);
     
     try {
       // Use the API hook to fetch all cars
       const allCarsFilters = {
         ...filters,
-        per_page: totalCount.toString() // Fetch all cars at once
+        // Fetch up to the cap amount
+        per_page: Math.min(totalCount, 500).toString()
       };
       
       // Call the API using supabase functions
@@ -570,8 +624,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         ...urlFilters,
         per_page: "50"
       };
-      
-      await fetchCars(1, initialFilters, true);
+      if (useServerSide) {
+        await fetchServerCars(1, 50, sortBy as ServerSort, {} as any);
+      } else {
+        await fetchCars(1, initialFilters, true);
+      }
 
       setIsRestoringState(false);
 
@@ -592,7 +649,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     };
 
     loadInitialData();
-  }, []); // Only run on mount
+  }, [useServerSide, fetchServerCars, fetchCars, sortBy]); // re-run if toggle changes
 
   // Save scroll position when navigating away
   useEffect(() => {
@@ -654,18 +711,19 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     loadInitialCounts();
   }, [manufacturers]);
 
-  // Calculate total pages when totalCount or filteredCars changes
+  // Calculate total pages considering server/client mode
   useEffect(() => {
-    let effectiveTotal = totalCount;
-    let effectivePages = Math.ceil(totalCount / 50);
-    
-    if (filters.grade_iaai && filters.grade_iaai !== 'all' && filteredCars.length > 0) {
-      effectiveTotal = filteredCars.length;
-      effectivePages = Math.ceil(filteredCars.length / 50);
+    if (useServerSide) {
+      const pages = Math.max(1, Math.ceil(serverTotal / 50));
+      setTotalPages(pages);
+    } else {
+      let effectivePages = Math.ceil(totalCount / 50);
+      if (filters.grade_iaai && filters.grade_iaai !== 'all' && filteredCars.length > 0) {
+        effectivePages = Math.ceil(filteredCars.length / 50);
+      }
+      setTotalPages(effectivePages);
     }
-    
-    setTotalPages(effectivePages);
-  }, [totalCount, filteredCars, filters.grade_iaai]);
+  }, [useServerSide, serverTotal, totalCount, filteredCars, filters.grade_iaai]);
 
   // Fetch all cars for sorting when sortBy changes and we have multiple pages
   useEffect(() => {
@@ -679,7 +737,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   }, [sortBy, totalPages, totalCount, filters.grade_iaai]);
 
   // Don't show cars until brand, model, and generation are selected
-  const shouldShowCars = filters.manufacturer_id && filters.model_id && filters.generation_id;
+  const shouldShowCars = useServerSide || (filters.manufacturer_id && filters.model_id && filters.generation_id);
 
   // Effect to highlight and scroll to specific car by lot number
   useEffect(() => {
@@ -718,7 +776,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     <div className="container-responsive py-4 sm:py-6">
       {/* Header Section - More compact */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
           <Button
             variant="ghost"
             size="sm"
@@ -738,8 +796,40 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           </div>
         </div>
 
-        {/* View Mode Toggle */}
-        <div className="flex gap-2">
+        {/* Quick Search + View Mode Toggle */}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-64">
+            <Input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearch();
+                }
+              }}
+              placeholder="Search model, trim, keywords..."
+              className="h-8"
+            />
+            <Button size="sm" className="h-8" onClick={handleSearch}>
+              <Search className="h-3 w-3 mr-1" />
+              Search
+            </Button>
+          </div>
+          <Button
+            variant={useServerSide ? 'default' : 'outline'}
+            size="sm"
+            className="h-8"
+            onClick={() => {
+              setUseServerSide(!useServerSide);
+              // refresh current view via server or client accordingly
+              handlePageChange(1);
+            }}
+            title="Toggle server-side filtering/sorting"
+          >
+            {useServerSide ? 'Server' : 'Client'}
+          </Button>
+
+          {/* View Mode Toggle */}
           <Button
             variant={viewMode === "grid" ? "default" : "outline"}
             size="sm"
@@ -802,16 +892,16 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       </div>
 
       {/* Error State */}
-      {error && (
+      {(useServerSide ? serverError : error) && (
         <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-8">
-          <p className="text-destructive font-medium">Error: {error}</p>
+          <p className="text-destructive font-medium">Error: {(useServerSide ? serverError : error) as any}</p>
         </div>
       )}
 
 
 
       {/* Loading State */}
-      {(loading && cars.length === 0) || isRestoringState ? (
+      {(((useServerSide ? serverLoading : loading) && (useServerSide ? serverCars.length === 0 : cars.length === 0)) || isRestoringState) ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin mr-2" />
           <span>
@@ -821,7 +911,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       ) : null}
 
       {/* No Selection State */}
-      {!shouldShowCars && !loading && !isRestoringState && (
+      {!shouldShowCars && !(useServerSide ? serverLoading : loading) && !isRestoringState && (
         <div className="text-center py-16">
           <div className="max-w-md mx-auto">
             <Car className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
@@ -834,7 +924,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       )}
 
       {/* No Results State */}
-      {shouldShowCars && !loading && !isRestoringState && cars.length === 0 && (
+      {shouldShowCars && !(useServerSide ? serverLoading : loading) && !isRestoringState && (useServerSide ? serverCars.length === 0 : cars.length === 0) && (
         <div className="text-center py-12">
           <p className="text-muted-foreground">
             No cars found matching your filters.
@@ -850,7 +940,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       )}
 
       {/* Cars Grid/List - Only show if brand, model, and generation are selected */}
-      {shouldShowCars && cars.length > 0 && (
+      {shouldShowCars && (useServerSide ? serverCars.length > 0 : cars.length > 0) && (
         <>
           <div
             ref={containerRef}
@@ -860,7 +950,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 : "space-y-3"
             }
           >
-            {carsForCurrentPage.map((car) => {
+            {(useServerSide ? serverCars : carsForCurrentPage).map((car) => {
               const lot = car.lots?.[0];
               const usdPrice = lot?.buy_now || 25000;
               const price = convertUSDtoEUR(Math.round(usdPrice + 2200));

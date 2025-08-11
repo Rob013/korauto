@@ -133,7 +133,8 @@ const EncarCarCard = ({
   const handleCardClick = () => {
     // Save current page and any filter state before navigating
     setPreviousPage(window.location.pathname + window.location.search);
-    navigate(`/car/${id}`);
+    // Prefer lot number if present; fall back to id
+    navigate(`/car/${lot || id}`);
   };
 
   const handleLikeClick = (e: React.MouseEvent) => {

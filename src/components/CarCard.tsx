@@ -363,8 +363,8 @@ const CarCard = memo(({
 
     // Save current page for back navigation
     setPreviousPage(window.location.pathname + window.location.search);
-    // Navigate in same tab
-    navigate(`/car/${lot}`);
+    // Navigate in same tab (prefer lot number, fallback to car id)
+    navigate(`/car/${lot || id}`);
   };
   return (
     <div

@@ -37,3 +37,9 @@ verify_jwt = false
 
 [functions.api-test]
 verify_jwt = false
+
+[functions.daily-sync]
+verify_jwt = false
+
+[functions.catalog-cars]
+verify_jwt = false

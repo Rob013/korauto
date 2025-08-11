@@ -680,7 +680,83 @@ const CarDetails = memo(() => {
           return;
         }
 
-        // If not found in cache, try Supabase edge function with lot number search
+        // If not found in cache, first try secure API with car ID (handles shared links that use car id)
+        try {
+          const { data: byIdData, error: byIdError } = await supabase.functions.invoke(
+            "secure-cars-api",
+            {
+              body: {
+                endpoint: "cars",
+                carId: lot,
+              },
+            }
+          );
+
+          if (!byIdError && byIdData) {
+            const carData = (byIdData as any).data || byIdData;
+            const lotData = carData?.lots?.[0];
+            if (lotData && isMounted) {
+              const basePrice =
+                lotData.buy_now ?? lotData.final_bid ?? lotData.price ?? 25000;
+              const price = convertUSDtoEUR(Math.round(basePrice + 2200));
+              const transformedCar: CarDetails = {
+                id: (carData.id?.toString?.() || lotData.lot) as string,
+                make: carData.manufacturer?.name || "Unknown",
+                model: carData.model?.name || "Unknown",
+                year: carData.year || 2020,
+                price,
+                image: lotData.images?.normal?.[0] || lotData.images?.big?.[0],
+                images: lotData.images?.normal || lotData.images?.big || [],
+                vin: carData.vin,
+                mileage: lotData.odometer?.km
+                  ? `${lotData.odometer.km.toLocaleString()} km`
+                  : undefined,
+                transmission: carData.transmission?.name,
+                fuel: carData.fuel?.name,
+                color: carData.color?.name,
+                condition: lotData.condition?.name?.replace(
+                  "run_and_drives",
+                  "Good Condition"
+                ),
+                lot: lotData.lot,
+                title: lotData.title || carData.title,
+                odometer: lotData.odometer,
+                engine: carData.engine,
+                cylinders: carData.cylinders,
+                drive_wheel: carData.drive_wheel,
+                body_type: carData.body_type,
+                damage: lotData.damage,
+                keys_available: lotData.keys_available,
+                airbags: lotData.airbags,
+                grade_iaai: lotData.grade_iaai,
+                seller: lotData.seller,
+                seller_type: lotData.seller_type,
+                sale_date: lotData.sale_date,
+                bid: lotData.bid,
+                buy_now: lotData.buy_now,
+                final_bid: lotData.final_bid,
+                features: getCarFeatures(carData, lotData),
+                safety_features: getSafetyFeatures(carData, lotData),
+                comfort_features: getComfortFeatures(carData, lotData),
+                performance_rating: 4.5,
+                popularity_score: 85,
+                insurance: lotData.insurance,
+                insurance_v2: lotData.insurance_v2,
+                location: lotData.location,
+                inspect: lotData.inspect,
+                details: lotData.details,
+              };
+              setCar(transformedCar);
+              setLoading(false);
+              trackCarView(carData.id || lot, transformedCar);
+              return;
+            }
+          }
+        } catch (byIdErr) {
+          console.log("Car ID lookup via secure API failed:", byIdErr);
+        }
+
+        // If still not found, try Supabase edge function with lot number search
         try {
           const secureResponse = await fetch(
             `https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/secure-cars-api`,
@@ -776,7 +852,7 @@ const CarDetails = memo(() => {
           console.log("Edge function failed:", edgeFunctionError);
         }
 
-        // If edge function fails, try external API with both lot ID and as lot number
+        // If both secure function attempts fail, try external API with both lot ID and as lot number
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 

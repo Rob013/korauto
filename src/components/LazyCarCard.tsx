@@ -179,15 +179,15 @@ const LazyCarCard = memo(({
     e.preventDefault();
     e.stopPropagation();
     setPreviousPage(window.location.pathname + window.location.search);
-    navigate(`/car/${lot}`);
+    navigate(`/car/${lot || id}`);
   }, [setPreviousPage, lot, navigate]);
 
   const handleDetailsClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setPreviousPage(window.location.pathname + window.location.search);
-    navigate(`/car/${lot}`);
-  }, [setPreviousPage, lot, navigate]);
+    navigate(`/car/${lot || id}`);
+  }, [setPreviousPage, lot, id, navigate]);
 
   // Don't render content until intersection
   if (!isIntersecting) {

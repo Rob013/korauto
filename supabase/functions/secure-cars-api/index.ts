@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -130,11 +131,6 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log('🌐 Making API request to:', url);
-    
-    // Log the constructed URL parameters for debugging
-    if (filters.grade_iaai) {
-      console.log('🔍 URL parameters for grade filter:', params.toString());
-    }
 
     // Make the API request with rate limiting
     const response = await fetch(url, {
@@ -178,6 +174,62 @@ const handler = async (req: Request): Promise<Response> => {
 
     const data = await response.json();
     console.log('✅ API response received, data length:', JSON.stringify(data).length);
+
+    // Background upsert into Supabase for caching/persistence
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL');
+      const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      if (supabaseUrl && serviceKey) {
+        const sb = createClient(supabaseUrl, serviceKey);
+
+        // Normalize cars list from response by endpoint shape
+        const carsArray: any[] = Array.isArray(data?.data)
+          ? data.data
+          : (endpoint.startsWith('cars/') || endpoint === 'car' || carId)
+            ? (data?.data ? [data.data] : [data])
+            : endpoint === 'search-lot' || lotNumber
+              ? [data]
+              : [];
+
+        if (carsArray.length > 0) {
+          const upserts = carsArray.map((car: any) => {
+            const lot = car?.lots?.[0] || car?.lot || car?.lots?.length ? car.lots[0] : null;
+            const images = lot?.images?.normal || lot?.images?.big || [];
+            const carIdStr = (car?.id ?? lot?.id ?? lot?.external_id ?? '').toString();
+            const payload = {
+              id: carIdStr,
+              api_id: carIdStr,
+              make: car?.manufacturer?.name || car?.make || 'Unknown',
+              model: car?.model?.name || car?.model || 'Unknown',
+              year: car?.year || new Date().getFullYear(),
+              price: typeof lot?.buy_now === 'number' ? Math.round(lot.buy_now + 2200) : null,
+              vin: car?.vin || null,
+              fuel: car?.fuel?.name || null,
+              transmission: car?.transmission?.name || null,
+              color: car?.color?.name || null,
+              condition: lot?.condition?.name || null,
+              lot_number: (lot?.lot ?? '').toString(),
+              mileage: lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : null,
+              images: images,
+              car_data: car,
+              lot_data: lot || null,
+              last_api_sync: new Date().toISOString(),
+            } as any;
+
+            return payload;
+          });
+
+          // Upsert in small batches
+          const batchSize = 25;
+          for (let i = 0; i < upserts.length; i += batchSize) {
+            const batch = upserts.slice(i, i + batchSize);
+            await sb.from('cars_cache').upsert(batch as any[], { onConflict: 'id', ignoreDuplicates: false });
+          }
+        }
+      }
+    } catch (persistError) {
+      console.error('⚠️ Failed to persist API data to cars_cache:', persistError);
+    }
 
     return new Response(JSON.stringify(data), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders }
