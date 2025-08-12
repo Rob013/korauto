@@ -460,92 +460,22 @@ const HomeCarsSection = memo(() => {
   };
 
   return (
-    <section id="cars" className="py-12 bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto px-4">
-        {/* Header section - encar.com style */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Featured Cars
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              Discover our handpicked selection of premium vehicles from South Korea
-            </p>
-          </div>
-          
-          {/* Quick Filter Tabs - encar.com style */}
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant={pendingFilters.manufacturer_id === undefined ? "default" : "outline"}
-              size="sm"
-              className={`${pendingFilters.manufacturer_id === undefined ? 'bg-blue-600 text-white' : 'border-gray-300 text-gray-700 dark:text-gray-300'} hover:bg-blue-700 hover:text-white`}
-              onClick={() => handleFiltersChange({})}
-            >
-              All Cars
-            </Button>
-            <Button
-              variant={pendingFilters.manufacturer_id === "1" ? "default" : "outline"}
-              size="sm"
-              className={`${pendingFilters.manufacturer_id === "1" ? 'bg-blue-600 text-white' : 'border-gray-300 text-gray-700 dark:text-gray-300'} hover:bg-blue-700 hover:text-white`}
-              onClick={() => handleFiltersChange({ manufacturer_id: "1" })}
-            >
-              Toyota
-            </Button>
-            <Button
-              variant={pendingFilters.manufacturer_id === "2" ? "default" : "outline"}
-              size="sm"
-              className={`${pendingFilters.manufacturer_id === "2" ? 'bg-blue-600 text-white' : 'border-gray-300 text-gray-700 dark:text-gray-300'} hover:bg-blue-700 hover:text-white`}
-              onClick={() => handleFiltersChange({ manufacturer_id: "2" })}
-            >
-              Honda
-            </Button>
-            <Button
-              variant={pendingFilters.manufacturer_id === "3" ? "default" : "outline"}
-              size="sm"
-              className={`${pendingFilters.manufacturer_id === "3" ? 'bg-blue-600 text-white' : 'border-gray-300 text-gray-700 dark:text-gray-300'} hover:bg-blue-700 hover:text-white`}
-              onClick={() => handleFiltersChange({ manufacturer_id: "3" })}
-            >
-              Hyundai
-            </Button>
-          </div>
-        </div>
+    <section id="cars" className="py-4 sm:py-6 lg:py-8 bg-secondary/30">
+      <div className="container-responsive">
+        <div className="text-center mb-4 sm:mb-6">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground">
+            Makinat e Disponueshme
+          </h2>
 
-        {/* Sort and View Controls */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              Showing {filteredCars.length} cars
-            </span>
+          <div className="flex justify-center mt-4 sm:mt-6">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
-              className="border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              className="w-full sm:w-auto border-primary text-primary hover:bg-primary hover:text-primary-foreground min-h-[44px]"
             >
-              {showFilters ? "Hide Filters" : "Show Filters"}
+              {showFilters ? "Fshih Filtrat" : "Shfaq Filtrat"}
             </Button>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Sort by:</span>
-            <div className="relative min-w-[140px]">
-              <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
-                <SelectTrigger className="h-9 text-sm border-gray-300 dark:border-gray-600">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent align="end">
-                  {getSortOptions().map((option) => (
-                    <SelectItem 
-                      key={option.value} 
-                      value={option.value}
-                      className="text-sm"
-                    >
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </div>
         </div>
 
@@ -609,36 +539,27 @@ const HomeCarsSection = memo(() => {
           </div>
         </div>
 
-        {/* Car Cards - encar.com style */}
+        {/* Car Cards */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm animate-pulse">
-                <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded-lg mb-4"></div>
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
-                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+              <div key={i} className="bg-card rounded-lg p-4 animate-pulse">
+                <div className="h-48 bg-muted rounded mb-4"></div>
+                <div className="h-4 bg-muted rounded mb-2"></div>
+                <div className="h-4 bg-muted rounded w-3/4"></div>
               </div>
             ))}
           </div>
         ) : sortedCars.length === 0 ? (
-          <div className="text-center py-12 px-4">
-            <div className="max-w-md mx-auto">
-              <div className="bg-gray-100 dark:bg-gray-800 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <AlertCircle className="h-8 w-8 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No cars available</h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Try adjusting your filters or check back later for new arrivals.
-              </p>
-              <Button variant="outline" onClick={handleClearFilters}>
-                Clear Filters
-              </Button>
-            </div>
+          <div className="text-center py-8 sm:py-12 px-4">
+            <p className="text-base sm:text-lg text-muted-foreground mb-4">
+              Nuk ka makina të disponueshme.
+            </p>
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">{displayedCars.map((car) => {
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0">
+              {displayedCars.map((car) => {
                 const lot = car.lots?.[0];
                 const usdPrice = lot?.buy_now || 25000;
                 const price = convertUSDtoEUR(Math.round(usdPrice + 2200));
