@@ -1,7 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, isDevelopmentMode } from '@/integrations/supabase/client';
 import { SearchReq, SearchRes, FACET_FIELDS } from '@/lib/search/types';
 import { createFiltersHash } from '@/lib/search/buildFilter';
+import { getFallbackCars } from '@/data/fallbackCars';
 
 const STALE_TIME = 60_000; // 60 seconds
 const CACHE_TIME = 5 * 60_000; // 5 minutes
@@ -33,6 +34,63 @@ export const useCarsSearch = (
 
   const queryFn = async ({ signal }: { signal?: AbortSignal }): Promise<SearchRes> => {
     console.log('🔍 Fetching cars with request (RPC sorted):', request);
+
+    // Check if we're in development mode
+    if (isDevelopmentMode()) {
+      console.log('🔧 Development mode: Using sample car data');
+      
+      // Convert fallback cars to SearchRes format
+      const page = request.page || 1;
+      const pageSize = request.pageSize || 20;
+      
+      // Apply filters to fallback data
+      const filters = request.filters || {};
+      const searchFilters = {
+        make: filters.make,
+        model: filters.model,
+        yearFrom: filters.year?.min,
+        yearTo: filters.year?.max,
+        priceFrom: filters.price_eur?.min,
+        priceTo: filters.price_eur?.max,
+        mileageFrom: filters.mileage_km?.min,
+        mileageTo: filters.mileage_km?.max,
+        search: request.q,
+      };
+      
+      const fallbackResult = getFallbackCars(page, pageSize, searchFilters);
+      
+      // Convert fallback cars to CarListing format
+      const hits = fallbackResult.data.map(car => ({
+        id: car.id,
+        make: car.make,
+        model: car.model,
+        year: car.year,
+        price_eur: car.price,
+        mileage_km: car.mileage || 0,
+        thumbnail: car.image_url || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400&h=300&fit=crop',
+        listed_at: car.created_at || new Date().toISOString(),
+      }));
+
+      // Generate facets from fallback data
+      const facets: SearchRes['facets'] = {};
+      if (request.mode === 'facets' || request.mode === 'full') {
+        // Create basic facets from fallback data
+        facets.make = {};
+        facets.model = {};
+        fallbackResult.data.forEach(car => {
+          facets.make![car.make] = (facets.make![car.make] || 0) + 1;
+          facets.model![car.model] = (facets.model![car.model] || 0) + 1;
+        });
+      }
+
+      console.log(`✅ Development mode: Loaded ${hits.length} cars (total: ${fallbackResult.totalCount})`);
+      
+      return {
+        hits,
+        total: fallbackResult.totalCount,
+        facets,
+      };
+    }
 
     const { data, error } = await (supabase as any).rpc('cars_search_sorted', {
       req: request as any,
