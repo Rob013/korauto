@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import LazyCarCard from "@/components/LazyCarCard";
 import { useSecureAuctionAPI, createFallbackManufacturers } from "@/hooks/useSecureAuctionAPI";
-import EncarStyleFilter from "@/components/EncarStyleFilter";
+import ModernEncarFilter from "@/components/ModernEncarFilter";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useResourcePreloader } from "@/hooks/useResourcePreloader";
@@ -882,7 +882,7 @@ const filteredCars = useMemo(() => {
         
         <div className={`flex-1 overflow-y-auto ${isMobile ? 'mobile-filter-content mobile-filter-compact' : 'p-3 sm:p-4'}`}>
           <div className={`${isMobile ? '' : ''}`}>
-            <EncarStyleFilter
+            <ModernEncarFilter
             filters={filters}
             manufacturers={manufacturers}
             models={models}
@@ -898,15 +898,14 @@ const filteredCars = useMemo(() => {
             onFetchTrimLevels={fetchTrimLevels}
             compact={true}
             onSearchCars={() => {
-              // Issue #2 FIXED: Hide filter panel after search and mark as explicitly closed
-              // This prevents the panel from reopening until user manually opens it
+              // Hide filter panel after search and mark as explicitly closed
               fetchCars(1, { ...filters, per_page: "50" }, true);
-              setShowFilters(false); // Always hide filter panel when search button is clicked
-              setHasExplicitlyClosed(true); // Mark as explicitly closed to prevent auto-reopening
+              setShowFilters(false);
+              setHasExplicitlyClosed(true);
             }}
             onCloseFilter={() => {
               setShowFilters(false);
-              setHasExplicitlyClosed(true); // Mark as explicitly closed
+              setHasExplicitlyClosed(true);
             }}
           />
           
