@@ -256,8 +256,25 @@ const filteredCars = useMemo(() => {
     maxVerticalDistance: 120
   });
 
+  // PERFORMANCE: Add simple cache for filter results to avoid duplicate API calls
+  const filterCacheRef = useRef<Map<string, { data: any[], timestamp: number, totalCount: number }>>(new Map());
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  
   // Internal function to actually apply filters - now using utilities
   const applyFiltersInternal = useCallback((newFilters: APIFilters) => {
+    // Create cache key from filters
+    const cacheKey = JSON.stringify(normalizeFilters(newFilters));
+    const cached = filterCacheRef.current.get(cacheKey);
+    
+    // Check if we have valid cached data
+    if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+      console.log('📦 Using cached filter results');
+      setCars(cached.data);
+      setTotalCount(cached.totalCount);
+      setIsFilterLoading(false);
+      return;
+    }
+    
     setFilters(newFilters);
     setCurrentPage(1); // Reset to first page when filters change
     
@@ -268,13 +285,30 @@ const filteredCars = useMemo(() => {
     // Use 50 cars per page for proper pagination
     const filtersWithPagination = addPaginationToFilters(newFilters, 50);
     
-    fetchCars(1, filtersWithPagination, true);
+    fetchCars(1, filtersWithPagination, true).then((result) => {
+      // Cache the results if we got data
+      if (result && result.data) {
+        filterCacheRef.current.set(cacheKey, {
+          data: result.data,
+          totalCount: result.totalCount || 0,
+          timestamp: Date.now()
+        });
+        
+        // Keep cache size reasonable
+        if (filterCacheRef.current.size > 20) {
+          const oldestKey = filterCacheRef.current.keys().next().value;
+          filterCacheRef.current.delete(oldestKey);
+        }
+      }
+    }).catch(error => {
+      console.error('Error fetching cars:', error);
+    });
 
     // Update URL with all non-empty filter values - now using utility
     const searchParams = filtersToURLParams(newFilters);
     searchParams.set('page', '1');
     setSearchParams(searchParams);
-  }, [fetchCars, setSearchParams]);
+  }, [fetchCars, setSearchParams, setCars, setTotalCount, setFilters]);
 
   // Optimized year filtering hook for better performance
   const {
@@ -293,8 +327,8 @@ const filteredCars = useMemo(() => {
 
   // Debounced version for performance - Reduced debounce time for year filters - using catalog utility
   const debouncedApplyFilters = useCallback(
-    catalogDebounce(applyFiltersInternal, 150), // Reduced from 300ms for faster response
-    [applyFiltersInternal]
+    catalogDebounce(applyFiltersInternal, isMobile ? 100 : 150), // Faster response on mobile
+    [applyFiltersInternal, isMobile]
   );
 
   const handleFiltersChange = useCallback(async (newFilters: APIFilters) => {
@@ -329,7 +363,16 @@ const filteredCars = useMemo(() => {
       // Apply other filters with debouncing to reduce API calls
       debouncedApplyFilters(newFilters);
     }
-  }, [debouncedApplyFilters, handleOptimizedYearFilter, filters, setCars, setFilters, setTotalCount]);
+    
+    // On mobile, auto-close filter panel after applying filters (except for search)
+    if (isMobile && showFilters) {
+      // Give users a brief moment to see the filter was applied, then close
+      setTimeout(() => {
+        setShowFilters(false);
+        setHasExplicitlyClosed(true);
+      }, 800);
+    }
+  }, [debouncedApplyFilters, handleOptimizedYearFilter, filters, setCars, setFilters, setTotalCount, isMobile, showFilters]);
 
   const handleClearFilters = useCallback(() => {
     setFilters({});
@@ -617,6 +660,40 @@ const filteredCars = useMemo(() => {
           ...urlFilters,
           per_page: "50"
         };
+        
+        // Check if we need to restore filter state from car details navigation
+        const restoreFilterState = sessionStorage.getItem('restore-filter-state');
+        if (restoreFilterState) {
+          try {
+            const savedFilterState = JSON.parse(restoreFilterState);
+            console.log("🔄 Restoring filter state from car details:", savedFilterState);
+            
+            // Restore filter panel state on mobile
+            if (isMobile && savedFilterState.showFilters !== undefined) {
+              setShowFilters(savedFilterState.showFilters);
+              if (savedFilterState.showFilters) {
+                setHasExplicitlyClosed(false);
+              }
+            }
+            
+            // Apply the saved filters (they should already be in the URL if properly saved)
+            setFilters(prev => ({
+              ...prev,
+              ...initialFilters
+            }));
+            
+            // Clean up the restore state
+            sessionStorage.removeItem('restore-filter-state');
+          } catch (error) {
+            console.warn("Failed to restore filter state:", error);
+            sessionStorage.removeItem('restore-filter-state');
+          }
+        } else {
+          setFilters(prev => ({
+            ...prev,
+            ...initialFilters
+          }));
+        }
         
         await fetchCars(urlCurrentPage, initialFilters, true);
 

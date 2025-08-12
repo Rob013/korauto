@@ -204,7 +204,7 @@ const handler = async (req: Request): Promise<Response> => {
       'X-Cache-Key': cacheKey,
     };
 
-    let result: any = {};
+    const result: any = {};
 
     if (validatedReq.mode === 'facets') {
       // Return only facets
