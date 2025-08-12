@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { filterZeroCounts, filterZeroCountFacets } from '@/utils/catalog-filter';
 
 /**
  * Test data representing filter options with counts
@@ -21,6 +22,15 @@ const mockFilterData = {
     { id: 'diesel', name: 'Diesel', count: 0 },
     { id: 'electric', name: 'Electric', count: 2 },
   ],
+};
+
+const mockFacetCounts = {
+  'Audi': 5,
+  'BMW': 0,
+  'Toyota': 10,
+  'Mercedes': 0,
+  'Honda': 3,
+  'Ford': 0,
 };
 
 describe('Filter Panel Zero Count Filtering', () => {
@@ -88,5 +98,68 @@ describe('Filter Panel Zero Count Filtering', () => {
     expect(filtered).toHaveLength(3);
     expect(filtered.map(item => item.name)).toEqual(['Item 1', 'Item 3', 'Item 5']);
     expect(filtered.map(item => item.count)).toEqual([3, 7, 1]);
+  });
+
+  describe('filterZeroCounts utility', () => {
+    it('should filter out items with zero count using utility', () => {
+      const filtered = filterZeroCounts(mockFilterData.brands);
+      
+      expect(filtered).toHaveLength(2);
+      expect(filtered.map(b => b.name)).toEqual(['Audi', 'Toyota']);
+    });
+
+    it('should handle items with undefined count', () => {
+      const dataWithUndefined = [
+        { name: 'Item 1', count: 5 },
+        { name: 'Item 2' }, // no count property
+        { name: 'Item 3', count: 0 },
+      ];
+
+      const filtered = filterZeroCounts(dataWithUndefined);
+      
+      expect(filtered).toHaveLength(1);
+      expect(filtered[0].name).toBe('Item 1');
+    });
+  });
+
+  describe('filterZeroCountFacets utility', () => {
+    it('should filter out facet entries with zero count', () => {
+      const filtered = filterZeroCountFacets(mockFacetCounts);
+      
+      expect(Object.keys(filtered)).toHaveLength(3);
+      expect(filtered).toEqual({
+        'Audi': 5,
+        'Toyota': 10,
+        'Honda': 3,
+      });
+      expect(filtered).not.toHaveProperty('BMW');
+      expect(filtered).not.toHaveProperty('Mercedes');
+      expect(filtered).not.toHaveProperty('Ford');
+    });
+
+    it('should return empty object if all counts are zero', () => {
+      const allZeroFacets = {
+        'Brand1': 0,
+        'Brand2': 0,
+        'Brand3': 0,
+      };
+
+      const filtered = filterZeroCountFacets(allZeroFacets);
+      
+      expect(Object.keys(filtered)).toHaveLength(0);
+    });
+
+    it('should preserve all entries with positive counts', () => {
+      const allPositiveFacets = {
+        'Audi': 5,
+        'Toyota': 10,
+        'Honda': 3,
+        'Ford': 1,
+      };
+
+      const filtered = filterZeroCountFacets(allPositiveFacets);
+      
+      expect(filtered).toEqual(allPositiveFacets);
+    });
   });
 });
