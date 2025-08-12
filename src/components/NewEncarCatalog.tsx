@@ -15,7 +15,6 @@ import {
   ChevronRight,
   Loader2,
 } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
 
 // Import our new components and hooks
 import { useFilterStore, useFilterStoreSelectors } from '@/store/filterStore';
@@ -172,12 +171,8 @@ export const NewEncarCatalog = ({ highlightCarId, className = '' }: NewEncarCata
 
   if (!isInitialized) {
     return (
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} className="h-48 w-full rounded-md" />
-          ))}
-        </div>
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
