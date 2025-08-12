@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Search, Filter, Car, Shield, Clock, Award } from "lucide-react";
 import { Link } from "react-router-dom";
 
