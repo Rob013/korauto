@@ -14,6 +14,7 @@ import {
   X,
   PanelLeftOpen,
   PanelLeftClose,
+  RotateCcw,
 } from "lucide-react";
 import LazyCarCard from "@/components/LazyCarCard";
 import { useSecureAuctionAPI, createFallbackManufacturers } from "@/hooks/useSecureAuctionAPI";
@@ -83,7 +84,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [isFilterLoading, setIsFilterLoading] = useState(false);
   const isMobile = useIsMobile();
   
-  // Initialize showFilters with preserved state for mobile users returning from car details
+  // Initialize showFilters - always open on desktop, configurable on mobile
   const [showFilters, setShowFilters] = useState(() => {
     if (isMobile) {
       // On mobile, try to restore the previous filter panel state
@@ -94,7 +95,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       // Default to closed on mobile
       return false;
     }
-    // Default to open on desktop
+    // Always open on desktop (cannot be closed)
     return true;
   });
   
@@ -226,7 +227,7 @@ const filteredCars = useMemo(() => {
     }
   }, []);
 
-  // Swipe gesture handlers
+  // Swipe gesture handlers (mobile only)
   const handleSwipeRightToShowFilters = useCallback(() => {
     if (!showFilters && isMobile) {
       setShowFilters(true);
@@ -241,16 +242,16 @@ const filteredCars = useMemo(() => {
     }
   }, [showFilters, isMobile]);
 
-  // Set up swipe gestures for main content (swipe right to show filters)
+  // Set up swipe gestures for main content (swipe right to show filters) - mobile only
   useSwipeGesture(mainContentRef, {
-    onSwipeRight: handleSwipeRightToShowFilters,
+    onSwipeRight: isMobile ? handleSwipeRightToShowFilters : undefined,
     minSwipeDistance: 80, // Require a more deliberate swipe
     maxVerticalDistance: 120
   });
 
-  // Set up swipe gestures for filter panel (swipe left to close filters)
+  // Set up swipe gestures for filter panel (swipe left to close filters) - mobile only
   useSwipeGesture(filterPanelRef, {
-    onSwipeLeft: handleSwipeLeftToCloseFilters,
+    onSwipeLeft: isMobile ? handleSwipeLeftToCloseFilters : undefined,
     minSwipeDistance: 80,
     maxVerticalDistance: 120
   });
@@ -799,7 +800,7 @@ const filteredCars = useMemo(() => {
     }
   }, [loading]);
 
-  // Save filter panel state to sessionStorage on mobile when it changes
+  // Save filter panel state to sessionStorage only on mobile when it changes
   useEffect(() => {
     if (isMobile) {
       sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(showFilters));
@@ -834,14 +835,11 @@ const filteredCars = useMemo(() => {
 
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Collapsible Filter Sidebar - Optimized for mobile */}
+      {/* Filter Sidebar - Always visible on desktop, collapsible on mobile */}
       <div 
         ref={filterPanelRef}
         className={`
-        fixed lg:relative z-40 bg-card border-r transition-transform duration-300 ease-in-out
-        ${showFilters ? 'translate-x-0' : '-translate-x-full'}
-        ${isMobile ? 'top-0 left-0 right-0 bottom-0 w-full h-dvh overflow-y-auto safe-area-inset' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0 overflow-y-auto'} 
-        lg:shadow-none shadow-xl
+        ${isMobile ? `fixed z-40 bg-card border-r transition-transform duration-300 ease-in-out top-0 left-0 right-0 bottom-0 w-full h-dvh overflow-y-auto safe-area-inset shadow-xl ${showFilters ? 'translate-x-0' : '-translate-x-full'}` : 'relative w-80 sm:w-80 lg:w-72 h-full flex-shrink-0 overflow-y-auto bg-card border-r'}
       `}>
         <div className={`${isMobile ? 'mobile-filter-compact filter-header bg-primary text-primary-foreground' : 'p-3 sm:p-4 border-b flex-shrink-0'}`}>
           <div className="flex items-center justify-between">
@@ -857,25 +855,42 @@ const filteredCars = useMemo(() => {
               )}
             </div>
             <div className="flex items-center gap-1">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleClearFilters}
-                className={`lg:hidden flex items-center gap-1 ${isMobile ? 'h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground text-xs' : 'h-8 px-2'}`}
-              >
-                <span className="text-xs">Clear</span>
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => {
-                  setShowFilters(false);
-                  setHasExplicitlyClosed(true); // Mark as explicitly closed
-                }}
-                className={`lg:hidden flex items-center gap-1 ${isMobile ? 'h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground' : 'h-8 px-2'}`}
-              >
-                <X className="h-3 w-3" />
-              </Button>
+              {/* Only show Clear and Close buttons on mobile */}
+              {isMobile && (
+                <>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleClearFilters}
+                    className="flex items-center gap-1 h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground text-xs"
+                  >
+                    <span className="text-xs">Clear</span>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => {
+                      setShowFilters(false);
+                      setHasExplicitlyClosed(true); // Mark as explicitly closed
+                    }}
+                    className="flex items-center gap-1 h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </>
+              )}
+              {/* Show Clear button on desktop */}
+              {!isMobile && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleClearFilters}
+                  className="flex items-center gap-1 h-8 px-2 text-muted-foreground hover:text-foreground"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                  <span className="text-xs">Clear All</span>
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -919,14 +934,12 @@ const filteredCars = useMemo(() => {
         </div>
       </div>
 
-      {/* Overlay for mobile - stronger backdrop on mobile */}
-      {showFilters && (
+      {/* Overlay for mobile only */}
+      {showFilters && isMobile && (
         <div 
-          className={`fixed inset-0 z-30 lg:hidden transition-opacity duration-300 ${
-            isMobile ? 'bg-black/70 backdrop-blur-md' : 'bg-black/50 backdrop-blur-sm'
-          }`}
+          className="fixed inset-0 z-30 transition-opacity duration-300 bg-black/70 backdrop-blur-md"
           onClick={() => {
-            // Issue #2 FIXED: Allow closing filters anytime via overlay click and mark as explicitly closed
+            // Allow closing filters via overlay click on mobile and mark as explicitly closed
             setShowFilters(false);
             setHasExplicitlyClosed(true); // Mark as explicitly closed
           }}
@@ -951,31 +964,33 @@ const filteredCars = useMemo(() => {
                   <span className="hidden xs:inline text-xs">Back</span>
                 </Button>
                 
-                {/* Filter Toggle Button - Solid styling with no effects */}
-                <Button
-                  variant="default"
-                  size="lg"
-                  onClick={() => {
-                    // Issue #2 FIXED: Allow toggling filters manually and reset explicit close flag
-                    const newShowState = !showFilters;
-                    setShowFilters(newShowState);
-                    if (newShowState) {
-                      setHasExplicitlyClosed(false); // Reset explicit close flag when manually opening
-                    } else {
-                      setHasExplicitlyClosed(true); // Mark as explicitly closed when manually closing
-                    }
-                  }}
-                  className="flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground"
-                >
-                  {showFilters ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
-                  <span className="hidden xs:inline">{showFilters ? 'Fshih Filtrat' : 'Shfaq Filtrat'}</span>
-                  <span className="xs:hidden">Filtrat</span>
-                  {hasSelectedCategories && !showFilters && (
-                    <span className="ml-1 text-xs bg-primary-foreground/20 px-2 py-1 rounded-full animate-bounce">
-                      {Object.values(filters).filter(Boolean).length}
-                    </span>
-                  )}
-                </Button>
+                {/* Filter Toggle Button - Only for mobile */}
+                {isMobile && (
+                  <Button
+                    variant="default"
+                    size="lg"
+                    onClick={() => {
+                      // Only allow toggling on mobile
+                      const newShowState = !showFilters;
+                      setShowFilters(newShowState);
+                      if (newShowState) {
+                        setHasExplicitlyClosed(false); // Reset explicit close flag when manually opening
+                      } else {
+                        setHasExplicitlyClosed(true); // Mark as explicitly closed when manually closing
+                      }
+                    }}
+                    className="flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground"
+                  >
+                    {showFilters ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
+                    <span className="hidden xs:inline">{showFilters ? 'Fshih Filtrat' : 'Shfaq Filtrat'}</span>
+                    <span className="xs:hidden">Filtrat</span>
+                    {hasSelectedCategories && !showFilters && (
+                      <span className="ml-1 text-xs bg-primary-foreground/20 px-2 py-1 rounded-full animate-bounce">
+                        {Object.values(filters).filter(Boolean).length}
+                      </span>
+                    )}
+                  </Button>
+                )}
               </div>
               
               {/* View mode and sort - mobile optimized */}
@@ -1094,9 +1109,10 @@ const filteredCars = useMemo(() => {
               <div
                 ref={containerRef}
                 className={`grid mobile-car-grid-compact sm:mobile-car-grid gap-2 sm:gap-3 lg:gap-4 transition-all duration-300 ${
-                  showFilters 
-                    ? 'lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' 
-                    : 'lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7'
+                  // On mobile, adjust grid based on filter visibility; on desktop, always account for filter panel
+                  isMobile 
+                    ? (showFilters ? 'grid-cols-1' : 'grid-cols-2 sm:grid-cols-3')
+                    : 'lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'
                 } ${isFilterLoading ? 'opacity-50' : ''}`}
               >
                 {carsForCurrentPage.map((car) => {

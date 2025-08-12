@@ -3,9 +3,10 @@ name: Daily Car Sync
 
 on:
   schedule:
-    # Run daily at 03:00 Europe/Belgrade (UTC+1 in winter, UTC+2 in summer)
-    # Using UTC+1 (02:00 UTC) as base time - GitHub Actions uses UTC
-    - cron: '0 2 * * *'
+    # Run daily at 03:00 Europe/Belgrade time
+    # Belgrade is UTC+1 in winter, UTC+2 in summer (DST)
+    # Using 01:00 UTC to ensure it runs at 3 AM Belgrade time year-round
+    - cron: '0 1 * * *'
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
