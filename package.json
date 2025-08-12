@@ -15,7 +15,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
-    "sync-cars": "tsx scripts/sync-cars.ts"
+    "sync-cars": "tsx scripts/sync-cars.ts",
+    "diagnose-db": "tsx scripts/diagnose-database.ts",
+    "verify-sync": "tsx scripts/verify-sync.ts"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.2",

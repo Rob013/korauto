@@ -181,8 +181,24 @@ async function insertInBatches(cars: Record<string, unknown>[], source: string):
 async function syncCars() {
   console.log('🚀 Starting car sync from external API')
   console.log(`📊 Configuration: PAGE_SIZE=${PAGE_SIZE}, BATCH_SIZE=${BATCH_SIZE}, RATE_LIMIT_DELAY=${RATE_LIMIT_DELAY}ms`)
+  console.log(`🎯 Target: Ensure all 190,000+ cars are synced and available in catalog`)
+  
+  const syncStartTime = Date.now()
   
   try {
+    // Step 0: Pre-sync verification
+    console.log('🔍 Pre-sync verification...')
+    const { count: preCountTotal } = await supabase
+      .from('cars')
+      .select('*', { count: 'exact', head: true })
+    
+    const { count: preCountActive } = await supabase
+      .from('cars')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true)
+    
+    console.log(`📊 Pre-sync state: ${preCountTotal} total cars, ${preCountActive} active`)
+
     // Step 1: Clear staging table
     console.log('🧹 Clearing cars_staging table')
     const { error: clearError } = await supabase
@@ -198,8 +214,11 @@ async function syncCars() {
     let currentPage = 1
     let hasMorePages = true
     let totalCarsProcessed = 0
+    let totalApiPages = 0
     const errors: string[] = []
 
+    console.log('📡 Starting API data fetch...')
+    
     while (hasMorePages) {
       const apiUrl = `${API_BASE_URL}/cars?page=${currentPage}&per_page=${PAGE_SIZE}`
       
@@ -212,13 +231,14 @@ async function syncCars() {
         }
 
         const cars = (apiResponse as Record<string, unknown>).data as Record<string, unknown>[]
+        totalApiPages = currentPage
         
         if (cars.length === 0) {
           console.log(`⚠️ No cars data in response for page ${currentPage}`)
           break
         }
 
-        console.log(`📊 Processing ${cars.length} cars from page ${currentPage}`)
+        console.log(`📊 Processing ${cars.length} cars from page ${currentPage} (${totalCarsProcessed.toLocaleString()} total so far)`)
 
         // Transform cars for staging
         const stagingCars: Record<string, unknown>[] = []
@@ -249,6 +269,13 @@ async function syncCars() {
           totalCarsProcessed += stagingCars.length
         }
 
+        // Progress logging for large datasets
+        if (currentPage % 50 === 0) {
+          const elapsedMinutes = Math.round((Date.now() - syncStartTime) / (1000 * 60))
+          const carsPerMinute = Math.round(totalCarsProcessed / Math.max(elapsedMinutes, 1))
+          console.log(`📊 Progress: Page ${currentPage}, ${totalCarsProcessed.toLocaleString()} cars processed (${carsPerMinute}/min)`)
+        }
+
         // Check if we have more pages
         hasMorePages = cars.length >= PAGE_SIZE
         currentPage++
@@ -270,10 +297,21 @@ async function syncCars() {
       }
     }
 
-    console.log(`📊 Finished fetching. Total cars in staging: ${totalCarsProcessed}`)
+    const fetchElapsedTime = Math.round((Date.now() - syncStartTime) / 1000)
+    console.log(`📊 API fetch completed: ${totalApiPages} pages, ${totalCarsProcessed.toLocaleString()} cars in ${fetchElapsedTime}s`)
+
+    // Validation check: Ensure we have a reasonable number of cars
+    if (totalCarsProcessed < 100000) {
+      console.warn(`⚠️ WARNING: Only ${totalCarsProcessed.toLocaleString()} cars fetched from API, expected 190,000+`)
+      console.warn(`⚠️ This may indicate API issues or incomplete data`)
+    } else {
+      console.log(`✅ Good car count: ${totalCarsProcessed.toLocaleString()} cars fetched from API`)
+    }
 
     // Step 3: Call bulk_merge_from_staging RPC function
     console.log('🔄 Merging staging data to main cars table')
+    const mergeStartTime = Date.now()
+    
     const { data: mergeResult, error: mergeError } = await supabase
       .rpc('bulk_merge_from_staging')
 
@@ -282,10 +320,13 @@ async function syncCars() {
       throw new Error(`Merge error: ${mergeError.message}`)
     }
 
-    console.log('✅ Bulk merge completed:', mergeResult)
+    const mergeElapsedTime = Math.round((Date.now() - mergeStartTime) / 1000)
+    console.log(`✅ Bulk merge completed in ${mergeElapsedTime}s:`, mergeResult)
 
     // Step 4: Call mark_missing_inactive RPC function
-    console.log('🔄 Marking missing cars as inactive')
+    console.log('🔄 Marking missing cars as inactive (sold car detection)')
+    const inactiveStartTime = Date.now()
+    
     const { data: inactiveResult, error: inactiveError } = await supabase
       .rpc('mark_missing_inactive')
 
@@ -294,9 +335,34 @@ async function syncCars() {
       throw new Error(`Mark inactive error: ${inactiveError.message}`)
     }
 
-    console.log('✅ Mark missing inactive completed:', inactiveResult)
+    const inactiveElapsedTime = Math.round((Date.now() - inactiveStartTime) / 1000)
+    console.log(`✅ Mark missing inactive completed in ${inactiveElapsedTime}s:`, inactiveResult)
 
-    // Step 5: Clean up staging table
+    // Step 5: Post-sync verification
+    console.log('🔍 Post-sync verification...')
+    const { count: postCountTotal } = await supabase
+      .from('cars')
+      .select('*', { count: 'exact', head: true })
+    
+    const { count: postCountActive } = await supabase
+      .from('cars')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true)
+    
+    const { count: postCountExternal } = await supabase
+      .from('cars')
+      .select('*', { count: 'exact', head: true })
+      .eq('source_api', 'external')
+    
+    console.log(`📊 Post-sync state: ${postCountTotal} total cars, ${postCountActive} active, ${postCountExternal} external`)
+    
+    // Calculate changes
+    const totalAdded = (postCountTotal || 0) - (preCountTotal || 0)
+    const activeChange = (postCountActive || 0) - (preCountActive || 0)
+    
+    console.log(`📊 Changes: ${totalAdded >= 0 ? '+' : ''}${totalAdded} total, ${activeChange >= 0 ? '+' : ''}${activeChange} active`)
+
+    // Step 6: Clean up staging table
     console.log('🧹 Cleaning up staging table')
     const { error: finalClearError } = await supabase
       .from('cars_staging')
@@ -307,17 +373,47 @@ async function syncCars() {
       console.error('❌ Error cleaning up staging table:', finalClearError)
     }
 
-    console.log(`✅ Sync completed successfully!`)
-    console.log(`📊 Total cars processed: ${totalCarsProcessed}`)
-    console.log(`📊 Errors encountered: ${errors.length}`)
+    // Final summary
+    const totalElapsedTime = Math.round((Date.now() - syncStartTime) / 1000)
+    const totalElapsedMinutes = Math.round(totalElapsedTime / 60)
+    
+    console.log(`✅ Sync completed successfully in ${totalElapsedMinutes}m ${totalElapsedTime % 60}s!`)
+    console.log(`📊 Final results:`)
+    console.log(`   - API cars processed: ${totalCarsProcessed.toLocaleString()}`)
+    console.log(`   - Database total cars: ${postCountTotal?.toLocaleString()}`)
+    console.log(`   - Database active cars: ${postCountActive?.toLocaleString()}`)
+    console.log(`   - External API cars: ${postCountExternal?.toLocaleString()}`)
+    console.log(`   - Errors encountered: ${errors.length}`)
+    
+    // 190k+ validation
+    if ((postCountTotal || 0) >= 190000) {
+      console.log('🎯 ✅ SUCCESS: Target of 190,000+ cars achieved!')
+    } else {
+      console.log(`🎯 ⚠️ WARNING: Only ${postCountTotal?.toLocaleString()} cars in database, target is 190,000+`)
+    }
     
     if (errors.length > 0) {
-      console.log('⚠️ Errors:', errors.slice(0, 5))
+      console.log('⚠️ Errors summary:', errors.slice(0, 5))
+      if (errors.length > 5) {
+        console.log(`   ... and ${errors.length - 5} more errors`)
+      }
     }
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     console.error('💥 Sync failed:', error)
+    
+    // Try to cleanup staging table on failure
+    try {
+      await supabase
+        .from('cars_staging')
+        .delete()
+        .neq('id', '')
+      console.log('🧹 Cleaned up staging table after failure')
+    } catch (cleanupError) {
+      console.error('❌ Error cleaning up staging table after failure:', cleanupError)
+    }
+    
     process.exit(1)
   }
 }
