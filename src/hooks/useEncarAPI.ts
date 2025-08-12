@@ -86,43 +86,67 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     setError(null);
 
     try {
-      // Generate mock car data for testing since the database may not have the correct structure
-      const mockCars: Car[] = [
-        {
-          id: '1',
-          make: 'BMW',
-          model: 'M3',
-          year: 2022,
-          price: 67300,
-          mileage: 25000,
-          image_url: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800',
-          source_api: 'auctionapis',
-          status: 'active'
-        },
-        {
-          id: '2',
-          make: 'Mercedes-Benz',
-          model: 'C-Class',
-          year: 2021,
-          price: 47300,
-          mileage: 30000,
-          image_url: 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800',
-          source_api: 'auctionapis',
-          status: 'active'
-        },
-        // Add more mock cars as needed
-      ];
+      console.log('🚗 Fetching cars from Supabase:', { page, limit, filters });
+      
+      // Build query for cars from Supabase
+      let query = supabase
+        .from('cars')
+        .select('*', { count: 'exact' })
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Apply filters
+      if (filters?.make?.length) {
+        query = query.in('make', filters.make);
+      }
+      if (filters?.model?.length) {
+        query = query.in('model', filters.model);
+      }
+      if (filters?.yearFrom) {
+        query = query.gte('year', filters.yearFrom);
+      }
+      if (filters?.yearTo) {
+        query = query.lte('year', filters.yearTo);
+      }
+      if (filters?.priceFrom) {
+        query = query.gte('price', filters.priceFrom);
+      }
+      if (filters?.priceTo) {
+        query = query.lte('price', filters.priceTo);
+      }
+      if (filters?.mileageFrom) {
+        query = query.gte('mileage', filters.mileageFrom);
+      }
+      if (filters?.mileageTo) {
+        query = query.lte('mileage', filters.mileageTo);
+      }
+      if (filters?.search) {
+        // Search in title, make, model, and vin
+        query = query.or(`title.ilike.%${filters.search}%,make.ilike.%${filters.search}%,model.ilike.%${filters.search}%,vin.ilike.%${filters.search}%`);
+      }
 
+      // Apply pagination
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+      query = query.range(from, to);
+
+      const { data, error: queryError, count } = await query;
+
+      if (queryError) {
+        console.error('❌ Error fetching cars from Supabase:', queryError);
+        throw queryError;
+      }
+
+      const cars = data || [];
+      console.log(`✅ Fetched ${cars.length} cars from Supabase (total: ${count})`);
+      
       if (page === 1) {
-        setCars(mockCars);
+        setCars(cars);
       } else {
-        setCars(prev => [...prev, ...mockCars]);
+        setCars(prev => [...prev, ...cars]);
       }
       
-      setTotalCount(mockCars.length);
+      setTotalCount(count || 0);
     } catch (err) {
       console.error('Error fetching cars:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch cars');
@@ -316,8 +340,24 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
 
   // Enhanced initial load with real-time updates
   useEffect(() => {
-    fetchCars(1, 100);
-    getSyncStatus();
+    const initializeData = async () => {
+      // Get initial car count
+      const { count } = await supabase
+        .from('cars')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_active', true);
+      
+      if (count !== null) {
+        setTotalCount(count);
+        console.log(`📊 Total cars in database: ${count.toLocaleString()}`);
+      }
+      
+      // Fetch initial cars
+      await fetchCars(1, 100);
+      await getSyncStatus();
+    };
+    
+    initializeData();
     
     // Set up real-time sync status updates
     const syncChannel = supabase
@@ -353,15 +393,17 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
       .subscribe();
 
     // Auto-refresh every 30 seconds to get latest counts
-    const refreshInterval = setInterval(() => {
-      getSyncStatus();
+    const refreshInterval = setInterval(async () => {
+      await getSyncStatus();
       // Get fresh car count
-      supabase.from('cars').select('id', { count: 'exact', head: true })
-        .then(({ count }) => {
-          if (count !== null) {
-            setTotalCount(count);
-          }
-        });
+      const { count } = await supabase
+        .from('cars')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_active', true);
+      
+      if (count !== null) {
+        setTotalCount(count);
+      }
     }, 30000);
 
     return () => {

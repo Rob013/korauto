@@ -2,8 +2,88 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Import mobile optimizations */
-@import './styles/mobile-optimizations.css';
+/* Mobile Performance Optimizations */
+
+/* Reduce motion for users who prefer it */
+.reduce-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Optimize touch interactions */
+.touch-manipulation {
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Optimize scrolling performance */
+.optimized-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  will-change: scroll-position;
+}
+
+/* Optimize image rendering */
+.optimized-image {
+  will-change: auto;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Mobile-specific card optimizations */
+@media (max-width: 768px) {
+  .mobile-card-compact {
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  }
+  
+  .mobile-card-compact:active {
+    transform: scale(0.98);
+  }
+  
+  /* Reduce visual complexity on mobile */
+  .mobile-card-compact .card-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.25rem;
+  }
+  
+  .mobile-card-compact .card-title {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  
+  .mobile-card-compact .card-price {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+}
+
+/* Grid optimizations for mobile */
+@media (max-width: 640px) {
+  .car-grid {
+    grid-template-columns: repeat(1, 1fr);
+    gap: 0.75rem;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .car-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 1025px) {
+  .car-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+}
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
