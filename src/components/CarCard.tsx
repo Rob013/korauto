@@ -31,7 +31,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { OptimizedImage } from "@/components/OptimizedImage";
-import { useIsMobile } from "@/hooks/use-mobile";
 interface CarCardProps {
   id: string;
   make: string;
@@ -258,7 +257,6 @@ const CarCard = ({
   const navigate = useNavigate();
   const { setPreviousPage } = useNavigation();
   const { toast } = useToast();
-  const isMobile = useIsMobile();
   const [isFavorite, setIsFavorite] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -363,38 +361,10 @@ const CarCard = ({
       `🚗 Clicked car with ID: ${id}, lot: ${lot}, saved scroll: ${window.scrollY}px`
     );
 
-    // Save current page for back navigation with detailed filter state
-    const currentFilters = new URLSearchParams(window.location.search);
-    const filterState = {
-      filterMake: currentFilters.get('manufacturer_id') || '',
-      filterYear: currentFilters.get('from_year') || '',
-      filterFuel: currentFilters.get('fuel_type') || '',
-      filterColor: currentFilters.get('color') || '',
-      filterTransmission: currentFilters.get('transmission') || '',
-      filterBodyType: currentFilters.get('body_type') || '',
-      filterCondition: currentFilters.get('condition') || '',
-      priceRange: [
-        parseInt(currentFilters.get('min_price') || '0'),
-        parseInt(currentFilters.get('max_price') || '100000')
-      ],
-      mileageRange: [
-        parseInt(currentFilters.get('min_mileage') || '0'),
-        parseInt(currentFilters.get('max_mileage') || '300000')
-      ],
-      sortBy: currentFilters.get('sort_by') || '',
-      searchTerm: currentFilters.get('search') || '',
-      showFilters: sessionStorage.getItem('mobile-filter-panel-state') === 'true'
-    };
-    
-    setPreviousPage(window.location.pathname + window.location.search, filterState);
-    
-    // On mobile, navigate in same tab for better UX
-    // On desktop, open in new tab
-    if (isMobile) {
-      navigate(`/car/${lot}`);
-    } else {
-      window.open(`/car/${lot}`, '_blank');
-    }
+    // Save current page for back navigation
+    setPreviousPage(window.location.pathname + window.location.search);
+    // Open car details in new tab
+    window.open(`/car/${lot}`, '_blank');
   };
   return (
     <div

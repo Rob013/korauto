@@ -69,7 +69,7 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
     try {
       console.log('🔍 Comprehensive search for:', term);
 
-      const allResults: CarSearchResult[] = [];
+      let allResults: CarSearchResult[] = [];
 
       // 1. First search in cached cars (fastest) - Enhanced with exact and partial matches
       console.log('🔍 Searching cached database...');
