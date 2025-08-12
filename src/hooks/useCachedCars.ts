@@ -51,10 +51,13 @@ export const useCachedCars = () => {
 
   useEffect(() => {
     const loadCars = async () => {
-      setLoading(true);
-      
-      // First try to load from cache
+      // First try to load from cache immediately for instant display
       await fetchCachedCars();
+      
+      // Show cached cars instantly - don't wait for freshness check
+      if (cachedCars.length > 0) {
+        setLoading(false);
+      }
       
       // Check if cache is fresh enough (increased from 1 hour to 4 hours for better performance)
       const now = new Date();
@@ -62,6 +65,7 @@ export const useCachedCars = () => {
       
       // Only fetch from API if cache is empty or very outdated
       if (cachedCars.length === 0) {
+        setLoading(true);
         const hasRecentData = cachedCars.some(car => 
           new Date(car.last_api_sync) > fourHoursAgo
         );
@@ -70,9 +74,19 @@ export const useCachedCars = () => {
           console.log('Cache is empty or outdated, fetching from API...');
           await fetchCars();
         }
+        setLoading(false);
+      } else {
+        // Background refresh for stale cached data (background fetch)
+        const hasStaleData = cachedCars.some(car => 
+          new Date(car.last_api_sync) < fourHoursAgo
+        );
+        
+        if (hasStaleData) {
+          console.log('Refreshing stale cached data in background...');
+          // Fetch in background without showing loading state
+          fetchCars().catch(err => console.warn('Background refresh failed:', err));
+        }
       }
-      
-      setLoading(false);
     };
 
     loadCars();

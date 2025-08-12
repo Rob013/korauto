@@ -595,9 +595,12 @@ const filteredCars = useMemo(() => {
     }
   };
 
-  // Initialize filters from URL params on component mount - OPTIMIZED
+  // Initialize filters from URL params on component mount - OPTIMIZED FOR SPEED
   useEffect(() => {
+    let isMounted = true; // Prevent state updates if component unmounts
+    
     const loadInitialData = async () => {
+      if (!isMounted) return;
       setIsRestoringState(true);
 
       // Check if we're coming from homepage filter
@@ -634,36 +637,102 @@ const filteredCars = useMemo(() => {
       }
 
       // Set filters and pagination immediately for faster UI response
-      setFilters(urlFilters);
-      setLoadedPages(urlLoadedPages);
-      setCurrentPage(urlCurrentPage);
+      if (isMounted) {
+        setFilters(urlFilters);
+        setLoadedPages(urlLoadedPages);
+        setCurrentPage(urlCurrentPage);
+      }
 
       try {
-        // PERFORMANCE OPTIMIZATION: Load only essential data first
-        // Load manufacturers immediately (they're cached)
-        const manufacturersData = await fetchManufacturers();
-        setManufacturers(manufacturersData);
-
-        // Load dependent data only if filters exist, in sequence to avoid race conditions
-        if (urlFilters.manufacturer_id) {
-          const modelsData = await fetchModels(urlFilters.manufacturer_id);
-          setModels(modelsData);
-          
-          if (urlFilters.model_id) {
-            const generationsData = await fetchGenerations(urlFilters.model_id);
-            setGenerations(generationsData);
-          }
+        // INSTANT CACHE DISPLAY: Check for cached data first
+        const cacheKey = JSON.stringify(normalizeFilters(urlFilters));
+        const cached = filterCacheRef.current.get(cacheKey);
+        
+        if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION && isMounted) {
+          console.log('⚡ Instantly displaying cached cars');
+          setCars(cached.data);
+          setTotalCount(cached.totalCount);
+          // Don't set isRestoringState to false yet - still loading fresh data
         }
 
-        // Load cars last - this is the most expensive operation
+        // Load manufacturers first (they're cached, so fast)
+        let manufacturersData = [];
+        try {
+          manufacturersData = await fetchManufacturers();
+          if (isMounted) {
+            setManufacturers(manufacturersData);
+          }
+        } catch (error) {
+          console.warn('Failed to load manufacturers, using fallback');
+        }
+
+        // PARALLEL API LOADING: Load dependent data simultaneously if filters exist
+        const loadPromises: Promise<any>[] = [];
+
+        // Load cars immediately for instant display
         const initialFilters = {
           ...urlFilters,
           per_page: "50"
         };
         
-        // Check if we need to restore filter state from car details navigation
+        loadPromises.push(
+          fetchCars(urlCurrentPage, initialFilters, true).then(result => {
+            if (isMounted && result && result.data) {
+              // Cache the results
+              filterCacheRef.current.set(cacheKey, {
+                data: result.data,
+                totalCount: result.totalCount || 0,
+                timestamp: Date.now()
+              });
+              
+              // Only update if we don't have cached data displayed
+              if (!cached) {
+                setCars(result.data);
+                setTotalCount(result.totalCount || 0);
+              }
+            }
+            return result;
+          }).catch(error => {
+            console.warn('Failed to load cars:', error);
+            return null;
+          })
+        );
+
+        // Load dependent data in parallel if filters exist
+        if (urlFilters.manufacturer_id) {
+          loadPromises.push(
+            fetchModels(urlFilters.manufacturer_id).then(modelsData => {
+              if (isMounted) {
+                setModels(modelsData);
+              }
+              return modelsData;
+            }).catch(error => {
+              console.warn('Failed to load models:', error);
+              return [];
+            })
+          );
+          
+          if (urlFilters.model_id) {
+            loadPromises.push(
+              fetchGenerations(urlFilters.model_id).then(generationsData => {
+                if (isMounted) {
+                  setGenerations(generationsData);
+                }
+                return generationsData;
+              }).catch(error => {
+                console.warn('Failed to load generations:', error);
+                return [];
+              })
+            );
+          }
+        }
+
+        // Wait for all critical data to load
+        await Promise.allSettled(loadPromises);
+        
+        // Handle filter state restoration
         const restoreFilterState = sessionStorage.getItem('restore-filter-state');
-        if (restoreFilterState) {
+        if (restoreFilterState && isMounted) {
           try {
             const savedFilterState = JSON.parse(restoreFilterState);
             console.log("🔄 Restoring filter state from car details:", savedFilterState);
@@ -676,31 +745,20 @@ const filteredCars = useMemo(() => {
               }
             }
             
-            // Apply the saved filters (they should already be in the URL if properly saved)
-            setFilters(prev => ({
-              ...prev,
-              ...initialFilters
-            }));
-            
             // Clean up the restore state
             sessionStorage.removeItem('restore-filter-state');
           } catch (error) {
             console.warn("Failed to restore filter state:", error);
             sessionStorage.removeItem('restore-filter-state');
           }
-        } else {
-          setFilters(prev => ({
-            ...prev,
-            ...initialFilters
-          }));
         }
-        
-        await fetchCars(urlCurrentPage, initialFilters, true);
 
       } catch (error) {
         console.error('Error loading initial data:', error);
       } finally {
-        setIsRestoringState(false);
+        if (isMounted) {
+          setIsRestoringState(false);
+        }
       }
 
       // SIMPLIFIED SCROLL RESTORATION for better performance
@@ -713,24 +771,27 @@ const filteredCars = useMemo(() => {
         newSearchParams.delete('fromHomepage');
         window.history.replaceState({}, '', `${window.location.pathname}?${newSearchParams.toString()}`);
       } else {
-        // Quick scroll restoration without complex timing checks
-        setTimeout(() => {
-          const savedData = sessionStorage.getItem(SCROLL_STORAGE_KEY);
-          if (savedData) {
-            try {
-              const { scrollTop } = JSON.parse(savedData);
-              if (scrollTop > 0) {
-                window.scrollTo({ top: scrollTop, behavior: 'auto' });
-              }
-            } catch (error) {
-              // Ignore scroll restoration errors
+        // Immediate scroll restoration without delay
+        const savedData = sessionStorage.getItem(SCROLL_STORAGE_KEY);
+        if (savedData) {
+          try {
+            const { scrollTop } = JSON.parse(savedData);
+            if (scrollTop > 0) {
+              window.scrollTo({ top: scrollTop, behavior: 'auto' });
             }
+          } catch (error) {
+            // Ignore scroll restoration errors
           }
-        }, 100); // Small delay to ensure DOM is ready
+        }
       }
     };
 
     loadInitialData();
+    
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
   }, []); // Only run on mount
 
   // OPTIMIZED: Simplified scroll position saving with less frequent updates
@@ -758,8 +819,11 @@ const filteredCars = useMemo(() => {
     };
   }, []); // Remove dependencies to prevent unnecessary re-binding
 
-  // OPTIMIZED: Load filter counts with reduced API calls and better debouncing
+  // OPTIMIZED: Load filter counts on-demand with better debouncing
   useEffect(() => {
+    // Skip loading counts during initial restore to improve performance
+    if (isRestoringState) return;
+    
     const loadFilterCounts = async () => {
       if (manufacturers.length > 0) {
         setLoadingCounts(true);
@@ -775,14 +839,14 @@ const filteredCars = useMemo(() => {
     };
 
     // PERFORMANCE: Longer debounce and only load when necessary
-    const timeoutId = setTimeout(loadFilterCounts, 500);
+    const timeoutId = setTimeout(loadFilterCounts, 1000); // Increased delay
     return () => clearTimeout(timeoutId);
-  }, [filters, manufacturers.length]); // Only depend on manufacturers.length, not the full array
+  }, [JSON.stringify(filters), manufacturers.length, isRestoringState]); // Stringify filters to prevent infinite loops
 
-  // OPTIMIZED: Load initial counts only once when manufacturers are first loaded
+  // OPTIMIZED: Load initial counts only once when manufacturers are first loaded AND not restoring
   useEffect(() => {
     const loadInitialCounts = async () => {
-      if (manufacturers.length > 0 && !filterCounts) { // Only load if not already loaded
+      if (manufacturers.length > 0 && !filterCounts && !isRestoringState) { // Added isRestoringState check
         setLoadingCounts(true);
         try {
           const counts = await fetchFilterCounts({}, manufacturers);
@@ -795,8 +859,10 @@ const filteredCars = useMemo(() => {
       }
     };
 
-    loadInitialCounts();
-  }, [manufacturers.length]); // Only run when manufacturers are first loaded
+    // Delay initial counts loading to not block car display
+    const timeoutId = setTimeout(loadInitialCounts, 2000);
+    return () => clearTimeout(timeoutId);
+  }, [manufacturers.length, filterCounts, isRestoringState]); // Added filterCounts to dependency
 
   // Calculate total pages when totalCount or filteredCars changes
   useEffect(() => {
@@ -1115,18 +1181,32 @@ const filteredCars = useMemo(() => {
             </div>
           )}
 
-          {/* Consolidated Loading State - Single Professional Spinner */}
-          {((loading && cars.length === 0) || isRestoringState || (isFilterLoading && cars.length === 0)) ? (
+          {/* Optimized Loading State - Show cars immediately when available */}
+          {((loading && cars.length === 0) || isRestoringState) ? (
             <div className="flex items-center justify-center py-12">
               <div className="flex flex-col items-center gap-3">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <span className="text-sm text-muted-foreground">
-                  {isRestoringState ? "Restoring your view..." : 
-                   isFilterLoading ? "Applying filters..." : "Loading cars..."}
+                  {isRestoringState ? "Loading cars..." : "Searching cars..."}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  Filter options loading in background
                 </span>
               </div>
             </div>
           ) : null}
+
+          {/* Background loading indicator for when cars are visible but filters updating */}
+          {(loading || isFilterLoading) && cars.length > 0 && (
+            <div className="mb-4 p-2 bg-primary/5 border border-primary/10 rounded-lg">
+              <div className="flex items-center gap-2 text-sm text-primary">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                <span>
+                  {isFilterLoading ? "Updating filters..." : "Loading more options..."}
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* No Selection State */}
           {!shouldShowCars && !loading && !isRestoringState && !isFilterLoading && (
@@ -1165,12 +1245,12 @@ const filteredCars = useMemo(() => {
             </div>
           )}
 
-          {/* Cars Grid/List - Show cars without requiring filters */}
+          {/* Cars Grid/List - Show cars immediately, even during filter updates */}
           {shouldShowCars && cars.length > 0 && (
             <div className="relative">
-              {/* Subtle loading indicator for existing cars during filter changes */}
-              {isFilterLoading && (
-                <div className="absolute top-0 left-0 right-0 bg-primary/10 backdrop-blur-sm z-10 rounded-lg p-2 mb-4">
+              {/* Subtle overlay during heavy filter operations only */}
+              {isFilterLoading && !loading && (
+                <div className="absolute top-0 left-0 right-0 bg-background/80 backdrop-blur-sm z-10 rounded-lg p-2 mb-4">
                   <div className="flex items-center justify-center gap-2 text-sm text-primary">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                     <span>Updating results...</span>
@@ -1185,7 +1265,7 @@ const filteredCars = useMemo(() => {
                   isMobile 
                     ? (showFilters ? 'grid-cols-1' : 'grid-cols-2 sm:grid-cols-3')
                     : 'lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'
-                } ${isFilterLoading ? 'opacity-50' : ''}`}
+                } ${isFilterLoading && loading ? 'opacity-60' : ''}`}
               >
                 {carsForCurrentPage.map((car) => {
                   const lot = car.lots?.[0];
