@@ -14,6 +14,7 @@ const Index = lazy(() => import("./pages/Index"));
 const Catalog = lazy(() => import("./pages/Catalog"));
 const NewCatalog = lazy(() => import("./pages/NewCatalog"));
 const FastCatalog = lazy(() => import("./pages/FastCatalog"));
+const SimpleCatalog = lazy(() => import("./components/SimpleCatalog"));
 const CarDetails = lazy(() => import("./pages/CarDetails"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AuthPage = lazy(() => import("./pages/AuthPage"));
@@ -129,9 +130,9 @@ const App = () => {
                 <NewCatalog />
               </Suspense>
             } />
-            <Route path="/catalog-fast" element={
+            <Route path="/catalog-simple" element={
               <Suspense fallback={<PageSkeleton />}>
-                <FastCatalog />
+                <SimpleCatalog />
               </Suspense>
             } />
             <Route path="/car/:id" element={
