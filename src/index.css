@@ -11,41 +11,44 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
+    /* Base colors - Automotive marketplace theme */
     --background: 0 0% 100%;
-    --foreground: 0 0% 0%;
+    --foreground: 224 15% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
+    --card-foreground: 224 15% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
+    --popover-foreground: 224 15% 15%;
 
-    --primary: 0 0% 0%;
+    /* Primary blue - typical automotive marketplace color */
+    --primary: 214 84% 56%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 0%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 224 15% 15%;
 
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 224 15% 45%;
 
-    --accent: 0 0% 100%;
-    --accent-foreground: 0 0% 0%;
-    --accent-hover: 0 0% 100%;
-    --accent-hover-foreground: 220 100% 50%;
+    --accent: 214 84% 56%;
+    --accent-foreground: 0 0% 100%;
+    --accent-hover: 214 84% 66%;
+    --accent-hover-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 90%;
-    --input: 0 0% 95%;
-    --ring: 0 0% 0%;
+    --border: 220 14% 90%;
+    --input: 220 14% 95%;
+    --ring: 214 84% 56%;
 
-    --inspection: 45 100% 50%;
-    --inspection-foreground: 0 0% 0%;
+    /* Automotive specific colors */
+    --inspection: 142 76% 36%;
+    --inspection-foreground: 0 0% 100%;
 
-    --premium: 45 100% 60%;
-    --premium-foreground: 0 0% 0%;
+    --premium: 45 93% 47%;
+    --premium-foreground: 0 0% 100%;
 
     --gradient-primary: linear-gradient(
       135deg,
@@ -81,40 +84,41 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 0 0% 8%;
+    /* Dark theme for automotive marketplace */
+    --background: 224 15% 8%;
     --foreground: 0 0% 95%;
 
-    --card: 0 0% 10%;
+    --card: 224 15% 10%;
     --card-foreground: 0 0% 95%;
 
-    --popover: 0 0% 10%;
+    --popover: 224 15% 10%;
     --popover-foreground: 0 0% 95%;
 
-    --primary: 0 0% 95%;
-    --primary-foreground: 0 0% 8%;
+    --primary: 214 84% 56%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 15%;
+    --secondary: 224 15% 15%;
     --secondary-foreground: 0 0% 95%;
 
-    --muted: 0 0% 15%;
+    --muted: 224 15% 15%;
     --muted-foreground: 0 0% 65%;
 
-    --accent: 0 0% 100%;
-    --accent-foreground: 0 0% 8%;
-    --accent-hover: 0 0% 100%;
-    --accent-hover-foreground: 220 100% 55%;
+    --accent: 214 84% 56%;
+    --accent-foreground: 0 0% 100%;
+    --accent-hover: 214 84% 66%;
+    --accent-hover-foreground: 0 0% 100%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 95%;
 
-    --border: 0 0% 20%;
-    --input: 0 0% 15%;
-    --ring: 0 0% 80%;
+    --border: 224 15% 20%;
+    --input: 224 15% 15%;
+    --ring: 214 84% 56%;
 
-    --inspection: 45 100% 50%;
-    --inspection-foreground: 0 0% 8%;
+    --inspection: 142 76% 36%;
+    --inspection-foreground: 0 0% 100%;
 
-    --premium: 45 100% 60%;
+    --premium: 45 93% 47%;
     --premium-foreground: 0 0% 8%;
 
     --gradient-primary: linear-gradient(
