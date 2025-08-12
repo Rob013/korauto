@@ -302,27 +302,27 @@ const ModernEncarFilter = memo<ModernEncarFilterProps>(({
   if (compact) {
     return (
       <div className="h-full flex flex-col bg-gradient-to-b from-background to-muted/10">
-        {/* Header with close button */}
-        <div className="flex-shrink-0 p-4 border-b bg-card/80 backdrop-blur-sm">
+        {/* Header with close button - improved spacing */}
+        <div className="flex-shrink-0 p-3 sm:p-4 border-b bg-card/80 backdrop-blur-sm safe-area-inset">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="h-5 w-5 text-primary" />
-              <h3 className="font-semibold text-lg">Search Filters</h3>
+              <h3 className="font-semibold text-base sm:text-lg">Search Filters</h3>
             </div>
             {onCloseFilter && (
-              <Button variant="ghost" size="sm" onClick={onCloseFilter}>
+              <Button variant="ghost" size="sm" onClick={onCloseFilter} className="h-8 w-8 p-0">
                 <X className="h-4 w-4" />
               </Button>
             )}
           </div>
           
-          {/* Filter summary */}
-          <div className="mt-2 flex items-center gap-2">
-            <Badge variant="secondary" className="text-xs">
+          {/* Filter summary - improved layout */}
+          <div className="mt-3 flex items-center justify-between gap-2">
+            <Badge variant="secondary" className="text-xs px-2 py-1">
               {getFilterSummary()}
             </Badge>
             {activeFilters.length > 0 && (
-              <Button variant="ghost" size="sm" onClick={onClearFilters} className="h-6 px-2 text-xs">
+              <Button variant="ghost" size="sm" onClick={onClearFilters} className="h-7 px-2 text-xs">
                 <RotateCcw className="h-3 w-3 mr-1" />
                 Clear all
               </Button>
@@ -330,14 +330,14 @@ const ModernEncarFilter = memo<ModernEncarFilterProps>(({
           </div>
         </div>
 
-        {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Scrollable content - improved spacing */}
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 safe-area-inset">
           
-          {/* Quick Search */}
-          <Card className="p-4 border-primary/20 shadow-sm">
+          {/* Quick Search - improved styling */}
+          <Card className="p-3 sm:p-4 border-primary/20 shadow-sm">
             <div className="flex items-center gap-2 mb-3">
               <Search className="h-4 w-4 text-primary" />
-              <Label className="font-medium">Quick Search</Label>
+              <Label className="font-medium text-sm">Quick Search</Label>
             </div>
             <div className="flex gap-2">
               <Input
@@ -345,20 +345,20 @@ const ModernEncarFilter = memo<ModernEncarFilterProps>(({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSearchClick()}
-                className="flex-1"
+                className="flex-1 h-10"
               />
-              <Button onClick={handleSearchClick} size="sm" className="px-3">
+              <Button onClick={handleSearchClick} size="sm" className="px-3 h-10">
                 <Search className="h-4 w-4" />
               </Button>
             </div>
           </Card>
 
-          {/* Active Filter Chips */}
+          {/* Active Filter Chips - improved layout */}
           {activeFilters.length > 0 && (
-            <Card className="p-4">
+            <Card className="p-3 sm:p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Filter className="h-4 w-4 text-primary" />
-                <Label className="font-medium">Active Filters</Label>
+                <Label className="font-medium text-sm">Active Filters</Label>
               </div>
               <div className="flex flex-wrap gap-2">
                 {activeFilters.map(filterType => {
@@ -414,6 +414,7 @@ const ModernEncarFilter = memo<ModernEncarFilterProps>(({
                       <button
                         onClick={() => removeFilter(filterType)}
                         className="ml-1 hover:bg-primary/30 rounded-full p-0.5 transition-colors"
+                        aria-label={`Remove ${label} filter`}
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -424,11 +425,11 @@ const ModernEncarFilter = memo<ModernEncarFilterProps>(({
             </Card>
           )}
 
-          {/* Popular Presets */}
-          <Card className="p-4">
+          {/* Popular Presets - improved styling */}
+          <Card className="p-3 sm:p-4">
             <div className="flex items-center gap-2 mb-3">
               <Star className="h-4 w-4 text-primary" />
-              <Label className="font-medium">Popular Searches</Label>
+              <Label className="font-medium text-sm">Popular Searches</Label>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {popularPresets.map((preset, index) => (
@@ -437,30 +438,33 @@ const ModernEncarFilter = memo<ModernEncarFilterProps>(({
                   variant="outline"
                   size="sm"
                   onClick={() => handlePresetClick(preset)}
-                  className="justify-start text-xs h-8 border-primary/20 hover:border-primary/40 hover:bg-primary/5"
+                  className="justify-start text-xs h-9 border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-colors"
                 >
-                  <Zap className="h-3 w-3 mr-1" />
-                  {preset.label}
+                  <Zap className="h-3 w-3 mr-1 flex-shrink-0" />
+                  <span className="truncate">{preset.label}</span>
                 </Button>
               ))}
             </div>
           </Card>
 
-          {/* Main Filters */}
-          <Card className="p-4 space-y-4">
+          {/* Main Filters - improved spacing and validation feedback */}
+          <Card className="p-3 sm:p-4 space-y-4">
             <div className="flex items-center gap-2 mb-3">
               <Car className="h-4 w-4 text-primary" />
-              <Label className="font-medium">Vehicle Details</Label>
+              <Label className="font-medium text-sm">Vehicle Details</Label>
             </div>
 
-            {/* Brand */}
+            {/* Brand - enhanced validation */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Brand</Label>
+              <Label className="text-sm font-medium flex items-center gap-1">
+                Brand
+                <span className="text-xs text-muted-foreground">(Required)</span>
+              </Label>
               <AdaptiveSelect 
                 value={filters.manufacturer_id || 'all'} 
                 onValueChange={(value) => updateFilter('manufacturer_id', value)}
                 placeholder="Select brand"
-                className="w-full"
+                className={`w-full ${!filters.manufacturer_id && isStrictMode ? 'border-orange-200 bg-orange-50' : ''}`}
                 options={[
                   ...(isStrictMode && filters.manufacturer_id ? [] : [{ value: 'all', label: 'All Brands' }]),
                   ...sortedManufacturers.map((manufacturer) => ({
@@ -469,17 +473,25 @@ const ModernEncarFilter = memo<ModernEncarFilterProps>(({
                   }))
                 ]}
               />
+              {!filters.manufacturer_id && isStrictMode && (
+                <p className="text-xs text-orange-600">Please select a brand to see available models</p>
+              )}
             </div>
 
-            {/* Model */}
+            {/* Model - enhanced validation */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Model</Label>
+              <Label className="text-sm font-medium flex items-center gap-1">
+                Model
+                {filters.manufacturer_id && (
+                  <span className="text-xs text-muted-foreground">(Optional)</span>
+                )}
+              </Label>
               <AdaptiveSelect 
                 value={filters.model_id || 'all'} 
                 onValueChange={(value) => updateFilter('model_id', value)}
                 disabled={!filters.manufacturer_id}
                 placeholder={filters.manufacturer_id ? "Select model" : "Select brand first"}
-                className="w-full"
+                className={`w-full ${!filters.manufacturer_id ? 'opacity-50' : ''}`}
                 options={[
                   { value: 'all', label: 'All Models' },
                   ...models.map((model) => ({
@@ -488,22 +500,28 @@ const ModernEncarFilter = memo<ModernEncarFilterProps>(({
                   }))
                 ]}
               />
+              {!filters.manufacturer_id && (
+                <p className="text-xs text-muted-foreground">Select a brand first to see available models</p>
+              )}
+              {filters.manufacturer_id && models.length === 0 && (
+                <p className="text-xs text-muted-foreground">Loading models...</p>
+              )}
             </div>
 
-            {/* Year Range Presets */}
+            {/* Year Range Presets - improved layout */}
             <div className="space-y-2">
               <Label className="text-sm font-medium flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
                 Year Range
               </Label>
-              <div className="grid grid-cols-2 gap-1">
+              <div className="grid grid-cols-2 gap-2">
                 {yearRangePresets.slice(0, 4).map((preset, index) => (
                   <Button
                     key={index}
                     variant="outline"
                     size="sm"
                     onClick={() => handleYearRangePreset(preset)}
-                    className="text-xs h-7 border-primary/20 hover:border-primary hover:bg-primary hover:text-white"
+                    className="text-xs h-8 border-primary/20 hover:border-primary hover:bg-primary hover:text-white transition-colors"
                   >
                     {preset.label}
                   </Button>
@@ -511,71 +529,80 @@ const ModernEncarFilter = memo<ModernEncarFilterProps>(({
               </div>
             </div>
 
-            {/* Custom Year Range */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <Label className="text-xs">From Year</Label>
+            {/* Custom Year Range - improved spacing */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">From Year</Label>
                 <AdaptiveSelect
                   value={filters.from_year || 'all'}
                   onValueChange={(value) => updateFilter('from_year', value)}
                   placeholder="Any"
-                  className="w-full text-sm"
+                  className="w-full text-sm h-10"
                   options={yearOptions}
                 />
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs">To Year</Label>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">To Year</Label>
                 <AdaptiveSelect
                   value={filters.to_year || 'all'}
                   onValueChange={(value) => updateFilter('to_year', value)}
                   placeholder="Any"
-                  className="w-full text-sm"
+                  className="w-full text-sm h-10"
                   options={yearOptions}
                 />
               </div>
             </div>
 
-            {/* Price Range */}
+            {/* Price Range - improved layout */}
             <div className="space-y-2">
               <Label className="text-sm font-medium flex items-center gap-1">
                 <DollarSign className="h-3 w-3" />
                 Price Range (EUR)
               </Label>
-              <div className="grid grid-cols-2 gap-2">
-                <Input
-                  type="number"
-                  placeholder="Min"
-                  value={filters.buy_now_price_from || ''}
-                  onChange={(e) => updateFilter('buy_now_price_from', e.target.value)}
-                  className="text-sm"
-                />
-                <Input
-                  type="number"
-                  placeholder="Max"
-                  value={filters.buy_now_price_to || ''}
-                  onChange={(e) => updateFilter('buy_now_price_to', e.target.value)}
-                  className="text-sm"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Min Price</Label>
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={filters.buy_now_price_from || ''}
+                    onChange={(e) => updateFilter('buy_now_price_from', e.target.value)}
+                    className="text-sm h-10"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Max Price</Label>
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    value={filters.buy_now_price_to || ''}
+                    onChange={(e) => updateFilter('buy_now_price_to', e.target.value)}
+                    className="text-sm h-10"
+                  />
+                </div>
               </div>
             </div>
           </Card>
 
-          {/* Advanced Filters */}
+          {/* Advanced Filters - improved styling */}
           {showAdvanced && (
-            <Card className="p-4 space-y-4">
+            <Card className="p-3 sm:p-4 space-y-4">
               <div className="flex items-center gap-2 mb-3">
                 <Settings className="h-4 w-4 text-primary" />
-                <Label className="font-medium">Advanced Options</Label>
+                <Label className="font-medium text-sm">Advanced Options</Label>
               </div>
 
-              {/* Color */}
+              {/* Color - improved layout */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Color</Label>
+                <Label className="text-sm font-medium flex items-center gap-1">
+                  <Palette className="h-3 w-3" />
+                  Color
+                </Label>
                 <AdaptiveSelect
                   value={filters.color || 'all'}
                   onValueChange={(value) => updateFilter('color', value)}
                   placeholder="Any color"
-                  className="w-full"
+                  className="w-full h-10"
                   options={[
                     { value: 'all', label: 'Any Color' },
                     ...colorOptions
@@ -583,14 +610,17 @@ const ModernEncarFilter = memo<ModernEncarFilterProps>(({
                 />
               </div>
 
-              {/* Fuel Type */}
+              {/* Fuel Type - improved layout */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Fuel Type</Label>
+                <Label className="text-sm font-medium flex items-center gap-1">
+                  <Fuel className="h-3 w-3" />
+                  Fuel Type
+                </Label>
                 <AdaptiveSelect
                   value={filters.fuel_type || 'all'}
                   onValueChange={(value) => updateFilter('fuel_type', value)}
                   placeholder="Any fuel"
-                  className="w-full"
+                  className="w-full h-10"
                   options={[
                     { value: 'all', label: 'Any Fuel' },
                     ...fuelTypeOptions
@@ -598,14 +628,17 @@ const ModernEncarFilter = memo<ModernEncarFilterProps>(({
                 />
               </div>
 
-              {/* Transmission */}
+              {/* Transmission - improved layout */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Transmission</Label>
+                <Label className="text-sm font-medium flex items-center gap-1">
+                  <Cog className="h-3 w-3" />
+                  Transmission
+                </Label>
                 <AdaptiveSelect
                   value={filters.transmission || 'all'}
                   onValueChange={(value) => updateFilter('transmission', value)}
                   placeholder="Any transmission"
-                  className="w-full"
+                  className="w-full h-10"
                   options={[
                     { value: 'all', label: 'Any Transmission' },
                     ...transmissionOptions
@@ -615,11 +648,11 @@ const ModernEncarFilter = memo<ModernEncarFilterProps>(({
             </Card>
           )}
 
-          {/* Advanced Toggle */}
+          {/* Advanced Toggle - improved styling */}
           <Button
             variant="outline"
             onClick={onToggleAdvanced}
-            className="w-full border-primary/20 hover:border-primary/40"
+            className="w-full border-primary/20 hover:border-primary/40 transition-colors h-10"
           >
             <Settings className="h-4 w-4 mr-2" />
             {showAdvanced ? 'Hide' : 'Show'} Advanced Filters
@@ -627,11 +660,11 @@ const ModernEncarFilter = memo<ModernEncarFilterProps>(({
           </Button>
         </div>
 
-        {/* Footer Actions */}
-        <div className="flex-shrink-0 p-4 border-t bg-card/80 backdrop-blur-sm">
+        {/* Footer Actions - improved layout */}
+        <div className="flex-shrink-0 p-3 sm:p-4 border-t bg-card/80 backdrop-blur-sm safe-area-inset">
           <Button 
             onClick={handleSearchClick} 
-            className="w-full bg-primary hover:bg-primary/90 text-white font-medium"
+            className="w-full bg-primary hover:bg-primary/90 text-white font-medium h-12 text-sm"
             disabled={isLoading}
           >
             {isLoading ? (
