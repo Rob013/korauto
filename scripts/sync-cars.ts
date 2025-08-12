@@ -25,10 +25,11 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Configuration
-const RATE_LIMIT_DELAY = 2000 // 2 seconds between requests
+const RATE_LIMIT_DELAY = 1000 // 1 second between requests (optimized)
 const MAX_RETRIES = 3
 const BACKOFF_MULTIPLIER = 2
-const PAGE_SIZE = 100
+const PAGE_SIZE = 1000 // Maximum page size to reduce API calls
+const BATCH_SIZE = 5000 // Bulk insert batch size for speed
 const REQUEST_TIMEOUT = 30000
 
 // Environment variables
@@ -144,9 +145,42 @@ function transformCarData(apiCar: Record<string, unknown>): Record<string, unkno
   }
 }
 
+// Helper function to insert cars in batches for better performance
+async function insertInBatches(cars: Record<string, unknown>[], source: string): Promise<void> {
+  const totalCars = cars.length
+  console.log(`📦 Inserting ${totalCars} cars from ${source} in batches of ${BATCH_SIZE}`)
+  
+  for (let i = 0; i < totalCars; i += BATCH_SIZE) {
+    const batch = cars.slice(i, i + BATCH_SIZE)
+    const batchNumber = Math.floor(i / BATCH_SIZE) + 1
+    const totalBatches = Math.ceil(totalCars / BATCH_SIZE)
+    
+    console.log(`📦 Processing batch ${batchNumber}/${totalBatches} (${batch.length} cars)`)
+    
+    const { error: insertError } = await supabase
+      .from('cars_staging')
+      .insert(batch)
+
+    if (insertError) {
+      console.error(`❌ Error inserting batch ${batchNumber}:`, insertError)
+      throw new Error(`Batch insert error: ${insertError.message}`)
+    } else {
+      console.log(`✅ Successfully inserted batch ${batchNumber}/${totalBatches}`)
+    }
+    
+    // Small delay between batches to avoid overwhelming the database
+    if (i + BATCH_SIZE < totalCars) {
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+  }
+  
+  console.log(`✅ Completed inserting all ${totalCars} cars from ${source}`)
+}
+
 // Main sync function
 async function syncCars() {
   console.log('🚀 Starting car sync from external API')
+  console.log(`📊 Configuration: PAGE_SIZE=${PAGE_SIZE}, BATCH_SIZE=${BATCH_SIZE}, RATE_LIMIT_DELAY=${RATE_LIMIT_DELAY}ms`)
   
   try {
     // Step 1: Clear staging table
@@ -186,7 +220,7 @@ async function syncCars() {
 
         console.log(`📊 Processing ${cars.length} cars from page ${currentPage}`)
 
-        // Transform and batch insert cars into staging
+        // Transform cars for staging
         const stagingCars: Record<string, unknown>[] = []
         
         for (const apiCar of cars) {
@@ -209,19 +243,10 @@ async function syncCars() {
           }
         }
 
-        // Batch insert into staging table
+        // Bulk insert into staging table in batches of BATCH_SIZE
         if (stagingCars.length > 0) {
-          const { error: insertError } = await supabase
-            .from('cars_staging')
-            .insert(stagingCars)
-
-          if (insertError) {
-            console.error(`❌ Error inserting cars into staging:`, insertError)
-            errors.push(`Staging insert error: ${insertError.message}`)
-          } else {
-            totalCarsProcessed += stagingCars.length
-            console.log(`✅ Inserted ${stagingCars.length} cars into staging. Total: ${totalCarsProcessed}`)
-          }
+          await insertInBatches(stagingCars, `page ${currentPage}`)
+          totalCarsProcessed += stagingCars.length
         }
 
         // Check if we have more pages
