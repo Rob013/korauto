@@ -264,7 +264,7 @@ const CatalogContent: React.FC = () => {
                 <span>{total.toLocaleString()} cars found</span>
                 <span>•</span>
                 <span>Page {filters.page || 1} of {totalPages}</span>
-                {isFetching && (
+                {isFetching && !isLoading && (
                   <>
                     <span>•</span>
                     <span className="flex items-center gap-1">

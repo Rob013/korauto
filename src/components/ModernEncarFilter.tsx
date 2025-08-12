@@ -444,10 +444,12 @@ const ModernEncarFilter = memo<ModernEncarFilterProps>(({
                 className={`w-full ${!filters.manufacturer_id ? 'opacity-50' : ''}`}
                 options={[
                   { value: 'all', label: 'All Models' },
-                  ...models.map((model) => ({
-                    value: model.id.toString(),
-                    label: `${model.name} (${model.cars_qty || 0})`
-                  }))
+                  ...models
+                    .filter((model) => model.cars_qty && model.cars_qty > 0)
+                    .map((model) => ({
+                      value: model.id.toString(),
+                      label: `${model.name} (${model.cars_qty})`
+                    }))
                 ]}
               />
               {!filters.manufacturer_id && (

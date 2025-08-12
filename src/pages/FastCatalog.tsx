@@ -247,7 +247,7 @@ function FastCatalogContent({ onCarClick }: FastCatalogContentProps) {
                     <span>共找到 {totalCount.toLocaleString()} 辆车</span>
                     <span>•</span>
                     <span>第 {currentPage} 页，共 {totalPages} 页</span>
-                    {(isFetching || isLoadingOptions) && (
+                    {(isFetching || isLoadingOptions) && !isLoading && (
                       <>
                         <span>•</span>
                         <span className="flex items-center gap-1">
