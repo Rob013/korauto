@@ -21,8 +21,6 @@ import {
   MapPin,
   DollarSign,
   Cog,
-  Star,
-  Zap,
   RotateCcw,
   SlidersHorizontal
 } from "lucide-react";
@@ -278,17 +276,7 @@ const ModernEncarFilter = memo<ModernEncarFilterProps>(({
     }
   }, [filters.manufacturer_id, filters.model_id, onFetchGrades]);
 
-  // Popular filter presets inspired by Encar.com
-  const popularPresets = [
-    { label: 'Recent Models (2020+)', filters: { from_year: '2020' } },
-    { label: 'Budget Friendly', filters: { buy_now_price_to: '15000' } },
-    { label: 'Low Mileage', filters: { odometer_to_km: '50000' } },
-    { label: 'Premium Cars', filters: { buy_now_price_from: '25000' } },
-  ];
 
-  const handlePresetClick = useCallback((preset: { label: string; filters: any }) => {
-    onFiltersChange({ ...filters, ...preset.filters });
-  }, [filters, onFiltersChange]);
 
   // Filter summary text
   const getFilterSummary = () => {
@@ -333,25 +321,7 @@ const ModernEncarFilter = memo<ModernEncarFilterProps>(({
         {/* Scrollable content - improved spacing */}
         <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 safe-area-inset">
           
-          {/* Quick Search - improved styling */}
-          <Card className="p-3 sm:p-4 border-primary/20 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <Search className="h-4 w-4 text-primary" />
-              <Label className="font-medium text-sm">Quick Search</Label>
-            </div>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Search cars..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearchClick()}
-                className="flex-1 h-10"
-              />
-              <Button onClick={handleSearchClick} size="sm" className="px-3 h-10">
-                <Search className="h-4 w-4" />
-              </Button>
-            </div>
-          </Card>
+
 
           {/* Active Filter Chips - improved layout */}
           {activeFilters.length > 0 && (
@@ -425,27 +395,7 @@ const ModernEncarFilter = memo<ModernEncarFilterProps>(({
             </Card>
           )}
 
-          {/* Popular Presets - improved styling */}
-          <Card className="p-3 sm:p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Star className="h-4 w-4 text-primary" />
-              <Label className="font-medium text-sm">Popular Searches</Label>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {popularPresets.map((preset, index) => (
-                <Button
-                  key={index}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePresetClick(preset)}
-                  className="justify-start text-xs h-9 border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-colors"
-                >
-                  <Zap className="h-3 w-3 mr-1 flex-shrink-0" />
-                  <span className="truncate">{preset.label}</span>
-                </Button>
-              ))}
-            </div>
-          </Card>
+
 
           {/* Main Filters - improved spacing and validation feedback */}
           <Card className="p-3 sm:p-4 space-y-4">
