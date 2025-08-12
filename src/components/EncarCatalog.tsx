@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import LazyCarCard from "@/components/LazyCarCard";
 import { useSecureAuctionAPI, createFallbackManufacturers } from "@/hooks/useSecureAuctionAPI";
+import { useCombinedCars } from "@/hooks/useCombinedCars";
 import ModernEncarFilter from "@/components/ModernEncarFilter";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
@@ -52,6 +53,8 @@ interface EncarCatalogProps {
 
 const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const { toast } = useToast();
+  
+  // Use the new combined cars hook that fetches from both database and API
   const {
     cars,
     setCars, // ✅ Import setCars
@@ -72,7 +75,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     fetchGrades,
     fetchTrimLevels,
     loadMore,
-  } = useSecureAuctionAPI();
+    // Additional metadata from combined hook
+    databaseCars,
+    apiCars,
+    databaseTotal,
+    apiTotal,
+    hasDatabaseData,
+    hasApiData,
+  } = useCombinedCars();
   const { convertUSDtoEUR } = useCurrencyAPI();
   const [sortBy, setSortBy] = useState<SortOption>("price_low");
   const [searchParams, setSearchParams] = useSearchParams();
@@ -1020,7 +1030,7 @@ const filteredCars = useMemo(() => {
                 Car Catalog
               </h1>
               <p className="text-muted-foreground text-xs sm:text-sm">
-                {totalCount.toLocaleString()} cars {filters.grade_iaai && filters.grade_iaai !== 'all' ? `filtered by ${filters.grade_iaai}` : 'total'} • Page {currentPage} of {totalPages} • Showing {carsForCurrentPage.length} cars
+                {totalCount.toLocaleString()} cars total ({databaseTotal} from database, {apiTotal} from API) {filters.grade_iaai && filters.grade_iaai !== 'all' ? `filtered by ${filters.grade_iaai}` : ''} • Page {currentPage} of {totalPages} • Showing {carsForCurrentPage.length} cars
                 {yearFilterProgress === 'instant' && (
                   <span className="ml-2 text-primary text-xs">⚡ Instant results</span>
                 )}
@@ -1133,6 +1143,19 @@ const filteredCars = useMemo(() => {
                           : ""
                       }
                     >
+                      {/* Data source indicator */}
+                      {car.source && (
+                        <div className="relative">
+                          <div className="absolute top-2 right-2 z-10">
+                            <Badge 
+                              variant={car.source === 'database' ? 'default' : 'secondary'} 
+                              className="text-xs px-1.5 py-0.5"
+                            >
+                              {car.source === 'database' ? '💾 DB' : '🌐 API'}
+                            </Badge>
+                          </div>
+                        </div>
+                      )}
                       <LazyCarCard
                         id={car.id}
                         make={car.manufacturer?.name || "Unknown"}
