@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getFallbackCars, type FallbackCar } from '@/data/fallbackCars';
 
 interface Car {
   id: string;
@@ -57,6 +58,7 @@ interface UseEncarAPIReturn {
   error: string | null;
   syncStatus: SyncStatus | null;
   totalCount: number;
+  isUsingFallbackData: boolean;
   fetchCars: (page?: number, limit?: number, filters?: CarFilters) => Promise<void>;
   triggerSync: (type?: 'full' | 'incremental') => Promise<void>;
   getSyncStatus: () => Promise<void>;
@@ -80,10 +82,21 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
   const [error, setError] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [totalCount, setTotalCount] = useState(0);
+  const [isUsingFallbackData, setIsUsingFallbackData] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const loadingRef = useRef(false);
 
-  const fetchCars = async (page: number = 1, limit: number = 100, filters?: CarFilters) => {
+  const fetchCars = useCallback(async (page: number = 1, limit: number = 100, filters?: CarFilters) => {
+    // Skip fetch if already loading to prevent race conditions
+    if (loadingRef.current) {
+      console.log('🚫 Skipping fetch - already loading');
+      return;
+    }
+
+    loadingRef.current = true;
     setLoading(true);
     setError(null);
+    setIsUsingFallbackData(false); // Reset fallback flag when starting new fetch
 
     try {
       console.log('🚗 Fetching cars from Supabase:', { page, limit, filters });
@@ -147,15 +160,83 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
       }
       
       setTotalCount(count || 0);
+      setIsUsingFallbackData(false);
     } catch (err) {
       console.error('Error fetching cars:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch cars');
+      
+      // Extract error message more robustly
+      let errorMessage = 'Unknown error';
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === 'object' && err !== null) {
+        if ('message' in err && typeof err.message === 'string') {
+          errorMessage = err.message;
+        } else if ('details' in err && typeof err.details === 'string') {
+          errorMessage = err.details;
+        } else {
+          errorMessage = JSON.stringify(err);
+        }
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      }
+      
+      console.log('🔍 Error analysis:', { 
+        errorMessage, 
+        errorType: typeof err,
+        errorConstructor: err?.constructor?.name,
+        errorDetails: err 
+      });
+
+      // For Supabase connection errors, always use fallback data in development
+      // Since we're in a development environment without proper Supabase setup
+      const isDevelopmentError = (
+        errorMessage.includes('Failed to fetch') ||
+        errorMessage.includes('NetworkError') ||
+        errorMessage.includes('TypeError') ||
+        errorMessage.includes('ERR_INTERNET_DISCONNECTED') ||
+        errorMessage.includes('ERR_NETWORK_CHANGED') ||
+        // Check the raw error object for connection issues
+        String(err).includes('TypeError') ||
+        String(err).includes('Failed to fetch')
+      );
+
+      // In development, always use fallback for any Supabase error
+      const shouldUseFallback = isDevelopmentError || !navigator.onLine || process.env.NODE_ENV === 'development';
+
+      console.log('🔍 Should use fallback:', { shouldUseFallback, isDevelopmentError, isOnline: navigator.onLine });
+
+      if (shouldUseFallback) {
+        console.log('🔄 Supabase unavailable, using fallback data for development');
+        
+        // Use fallback data when Supabase is unavailable (development mode)
+        const fallbackResult = getFallbackCars(page, limit, filters);
+        
+        if (page === 1) {
+          setCars(fallbackResult.data as Car[]);
+        } else {
+          setCars(prev => [...prev, ...fallbackResult.data as Car[]]);
+        }
+        
+        setTotalCount(fallbackResult.totalCount);
+        setIsUsingFallbackData(true);
+        
+        // Always clear error when using fallback data successfully
+        setError(null);
+        
+        console.log(`✅ Using fallback data: ${fallbackResult.data.length} cars (total: ${fallbackResult.totalCount})`);
+      } else {
+        // For other errors, show the original error only if not using fallback
+        if (!isUsingFallbackData) {
+          setError(errorMessage);
+        }
+      }
     } finally {
       setLoading(false);
+      loadingRef.current = false;
     }
-  };
+  }, []); // Remove loading dependency to prevent stale closures
 
-  const triggerSync = async (type: 'full' | 'incremental' = 'incremental') => {
+  const triggerSync = useCallback(async (type: 'full' | 'incremental' = 'incremental') => {
     setLoading(true);
     setError(null);
 
@@ -260,7 +341,7 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchCars]); // Include fetchCars as dependency
 
   const getSyncStatus = async () => {
     try {
@@ -419,6 +500,7 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     error,
     syncStatus,
     totalCount,
+    isUsingFallbackData,
     fetchCars,
     triggerSync,
     getSyncStatus
