@@ -265,7 +265,7 @@ export function FastCarFilterPanel({ className, compact = false }: FastCarFilter
                 <SelectValue placeholder="选择品牌" />
               </SelectTrigger>
               <SelectContent>
-                {filterOptions?.makes.filter(make => make.count > 0).map((make) => (
+                {filterOptions?.makes.map((make) => (
                   <SelectItem key={make.value} value={make.value}>
                     {make.label} ({make.count})
                   </SelectItem>
@@ -289,7 +289,7 @@ export function FastCarFilterPanel({ className, compact = false }: FastCarFilter
                 <SelectValue placeholder={!filters.make ? "请先选择品牌" : "选择型号"} />
               </SelectTrigger>
               <SelectContent>
-                {availableModels.filter(model => (model.count || 0) > 0).map((model) => (
+                {availableModels.map((model) => (
                   <SelectItem key={model.value} value={model.value}>
                     {model.label} {model.count && `(${model.count})`}
                   </SelectItem>
@@ -369,7 +369,7 @@ export function FastCarFilterPanel({ className, compact = false }: FastCarFilter
                     <SelectValue placeholder="选择燃料类型" />
                   </SelectTrigger>
                   <SelectContent>
-                    {filterOptions?.fuels.filter(fuel => fuel.count > 0).map((fuel) => (
+                    {filterOptions?.fuels.map((fuel) => (
                       <SelectItem key={fuel.value} value={fuel.value}>
                         {fuel.label} ({fuel.count})
                       </SelectItem>
@@ -386,7 +386,7 @@ export function FastCarFilterPanel({ className, compact = false }: FastCarFilter
                     <SelectValue placeholder="选择变速箱" />
                   </SelectTrigger>
                   <SelectContent>
-                    {filterOptions?.transmissions.filter(transmission => transmission.count > 0).map((transmission) => (
+                    {filterOptions?.transmissions.map((transmission) => (
                       <SelectItem key={transmission.value} value={transmission.value}>
                         {transmission.label} ({transmission.count})
                       </SelectItem>
@@ -406,7 +406,7 @@ export function FastCarFilterPanel({ className, compact = false }: FastCarFilter
                     <SelectValue placeholder="选择颜色" />
                   </SelectTrigger>
                   <SelectContent>
-                    {filterOptions?.colors.filter(color => color.count > 0).map((color) => (
+                    {filterOptions?.colors.map((color) => (
                       <SelectItem key={color.value} value={color.value}>
                         {color.label} ({color.count})
                       </SelectItem>
@@ -423,7 +423,7 @@ export function FastCarFilterPanel({ className, compact = false }: FastCarFilter
                     <SelectValue placeholder="选择车况" />
                   </SelectTrigger>
                   <SelectContent>
-                    {filterOptions?.conditions.filter(condition => condition.count > 0).map((condition) => (
+                    {filterOptions?.conditions.map((condition) => (
                       <SelectItem key={condition.value} value={condition.value}>
                         {condition.label} ({condition.count})
                       </SelectItem>

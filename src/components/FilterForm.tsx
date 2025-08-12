@@ -408,7 +408,7 @@ const FilterForm = memo<FilterFormProps>(({
                     [{ value: 'loading', label: 'Loading grades...', disabled: true }] :
                     grades.length === 0 && filters.manufacturer_id ? 
                     [{ value: 'no-grades', label: 'No grades found', disabled: true }] :
-                    grades.filter(grade => (grade.count || 0) > 0).map((grade) => ({
+                    grades.map((grade) => ({
                       value: grade.value,
                       label: `${grade.label}${grade.count ? ` (${grade.count})` : ''}`
                     }))
@@ -429,7 +429,7 @@ const FilterForm = memo<FilterFormProps>(({
                   { value: 'all', label: 'All Trim Levels' },
                   ...(trimLevels.length === 0 && filters.manufacturer_id ? 
                     [{ value: 'no-trims', label: 'No trim levels found', disabled: true }] :
-                    trimLevels.filter(trim => (trim.count || 0) > 0).map((trim) => ({
+                    trimLevels.map((trim) => ({
                       value: trim.value,
                       label: `${trim.label}${trim.count ? ` (${trim.count})` : ''}`
                     }))
