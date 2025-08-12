@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChevronDown, ChevronUp, Search, X } from 'lucide-react';
 import { FacetCounts } from '@/lib/search/types';
+import { filterZeroCountFacets, optimizedDebounce } from '@/utils/catalog-filter';
 
 interface FacetProps {
   title: string;
@@ -35,9 +36,17 @@ export const Facet = ({
   const [showAll, setShowAll] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Process and sort facet options
+  // Optimized debounced search to avoid excessive filtering
+  const debouncedSetSearchTerm = useCallback(
+    optimizedDebounce((term: string) => setSearchTerm(term), 200),
+    []
+  );
+
+  // Process and sort facet options, filtering out zero counts
   const sortedOptions = useMemo(() => {
-    const entries = Object.entries(facetCounts);
+    // Filter out zero counts first using utility function
+    const filteredCounts = filterZeroCountFacets(facetCounts);
+    const entries = Object.entries(filteredCounts);
     
     // Filter by search term if provided
     const filtered = searchTerm
@@ -58,8 +67,8 @@ export const Facet = ({
   const visibleOptions = showAll ? sortedOptions : sortedOptions.slice(0, maxItems);
   const hasMore = sortedOptions.length > maxItems;
 
-  // Handle checkbox change
-  const handleValueChange = (value: string, checked: boolean) => {
+  // Handle checkbox change with optimized callback
+  const handleValueChange = useCallback((value: string, checked: boolean) => {
     if (disabled) return;
 
     let newValues: string[];
@@ -70,18 +79,24 @@ export const Facet = ({
     }
     
     onSelectionChange(newValues);
-  };
+  }, [disabled, selectedValues, onSelectionChange]);
 
-  // Clear all selections
-  const handleClearAll = () => {
+  // Clear all selections with callback optimization
+  const handleClearAll = useCallback(() => {
     if (disabled) return;
     onSelectionChange([]);
-  };
+  }, [disabled, onSelectionChange]);
 
-  // Clear search
-  const handleClearSearch = () => {
+  // Clear search with callback optimization
+  const handleClearSearch = useCallback(() => {
     setSearchTerm('');
-  };
+  }, []);
+
+  // Handle search input change
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    debouncedSetSearchTerm(value);
+  }, [debouncedSetSearchTerm]);
 
   if (!isExpanded) {
     return (
@@ -146,7 +161,7 @@ export const Facet = ({
             <Input
               placeholder={`Search ${title.toLowerCase()}...`}
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
               className="pl-7 pr-7 h-8 text-sm"
               disabled={disabled}
             />
@@ -170,7 +185,8 @@ export const Facet = ({
         <div className="space-y-2">
           {visibleOptions.map(([value, count]) => {
             const isSelected = selectedValues.includes(value);
-            const isDisabled = disabled || count === 0;
+            // No need to check for count === 0 since we already filtered them out
+            const isDisabled = disabled;
             
             return (
               <div key={value} className="flex items-center space-x-2">
@@ -191,9 +207,7 @@ export const Facet = ({
                 >
                   <div className="flex items-center justify-between">
                     <span className="truncate pr-2">{value}</span>
-                    <span className={`text-xs ${
-                      count === 0 ? 'text-muted-foreground' : 'text-muted-foreground'
-                    }`}>
+                    <span className="text-xs text-muted-foreground">
                       {count.toLocaleString()}
                     </span>
                   </div>
