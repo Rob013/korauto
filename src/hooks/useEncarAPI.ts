@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getFallbackCars, type FallbackCar } from '@/data/fallbackCars';
 
@@ -83,10 +83,20 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const [isUsingFallbackData, setIsUsingFallbackData] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const loadingRef = useRef(false);
 
-  const fetchCars = async (page: number = 1, limit: number = 100, filters?: CarFilters) => {
+  const fetchCars = useCallback(async (page: number = 1, limit: number = 100, filters?: CarFilters) => {
+    // Skip fetch if already loading to prevent race conditions
+    if (loadingRef.current) {
+      console.log('🚫 Skipping fetch - already loading');
+      return;
+    }
+
+    loadingRef.current = true;
     setLoading(true);
     setError(null);
+    setIsUsingFallbackData(false); // Reset fallback flag when starting new fetch
 
     try {
       console.log('🚗 Fetching cars from Supabase:', { page, limit, filters });
@@ -210,21 +220,23 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
         setTotalCount(fallbackResult.totalCount);
         setIsUsingFallbackData(true);
         
-        // Clear error when using fallback data
+        // Always clear error when using fallback data successfully
         setError(null);
         
         console.log(`✅ Using fallback data: ${fallbackResult.data.length} cars (total: ${fallbackResult.totalCount})`);
       } else {
-        // For other errors, show the original error
-        setError(errorMessage);
-        setIsUsingFallbackData(false);
+        // For other errors, show the original error only if not using fallback
+        if (!isUsingFallbackData) {
+          setError(errorMessage);
+        }
       }
     } finally {
       setLoading(false);
+      loadingRef.current = false;
     }
-  };
+  }, []); // Remove loading dependency to prevent stale closures
 
-  const triggerSync = async (type: 'full' | 'incremental' = 'incremental') => {
+  const triggerSync = useCallback(async (type: 'full' | 'incremental' = 'incremental') => {
     setLoading(true);
     setError(null);
 
@@ -329,7 +341,7 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchCars]); // Include fetchCars as dependency
 
   const getSyncStatus = async () => {
     try {

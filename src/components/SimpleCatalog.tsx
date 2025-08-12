@@ -87,12 +87,13 @@ const SimpleCatalog = ({ highlightCarId }: SimpleCatalogProps = {}) => {
     setFilters(urlFilters);
   }, [searchParams]);
 
-  // Fetch cars when filters change
+  // Fetch cars when filters change with debounce
   useEffect(() => {
-    const loadCars = async () => {
+    const timeoutId = setTimeout(async () => {
       await fetchCars(currentPage, 50, filters);
-    };
-    loadCars();
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
   }, [currentPage, filters, fetchCars]);
 
   // Sort cars client-side for now (later optimize with server-side sorting)
@@ -301,8 +302,8 @@ const SimpleCatalog = ({ highlightCarId }: SimpleCatalogProps = {}) => {
             </div>
           </div>
 
-          {/* Error State - Only show if not using fallback data */}
-          {error && !isUsingFallbackData && (
+          {/* Error State - Only show if not using fallback data AND no cars are loaded */}
+          {error && !isUsingFallbackData && cars.length === 0 && (
             <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
               <p className="text-destructive font-medium">Error: {error}</p>
             </div>
