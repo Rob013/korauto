@@ -55,6 +55,7 @@ const SimpleCatalog = ({ highlightCarId }: SimpleCatalogProps = {}) => {
     loading,
     error,
     totalCount,
+    isUsingFallbackData,
     fetchCars,
     triggerSync,
     getSyncStatus,
@@ -293,14 +294,30 @@ const SimpleCatalog = ({ highlightCarId }: SimpleCatalogProps = {}) => {
               <h1 className="text-3xl font-bold">Car Catalog</h1>
               <p className="text-muted-foreground">
                 {totalCount.toLocaleString()} cars available • Page {currentPage} of {totalPages}
+                {isUsingFallbackData && (
+                  <span className="ml-2 text-blue-600 text-sm">• Development Mode</span>
+                )}
               </p>
             </div>
           </div>
 
-          {/* Error State */}
-          {error && (
+          {/* Error State - Only show if not using fallback data */}
+          {error && !isUsingFallbackData && (
             <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
               <p className="text-destructive font-medium">Error: {error}</p>
+            </div>
+          )}
+
+          {/* Development Mode Notice */}
+          {isUsingFallbackData && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <p className="text-blue-800 font-medium">Development Mode</p>
+              </div>
+              <p className="text-blue-700 text-sm mt-1">
+                Using sample car data for development. To use live data, configure Supabase environment variables.
+              </p>
             </div>
           )}
 
@@ -315,7 +332,7 @@ const SimpleCatalog = ({ highlightCarId }: SimpleCatalogProps = {}) => {
           )}
 
           {/* No Results */}
-          {!loading && cars.length === 0 && (
+          {!loading && cars.length === 0 && !isUsingFallbackData && (
             <div className="text-center py-12">
               <Car className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No cars found</h3>
