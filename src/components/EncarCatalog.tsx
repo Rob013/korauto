@@ -1038,18 +1038,21 @@ const filteredCars = useMemo(() => {
             </div>
           )}
 
-          {/* Loading State */}
-          {(loading && cars.length === 0) || isRestoringState ? (
+          {/* Consolidated Loading State - Single Professional Spinner */}
+          {((loading && cars.length === 0) || isRestoringState || (isFilterLoading && cars.length === 0)) ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin mr-2" />
-              <span>
-                {isRestoringState ? "Restoring your view..." : "Loading cars..."}
-              </span>
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="text-sm text-muted-foreground">
+                  {isRestoringState ? "Restoring your view..." : 
+                   isFilterLoading ? "Applying filters..." : "Loading cars..."}
+                </span>
+              </div>
             </div>
           ) : null}
 
           {/* No Selection State */}
-          {!shouldShowCars && !loading && !isRestoringState && (
+          {!shouldShowCars && !loading && !isRestoringState && !isFilterLoading && (
             <div className="text-center py-16">
               <div className="max-w-md mx-auto">
                 <Car className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
@@ -1085,23 +1088,15 @@ const filteredCars = useMemo(() => {
             </div>
           )}
 
-          {/* Filter Loading State */}
-          {isFilterLoading && cars.length === 0 && (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin" />
-              </div>
-          )}
-
           {/* Cars Grid/List - Show cars without requiring filters */}
           {shouldShowCars && cars.length > 0 && (
             <div className="relative">
-              {/* Loading Overlay for Cars Grid */}
+              {/* Subtle loading indicator for existing cars during filter changes */}
               {isFilterLoading && (
-                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
-                  <div className="bg-card border border-border rounded-lg p-6 shadow-lg">
-                    <div className="flex items-center justify-center">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    </div>
+                <div className="absolute top-0 left-0 right-0 bg-primary/10 backdrop-blur-sm z-10 rounded-lg p-2 mb-4">
+                  <div className="flex items-center justify-center gap-2 text-sm text-primary">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                    <span>Updating results...</span>
                   </div>
                 </div>
               )}
