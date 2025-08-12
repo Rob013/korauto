@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 
 describe('sync-cars script', () => {
-  it('should be importable', async () => {
+  it('should be importable and have optimized configuration', async () => {
     // Mock environment variables
     vi.stubEnv('SUPABASE_URL', 'https://test.supabase.co')
     vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'test-key')

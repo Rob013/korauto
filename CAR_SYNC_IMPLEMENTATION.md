@@ -5,8 +5,11 @@ This document outlines the implementation of the car sync system for KorAuto tha
 ## Implementation Overview
 
 ### 1. ✅ Scripts/sync-cars.ts
-Created `scripts/sync-cars.ts` with the following features:
+Created `scripts/sync-cars.ts` with the following optimized features:
 - Uses environment variables from GitHub secrets (SUPABASE_*, API_BASE_URL, API_KEY)
+- **OPTIMIZED:** Maximum page size of 1,000 cars per API request (reduced from 100)
+- **OPTIMIZED:** Bulk insert batching of 5,000 records for maximum speed
+- **OPTIMIZED:** Reduced rate limiting to 1 second between requests
 - Implements robust API request handling with retry logic and rate limiting
 - Transforms API data to match the database schema
 - Uses staging table approach for atomic data updates
@@ -52,8 +55,10 @@ Implemented two critical RPC functions as requested:
 ### 5. ✅ API Integration
 The script properly:
 - Reads from the API specified by `API_BASE_URL` + `API_KEY` secrets
+- **OPTIMIZED:** Uses maximum page size of 1,000 cars per request to minimize API calls
+- **OPTIMIZED:** Implements bulk insert batching of 5,000 records for optimal performance
 - Supports pagination for large datasets
-- Implements retry logic and rate limiting
+- Implements retry logic and optimized rate limiting (1 second between requests)
 - Transforms API data to match database schema
 - Stores all cars in Supabase via staging table approach
 
@@ -79,11 +84,17 @@ API_KEY=your_api_key
 
 ### Sync Process Flow
 1. Clear `cars_staging` table
-2. Fetch cars from external API with pagination
-3. Transform and insert cars into `cars_staging`
+2. **OPTIMIZED:** Fetch cars from external API with 1,000 cars per page (maximum allowed)
+3. **OPTIMIZED:** Transform and batch insert cars into `cars_staging` in batches of 5,000
 4. Call `bulk_merge_from_staging()` to update main table
 5. Call `mark_missing_inactive()` to mark missing cars as inactive
 6. Clean up staging table
+
+### Performance Optimizations
+- **PAGE_SIZE: 1,000** - Maximum allowed page size to reduce API calls by 10x
+- **BATCH_SIZE: 5,000** - Bulk insert batching for optimal database performance
+- **RATE_LIMIT_DELAY: 1,000ms** - Optimized rate limiting (reduced from 2 seconds)
+- **Batch Processing:** Cars are inserted in optimal chunks to balance memory usage and performance
 
 ### Error Handling
 - Comprehensive error handling with proper logging
@@ -127,11 +138,12 @@ The workflow can be manually triggered from the GitHub Actions tab.
 - ✅ Atomic data updates via staging table
 - ✅ Proper inactive car management
 - ✅ Robust error handling and retry logic
-- ✅ Rate limiting and API best practices
-- ✅ Comprehensive logging
+- ✅ **OPTIMIZED:** Maximum page size (1,000) and bulk insert batching (5,000)
+- ✅ **OPTIMIZED:** Rate limiting (1 second between requests)
+- ✅ Comprehensive logging with performance metrics
 - ✅ TypeScript strict typing
 - ✅ Database integrity via RLS policies
 - ✅ Automated daily execution
 - ✅ Manual trigger capability
 
-All requirements from the problem statement have been successfully implemented!
+All requirements from the problem statement have been successfully implemented with performance optimizations!
