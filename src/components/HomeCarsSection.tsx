@@ -514,7 +514,7 @@ const HomeCarsSection = memo(() => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-600 dark:text-gray-400">
-              Showing {displayedCars.length} cars
+              Showing {filteredCars.length} cars
             </span>
             <Button
               variant="outline"
