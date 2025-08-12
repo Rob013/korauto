@@ -260,7 +260,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
               <SelectValue placeholder="Select brand" />
             </SelectTrigger>
             <SelectContent>
-              {data.brands.map((brand) => (
+              {data.brands.filter(brand => (brand.count || 0) > 0).map((brand) => (
                 <SelectItem key={brand.id} value={brand.id}>
                   {brand.name} {brand.count && `(${brand.count})`}
                 </SelectItem>
@@ -281,7 +281,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
               <SelectValue placeholder={!filters.brand ? "Select brand first" : "Select model"} />
             </SelectTrigger>
             <SelectContent>
-              {availableModels.map((model) => (
+              {availableModels.filter(model => (model.count || 0) > 0).map((model) => (
                 <SelectItem key={model.id} value={model.id}>
                   {model.name} {model.count && `(${model.count})`}
                 </SelectItem>
@@ -350,7 +350,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <SelectValue placeholder="Select fuel type" />
               </SelectTrigger>
               <SelectContent>
-                {data.fuelTypes.map((fuel) => (
+                {data.fuelTypes.filter(fuel => (fuel.count || 0) > 0).map((fuel) => (
                   <SelectItem key={fuel.id} value={fuel.id}>
                     {fuel.name} {fuel.count && `(${fuel.count})`}
                   </SelectItem>
@@ -367,7 +367,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <SelectValue placeholder="Select transmission" />
               </SelectTrigger>
               <SelectContent>
-                {data.transmissions.map((transmission) => (
+                {data.transmissions.filter(transmission => (transmission.count || 0) > 0).map((transmission) => (
                   <SelectItem key={transmission.id} value={transmission.id}>
                     {transmission.name} {transmission.count && `(${transmission.count})`}
                   </SelectItem>
@@ -403,7 +403,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <SelectValue placeholder="Select body type" />
               </SelectTrigger>
               <SelectContent>
-                {data.bodyTypes.map((bodyType) => (
+                {data.bodyTypes.filter(bodyType => (bodyType.count || 0) > 0).map((bodyType) => (
                   <SelectItem key={bodyType.id} value={bodyType.id}>
                     {bodyType.name} {bodyType.count && `(${bodyType.count})`}
                   </SelectItem>
@@ -420,7 +420,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <SelectValue placeholder="Select color" />
               </SelectTrigger>
               <SelectContent>
-                {data.colors.map((color) => (
+                {data.colors.filter(color => (color.count || 0) > 0).map((color) => (
                   <SelectItem key={color.id} value={color.id}>
                     {color.name} {color.count && `(${color.count})`}
                   </SelectItem>
@@ -437,7 +437,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <SelectValue placeholder="Select location" />
               </SelectTrigger>
               <SelectContent>
-                {data.locations.map((location) => (
+                {data.locations.filter(location => (location.count || 0) > 0).map((location) => (
                   <SelectItem key={location.id} value={location.id}>
                     {location.name} {location.count && `(${location.count})`}
                   </SelectItem>
