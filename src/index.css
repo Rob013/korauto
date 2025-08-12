@@ -480,6 +480,14 @@ All colors MUST be HSL.
     max-height: 100dvh;
   }
 
+  /* Safe area inset support for modern devices */
+  .safe-area-inset {
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+    padding-top: max(12px, env(safe-area-inset-top));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
   /* Optimized container spacing for mobile - More compact */
   .container-responsive {
     padding-left: max(12px, env(safe-area-inset-left));
@@ -534,11 +542,22 @@ All colors MUST be HSL.
     justify-content: center;
   }
 
-  /* Ensure filter content is properly scrollable - More compact */
-  .mobile-filter-content {
-    height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+  /* Enhanced filter content spacing */
+  .filter-content-improved {
+    padding: clamp(12px, 3vw, 16px);
+    gap: clamp(12px, 3vw, 16px);
+  }
+
+  /* Better form control heights for mobile */
+  .mobile-form-control {
+    min-height: 40px;
+    height: auto;
+  }
+
+  /* Improved card spacing for filters */
+  .filter-card-spacing {
+    padding: clamp(12px, 3vw, 16px);
+    margin-bottom: clamp(8px, 2vw, 12px);
   }
 
   /* Compact filter panel styles */
