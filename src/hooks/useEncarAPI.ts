@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, isDevelopmentMode } from '@/integrations/supabase/client';
 import { getFallbackCars, type FallbackCar } from '@/data/fallbackCars';
 
 interface Car {
@@ -98,6 +98,29 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     setError(null);
     setIsUsingFallbackData(false); // Reset fallback flag when starting new fetch
 
+    // Check if we're in development mode
+    if (isDevelopmentMode()) {
+      console.log('🔧 Development mode: Using sample car data');
+      
+      // Use fallback data directly in development mode
+      const fallbackResult = getFallbackCars(page, limit, filters);
+      
+      if (page === 1) {
+        setCars(fallbackResult.data as Car[]);
+      } else {
+        setCars(prev => [...prev, ...fallbackResult.data as Car[]]);
+      }
+      
+      setTotalCount(fallbackResult.totalCount);
+      setIsUsingFallbackData(true);
+      setError(null);
+      
+      console.log(`✅ Development mode: Loaded ${fallbackResult.data.length} cars (total: ${fallbackResult.totalCount})`);
+      setLoading(false);
+      loadingRef.current = false;
+      return;
+    }
+
     try {
       console.log('🚗 Fetching cars from Supabase:', { page, limit, filters });
       
@@ -187,8 +210,8 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
         errorDetails: err 
       });
 
-      // For Supabase connection errors, always use fallback data in development
-      // Since we're in a development environment without proper Supabase setup
+      // For Supabase connection errors, always use fallback data as backup
+      // This handles cases where live Supabase is configured but unavailable
       const isDevelopmentError = (
         errorMessage.includes('Failed to fetch') ||
         errorMessage.includes('NetworkError') ||
@@ -200,15 +223,15 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
         String(err).includes('Failed to fetch')
       );
 
-      // In development, always use fallback for any Supabase error
-      const shouldUseFallback = isDevelopmentError || !navigator.onLine || process.env.NODE_ENV === 'development';
+      // Use fallback for network/connection errors even in production mode
+      const shouldUseFallback = isDevelopmentError || !navigator.onLine;
 
       console.log('🔍 Should use fallback:', { shouldUseFallback, isDevelopmentError, isOnline: navigator.onLine });
 
       if (shouldUseFallback) {
-        console.log('🔄 Supabase unavailable, using fallback data for development');
+        console.log('🔄 Supabase unavailable, using fallback data');
         
-        // Use fallback data when Supabase is unavailable (development mode)
+        // Use fallback data when Supabase is unavailable
         const fallbackResult = getFallbackCars(page, limit, filters);
         
         if (page === 1) {
