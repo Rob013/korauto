@@ -2362,7 +2362,7 @@ export const useSecureAuctionAPI = () => {
         ...newFilters,
         // Remove pagination parameters to get all cars
         page: undefined,
-        per_page: undefined,
+        per_page: "9999", // Set a high limit to ensure we get all cars
         simple_paginate: "0",
       };
       

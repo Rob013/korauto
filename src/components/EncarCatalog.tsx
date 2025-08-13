@@ -349,6 +349,15 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   }, [filters, searchTerm, handleFiltersChange]);
 
   const handlePageChange = useCallback((page: number) => {
+    // When global sorting is active, ensure we don't go beyond available pages
+    if (isSortingGlobal && allCarsForSorting.length > 0) {
+      const maxPages = Math.ceil(allCarsForSorting.length / 50);
+      if (page > maxPages) {
+        console.log(`⚠️ Attempted to navigate to page ${page}, but only ${maxPages} pages available with ${allCarsForSorting.length} cars`);
+        return;
+      }
+    }
+    
     setCurrentPage(page);
     
     // If global sorting is active, don't fetch new cars - just update the page for slicing
@@ -357,6 +366,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       const currentParams = Object.fromEntries(searchParams.entries());
       currentParams.page = page.toString();
       setSearchParams(currentParams);
+      console.log(`📄 Global sorting: Navigated to page ${page} (showing cars ${(page-1)*50 + 1}-${Math.min(page*50, allCarsForSorting.length)} of ${allCarsForSorting.length})`);
       return;
     }
     
@@ -411,7 +421,19 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       
       setAllCarsForSorting(filteredAllCars);
       lastSortParamsRef.current = sortKey;
-      console.log(`✅ Global sorting: Loaded ${filteredAllCars.length} cars for sorting across all pages`);
+      
+      // Check if current page is beyond available pages and reset to page 1 if needed
+      const maxPages = Math.ceil(filteredAllCars.length / 50);
+      if (currentPage > maxPages && maxPages > 0) {
+        console.log(`📄 Resetting page from ${currentPage} to 1 (max available: ${maxPages})`);
+        setCurrentPage(1);
+        // Update URL to reflect page reset
+        const currentParams = Object.fromEntries(searchParams.entries());
+        currentParams.page = '1';
+        setSearchParams(currentParams);
+      }
+      
+      console.log(`✅ Global sorting: Loaded ${filteredAllCars.length} cars for sorting across ${maxPages} pages`);
     } catch (err) {
       console.error('❌ Error fetching all cars for global sorting:', err);
       setIsSortingGlobal(false);
@@ -420,7 +442,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       setIsLoading(false);
       fetchingSortRef.current = false;
     }
-  }, [totalCount, fetchAllCars, filters.grade_iaai, filters.manufacturer_id, filters.model_id, filters.generation_id, filters.from_year, filters.to_year, sortBy, filteredCars, totalPages]);
+  }, [totalCount, fetchAllCars, filters.grade_iaai, filters.manufacturer_id, filters.model_id, filters.generation_id, filters.from_year, filters.to_year, sortBy, filteredCars, totalPages, currentPage, setSearchParams]);
 
   const handleManufacturerChange = async (manufacturerId: string) => {
     console.log(`[handleManufacturerChange] Called with manufacturerId: ${manufacturerId}`);
@@ -727,13 +749,19 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     let effectiveTotal = totalCount;
     let effectivePages = Math.ceil(totalCount / 50);
     
-    if (filters.grade_iaai && filters.grade_iaai !== 'all' && filteredCars.length > 0) {
+    // When global sorting is active, use the actual number of cars available for sorting
+    if (isSortingGlobal && allCarsForSorting.length > 0) {
+      effectiveTotal = allCarsForSorting.length;
+      effectivePages = Math.ceil(allCarsForSorting.length / 50);
+      console.log(`📊 Global sorting pagination: ${allCarsForSorting.length} cars across ${effectivePages} pages`);
+    } else if (filters.grade_iaai && filters.grade_iaai !== 'all' && filteredCars.length > 0) {
       effectiveTotal = filteredCars.length;
       effectivePages = Math.ceil(filteredCars.length / 50);
+      console.log(`📊 Grade filter pagination: ${filteredCars.length} cars across ${effectivePages} pages`);
     }
     
     setTotalPages(effectivePages);
-  }, [totalCount, filteredCars, filters.grade_iaai]);
+  }, [totalCount, filteredCars, filters.grade_iaai, isSortingGlobal, allCarsForSorting.length]);
 
   // Fetch all cars for sorting when sortBy changes OR when totalCount first becomes available
   // This ensures global sorting works on initial load and when sort options change
@@ -1008,7 +1036,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 Car Catalog
               </h1>
               <p className="text-muted-foreground text-xs sm:text-sm">
-                {totalCount.toLocaleString()} cars {filters.grade_iaai && filters.grade_iaai !== 'all' ? `filtered by ${filters.grade_iaai}` : 'total'} • Page {currentPage} of {totalPages} • Showing {carsForCurrentPage.length} cars
+                {(() => {
+                  // Show different counts based on sorting mode
+                  if (isSortingGlobal && allCarsForSorting.length > 0) {
+                    return `${allCarsForSorting.length.toLocaleString()} cars sorted globally • Page ${currentPage} of ${totalPages} • Showing ${carsForCurrentPage.length} cars`;
+                  } else {
+                    return `${totalCount.toLocaleString()} cars ${filters.grade_iaai && filters.grade_iaai !== 'all' ? `filtered by ${filters.grade_iaai}` : 'total'} • Page ${currentPage} of ${totalPages} • Showing ${carsForCurrentPage.length} cars`;
+                  }
+                })()}
                 {yearFilterProgress === 'instant' && (
                   <span className="ml-2 text-primary text-xs">⚡ Instant results</span>
                 )}
