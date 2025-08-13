@@ -14,6 +14,8 @@ import {
   X,
   PanelLeftOpen,
   PanelLeftClose,
+  Lock,
+  Unlock,
 } from "lucide-react";
 import LazyCarCard from "@/components/LazyCarCard";
 import { useSecureAuctionAPI, createFallbackManufacturers } from "@/hooks/useSecureAuctionAPI";
@@ -104,6 +106,15 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       const savedFilterState = sessionStorage.getItem('mobile-filter-panel-state');
       // If state is explicitly false, user has closed it
       return savedFilterState === 'false';
+    }
+    return false;
+  });
+
+  // Catalog lock state - prevents accidental swipe gestures on mobile
+  const [catalogLocked, setCatalogLocked] = useState(() => {
+    if (isMobile) {
+      const savedLockState = localStorage.getItem('catalog-lock-state');
+      return savedLockState === 'true';
     }
     return false;
   });
@@ -228,18 +239,25 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
   // Swipe gesture handlers
   const handleSwipeRightToShowFilters = useCallback(() => {
-    if (!showFilters && isMobile) {
+    if (!showFilters && isMobile && !catalogLocked) {
       setShowFilters(true);
       setHasExplicitlyClosed(false); // Reset explicit close flag when opening via swipe
     }
-  }, [showFilters, isMobile]);
+  }, [showFilters, isMobile, catalogLocked]);
 
   const handleSwipeLeftToCloseFilters = useCallback(() => {
-    if (showFilters && isMobile) {
+    if (showFilters && isMobile && !catalogLocked) {
       setShowFilters(false);
       setHasExplicitlyClosed(true); // Mark as explicitly closed
     }
-  }, [showFilters, isMobile]);
+  }, [showFilters, isMobile, catalogLocked]);
+
+  // Handle catalog lock toggle
+  const handleCatalogLockToggle = useCallback(() => {
+    const newLockState = !catalogLocked;
+    setCatalogLocked(newLockState);
+    localStorage.setItem('catalog-lock-state', newLockState.toString());
+  }, [catalogLocked]);
 
   // Set up swipe gestures for main content (swipe right to show filters)
   useSwipeGesture(mainContentRef, {
@@ -1011,6 +1029,24 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               
               {/* View mode and sort - mobile optimized */}
               <div className="flex gap-1 items-center">
+                {/* Catalog Lock Button - Only on mobile */}
+                {isMobile && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCatalogLockToggle}
+                    className={`h-8 px-2 flex items-center gap-1 transition-colors ${
+                      catalogLocked 
+                        ? 'bg-orange-100 hover:bg-orange-200 border-orange-300 text-orange-700 dark:bg-orange-900/20 dark:hover:bg-orange-900/30 dark:border-orange-600 dark:text-orange-400' 
+                        : 'hover:bg-accent'
+                    }`}
+                    title={catalogLocked ? 'Unlock swipe gestures' : 'Lock to prevent accidental swipes'}
+                  >
+                    {catalogLocked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
+                    <span className="hidden sm:inline text-xs">{catalogLocked ? 'Locked' : 'Lock'}</span>
+                  </Button>
+                )}
+                
                 {/* Sort Control - smaller on mobile */}
                 <div className="relative">
                   <ArrowUpDown className="h-3 w-3 absolute left-2 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none" />
