@@ -92,6 +92,7 @@ const mockFiltersData = {
 };
 
 const sortOptions = [
+  { value: 'recently_added', label: 'Recently Added' },
   { value: 'price_asc', label: 'Price: Low to High' },
   { value: 'price_desc', label: 'Price: High to Low' },
   { value: 'year_desc', label: 'Year: Newest First' },
@@ -239,7 +240,7 @@ const CatalogContent: React.FC = () => {
                 {/* Sort Control */}
                 <div className="flex items-center gap-2">
                   <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-                  <Select value={filters.sort || 'price_asc'} onValueChange={handleSortChange}>
+                  <Select value={filters.sort || 'recently_added'} onValueChange={handleSortChange}>
                     <SelectTrigger className="w-[200px]">
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>

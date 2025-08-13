@@ -73,7 +73,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     loadMore,
   } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
-  const [sortBy, setSortBy] = useState<SortOption>("price_low");
+  const [sortBy, setSortBy] = useState<SortOption>("recently_added");
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -1077,8 +1077,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           {/* Filter Loading State */}
           {isFilterLoading && cars.length === 0 && (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin mr-3" />
-              <span className="text-lg font-medium">Applying filters...</span>
+              {/* Loading without text or spinner */}
             </div>
           )}
 
@@ -1090,8 +1089,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
                   <div className="bg-card border border-border rounded-lg p-6 shadow-lg">
                     <div className="flex items-center gap-3">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                      <span className="text-sm font-medium text-foreground">Applying filters...</span>
+                      {/* Loading without text or spinner */}
                     </div>
                   </div>
                 </div>

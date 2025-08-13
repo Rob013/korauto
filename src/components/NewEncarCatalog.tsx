@@ -31,7 +31,7 @@ interface NewEncarCatalogProps {
 }
 
 const SORT_OPTIONS: SortOption[] = [
-  { field: 'listed_at', dir: 'desc', label: 'Recently Listed' },
+  { field: 'listed_at', dir: 'desc', label: 'Recently Added' },
   { field: 'listed_at', dir: 'asc', label: 'Oldest First' },
   { field: 'price_eur', dir: 'asc', label: 'Price: Low to High' },
   { field: 'price_eur', dir: 'desc', label: 'Price: High to Low' },
