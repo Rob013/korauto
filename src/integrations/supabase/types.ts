@@ -16,22 +16,115 @@ export type Database = {
     Tables: {
       cars: {
         Row: {
+          buy_now_price: number | null
+          color: string | null
           "Column Name": string | null
+          condition: string | null
           Constraints: string | null
+          created_at: string | null
+          current_bid: number | null
           Description: string | null
+          domain_name: string | null
+          external_id: string | null
+          final_bid: number | null
+          fuel: string | null
+          id: string | null
+          image_url: string | null
+          images: Json | null
+          is_active: boolean | null
+          is_archived: boolean | null
+          is_live: boolean | null
+          keys_available: boolean | null
+          last_synced_at: string | null
+          location: string | null
+          lot_number: string | null
+          make: string | null
+          mileage: number | null
+          model: string | null
+          price: number | null
+          sale_date: string | null
+          source_api: string | null
+          status: string | null
+          title: string | null
+          transmission: string | null
           Type: string | null
+          updated_at: string | null
+          vin: string | null
+          year: number | null
         }
         Insert: {
+          buy_now_price?: number | null
+          color?: string | null
           "Column Name"?: string | null
+          condition?: string | null
           Constraints?: string | null
+          created_at?: string | null
+          current_bid?: number | null
           Description?: string | null
+          domain_name?: string | null
+          external_id?: string | null
+          final_bid?: number | null
+          fuel?: string | null
+          id?: string | null
+          image_url?: string | null
+          images?: Json | null
+          is_active?: boolean | null
+          is_archived?: boolean | null
+          is_live?: boolean | null
+          keys_available?: boolean | null
+          last_synced_at?: string | null
+          location?: string | null
+          lot_number?: string | null
+          make?: string | null
+          mileage?: number | null
+          model?: string | null
+          price?: number | null
+          sale_date?: string | null
+          source_api?: string | null
+          status?: string | null
+          title?: string | null
+          transmission?: string | null
           Type?: string | null
+          updated_at?: string | null
+          vin?: string | null
+          year?: number | null
         }
         Update: {
+          buy_now_price?: number | null
+          color?: string | null
           "Column Name"?: string | null
+          condition?: string | null
           Constraints?: string | null
+          created_at?: string | null
+          current_bid?: number | null
           Description?: string | null
+          domain_name?: string | null
+          external_id?: string | null
+          final_bid?: number | null
+          fuel?: string | null
+          id?: string | null
+          image_url?: string | null
+          images?: Json | null
+          is_active?: boolean | null
+          is_archived?: boolean | null
+          is_live?: boolean | null
+          keys_available?: boolean | null
+          last_synced_at?: string | null
+          location?: string | null
+          lot_number?: string | null
+          make?: string | null
+          mileage?: number | null
+          model?: string | null
+          price?: number | null
+          sale_date?: string | null
+          source_api?: string | null
+          status?: string | null
+          title?: string | null
+          transmission?: string | null
           Type?: string | null
+          updated_at?: string | null
+          vin?: string | null
+          year?: number | null
         }
         Relationships: []
       }
@@ -135,6 +228,8 @@ export type Database = {
       }
       inspection_requests: {
         Row: {
+          archived: boolean
+          archived_at: string | null
           car_id: string | null
           created_at: string
           customer_email: string
@@ -146,6 +241,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived?: boolean
+          archived_at?: string | null
           car_id?: string | null
           created_at?: string
           customer_email: string
@@ -157,6 +254,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived?: boolean
+          archived_at?: string | null
           car_id?: string | null
           created_at?: string
           customer_email?: string
