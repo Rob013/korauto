@@ -320,7 +320,7 @@ const LazyCarCard = memo(({
         {/* Pricing - More compact */}
         <div className="flex flex-col gap-0.5 sm:gap-1 mb-1.5 sm:mb-2">
           <span className="card-price text-base sm:text-lg lg:text-xl font-bold text-primary">
-            {typeof price === 'number' && isFinite(price) ? `€${price.toLocaleString()}` : 'Çmimi në kërkesë'}
+            €{price.toLocaleString()}
           </span>
           <span className="text-xs text-muted-foreground">
             Deri ne portin e Durresit

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,11 +14,10 @@ import {
   X,
   PanelLeftOpen,
   PanelLeftClose,
-  RotateCcw,
 } from "lucide-react";
 import LazyCarCard from "@/components/LazyCarCard";
-import { useEncarAPI } from "@/hooks/useEncarAPI";
-import ModernEncarFilter from "@/components/ModernEncarFilter";
+import { useSecureAuctionAPI, createFallbackManufacturers } from "@/hooks/useSecureAuctionAPI";
+import EncarStyleFilter from "@/components/EncarStyleFilter";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useResourcePreloader } from "@/hooks/useResourcePreloader";
@@ -55,14 +53,25 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const { toast } = useToast();
   const {
     cars,
+    setCars, // ✅ Import setCars
     loading,
     error,
     totalCount,
+    setTotalCount, // ✅ Import setTotalCount for optimized filtering
+    hasMorePages,
     fetchCars,
-    triggerSync,
-    getSyncStatus,
-    syncStatus
-  } = useEncarAPI();
+    fetchAllCars, // ✅ Import new function for global sorting
+    filters,
+    setFilters,
+    fetchManufacturers,
+    fetchModels,
+    fetchGenerations,
+    fetchAllGenerationsForManufacturer, // ✅ Import new function
+    fetchFilterCounts,
+    fetchGrades,
+    fetchTrimLevels,
+    loadMore,
+  } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
   const [sortBy, setSortBy] = useState<SortOption>("price_low");
   const [searchParams, setSearchParams] = useSearchParams();
@@ -74,7 +83,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [isFilterLoading, setIsFilterLoading] = useState(false);
   const isMobile = useIsMobile();
   
-  // Initialize showFilters - always open on desktop, configurable on mobile
+  // Initialize showFilters with preserved state for mobile users returning from car details
   const [showFilters, setShowFilters] = useState(() => {
     if (isMobile) {
       // On mobile, try to restore the previous filter panel state
@@ -85,7 +94,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       // Default to closed on mobile
       return false;
     }
-    // Always open on desktop (cannot be closed)
+    // Default to open on desktop
     return true;
   });
   
@@ -109,9 +118,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const extractGradesFromTitleCallback = useCallback(extractGradesFromTitle, []);
 
   // Memoized client-side grade filtering for better performance - now using utility
-const filteredCars = useMemo(() => {
-  return applyGradeFilter(cars as any[], filters.grade_iaai);
-}, [cars, filters.grade_iaai]);
+  const filteredCars = useMemo(() => {
+    return applyGradeFilter(cars, filters.grade_iaai);
+  }, [cars, filters.grade_iaai]);
   
   // console.log(`📊 Filter Results: ${filteredCars.length} cars match (total loaded: ${cars.length}, total count from API: ${totalCount}, grade filter: ${filters.grade_iaai || 'none'})`);
 
@@ -217,7 +226,7 @@ const filteredCars = useMemo(() => {
     }
   }, []);
 
-  // Swipe gesture handlers (mobile only)
+  // Swipe gesture handlers
   const handleSwipeRightToShowFilters = useCallback(() => {
     if (!showFilters && isMobile) {
       setShowFilters(true);
@@ -232,39 +241,22 @@ const filteredCars = useMemo(() => {
     }
   }, [showFilters, isMobile]);
 
-  // Set up swipe gestures for main content (swipe right to show filters) - mobile only
+  // Set up swipe gestures for main content (swipe right to show filters)
   useSwipeGesture(mainContentRef, {
-    onSwipeRight: isMobile ? handleSwipeRightToShowFilters : undefined,
+    onSwipeRight: handleSwipeRightToShowFilters,
     minSwipeDistance: 80, // Require a more deliberate swipe
     maxVerticalDistance: 120
   });
 
-  // Set up swipe gestures for filter panel (swipe left to close filters) - mobile only
+  // Set up swipe gestures for filter panel (swipe left to close filters)
   useSwipeGesture(filterPanelRef, {
-    onSwipeLeft: isMobile ? handleSwipeLeftToCloseFilters : undefined,
+    onSwipeLeft: handleSwipeLeftToCloseFilters,
     minSwipeDistance: 80,
     maxVerticalDistance: 120
   });
 
-  // PERFORMANCE: Add simple cache for filter results to avoid duplicate API calls
-  const filterCacheRef = useRef<Map<string, { data: any[], timestamp: number, totalCount: number }>>(new Map());
-  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-  
   // Internal function to actually apply filters - now using utilities
   const applyFiltersInternal = useCallback((newFilters: APIFilters) => {
-    // Create cache key from filters
-    const cacheKey = JSON.stringify(normalizeFilters(newFilters));
-    const cached = filterCacheRef.current.get(cacheKey);
-    
-    // Check if we have valid cached data
-    if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
-      console.log('📦 Using cached filter results');
-      setCars(cached.data);
-      setTotalCount(cached.totalCount);
-      setIsFilterLoading(false);
-      return;
-    }
-    
     setFilters(newFilters);
     setCurrentPage(1); // Reset to first page when filters change
     
@@ -275,30 +267,13 @@ const filteredCars = useMemo(() => {
     // Use 50 cars per page for proper pagination
     const filtersWithPagination = addPaginationToFilters(newFilters, 50);
     
-    fetchCars(1, filtersWithPagination, true).then((result) => {
-      // Cache the results if we got data
-      if (result && result.data) {
-        filterCacheRef.current.set(cacheKey, {
-          data: result.data,
-          totalCount: result.totalCount || 0,
-          timestamp: Date.now()
-        });
-        
-        // Keep cache size reasonable
-        if (filterCacheRef.current.size > 20) {
-          const oldestKey = filterCacheRef.current.keys().next().value;
-          filterCacheRef.current.delete(oldestKey);
-        }
-      }
-    }).catch(error => {
-      console.error('Error fetching cars:', error);
-    });
+    fetchCars(1, filtersWithPagination, true);
 
     // Update URL with all non-empty filter values - now using utility
     const searchParams = filtersToURLParams(newFilters);
     searchParams.set('page', '1');
     setSearchParams(searchParams);
-  }, [fetchCars, setSearchParams, setCars, setTotalCount, setFilters]);
+  }, [fetchCars, setSearchParams]);
 
   // Optimized year filtering hook for better performance
   const {
@@ -317,8 +292,8 @@ const filteredCars = useMemo(() => {
 
   // Debounced version for performance - Reduced debounce time for year filters - using catalog utility
   const debouncedApplyFilters = useCallback(
-    catalogDebounce(applyFiltersInternal, isMobile ? 100 : 150), // Faster response on mobile
-    [applyFiltersInternal, isMobile]
+    catalogDebounce(applyFiltersInternal, 150), // Reduced from 300ms for faster response
+    [applyFiltersInternal]
   );
 
   const handleFiltersChange = useCallback(async (newFilters: APIFilters) => {
@@ -353,16 +328,7 @@ const filteredCars = useMemo(() => {
       // Apply other filters with debouncing to reduce API calls
       debouncedApplyFilters(newFilters);
     }
-    
-    // On mobile, auto-close filter panel after applying filters (except for search)
-    if (isMobile && showFilters) {
-      // Give users a brief moment to see the filter was applied, then close
-      setTimeout(() => {
-        setShowFilters(false);
-        setHasExplicitlyClosed(true);
-      }, 800);
-    }
-  }, [debouncedApplyFilters, handleOptimizedYearFilter, filters, setCars, setFilters, setTotalCount, isMobile, showFilters]);
+  }, [debouncedApplyFilters, handleOptimizedYearFilter, filters, setCars, setFilters, setTotalCount]);
 
   const handleClearFilters = useCallback(() => {
     setFilters({});
@@ -651,40 +617,6 @@ const filteredCars = useMemo(() => {
           per_page: "50"
         };
         
-        // Check if we need to restore filter state from car details navigation
-        const restoreFilterState = sessionStorage.getItem('restore-filter-state');
-        if (restoreFilterState) {
-          try {
-            const savedFilterState = JSON.parse(restoreFilterState);
-            console.log("🔄 Restoring filter state from car details:", savedFilterState);
-            
-            // Restore filter panel state on mobile
-            if (isMobile && savedFilterState.showFilters !== undefined) {
-              setShowFilters(savedFilterState.showFilters);
-              if (savedFilterState.showFilters) {
-                setHasExplicitlyClosed(false);
-              }
-            }
-            
-            // Apply the saved filters (they should already be in the URL if properly saved)
-            setFilters(prev => ({
-              ...prev,
-              ...initialFilters
-            }));
-            
-            // Clean up the restore state
-            sessionStorage.removeItem('restore-filter-state');
-          } catch (error) {
-            console.warn("Failed to restore filter state:", error);
-            sessionStorage.removeItem('restore-filter-state');
-          }
-        } else {
-          setFilters(prev => ({
-            ...prev,
-            ...initialFilters
-          }));
-        }
-        
         await fetchCars(urlCurrentPage, initialFilters, true);
 
       } catch (error) {
@@ -867,7 +799,7 @@ const filteredCars = useMemo(() => {
     }
   }, [loading]);
 
-  // Save filter panel state to sessionStorage only on mobile when it changes
+  // Save filter panel state to sessionStorage on mobile when it changes
   useEffect(() => {
     if (isMobile) {
       sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(showFilters));
@@ -902,11 +834,14 @@ const filteredCars = useMemo(() => {
 
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Filter Sidebar - Always visible on desktop, collapsible on mobile */}
+      {/* Collapsible Filter Sidebar - Optimized for mobile */}
       <div 
         ref={filterPanelRef}
         className={`
-        ${isMobile ? `fixed z-40 bg-card border-r transition-transform duration-300 ease-in-out top-0 left-0 right-0 bottom-0 w-full h-dvh overflow-y-auto safe-area-inset shadow-xl ${showFilters ? 'translate-x-0' : '-translate-x-full'}` : 'relative w-80 sm:w-80 lg:w-72 h-full flex-shrink-0 overflow-y-auto bg-card border-r'}
+        fixed lg:relative z-40 bg-card border-r transition-transform duration-300 ease-in-out
+        ${showFilters ? 'translate-x-0' : '-translate-x-full'}
+        ${isMobile ? 'top-0 left-0 right-0 bottom-0 w-full h-dvh overflow-y-auto safe-area-inset' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0 overflow-y-auto'} 
+        lg:shadow-none shadow-xl
       `}>
         <div className={`${isMobile ? 'mobile-filter-compact filter-header bg-primary text-primary-foreground' : 'p-3 sm:p-4 border-b flex-shrink-0'}`}>
           <div className="flex items-center justify-between">
@@ -922,49 +857,32 @@ const filteredCars = useMemo(() => {
               )}
             </div>
             <div className="flex items-center gap-1">
-              {/* Only show Clear and Close buttons on mobile */}
-              {isMobile && (
-                <>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={handleClearFilters}
-                    className="flex items-center gap-1 h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground text-xs"
-                  >
-                    <span className="text-xs">Clear</span>
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => {
-                      setShowFilters(false);
-                      setHasExplicitlyClosed(true); // Mark as explicitly closed
-                    }}
-                    className="flex items-center gap-1 h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground"
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </>
-              )}
-              {/* Show Clear button on desktop */}
-              {!isMobile && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleClearFilters}
-                  className="flex items-center gap-1 h-8 px-2 text-muted-foreground hover:text-foreground"
-                >
-                  <RotateCcw className="h-3 w-3" />
-                  <span className="text-xs">Clear All</span>
-                </Button>
-              )}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleClearFilters}
+                className={`lg:hidden flex items-center gap-1 ${isMobile ? 'h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground text-xs' : 'h-8 px-2'}`}
+              >
+                <span className="text-xs">Clear</span>
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => {
+                  setShowFilters(false);
+                  setHasExplicitlyClosed(true); // Mark as explicitly closed
+                }}
+                className={`lg:hidden flex items-center gap-1 ${isMobile ? 'h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground' : 'h-8 px-2'}`}
+              >
+                <X className="h-3 w-3" />
+              </Button>
             </div>
           </div>
         </div>
         
         <div className={`flex-1 overflow-y-auto ${isMobile ? 'mobile-filter-content mobile-filter-compact' : 'p-3 sm:p-4'}`}>
           <div className={`${isMobile ? '' : ''}`}>
-            <ModernEncarFilter
+            <EncarStyleFilter
             filters={filters}
             manufacturers={manufacturers}
             models={models}
@@ -980,14 +898,15 @@ const filteredCars = useMemo(() => {
             onFetchTrimLevels={fetchTrimLevels}
             compact={true}
             onSearchCars={() => {
-              // Hide filter panel after search and mark as explicitly closed
+              // Issue #2 FIXED: Hide filter panel after search and mark as explicitly closed
+              // This prevents the panel from reopening until user manually opens it
               fetchCars(1, { ...filters, per_page: "50" }, true);
-              setShowFilters(false);
-              setHasExplicitlyClosed(true);
+              setShowFilters(false); // Always hide filter panel when search button is clicked
+              setHasExplicitlyClosed(true); // Mark as explicitly closed to prevent auto-reopening
             }}
             onCloseFilter={() => {
               setShowFilters(false);
-              setHasExplicitlyClosed(true);
+              setHasExplicitlyClosed(true); // Mark as explicitly closed
             }}
           />
           
@@ -1001,12 +920,14 @@ const filteredCars = useMemo(() => {
         </div>
       </div>
 
-      {/* Overlay for mobile only */}
-      {showFilters && isMobile && (
+      {/* Overlay for mobile - stronger backdrop on mobile */}
+      {showFilters && (
         <div 
-          className="fixed inset-0 z-30 transition-opacity duration-300 bg-black/70 backdrop-blur-md"
+          className={`fixed inset-0 z-30 lg:hidden transition-opacity duration-300 ${
+            isMobile ? 'bg-black/70 backdrop-blur-md' : 'bg-black/50 backdrop-blur-sm'
+          }`}
           onClick={() => {
-            // Allow closing filters via overlay click on mobile and mark as explicitly closed
+            // Issue #2 FIXED: Allow closing filters anytime via overlay click and mark as explicitly closed
             setShowFilters(false);
             setHasExplicitlyClosed(true); // Mark as explicitly closed
           }}
@@ -1031,33 +952,31 @@ const filteredCars = useMemo(() => {
                   <span className="hidden xs:inline text-xs">Back</span>
                 </Button>
                 
-                {/* Filter Toggle Button - Only for mobile */}
-                {isMobile && (
-                  <Button
-                    variant="default"
-                    size="lg"
-                    onClick={() => {
-                      // Only allow toggling on mobile
-                      const newShowState = !showFilters;
-                      setShowFilters(newShowState);
-                      if (newShowState) {
-                        setHasExplicitlyClosed(false); // Reset explicit close flag when manually opening
-                      } else {
-                        setHasExplicitlyClosed(true); // Mark as explicitly closed when manually closing
-                      }
-                    }}
-                    className="flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground"
-                  >
-                    {showFilters ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
-                    <span className="hidden xs:inline">{showFilters ? 'Fshih Filtrat' : 'Shfaq Filtrat'}</span>
-                    <span className="xs:hidden">Filtrat</span>
-                    {hasSelectedCategories && !showFilters && (
-                      <span className="ml-1 text-xs bg-primary-foreground/20 px-2 py-1 rounded-full animate-bounce">
-                        {Object.values(filters).filter(Boolean).length}
-                      </span>
-                    )}
-                  </Button>
-                )}
+                {/* Filter Toggle Button - Solid styling with no effects */}
+                <Button
+                  variant="default"
+                  size="lg"
+                  onClick={() => {
+                    // Issue #2 FIXED: Allow toggling filters manually and reset explicit close flag
+                    const newShowState = !showFilters;
+                    setShowFilters(newShowState);
+                    if (newShowState) {
+                      setHasExplicitlyClosed(false); // Reset explicit close flag when manually opening
+                    } else {
+                      setHasExplicitlyClosed(true); // Mark as explicitly closed when manually closing
+                    }
+                  }}
+                  className="flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
+                  {showFilters ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
+                  <span className="hidden xs:inline">{showFilters ? 'Fshih Filtrat' : 'Shfaq Filtrat'}</span>
+                  <span className="xs:hidden">Filtrat</span>
+                  {hasSelectedCategories && !showFilters && (
+                    <span className="ml-1 text-xs bg-primary-foreground/20 px-2 py-1 rounded-full animate-bounce">
+                      {Object.values(filters).filter(Boolean).length}
+                    </span>
+                  )}
+                </Button>
               </div>
               
               {/* View mode and sort - mobile optimized */}
@@ -1105,21 +1024,18 @@ const filteredCars = useMemo(() => {
             </div>
           )}
 
-          {/* Consolidated Loading State - Single Professional Spinner */}
-          {((loading && cars.length === 0) || isRestoringState || (isFilterLoading && cars.length === 0)) ? (
+          {/* Loading State */}
+          {(loading && cars.length === 0) || isRestoringState ? (
             <div className="flex items-center justify-center py-12">
-              <div className="flex flex-col items-center gap-3">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span className="text-sm text-muted-foreground">
-                  {isRestoringState ? "Restoring your view..." : 
-                   isFilterLoading ? "Applying filters..." : "Loading cars..."}
-                </span>
-              </div>
+              <Loader2 className="h-8 w-8 animate-spin mr-2" />
+              <span>
+                {isRestoringState ? "Restoring your view..." : "Loading cars..."}
+              </span>
             </div>
           ) : null}
 
           {/* No Selection State */}
-          {!shouldShowCars && !loading && !isRestoringState && !isFilterLoading && (
+          {!shouldShowCars && !loading && !isRestoringState && (
             <div className="text-center py-16">
               <div className="max-w-md mx-auto">
                 <Car className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
@@ -1155,15 +1071,25 @@ const filteredCars = useMemo(() => {
             </div>
           )}
 
+          {/* Filter Loading State */}
+          {isFilterLoading && cars.length === 0 && (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin mr-3" />
+              <span className="text-lg font-medium">Applying filters...</span>
+            </div>
+          )}
+
           {/* Cars Grid/List - Show cars without requiring filters */}
           {shouldShowCars && cars.length > 0 && (
             <div className="relative">
-              {/* Subtle loading indicator for existing cars during filter changes */}
+              {/* Loading Overlay for Cars Grid */}
               {isFilterLoading && (
-                <div className="absolute top-0 left-0 right-0 bg-primary/10 backdrop-blur-sm z-10 rounded-lg p-2 mb-4">
-                  <div className="flex items-center justify-center gap-2 text-sm text-primary">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                    <span>Updating results...</span>
+                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
+                  <div className="bg-card border border-border rounded-lg p-6 shadow-lg">
+                    <div className="flex items-center gap-3">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      <span className="text-sm font-medium text-foreground">Applying filters...</span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1171,10 +1097,9 @@ const filteredCars = useMemo(() => {
               <div
                 ref={containerRef}
                 className={`grid mobile-car-grid-compact sm:mobile-car-grid gap-2 sm:gap-3 lg:gap-4 transition-all duration-300 ${
-                  // On mobile, adjust grid based on filter visibility; on desktop, always account for filter panel
-                  isMobile 
-                    ? (showFilters ? 'grid-cols-1' : 'grid-cols-2 sm:grid-cols-3')
-                    : 'lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'
+                  showFilters 
+                    ? 'lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' 
+                    : 'lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7'
                 } ${isFilterLoading ? 'opacity-50' : ''}`}
               >
                 {carsForCurrentPage.map((car) => {

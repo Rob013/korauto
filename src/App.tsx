@@ -13,8 +13,6 @@ import { useResourcePreloader } from "./hooks/useResourcePreloader";
 const Index = lazy(() => import("./pages/Index"));
 const Catalog = lazy(() => import("./pages/Catalog"));
 const NewCatalog = lazy(() => import("./pages/NewCatalog"));
-const FastCatalog = lazy(() => import("./pages/FastCatalog"));
-const SimpleCatalog = lazy(() => import("./components/SimpleCatalog"));
 const CarDetails = lazy(() => import("./pages/CarDetails"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AuthPage = lazy(() => import("./pages/AuthPage"));
@@ -31,7 +29,7 @@ const PerformanceDashboard = lazy(() => import("./components/PerformanceDashboar
 
 // Lazy load admin components for better code splitting
 const AdminSyncDashboard = lazy(() => import("./components/AdminSyncDashboard"));
-const CookieManagementDashboard = lazy(() => import("./components/CookieManagementDashboard").then(m => ({ default: m.CookieManagementDashboard })));
+const CookieManagementDashboard = lazy(() => import("./components/CookieManagementDashboard"));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-background">
@@ -89,7 +87,7 @@ const queryClient = new QueryClient({
       // Retry failed requests up to 2 times
       retry: 2,
       // Only refetch if data is stale (improved from 'always')
-      refetchOnMount: true,
+      refetchOnMount: 'if-stale',
       // Enable background refetching for better UX
       refetchInterval: false,
       // Network mode optimizations
@@ -128,11 +126,6 @@ const App = () => {
             <Route path="/catalog-new" element={
               <Suspense fallback={<PageSkeleton />}>
                 <NewCatalog />
-              </Suspense>
-            } />
-            <Route path="/catalog-simple" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <SimpleCatalog />
               </Suspense>
             } />
             <Route path="/car/:id" element={

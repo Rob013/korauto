@@ -2,89 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Mobile Performance Optimizations */
-
-/* Reduce motion for users who prefer it */
-.reduce-motion * {
-  animation-duration: 0.01ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 0.01ms !important;
-  scroll-behavior: auto !important;
-}
-
-/* Optimize touch interactions */
-.touch-manipulation {
-  touch-action: manipulation;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Optimize scrolling performance */
-.optimized-scroll {
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
-  will-change: scroll-position;
-}
-
-/* Optimize image rendering */
-.optimized-image {
-  will-change: auto;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  perspective: 1000px;
-}
-
-/* Mobile-specific card optimizations */
-@media (max-width: 768px) {
-  .mobile-card-compact {
-    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
-  }
-  
-  .mobile-card-compact:active {
-    transform: scale(0.98);
-  }
-  
-  /* Reduce visual complexity on mobile */
-  .mobile-card-compact .card-details {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.25rem;
-  }
-  
-  .mobile-card-compact .card-title {
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-  }
-  
-  .mobile-card-compact .card-price {
-    font-size: 1rem;
-    line-height: 1.5rem;
-  }
-}
-
-/* Grid optimizations for mobile */
-@media (max-width: 640px) {
-  .car-grid {
-    grid-template-columns: repeat(1, 1fr);
-    gap: 0.75rem;
-  }
-}
-
-@media (min-width: 641px) and (max-width: 1024px) {
-  .car-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-  }
-}
-
-@media (min-width: 1025px) {
-  .car-grid {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
-  }
-}
-
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
@@ -563,14 +480,6 @@ All colors MUST be HSL.
     max-height: 100dvh;
   }
 
-  /* Safe area inset support for modern devices */
-  .safe-area-inset {
-    padding-left: max(12px, env(safe-area-inset-left));
-    padding-right: max(12px, env(safe-area-inset-right));
-    padding-top: max(12px, env(safe-area-inset-top));
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
-  }
-
   /* Optimized container spacing for mobile - More compact */
   .container-responsive {
     padding-left: max(12px, env(safe-area-inset-left));
@@ -625,22 +534,11 @@ All colors MUST be HSL.
     justify-content: center;
   }
 
-  /* Enhanced filter content spacing */
-  .filter-content-improved {
-    padding: clamp(12px, 3vw, 16px);
-    gap: clamp(12px, 3vw, 16px);
-  }
-
-  /* Better form control heights for mobile */
-  .mobile-form-control {
-    min-height: 40px;
-    height: auto;
-  }
-
-  /* Improved card spacing for filters */
-  .filter-card-spacing {
-    padding: clamp(12px, 3vw, 16px);
-    margin-bottom: clamp(8px, 2vw, 12px);
+  /* Ensure filter content is properly scrollable - More compact */
+  .mobile-filter-content {
+    height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Compact filter panel styles */

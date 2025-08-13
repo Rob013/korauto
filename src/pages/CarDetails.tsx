@@ -994,11 +994,6 @@ const CarDetails = memo(() => {
                 // Try multiple methods in order of preference
                 if (previousPage && previousPage !== window.location.href) {
                   console.log("🔙 Using saved previous page:", previousPage);
-                  // If we have filter state, restore it to sessionStorage for the catalog
-                  if (filterState) {
-                    console.log("🔙 Restoring filter state:", filterState);
-                    sessionStorage.setItem('restore-filter-state', JSON.stringify(filterState));
-                  }
                   navigate(previousPage);
                 } else if (
                   document.referrer &&

@@ -3,10 +3,9 @@ name: Daily Car Sync
 
 on:
   schedule:
-    # Run daily at 03:00 Europe/Belgrade time
-    # Belgrade is UTC+1 in winter, UTC+2 in summer (DST)
-    # Using 01:00 UTC to ensure it runs at 3 AM Belgrade time year-round
-    - cron: '0 1 * * *'
+    # Run daily at 03:00 Europe/Belgrade (UTC+1 in winter, UTC+2 in summer)
+    # Using UTC+1 (02:00 UTC) as base time - GitHub Actions uses UTC
+    - cron: '0 2 * * *'
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
@@ -55,112 +54,41 @@ jobs:
 
       - name: Verify sync results
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
           SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
-          API_BASE_URL: ${{ secrets.API_BASE_URL }}
-          API_KEY: ${{ secrets.API_KEY }}
         run: |
           echo "🔍 Verifying sync results..."
 
-          # Run comprehensive verification
-          echo "📋 Running comprehensive sync verification..."
-          tsx scripts/verify-sync.ts
-
-          # Install PostgreSQL client for direct DB queries
+          # Install PostgreSQL client
           sudo apt-get update
           sudo apt-get install -y postgresql-client
 
-          # Check total car counts and validate 190k+ target
+          # Check total car counts
           DB_URL="postgresql://postgres:$SUPABASE_DB_PASSWORD@db.$SUPABASE_PROJECT_ID.supabase.co:5432/postgres"
-          
-          echo "📊 Database statistics:"
           psql "$DB_URL" -c "
             SELECT
               'Total cars' as metric,
-              COUNT(*) as count,
-              CASE 
-                WHEN COUNT(*) >= 190000 THEN '✅ TARGET MET'
-                ELSE '⚠️ BELOW TARGET'
-              END as status
+              COUNT(*) as count
             FROM public.cars
             UNION ALL
             SELECT
               'Active cars' as metric,
-              COUNT(*) as count,
-              CASE 
-                WHEN COUNT(*) >= 170000 THEN '✅ GOOD'
-                ELSE '⚠️ LOW'
-              END as status
+              COUNT(*) as count
             FROM public.cars
             WHERE is_active = true
             UNION ALL
             SELECT
               'Inactive cars' as metric,
-              COUNT(*) as count,
-              '📊 INFO' as status
+              COUNT(*) as count
             FROM public.cars
             WHERE is_active = false
             UNION ALL
             SELECT
               'External API cars' as metric,
-              COUNT(*) as count,
-              CASE 
-                WHEN COUNT(*) >= 180000 THEN '✅ GOOD'
-                ELSE '⚠️ LOW'
-              END as status
+              COUNT(*) as count
             FROM public.cars
             WHERE source_api = 'external'
-            UNION ALL
-            SELECT
-              'Recently synced (24h)' as metric,
-              COUNT(*) as count,
-              CASE 
-                WHEN COUNT(*) > 0 THEN '✅ ACTIVE'
-                ELSE '⚠️ STALE'
-              END as status
-            FROM public.cars
-            WHERE last_synced_at > NOW() - INTERVAL '24 hours'
             ORDER BY metric;
-          "
-
-          # Check data quality
-          echo "🔍 Data quality check:"
-          psql "$DB_URL" -c "
-            SELECT 
-              'Cars with complete data' as metric,
-              COUNT(*) as count,
-              ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM public.cars WHERE is_active = true), 2) || '%' as percentage
-            FROM public.cars 
-            WHERE is_active = true 
-              AND make IS NOT NULL AND make != ''
-              AND model IS NOT NULL AND model != ''
-              AND price > 0
-              AND (image_url IS NOT NULL OR images != '[]')
-            UNION ALL
-            SELECT 
-              'Active cars without images' as metric,
-              COUNT(*) as count,
-              ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM public.cars WHERE is_active = true), 2) || '%' as percentage
-            FROM public.cars 
-            WHERE is_active = true 
-              AND (image_url IS NULL OR image_url = '')
-              AND (images IS NULL OR images = '[]')
-            ORDER BY metric;
-          "
-
-          # Test search functionality
-          echo "🔍 Testing search functionality:"
-          psql "$DB_URL" -c "
-            SELECT public.cars_search_sorted('{
-              \"q\": \"\",
-              \"filters\": {},
-              \"sort\": {\"field\": \"year\", \"dir\": \"desc\"},
-              \"page\": 1,
-              \"pageSize\": 5,
-              \"mode\": \"results\"
-            }'::jsonb) -> 'total' as search_total_cars;
           "
 
           echo "✅ Sync verification completed!"

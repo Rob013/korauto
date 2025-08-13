@@ -9,7 +9,6 @@
 export interface APIFilters {
   manufacturer_id?: string;
   model_id?: string;
-  generation_id?: string;
   grade_iaai?: string;
   trim_level?: string;
   color?: string;
@@ -31,7 +30,7 @@ export interface APIFilters {
 export interface Car {
   id: string;
   title?: string;
-  lots?: any[];
+  lots?: Array<{ grade_iaai?: string; [key: string]: unknown }>;
   engine?: { name?: string };
   [key: string]: unknown;
 }
@@ -205,11 +204,10 @@ export const hasActiveFilters = (filters: APIFilters): boolean => {
  * Checks if this is a year range filter change
  */
 export const isYearRangeChange = (newFilters: APIFilters, currentFilters: APIFilters): boolean => {
-  return !!(
-    (newFilters.from_year !== currentFilters.from_year || 
-     newFilters.to_year !== currentFilters.to_year) && 
-    (newFilters.from_year != null || newFilters.to_year != null)
-  );
+  return (
+    newFilters.from_year !== currentFilters.from_year || 
+    newFilters.to_year !== currentFilters.to_year
+  ) && (newFilters.from_year || newFilters.to_year);
 };
 
 /**
@@ -306,9 +304,8 @@ export const sortManufacturers = (manufacturers: Array<{
   id: number; 
   name: string; 
   cars_qty?: number; 
-  car_count?: number; 
-  image?: string;
-}>): Array<{ id: number; name: string; cars_qty?: number; car_count?: number; image?: string }> => {
+  car_count?: number 
+}>): Array<{ id: number; name: string; cars_qty?: number; car_count?: number }> => {
   return manufacturers
     .filter(m => {
       // Ensure manufacturer has valid data from API
@@ -390,73 +387,5 @@ export const debounce = <T extends (...args: unknown[]) => unknown>(
   return (...args: Parameters<T>) => {
     clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
-  };
-};
-
-/**
- * Memoization utility for expensive computations
- */
-const memoizeCache = new Map<string, any>();
-export const memoize = <T extends (...args: any[]) => any>(fn: T): T => {
-  return ((...args: Parameters<T>) => {
-    const key = JSON.stringify(args);
-    
-    if (memoizeCache.has(key)) {
-      return memoizeCache.get(key);
-    }
-    
-    const result = fn(...args);
-    memoizeCache.set(key, result);
-    
-    // Limit cache size to prevent memory leaks
-    if (memoizeCache.size > 100) {
-      const firstKey = memoizeCache.keys().next().value;
-      memoizeCache.delete(firstKey);
-    }
-    
-    return result;
-  }) as T;
-};
-
-/**
- * Filters out items with zero or undefined count from filter options
- * This ensures consistent behavior across all filter components
- */
-export const filterZeroCounts = <T extends { count?: number }>(items: T[]): T[] => {
-  return items.filter(item => (item.count || 0) > 0);
-};
-
-/**
- * Filters out entries with zero count from facet counts object
- * Optimized with memoization for performance
- */
-export const filterZeroCountFacets = memoize((facetCounts: Record<string, number>): Record<string, number> => {
-  const filtered: Record<string, number> = {};
-  Object.entries(facetCounts).forEach(([key, count]) => {
-    if (count > 0) {
-      filtered[key] = count;
-    }
-  });
-  return filtered;
-});
-
-/**
- * Optimized debounce for search operations
- * Uses requestAnimationFrame for smooth UI updates
- */
-export const optimizedDebounce = <T extends (...args: unknown[]) => unknown>(
-  func: T,
-  wait: number
-): ((...args: Parameters<T>) => void) => {
-  let timeout: NodeJS.Timeout;
-  let rafId: number;
-  
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    if (rafId) cancelAnimationFrame(rafId);
-    
-    timeout = setTimeout(() => {
-      rafId = requestAnimationFrame(() => func(...args));
-    }, wait);
   };
 };

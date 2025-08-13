@@ -18,9 +18,8 @@ async function makeApiRequest(url: string, retryCount = 0): Promise<any> {
   const headers = {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
-    'User-Agent': 'Encar-Sync/2.0',
-    'x-api-key': Deno.env.get('AUCTIONS_API_KEY') || ''
-  } as Record<string, string>
+    'User-Agent': 'Encar-Sync/2.0'
+  }
 
   try {
     console.log(`📡 API Request: ${url} (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`)
@@ -83,16 +82,12 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-// Get request parameters
-const url = new URL(req.url)
-let body: any = {}
-if (req.method !== 'GET') {
-  try { body = await req.json(); } catch {}
-}
-const syncType = (body?.type || url.searchParams.get('type') || 'incremental') as string
-const minutes = parseInt((body?.minutes ?? url.searchParams.get('minutes') ?? '60').toString())
+    // Get request parameters
+    const url = new URL(req.url)
+    const syncType = url.searchParams.get('type') || 'incremental'
+    const minutes = parseInt(url.searchParams.get('minutes') || '60')
 
-console.log(`📋 Sync Details: ${syncType} sync for last ${minutes} minutes`)
+    console.log(`📋 Sync Details: ${syncType} sync for last ${minutes} minutes`)
 
     // Clean up stuck syncs older than 1 hour
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
@@ -155,17 +150,18 @@ console.log(`📋 Sync Details: ${syncType} sync for last ${minutes} minutes`)
 
     console.log(`✅ Created sync record: ${syncRecord.id}`)
 
-const BASE_URL = 'https://auctionsapi.com/api'
+    const API_KEY = 'd00985c77981fe8d26be16735f932ed1'
+    const BASE_URL = 'https://auctionsapi.com/api'
     
     let totalCarsProcessed = 0
     let totalArchivedProcessed = 0
-    const errors: string[] = []
+    let errors: string[] = []
 
     try {
       // Step 1: Process active cars from /api/cars endpoint
       console.log(`📡 Processing active cars (${syncType === 'full' ? 'full sync' : `last ${minutes} minutes`})`)
       
-let baseUrl = `${BASE_URL}/cars?per_page=${PAGE_SIZE}`
+      let baseUrl = `${BASE_URL}/cars?api_key=${API_KEY}&per_page=${PAGE_SIZE}`
       if (syncType !== 'full') {
         baseUrl += `&minutes=${minutes}`
       }
@@ -303,9 +299,9 @@ let baseUrl = `${BASE_URL}/cars?per_page=${PAGE_SIZE}`
       // Step 2: Process archived lots from /api/archived-lots endpoint
       console.log(`🗂️ Processing archived lots (${syncType === 'full' ? 'full sync' : `last ${minutes} minutes`})`)
       
-let archivedUrl = `${BASE_URL}/archived-lots`
+      let archivedUrl = `${BASE_URL}/archived-lots?api_key=${API_KEY}`
       if (syncType !== 'full') {
-        archivedUrl += `?minutes=${minutes}`
+        archivedUrl += `&minutes=${minutes}`
       }
 
       try {

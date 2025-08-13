@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useEffect, useState, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
@@ -41,7 +40,7 @@ import { CookieManagementDashboard } from "@/components/CookieManagementDashboar
 // Lazy load heavy admin components
 const AdminSyncDashboard = lazy(() => 
   import("@/components/AdminSyncDashboard").then(module => ({ 
-    default: module.default 
+    default: module.AdminSyncDashboard 
   }))
 );
 
