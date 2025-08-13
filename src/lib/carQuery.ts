@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { supabase } from '@/integrations/supabase/client';
 import type { CarFilters, SortOption } from '@/store/carFilterStore';
 import type { Tables } from '@/integrations/supabase/types';

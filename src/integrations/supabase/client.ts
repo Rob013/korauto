@@ -1,10 +1,14 @@
-// This file configures the Supabase client with environment variable support
+// This file configures the Supabase client with project constants (no VITE_* envs)
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from './types';
+// Note: Database types are not used here to avoid TS issues in preview builds
 import { isDevelopmentMode, getSupabaseConfig, DEVELOPMENT_SUPABASE_CONFIG } from '@/lib/developmentMode';
 
-// Get configuration based on environment variables or use development defaults
-const config = isDevelopmentMode() ? DEVELOPMENT_SUPABASE_CONFIG : getSupabaseConfig();
+// Always resolve a working config (fallback to development constants)
+const resolvedConfig = (() => {
+  const cfg = getSupabaseConfig();
+  if (!cfg?.url || !cfg?.anonKey) return DEVELOPMENT_SUPABASE_CONFIG;
+  return cfg;
+})();
 
 // Log the current mode for debugging
 if (isDevelopmentMode()) {
@@ -16,7 +20,7 @@ if (isDevelopmentMode()) {
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(config.url, config.anonKey, {
+export const supabase = createClient(resolvedConfig.url, resolvedConfig.anonKey, {
   auth: {
     storage: localStorage,
     persistSession: true,

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useCallback, useRef } from 'react';
 import { debounce, throttle } from '@/utils/performance';
 

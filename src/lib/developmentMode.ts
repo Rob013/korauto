@@ -6,22 +6,14 @@
  */
 
 export const isDevelopmentMode = (): boolean => {
-  // Check if Supabase environment variables are configured
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  
-  // If either environment variable is missing or empty, use development mode
-  const hasSupabaseConfig = !!(supabaseUrl && supabaseKey && 
-    supabaseUrl.trim() !== '' && supabaseKey.trim() !== '');
-  
-  return !hasSupabaseConfig;
+  // Lovable does not support VITE_* env vars; always use live Supabase config
+  return false;
 };
 
 export const getSupabaseConfig = () => {
-  return {
-    url: import.meta.env.VITE_SUPABASE_URL,
-    anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-  };
+  const url = import.meta.env.VITE_SUPABASE_URL || DEVELOPMENT_SUPABASE_CONFIG.url;
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || DEVELOPMENT_SUPABASE_CONFIG.anonKey;
+  return { url, anonKey };
 };
 
 // Development mode hardcoded credentials (fallback)

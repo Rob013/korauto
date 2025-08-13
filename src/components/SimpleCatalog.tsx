@@ -96,6 +96,13 @@ const SimpleCatalog = ({ highlightCarId }: SimpleCatalogProps = {}) => {
     return () => clearTimeout(timeoutId);
   }, [currentPage, filters, fetchCars]);
 
+  // Auto-trigger a full sync if no cars are present
+  useEffect(() => {
+    if (!loading && totalCount === 0) {
+      triggerSync('full').catch(() => {});
+    }
+  }, [loading, totalCount, triggerSync]);
+
   // Sort cars client-side for now (later optimize with server-side sorting)
   const sortedCars = useMemo(() => {
     if (!cars || cars.length === 0) return [];
@@ -195,6 +202,9 @@ const SimpleCatalog = ({ highlightCarId }: SimpleCatalogProps = {}) => {
                 <Button variant="ghost" size="sm" onClick={handleClearFilters}>
                   <RotateCcw className="h-4 w-4" />
                   Clear
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleSync}>
+                  Sync
                 </Button>
                 {isMobile && (
                   <Button variant="ghost" size="sm" onClick={() => setShowFilters(false)}>
