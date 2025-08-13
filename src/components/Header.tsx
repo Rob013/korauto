@@ -78,12 +78,6 @@ const Header = () => {
               Kontaktet
             </Link>
             <Link 
-              to="/marketplace" 
-              className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200"
-            >
-              Marketplace
-            </Link>
-            <Link 
               to="/favorites" 
               className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200 flex items-center gap-1"
             >
@@ -155,13 +149,6 @@ const Header = () => {
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Kontaktet
-              </Link>
-              <Link 
-                to="/marketplace" 
-                className="text-foreground hover:text-primary font-medium transition-colors py-2 px-3 rounded-md hover:bg-primary/10"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Marketplace
               </Link>
 
               <Link 
