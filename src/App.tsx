@@ -30,6 +30,8 @@ const PerformanceDashboard = lazy(() => import("./components/PerformanceDashboar
 // Lazy load admin components for better code splitting
 const AdminSyncDashboard = lazy(() => import("./components/AdminSyncDashboard"));
 const CookieManagementDashboard = lazy(() => import("./components/CookieManagementDashboard"));
+// Lazy load marketplace page
+const MarketplacePage = lazy(() => import("./pages/MarketplacePage"));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-background">
@@ -192,6 +194,11 @@ const App = () => {
             <Route path="/cookie-management" element={
               <Suspense fallback={<PageSkeleton />}>
                 <CookieManagementDashboard />
+              </Suspense>
+            } />
+            <Route path="/marketplace" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <MarketplacePage />
               </Suspense>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
