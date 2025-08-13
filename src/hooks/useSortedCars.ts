@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-export type SortOption = 'price_low' | 'price_high' | 'year_new' | 'year_old' | 'mileage_low' | 'mileage_high' | 'make_az' | 'make_za' | 'popular';
+export type SortOption = 'recently_added' | 'price_low' | 'price_high' | 'year_new' | 'year_old' | 'mileage_low' | 'mileage_high' | 'make_az' | 'make_za' | 'popular';
 
 // Use a generic type that works with both secure API cars and other car types
 interface FlexibleCar {
@@ -69,6 +69,13 @@ export const useSortedCars = (cars: FlexibleCar[], sortBy: SortOption) => {
       const bPrice = bLot?.buy_now ? Math.round(bLot.buy_now + 2200) : 25000;
 
       switch (sortBy) {
+        case 'recently_added': {
+          // Sort by sale_date if available, otherwise by ID (assuming newer IDs = more recent)
+          const aDate = aLot?.sale_date ? new Date(aLot.sale_date).getTime() : parseInt(a.id) || 0;
+          const bDate = bLot?.sale_date ? new Date(bLot.sale_date).getTime() : parseInt(b.id) || 0;
+          return bDate - aDate; // Most recent first
+        }
+        
         case 'price_low':
           return aPrice - bPrice;
         
@@ -81,30 +88,35 @@ export const useSortedCars = (cars: FlexibleCar[], sortBy: SortOption) => {
         case 'year_old':
           return a.year - b.year;
         
-        case 'mileage_low':
+        case 'mileage_low': {
           const aMileage = aLot?.odometer?.km || 999999;
           const bMileage = bLot?.odometer?.km || 999999;
           return aMileage - bMileage;
+        }
         
-        case 'mileage_high':
+        case 'mileage_high': {
           const aMileageHigh = aLot?.odometer?.km || 0;
           const bMileageHigh = bLot?.odometer?.km || 0;
           return bMileageHigh - aMileageHigh;
+        }
         
-        case 'make_az':
+        case 'make_az': {
           const aMake = a.manufacturer?.name || '';
           const bMake = b.manufacturer?.name || '';
           return aMake.localeCompare(bMake);
+        }
         
-        case 'make_za':
+        case 'make_za': {
           const aMakeZ = a.manufacturer?.name || '';
           const bMakeZ = b.manufacturer?.name || '';
           return bMakeZ.localeCompare(aMakeZ);
+        }
         
-        case 'popular':
+        case 'popular': {
           const aPopularity = a.popularity_score || aLot?.popularity_score || 0;
           const bPopularity = b.popularity_score || bLot?.popularity_score || 0;
           return bPopularity - aPopularity;
+        }
         
         default:
           return 0;
@@ -116,6 +128,7 @@ export const useSortedCars = (cars: FlexibleCar[], sortBy: SortOption) => {
 };
 
 export const getSortOptions = () => [
+  { value: 'recently_added', label: 'Më të fundit të shtuar' },
   { value: 'price_low', label: 'Çmimi: Nga më i ulet' },
   { value: 'price_high', label: 'Çmimi: Nga më i larti' },
   { value: 'year_new', label: 'Viti: Nga më i ri' },
