@@ -424,6 +424,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
   const handleManufacturerChange = async (manufacturerId: string) => {
     console.log(`[handleManufacturerChange] Called with manufacturerId: ${manufacturerId}`);
+    
+    // Prevent rapid consecutive calls by showing loading immediately
     setIsLoading(true);
     setIsFilterLoading(true);
     setModels([]);
@@ -451,7 +453,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setLoadedPages(1);
     
     try {
-      // Only fetch models and cars, skip duplicate calls for grades/trim levels
+      // Only fetch essential data - models and cars. Skip grades/trim levels to prevent excessive calls
       const promises = [];
       
       if (manufacturerId) {
@@ -466,7 +468,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         );
       }
       
-      // Fetch cars with new filters - remove per_page duplicates
+      // Fetch cars with new filters
       promises.push(
         fetchCars(1, { ...newFilters, per_page: "50" }, true)
       );
@@ -1025,11 +1027,12 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           )}
 
           {/* Loading State */}
-          {(loading && cars.length === 0) || isRestoringState ? (
+          {(loading && cars.length === 0) || isRestoringState || isFilterLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin mr-2" />
               <span>
-                {isRestoringState ? "Restoring your view..." : "Loading cars..."}
+                {isRestoringState ? "Restoring your view..." : 
+                 isFilterLoading ? "Switching brand..." : "Loading cars..."}
               </span>
             </div>
           ) : null}

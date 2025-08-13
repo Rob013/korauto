@@ -180,40 +180,50 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   // Prioritized manufacturer sorting using utility
   const sortedManufacturers = useMemo(() => sortManufacturers(manufacturers), [manufacturers]);
 
-  // Fetch grades when filters change
+  // Fetch grades when filters change - with debouncing to prevent excessive calls
   useEffect(() => {
     if (filters.manufacturer_id && onFetchGrades) {
-      setIsLoadingGrades(true);
-      onFetchGrades(filters.manufacturer_id, filters.model_id)
-        .then(gradesData => {
-          if (Array.isArray(gradesData)) {
-            setGrades(gradesData);
-          }
-          setIsLoadingGrades(false);
-        })
-        .catch((err) => {
-          console.error('Grade fetch error:', err);
-          setIsLoadingGrades(false);
-        });
+      // Debounce to prevent rapid consecutive calls when switching brands
+      const timeoutId = setTimeout(() => {
+        setIsLoadingGrades(true);
+        onFetchGrades(filters.manufacturer_id, filters.model_id)
+          .then(gradesData => {
+            if (Array.isArray(gradesData)) {
+              setGrades(gradesData);
+            }
+            setIsLoadingGrades(false);
+          })
+          .catch((err) => {
+            console.error('Grade fetch error:', err);
+            setIsLoadingGrades(false);
+          });
+      }, 300); // 300ms debounce delay
+
+      return () => clearTimeout(timeoutId);
     } else {
       setGrades([]);
       setIsLoadingGrades(false);
     }
   }, [filters.manufacturer_id, filters.model_id, onFetchGrades]);
 
-  // Fetch trim levels when filters change
+  // Fetch trim levels when filters change - with debouncing to prevent excessive calls
   useEffect(() => {
     if (filters.manufacturer_id && onFetchTrimLevels) {
-      onFetchTrimLevels(filters.manufacturer_id, filters.model_id)
-        .then(trimLevelsData => {
-          if (Array.isArray(trimLevelsData)) {
-            setTrimLevels(trimLevelsData);
-          }
-        })
-        .catch((err) => {
-          console.error('Trim level fetch error:', err);
-          setTrimLevels([]);
-        });
+      // Debounce to prevent rapid consecutive calls when switching brands
+      const timeoutId = setTimeout(() => {
+        onFetchTrimLevels(filters.manufacturer_id, filters.model_id)
+          .then(trimLevelsData => {
+            if (Array.isArray(trimLevelsData)) {
+              setTrimLevels(trimLevelsData);
+            }
+          })
+          .catch((err) => {
+            console.error('Trim level fetch error:', err);
+            setTrimLevels([]);
+          });
+      }, 300); // 300ms debounce delay
+
+      return () => clearTimeout(timeoutId);
     } else {
       setTrimLevels([]);
     }
