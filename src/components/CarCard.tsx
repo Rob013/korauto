@@ -483,7 +483,7 @@ const CarCard = ({
         <div className="space-y-2 mt-auto">
           <div className="flex items-center justify-between">
             <span className="text-lg font-bold text-primary">
-              €{price.toLocaleString()}
+              {typeof price === 'number' && isFinite(price) ? `€${price.toLocaleString()}` : 'Çmimi në kërkesë'}
             </span>
             <Button
               size="sm"
