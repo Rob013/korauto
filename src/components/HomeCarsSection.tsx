@@ -117,10 +117,10 @@ const HomeCarsSection = memo(() => {
         return false;
       }
 
-      // Generation filter (removed generation_id dependency)
+      // Generation filter
       if (
-        (filters as any).generation_id &&
-        car.generation?.id !== parseInt((filters as any).generation_id)
+        filters.generation_id &&
+        car.generation?.id !== parseInt(filters.generation_id)
       ) {
         return false;
       }
@@ -328,7 +328,7 @@ const HomeCarsSection = memo(() => {
 
   const handleFiltersChange = (newFilters: APIFilters) => {
     // Check if generation is being selected
-    if ((newFilters as any).generation_id && (newFilters as any).generation_id !== (filters as any).generation_id) {
+    if (newFilters.generation_id && newFilters.generation_id !== filters.generation_id) {
       // Smooth redirect to catalog with all current filters
       const searchParams = new URLSearchParams();
       Object.entries(newFilters).forEach(([key, value]) => {

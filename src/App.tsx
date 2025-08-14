@@ -8,7 +8,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { InstallPrompt } from "./components/InstallPrompt";
 import FloatingPerformanceWidget from "./components/FloatingPerformanceWidget";
 import { useResourcePreloader } from "./hooks/useResourcePreloader";
-import { NavigationProvider } from "./contexts/NavigationContext";
 
 // Lazy load all pages for better code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -88,7 +87,7 @@ const queryClient = new QueryClient({
       // Retry failed requests up to 2 times
       retry: 2,
       // Only refetch if data is stale (improved from 'always')
-      refetchOnMount: false,
+      refetchOnMount: 'if-stale',
       // Enable background refetching for better UX
       refetchInterval: false,
       // Network mode optimizations
@@ -110,10 +109,9 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <NavigationProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
           <Routes>
             <Route path="/" element={
               <Suspense fallback={<PageSkeleton />}>
@@ -206,7 +204,6 @@ const App = () => {
         </BrowserRouter>
         <InstallPrompt />
         <FloatingPerformanceWidget />
-        </NavigationProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
