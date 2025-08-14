@@ -438,7 +438,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Function to fetch all cars for sorting across all pages
   const fetchAllCarsForSorting = useCallback(async () => {
     // Create a unique key for current sort parameters to prevent duplicate calls
-    const sortKey = `${totalCount}-${sortBy}-${filters.grade_iaai || ''}-${filters.manufacturer_id || ''}-${filters.model_id || ''}`;
+    const sortKey = `${totalCount}-${sortBy}-${filters.grade_iaai || ''}-${filters.manufacturer_id || ''}-${filters.model_id || ''}-${filters.generation_id || ''}-${filters.from_year || ''}-${filters.to_year || ''}`;
     
     if (fetchingSortRef.current) {
       console.log(`⏳ Already fetching sort data, skipping duplicate request`);
@@ -1098,6 +1098,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     value={sortBy}
                     onValueChange={(value: SortOption) => {
                       setSortBy(value);
+                      // Immediately trigger global sorting for large datasets when sort changes
+                      if (totalCount > 50 && !fetchingSortRef.current) {
+                        console.log(`🔄 Sort changed: Immediately triggering global sorting for ${totalCount} cars with sortBy=${value}`);
+                        fetchAllCarsForSorting();
+                      }
                     }}
                     placeholder="Sort"
                     className="w-24 sm:w-32 h-7 text-xs pl-6"
