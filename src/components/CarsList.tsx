@@ -293,6 +293,23 @@ const CarsList: React.FC<CarsListProps> = ({
         <div ref={loadMoreRef} className="h-1" />
       )}
 
+      {/* Load More Button (visible backup) */}
+      {hasMore && !isLoading && cars.length > 0 && (
+        <div className="flex justify-center py-8">
+          <Button
+            onClick={onLoadMore}
+            variant="outline"
+            size="lg"
+            className="flex items-center gap-2"
+          >
+            Load More Cars
+            <div className="text-xs text-muted-foreground ml-2">
+              ({cars.length} of {cars.length < 1000 ? '1000+' : 'many'} shown)
+            </div>
+          </Button>
+        </div>
+      )}
+
       {/* Initial Loading Skeletons */}
       {isLoading && cars.length === 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
