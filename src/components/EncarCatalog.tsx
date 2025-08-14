@@ -399,10 +399,36 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setSearchParams(currentParams);
   }, [filters, fetchCars, setSearchParams, isSortingGlobal, allCarsForSorting.length]);
 
-  const handleLoadMore = () => {
-    // For backward compatibility, load next page
-    handlePageChange(currentPage + 1);
-  };
+  const loadMoreCars = useCallback(() => {
+    // Implement proper "load more" functionality
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    
+    // If global sorting is active, don't fetch new cars - just update the page for slicing
+    if (isSortingGlobal && allCarsForSorting.length > 0) {
+      // Update URL with new page
+      const currentParams = Object.fromEntries(searchParams.entries());
+      currentParams.page = nextPage.toString();
+      setSearchParams(currentParams);
+      console.log(`📄 Global sorting: Loading more cars for page ${nextPage}`);
+      return;
+    }
+    
+    // Fetch cars for the next page and append them to the existing list
+    const filtersWithPagination = addPaginationToFilters(filters, 50);
+    
+    fetchCars(nextPage, filtersWithPagination, false); // Don't reset list, append instead
+    
+    // Update URL with new page
+    const currentParams = Object.fromEntries(searchParams.entries());
+    currentParams.page = nextPage.toString();
+    setSearchParams(currentParams);
+  }, [currentPage, isSortingGlobal, allCarsForSorting.length, searchParams, setSearchParams, filters, fetchCars]);
+
+  const handleLoadMore = useCallback(() => {
+    // Legacy function for backward compatibility
+    loadMoreCars();
+  }, [loadMoreCars]);
 
   // Function to fetch all cars for sorting across all pages
   const fetchAllCarsForSorting = useCallback(async () => {
@@ -1221,55 +1247,30 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 })}
               </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
+              {/* Load More Button - replacing pagination */}
+              {hasMorePages && !loading && (
                 <div className="flex justify-center mt-6">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1 || loading}
-                      variant="outline"
-                      size="sm"
-                    >
-                      Previous
-                    </Button>
-                    
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        let pageNum;
-                        if (totalPages <= 5) {
-                          pageNum = i + 1;
-                        } else if (currentPage <= 3) {
-                          pageNum = i + 1;
-                        } else if (currentPage >= totalPages - 2) {
-                          pageNum = totalPages - 4 + i;
-                        } else {
-                          pageNum = currentPage - 2 + i;
-                        }
-                        
-                        return (
-                          <Button
-                            key={pageNum}
-                            onClick={() => handlePageChange(pageNum)}
-                            variant={currentPage === pageNum ? "default" : "outline"}
-                            size="sm"
-                            className="w-10 h-8"
-                            disabled={loading}
-                          >
-                            {pageNum}
-                          </Button>
-                        );
-                      })}
+                  <Button
+                    onClick={() => loadMoreCars()}
+                    variant="outline"
+                    size="lg"
+                    className="flex items-center gap-2"
+                    disabled={loading}
+                  >
+                    Load More Cars
+                    <div className="text-xs text-muted-foreground ml-2">
+                      ({cars.length} of {totalCount} shown)
                     </div>
-                    
-                    <Button
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalPages || loading}
-                      variant="outline"
-                      size="sm"
-                    >
-                      Next
-                    </Button>
+                  </Button>
+                </div>
+              )}
+              
+              {/* Loading indicator for load more */}
+              {loading && cars.length > 0 && (
+                <div className="flex justify-center py-8">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                    <span>Loading more cars...</span>
                   </div>
                 </div>
               )}
