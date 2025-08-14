@@ -30,7 +30,7 @@ interface UserPreferences {
   autoSave: boolean;
 }
 
-export const CookieManagementDashboard: React.FC = () => {
+const CookieManagementDashboard: React.FC = () => {
   const { stats, refreshStats, optimize, clearAll } = useCookieMonitor();
   const { sessionId, generateSession, clearSession } = useSessionId();
   const { preferences, updatePreferences } = usePreferences<UserPreferences>({
@@ -390,3 +390,5 @@ export const CookieManagementDashboard: React.FC = () => {
     </div>
   );
 };
+
+export default CookieManagementDashboard;

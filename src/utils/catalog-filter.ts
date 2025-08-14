@@ -9,6 +9,7 @@
 export interface APIFilters {
   manufacturer_id?: string;
   model_id?: string;
+  generation_id?: string;
   grade_iaai?: string;
   trim_level?: string;
   color?: string;
@@ -32,6 +33,7 @@ export interface Car {
   title?: string;
   lots?: Array<{ grade_iaai?: string; [key: string]: unknown }>;
   engine?: { name?: string };
+  price?: number;
   [key: string]: unknown;
 }
 
