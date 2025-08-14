@@ -36,12 +36,14 @@ const queryClient = new QueryClient({
 // Mock data for the filters panel - replace with actual API calls
 const mockFiltersData = {
   brands: [
-    { id: 'audi', name: 'Audi', count: 245 },
-    { id: 'bmw', name: 'BMW', count: 312 },
-    { id: 'mercedes', name: 'Mercedes-Benz', count: 189 },
-    { id: 'volkswagen', name: 'Volkswagen', count: 156 },
-    { id: 'toyota', name: 'Toyota', count: 201 },
+    { id: 'toyota', name: 'Toyota', count: 245 },
     { id: 'honda', name: 'Honda', count: 134 },
+    { id: 'bmw', name: 'BMW', count: 312 },
+    { id: 'mercedes-benz', name: 'Mercedes-Benz', count: 189 },
+    { id: 'audi', name: 'Audi', count: 245 },
+    { id: 'volkswagen', name: 'Volkswagen', count: 156 },
+    { id: 'hyundai', name: 'Hyundai', count: 201 },
+    { id: 'kia', name: 'Kia', count: 134 },
   ],
   models: [
     { id: 'a3', name: 'A3', brandId: 'audi', count: 45 },

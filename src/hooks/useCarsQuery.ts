@@ -37,6 +37,19 @@ const fetchCars = async (
   params: ReturnType<typeof buildQueryParams>,
   signal?: AbortSignal
 ): Promise<CarsResponse> => {
+  // Use mock data for development/testing
+  const { mockFetchCars } = await import('@/utils/mockCarsData');
+  const mockResponse = await mockFetchCars(params, signal);
+  
+  return {
+    cars: mockResponse.cars,
+    total: mockResponse.total,
+    page: mockResponse.page,
+    totalPages: mockResponse.totalPages,
+    hasMore: mockResponse.hasMore
+  };
+  
+  /* Original API call - uncomment when API is available
   const searchParams = new URLSearchParams();
   
   // Add all params to search string
@@ -56,10 +69,31 @@ const fetchCars = async (
   }
 
   return response.json();
+  */
 };
 
 // Mock API function for models
 const fetchModels = async (brandId: string, signal?: AbortSignal): Promise<Model[]> => {
+  // Use mock data for development/testing
+  const { carModels } = await import('@/utils/mockCarsData');
+  
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  if (signal?.aborted) {
+    throw new Error('Request aborted');
+  }
+  
+  const brandName = brandId.charAt(0).toUpperCase() + brandId.slice(1);
+  const models = (carModels as any)[brandName] || [];
+  
+  return models.map((model: string, index: number) => ({
+    id: model.toLowerCase().replace(/\s+/g, '-'),
+    name: model,
+    brandId: brandId
+  }));
+  
+  /* Original API call - uncomment when API is available
   const response = await fetch(`/api/models?brand=${brandId}`, {
     signal,
     headers: {
@@ -72,6 +106,7 @@ const fetchModels = async (brandId: string, signal?: AbortSignal): Promise<Model
   }
 
   return response.json();
+  */
 };
 
 export const useCarsQuery = (filters: FilterState) => {
