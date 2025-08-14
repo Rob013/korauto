@@ -78,8 +78,13 @@ export const useFiltersFromUrl = () => {
 
   // Update single filter
   const updateFilter = useCallback((key: keyof FilterState, value: any) => {
-    // Reset to page 1 when any filter changes, including sort
-    updateFilters({ [key]: value, page: 1 });
+    // For sort changes, don't reset page to maintain accumulated cars
+    if (key === 'sort') {
+      updateFilters({ [key]: value });
+    } else {
+      // Reset to page 1 when any other filter changes
+      updateFilters({ [key]: value, page: 1 });
+    }
   }, [updateFilters]);
 
   // Handle dependent filters: when brand changes, reset model
