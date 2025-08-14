@@ -263,8 +263,12 @@ const CatalogContent: React.FC = () => {
               </h1>
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <span>{total.toLocaleString()} cars found</span>
-                <span>•</span>
-                <span>Page {filters.page || 1} of {totalPages}</span>
+                {cars.length > 0 && cars.length < total && (
+                  <>
+                    <span>•</span>
+                    <span>Showing {cars.length} of {total.toLocaleString()}</span>
+                  </>
+                )}
                 {isFetching && (
                   <>
                     <span>•</span>

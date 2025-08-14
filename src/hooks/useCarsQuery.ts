@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useState, useEffect } from 'react';
 import { FilterState } from '@/hooks/useFiltersFromUrl';
 import { buildQueryParams } from '@/utils/buildQueryParams';
 
@@ -77,6 +77,25 @@ const fetchModels = async (brandId: string, signal?: AbortSignal): Promise<Model
 export const useCarsQuery = (filters: FilterState) => {
   const queryClient = useQueryClient();
   const abortControllerRef = useRef<AbortController | null>(null);
+  
+  // Track accumulated cars for infinite scroll
+  const [accumulatedCars, setAccumulatedCars] = useState<Car[]>([]);
+  const [currentTotal, setCurrentTotal] = useState(0);
+  const [currentHasMore, setCurrentHasMore] = useState(false);
+  
+  // Create a key for filters without page to track when filters change
+  const filtersWithoutPage = { ...filters };
+  delete filtersWithoutPage.page;
+  const filtersKey = JSON.stringify(filtersWithoutPage);
+  const filtersKeyRef = useRef(filtersKey);
+
+  // Reset accumulated cars when filters change (except page)
+  useEffect(() => {
+    if (filtersKey !== filtersKeyRef.current) {
+      setAccumulatedCars([]);
+      filtersKeyRef.current = filtersKey;
+    }
+  }, [filtersKey]);
 
   // Create query key from URL params for proper caching
   const queryKey = ['cars', buildQueryParams(filters)];
@@ -132,6 +151,29 @@ export const useCarsQuery = (filters: FilterState) => {
     },
   });
 
+  // Update accumulated cars when new data comes in
+  useEffect(() => {
+    if (carsQuery.data) {
+      const { cars, total, hasMore } = carsQuery.data;
+      const isFirstPage = (filters.page || 1) === 1;
+      
+      setCurrentTotal(total);
+      setCurrentHasMore(hasMore);
+      
+      if (isFirstPage) {
+        // Replace cars on first page (new search/filter/sort)
+        setAccumulatedCars(cars);
+      } else {
+        // Append cars for subsequent pages
+        setAccumulatedCars(prev => {
+          const existingIds = new Set(prev.map(car => car.id));
+          const newCars = cars.filter(car => !existingIds.has(car.id));
+          return [...prev, ...newCars];
+        });
+      }
+    }
+  }, [carsQuery.data, filters.page]);
+
   // Models query for dependent filtering
   const modelsQuery = useQuery({
     queryKey: ['models', filters.brand],
@@ -145,7 +187,7 @@ export const useCarsQuery = (filters: FilterState) => {
 
   // Prefetch next page when current data is available
   const prefetchNextPage = useCallback(() => {
-    if (carsQuery.data && (carsQuery.data as CarsResponse).hasMore) {
+    if (currentHasMore) {
       const nextPageFilters = { ...filters, page: (filters.page || 1) + 1 };
       const nextPageQueryKey = ['cars', buildQueryParams(nextPageFilters)];
       
@@ -157,19 +199,20 @@ export const useCarsQuery = (filters: FilterState) => {
         staleTime: 45000,
       });
     }
-  }, [carsQuery.data, filters, queryClient]);
+  }, [currentHasMore, filters, queryClient]);
 
   // Invalidate queries when filters change significantly
   const invalidateQueries = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['cars'] });
+    setAccumulatedCars([]);
   }, [queryClient]);
 
   return {
     // Data
-    cars: (carsQuery.data as CarsResponse | undefined)?.cars || [],
-    total: (carsQuery.data as CarsResponse | undefined)?.total || 0,
-    totalPages: (carsQuery.data as CarsResponse | undefined)?.totalPages || 0,
-    hasMore: (carsQuery.data as CarsResponse | undefined)?.hasMore || false,
+    cars: accumulatedCars,
+    total: currentTotal,
+    totalPages: Math.ceil(currentTotal / (filters.pageSize || 20)),
+    hasMore: currentHasMore,
     models: modelsQuery.data || [],
     
     // Loading states

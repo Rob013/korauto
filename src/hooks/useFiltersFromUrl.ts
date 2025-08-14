@@ -78,7 +78,8 @@ export const useFiltersFromUrl = () => {
 
   // Update single filter
   const updateFilter = useCallback((key: keyof FilterState, value: any) => {
-    updateFilters({ [key]: value, page: 1 }); // Reset to page 1 when filter changes
+    // Reset to page 1 when any filter changes, including sort
+    updateFilters({ [key]: value, page: 1 });
   }, [updateFilters]);
 
   // Handle dependent filters: when brand changes, reset model
