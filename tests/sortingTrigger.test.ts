@@ -5,12 +5,12 @@ describe('Sort Trigger Integration Test', () => {
   
   it('should demonstrate the potential issue with sort triggering', () => {
     // Simulate the scenario: User has filtered data and changes sort
-    let totalCount = 554; // Large filtered dataset
+    const totalCount = 554; // Large filtered dataset
     let sortBy = 'recently_added';
     let globalSortTriggered = false;
-    let fetchingSortRef = { current: false };
+    const fetchingSortRef = { current: false };
     let isSortingGlobal = false;
-    let allCarsForSorting = [];
+    let allCarsForSorting: unknown[] = [];
 
     // Mock the fetchAllCarsForSorting function
     const mockFetchAllCarsForSorting = vi.fn(() => {
@@ -54,11 +54,11 @@ describe('Sort Trigger Integration Test', () => {
 
   it('should simulate the exact user workflow that causes the issue', () => {
     // Simulate: User filters for Mercedes A-Class (554 results), then changes sort to "price_low"
-    let filters = {
+    const filters = {
       manufacturer_id: '1', // Mercedes
       model_id: '2' // A-Class
     };
-    let totalCount = 554;
+    const totalCount = 554;
     let sortBy = 'recently_added';
     let globalSortCalls = 0;
 

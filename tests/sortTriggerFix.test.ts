@@ -5,8 +5,8 @@ describe('Sort Trigger Fix Validation', () => {
   
   it('should trigger global sorting immediately when sort changes for large datasets', () => {
     // Mock the scenario: User has Mercedes A-Class filtered (554 cars) and changes sort
-    let totalCount = 554;
-    let fetchingSortRef = { current: false };
+    const totalCount = 554;
+    const fetchingSortRef = { current: false };
     let globalSortTriggered = false;
     
     const mockFetchAllCarsForSorting = vi.fn(() => {
@@ -34,8 +34,8 @@ describe('Sort Trigger Fix Validation', () => {
   });
 
   it('should not trigger duplicate requests when already fetching', () => {
-    let totalCount = 554;
-    let fetchingSortRef = { current: true }; // Already fetching
+    const totalCount = 554;
+    const fetchingSortRef = { current: true }; // Already fetching
     let globalSortCalls = 0;
     
     const mockFetchAllCarsForSorting = vi.fn(() => {
@@ -61,7 +61,7 @@ describe('Sort Trigger Fix Validation', () => {
     // 2. User changes sort to "price_low" -> should trigger global sort
     // 3. User gets globally sorted results showing cheapest car first
     
-    let scenario = {
+    const scenario = {
       totalCount: 554,
       sortBy: 'recently_added',
       fetchingSortRef: { current: false },
@@ -101,7 +101,7 @@ describe('Sort Trigger Fix Validation', () => {
 
   it('should validate the enhanced cache key includes all filter parameters', () => {
     // Test that the improved cache key includes all relevant filters
-    const createSortKey = (totalCount: number, sortBy: string, filters: any) => {
+    const createSortKey = (totalCount: number, sortBy: string, filters: Record<string, string>) => {
       return `${totalCount}-${sortBy}-${filters.grade_iaai || ''}-${filters.manufacturer_id || ''}-${filters.model_id || ''}-${filters.generation_id || ''}-${filters.from_year || ''}-${filters.to_year || ''}`;
     };
 
