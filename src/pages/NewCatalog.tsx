@@ -376,6 +376,8 @@ const CatalogContent: React.FC = () => {
               hasMore={hasMore}
               onLoadMore={handleLoadMore}
               onCarClick={handleCarClick}
+              totalCount={total}
+              activeFiltersCount={activeFiltersCount}
             />
           </div>
         </div>

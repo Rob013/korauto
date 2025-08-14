@@ -28,6 +28,8 @@ interface CarsListProps {
   onLoadMore: () => void;
   onCarClick: (car: Car) => void;
   className?: string;
+  totalCount?: number; // Add total count for better display
+  activeFiltersCount?: number; // Add active filters count
 }
 
 // Skeleton component for loading states
@@ -178,6 +180,8 @@ const CarsList: React.FC<CarsListProps> = ({
   onLoadMore,
   onCarClick,
   className = '',
+  totalCount,
+  activeFiltersCount,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -302,10 +306,21 @@ const CarsList: React.FC<CarsListProps> = ({
             size="lg"
             className="flex items-center gap-2"
           >
-            Load More Cars
-            <div className="text-xs text-muted-foreground ml-2">
-              ({cars.length} of {cars.length < 1000 ? '1000+' : 'many'} shown)
-            </div>
+            {activeFiltersCount && activeFiltersCount > 0 ? (
+              <>
+                Load More Filtered Cars
+                <div className="text-xs text-muted-foreground ml-2">
+                  ({cars.length} of {totalCount ? totalCount.toLocaleString() : 'many'} shown)
+                </div>
+              </>
+            ) : (
+              <>
+                Load More Cars
+                <div className="text-xs text-muted-foreground ml-2">
+                  ({cars.length} of {totalCount ? totalCount.toLocaleString() : 'many'} shown)
+                </div>
+              </>
+            )}
           </Button>
         </div>
       )}

@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRef, useCallback, useState, useEffect } from 'react';
+import { useRef, useCallback, useState, useEffect, useMemo } from 'react';
 import { FilterState } from '@/hooks/useFiltersFromUrl';
 import { buildQueryParams } from '@/utils/buildQueryParams';
 
@@ -124,13 +124,20 @@ export const useCarsQuery = (filters: FilterState) => {
   const filtersKey = JSON.stringify(filtersWithoutPage);
   const filtersKeyRef = useRef(filtersKey);
 
-  // Reset accumulated cars when filters change (except page)
+  // Create a key for filters without page AND sort to track when non-sort filters change
+  const filtersWithoutPageAndSort = { ...filters };
+  delete filtersWithoutPageAndSort.page;
+  delete filtersWithoutPageAndSort.sort;
+  const nonSortFiltersKey = JSON.stringify(filtersWithoutPageAndSort);
+  const nonSortFiltersKeyRef = useRef(nonSortFiltersKey);
+
+  // Reset accumulated cars when filters change (except page and sort)
   useEffect(() => {
-    if (filtersKey !== filtersKeyRef.current) {
+    if (nonSortFiltersKey !== nonSortFiltersKeyRef.current) {
       setAccumulatedCars([]);
-      filtersKeyRef.current = filtersKey;
+      nonSortFiltersKeyRef.current = nonSortFiltersKey;
     }
-  }, [filtersKey]);
+  }, [nonSortFiltersKey]);
 
   // Create query key from URL params for proper caching
   const queryKey = ['cars', buildQueryParams(filters)];
@@ -186,6 +193,30 @@ export const useCarsQuery = (filters: FilterState) => {
     },
   });
 
+  // Simple sort function for cars
+  const sortCars = useCallback((cars: Car[], sortType: string): Car[] => {
+    const sorted = [...cars];
+    
+    switch (sortType) {
+      case 'price_asc':
+        return sorted.sort((a, b) => a.price - b.price);
+      case 'price_desc':
+        return sorted.sort((a, b) => b.price - a.price);
+      case 'year_desc':
+        return sorted.sort((a, b) => b.year - a.year);
+      case 'year_asc':
+        return sorted.sort((a, b) => a.year - b.year);
+      case 'mileage_asc':
+        return sorted.sort((a, b) => (a.mileage || 0) - (b.mileage || 0));
+      case 'mileage_desc':
+        return sorted.sort((a, b) => (b.mileage || 0) - (a.mileage || 0));
+      case 'recently_added':
+      default:
+        // For recently added, maintain original order or sort by ID
+        return sorted.sort((a, b) => b.id.localeCompare(a.id));
+    }
+  }, []);
+
   // Update accumulated cars when new data comes in
   useEffect(() => {
     if (carsQuery.data) {
@@ -208,6 +239,11 @@ export const useCarsQuery = (filters: FilterState) => {
       }
     }
   }, [carsQuery.data, filters.page]);
+
+  // Apply sorting to accumulated cars when sort changes
+  const sortedAccumulatedCars = useMemo(() => {
+    return sortCars(accumulatedCars, filters.sort || 'recently_added');
+  }, [accumulatedCars, filters.sort, sortCars]);
 
   // Models query for dependent filtering
   const modelsQuery = useQuery({
@@ -243,8 +279,8 @@ export const useCarsQuery = (filters: FilterState) => {
   }, [queryClient]);
 
   return {
-    // Data
-    cars: accumulatedCars,
+    // Data - return sorted accumulated cars
+    cars: sortedAccumulatedCars,
     total: currentTotal,
     totalPages: Math.ceil(currentTotal / (filters.pageSize || 20)),
     hasMore: currentHasMore,
