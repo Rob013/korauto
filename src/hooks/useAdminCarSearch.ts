@@ -19,7 +19,7 @@ export interface CachedCarData {
   year: number;
   vin: string;
   lot_number: string;
-  car_data: Record<string, any> | string;
+  car_data: any; // Allow any type for car_data
   price: number;
   mileage: string;
   color: string;
@@ -56,6 +56,20 @@ export const useAdminCarSearch = () => {
           mileage: "50000",
           color: "Black",
           fuel: "Gasoline",
+          transmission: "Automatic",
+        },
+        {
+          api_id: "2", 
+          make: "Mercedes-Benz",
+          model: "E-Class",
+          year: 2019,
+          vin: "456DEF",
+          lot_number: "002", 
+          car_data: {},
+          price: 45000,
+          mileage: "60000",
+          color: "Silver",
+          fuel: "Diesel",
           transmission: "Automatic",
         }
       ].filter(car => 

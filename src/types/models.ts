@@ -16,6 +16,7 @@ export interface Generation {
   to_year?: number;
   cars_qty?: number;
   image?: string;
+  [key: string]: any; // Allow additional properties
 }
 
 export interface CachedCarData {
@@ -25,7 +26,7 @@ export interface CachedCarData {
   year: number;
   vin: string;
   lot_number: string;
-  car_data: Record<string, any> | string; // Allow both types
+  car_data: any; // Allow any type for car_data
   price: number;
   mileage: string;
   color: string;
