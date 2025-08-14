@@ -46,7 +46,6 @@ import {
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
-import { debugSortingState } from "@/debug-sorting";
 
 interface EncarCatalogProps {
   highlightCarId?: string | null;
@@ -149,9 +148,12 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Memoized cars to sort (global vs current page)
   const carsToSort = useMemo(() => {
     const result = isSortingGlobal && allCarsForSorting.length > 0 ? allCarsForSorting : carsForSorting;
-    debugSortingState(totalCount, isSortingGlobal, allCarsForSorting, carsForSorting, sortBy, "carsToSort selection");
+    // Log for debugging: show which dataset is being used for sorting
+    if (totalCount > 50) {
+      console.log(`🎯 Sorting ${result.length} cars (global: ${isSortingGlobal && allCarsForSorting.length > 0}, total available: ${totalCount})`);
+    }
     return result;
-  }, [isSortingGlobal, allCarsForSorting, carsForSorting, totalCount, sortBy]);
+  }, [isSortingGlobal, allCarsForSorting, carsForSorting, totalCount]);
   
   const sortedCars = useSortedCars(carsToSort, sortBy);
   
@@ -438,8 +440,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Create a unique key for current sort parameters to prevent duplicate calls
     const sortKey = `${totalCount}-${sortBy}-${filters.grade_iaai || ''}-${filters.manufacturer_id || ''}-${filters.model_id || ''}`;
     
-    console.log(`🔍 fetchAllCarsForSorting called with sortKey: ${sortKey}, lastSortParamsRef: ${lastSortParamsRef.current}`);
-    
     if (fetchingSortRef.current) {
       console.log(`⏳ Already fetching sort data, skipping duplicate request`);
       return;
@@ -465,7 +465,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setIsLoading(true);
     
     try {
-      console.log(`🔄 Global sorting: Fetching all cars for sorting across ${totalPages} pages`);
+      console.log(`🔄 Global sorting: Fetching all ${totalCount} cars for sorting across ${totalPages} pages`);
       
       // Use the new fetchAllCars function to get all cars with current filters
       const allCars = await fetchAllCars(filters);
@@ -822,9 +822,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Fetch all cars for sorting when sortBy changes OR when totalCount first becomes available
   // This ensures global sorting works on initial load and when sort options change
   useEffect(() => {
-    console.log(`🔄 Sort effect triggered: totalCount=${totalCount}, sortBy=${sortBy}, fetchingSortRef=${fetchingSortRef.current}`);
-    debugSortingState(totalCount, isSortingGlobal, allCarsForSorting, carsForSorting, sortBy, "sort effect");
-    
     if (totalCount > 50) {
       // Always trigger global sorting for large datasets, regardless of current state
       if (!fetchingSortRef.current) {
