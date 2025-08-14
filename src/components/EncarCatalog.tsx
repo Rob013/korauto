@@ -147,8 +147,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   
   // Memoized cars to sort (global vs current page)
   const carsToSort = useMemo(() => {
-    return isSortingGlobal && allCarsForSorting.length > 0 ? allCarsForSorting : carsForSorting;
-  }, [isSortingGlobal, allCarsForSorting, carsForSorting]);
+    const result = isSortingGlobal && allCarsForSorting.length > 0 ? allCarsForSorting : carsForSorting;
+    // Log for debugging: show which dataset is being used for sorting
+    if (totalCount > 50) {
+      console.log(`🎯 Sorting ${result.length} cars (global: ${isSortingGlobal && allCarsForSorting.length > 0}, total available: ${totalCount})`);
+    }
+    return result;
+  }, [isSortingGlobal, allCarsForSorting, carsForSorting, totalCount]);
   
   const sortedCars = useSortedCars(carsToSort, sortBy);
   
@@ -435,13 +440,20 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Create a unique key for current sort parameters to prevent duplicate calls
     const sortKey = `${totalCount}-${sortBy}-${filters.grade_iaai || ''}-${filters.manufacturer_id || ''}-${filters.model_id || ''}`;
     
-    if (fetchingSortRef.current || sortKey === lastSortParamsRef.current) {
-      console.log(`⏭️ Skipping duplicate sort request: ${sortKey}`);
+    if (fetchingSortRef.current) {
+      console.log(`⏳ Already fetching sort data, skipping duplicate request`);
+      return;
+    }
+
+    // Only skip if the exact same sort request was completed successfully
+    if (sortKey === lastSortParamsRef.current && isSortingGlobal && allCarsForSorting.length > 0) {
+      console.log(`✅ Using cached sort data for: ${sortKey}`);
       return;
     }
 
     if (totalCount <= 50) {
       // For small datasets, use current filtered cars instead of fetching
+      console.log(`📝 Small dataset (${totalCount} cars), using filtered cars for sorting`);
       setAllCarsForSorting(filteredCars);
       setIsSortingGlobal(true);
       lastSortParamsRef.current = sortKey;
@@ -453,7 +465,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setIsLoading(true);
     
     try {
-      console.log(`🔄 Global sorting: Fetching all cars for sorting across ${totalPages} pages`);
+      console.log(`🔄 Global sorting: Fetching all ${totalCount} cars for sorting across ${totalPages} pages`);
       
       // Use the new fetchAllCars function to get all cars with current filters
       const allCars = await fetchAllCars(filters);
@@ -486,7 +498,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       setIsLoading(false);
       fetchingSortRef.current = false;
     }
-  }, [totalCount, fetchAllCars, filters.grade_iaai, filters.manufacturer_id, filters.model_id, filters.generation_id, filters.from_year, filters.to_year, sortBy, filteredCars, totalPages, currentPage, setSearchParams]);
+  }, [totalCount, fetchAllCars, filters.grade_iaai, filters.manufacturer_id, filters.model_id, filters.generation_id, filters.from_year, filters.to_year, sortBy, filteredCars, totalPages, currentPage, setSearchParams, isSortingGlobal, allCarsForSorting.length]);
 
   const handleManufacturerChange = async (manufacturerId: string) => {
     console.log(`[handleManufacturerChange] Called with manufacturerId: ${manufacturerId}`);
@@ -810,15 +822,21 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Fetch all cars for sorting when sortBy changes OR when totalCount first becomes available
   // This ensures global sorting works on initial load and when sort options change
   useEffect(() => {
-    if (totalCount > 50 && !fetchingSortRef.current) {
-      console.log(`🔄 Triggering global sorting: totalCount=${totalCount}, sortBy=${sortBy}`);
-      fetchAllCarsForSorting();
-    } else if (totalCount <= 50) {
-      // Reset global sorting if not needed (small dataset)
-      setIsSortingGlobal(false);
-      setAllCarsForSorting([]);
+    if (totalCount > 50) {
+      // Always trigger global sorting for large datasets, regardless of current state
+      if (!fetchingSortRef.current) {
+        console.log(`🔄 Triggering global sorting: totalCount=${totalCount}, sortBy=${sortBy}`);
+        fetchAllCarsForSorting();
+      } else {
+        console.log(`⏳ Global sorting already in progress for totalCount=${totalCount}, sortBy=${sortBy}`);
+      }
+    } else if (totalCount > 0 && totalCount <= 50) {
+      // For small datasets, use current filtered cars and enable global sorting immediately
+      console.log(`📝 Small dataset (${totalCount} cars), using current filtered cars for sorting`);
+      setAllCarsForSorting(filteredCars);
+      setIsSortingGlobal(true);
     }
-  }, [sortBy, totalCount, fetchAllCarsForSorting]);
+  }, [sortBy, totalCount, fetchAllCarsForSorting, filteredCars]);
 
   // Show cars without requiring brand and model selection
   const shouldShowCars = true;
