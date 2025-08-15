@@ -64,9 +64,10 @@ describe('useSortedCars - Global Sorting Fix', () => {
 
     const { result } = renderHook(() => useSortedCars(carsWithMissingData, 'price_low'));
 
-    // Cars with missing data should get default price of 25000 (from code)
-    expect(result.current).toHaveLength(3);
-    expect(result.current[0].lots[0].buy_now || 25000).toBeLessThanOrEqual(result.current[1].lots[0].buy_now || 25000);
+    // Cars with missing price data should be filtered out, leaving only cars with real pricing
+    expect(result.current).toHaveLength(2);
+    expect(result.current[0].lots[0].buy_now).toBe(30000);
+    expect(result.current[1].lots[0].buy_now).toBe(35000);
   });
 
   it('should sort by year correctly', () => {

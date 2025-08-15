@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { filterCarsWithRealPricing } from '@/utils/carPricing';
 
 export type SortOption = 'recently_added' | 'price_low' | 'price_high' | 'year_new' | 'year_old' | 'mileage_low' | 'mileage_high' | 'make_az' | 'make_za' | 'popular';
 
@@ -62,11 +63,15 @@ export const useSortedCars = (cars: FlexibleCar[], sortBy: SortOption) => {
   return useMemo(() => {
     if (!cars || cars.length === 0) return [];
 
-    const sorted = [...cars].sort((a, b) => {
+    // Filter out cars without real pricing data first
+    const carsWithRealPricing = filterCarsWithRealPricing(cars);
+
+    const sorted = [...carsWithRealPricing].sort((a, b) => {
       const aLot = a.lots?.[0];
       const bLot = b.lots?.[0];
-      const aPrice = aLot?.buy_now ? Math.round(aLot.buy_now + 2200) : 25000;
-      const bPrice = bLot?.buy_now ? Math.round(bLot.buy_now + 2200) : 25000;
+      // Since we've filtered for cars with real pricing, we can use actual prices or fallback safely
+      const aPrice = aLot?.buy_now || aLot?.final_bid || aLot?.price || 0;
+      const bPrice = bLot?.buy_now || bLot?.final_bid || bLot?.price || 0;
 
       switch (sortBy) {
         case 'recently_added': {
