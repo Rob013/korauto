@@ -72,6 +72,10 @@ interface CarCardProps {
   grade_iaai?: string;
   domain?: string;
   external_id?: string;
+  // Archive information for sold cars
+  is_archived?: boolean;
+  archived_at?: string;
+  archive_reason?: string;
   // Insurance information
   insurance?: {
     accident_history?: string;
@@ -248,6 +252,9 @@ const CarCard = ({
   grade_iaai,
   domain,
   external_id,
+  is_archived,
+  archived_at,
+  archive_reason,
   insurance,
   insurance_v2,
   location,
@@ -260,6 +267,22 @@ const CarCard = ({
   const [isFavorite, setIsFavorite] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // Check if this sold car should be hidden (sold more than 24 hours ago)
+  const shouldHideSoldCar = () => {
+    if (!is_archived || !archived_at || archive_reason !== 'sold') {
+      return false; // Not a sold car
+    }
+    
+    const archivedTime = new Date(archived_at);
+    const now = new Date();
+    const hoursSinceArchived = (now.getTime() - archivedTime.getTime()) / (1000 * 60 * 60);
+    
+    return hoursSinceArchived > 24; // Hide if sold more than 24 hours ago
+  };
+
+  const hideSoldCar = shouldHideSoldCar();
+
   useEffect(() => {
     const getUser = async () => {
       const {
@@ -366,6 +389,12 @@ const CarCard = ({
     // Open car details in new tab
     window.open(`/car/${lot}`, '_blank');
   };
+
+  // Don't render the component if it should be hidden
+  if (hideSoldCar) {
+    return null;
+  }
+
   return (
     <div
       className="bg-card rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-border cursor-pointer group touch-manipulation relative"

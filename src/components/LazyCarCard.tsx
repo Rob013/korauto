@@ -31,6 +31,10 @@ interface LazyCarCardProps {
   details?: {
     seats_count?: number;
   };
+  // Archive information for sold cars
+  is_archived?: boolean;
+  archived_at?: string;
+  archive_reason?: string;
 }
 
 const LazyCarCard = memo(({
@@ -49,7 +53,10 @@ const LazyCarCard = memo(({
   status,
   sale_status,
   insurance_v2,
-  details
+  details,
+  is_archived,
+  archived_at,
+  archive_reason
 }: LazyCarCardProps) => {
   const navigate = useNavigate();
   const { setPreviousPage } = useNavigation();
@@ -59,6 +66,21 @@ const LazyCarCard = memo(({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isIntersecting, setIsIntersecting] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  // Check if this sold car should be hidden (sold more than 24 hours ago)
+  const shouldHideSoldCar = () => {
+    if (!is_archived || !archived_at || archive_reason !== 'sold') {
+      return false; // Not a sold car
+    }
+    
+    const archivedTime = new Date(archived_at);
+    const now = new Date();
+    const hoursSinceArchived = (now.getTime() - archivedTime.getTime()) / (1000 * 60 * 60);
+    
+    return hoursSinceArchived > 24; // Hide if sold more than 24 hours ago
+  };
+
+  const hideSoldCar = shouldHideSoldCar();
 
   // Intersection Observer for lazy loading
   useEffect(() => {
@@ -216,6 +238,11 @@ const LazyCarCard = memo(({
           </div>
       </div>
     );
+  }
+
+  // Don't render the component if it should be hidden
+  if (hideSoldCar) {
+    return null;
   }
 
   return (
