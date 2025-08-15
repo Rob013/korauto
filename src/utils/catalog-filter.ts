@@ -6,6 +6,8 @@
  * filter validation, and search functionality.
  */
 
+import { hasRealPricing } from './carPricing';
+
 export interface APIFilters {
   manufacturer_id?: string;
   model_id?: string;
@@ -135,13 +137,17 @@ export const matchesGradeFilter = (car: Car, gradeFilter: string): boolean => {
 
 /**
  * Applies client-side grade filtering to a list of cars
+ * Also filters out cars without real pricing data
  */
 export const applyGradeFilter = (cars: Car[], gradeFilter?: string): Car[] => {
+  // First filter out cars without real pricing data
+  const carsWithRealPricing = cars.filter(hasRealPricing);
+  
   if (!gradeFilter || gradeFilter === 'all') {
-    return cars;
+    return carsWithRealPricing;
   }
 
-  return cars.filter(car => matchesGradeFilter(car, gradeFilter));
+  return carsWithRealPricing.filter(car => matchesGradeFilter(car, gradeFilter));
 };
 
 /**
