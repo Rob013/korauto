@@ -274,11 +274,22 @@ const CarCard = ({
       return false; // Not a sold car
     }
     
-    const archivedTime = new Date(archived_at);
-    const now = new Date();
-    const hoursSinceArchived = (now.getTime() - archivedTime.getTime()) / (1000 * 60 * 60);
-    
-    return hoursSinceArchived > 24; // Hide if sold more than 24 hours ago
+    try {
+      const archivedTime = new Date(archived_at);
+      
+      // Check if date is valid
+      if (isNaN(archivedTime.getTime())) {
+        return true; // Hide cars with invalid dates as safety measure
+      }
+      
+      const now = new Date();
+      const hoursSinceArchived = (now.getTime() - archivedTime.getTime()) / (1000 * 60 * 60);
+      
+      return hoursSinceArchived > 24; // Hide if sold more than 24 hours ago
+    } catch (error) {
+      // In case of any error, hide the car as a safety measure
+      return true;
+    }
   };
 
   const hideSoldCar = shouldHideSoldCar();
