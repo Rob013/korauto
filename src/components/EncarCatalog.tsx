@@ -85,7 +85,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [isFilterLoading, setIsFilterLoading] = useState(false);
   const isMobile = useIsMobile();
   
-  // Initialize showFilters with preserved state for mobile users returning from car details
+  // Initialize showFilters - always open on desktop, toggleable on mobile
   const [showFilters, setShowFilters] = useState(() => {
     if (isMobile) {
       // On mobile, try to restore the previous filter panel state
@@ -96,7 +96,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       // Default to closed on mobile
       return false;
     }
-    // Default to open on desktop
+    // Always open on desktop (unclosable)
     return true;
   });
   
@@ -957,17 +957,20 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               >
                 <span className="text-xs">Clear</span>
               </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => {
-                  setShowFilters(false);
-                  setHasExplicitlyClosed(true); // Mark as explicitly closed
-                }}
-                className={`lg:hidden flex items-center gap-1 ${isMobile ? 'h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground' : 'h-8 px-2'}`}
-              >
-                <X className="h-3 w-3" />
-              </Button>
+              {/* Only show close button on mobile */}
+              {isMobile && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => {
+                    setShowFilters(false);
+                    setHasExplicitlyClosed(true); // Mark as explicitly closed
+                  }}
+                  className="flex items-center gap-1 h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -990,15 +993,19 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             onFetchTrimLevels={fetchTrimLevels}
             compact={true}
             onSearchCars={() => {
-              // Issue #2 FIXED: Hide filter panel after search and mark as explicitly closed
-              // This prevents the panel from reopening until user manually opens it
+              // Apply search/filters but keep panel open on desktop
               fetchCars(1, { ...filters, per_page: "50" }, true);
-              setShowFilters(false); // Always hide filter panel when search button is clicked
-              setHasExplicitlyClosed(true); // Mark as explicitly closed to prevent auto-reopening
+              if (isMobile) {
+                setShowFilters(false); // Only hide on mobile
+                setHasExplicitlyClosed(true); // Mark as explicitly closed on mobile
+              }
             }}
             onCloseFilter={() => {
-              setShowFilters(false);
-              setHasExplicitlyClosed(true); // Mark as explicitly closed
+              if (isMobile) {
+                setShowFilters(false);
+                setHasExplicitlyClosed(true); // Mark as explicitly closed
+              }
+              // Do nothing on desktop - filters stay open
             }}
           />
           
@@ -1019,9 +1026,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             isMobile ? 'bg-black/70 backdrop-blur-md' : 'bg-black/50 backdrop-blur-sm'
           }`}
           onClick={() => {
-            // Issue #2 FIXED: Allow closing filters anytime via overlay click and mark as explicitly closed
-            setShowFilters(false);
-            setHasExplicitlyClosed(true); // Mark as explicitly closed
+            // Only close on mobile via overlay click
+            if (isMobile) {
+              setShowFilters(false);
+              setHasExplicitlyClosed(true); // Mark as explicitly closed
+            }
           }}
         />
       )}

@@ -11,6 +11,7 @@ import { hasRealPricing } from './carPricing';
 export interface APIFilters {
   manufacturer_id?: string;
   model_id?: string;
+  generation_id?: string;
   grade_iaai?: string;
   trim_level?: string;
   color?: string;
@@ -362,9 +363,9 @@ export const generateYearPresets = (currentYear?: number) => {
   const year = currentYear || new Date().getFullYear();
   return [
     { label: '2022+', from: 2022, to: year + 2 },
-    { label: '2020+', from: 2020, to: year + 2 },
-    { label: '2018+', from: 2018, to: year + 2 },
-    { label: '2015+', from: 2015, to: year + 2 },
+    { label: '2020+', from: 2020, to: 2022 },
+    { label: '2018+', from: 2018, to: 2020 },
+    { label: '2015+', from: 2015, to: 2018 },
     { label: '2010+', from: 2010, to: year + 2 },
     { label: '2005+', from: 2005, to: year + 2 },
     { label: '2000+', from: 2000, to: year + 2 },

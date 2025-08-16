@@ -287,8 +287,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   value: manufacturer.id.toString(),
                   label: (
                     <div className="flex items-center gap-1.5">
-                      {manufacturer.image && (
-                        <img src={manufacturer.image} alt={manufacturer.name} className="w-3 h-3 object-contain" />
+                      {(manufacturer as any).image && (
+                        <img src={(manufacturer as any).image} alt={manufacturer.name} className="w-3 h-3 object-contain" />
                       )}
                       <span className="text-xs">{manufacturer.name} ({manufacturer.cars_qty})</span>
                     </div>
@@ -624,8 +624,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     value: manufacturer.id.toString(),
                     label: (
                       <div className="flex items-center gap-2">
-                        {manufacturer.image && (
-                          <img src={manufacturer.image} alt={manufacturer.name} className="w-5 h-5 object-contain" />
+                        {(manufacturer as any).image && (
+                          <img src={(manufacturer as any).image} alt={manufacturer.name} className="w-5 h-5 object-contain" />
                         )}
                         <span>{manufacturer.name} ({manufacturer.cars_qty})</span>
                       </div>
@@ -798,8 +798,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     value: manufacturer.id.toString(),
                     label: (
                       <div className="flex items-center gap-2">
-                        {manufacturer.image && (
-                          <img src={manufacturer.image} alt={manufacturer.name} className="w-4 h-4 object-contain" />
+                        {(manufacturer as any).image && (
+                          <img src={(manufacturer as any).image} alt={manufacturer.name} className="w-4 h-4 object-contain" />
                         )}
                         <span>{manufacturer.name} ({manufacturer.cars_qty})</span>
                       </div>
