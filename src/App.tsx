@@ -87,7 +87,7 @@ const queryClient = new QueryClient({
       // Retry failed requests up to 2 times
       retry: 2,
       // Only refetch if data is stale (improved from 'always')
-      refetchOnMount: true,
+      refetchOnMount: 'if-stale',
       // Enable background refetching for better UX
       refetchInterval: false,
       // Network mode optimizations
