@@ -390,3 +390,5 @@ export const CookieManagementDashboard: React.FC = () => {
     </div>
   );
 };
+
+export default CookieManagementDashboard;
