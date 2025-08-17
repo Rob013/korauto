@@ -1,78 +1,90 @@
-// Type suppression utilities for handling complex typing issues
-// This file provides temporary type fixes during development
+/**
+ * Global Type Suppression Utilities
+ * 
+ * This module provides comprehensive type suppression and compatibility fixes
+ * for TypeScript compilation errors across the application.
+ */
 
-export const suppressCarDataType = (carData: any): Record<string, any> => {
-  if (typeof carData === 'string') {
-    try {
-      return JSON.parse(carData);
-    } catch {
-      return { raw: carData };
-    }
-  }
-  return carData || {};
-};
+// Type compatibility for Supabase types
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
-export const suppressManufacturerImage = (manufacturer: any) => {
-  return {
-    ...manufacturer,
-    image: manufacturer.image || undefined
-  };
-};
-
-export const suppressStringType = (value: string | { name: string; }): string => {
-  if (typeof value === 'string') {
-    return value;
-  }
-  return value.name || '';
-};
-
-// Global type declaration for quick fixes
-declare global {
-  interface Window {
-    // Add any window properties if needed
-  }
-}
-
-// Model with cars_qty property
-export interface ModelWithCount {
+// Enhanced Model interface with optional properties
+export interface Model {
   id: number;
   name: string;
-  manufacturer_id: number;
+  car_count?: number;
   cars_qty?: number;
+  model_id?: number;
 }
 
-// Car data with proper lot types
-export interface CarWithLots {
-  id: string;
-  title?: string;
-  lots?: Array<{ grade_iaai?: string; [key: string]: unknown }>;
-  engine?: { name?: string };
-  price?: number;
-  [key: string]: unknown;
+// Extended CachedCarData interface
+export interface CachedCarData {
+  api_id: string;
+  make: string;
+  model: string;
+  year: number;
+  vin: string;
+  lot_number: string;
+  car_data: Record<string, any>;
+  price: number;
+  mileage: string;
+  color: string;
+  fuel: string;
+  transmission: string;
 }
 
-// Any-typed workaround for complex type issues
-export const anyType = (value: any) => value as any;
+// Color type compatibility
+export type ColorValue = string | { name: string; };
 
-// Generation ID type extension
-export interface ExtendedAPIFilters {
-  manufacturer_id?: string;
-  model_id?: string;
-  generation_id?: string;
-  grade_iaai?: string;
-  trim_level?: string;
-  color?: string;
-  fuel_type?: string;
-  transmission?: string;
-  body_type?: string;
-  odometer_from_km?: string;
-  odometer_to_km?: string;
-  from_year?: string;
-  to_year?: string;
-  buy_now_price_from?: string;
-  buy_now_price_to?: string;
-  search?: string;
-  seats_count?: string;
-  max_accidents?: string;
-  per_page?: string;
-}
+// Safe color name extraction
+export const getColorName = (color: ColorValue): string => {
+  if (typeof color === 'string') {
+    return color;
+  }
+  if (typeof color === 'object' && color?.name) {
+    return color.name;
+  }
+  return '';
+};
+
+// Safe string operations
+export const safeToLowerCase = (value: any): string => {
+  if (typeof value === 'string') {
+    return value.toLowerCase();
+  }
+  if (typeof value === 'object' && value?.name && typeof value.name === 'string') {
+    return value.name.toLowerCase();
+  }
+  return '';
+};
+
+// Grade deduplication and sorting utilities
+export const deduplicateGrades = <T extends { value: string; label: string }>(grades: T[]): T[] => {
+  const seen = new Set<string>();
+  return grades.filter(grade => {
+    const key = grade.value.toLowerCase();
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  }).sort((a, b) => a.label.localeCompare(b.label));
+};
+
+// Trim level deduplication and sorting utilities
+export const deduplicateTrimLevels = <T extends { value: string; label: string }>(trimLevels: T[]): T[] => {
+  const seen = new Set<string>();
+  return trimLevels.filter(trim => {
+    const key = trim.value.toLowerCase();
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  }).sort((a, b) => a.label.localeCompare(b.label));
+};
+
+// Component default export suppression
+export const suppressDefaultExport = <T>(component: T): { default: T } => ({
+  default: component
+});
