@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { ArrowUpDown } from "lucide-react";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
+import { useDailyRotatingCars } from "@/hooks/useDailyRotatingCars";
 
 interface APIFilters {
   manufacturer_id?: string;
@@ -257,16 +258,48 @@ const HomeCarsSection = memo(() => {
     cylinders: Number(car.cylinders || 0),
   }));
 
-  // Don't filter homepage cars - always show original cars
-  const sortedCars = useSortedCars(carsForSorting, sortBy);
+  // Check if any meaningful filters are applied (using pendingFilters for homepage)
+  const hasFilters = useMemo(() => {
+    return !!(pendingFilters.manufacturer_id || 
+              pendingFilters.model_id || 
+              pendingFilters.generation_id ||
+              pendingFilters.color ||
+              pendingFilters.fuel_type ||
+              pendingFilters.transmission ||
+              pendingFilters.odometer_from_km ||
+              pendingFilters.odometer_to_km ||
+              pendingFilters.from_year ||
+              pendingFilters.to_year ||
+              pendingFilters.buy_now_price_from ||
+              pendingFilters.buy_now_price_to ||
+              pendingFilters.search ||
+              pendingFilters.seats_count);
+  }, [pendingFilters]);
 
-  // Show 30 cars by default (daily rotation) - optimized for better loading performance
-  const defaultDisplayCount = 30;
+  // Apply daily rotating cars when no filters are applied, showing 50 cars same as catalog
+  const dailyRotatingCars = useDailyRotatingCars(carsForSorting, hasFilters, 50);
+
+  // Use daily rotating cars when no filters, otherwise use sorted cars
+  const carsToDisplay = useMemo(() => {
+    if (!hasFilters) {
+      return dailyRotatingCars;
+    }
+    // When filters are applied, use sorted cars
+    return useSortedCars(carsForSorting, sortBy);
+  }, [hasFilters, dailyRotatingCars, carsForSorting, sortBy]);
+
+  // Show 50 cars by default (daily rotation) to match catalog
+  const defaultDisplayCount = 50;
 
   // Memoize displayed cars to prevent unnecessary re-renders
   const displayedCars = useMemo(() => {
-    return showAllCars ? sortedCars : sortedCars.slice(0, defaultDisplayCount);
-  }, [showAllCars, sortedCars, defaultDisplayCount]);
+    if (!hasFilters) {
+      // When no filters, show all daily rotating cars (already limited to 50)
+      return showAllCars ? carsToDisplay : carsToDisplay.slice(0, defaultDisplayCount);
+    }
+    // When filters are applied, use the slice logic
+    return showAllCars ? carsToDisplay : carsToDisplay.slice(0, defaultDisplayCount);
+  }, [showAllCars, carsToDisplay, defaultDisplayCount, hasFilters]);
 
   // Preload first 6 car images for better initial loading performance
   useEffect(() => {
@@ -549,7 +582,7 @@ const HomeCarsSection = memo(() => {
               </div>
             ))}
           </div>
-        ) : sortedCars.length === 0 ? (
+        ) : carsToDisplay.length === 0 ? (
           <div className="text-center py-8 sm:py-12 px-4">
             <p className="text-base sm:text-lg text-muted-foreground mb-4">
               Nuk ka makina të disponueshme.
@@ -595,14 +628,14 @@ const HomeCarsSection = memo(() => {
 
             {/* Show More Button */}
             <div className="text-center mt-8">
-              {sortedCars.length > 30 && !showAllCars && (
+              {carsToDisplay.length > defaultDisplayCount && !showAllCars && (
                 <Button
                   onClick={() => setShowAllCars(true)}
                   variant="outline"
                   size="lg"
                   className="bg-card border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3"
                 >
-                  Shiko të gjitha ({sortedCars.length} makina)
+                  Shiko të gjitha ({carsToDisplay.length} makina)
                 </Button>
               )}
             </div>
