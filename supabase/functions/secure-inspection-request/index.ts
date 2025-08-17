@@ -27,7 +27,10 @@ const handler = async (req: Request): Promise<Response> => {
       customer_phone, 
       car_id, 
       notes,
-      client_ip 
+      client_ip,
+      session_id,
+      privacy_consent = false,
+      data_processing_consent = false
     } = await req.json();
 
     console.log('📝 Processing inspection request:', {
@@ -38,9 +41,9 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     // Input validation
-    if (!customer_name || !customer_email || !customer_phone) {
+    if (!customer_name || !customer_email || !customer_phone || !privacy_consent || !data_processing_consent) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
+        JSON.stringify({ error: 'Missing required fields or consent not provided' }),
         {
           status: 400,
           headers: { 'Content-Type': 'application/json', ...corsHeaders }
@@ -102,7 +105,11 @@ const handler = async (req: Request): Promise<Response> => {
       customer_email: customer_email.trim().toLowerCase().replace(/[<>"'&]/g, ''),
       customer_phone: customer_phone.trim().replace(/[<>"'&]/g, ''),
       car_id: car_id?.trim() || null,
-      notes: notes?.trim().replace(/[<>"'&]/g, '') || 'General inspection request'
+      notes: notes?.trim().replace(/[<>"'&]/g, '') || 'General inspection request',
+      session_id: session_id?.trim() || null,
+      ip_address: client_ip || null,
+      privacy_consent: true,
+      data_processing_consent: true
     };
 
     // Insert inspection request

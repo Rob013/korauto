@@ -35,10 +35,16 @@ export interface CachedCarData {
   year: number;
   vin: string;
   lot_number: string;
-  car_data: Record<string, any>;
+  car_data: Record<string, any> | string | any;
   price: number;
   mileage: string;
   color: string;
   fuel: string;
   transmission: string;
+}
+
+export interface APIFilters {
+  [key: string]: any;
+  max_accidents?: number;
+  generation_id?: string;
 }
