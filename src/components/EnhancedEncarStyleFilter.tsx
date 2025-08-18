@@ -381,7 +381,6 @@ const EnhancedEncarStyleFilter: React.FC<EnhancedEncarStyleFilterProps> = ({
               Brand
             </Label>
             <AdaptiveSelect
-              id="manufacturer"
               value={filters.manufacturer_id || 'all'}
               onValueChange={(value) => updateFilter('manufacturer_id', value)}
               placeholder="Select brand"
@@ -402,7 +401,6 @@ const EnhancedEncarStyleFilter: React.FC<EnhancedEncarStyleFilterProps> = ({
                 Model
               </Label>
               <AdaptiveSelect
-                id="model"
                 value={filters.model_id || 'all'}
                 onValueChange={(value) => updateFilter('model_id', value)}
                 placeholder="Select model"
@@ -442,8 +440,8 @@ const EnhancedEncarStyleFilter: React.FC<EnhancedEncarStyleFilterProps> = ({
               />
             </div>
             <div className="flex space-x-2">
-              <Button variant="outline" size="xs" onClick={() => handleYearRangePreset({ from: new Date().getFullYear() - 5, to: new Date().getFullYear() })}>Last 5 Years</Button>
-              <Button variant="outline" size="xs" onClick={() => handleYearRangePreset({ from: new Date().getFullYear() - 10, to: new Date().getFullYear() })}>Last 10 Years</Button>
+              <Button variant="outline" size="sm" onClick={() => handleYearRangePreset({ from: new Date().getFullYear() - 5, to: new Date().getFullYear() })}>Last 5 Years</Button>
+              <Button variant="outline" size="sm" onClick={() => handleYearRangePreset({ from: new Date().getFullYear() - 10, to: new Date().getFullYear() })}>Last 10 Years</Button>
             </div>
           </div>
         </CollapsibleContent>
@@ -465,7 +463,6 @@ const EnhancedEncarStyleFilter: React.FC<EnhancedEncarStyleFilterProps> = ({
                 Grade
               </Label>
               <AdaptiveSelect
-                id="grade"
                 value={filters.grade_iaai || 'all'}
                 onValueChange={(value) => updateFilter('grade_iaai', value)}
                 placeholder={isLoadingGrades ? "Loading..." : "Select grade"}
@@ -493,7 +490,6 @@ const EnhancedEncarStyleFilter: React.FC<EnhancedEncarStyleFilterProps> = ({
                 Trim Level
               </Label>
               <AdaptiveSelect
-                id="trim"
                 value={filters.trim_level || 'all'}
                 onValueChange={(value) => updateFilter('trim_level', value)}
                 placeholder="Select trim"
