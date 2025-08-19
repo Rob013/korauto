@@ -18,12 +18,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowUpDown } from "lucide-react";
-import EncarStyleFilter from "@/components/EncarStyleFilter";
+import ImprovedEncarStyleFilter from "@/components/ImprovedEncarStyleFilter";
 import { useDailyRotatingCars } from "@/hooks/useDailyRotatingCars";
 
 interface APIFilters {
   manufacturer_id?: string;
   model_id?: string;
+  generation_id?: string;
   grade_iaai?: string;
   color?: string;
   fuel_type?: string;
@@ -36,6 +37,7 @@ interface APIFilters {
   buy_now_price_to?: string;
   search?: string;
   seats_count?: string;
+  max_accidents?: string;
   per_page?: string;
 }
 
@@ -523,7 +525,7 @@ const HomeCarsSection = memo(() => {
         {/* Filter Form */}
         {showFilters && (
           <div className="mb-6 sm:mb-8">
-            <EncarStyleFilter
+            <ImprovedEncarStyleFilter
               filters={pendingFilters}
               manufacturers={manufacturers}
               models={models}
