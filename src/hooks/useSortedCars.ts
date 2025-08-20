@@ -70,8 +70,8 @@ export const useSortedCars = (cars: FlexibleCar[], sortBy: SortOption) => {
       const aLot = a.lots?.[0];
       const bLot = b.lots?.[0];
       // Since we've filtered for cars with real pricing, we can use actual prices or fallback safely
-      const aPrice = aLot?.buy_now || aLot?.final_price || 0;
-      const bPrice = bLot?.buy_now || bLot?.final_price || 0;
+      const aPrice = aLot?.buy_now || aLot?.final_bid || aLot?.price || 0;
+      const bPrice = bLot?.buy_now || bLot?.final_bid || bLot?.price || 0;
 
       switch (sortBy) {
         case 'recently_added': {

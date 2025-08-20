@@ -19,8 +19,6 @@ import {
 } from "lucide-react";
 import LazyCarCard from "@/components/LazyCarCard";
 import { useSecureAuctionAPI, createFallbackManufacturers } from "@/hooks/useSecureAuctionAPI";
-import { filterOutTestCars } from "@/utils/testCarFilter";
-import { useRandomCars } from "@/hooks/useRandomCars";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
@@ -77,7 +75,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     loadMore,
   } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
-  const [sortBy, setSortBy] = useState<SortOption>("popular");
+  const [sortBy, setSortBy] = useState<SortOption>("recently_added");
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -130,26 +128,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Memoized helper function to extract grades from title - now using utility
   const extractGradesFromTitleCallback = useCallback(extractGradesFromTitle, []);
 
-  // Get random cars when no filters are active (for "all brands" display)
-  const hasFilters = !!(filters.manufacturer_id || filters.model_id || filters.generation_id || 
-    filters.from_year || filters.to_year || filters.search || filters.grade_iaai);
-  const randomCars = useRandomCars(cars, hasFilters);
-  const isLoadingRandom = false; // useRandomCars doesn't have loading state
-  
-  // Determine if we should show random cars (when no meaningful filters applied) 
-  const shouldShowRandomCars = useMemo(() => {
-    const hasNoMeaningfulFilters = !filters.manufacturer_id && !filters.model_id && 
-      !filters.generation_id && !filters.from_year && !filters.to_year && 
-      !filters.search && !filters.grade_iaai;
-    return hasNoMeaningfulFilters && randomCars && randomCars.length > 0;
-  }, [filters, randomCars]);
-
-  // Memoized client-side grade filtering for better performance - now using utility + test car filtering
+  // Memoized client-side grade filtering for better performance - now using utility
   const filteredCars = useMemo(() => {
-    // First apply grade filtering, then remove test cars
-    const gradeFiltered = applyGradeFilter(cars as any, filters.grade_iaai);
-    const withoutTestCars = filterOutTestCars(gradeFiltered);
-    return withoutTestCars;
+    return applyGradeFilter(cars as any[], filters.grade_iaai);
   }, [cars, filters.grade_iaai]);
   
   // console.log(`📊 Filter Results: ${filteredCars.length} cars match (total loaded: ${cars.length}, total count from API: ${totalCount}, grade filter: ${filters.grade_iaai || 'none'})`);
@@ -164,32 +145,24 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }));
   }, [filteredCars]);
   
-  // Memoized cars to sort (global vs current page vs random cars)
+  // Memoized cars to sort (global vs current page)
   const carsToSort = useMemo(() => {
-    // Align catalog "All brands" with homepage: do not randomize, just show sorted filtered list
-    if (!hasFilters) {
-      return carsForSorting;
-    }
     const result = isSortingGlobal && allCarsForSorting.length > 0 ? allCarsForSorting : carsForSorting;
+    // Log for debugging: show which dataset is being used for sorting
     if (totalCount > 50) {
       console.log(`🎯 Sorting ${result.length} cars (global: ${isSortingGlobal && allCarsForSorting.length > 0}, total available: ${totalCount})`);
     }
     return result;
-  }, [isSortingGlobal, allCarsForSorting, carsForSorting, totalCount, hasFilters]);
+  }, [isSortingGlobal, allCarsForSorting, carsForSorting, totalCount]);
   
   const sortedCars = useSortedCars(carsToSort, sortBy);
   
-  // Memoized current page cars from sorted results (or random cars)
+  // Memoized current page cars from sorted results
   const carsForCurrentPage = useMemo(() => {
-    // For random cars, show them directly without pagination
-    if (shouldShowRandomCars) {
-      return sortedCars; // Random cars are already limited to 24
-    }
-    
     return isSortingGlobal && allCarsForSorting.length > 0 
       ? sortedCars.slice((currentPage - 1) * 50, currentPage * 50)
       : sortedCars;
-  }, [isSortingGlobal, allCarsForSorting.length, sortedCars, currentPage, shouldShowRandomCars]);
+  }, [isSortingGlobal, allCarsForSorting.length, sortedCars, currentPage]);
 
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -396,14 +369,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       search: searchTerm.trim() || undefined,
     };
     handleFiltersChange(newFilters);
-     
-    // Enhanced: Trigger global sorting for large datasets when sort changes
-    if (totalCount > 50) {
-      console.log(`🔄 Sort changed: Immediately triggering global sorting for ${totalCount} cars with sortBy=${sortBy}`);
-      if (!fetchingSortRef.current) {
-        fetchAllCarsForSorting();
-      }
-    }
   }, [filters, searchTerm, handleFiltersChange]);
 
   const handlePageChange = useCallback((page: number) => {
@@ -505,10 +470,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       // Use the new fetchAllCars function to get all cars with current filters
       const allCars = await fetchAllCars(filters);
       
-      // Apply the same client-side filtering as the current filtered cars - using utility + remove test cars
-      const filteredAllCars = filterOutTestCars(allCars.filter((car: any) => {
+      // Apply the same client-side filtering as the current filtered cars - using utility
+      const filteredAllCars = allCars.filter((car: any) => {
         return matchesGradeFilter(car, filters.grade_iaai);
-      }));
+      });
       
       setAllCarsForSorting(filteredAllCars);
       lastSortParamsRef.current = sortKey;
@@ -726,27 +691,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           }
         }
 
-        // Load cars last - align default (all brands) with homepage dataset
+        // Load cars last - this is the most expensive operation
         const initialFilters = {
           ...urlFilters,
           per_page: "50"
         };
-
-        const hasMeaningfulFilters = Boolean(
-          urlFilters.manufacturer_id || urlFilters.model_id ||
-          urlFilters.generation_id || urlFilters.from_year ||
-          urlFilters.to_year || urlFilters.search || urlFilters.grade_iaai
-        );
-
-        if (!hasMeaningfulFilters) {
-          // Same daily rotation as homepage
-          const today = new Date();
-          const dayOfMonth = today.getDate();
-          const dailyPage = ((dayOfMonth - 1) % 10) + 1;
-          await fetchCars(dailyPage, { per_page: "30" }, true);
-        } else {
-          await fetchCars(urlCurrentPage, initialFilters, true);
-        }
+        
+        await fetchCars(urlCurrentPage, initialFilters, true);
 
       } catch (error) {
         console.error('Error loading initial data:', error);
