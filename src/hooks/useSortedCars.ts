@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useMemo } from 'react';
 import { filterCarsWithRealPricing } from '@/utils/carPricing';
 

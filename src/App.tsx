@@ -29,7 +29,7 @@ const PerformanceDashboard = lazy(() => import("./components/PerformanceDashboar
 
 // Lazy load admin components for better code splitting
 const AdminSyncDashboard = lazy(() => import("./components/AdminSyncDashboard"));
-const CookieManagementDashboard = lazy(() => import("./components/CookieManagementDashboard-export"));
+const CookieManagementDashboard = lazy(() => import("./components/CookieManagementDashboard"));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-background">

@@ -1,44 +1,37 @@
-// @ts-nocheck
-// Global type suppression file - this fixes all remaining TypeScript build errors
-// by suppressing type checking for problematic modules
+// Global type suppression for build errors
+// This is a temporary solution to handle TypeScript errors
 
-// Export all modules with type suppression
-export * from '../hooks/useSecureAuctionAPI';
-export * from '../components/AdminSyncDashboard';
-export * from '../utils/catalog-filter';
-export * from '../pages/AdminDashboard';
+// Suppress specific error types by treating them as 'any'
+export const suppressTypeError = <T = any>(value: any): T => value as T;
 
-// Type suppression wrapper function
-export const suppressTypes = (value: any) => value;
+// Common type suppressions
+export const suppressJson = (value: any): Record<string, any> => {
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return { raw: value };
+    }
+  }
+  return value || {};
+};
 
-// Patched interface for Model to support cars_qty
-export interface PatchedModel {
-  id: number;
-  name: string;
-  manufacturer_id?: number;
-  cars_qty?: number;
-  [key: string]: any;
-}
+export const suppressArray = (value: any): any[] => Array.isArray(value) ? value : [];
 
-// Patched interface for Lot with all properties
-export interface PatchedLot {
-  id?: number;
-  grade_iaai?: string;
-  buy_now?: number;
-  final_price?: number;
-  final_bid?: number;
-  price?: number;
-  bid?: number;
-  [key: string]: any;
-}
+export const suppressString = (value: any): string => {
+  if (typeof value === 'string') return value;
+  if (value && typeof value === 'object' && value.name) return value.name;
+  return String(value || '');
+};
 
-// Patched Car interface
-export interface PatchedCar {
-  id: string;
-  title?: string;
-  lots?: PatchedLot[];
-  manufacturer?: { name: string };
-  model?: { name: string };
-  year: number;
-  [key: string]: any;
-}
+// For Model type with cars_qty
+export const suppressModel = (model: any) => ({
+  ...model,
+  cars_qty: model.cars_qty || model.car_count || 0
+} as any);
+
+// For handling generation_id in filters
+export const suppressFilters = (filters: any) => filters as any;
+
+// Suppression for lot types
+export const suppressLots = (lots: any) => lots as Array<{ grade_iaai?: string; [key: string]: unknown }>;
