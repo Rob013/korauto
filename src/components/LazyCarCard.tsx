@@ -180,7 +180,7 @@ const LazyCarCard = memo(({
     e.stopPropagation();
     setPreviousPage(window.location.pathname + window.location.search);
     
-    // Issue #1 FIXED: Save filter panel as closed when navigating to car details
+    // Save filter panel as closed when navigating to car details
     // This prevents the filter panel from reopening when user returns to catalog
     sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
     
@@ -192,7 +192,7 @@ const LazyCarCard = memo(({
     e.stopPropagation();
     setPreviousPage(window.location.pathname + window.location.search);
     
-    // Issue #1 FIXED: Save filter panel as closed when navigating to car details
+    // Save filter panel as closed when navigating to car details
     // This prevents the filter panel from reopening when user returns to catalog
     sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
     

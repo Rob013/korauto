@@ -1014,6 +1014,10 @@ const CarDetails = memo(() => {
                   console.log("🔙 Using browser back");
                   window.history.back();
                   return;
+                } else {
+                  // Fallback to catalog page
+                  console.log("🔙 Falling back to catalog page");
+                  navigate('/catalog');
                 }
 
                 // Final fallbacks - try to preserve state

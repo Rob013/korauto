@@ -296,6 +296,7 @@ const HomeCarsSection = memo(() => {
     const dailyPage = ((dayOfMonth - 1) % 10) + 1; // Cycle through pages 1-10
 
     // Load initial data with 30 cars from daily page - optimized for faster loading
+    // Show same cars as catalog when no specific brand is selected (all brands)
     fetchCars(dailyPage, { per_page: "30" }, true);
     
     // Load manufacturers with caching

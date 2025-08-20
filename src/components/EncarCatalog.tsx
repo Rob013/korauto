@@ -35,7 +35,7 @@ import {
   debounce as catalogDebounce
 } from "@/utils/catalog-filter";
 
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useLocation } from "react-router-dom";
 import {
   useSortedCars,
   getSortOptions,
@@ -44,6 +44,7 @@ import {
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigation } from "@/contexts/NavigationContext";
 
 interface EncarCatalogProps {
   highlightCarId?: string | null;
@@ -51,6 +52,8 @@ interface EncarCatalogProps {
 
 const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const { toast } = useToast();
+  const location = useLocation();
+  const { savePageState, getPageState } = useNavigation();
   const {
     cars,
     setCars, // ✅ Import setCars
@@ -386,39 +389,39 @@ const filteredCars = useMemo(() => {
       return;
     }
 
-    if (totalCount <= 50) {
+    // Always fetch all cars for global sorting when totalCount > 50
+    if (totalCount > 50) {
+      fetchingSortRef.current = true;
+      setIsSortingGlobal(true);
+      setIsLoading(true);
+      
+      try {
+        console.log(`🔄 Global sorting: Fetching all ${totalCount} cars for sorting across all pages`);
+        
+        // Use the new fetchAllCars function to get all cars with current filters
+        const allCars = await fetchAllCars(filters);
+        
+        // Apply the same client-side filtering as the current filtered cars - using utility
+        const filteredAllCars = allCars.filter((car: any) => {
+          return matchesGradeFilter(car, filters.grade_iaai);
+        });
+        
+        setAllCarsForSorting(filteredAllCars);
+        lastSortParamsRef.current = sortKey;
+        console.log(`✅ Global sorting: Loaded ${filteredAllCars.length} cars for sorting across all pages`);
+      } catch (err) {
+        console.error('❌ Error fetching all cars for global sorting:', err);
+        setIsSortingGlobal(false);
+        setAllCarsForSorting([]);
+      } finally {
+        setIsLoading(false);
+        fetchingSortRef.current = false;
+      }
+    } else {
       // For small datasets, use current filtered cars instead of fetching
       setAllCarsForSorting(filteredCars);
       setIsSortingGlobal(true);
       lastSortParamsRef.current = sortKey;
-      return;
-    }
-    
-    fetchingSortRef.current = true;
-    setIsSortingGlobal(true);
-    setIsLoading(true);
-    
-    try {
-      console.log(`🔄 Global sorting: Fetching all cars for sorting across ${totalPages} pages`);
-      
-      // Use the new fetchAllCars function to get all cars with current filters
-      const allCars = await fetchAllCars(filters);
-      
-      // Apply the same client-side filtering as the current filtered cars - using utility
-      const filteredAllCars = allCars.filter((car: any) => {
-        return matchesGradeFilter(car, filters.grade_iaai);
-      });
-      
-      setAllCarsForSorting(filteredAllCars);
-      lastSortParamsRef.current = sortKey;
-      console.log(`✅ Global sorting: Loaded ${filteredAllCars.length} cars for sorting across all pages`);
-    } catch (err) {
-      console.error('❌ Error fetching all cars for global sorting:', err);
-      setIsSortingGlobal(false);
-      setAllCarsForSorting([]);
-    } finally {
-      setIsLoading(false);
-      fetchingSortRef.current = false;
     }
   }, [totalCount, fetchAllCars, filters.grade_iaai, filters.manufacturer_id, filters.model_id, filters.generation_id, filters.from_year, filters.to_year, sortBy, filteredCars, totalPages]);
 
@@ -560,27 +563,38 @@ const filteredCars = useMemo(() => {
       const fromHomepage = searchParams.get('fromHomepage');
       const isFromHomepage = fromHomepage === 'true';
 
-      // Get filters and pagination state from URL parameters
-      const urlFilters: APIFilters = {};
+      // Try to restore page state from navigation context
+      const savedState = getPageState(location.pathname);
+      let urlFilters: APIFilters = {};
       let urlLoadedPages = 1;
       let urlCurrentPage = 1;
+      let urlSortBy = sortBy;
 
-      for (const [key, value] of searchParams.entries()) {
-        if (key === "loadedPages") {
-          urlLoadedPages = parseInt(value) || 1;
-        } else if (key === "page") {
-          urlCurrentPage = parseInt(value) || 1;
-        } else if (value && key !== "loadedPages" && key !== "fromHomepage" && key !== "page") {
-          let decodedValue = value;
-          try {
-            decodedValue = decodeURIComponent(value);
-            if (decodedValue.includes('%')) {
-              decodedValue = decodeURIComponent(decodedValue);
+      if (savedState && !isFromHomepage) {
+        // Restore from saved state
+        urlFilters = savedState.filters;
+        urlCurrentPage = savedState.currentPage;
+        urlSortBy = savedState.sortBy as SortOption;
+        console.log('🔄 Restoring saved page state:', savedState);
+      } else {
+        // Get filters and pagination state from URL parameters
+        for (const [key, value] of searchParams.entries()) {
+          if (key === "loadedPages") {
+            urlLoadedPages = parseInt(value) || 1;
+          } else if (key === "page") {
+            urlCurrentPage = parseInt(value) || 1;
+          } else if (value && key !== "loadedPages" && key !== "fromHomepage" && key !== "page") {
+            let decodedValue = value;
+            try {
+              decodedValue = decodeURIComponent(value);
+              if (decodedValue.includes('%')) {
+                decodedValue = decodeURIComponent(decodedValue);
+              }
+            } catch (e) {
+              decodedValue = value;
             }
-          } catch (e) {
-            decodedValue = value;
+            urlFilters[key as keyof APIFilters] = decodedValue;
           }
-          urlFilters[key as keyof APIFilters] = decodedValue;
         }
       }
 
@@ -591,6 +605,7 @@ const filteredCars = useMemo(() => {
 
       // Set filters and pagination immediately for faster UI response
       setFilters(urlFilters);
+      setSortBy(urlSortBy);
       setLoadedPages(urlLoadedPages);
       setCurrentPage(urlCurrentPage);
 
@@ -736,13 +751,9 @@ const filteredCars = useMemo(() => {
   // Fetch all cars for sorting when sortBy changes OR when totalCount first becomes available
   // This ensures global sorting works on initial load and when sort options change
   useEffect(() => {
-    if (totalCount > 50 && !fetchingSortRef.current) {
+    if (totalCount > 0 && !fetchingSortRef.current) {
       console.log(`🔄 Triggering global sorting: totalCount=${totalCount}, sortBy=${sortBy}`);
       fetchAllCarsForSorting();
-    } else if (totalCount <= 50) {
-      // Reset global sorting if not needed (small dataset)
-      setIsSortingGlobal(false);
-      setAllCarsForSorting([]);
     }
   }, [sortBy, totalCount, fetchAllCarsForSorting]);
 
@@ -798,6 +809,19 @@ const filteredCars = useMemo(() => {
       return () => clearTimeout(timer);
     }
   }, [loading]);
+
+  // Save page state when filters, sorting, or pagination changes
+  useEffect(() => {
+    if (!isRestoringState && totalCount > 0) {
+      savePageState(location.pathname, {
+        path: location.pathname,
+        filters,
+        sortBy,
+        currentPage,
+        scrollPosition: window.scrollY
+      });
+    }
+  }, [filters, sortBy, currentPage, totalCount, isRestoringState, location.pathname, savePageState]);
 
   // Save filter panel state to sessionStorage on mobile when it changes
   useEffect(() => {
@@ -1006,12 +1030,21 @@ const filteredCars = useMemo(() => {
                 Car Catalog
               </h1>
               <p className="text-muted-foreground text-xs sm:text-sm">
-                {totalCount.toLocaleString()} cars {filters.grade_iaai && filters.grade_iaai !== 'all' ? `filtered by ${filters.grade_iaai}` : 'total'} • Page {currentPage} of {totalPages} • Showing {carsForCurrentPage.length} cars
-                {yearFilterProgress === 'instant' && (
-                  <span className="ml-2 text-primary text-xs">⚡ Instant results</span>
-                )}
-                {yearFilterProgress === 'loading' && (
-                  <span className="ml-2 text-primary text-xs">🔄 Loading complete results...</span>
+                {isSortingGlobal ? (
+                  <>
+                    {allCarsForSorting.length.toLocaleString()} cars sorted globally • Page {currentPage} of {Math.ceil(allCarsForSorting.length / 50)} • Showing {carsForCurrentPage.length} cars
+                    <span className="ml-2 text-primary text-xs">🔄 Global sorting active</span>
+                  </>
+                ) : (
+                  <>
+                    {totalCount.toLocaleString()} cars {filters.grade_iaai && filters.grade_iaai !== 'all' ? `filtered by ${filters.grade_iaai}` : 'total'} • Page {currentPage} of {totalPages} • Showing {carsForCurrentPage.length} cars
+                    {yearFilterProgress === 'instant' && (
+                      <span className="ml-2 text-primary text-xs">⚡ Instant results</span>
+                    )}
+                    {yearFilterProgress === 'loading' && (
+                      <span className="ml-2 text-primary text-xs">🔄 Loading complete results...</span>
+                    )}
+                  </>
                 )}
               </p>
             </div>
@@ -1148,7 +1181,7 @@ const filteredCars = useMemo(() => {
               </div>
 
               {/* Pagination */}
-              {totalPages > 1 && (
+              {(totalPages > 1 || (isSortingGlobal && allCarsForSorting.length > 50)) && (
                 <div className="flex justify-center mt-6">
                   <div className="flex items-center gap-2">
                     <Button
@@ -1161,36 +1194,41 @@ const filteredCars = useMemo(() => {
                     </Button>
                     
                     <div className="flex items-center gap-1">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        let pageNum;
-                        if (totalPages <= 5) {
-                          pageNum = i + 1;
-                        } else if (currentPage <= 3) {
-                          pageNum = i + 1;
-                        } else if (currentPage >= totalPages - 2) {
-                          pageNum = totalPages - 4 + i;
-                        } else {
-                          pageNum = currentPage - 2 + i;
-                        }
+                      {(() => {
+                        const effectiveTotalPages = isSortingGlobal ? Math.ceil(allCarsForSorting.length / 50) : totalPages;
+                        const displayPages = Math.min(5, effectiveTotalPages);
                         
-                        return (
-                          <Button
-                            key={pageNum}
-                            onClick={() => handlePageChange(pageNum)}
-                            variant={currentPage === pageNum ? "default" : "outline"}
-                            size="sm"
-                            className="w-10 h-8"
-                            disabled={loading}
-                          >
-                            {pageNum}
-                          </Button>
-                        );
-                      })}
+                        return Array.from({ length: displayPages }, (_, i) => {
+                          let pageNum;
+                          if (effectiveTotalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= effectiveTotalPages - 2) {
+                            pageNum = effectiveTotalPages - 4 + i;
+                          } else {
+                            pageNum = currentPage - 2 + i;
+                          }
+                          
+                          return (
+                            <Button
+                              key={pageNum}
+                              onClick={() => handlePageChange(pageNum)}
+                              variant={currentPage === pageNum ? "default" : "outline"}
+                              size="sm"
+                              className="w-10 h-8"
+                              disabled={loading}
+                            >
+                              {pageNum}
+                            </Button>
+                          );
+                        });
+                      })()}
                     </div>
                     
                     <Button
                       onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalPages || loading}
+                      disabled={currentPage === (isSortingGlobal ? Math.ceil(allCarsForSorting.length / 50) : totalPages) || loading}
                       variant="outline"
                       size="sm"
                     >
