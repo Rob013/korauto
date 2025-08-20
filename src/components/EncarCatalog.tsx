@@ -25,7 +25,6 @@ import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useResourcePreloader } from "@/hooks/useResourcePreloader";
 import { debounce } from "@/utils/performance";
 import { useOptimizedYearFilter } from "@/hooks/useOptimizedYearFilter";
-import { useDailyRotatingCars } from "@/hooks/useDailyRotatingCars";
 import {
   APIFilters,
   extractGradesFromTitle,
@@ -129,28 +128,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Memoized helper function to extract grades from title - now using utility
   const extractGradesFromTitleCallback = useCallback(extractGradesFromTitle, []);
 
-  // Helper function to check if filters are in default "all brands" state
-  const isDefaultState = useMemo(() => {
-    // Default state means no meaningful filters are applied
-    return !filters.manufacturer_id && 
-           !filters.model_id && 
-           !filters.generation_id &&
-           !filters.color &&
-           !filters.fuel_type &&
-           !filters.transmission &&
-           !filters.body_type &&
-           !filters.odometer_from_km &&
-           !filters.odometer_to_km &&
-           !filters.from_year &&
-           !filters.to_year &&
-           !filters.buy_now_price_from &&
-           !filters.buy_now_price_to &&
-           !filters.search &&
-           !filters.seats_count &&
-           !filters.max_accidents &&
-           (!filters.grade_iaai || filters.grade_iaai === 'all');
-  }, [filters]);
-
   // Memoized client-side grade filtering for better performance - now using utility
   const filteredCars = useMemo(() => {
     return applyGradeFilter(cars, filters.grade_iaai);
@@ -168,38 +145,24 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }));
   }, [filteredCars]);
   
-  // Apply daily rotating cars when in default state, same as homepage
-  const dailyRotatingCars = useDailyRotatingCars(carsForSorting, !isDefaultState, 50);
-  
   // Memoized cars to sort (global vs current page)
   const carsToSort = useMemo(() => {
-    // When in default state, use daily rotating cars instead of regular sorting
-    if (isDefaultState && !isSortingGlobal) {
-      console.log(`🎲 Using daily rotating cars: ${dailyRotatingCars.length} cars (default state)`);
-      return dailyRotatingCars;
-    }
-    
     const result = isSortingGlobal && allCarsForSorting.length > 0 ? allCarsForSorting : carsForSorting;
     // Log for debugging: show which dataset is being used for sorting
     if (totalCount > 50) {
       console.log(`🎯 Sorting ${result.length} cars (global: ${isSortingGlobal && allCarsForSorting.length > 0}, total available: ${totalCount})`);
     }
     return result;
-  }, [isSortingGlobal, allCarsForSorting, carsForSorting, totalCount, isDefaultState, dailyRotatingCars]);
+  }, [isSortingGlobal, allCarsForSorting, carsForSorting, totalCount]);
   
-  const sortedCars = useSortedCars(carsToSort, isDefaultState ? "recently_added" : sortBy);
+  const sortedCars = useSortedCars(carsToSort, sortBy);
   
   // Memoized current page cars from sorted results
   const carsForCurrentPage = useMemo(() => {
-    // When using daily rotating cars in default state, don't apply additional sorting/pagination
-    if (isDefaultState && !isSortingGlobal) {
-      return sortedCars; // Daily rotating cars already limited to 50
-    }
-    
     return isSortingGlobal && allCarsForSorting.length > 0 
       ? sortedCars.slice((currentPage - 1) * 50, currentPage * 50)
       : sortedCars;
-  }, [isSortingGlobal, allCarsForSorting.length, sortedCars, currentPage, isDefaultState]);
+  }, [isSortingGlobal, allCarsForSorting.length, sortedCars, currentPage]);
 
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
