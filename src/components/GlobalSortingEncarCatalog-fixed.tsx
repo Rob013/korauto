@@ -6,9 +6,9 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useSecureAuctionAPI } from '@/hooks/useSecureAuctionAPI-fixed';
-import { useSortedCars, SortOption } from '@/hooks/useSortedCars';
+import { useSecureAuctionAPI } from '@/hooks/useSecureAuctionAPI';
 import { useRandomCars } from '@/hooks/useRandomCars';
+import { useSortedCars, SortOption } from '@/hooks/useSortedCars';
 import { filterOutTestCars } from '@/utils/testCarFilter';
 import { applyGradeFilter } from '@/utils/catalog-filter';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -53,14 +53,15 @@ const GlobalSortingEncarCatalog: React.FC<GlobalSortingEncarCatalogProps> = ({ h
   // Check if any filters are active (excluding page-related params)
   const hasActiveFilters = Object.values(filters).some(value => value && value !== 'all');
 
-  // Use random cars when no filters are active (like homepage)
-  // First get some base cars data, then randomize if no filters
+  // Use secure API for both filtered and unfiltered data
   const secureApiResult = useSecureAuctionAPI(hasActiveFilters ? {
     ...filters,
     per_page: '1000', // Load all when filtering for global sort
   } : { per_page: '100' }); // Get 100 cars for random display
   
   const baseCars = secureApiResult.cars || [];
+  
+  // Randomize cars when no filters are active
   const randomizedCars = useRandomCars(baseCars, hasActiveFilters);
   
   const apiData = hasActiveFilters ? { cars: baseCars, totalCount: secureApiResult.totalCount } : null;
@@ -87,7 +88,7 @@ const GlobalSortingEncarCatalog: React.FC<GlobalSortingEncarCatalogProps> = ({ h
       const allCars = filterOutTestCars(apiData.cars);
       const gradeFiltered = applyGradeFilter(allCars, filters.grade_iaai);
       setAllFilteredCars(gradeFiltered);
-    } else if (!hasActiveFilters && randomCars) {
+    } else if (!hasActiveFilters && randomCars.length > 0) {
       const cleanCars = filterOutTestCars(randomCars);
       setAllFilteredCars(cleanCars);
     }
