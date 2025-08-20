@@ -174,7 +174,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       cars_qty?: number;
       image?: string;
     }[]
-  >(createFallbackManufacturers()); // Initialize with fallback data immediately
+  >([]);
 
   const [models, setModels] = useState<
     {

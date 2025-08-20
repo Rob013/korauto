@@ -1376,10 +1376,6 @@ export const useSecureAuctionAPI = () => {
           cars_qty: manufacturer.cars_qty || manufacturer.car_count || 0,
           car_count: manufacturer.car_count || manufacturer.cars_qty || 0
         }));
-      } else {
-        // No manufacturers from API, use fallback data
-        console.log(`⚠️ No manufacturers from API, using fallback data`);
-        manufacturers = createFallbackManufacturers();
       }
       
       console.log(`🏷️ Retrieved manufacturers:`, 
@@ -1388,10 +1384,8 @@ export const useSecureAuctionAPI = () => {
       return manufacturers;
     } catch (err) {
       console.error("❌ Error fetching manufacturers:", err);
-      console.log(`🔄 Using fallback manufacturer data`);
-      
-      // Return fallback data when API fails
-      return createFallbackManufacturers();
+      // Prefer empty list on failure so UI doesn't show fake brands
+      return [];
     }
   };
 
@@ -1890,16 +1884,12 @@ export const useSecureAuctionAPI = () => {
   const fetchGrades = async (manufacturerId?: string, modelId?: string, generationId?: string): Promise<{ value: string; label: string; count?: number }[]> => {
     const cacheKey = `${manufacturerId || ''}-${modelId || ''}-${generationId || ''}`;
     
-    // Always return fallback instantly for manufacturer-only filtering for speed
+    // For manufacturer-only context, prefer real API: trigger async fetch; return empty until ready
     if (!modelId && !generationId && manufacturerId) {
-      const fallback = getFallbackGrades(manufacturerId);
-      // Start async fetch to update cache but don't wait
-      setTimeout(() => {
-        if (!gradesCache[cacheKey]) {
-          _fetchGradesAsync(manufacturerId, modelId, generationId, cacheKey);
-        }
-      }, 0);
-      return fallback;
+      if (!gradesCache[cacheKey]) {
+        _fetchGradesAsync(manufacturerId, modelId, generationId, cacheKey).catch(() => {});
+      }
+      return gradesCache[cacheKey] || [];
     }
     
     // Use cache if available
@@ -1928,9 +1918,8 @@ export const useSecureAuctionAPI = () => {
       console.log('🔍 Found', cars.length, 'cars for grade extraction');
       
       if (cars.length === 0) {
-        const fallback = getFallbackGrades(manufacturerId);
-        setGradesCache(prev => ({ ...prev, [key]: fallback }));
-        return fallback;
+        setGradesCache(prev => ({ ...prev, [key]: [] }));
+        return [];
       }
       
       // Extract unique grades from multiple sources (like encar.com approach)
@@ -2052,10 +2041,8 @@ export const useSecureAuctionAPI = () => {
       
       // If no variants found from API, try fallback
       if (grades.length === 0) {
-        console.log('⚠️ No variants found from API, trying fallback...');
-        const fallback = getFallbackGrades(manufacturerId);
-        console.log('🔄 Fallback variants:', fallback);
-        return fallback;
+        console.log('⚠️ No variants found from API');
+        return [];
       }
       
       const result = grades;
@@ -2063,10 +2050,9 @@ export const useSecureAuctionAPI = () => {
       return result;
     } catch (err) {
       console.error("❌ Error fetching grades:", err);
-      const fallback = getFallbackGrades(manufacturerId);
       const key = cacheKey || `${manufacturerId || ''}-${modelId || ''}-${generationId || ''}`;
-      setGradesCache(prev => ({ ...prev, [key]: fallback }));
-      return fallback;
+      setGradesCache(prev => ({ ...prev, [key]: [] }));
+      return [];
     }
   };
 
