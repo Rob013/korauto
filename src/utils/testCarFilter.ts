@@ -23,7 +23,6 @@ export const isTestCar = (car: CarLike): boolean => {
   // Common test car patterns
   const testPatterns = [
     'gjenarta',
-    'elite',
     'test car',
     'sample',
     'demo',
