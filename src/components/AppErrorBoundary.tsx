@@ -26,7 +26,7 @@ export class AppErrorBoundary extends React.Component<React.PropsWithChildren, A
         <div style={{ padding: 24, fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif' }}>
           <h1 style={{ fontSize: 20, marginBottom: 8 }}>Something went wrong</h1>
           <p style={{ marginBottom: 16 }}>Please refresh the page. If the problem persists, try clearing the site data.</p>
-          {process.env.NODE_ENV !== 'production' && this.state.error && (
+          {import.meta.env.DEV && this.state.error && (
             <pre style={{ whiteSpace: 'pre-wrap', background: '#f6f6f6', padding: 12, borderRadius: 8 }}>
               {String(this.state.error.stack || this.state.error.message)}
             </pre>
