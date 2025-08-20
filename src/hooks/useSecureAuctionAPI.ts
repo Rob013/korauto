@@ -514,7 +514,10 @@ export const createFallbackCars = (filters: any = {}): any[] => {
   }
   
   if (filters.color) {
-    filteredCars = filteredCars.filter(car => car.color.toLowerCase() === filters.color.toLowerCase());
+    filteredCars = filteredCars.filter(car => {
+      const carColor = typeof car.color === 'string' ? car.color : car.color?.name || '';
+      return carColor.toLowerCase() === filters.color.toLowerCase();
+    });
   }
 
   // Note: Removed test car generation to eliminate test cars from catalog
@@ -641,8 +644,8 @@ export const createFallbackGenerations = (manufacturerName: string): Generation[
   return generationData[manufacturerName] || [];
 };
 
-// Create fallback model data for testing when API is not available
-export const createFallbackModels = (manufacturerName: string): Model[] => {
+// Create fallback model data for testing when API is not available  
+export const createFallbackModels = (manufacturerName: string): any[] => {
   const modelData: { [key: string]: Model[] } = {
     'BMW': [
       { id: 101, name: '3 Series', cars_qty: 201 },

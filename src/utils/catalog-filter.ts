@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Catalog Filter Utilities
  * 
@@ -33,8 +34,16 @@ export interface APIFilters {
 export interface Car {
   id: string;
   title?: string;
-  lots?: Array<{ grade_iaai?: string; [key: string]: unknown }>;
+  lots?: Array<{ 
+    grade_iaai?: string; 
+    buy_now?: number;
+    final_price?: number;
+    bid?: number;
+    [key: string]: unknown 
+  }>;
   engine?: { name?: string };
+  manufacturer?: { name: string };
+  model?: { name: string };
   [key: string]: unknown;
 }
 

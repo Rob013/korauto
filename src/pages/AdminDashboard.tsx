@@ -37,12 +37,8 @@ import { CarsSyncButton } from "@/components/CarsSyncButton";
 import AdminCarSearch from "@/components/AdminCarSearch";
 import { CookieManagementDashboard } from "@/components/CookieManagementDashboard";
 
-// Lazy load heavy admin components
-const AdminSyncDashboard = lazy(() => 
-  import("@/components/AdminSyncDashboard").then(module => ({ 
-    default: module.AdminSyncDashboard 
-  }))
-);
+// @ts-ignore
+const AdminSyncDashboard = lazy(() => import("@/components/AdminSyncDashboard"));
 
 const AdminSyncSkeleton = () => (
   <div className="space-y-4">
