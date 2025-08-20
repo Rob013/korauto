@@ -211,10 +211,11 @@ export const hasActiveFilters = (filters: APIFilters): boolean => {
  * Checks if this is a year range filter change
  */
 export const isYearRangeChange = (newFilters: APIFilters, currentFilters: APIFilters): boolean => {
-  return (
-    newFilters.from_year !== currentFilters.from_year || 
-    newFilters.to_year !== currentFilters.to_year
-  ) && (newFilters.from_year || newFilters.to_year);
+  return Boolean(
+    (newFilters.from_year !== currentFilters.from_year || 
+     newFilters.to_year !== currentFilters.to_year) && 
+    (newFilters.from_year || newFilters.to_year)
+  );
 };
 
 /**

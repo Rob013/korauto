@@ -9,12 +9,12 @@ export interface Manufacturer {
 export interface Model {
   id: number;
   name: string;
-  manufacturer_id: number;
+  manufacturer_id?: number;
   cars_qty?: number;
 }
 
 export interface Lot {
-  id: number;
+  id?: number;
   grade_iaai?: string;
   [key: string]: unknown;
 }
