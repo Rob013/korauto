@@ -54,19 +54,18 @@ const GlobalSortingEncarCatalog: React.FC<GlobalSortingEncarCatalogProps> = ({ h
   const hasActiveFilters = Object.values(filters).some(value => value && value !== 'all');
 
   // Use random cars when no filters are active (like homepage)
-  // First get some base cars data, then randomize if no filters
+  const randomCarsResult = useRandomCars(hasActiveFilters ? 0 : 100, hasActiveFilters ? 0 : 50);
+  const randomCars = hasActiveFilters ? [] : randomCarsResult;
+  const isLoadingRandom = false;
+
+  // Use secure API when filters are active
   const secureApiResult = useSecureAuctionAPI(hasActiveFilters ? {
     ...filters,
     per_page: '1000', // Load all when filtering for global sort
-  } : { per_page: '100' }); // Get 100 cars for random display
+  } : {});
   
-  const baseCars = secureApiResult.cars || [];
-  const randomizedCars = useRandomCars(baseCars, hasActiveFilters);
-  
-  const apiData = hasActiveFilters ? { cars: baseCars, totalCount: secureApiResult.totalCount } : null;
-  const randomCars = hasActiveFilters ? [] : randomizedCars;
+  const apiData = hasActiveFilters ? { cars: secureApiResult.cars, totalCount: secureApiResult.totalCount } : null;
   const isLoadingAPI = hasActiveFilters ? secureApiResult.loading : false;
-  const isLoadingRandom = !hasActiveFilters ? secureApiResult.loading : false;
   const manufacturers = secureApiResult.manufacturers || [];
   const models = secureApiResult.models || [];
   const generations = secureApiResult.carGenerations || [];
