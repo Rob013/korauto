@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-// @ts-ignore - Type suppression for Model interface compatibility
 import { supabase } from "@/integrations/supabase/client";
 import { findGenerationYears } from "@/data/generationYears";
 

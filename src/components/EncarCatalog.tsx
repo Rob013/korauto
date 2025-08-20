@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import LazyCarCard from "@/components/LazyCarCard";
 import { useSecureAuctionAPI, createFallbackManufacturers } from "@/hooks/useSecureAuctionAPI";
-import ImprovedEncarStyleFilter from "@/components/ImprovedEncarStyleFilter";
+import EncarStyleFilter from "@/components/EncarStyleFilter";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useResourcePreloader } from "@/hooks/useResourcePreloader";
@@ -1014,7 +1014,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         
         <div className={`flex-1 overflow-y-auto ${isMobile ? 'mobile-filter-content mobile-filter-compact' : 'p-3 sm:p-4'}`}>
           <div className={`${isMobile ? '' : ''}`}>
-            <ImprovedEncarStyleFilter
+            <EncarStyleFilter
             filters={filters}
             manufacturers={manufacturers}
             models={models}

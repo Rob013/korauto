@@ -6,17 +6,10 @@ export interface FilterState {
   brand?: string;
   model?: string;
   fuel?: string;
-  fuel_type?: string;
   transmission?: string;
   bodyType?: string;
-  body_type?: string;
   color?: string;
   location?: string;
-  manufacturer_id?: string;
-  model_id?: string;
-  generation_id?: string;
-  grade_iaai?: string;
-  trim_level?: string;
   
   // Range filters
   yearMin?: number;
@@ -25,16 +18,6 @@ export interface FilterState {
   priceMax?: number;
   mileageMin?: number;
   mileageMax?: number;
-  from_year?: string;
-  to_year?: string;
-  buy_now_price_from?: string;
-  buy_now_price_to?: string;
-  odometer_from_km?: string;
-  odometer_to_km?: string;
-  
-  // Additional filters
-  seats_count?: string;
-  max_accidents?: string;
   
   // Pagination and sorting
   page?: number;

@@ -29,7 +29,7 @@ const PerformanceDashboard = lazy(() => import("./components/PerformanceDashboar
 
 // Lazy load admin components for better code splitting
 const AdminSyncDashboard = lazy(() => import("./components/AdminSyncDashboard"));
-const CookieManagementDashboard = lazy(() => import("./components/CookieManagementDashboard").then(module => ({ default: module.CookieManagementDashboard })));
+const CookieManagementDashboard = lazy(() => import("./components/CookieManagementDashboard"));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-background">
@@ -87,7 +87,7 @@ const queryClient = new QueryClient({
       // Retry failed requests up to 2 times
       retry: 2,
       // Only refetch if data is stale (improved from 'always')
-      refetchOnMount: false,
+      refetchOnMount: 'if-stale',
       // Enable background refetching for better UX
       refetchInterval: false,
       // Network mode optimizations
