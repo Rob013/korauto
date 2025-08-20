@@ -10,6 +10,7 @@ import {
   getSortOptions,
   SortOption,
 } from "@/hooks/useSortedCars";
+import { filterOutTestCars } from "@/utils/testCarFilter";
 import {
   Select,
   SelectContent,
@@ -258,8 +259,9 @@ const HomeCarsSection = memo(() => {
     cylinders: Number(car.cylinders || 0),
   }));
 
-  // Don't filter homepage cars - always show original cars
-  const sortedCars = useSortedCars(carsForSorting, sortBy);
+  // Remove test cars on homepage as well
+  const nonTestCars = useMemo(() => filterOutTestCars(carsForSorting), [carsForSorting]);
+  const sortedCars = useSortedCars(nonTestCars, sortBy);
 
   // Show 30 cars by default (daily rotation) - optimized for better loading performance
   const defaultDisplayCount = 30;

@@ -77,7 +77,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     loadMore,
   } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
-  const [sortBy, setSortBy] = useState<SortOption>("recently_added");
+  const [sortBy, setSortBy] = useState<SortOption>("popular");
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -166,19 +166,16 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   
   // Memoized cars to sort (global vs current page vs random cars)
   const carsToSort = useMemo(() => {
-    // Show random cars when no filters are active
-    if (shouldShowRandomCars) {
-      console.log(`🎲 Showing ${randomCars.length} random cars (no filters active)`);
-      return randomCars;
+    // Align catalog "All brands" with homepage: do not randomize, just show sorted filtered list
+    if (!hasFilters) {
+      return carsForSorting;
     }
-    
     const result = isSortingGlobal && allCarsForSorting.length > 0 ? allCarsForSorting : carsForSorting;
-    // Log for debugging: show which dataset is being used for sorting
     if (totalCount > 50) {
       console.log(`🎯 Sorting ${result.length} cars (global: ${isSortingGlobal && allCarsForSorting.length > 0}, total available: ${totalCount})`);
     }
     return result;
-  }, [isSortingGlobal, allCarsForSorting, carsForSorting, totalCount, shouldShowRandomCars, randomCars]);
+  }, [isSortingGlobal, allCarsForSorting, carsForSorting, totalCount, hasFilters]);
   
   const sortedCars = useSortedCars(carsToSort, sortBy);
   
@@ -729,13 +726,27 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           }
         }
 
-        // Load cars last - this is the most expensive operation
+        // Load cars last - align default (all brands) with homepage dataset
         const initialFilters = {
           ...urlFilters,
           per_page: "50"
         };
-        
-        await fetchCars(urlCurrentPage, initialFilters, true);
+
+        const hasMeaningfulFilters = Boolean(
+          urlFilters.manufacturer_id || urlFilters.model_id ||
+          urlFilters.generation_id || urlFilters.from_year ||
+          urlFilters.to_year || urlFilters.search || urlFilters.grade_iaai
+        );
+
+        if (!hasMeaningfulFilters) {
+          // Same daily rotation as homepage
+          const today = new Date();
+          const dayOfMonth = today.getDate();
+          const dailyPage = ((dayOfMonth - 1) % 10) + 1;
+          await fetchCars(dailyPage, { per_page: "30" }, true);
+        } else {
+          await fetchCars(urlCurrentPage, initialFilters, true);
+        }
 
       } catch (error) {
         console.error('Error loading initial data:', error);
