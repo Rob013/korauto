@@ -23,6 +23,17 @@ const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => P
 
 // Create fallback car data for testing when API is not available
 export const createFallbackCars = (filters: any = {}): any[] => {
+  // If a specific brand is selected (not "all" or empty), don't show fallback cars to avoid "test cars"
+  // Only use fallback when no brand filter is applied or when "all" brands is selected
+  if (filters.manufacturer_id && 
+      filters.manufacturer_id !== 'all' && 
+      filters.manufacturer_id !== '' &&
+      filters.manufacturer_id !== undefined &&
+      filters.manufacturer_id !== null) {
+    console.log(`🚫 Brand filter applied (${filters.manufacturer_id}), not showing fallback cars to avoid test cars`);
+    return [];
+  }
+
   const fallbackCars = [
     {
       id: 1001,
@@ -37,7 +48,7 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       body_type: 'Sedan',
       odometer: { km: 85000 },
       buy_now: 15000,
-      images: { normal: ['/images/bmw-3-series-demo.jpg'] },
+      images: { normal: ['/images/car-placeholder.jpg'] },
       status: 'Available',
       location: 'South Korea',
       trim_level: '325i',
@@ -58,7 +69,7 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       body_type: 'Sedan',
       odometer: { km: 65000 },
       buy_now: 22000,
-      images: { normal: ['/images/bmw-3-series-f30-demo.jpg'] },
+      images: { normal: ['/images/car-placeholder.jpg'] },
       status: 'Available',
       location: 'South Korea',
       trim_level: '320i',
@@ -79,7 +90,7 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       body_type: 'Sedan',
       odometer: { km: 75000 },
       buy_now: 18500,
-      images: { normal: ['/images/audi-a6-demo.jpg'] },
+      images: { normal: ['/images/car-placeholder.jpg'] },
       status: 'Available',
       location: 'South Korea',
       trim_level: '2.0T',
@@ -100,7 +111,7 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       body_type: 'Sedan',
       odometer: { km: 95000 },
       buy_now: 14000,
-      images: { normal: ['/images/mercedes-c-class-demo.jpg'] },
+      images: { normal: ['/images/car-placeholder.jpg'] },
       status: 'Available',
       location: 'South Korea',
       trim_level: 'C250',
@@ -121,7 +132,7 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       body_type: 'Sedan',
       odometer: { km: 45000 },
       buy_now: 19500,
-      images: { normal: ['/images/toyota-camry-demo.jpg'] },
+      images: { normal: ['/images/car-placeholder.jpg'] },
       status: 'Available',
       location: 'South Korea',
       trim_level: 'LE',
@@ -142,7 +153,7 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       body_type: 'Hatchback',
       odometer: { km: 55000 },
       buy_now: 16000,
-      images: { normal: ['/images/honda-civic-demo.jpg'] },
+      images: { normal: ['/images/car-placeholder.jpg'] },
       status: 'Available',
       location: 'South Korea',
       trim_level: 'Sport',
@@ -166,7 +177,7 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       lots: [{
         buy_now: 18500,
         odometer: { km: 48000 },
-        images: { normal: ['/images/vw-tiguan-demo.jpg'] },
+        images: { normal: ['/images/car-placeholder.jpg'] },
         status: 'Available',
         lot: 'VW1007',
         grade_iaai: 'A',
@@ -194,7 +205,7 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       lots: [{
         buy_now: 21000,
         odometer: { km: 35000 },
-        images: { normal: ['/images/vw-tiguan-2020-demo.jpg'] },
+        images: { normal: ['/images/car-placeholder.jpg'] },
         status: 'Available',
         lot: 'VW1008',
         grade_iaai: 'A',
@@ -222,7 +233,7 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       lots: [{
         buy_now: 15500,
         odometer: { km: 62000 },
-        images: { normal: ['/images/vw-passat-demo.jpg'] },
+        images: { normal: ['/images/car-placeholder.jpg'] },
         status: 'Available',
         lot: 'VW1009',
         grade_iaai: 'B',
@@ -250,7 +261,7 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       lots: [{
         buy_now: 19000,
         odometer: { km: 28000 },
-        images: { normal: ['/images/vw-passat-2021-demo.jpg'] },
+        images: { normal: ['/images/car-placeholder.jpg'] },
         status: 'Available',
         lot: 'VW1010',
         grade_iaai: 'A',
@@ -278,7 +289,7 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       lots: [{
         buy_now: 24000,
         odometer: { km: 15000 },
-        images: { normal: ['/images/vw-golf-gti-demo.jpg'] },
+        images: { normal: ['/images/car-placeholder.jpg'] },
         status: 'Available',
         lot: 'VW1011',
         grade_iaai: 'A',
@@ -306,7 +317,7 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       lots: [{
         buy_now: 16500,
         odometer: { km: 40000 },
-        images: { normal: ['/images/vw-jetta-demo.jpg'] },
+        images: { normal: ['/images/car-placeholder.jpg'] },
         status: 'Available',
         lot: 'VW1012',
         grade_iaai: 'B',
@@ -334,7 +345,7 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       lots: [{
         buy_now: 28000,
         odometer: { km: 32000 },
-        images: { normal: ['/images/vw-atlas-demo.jpg'] },
+        images: { normal: ['/images/car-placeholder.jpg'] },
         status: 'Available',
         lot: 'VW1013',
         grade_iaai: 'A',
@@ -363,7 +374,7 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       lots: [{
         buy_now: 19500,
         odometer: { km: 45000 },
-        images: { normal: ['/images/toyota-camry-demo.jpg'] },
+        images: { normal: ['/images/car-placeholder.jpg'] },
         status: 'Available',
         lot: 'TOY2001',
         grade_iaai: 'A',
@@ -391,7 +402,7 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       lots: [{
         buy_now: 17500,
         odometer: { km: 38000 },
-        images: { normal: ['/images/honda-civic-demo.jpg'] },
+        images: { normal: ['/images/car-placeholder.jpg'] },
         status: 'Available',
         lot: 'HON2002',
         grade_iaai: 'A',
@@ -419,7 +430,7 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       lots: [{
         buy_now: 18500,
         odometer: { km: 25000 },
-        images: { normal: ['/images/hyundai-elantra-demo.jpg'] },
+        images: { normal: ['/images/car-placeholder.jpg'] },
         status: 'Available',
         lot: 'HYU2003',
         grade_iaai: 'A',
@@ -447,7 +458,7 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       lots: [{
         buy_now: 16500,
         odometer: { km: 35000 },
-        images: { normal: ['/images/kia-forte-demo.jpg'] },
+        images: { normal: ['/images/car-placeholder.jpg'] },
         status: 'Available',
         lot: 'KIA2004',
         grade_iaai: 'B',
@@ -475,7 +486,7 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       lots: [{
         buy_now: 18000,
         odometer: { km: 42000 },
-        images: { normal: ['/images/nissan-altima-demo.jpg'] },
+        images: { normal: ['/images/car-placeholder.jpg'] },
         status: 'Available',
         lot: 'NIS2005',
         grade_iaai: 'B',
@@ -493,15 +504,15 @@ export const createFallbackCars = (filters: any = {}): any[] => {
   // Filter cars based on provided filters
   let filteredCars = fallbackCars;
   
-  if (filters.manufacturer_id) {
+  if (filters.manufacturer_id && filters.manufacturer_id !== 'all' && filters.manufacturer_id !== '') {
     filteredCars = filteredCars.filter(car => car.manufacturer.id.toString() === filters.manufacturer_id);
   }
   
-  if (filters.model_id) {
+  if (filters.model_id && filters.model_id !== 'all' && filters.model_id !== '') {
     filteredCars = filteredCars.filter(car => car.model.id.toString() === filters.model_id);
   }
   
-  if (filters.generation_id) {
+  if (filters.generation_id && filters.generation_id !== 'all' && filters.generation_id !== '') {
     filteredCars = filteredCars.filter(car => car.generation.id.toString() === filters.generation_id);
   }
   
@@ -1302,8 +1313,21 @@ export const useSecureAuctionAPI = () => {
         }
       }
       
-      // Use fallback car data when API fails
-      console.log("🔄 Using fallback car data due to API failure");
+      // Use fallback car data when API fails - but only if no specific brand filter is applied
+      if (newFilters.manufacturer_id && 
+          newFilters.manufacturer_id !== 'all' && 
+          newFilters.manufacturer_id !== '' &&
+          newFilters.manufacturer_id !== undefined &&
+          newFilters.manufacturer_id !== null) {
+        console.log("❌ API failed for brand-specific search, not showing fallback cars to avoid test car display");
+        setError("Failed to load cars for the selected brand. Please try again.");
+        setCars([]);
+        setTotalCount(0);
+        setHasMorePages(false);
+        return;
+      }
+      
+      console.log("🔄 Using fallback car data due to API failure (no specific brand filter applied)");
       const allFallbackCars = createFallbackCars(newFilters);
       
       // Enable pagination for fallback data to test multi-page sorting
@@ -2399,8 +2423,17 @@ export const useSecureAuctionAPI = () => {
         }
       }
       
-      // Use fallback car data when API fails
-      console.log("🔄 Using fallback car data for global sorting due to API failure");
+      // Use fallback car data when API fails - but only if no specific brand filter is applied
+      if (newFilters.manufacturer_id && 
+          newFilters.manufacturer_id !== 'all' && 
+          newFilters.manufacturer_id !== '' &&
+          newFilters.manufacturer_id !== undefined &&
+          newFilters.manufacturer_id !== null) {
+        console.log("❌ API failed for brand-specific global sorting, not using fallback cars");
+        return [];
+      }
+      
+      console.log("🔄 Using fallback car data for global sorting due to API failure (no specific brand filter applied)");
       return createFallbackCars(newFilters);
     }
   };
