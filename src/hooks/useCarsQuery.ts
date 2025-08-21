@@ -37,7 +37,88 @@ const fetchCars = async (
   params: ReturnType<typeof buildQueryParams>,
   signal?: AbortSignal
 ): Promise<CarsResponse> => {
-  // Use mock data for development/testing
+  // When no brand filter is applied, use the same secure auction API data as homepage
+  if (!params.brand || params.brand === '' || params.brand === 'all') {
+    const { createFallbackCars } = await import('@/hooks/useSecureAuctionAPI');
+    const { useDailyRotatingCars } = await import('@/hooks/useDailyRotatingCars');
+    
+    // Get cars from secure auction API (same as homepage)
+    const allCars = createFallbackCars({});
+    
+    // Apply daily rotation logic (same as homepage)
+    const hasFilters = Object.entries(params).some(([key, value]) => 
+      value && value !== '' && key !== 'page' && key !== 'pageSize' && key !== 'sort'
+    );
+    
+    const dailyRotatingCars = (() => {
+      if (hasFilters || allCars.length === 0) {
+        return allCars;
+      }
+
+      // Get day of month as seed for daily rotation (same logic as homepage)
+      const today = new Date();
+      const dayOfMonth = today.getDate();
+      const month = today.getMonth() + 1;
+      const dailySeed = dayOfMonth * 100 + month;
+
+      // Filter available cars
+      const availableCars = allCars.filter(
+        (car) =>
+          car.manufacturer?.name && 
+          car.lots?.[0]?.images?.normal?.[0]
+      );
+
+      // Seeded random function
+      const seededRandom = (seed: number) => {
+        const x = Math.sin(seed) * 10000;
+        return x - Math.floor(x);
+      };
+
+      // Shuffle with seed
+      const shuffleWithSeed = (array: any[], seed: number) => {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(seededRandom(seed + i) * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+      };
+
+      return shuffleWithSeed(availableCars, dailySeed).slice(0, 50);
+    })();
+    
+    // Convert to the expected format
+    const convertedCars = dailyRotatingCars.map(car => ({
+      id: car.id?.toString() || '',
+      make: car.manufacturer?.name || '',
+      model: car.model?.name || '',
+      year: car.year || 2020,
+      price: Math.round((car.lots?.[0]?.buy_now || 25000) + 2200), // Add fees like homepage
+      mileage: car.lots?.[0]?.odometer?.km,
+      fuel: car.fuel?.name,
+      transmission: car.transmission?.name,
+      bodyType: car.body_type || 'Sedan',
+      color: car.color?.name,
+      location: car.location || 'Seoul',
+      images: car.lots?.[0]?.images?.normal || []
+    }));
+    
+    const pageSize = parseInt(params.pageSize || '20');
+    const page = parseInt(params.page || '1');
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedCars = convertedCars.slice(startIndex, endIndex);
+    
+    return {
+      cars: paginatedCars,
+      total: convertedCars.length,
+      page: page,
+      totalPages: Math.ceil(convertedCars.length / pageSize),
+      hasMore: endIndex < convertedCars.length
+    };
+  }
+  
+  // For brand-specific filters, use mock data
   const { mockFetchCars } = await import('@/utils/mockCarsData');
   const mockResponse = await mockFetchCars(params, signal);
   
