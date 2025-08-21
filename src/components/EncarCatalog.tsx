@@ -113,15 +113,47 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     return grades;
   }, []);
 
-  // Memoized client-side grade filtering for better performance
+  // Filter cars to remove test/emergency cars and apply grade filtering
   const filteredCars = useMemo(() => {
+    // First filter out test/emergency cars (addressing the "18 test cars" issue)
+    const realCars = cars.filter((car) => {
+      // Remove cars with emergency or test IDs
+      if (car.id && (
+        car.id.startsWith('emergency-') || 
+        car.id.startsWith('test-') || 
+        car.id.startsWith('sample-') ||
+        car.id.startsWith('mock-')
+      )) {
+        return false;
+      }
+
+      // Remove cars with test data indicators in external_id
+      if (car.external_id && (
+        car.external_id.startsWith('emergency-') || 
+        car.external_id.startsWith('test-') || 
+        car.external_id.startsWith('sample-') ||
+        car.external_id.startsWith('mock-')
+      )) {
+        return false;
+      }
+
+      // Remove mock cars that have generic image URLs (likely test data)
+      if (car.image_url && car.image_url.includes('unsplash.com') && 
+          (!car.vin || car.vin.length < 10)) {
+        return false;
+      }
+
+      return true;
+    });
+
+    // Apply grade filtering only if a specific grade is selected
     if (!filters.grade_iaai || filters.grade_iaai === 'all') {
-      return cars;
+      return realCars;
     }
 
     const filterGrade = filters.grade_iaai.toLowerCase().trim();
     
-    return cars.filter((car) => {
+    return realCars.filter((car) => {
       const carGrades: string[] = [];
       
       // Extract grades from lots (primary source)
@@ -430,8 +462,33 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       }
       const allCars = data.data || [];
       
-      // Apply the same filtering as current cars
+      // Apply the same filtering as current cars - remove test cars and apply grade filtering
       const filteredAllCars = allCars.filter((car: any) => {
+        // Filter out test/emergency cars (same logic as in filteredCars)
+        if (car.id && (
+          car.id.startsWith('emergency-') || 
+          car.id.startsWith('test-') || 
+          car.id.startsWith('sample-') ||
+          car.id.startsWith('mock-')
+        )) {
+          return false;
+        }
+
+        if (car.external_id && (
+          car.external_id.startsWith('emergency-') || 
+          car.external_id.startsWith('test-') || 
+          car.external_id.startsWith('sample-') ||
+          car.external_id.startsWith('mock-')
+        )) {
+          return false;
+        }
+
+        if (car.image_url && car.image_url.includes('unsplash.com') && 
+            (!car.vin || car.vin.length < 10)) {
+          return false;
+        }
+
+        // Apply grade filtering if specified
         if (filters.grade_iaai && filters.grade_iaai !== 'all') {
           const lot = car.lots?.[0];
           const grade = lot?.grade_iaai;
@@ -736,8 +793,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
   }, [sortBy, totalPages, totalCount, filters.grade_iaai]);
 
-  // Don't show cars until brand, model, and generation are selected
-  const shouldShowCars = useServerSide || (filters.manufacturer_id && filters.model_id && filters.generation_id);
+  // Show cars when brand is selected - enable real brand filtering before model selection
+  const shouldShowCars = useServerSide || filters.manufacturer_id;
 
   // Effect to highlight and scroll to specific car by lot number
   useEffect(() => {
@@ -915,9 +972,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         <div className="text-center py-16">
           <div className="max-w-md mx-auto">
             <Car className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Zgjidhni markën, modelin dhe gjeneratën</h3>
+            <h3 className="text-lg font-semibold mb-2">Zgjidhni markën</h3>
             <p className="text-muted-foreground mb-6">
-              Për të parë makinat, ju duhet të zgjidhni së paku markën, modelin dhe gjeneratën e makinës.
+              Për të parë makinat, ju duhet të zgjidhni së paku markën e makinës.
             </p>
           </div>
         </div>
@@ -939,7 +996,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         </div>
       )}
 
-      {/* Cars Grid/List - Only show if brand, model, and generation are selected */}
+      {/* Cars Grid/List - Show if brand is selected */}
       {shouldShowCars && (useServerSide ? serverCars.length > 0 : cars.length > 0) && (
         <>
           <div
