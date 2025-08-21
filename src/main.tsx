@@ -3,7 +3,7 @@ import App from './App.tsx'
 import { AppErrorBoundary } from '@/components/AppErrorBoundary'
 import './index.css'
 import { ThemeProvider } from "@/components/ThemeProvider"
-import { NavigationProvider } from '@/contexts/NavigationContext'
+import { NavigationProvider } from './contexts/NavigationContext.tsx'
 
 // Register service worker for caching
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
