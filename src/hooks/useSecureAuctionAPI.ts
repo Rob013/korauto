@@ -360,6 +360,8 @@ export const useSecureAuctionAPI = () => {
         page: page.toString(),
         per_page: newFilters.per_page || "50", // Show 50 cars per page
         simple_paginate: "0",
+        // Add filter to exclude test cars at API level if supported
+        exclude_test_cars: "1"
       };
       
       // IMPORTANT: Remove grade_iaai from server request - we'll do client-side filtering
@@ -370,8 +372,40 @@ export const useSecureAuctionAPI = () => {
       console.log(`🔄 Fetching cars - Page ${page} with filters:`, apiFilters);
       const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
 
-      // Apply client-side variant filtering if a variant is selected
-      let filteredCars = data.data || [];
+      // FIRST: Filter out test/emergency cars before any other filtering
+      let filteredCars = (data.data || []).filter(car => {
+        // Remove cars with emergency or test IDs
+        if (car.id && (
+          car.id.startsWith('emergency-') || 
+          car.id.startsWith('test-') || 
+          car.id.startsWith('sample-') ||
+          car.id.startsWith('mock-')
+        )) {
+          return false;
+        }
+
+        // Remove cars with test data indicators in external_id
+        if (car.external_id && (
+          car.external_id.startsWith('emergency-') || 
+          car.external_id.startsWith('test-') || 
+          car.external_id.startsWith('sample-') ||
+          car.external_id.startsWith('mock-')
+        )) {
+          return false;
+        }
+
+        // Remove mock cars that have generic image URLs (likely test data)
+        if (car.image_url && car.image_url.includes('unsplash.com') && 
+            (!car.vin || car.vin.length < 10)) {
+          return false;
+        }
+
+        return true;
+      });
+
+      console.log(`🧹 Filtered out test cars: ${(data.data || []).length - filteredCars.length} test cars removed, ${filteredCars.length} real cars remaining`);
+
+      // SECOND: Apply client-side variant filtering if a variant is selected
       if (selectedVariant && selectedVariant !== 'all') {
         console.log(`🔍 Applying client-side variant filter: "${selectedVariant}"`);
         
@@ -405,7 +439,7 @@ export const useSecureAuctionAPI = () => {
           return false;
         });
         
-        console.log(`✅ Variant filter "${selectedVariant}": ${filteredCars.length} cars match out of ${data.data?.length || 0} total`);
+        console.log(`✅ Variant filter "${selectedVariant}": ${filteredCars.length} cars match after test car filtering`);
       }
 
       // Set metadata from response (but adjust total count for client-side filtering)
@@ -497,7 +531,8 @@ export const useSecureAuctionAPI = () => {
       const carResponse = await makeSecureAPICall('cars', {
         model_id: modelId,
         per_page: '20',
-        simple_paginate: '0'
+        simple_paginate: '0',
+        exclude_test_cars: '1'
       });
       const cars = carResponse.data || [];
       const generations = extractGenerationsFromCars(cars).filter(g => g && g.id && g.name);
@@ -534,6 +569,7 @@ export const useSecureAuctionAPI = () => {
         ...filters,
         per_page: "1",
         simple_paginate: "1",
+        exclude_test_cars: "1"
       };
 
       const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
@@ -600,7 +636,10 @@ export const useSecureAuctionAPI = () => {
       const key = cacheKey || `${manufacturerId || ''}-${modelId || ''}-${generationId || ''}`;
       
       // Build filters - only include valid values
-      const filters: any = { per_page: '50' }; // Increased for better grade coverage
+      const filters: any = { 
+        per_page: '50', // Increased for better grade coverage
+        exclude_test_cars: '1'
+      };
       if (manufacturerId) filters.manufacturer_id = manufacturerId;
       if (modelId) filters.model_id = modelId;
       if (generationId) filters.generation_id = generationId;
@@ -881,7 +920,8 @@ export const useSecureAuctionAPI = () => {
       const data = await makeSecureAPICall("cars", {
         generation_id: generationId,
         per_page: "1",
-        simple_paginate: "1"
+        simple_paginate: "1",
+        exclude_test_cars: "1"
       });
       const count = data.meta?.total || 0;
       console.log(`✅ Generation ${generationId} count: ${count}`);
@@ -894,7 +934,8 @@ export const useSecureAuctionAPI = () => {
         console.log(`🔄 Trying fallback for generation ${generationId}...`);
         const carData = await makeSecureAPICall("cars", {
           generation_id: generationId,
-          per_page: "1000"
+          per_page: "1000",
+          exclude_test_cars: "1"
         });
         const manualCount = carData.data?.length || 0;
         console.log(`✅ Fallback count for generation ${generationId}: ${manualCount}`);
@@ -918,7 +959,8 @@ export const useSecureAuctionAPI = () => {
       const data = await makeSecureAPICall("cars", {
         ...filters,
         per_page: "1",
-        simple_paginate: "1"
+        simple_paginate: "1",
+        exclude_test_cars: "1"
       });
       return data.meta?.total || 0;
     } catch (err) {
@@ -963,7 +1005,8 @@ export const useSecureAuctionAPI = () => {
               manufacturer_id: manufacturerId,
               generation_id: g.id.toString(),
               per_page: "1",
-              simple_paginate: "1"
+              simple_paginate: "1",
+              exclude_test_cars: "1"
             });
             
             const realCount = carData.meta?.total || 0;
