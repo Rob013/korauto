@@ -1,5 +1,5 @@
 import LazyCarCard from "./LazyCarCard";
-import { memo, useState, useEffect } from "react";
+import { memo, useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { AlertCircle } from "lucide-react";
@@ -51,6 +51,7 @@ const HomeCarsSection = memo(() => {
     fetchGenerations,
     fetchFilterCounts,
     fetchGrades,
+    fetchTrimLevels,
   } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
   const [sortBy, setSortBy] = useState<SortOption>("popular");
@@ -58,6 +59,7 @@ const HomeCarsSection = memo(() => {
   const [showFilters, setShowFilters] = useState(true);
 
   const [filters, setFilters] = useState<APIFilters>({});
+  const [pendingFilters, setPendingFilters] = useState<APIFilters>({});
   const [manufacturers, setManufacturers] = useState<
     {
       id: number;
@@ -87,6 +89,19 @@ const HomeCarsSection = memo(() => {
   >([]);
   const [filterCounts, setFilterCounts] = useState<any>(null);
 
+  // Cache for API data to improve performance
+  const [dataCache, setDataCache] = useState<{
+    manufacturers?: { id: number; name: string; car_count?: number; cars_qty?: number; }[];
+    models?: { [manufacturerId: string]: { id: number; name: string; car_count?: number; cars_qty?: number; }[] };
+    generations?: { [modelId: string]: { id: number; name: string; manufacturer_id?: number; model_id?: number; from_year?: number; to_year?: number; cars_qty?: number; }[] };
+    lastUpdated?: number;
+  }>({});
+
+  // Performance optimization: debounced API calls
+  const [isLoadingManufacturers, setIsLoadingManufacturers] = useState(false);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
+  const [isLoadingGenerations, setIsLoadingGenerations] = useState(false);
+
   // Frontend filtering function
   const applyFrontendFilters = (cars: any[], filters: APIFilters) => {
     return cars.filter((car) => {
@@ -103,7 +118,7 @@ const HomeCarsSection = memo(() => {
         return false;
       }
 
-      // Generation filter
+      // Generation filter (now optional as some filters may not have it)
       if (
         filters.generation_id &&
         car.generation?.id !== parseInt(filters.generation_id)
@@ -246,11 +261,33 @@ const HomeCarsSection = memo(() => {
   // Don't filter homepage cars - always show original cars
   const sortedCars = useSortedCars(carsForSorting, sortBy);
 
-  // Show 50 cars by default (daily rotation)
-  const defaultDisplayCount = 50;
-  const displayedCars = showAllCars
-    ? sortedCars
-    : sortedCars.slice(0, defaultDisplayCount);
+  // Show 30 cars by default (daily rotation) - optimized for better loading performance
+  const defaultDisplayCount = 30;
+
+  // Memoize displayed cars to prevent unnecessary re-renders
+  const displayedCars = useMemo(() => {
+    return showAllCars ? sortedCars : sortedCars.slice(0, defaultDisplayCount);
+  }, [showAllCars, sortedCars, defaultDisplayCount]);
+
+  // Preload first 6 car images for better initial loading performance
+  useEffect(() => {
+    const preloadImages = () => {
+      const firstSixCars = displayedCars.slice(0, 6);
+      firstSixCars.forEach((car) => {
+        const lot = car.lots?.[0];
+        const imageUrl = lot?.images?.normal?.[0] || lot?.images?.big?.[0];
+        if (imageUrl) {
+          const img = new Image();
+          img.src = imageUrl;
+        }
+      });
+    };
+
+    if (displayedCars.length > 0) {
+      // Delay preloading to not interfere with critical resources
+      setTimeout(preloadImages, 100);
+    }
+  }, [displayedCars]);
 
   useEffect(() => {
     // Calculate daily page based on day of month (1-31)
@@ -258,9 +295,36 @@ const HomeCarsSection = memo(() => {
     const dayOfMonth = today.getDate(); // 1-31
     const dailyPage = ((dayOfMonth - 1) % 10) + 1; // Cycle through pages 1-10
 
-    // Load initial data with 50 cars from daily page
-    fetchCars(dailyPage, { per_page: "50" }, true);
-    fetchManufacturers().then(setManufacturers);
+    // Load initial data with 30 cars from daily page - optimized for faster loading
+    fetchCars(dailyPage, { per_page: "30" }, true);
+    
+    // Load manufacturers with caching
+    const loadManufacturers = async () => {
+      setIsLoadingManufacturers(true);
+      try {
+        // Check cache first (cache for 5 minutes)
+        const cacheAge = Date.now() - (dataCache.lastUpdated || 0);
+        if (dataCache.manufacturers && cacheAge < 5 * 60 * 1000) {
+          setManufacturers(dataCache.manufacturers);
+          setIsLoadingManufacturers(false);
+          return;
+        }
+
+        const manufacturersData = await fetchManufacturers();
+        setManufacturers(manufacturersData);
+        setDataCache(prev => ({
+          ...prev,
+          manufacturers: manufacturersData,
+          lastUpdated: Date.now()
+        }));
+      } catch (error) {
+        console.error('Failed to load manufacturers:', error);
+      } finally {
+        setIsLoadingManufacturers(false);
+      }
+    };
+
+    loadManufacturers();
   }, []);
 
   const handleFiltersChange = (newFilters: APIFilters) => {
@@ -274,23 +338,15 @@ const HomeCarsSection = memo(() => {
         }
       });
       
+      // Add flag to indicate navigation from homepage filters
+      searchParams.set('fromHomepage', 'true');
+      
       // Clear any existing scroll restoration data
       sessionStorage.removeItem('encar-catalog-scroll');
       console.log('🚀 Homepage: Cleared scroll data and navigating to catalog');
       
-      // Navigate and ensure we're at the top
+      // Navigate to catalog
       navigate(`/catalog?${searchParams.toString()}`);
-      
-      // Force scroll to top immediately after navigation
-      setTimeout(() => {
-        console.log('🚀 Homepage: Forcing scroll to top');
-        window.scrollTo({ top: 0, behavior: 'auto' });
-        // Then smooth scroll to ensure we're at the very top
-        setTimeout(() => {
-          console.log('🚀 Homepage: Second scroll to top');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }, 50);
-      }, 0);
       return;
     }
     
@@ -307,17 +363,100 @@ const HomeCarsSection = memo(() => {
           searchParams.set(key, value);
         }
       });
+      
+      // Add flag to indicate navigation from homepage filters
+      searchParams.set('fromHomepage', 'true');
+      
       navigate(`/catalog?${searchParams.toString()}`);
     } else {
-      // Apply filters locally for manufacturer and model selection
-      setFilters(newFilters);
-      console.log('Applied filters:', newFilters);
+      // Store filters as pending for basic filters (manufacturer, model)
+      // Don't apply them immediately - wait for search button click
+      setPendingFilters(newFilters);
+      console.log('Stored pending filters:', newFilters);
+    }
+  };
+
+  const handleSearchCars = () => {
+    // Always redirect to catalog with current pending filters
+    const searchParams = new URLSearchParams();
+    Object.entries(pendingFilters).forEach(([key, value]) => {
+      if (value && value !== '') {
+        searchParams.set(key, value);
+      }
+    });
+    
+    // Add flag to indicate navigation from homepage search
+    searchParams.set('fromHomepage', 'true');
+    
+    navigate(`/catalog?${searchParams.toString()}`);
+  };
+
+  // Optimized manufacturer change handler with caching
+  const handleManufacturerChange = async (manufacturerId: string) => {
+    setIsLoadingModels(true);
+    try {
+      // Check cache first
+      if (dataCache.models && dataCache.models[manufacturerId]) {
+        setModels(dataCache.models[manufacturerId]);
+        setGenerations([]);
+        setIsLoadingModels(false);
+        return;
+      }
+
+      // Fetch from API
+      const modelsData = await fetchModels(manufacturerId);
+      setModels(modelsData);
+      setGenerations([]);
+      
+      // Update cache
+      setDataCache(prev => ({
+        ...prev,
+        models: {
+          ...prev.models,
+          [manufacturerId]: modelsData
+        }
+      }));
+    } catch (error) {
+      console.error('Failed to load models:', error);
+    } finally {
+      setIsLoadingModels(false);
+    }
+  };
+
+  // Optimized model change handler with caching
+  const handleModelChange = async (modelId: string) => {
+    setIsLoadingGenerations(true);
+    try {
+      // Check cache first
+      if (dataCache.generations && dataCache.generations[modelId]) {
+        setGenerations(dataCache.generations[modelId]);
+        setIsLoadingGenerations(false);
+        return;
+      }
+
+      // Fetch from API
+      const generationsData = await fetchGenerations(modelId);
+      setGenerations(generationsData);
+      
+      // Update cache
+      setDataCache(prev => ({
+        ...prev,
+        generations: {
+          ...prev.generations,
+          [modelId]: generationsData
+        }
+      }));
+    } catch (error) {
+      console.error('Failed to load generations:', error);
+    } finally {
+      setIsLoadingGenerations(false);
     }
   };
 
   const handleClearFilters = () => {
     // Frontend-only filter clearing - no API calls needed
     setFilters({});
+    setPendingFilters({});
   };
 
   return (
@@ -353,26 +492,18 @@ const HomeCarsSection = memo(() => {
         {showFilters && (
           <div className="mb-6 sm:mb-8">
             <EncarStyleFilter
-              filters={filters}
+              filters={pendingFilters}
               manufacturers={manufacturers}
               models={models}
-              generations={generations}
               filterCounts={filterCounts}
               onFiltersChange={handleFiltersChange}
               onClearFilters={handleClearFilters}
-              onManufacturerChange={(manufacturerId) => {
-                if (manufacturerId) {
-                  fetchModels(manufacturerId).then(setModels);
-                  setGenerations([]);
-                }
-              }}
-              onModelChange={(modelId) => {
-                if (modelId) {
-                  fetchGenerations(modelId).then(setGenerations);
-                }
-              }}
+              onManufacturerChange={handleManufacturerChange}
+              onModelChange={handleModelChange}
               onFetchGrades={fetchGrades}
+              onFetchTrimLevels={fetchTrimLevels}
               isHomepage={true}
+              onSearchCars={handleSearchCars}
             />
           </div>
         )}
@@ -463,9 +594,9 @@ const HomeCarsSection = memo(() => {
               })}
             </div>
 
-            {/* Show More Button and Browse All Cars Button */}
-            <div className="text-center mt-8 space-y-6">
-              {sortedCars.length > 50 && !showAllCars && (
+            {/* Show More Button */}
+            <div className="text-center mt-8">
+              {sortedCars.length > 30 && !showAllCars && (
                 <Button
                   onClick={() => setShowAllCars(true)}
                   variant="outline"
@@ -475,14 +606,6 @@ const HomeCarsSection = memo(() => {
                   Shiko të gjitha ({sortedCars.length} makina)
                 </Button>
               )}
-
-              <Button
-                onClick={() => navigate("/catalog")}
-                size="lg"
-                className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3"
-              >
-                Shfleto të gjitha makinat
-              </Button>
             </div>
           </>
         )}

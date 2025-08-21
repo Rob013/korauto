@@ -24,10 +24,26 @@ export default {
 			'lg': '1024px',
 			'xl': '1280px',
 			'2xl': '1536px',
+			'3xl': '1792px',
 		},
     extend: {
       fontFamily: {
         'sans': ['Noto Sans', 'system-ui', 'sans-serif'],
+      },
+      height: {
+        'dvh': '100dvh',
+        'svh': '100svh',
+        'lvh': '100lvh',
+      },
+      minHeight: {
+        'dvh': '100dvh',
+        'svh': '100svh', 
+        'lvh': '100lvh',
+      },
+      maxHeight: {
+        'dvh': '100dvh',
+        'svh': '100svh',
+        'lvh': '100lvh',
       },
 			colors: {
 				border: 'hsl(var(--border))',

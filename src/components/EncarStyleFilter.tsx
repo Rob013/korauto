@@ -1,5 +1,5 @@
 import React, { useState, memo, useCallback, useMemo, useEffect } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AdaptiveSelect } from "@/components/ui/adaptive-select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -18,9 +18,17 @@ import {
   Fuel,
   Settings,
   MapPin,
-  DollarSign
+  DollarSign,
+  Cog
 } from "lucide-react";
-import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS } from '@/hooks/useAuctionAPI';
+import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS, BODY_TYPE_OPTIONS } from '@/hooks/useAuctionAPI';
+import {
+  APIFilters,
+  sortManufacturers,
+  generateYearRange,
+  generateYearPresets,
+  isStrictFilterMode
+} from '@/utils/catalog-filter';
 
 interface Manufacturer {
   id: number;
@@ -37,20 +45,9 @@ interface Model {
   cars_qty?: number;
 }
 
-interface Generation {
-  cars_qty?: number;
-  from_year?: number;
-  id: number;
-  manufacturer_id?: number;
-  model_id?: number;
-  name: string;
-  to_year?: number;
-}
-
 interface FilterCounts {
   manufacturers: { [key: string]: number };
   models: { [key: string]: number };
-  generations: { [key: string]: number };
   colors: { [key: string]: number };
   fuelTypes: { [key: string]: number };
   transmissions: { [key: string]: number };
@@ -58,63 +55,52 @@ interface FilterCounts {
 }
 
 interface EncarStyleFilterProps {
-  filters: {
-    manufacturer_id?: string;
-    model_id?: string;
-    generation_id?: string;
-    grade_iaai?: string;
-    color?: string;
-    fuel_type?: string;
-    transmission?: string;
-    odometer_from_km?: string;
-    odometer_to_km?: string;
-    from_year?: string;
-    to_year?: string;
-    buy_now_price_from?: string;
-    buy_now_price_to?: string;
-    seats_count?: string;
-    search?: string;
-    max_accidents?: string;
-  };
+  filters: APIFilters;
   manufacturers: Manufacturer[];
   models?: Model[];
-  generations?: Generation[];
   filterCounts?: FilterCounts;
   onFiltersChange: (filters: any) => void;
   onClearFilters: () => void;
   onManufacturerChange?: (manufacturerId: string) => void;
   onModelChange?: (modelId: string) => void;
-  onGenerationChange?: (generationId: string) => void;
   showAdvanced?: boolean;
   onToggleAdvanced?: () => void;
   loadingCounts?: boolean;
-  onFetchGrades?: (manufacturerId?: string, modelId?: string, generationId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
+  onFetchGrades?: (manufacturerId?: string, modelId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
+  onFetchTrimLevels?: (manufacturerId?: string, modelId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
   isHomepage?: boolean;
   compact?: boolean;
+  onSearchCars?: () => void;
+  onCloseFilter?: () => void;
 }
 
 const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   filters,
   manufacturers,
   models = [],
-  generations = [],
   filterCounts,
   loadingCounts = false,
   onFiltersChange,
   onClearFilters,
   onManufacturerChange,
   onModelChange,
-  onGenerationChange,
   showAdvanced = false,
   onToggleAdvanced,
   onFetchGrades,
+  onFetchTrimLevels,
   isHomepage = false,
-  compact = false
+  compact = false,
+  onSearchCars,
+  onCloseFilter
 }) => {
   const [grades, setGrades] = useState<{ value: string; label: string; count?: number }[]>([]);
+  const [trimLevels, setTrimLevels] = useState<{ value: string; label: string; count?: number }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingGrades, setIsLoadingGrades] = useState(false);
   const [expandedSections, setExpandedSections] = useState<string[]>(['basic']);
+
+  // Track if strict filtering mode is enabled - using utility
+  const isStrictMode = useMemo(() => isStrictFilterMode(filters), [filters]);
 
   const updateFilter = useCallback((key: string, value: string) => {
     const actualValue = value === 'all' || value === 'any' ? undefined : value;
@@ -127,7 +113,6 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
         ...filters,
         [key]: actualValue,
         model_id: undefined,
-        generation_id: undefined,
         grade_iaai: undefined
       });
     } else if (key === 'model_id') {
@@ -135,72 +120,114 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
       onFiltersChange({
         ...filters,
         [key]: actualValue,
-        generation_id: undefined,
         grade_iaai: undefined
       });
     } else {
       const updatedFilters = { ...filters, [key]: actualValue };
-      
-      if (key === 'generation_id') {
-        updatedFilters.grade_iaai = undefined;
-      }
-      
       onFiltersChange(updatedFilters);
     }
     
-    setTimeout(() => setIsLoading(false), 50);
+    // Faster response for year filters - reduced timeout for better responsiveness
+    const timeout = (key === 'from_year' || key === 'to_year') ? 25 : 100;
+    setTimeout(() => setIsLoading(false), timeout);
   }, [filters, onFiltersChange, onManufacturerChange, onModelChange]);
 
+  // Enhanced search handler for consistent catalog navigation
+  const handleSearchClick = useCallback(() => {
+    if (onSearchCars) {
+      onSearchCars();
+    } else if (isHomepage) {
+      // Fallback: if no search handler provided but we're on homepage, redirect to catalog
+      const searchParams = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== '') {
+          searchParams.set(key, value);
+        }
+      });
+      window.location.href = `/catalog?${searchParams.toString()}`;
+    }
+  }, [onSearchCars, isHomepage, filters]);
+
+  // Handle year range preset selection - immediate application for better UX
+  const handleYearRangePreset = useCallback((preset: { label: string; from: number; to: number }) => {
+    const updatedFilters = {
+      ...filters,
+      from_year: preset.from.toString(),
+      to_year: preset.to.toString()
+    };
+    
+    // Apply year range presets immediately without debouncing for instant response
+    onFiltersChange(updatedFilters);
+  }, [filters, onFiltersChange]);
+
   const currentYear = useMemo(() => new Date().getFullYear(), []);
-  const years = useMemo(() => Array.from({ length: 25 }, (_, i) => currentYear - i), [currentYear]);
+  // Enhanced year range using utility  
+  const years = useMemo(() => generateYearRange(currentYear), [currentYear]);
+  
+  // Enhanced year range presets using utility
+  const yearRangePresets = useMemo(() => generateYearPresets(currentYear), [currentYear]);
 
-  // Prioritized manufacturer sorting (German, Korean, Popular)
-  const sortedManufacturers = useMemo(() => {
-    return manufacturers
-      .sort((a, b) => {
-        const germanBrands = ['BMW', 'Mercedes-Benz', 'Audi', 'Volkswagen', 'Porsche', 'Opel'];
-        const koreanBrands = ['Hyundai', 'Kia', 'Genesis'];
-        const popularBrands = ['Toyota', 'Honda', 'Nissan', 'Ford', 'Chevrolet', 'Mazda', 'Subaru', 'Lexus'];
-        
-        const aIsGerman = germanBrands.includes(a.name);
-        const bIsGerman = germanBrands.includes(b.name);
-        const aIsKorean = koreanBrands.includes(a.name);
-        const bIsKorean = koreanBrands.includes(b.name);
-        const aIsPopular = popularBrands.includes(a.name);
-        const bIsPopular = popularBrands.includes(b.name);
-        
-        if (aIsGerman && !bIsGerman) return -1;
-        if (!aIsGerman && bIsGerman) return 1;
-        if (aIsKorean && !bIsKorean && !bIsGerman) return -1;
-        if (!aIsKorean && bIsKorean && !aIsGerman) return 1;
-        if (aIsPopular && !bIsPopular && !bIsGerman && !bIsKorean) return -1;
-        if (!aIsPopular && bIsPopular && !aIsGerman && !aIsKorean) return 1;
-        
-        return a.name.localeCompare(b.name);
-      })
-      .filter((m) => m.cars_qty && m.cars_qty > 0);
-  }, [manufacturers]);
+  // Year options for dropdowns - strict mode aware
+  const yearOptions = useMemo(() => [
+    // In strict mode, show "All years" only when no specific year is selected or not in strict mode
+    ...(isStrictMode && (filters.from_year || filters.to_year) ? [] : [{ value: 'all', label: 'All years' }]),
+    ...years.map(year => ({
+      value: year.toString(),
+      label: year.toString()
+    }))
+  ], [years, isStrictMode, filters.from_year, filters.to_year]);
 
-  // Fetch grades when filters change
+  // Prioritized manufacturer sorting using utility
+  const sortedManufacturers = useMemo(() => sortManufacturers(manufacturers), [manufacturers]);
+
+  // Fetch grades when filters change - with debouncing to prevent excessive calls
   useEffect(() => {
     if (filters.manufacturer_id && onFetchGrades) {
-      setIsLoadingGrades(true);
-      onFetchGrades(filters.manufacturer_id, filters.model_id, filters.generation_id)
-        .then(gradesData => {
-          if (Array.isArray(gradesData)) {
-            setGrades(gradesData);
-          }
-          setIsLoadingGrades(false);
-        })
-        .catch((err) => {
-          console.error('Grade fetch error:', err);
-          setIsLoadingGrades(false);
-        });
+      // Debounce to prevent rapid consecutive calls when switching brands
+      const timeoutId = setTimeout(() => {
+        setIsLoadingGrades(true);
+        onFetchGrades(filters.manufacturer_id, filters.model_id)
+          .then(gradesData => {
+            if (Array.isArray(gradesData)) {
+              setGrades(gradesData);
+            }
+            setIsLoadingGrades(false);
+          })
+          .catch((err) => {
+            console.error('Grade fetch error:', err);
+            setIsLoadingGrades(false);
+          });
+      }, 300); // 300ms debounce delay
+
+      return () => clearTimeout(timeoutId);
     } else {
       setGrades([]);
       setIsLoadingGrades(false);
     }
-  }, [filters.manufacturer_id, filters.model_id, filters.generation_id, onFetchGrades]);
+  }, [filters.manufacturer_id, filters.model_id, onFetchGrades]);
+
+  // Fetch trim levels when filters change - with debouncing to prevent excessive calls
+  useEffect(() => {
+    if (filters.manufacturer_id && onFetchTrimLevels) {
+      // Debounce to prevent rapid consecutive calls when switching brands
+      const timeoutId = setTimeout(() => {
+        onFetchTrimLevels(filters.manufacturer_id, filters.model_id)
+          .then(trimLevelsData => {
+            if (Array.isArray(trimLevelsData)) {
+              setTrimLevels(trimLevelsData);
+            }
+          })
+          .catch((err) => {
+            console.error('Trim level fetch error:', err);
+            setTrimLevels([]);
+          });
+      }, 300); // 300ms debounce delay
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      setTrimLevels([]);
+    }
+  }, [filters.manufacturer_id, filters.model_id, onFetchTrimLevels]);
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => 
@@ -209,6 +236,353 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
         : [...prev, section]
     );
   };
+
+  // Compact mode for sidebar
+  if (compact) {
+    return (
+      <div className="space-y-2 h-full flex flex-col">
+        <div className="flex items-center justify-between flex-shrink-0">
+          <h3 className="text-sm font-semibold">Search Cars</h3>
+          <div className="flex items-center gap-1">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onClearFilters}
+              className="text-muted-foreground hover:text-destructive flex items-center gap-1 h-6 px-1.5"
+            >
+              <X className="h-3 w-3" />
+              <span className="text-xs">Clear</span>
+            </Button>
+            {onCloseFilter && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={onCloseFilter}
+                className="text-muted-foreground hover:text-foreground flex items-center gap-1 h-6 px-1.5"
+              >
+                <X className="h-3 w-3" />
+                <span className="text-xs">Close</span>
+              </Button>
+            )}
+          </div>
+        </div>
+        
+        {/* Scrollable filter content */}
+        <div className="flex-1 overflow-y-auto space-y-2 pb-2">
+          <div className="space-y-2">
+          <div className="space-y-1 filter-section">
+            <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+              <Car className="h-2.5 w-2.5" />
+              Brand
+            </Label>
+            <AdaptiveSelect 
+              value={filters.manufacturer_id || 'all'} 
+              onValueChange={(value) => updateFilter('manufacturer_id', value)}
+              placeholder="Select brand"
+              className="filter-control h-8 text-xs"
+              options={[
+                // In strict mode, show "All Brands" only when no specific brand is selected
+                ...(isStrictMode && filters.manufacturer_id ? [] : [{ value: 'all', label: 'All Brands' }]),
+                ...sortedManufacturers.map((manufacturer) => ({
+                  value: manufacturer.id.toString(),
+                  label: (
+                    <div className="flex items-center gap-1.5">
+                      {(manufacturer as any).image && (
+                        <img src={(manufacturer as any).image} alt={manufacturer.name} className="w-3 h-3 object-contain" />
+                      )}
+                      <span className="text-xs">{manufacturer.name} ({manufacturer.cars_qty})</span>
+                    </div>
+                  )
+                }))
+              ]}
+            />
+          </div>
+
+          <div className="space-y-1 filter-section">
+            <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+              <Settings className="h-2.5 w-2.5" />
+              Model
+            </Label>
+            <AdaptiveSelect 
+              value={filters.model_id || 'all'} 
+              onValueChange={(value) => updateFilter('model_id', value)}
+              disabled={!filters.manufacturer_id}
+              placeholder={filters.manufacturer_id ? "Select model" : "Select brand first"}
+              className="filter-control h-8 text-xs"
+              options={[
+                // In strict mode, show "All Models" only when no specific model is selected or not in strict mode
+                ...(isStrictMode && filters.model_id ? [] : [{ value: 'all', label: 'All Models' }]),
+                ...models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => ({
+                  value: model.id.toString(),
+                  label: `${model.name} (${model.cars_qty})`
+                }))
+              ]}
+            />
+          </div>
+
+          {/* Year presets - Fast year selections under model */}
+          <div className="space-y-1 filter-section">
+            <Label className="filter-label text-xs text-muted-foreground flex items-center gap-1">
+              Year Range: 
+              <span className="text-xs text-primary bg-primary/10 px-1 rounded" title="Optimized for instant results">⚡</span>
+            </Label>
+            <div className="year-buttons flex flex-wrap gap-1">
+              {yearRangePresets.slice(0, 4).map((preset) => (
+                <Button
+                  key={preset.label}
+                  variant={
+                    filters.from_year === preset.from.toString() && 
+                    filters.to_year === preset.to.toString() 
+                      ? "default" 
+                      : "outline"
+                  }
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={() => handleYearRangePreset(preset)}
+                  title={`⚡ Instant filter: From ${preset.from} to present (${preset.to})`} // Added optimization indicator
+                >
+                  {preset.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Enhanced Year Filter - From/To dropdowns */}
+          <div className="space-y-1 filter-section">
+            <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+              <Calendar className="h-2.5 w-2.5" />
+              Year Range
+            </Label>
+            <div className="grid grid-cols-2 gap-1.5">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">From</Label>
+                <AdaptiveSelect 
+                  value={filters.from_year || 'all'} 
+                  onValueChange={(value) => updateFilter('from_year', value)}
+                  placeholder="All years"
+                  className="filter-control h-8 text-xs"
+                  options={yearOptions}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">To</Label>
+                <AdaptiveSelect 
+                  value={filters.to_year || 'all'} 
+                  onValueChange={(value) => updateFilter('to_year', value)}
+                  placeholder="All years"
+                  className="filter-control h-8 text-xs"
+                  options={yearOptions}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Price Range */}
+          <div className="space-y-1 filter-section">
+            <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+              <DollarSign className="h-2.5 w-2.5" />
+              Price (EUR)
+            </Label>
+            <div className="grid grid-cols-2 gap-1.5">
+              <Input
+                type="number"
+                placeholder="From"
+                value={filters.buy_now_price_from || ''}
+                onChange={(e) => updateFilter('buy_now_price_from', e.target.value)}
+                className="filter-control h-8 text-xs"
+              />
+              <Input
+                type="number"
+                placeholder="To"
+                value={filters.buy_now_price_to || ''}
+                onChange={(e) => updateFilter('buy_now_price_to', e.target.value)}
+                className="filter-control h-8 text-xs"
+              />
+            </div>
+          </div>
+
+          {/* Additional Filters Toggle */}
+          <Button
+            variant="ghost"
+            onClick={() => toggleSection('more')}
+            className="w-full justify-between text-xs h-7"
+          >
+            More Filters
+            {expandedSections.includes('more') ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </Button>
+
+          {expandedSections.includes('more') && (
+            <div className="space-y-2 pt-2 border-t">
+              {/* Grade/Engine and Trim Level first */}
+              <div className="space-y-2">
+                <div className="space-y-1 filter-section">
+                  <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+                    <Cog className="h-2.5 w-2.5" />
+                    Grade/Engine
+                  </Label>
+                  <AdaptiveSelect 
+                    value={filters.grade_iaai || 'all'} 
+                    onValueChange={(value) => updateFilter('grade_iaai', value)}
+                    disabled={!filters.manufacturer_id}
+                    placeholder={filters.manufacturer_id ? "All Grades" : "Select brand first"}
+                    className="filter-control h-8 text-xs"
+                    options={[
+                      { value: 'all', label: 'All Grades' },
+                      ...grades.map((grade) => ({
+                        value: grade.value,
+                        label: `${grade.label}${grade.count ? ` (${grade.count})` : ''}`
+                      }))
+                    ]}
+                  />
+                </div>
+
+                <div className="space-y-1 filter-section">
+                  <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+                    <Cog className="h-2.5 w-2.5" />
+                    Trim Level
+                  </Label>
+                  <AdaptiveSelect 
+                    value={filters.trim_level || 'all'} 
+                    onValueChange={(value) => updateFilter('trim_level', value)}
+                    disabled={!filters.manufacturer_id}
+                    placeholder={filters.manufacturer_id ? "All Trim Levels" : "Select brand first"}
+                    className="filter-control h-8 text-xs"
+                    options={[
+                      { value: 'all', label: 'All Trim Levels' },
+                      ...trimLevels.map((trim) => ({
+                        value: trim.value,
+                        label: `${trim.label}${trim.count ? ` (${trim.count})` : ''}`
+                      }))
+                    ]}
+                  />
+                </div>
+
+                <div className="space-y-1 filter-section">
+                  <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+                    <Palette className="h-2.5 w-2.5" />
+                    Color
+                  </Label>
+                  <AdaptiveSelect 
+                    value={filters.color || 'all'} 
+                    onValueChange={(value) => updateFilter('color', value)}
+                    placeholder="Any color"
+                    className="filter-control h-8 text-xs"
+                    options={[
+                      // In strict mode, show "Any color" only when no specific color is selected or not in strict mode
+                      ...(isStrictMode && filters.color ? [] : [{ value: 'all', label: 'Any color' }]),
+                      ...Object.entries(COLOR_OPTIONS).map(([name, id]) => ({
+                        value: id.toString(),
+                        label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
+                      }))
+                    ]}
+                  />
+                </div>
+
+                <div className="space-y-1 filter-section">
+                  <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+                    <Fuel className="h-2.5 w-2.5" />
+                    Fuel
+                  </Label>
+                  <AdaptiveSelect 
+                    value={filters.fuel_type || 'all'} 
+                    onValueChange={(value) => updateFilter('fuel_type', value)}
+                    placeholder="Any type"
+                    className="filter-control h-8 text-xs"
+                    options={[
+                      // In strict mode, show "Any type" only when no specific fuel type is selected or not in strict mode
+                      ...(isStrictMode && filters.fuel_type ? [] : [{ value: 'all', label: 'Any type' }]),
+                      ...Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => ({
+                        value: id.toString(),
+                        label: name.charAt(0).toUpperCase() + name.slice(1)
+                      }))
+                    ]}
+                  />
+                </div>
+
+                <div className="space-y-1 filter-section">
+                  <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+                    <Settings className="h-2.5 w-2.5" />
+                    Transmission
+                  </Label>
+                  <AdaptiveSelect 
+                    value={filters.transmission || 'all'} 
+                    onValueChange={(value) => updateFilter('transmission', value)}
+                    placeholder="Any type"
+                    className="filter-control h-8 text-xs"
+                    options={[
+                      // In strict mode, show "Any type" only when no specific transmission is selected or not in strict mode
+                      ...(isStrictMode && filters.transmission ? [] : [{ value: 'all', label: 'Any type' }]),
+                      ...Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => ({
+                        value: id.toString(),
+                        label: name.charAt(0).toUpperCase() + name.slice(1)
+                      }))
+                    ]}
+                  />
+                </div>
+
+                <div className="space-y-1 filter-section">
+                  <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+                    <Car className="h-2.5 w-2.5" />
+                    Body Type
+                  </Label>
+                  <AdaptiveSelect 
+                    value={filters.body_type || 'all'} 
+                    onValueChange={(value) => updateFilter('body_type', value)}
+                    placeholder="Any type"
+                    className="filter-control h-8 text-xs"
+                    options={[
+                      { value: 'all', label: 'Any type' },
+                      ...Object.entries(BODY_TYPE_OPTIONS).map(([name, id]) => ({
+                        value: id.toString(),
+                        label: name.charAt(0).toUpperCase() + name.slice(1)
+                      }))
+                    ]}
+                  />
+                </div>
+
+                {/* Mileage */}
+                <div className="space-y-1 filter-section">
+                  <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+                    <MapPin className="h-2.5 w-2.5" />
+                    Mileage (km)
+                  </Label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <Input
+                      type="number"
+                      placeholder="From"
+                      value={filters.odometer_from_km || ''}
+                      onChange={(e) => updateFilter('odometer_from_km', e.target.value)}
+                      className="filter-control h-8 text-xs"
+                    />
+                    <Input
+                      type="number"
+                      placeholder="To"
+                      value={filters.odometer_to_km || ''}
+                      onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
+                      className="filter-control h-8 text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Search Button */}
+          <div className="pt-2 border-t flex-shrink-0">
+            <Button 
+              onClick={handleSearchClick} 
+              className="w-full h-8 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs"
+              size="sm"
+            >
+              <Search className="h-3 w-3 mr-1.5" />
+              Search Cars
+            </Button>
+          </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Homepage style - compact single row
   if (isHomepage) {
@@ -237,24 +611,28 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 <Car className="h-3 w-3" />
                 Marka
               </Label>
-              <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder="Zgjidhni markën" />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="all">Të gjitha Markat</SelectItem>
-                  {sortedManufacturers.map((manufacturer) => (
-                    <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
+              <AdaptiveSelect 
+                value={filters.manufacturer_id || 'all'} 
+                onValueChange={(value) => updateFilter('manufacturer_id', value)}
+                placeholder={isLoading ? "Loading..." : "Zgjidhni markën"}
+                className="h-11"
+                disabled={isLoading}
+                options={[
+                  // In strict mode, show "Të gjitha Markat" only when no specific brand is selected or not in strict mode
+                  ...(isStrictMode && filters.manufacturer_id ? [] : [{ value: 'all', label: 'Të gjitha Markat' }]),
+                  ...sortedManufacturers.map((manufacturer) => ({
+                    value: manufacturer.id.toString(),
+                    label: (
                       <div className="flex items-center gap-2">
-                        {manufacturer.image && (
-                          <img src={manufacturer.image} alt={manufacturer.name} className="w-5 h-5 object-contain" />
+                        {(manufacturer as any).image && (
+                          <img src={(manufacturer as any).image} alt={manufacturer.name} className="w-5 h-5 object-contain" />
                         )}
                         <span>{manufacturer.name} ({manufacturer.cars_qty})</span>
                       </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    )
+                  }))
+                ]}
+              />
             </div>
 
             <div className="space-y-2">
@@ -262,57 +640,109 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 <Settings className="h-3 w-3" />
                 Modeli
               </Label>
-              <Select 
+              <AdaptiveSelect 
                 value={filters.model_id || 'all'} 
                 onValueChange={(value) => updateFilter('model_id', value)}
                 disabled={!filters.manufacturer_id}
-              >
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"} />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="all">Të gjithë Modelet</SelectItem>
-                  {models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => (
-                    <SelectItem key={model.id} value={model.id.toString()}>
-                      {model.name} ({model.cars_qty})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"}
+                className="h-11"
+                options={[
+                  // In strict mode, show "Të gjithë Modelet" only when no specific model is selected or not in strict mode
+                  ...(isStrictMode && filters.model_id ? [] : [{ value: 'all', label: 'Të gjithë Modelet' }]),
+                  ...models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => ({
+                    value: model.id.toString(),
+                    label: `${model.name} (${model.cars_qty})`
+                  }))
+                ]}
+              />
             </div>
 
             <div className="space-y-2">
               <Label className="text-sm font-medium flex items-center gap-2">
                 <Calendar className="h-3 w-3" />
-                Gjenerata
+                Vitet
+                {(filters.from_year || filters.to_year) && (
+                  <Badge variant="secondary" className="text-xs">
+                    {filters.from_year || 'Çdo vit'} - {filters.to_year || 'sot'}
+                  </Badge>
+                )}
               </Label>
-              <Select 
-                value={filters.generation_id || 'all'} 
-                onValueChange={(value) => updateFilter('generation_id', value)}
-                disabled={!filters.model_id}
-              >
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder={filters.model_id ? "Zgjidhni gjeneratën" : "Zgjidhni modelin së pari"} />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="all">Të gjitha Gjeneratat</SelectItem>
-                  {generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => (
-                    <SelectItem key={generation.id} value={generation.id.toString()}>
-                      {generation.name}
-                      {generation.from_year ? (() => {
-                        const from = generation.from_year.toString().slice(-2);
-                        const currentYear = new Date().getFullYear();
-                        const toYearRaw = generation.to_year || currentYear;
-                        const to = (generation.to_year && generation.to_year !== currentYear) ? toYearRaw.toString().slice(-2) : 'present';
-                        return ` (${from}-${to})`;
-                      })() : ''}
-                    </SelectItem>
+              
+              {/* Year Range Dropdowns - moved to top */}
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Nga viti</Label>
+                  <AdaptiveSelect 
+                    value={filters.from_year || 'all'} 
+                    onValueChange={(value) => updateFilter('from_year', value)}
+                    placeholder="Çdo vit"
+                    className="h-9 text-sm"
+                    options={yearOptions}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Deri në vitin</Label>
+                  <AdaptiveSelect 
+                    value={filters.to_year || 'all'} 
+                    onValueChange={(value) => updateFilter('to_year', value)}
+                    placeholder="Çdo vit"
+                    className="h-9 text-sm"
+                    options={yearOptions}
+                  />
+                </div>
+              </div>
+
+              {/* Year Range Preset Buttons for Homepage - moved below dropdowns */}
+              <div className="mt-3">
+                <Label className="text-xs text-muted-foreground mb-2 block">Zgjidhni vitet:</Label>
+                <div className="flex flex-wrap gap-1">
+                  {yearRangePresets.slice(0, 4).map((preset) => (
+                    <Button
+                      key={preset.label}
+                      variant={
+                        filters.from_year === preset.from.toString() && 
+                        filters.to_year === preset.to.toString() 
+                          ? "default" 
+                          : "outline"
+                      }
+                      size="sm"
+                      className="h-8 px-3 text-xs"
+                      onClick={() => handleYearRangePreset(preset)}
+                      title={`⚡ Instant filter: From ${preset.from} to present (${preset.to})`} // Added optimization indicator
+                    >
+                      {preset.label}
+                    </Button>
                   ))}
-                </SelectContent>
-              </Select>
+                  {(filters.from_year || filters.to_year) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-2 text-xs text-muted-foreground"
+                      onClick={() => onFiltersChange({
+                        ...filters,
+                        from_year: undefined,
+                        to_year: undefined
+                      })}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
 
 
+          </div>
+
+          <div className="mt-4 flex justify-center">
+            <Button 
+              onClick={handleSearchClick} 
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-8 py-3 h-12 text-base"
+              size="lg"
+            >
+              <Search className="h-5 w-5 mr-2" />
+              Kërko Makinat
+            </Button>
           </div>
         </div>
       </Card>
@@ -354,97 +784,47 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
         </Button>
 
         {expandedSections.includes('basic') && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-3 bg-muted/30 rounded-lg">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-muted/30 rounded-lg">
             <div className="space-y-2">
               <Label className="text-sm font-medium">Marka</Label>
-              <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Zgjidhni markën" />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="all">Të gjitha Markat</SelectItem>
-                  {sortedManufacturers.map((manufacturer) => (
-                    <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
+              <AdaptiveSelect 
+                value={filters.manufacturer_id || 'all'} 
+                onValueChange={(value) => updateFilter('manufacturer_id', value)}
+                placeholder="Zgjidhni markën"
+                options={[
+                  // In strict mode, show "Të gjitha Markat" only when no specific brand is selected or not in strict mode
+                  ...(isStrictMode && filters.manufacturer_id ? [] : [{ value: 'all', label: 'Të gjitha Markat' }]),
+                  ...sortedManufacturers.map((manufacturer) => ({
+                    value: manufacturer.id.toString(),
+                    label: (
                       <div className="flex items-center gap-2">
-                        {manufacturer.image && (
-                          <img src={manufacturer.image} alt={manufacturer.name} className="w-4 h-4 object-contain" />
+                        {(manufacturer as any).image && (
+                          <img src={(manufacturer as any).image} alt={manufacturer.name} className="w-4 h-4 object-contain" />
                         )}
                         <span>{manufacturer.name} ({manufacturer.cars_qty})</span>
                       </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    )
+                  }))
+                ]}
+              />
             </div>
 
             <div className="space-y-2">
               <Label className="text-sm font-medium">Modeli</Label>
-              <Select 
+              <AdaptiveSelect 
                 value={filters.model_id || 'all'} 
                 onValueChange={(value) => updateFilter('model_id', value)}
                 disabled={!filters.manufacturer_id}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"} />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="all">Të gjithë Modelet</SelectItem>
-                  {models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => (
-                    <SelectItem key={model.id} value={model.id.toString()}>
-                      {model.name} ({model.cars_qty})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Gjenerata</Label>
-              <Select 
-                value={filters.generation_id || 'all'} 
-                onValueChange={(value) => updateFilter('generation_id', value)}
-                disabled={!filters.model_id}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={filters.model_id ? "Zgjidhni gjeneratën" : "Zgjidhni modelin së pari"} />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="all">Të gjitha Gjeneratat</SelectItem>
-                  {generations.filter(gen => gen.cars_qty && gen.cars_qty > 0).map((generation) => (
-                    <SelectItem key={generation.id} value={generation.id.toString()}>
-                      {generation.name}
-                      {generation.from_year ? (() => {
-                        const from = generation.from_year.toString().slice(-2);
-                        const currentYear = new Date().getFullYear();
-                        const toYearRaw = generation.to_year || currentYear;
-                        const to = (generation.to_year && generation.to_year !== currentYear) ? toYearRaw.toString().slice(-2) : 'present';
-                        return ` (${from}-${to})`;
-                      })() : ''}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Variants</Label>
-              <Select 
-                value={filters.grade_iaai || 'all'} 
-                onValueChange={(value) => updateFilter('grade_iaai', value)}
-                disabled={!filters.generation_id || isLoadingGrades}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={isLoadingGrades ? "Loading..." : "Select variant"} />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="all">All Variants</SelectItem>
-                  {grades.map((grade) => (
-                    <SelectItem key={grade.value} value={grade.value}>
-                      {grade.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"}
+                options={[
+                  // In strict mode, show "Të gjithë Modelet" only when no specific model is selected or not in strict mode
+                  ...(isStrictMode && filters.model_id ? [] : [{ value: 'all', label: 'Të gjithë Modelet' }]),
+                  ...models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => ({
+                    value: model.id.toString(),
+                    label: `${model.name} (${model.cars_qty})`
+                  }))
+                ]}
+              />
             </div>
           </div>
         )}
@@ -466,39 +846,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
         {expandedSections.includes('advanced') && (
           <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
-            {/* Year and Price */}
+            {/* Price */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <Label className="text-sm font-medium flex items-center gap-2">
-                  <Calendar className="h-3 w-3" />
-                  Viti
-                </Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Select value={filters.from_year || 'all'} onValueChange={(value) => updateFilter('from_year', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Nga" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60">
-                      <SelectItem value="all">Çdo vit</SelectItem>
-                      {years.map(year => (
-                        <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={filters.to_year || 'all'} onValueChange={(value) => updateFilter('to_year', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Deri" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60">
-                      <SelectItem value="all">Çdo vit</SelectItem>
-                      {years.map(year => (
-                        <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
               <div className="space-y-3">
                 <Label className="text-sm font-medium flex items-center gap-2">
                   <DollarSign className="h-3 w-3" />
@@ -521,24 +870,127 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               </div>
             </div>
 
-            {/* Color, Fuel, Transmission */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Year Selection and Variants */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Calendar className="h-3 w-3" />
+                  Vitet
+                  {(filters.from_year || filters.to_year) && (
+                    <Badge variant="secondary" className="text-xs">
+                      {filters.from_year || 'Çdo vit'} - {filters.to_year || 'sot'}
+                    </Badge>
+                  )}
+                </Label>
+                
+                {/* Year Range Preset Buttons - Compact layout */}
+                <div className="mt-2">
+                  <Label className="text-xs text-muted-foreground mb-2 block">Vitet:</Label>
+                  <div className="flex flex-wrap gap-1">
+                    {yearRangePresets.map((preset) => (
+                      <Button
+                        key={preset.label}
+                        variant={
+                          filters.from_year === preset.from.toString() && 
+                          filters.to_year === preset.to.toString() 
+                            ? "default" 
+                            : "outline"
+                        }
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => handleYearRangePreset(preset)}
+                        title={`⚡ Instant filter: From ${preset.from} to present (${preset.to})`} // Added optimization indicator
+                      >
+                        {preset.label}
+                      </Button>
+                    ))}
+                    {(filters.from_year || filters.to_year) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-xs text-muted-foreground"
+                        onClick={() => onFiltersChange({
+                          ...filters,
+                          from_year: undefined,
+                          to_year: undefined
+                        })}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Enhanced Year Filter - From/To dropdowns for advanced section */}
+                <div className="mt-3">
+                  <Label className="text-xs text-muted-foreground mb-2 block">Custom Year Range:</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">From Year</Label>
+                      <AdaptiveSelect 
+                        value={filters.from_year || 'all'} 
+                        onValueChange={(value) => updateFilter('from_year', value)}
+                        placeholder="All years"
+                        className="h-8 text-xs"
+                        options={yearOptions}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">To Year</Label>
+                      <AdaptiveSelect 
+                        value={filters.to_year || 'all'} 
+                        onValueChange={(value) => updateFilter('to_year', value)}
+                        placeholder="All years"
+                        className="h-8 text-xs"
+                        options={yearOptions}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Cog className="h-3 w-3" />
+                  Grade/Engine
+                </Label>
+                <AdaptiveSelect 
+                  value={filters.grade_iaai || 'all'} 
+                  onValueChange={(value) => updateFilter('grade_iaai', value)}
+                  disabled={!filters.manufacturer_id || isLoadingGrades}
+                  placeholder={isLoadingGrades ? "Loading..." : "Select grade"}
+                  options={[
+                    // In strict mode, show "All Grades" only when no specific grade is selected or not in strict mode
+                    ...(isStrictMode && filters.grade_iaai ? [] : [{ value: 'all', label: 'All Grades' }]),
+                    ...grades.map((grade) => ({
+                      value: grade.value,
+                      label: grade.label
+                    }))
+                  ]}
+                />
+              </div>
+            </div>
+
+            {/* Color, Fuel, Transmission, Body Type */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-medium flex items-center gap-2">
                   <Palette className="h-3 w-3" />
                   Ngjyra
                 </Label>
-                <Select value={filters.color || 'all'} onValueChange={(value) => updateFilter('color', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Çdo ngjyrë" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Çdo ngjyrë</SelectItem>
-                    {Object.entries(COLOR_OPTIONS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <AdaptiveSelect 
+                  value={filters.color || 'all'} 
+                  onValueChange={(value) => updateFilter('color', value)}
+                  placeholder="Çdo ngjyrë"
+                  options={[
+                    // In strict mode, show "Çdo ngjyrë" only when no specific color is selected or not in strict mode
+                    ...(isStrictMode && filters.color ? [] : [{ value: 'all', label: 'Çdo ngjyrë' }]),
+                    ...Object.entries(COLOR_OPTIONS).map(([name, id]) => ({
+                      value: id.toString(),
+                      label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
+                    }))
+                  ]}
+                />
               </div>
 
               <div className="space-y-2">
@@ -546,17 +998,19 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   <Fuel className="h-3 w-3" />
                   Karburanti
                 </Label>
-                <Select value={filters.fuel_type || 'all'} onValueChange={(value) => updateFilter('fuel_type', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Çdo tip" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Çdo tip</SelectItem>
-                    {Object.entries(FUEL_TYPE_OPTIONS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <AdaptiveSelect 
+                  value={filters.fuel_type || 'all'} 
+                  onValueChange={(value) => updateFilter('fuel_type', value)}
+                  placeholder="Çdo tip"
+                  options={[
+                    // In strict mode, show "Çdo tip" only when no specific fuel type is selected or not in strict mode
+                    ...(isStrictMode && filters.fuel_type ? [] : [{ value: 'all', label: 'Çdo tip' }]),
+                    ...Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => ({
+                      value: id.toString(),
+                      label: name.charAt(0).toUpperCase() + name.slice(1)
+                    }))
+                  ]}
+                />
               </div>
 
               <div className="space-y-2">
@@ -564,17 +1018,38 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   <Settings className="h-3 w-3" />
                   Transmisioni
                 </Label>
-                <Select value={filters.transmission || 'all'} onValueChange={(value) => updateFilter('transmission', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Çdo tip" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Çdo tip</SelectItem>
-                    {Object.entries(TRANSMISSION_OPTIONS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <AdaptiveSelect 
+                  value={filters.transmission || 'all'} 
+                  onValueChange={(value) => updateFilter('transmission', value)}
+                  placeholder="Çdo tip"
+                  options={[
+                    // In strict mode, show "Çdo tip" only when no specific transmission is selected or not in strict mode
+                    ...(isStrictMode && filters.transmission ? [] : [{ value: 'all', label: 'Çdo tip' }]),
+                    ...Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => ({
+                      value: id.toString(),
+                      label: name.charAt(0).toUpperCase() + name.slice(1)
+                    }))
+                  ]}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Car className="h-3 w-3" />
+                  Lloji i Trupit
+                </Label>
+                <AdaptiveSelect 
+                  value={filters.body_type || 'all'} 
+                  onValueChange={(value) => updateFilter('body_type', value)}
+                  placeholder="Çdo tip"
+                  options={[
+                    { value: 'all', label: 'Çdo tip' },
+                    ...Object.entries(BODY_TYPE_OPTIONS).map(([name, id]) => ({
+                      value: id.toString(),
+                      label: name.charAt(0).toUpperCase() + name.slice(1)
+                    }))
+                  ]}
+                />
               </div>
             </div>
 

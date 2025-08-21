@@ -85,7 +85,16 @@ Deno.serve(async (req) => {
     // Get request parameters
     const url = new URL(req.url)
     const syncType = url.searchParams.get('type') || 'incremental'
-    const minutes = parseInt(url.searchParams.get('minutes') || '60')
+    
+    // Handle different sync types with appropriate time windows
+    let minutes: number
+    if (syncType === 'daily') {
+      minutes = 24 * 60 // 24 hours for daily sync
+    } else if (syncType === 'full') {
+      minutes = 0 // Full sync ignores time window
+    } else {
+      minutes = parseInt(url.searchParams.get('minutes') || '60') // Default hourly
+    }
 
     console.log(`📋 Sync Details: ${syncType} sync for last ${minutes} minutes`)
 
@@ -360,6 +369,26 @@ Deno.serve(async (req) => {
         errors.push(`Archived lots error: ${archivedError.message}`)
       }
 
+      // For daily sync, call the cleanup function to remove old sold cars
+      let cleanupResult = null
+      if (syncType === 'daily') {
+        try {
+          console.log(`🧹 Running daily cleanup to remove old sold cars...`)
+          const { data: cleanupData, error: cleanupError } = await supabase.rpc('remove_old_sold_cars')
+          
+          if (cleanupError) {
+            console.error(`❌ Error during daily cleanup:`, cleanupError)
+            errors.push(`Cleanup error: ${cleanupError.message}`)
+          } else {
+            cleanupResult = cleanupData
+            console.log(`✅ Daily cleanup completed: ${cleanupData?.removed_cars_count || 0} cars removed from website`)
+          }
+        } catch (cleanupError) {
+          console.error(`❌ Error calling cleanup function:`, cleanupError)
+          errors.push(`Cleanup function error: ${cleanupError.message}`)
+        }
+      }
+
       // Complete sync
       const completedAt = new Date().toISOString()
       await supabase
@@ -384,6 +413,7 @@ Deno.serve(async (req) => {
           cars_processed: totalCarsProcessed,
           archived_lots_processed: totalArchivedProcessed,
           total_processed: totalCarsProcessed + totalArchivedProcessed,
+          cleanup_result: cleanupResult,
           errors_count: errors.length,
           errors: errors.slice(0, 5),
           completed_at: completedAt

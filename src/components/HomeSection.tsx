@@ -19,15 +19,10 @@ const HomeSection = () => {
             Mirë se vini në KORAUTO
           </h1>
           <p className="text-lg md:text-xl mb-6 text-muted-foreground max-w-3xl mx-auto">
-            Find your perfect car from South Korea with best price and quality
+            Find your perfect car from Korenë e jugut with best price and quality
           </p>
           
           <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-8">
-            <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 text-lg" onClick={() => document.getElementById('cars')?.scrollIntoView({
-            behavior: 'smooth'
-          })}>
-              Shfleto Makinat
-            </Button>
             <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3 text-lg transition-colors" onClick={() => window.location.href = '/catalog'}>
               Katalogu
             </Button>

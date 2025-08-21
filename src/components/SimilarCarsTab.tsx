@@ -4,6 +4,7 @@ import { ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSecureAuctionAPI } from '@/hooks/useSecureAuctionAPI';
 import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
+import { hasRealPricing } from '@/utils/carPricing';
 import CarCard from './CarCard';
 
 interface SimilarCarsTabProps {
@@ -44,11 +45,12 @@ const SimilarCarsTab = ({ carMake, carModel, currentCarId }: SimilarCarsTabProps
   }, [carMake, carModel, fetchCars, fetchManufacturers]);
 
   useEffect(() => {
-    // Filter cars to show same brand, exclude current car
+    // Filter cars to show same brand, exclude current car, and only include cars with real pricing
     const filtered = cars
       .filter(car => 
         car.manufacturer?.name?.toLowerCase() === carMake.toLowerCase() &&
-        car.id !== currentCarId
+        car.id !== currentCarId &&
+        hasRealPricing(car)
       )
       .slice(0, 4); // Show max 4 similar cars
 

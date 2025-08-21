@@ -90,7 +90,7 @@ export const isFastConnection = (): boolean => {
 };
 
 /**
- * Optimize images based on device capabilities
+ * Optimize images based on device capabilities and connection
  */
 export const getOptimizedImageUrl = (url: string, width: number, quality = 80): string => {
   if (!url) return '';
@@ -100,165 +100,85 @@ export const getOptimizedImageUrl = (url: string, width: number, quality = 80): 
     return url;
   }
   
+  // Adjust quality based on connection speed
+  const effectiveQuality = isFastConnection() ? quality : Math.min(quality, 60);
+  
   // For external images, you could add query parameters for optimization
   // This is a placeholder - adjust based on your image service
-  return `${url}?w=${width}&q=${quality}`;
+  return `${url}?w=${width}&q=${effectiveQuality}&auto=format,compress`;
 };
 
 /**
- * Memory-efficient cache with LRU behavior
+ * Memoization utility for expensive computations
  */
-export class LRUCache<K, V> {
-  private cache = new Map<K, V>();
-  private maxSize: number;
-
-  constructor(maxSize: number = 100) {
-    this.maxSize = maxSize;
-  }
-
-  get(key: K): V | undefined {
-    if (this.cache.has(key)) {
-      const value = this.cache.get(key)!;
-      this.cache.delete(key);
-      this.cache.set(key, value);
-      return value;
-    }
-    return undefined;
-  }
-
-  set(key: K, value: V): void {
-    if (this.cache.has(key)) {
-      this.cache.delete(key);
-    } else if (this.cache.size >= this.maxSize) {
-      const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
-    }
-    this.cache.set(key, value);
-  }
-
-  clear(): void {
-    this.cache.clear();
-  }
-}
-
-/**
- * Virtual scrolling utilities
- */
-export const calculateVisibleRange = (
-  scrollTop: number,
-  containerHeight: number,
-  itemHeight: number,
-  totalItems: number,
-  overscan: number = 5
-) => {
-  const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
-  const endIndex = Math.min(
-    totalItems - 1,
-    Math.ceil((scrollTop + containerHeight) / itemHeight) + overscan
-  );
+export const memoize = <T extends (...args: any[]) => any>(fn: T): T => {
+  const cache = new Map();
   
-  return { startIndex, endIndex };
-};
-
-/**
- * Performance monitoring
- */
-export class PerformanceMonitor {
-  private static instance: PerformanceMonitor;
-  private metrics: Map<string, number[]> = new Map();
-
-  static getInstance(): PerformanceMonitor {
-    if (!PerformanceMonitor.instance) {
-      PerformanceMonitor.instance = new PerformanceMonitor();
+  return ((...args: Parameters<T>) => {
+    const key = JSON.stringify(args);
+    
+    if (cache.has(key)) {
+      return cache.get(key);
     }
-    return PerformanceMonitor.instance;
-  }
-
-  startTimer(name: string): () => void {
-    const start = performance.now();
-    return () => {
-      const duration = performance.now() - start;
-      if (!this.metrics.has(name)) {
-        this.metrics.set(name, []);
-      }
-      this.metrics.get(name)!.push(duration);
-      
-      // Keep only last 100 measurements
-      if (this.metrics.get(name)!.length > 100) {
-        this.metrics.get(name)!.shift();
-      }
-    };
-  }
-
-  getAverageTime(name: string): number {
-    const measurements = this.metrics.get(name);
-    if (!measurements || measurements.length === 0) return 0;
-    return measurements.reduce((a, b) => a + b, 0) / measurements.length;
-  }
-
-  logMetrics(): void {
-    console.group('Performance Metrics');
-    this.metrics.forEach((measurements, name) => {
-      const avg = this.getAverageTime(name);
-      const min = Math.min(...measurements);
-      const max = Math.max(...measurements);
-      console.log(`${name}: avg=${avg.toFixed(2)}ms, min=${min.toFixed(2)}ms, max=${max.toFixed(2)}ms`);
-    });
-    console.groupEnd();
-  }
-}
-
-/**
- * Optimize React rendering with requestIdleCallback
- */
-export const scheduleIdleTask = (task: () => void): void => {
-  if ('requestIdleCallback' in window) {
-    (window as any).requestIdleCallback(task);
-  } else {
-    setTimeout(task, 1);
-  }
+    
+    const result = fn(...args);
+    cache.set(key, result);
+    
+    // Limit cache size to prevent memory leaks
+    if (cache.size > 100) {
+      const firstKey = cache.keys().next().value;
+      cache.delete(firstKey);
+    }
+    
+    return result;
+  }) as T;
 };
 
 /**
- * Preload critical images
+ * Virtual scrolling utility for large lists
  */
-export const preloadCriticalImages = (imageUrls: string[]): void => {
-  imageUrls.forEach(url => {
-    const img = new Image();
-    img.src = url;
-  });
-};
-
-/**
- * Optimize scroll performance
- */
-export const optimizeScroll = (callback: () => void): (() => void) => {
-  let ticking = false;
+export const createVirtualScrollConfig = (itemHeight: number, containerHeight: number) => {
+  const visibleCount = Math.ceil(containerHeight / itemHeight);
+  const bufferSize = Math.min(5, Math.ceil(visibleCount * 0.3));
   
-  return () => {
-    if (!ticking) {
-      requestAnimationFrame(() => {
-        callback();
-        ticking = false;
-      });
-      ticking = true;
-    }
+  return {
+    itemHeight,
+    visibleCount,
+    bufferSize,
+    overscan: bufferSize
   };
 };
 
 /**
- * Memory cleanup utilities
+ * Performance measurement utility
  */
-export const cleanupEventListeners = (element: Element, event: string, handler: EventListener): void => {
-  element.removeEventListener(event, handler);
-};
-
-export const cleanupTimeouts = (timeouts: NodeJS.Timeout[]): void => {
-  timeouts.forEach(timeout => clearTimeout(timeout));
-};
-
-export const cleanupIntervals = (intervals: NodeJS.Timeout[]): void => {
-  intervals.forEach(interval => clearInterval(interval));
+export const measurePerformance = (name: string, fn: () => void | Promise<void>) => {
+  return async () => {
+    const startTime = performance.now();
+    
+    try {
+      const result = fn();
+      if (result instanceof Promise) {
+        await result;
+      }
+    } finally {
+      const endTime = performance.now();
+      const duration = endTime - startTime;
+      
+      if (import.meta.env.DEV) {
+        console.log(`⏱️ ${name}: ${duration.toFixed(2)}ms`);
+      }
+      
+      // Report to analytics in production
+      if (import.meta.env.PROD && 'analytics' in window) {
+        (window as any).analytics?.track('Performance Metric', {
+          name,
+          duration,
+          timestamp: Date.now()
+        });
+      }
+    }
+  };
 };
 
 export default {
@@ -269,13 +189,7 @@ export default {
   batchDOMUpdates,
   isFastConnection,
   getOptimizedImageUrl,
-  LRUCache,
-  calculateVisibleRange,
-  PerformanceMonitor,
-  scheduleIdleTask,
-  preloadCriticalImages,
-  optimizeScroll,
-  cleanupEventListeners,
-  cleanupTimeouts,
-  cleanupIntervals
+  memoize,
+  createVirtualScrollConfig,
+  measurePerformance
 };

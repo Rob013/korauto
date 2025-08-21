@@ -1,13 +1,12 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
+import { AppErrorBoundary } from '@/components/AppErrorBoundary'
 import './index.css'
-// import { ThemeProvider } from "@/components/ThemeProvider"
-// import { NavigationProvider } from './contexts/NavigationContext.tsx'
+import { ThemeProvider } from "@/components/ThemeProvider"
+import { NavigationProvider } from '@/contexts/NavigationContext'
 
-console.log('🚀 Main.tsx is loading...');
-
-// Simple service worker registration without blocking
-if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+// Register service worker for caching
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then((registration) => {
@@ -19,28 +18,12 @@ if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
   });
 }
 
-// Performance monitoring - only in development and only after app loads
-if (process.env.NODE_ENV === 'development') {
-  console.log('Development mode - performance monitoring available');
-}
-
-console.log('🎯 About to render React app...');
-
-try {
-  const rootElement = document.getElementById("root");
-  console.log('📦 Root element found:', rootElement);
-  
-  if (rootElement) {
-    const root = createRoot(rootElement);
-    console.log('✅ React root created successfully');
-    
-    // Test without providers first
-    root.render(<App />);
-    
-    console.log('🎉 React app rendered successfully!');
-  } else {
-    console.error('❌ Root element not found!');
-  }
-} catch (error) {
-  console.error('❌ Error rendering React app:', error);
-}
+createRoot(document.getElementById("root")!).render(
+  <AppErrorBoundary>
+    <ThemeProvider defaultTheme="system" storageKey="korauto-ui-theme">
+      <NavigationProvider>
+        <App />
+      </NavigationProvider>
+    </ThemeProvider>
+  </AppErrorBoundary>
+);

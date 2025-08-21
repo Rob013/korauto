@@ -235,6 +235,24 @@ All colors MUST be HSL.
     }
   }
 
+  /* Fix for Albanian inspection texts in dark mode - should be black */
+  .dark .inspection-text-black {
+    color: #000000 !important;
+  }
+
+  .dark .inspection-subtext-black {
+    color: #000000 !important;
+  }
+
+  /* Ensure normal colors in light mode */
+  .inspection-text-black {
+    color: inherit;
+  }
+
+  .inspection-subtext-black {
+    color: inherit;
+  }
+
   /* Text truncation utilities */
   .line-clamp-2 {
     display: -webkit-box;
@@ -276,4 +294,461 @@ All colors MUST be HSL.
       @apply ring-0 ring-transparent;
     }
   }
+
+  /* Enhanced Adaptive Select Optimizations for All Devices */
+  
+  /* Base responsive optimizations */
+  .adaptive-select-trigger {
+    min-height: 44px; /* iOS and Android friendly touch target */
+    transition: all 0.2s ease;
+  }
+
+  /* Mobile optimization for touch devices */
+  @media (max-width: 768px), (pointer: coarse) {
+    .adaptive-select-trigger {
+      height: 48px; /* Larger touch target for mobile */
+      font-size: 16px; /* Prevent zoom on iOS */
+      padding: 12px 16px;
+    }
+    
+    .adaptive-select-content {
+      max-height: 60vh; /* Limit height on mobile */
+      margin-top: 4px;
+    }
+    
+    .adaptive-select-item {
+      padding: 16px 20px; /* Larger touch targets */
+      min-height: 48px;
+      font-size: 16px;
+    }
+  }
+
+  /* iPad specific optimizations */
+  @media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait),
+         (min-width: 1024px) and (max-width: 1366px) and (orientation: landscape) {
+    .adaptive-select-trigger {
+      height: 44px;
+      font-size: 16px;
+    }
+  }
+
+  /* iOS Safari specific optimizations */
+  @supports (-webkit-touch-callout: none) {
+    .adaptive-select select {
+      font-size: 16px !important; /* Prevent zoom */
+      border-radius: 8px; /* iOS-style corners */
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    
+    /* Fix for iOS select styling */
+    .adaptive-select select:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px hsl(var(--ring));
+    }
+  }
+
+  /* macOS Safari optimizations */
+  @media (hover: hover) and (pointer: fine) {
+    .adaptive-select-trigger:hover {
+      background-color: hsl(var(--accent));
+    }
+    
+    .adaptive-select-item:hover {
+      background-color: hsl(var(--accent));
+    }
+  }
+
+  /* High DPI display optimizations */
+  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .adaptive-select-trigger {
+      border-width: 0.5px;
+    }
+  }
+
+  /* Performance and smoothness optimizations */
+  .performance-optimized {
+    contain: layout style paint;
+    content-visibility: auto;
+  }
+
+  /* Smooth scrolling for better UX */
+  .smooth-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* GPU acceleration for animations */
+  .gpu-accelerated {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  /* Layout stability utilities */
+  .layout-stable {
+    contain: size layout;
+  }
+
+  .size-stable {
+    min-height: 0;
+    min-width: 0;
+  }
+
+  /* Image optimization */
+  .optimized-image {
+    content-visibility: auto;
+    contain-intrinsic-size: 280px 160px;
+  }
+
+  /* Prevent layout shifts in card grids */
+  .stable-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  /* Better focus management */
+  .focus-trap {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--ring));
+    border-radius: calc(var(--radius) - 2px);
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .hover-lift:hover {
+      transform: none;
+    }
+    
+    .transition-smooth {
+      transition: none;
+    }
+    
+    .animate-fade-in-up {
+      animation: none;
+    }
+    
+    .group-hover\\:scale-105:hover {
+      transform: none;
+    }
+  }
+
+  /* Enhanced button touch targets */
+  .enhanced-touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 12px;
+    position: relative;
+  }
+
+  .enhanced-touch-target::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+/* Mobile Layout Optimizations */
+@media (max-width: 768px) {
+  /* Safe area inset for notched devices */
+  .safe-area-inset {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Dynamic viewport height support for mobile browsers */
+  .mobile-full-height {
+    height: 100vh; /* Fallback for older browsers */
+    height: 100dvh; /* Dynamic viewport height for modern browsers */
+    min-height: -webkit-fill-available; /* iOS Safari compatibility */
+  }
+
+  /* Filter panel specific optimizations - More compact */
+  .mobile-filter-panel {
+    height: 100vh; /* Fallback */
+    height: 100dvh; /* Dynamic viewport height */
+    min-height: -webkit-fill-available; /* iOS Safari */
+    max-height: 100vh; /* Prevent overflow on some devices */
+    max-height: 100dvh;
+  }
+
+  /* Optimized container spacing for mobile - More compact */
+  .container-responsive {
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+
+  /* Better touch targets - More compact */
+  button, [role="button"] {
+    min-height: 40px;
+    min-width: 40px;
+  }
+
+  /* Enhanced filter button visibility */
+  .mobile-filter-button {
+    position: sticky;
+    top: 12px;
+    z-index: 20;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Smooth filter panel transitions */
+  .filter-panel {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  /* Better text readability on mobile - More compact */
+  .mobile-text-optimize {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    font-size: clamp(13px, 3.5vw, 15px);
+    line-height: 1.4;
+  }
+
+  /* Improved car grid layout - More compact for mobile */
+  .mobile-car-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 6px;
+  }
+  
+  /* Extra compact layout for very small screens */
+  .mobile-car-grid-compact {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 4px;
+  }
+
+  /* Better loading states */
+  .mobile-loading {
+    min-height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Ensure filter content is properly scrollable - More compact */
+  .mobile-filter-content {
+    height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Compact filter panel styles */
+  .mobile-filter-compact {
+    padding: 8px 12px;
+  }
+
+  .mobile-filter-compact .filter-section {
+    margin-bottom: 12px;
+  }
+
+  .mobile-filter-compact .filter-label {
+    font-size: 12px;
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+
+  .mobile-filter-compact .filter-control {
+    height: 36px;
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+
+  .mobile-filter-compact .filter-header {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+
+  .mobile-filter-compact .year-buttons {
+    gap: 4px;
+  }
+
+  .mobile-filter-compact .year-buttons button {
+    padding: 4px 8px;
+    font-size: 11px;
+    min-height: 28px;
+  }
+}
+
+/* Small mobile devices - Even more compact */
+@media (max-width: 375px) {
+  .container-responsive {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  .mobile-car-grid {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  
+  /* Ultra compact for smallest devices */
+  .mobile-car-grid-compact {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+
+  .mobile-text-optimize {
+    font-size: clamp(11px, 3.5vw, 13px);
+  }
+  
+  /* More compact card content for small screens */
+  .mobile-card-compact {
+    padding: 6px;
+  }
+  
+  .mobile-card-compact .card-title {
+    font-size: 13px;
+    line-height: 1.2;
+  }
+  
+  .mobile-card-compact .card-price {
+    font-size: 15px;
+    font-weight: 700;
+  }
+  
+  .mobile-card-compact .card-details {
+    font-size: 10px;
+    line-height: 1.1;
+  }
+
+  /* Ultra compact filter styles for smallest screens */
+  .mobile-filter-compact {
+    padding: 6px 8px;
+  }
+
+  .mobile-filter-compact .filter-section {
+    margin-bottom: 8px;
+  }
+
+  .mobile-filter-compact .filter-label {
+    font-size: 11px;
+    margin-bottom: 3px;
+  }
+
+  .mobile-filter-compact .filter-control {
+    height: 32px;
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  .mobile-filter-compact .filter-header {
+    padding: 6px 8px;
+    font-size: 13px;
+  }
+
+  .mobile-filter-compact .year-buttons button {
+    padding: 3px 6px;
+    font-size: 10px;
+    min-height: 24px;
+  }
+}
+
+/* Enhanced filter animations */
+@keyframes slideInFromLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutToLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+.filter-enter {
+  animation: slideInFromLeft 300ms ease-out;
+}
+
+.filter-exit {
+  animation: slideOutToLeft 300ms ease-in;
+}
+
+/* Improved lot number visibility */
+.lot-number-highlight {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%);
+  color: hsl(var(--primary-foreground));
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Black background sections for inspection reports */
+.inspection-section-black {
+  background: #000000 !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  border-color: #333333 !important;
+}
+
+.inspection-section-black h5,
+.inspection-section-black h4,
+.inspection-section-black h3,
+.inspection-section-black .text-foreground {
+  color: #ffffff !important;
+}
+
+.inspection-section-black .text-muted-foreground {
+  color: #cccccc !important;
+}
+
+.inspection-section-black .bg-card {
+  background-color: #1a1a1a !important;
+  border-color: #333333 !important;
+}
+
+.inspection-section-black .border-border {
+  border-color: #333333 !important;
+}
+
+/* Ensure button styling remains readable in black sections */
+.inspection-section-black .bg-primary {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+.inspection-section-black .text-primary {
+  color: #ffffff !important;
+}
+
+/* Icon containers in black sections */
+.inspection-section-black .bg-blue-600,
+.inspection-section-black .bg-green-600,
+.inspection-section-black .bg-orange-600,
+.inspection-section-black .bg-purple-600,
+.inspection-section-black .bg-yellow-600 {
+  background-color: #ffffff !important;
+}
+
+.inspection-section-black .bg-blue-600 svg,
+.inspection-section-black .bg-green-600 svg,
+.inspection-section-black .bg-orange-600 svg,
+.inspection-section-black .bg-purple-600 svg,
+.inspection-section-black .bg-yellow-600 svg {
+  color: #000000 !important;
+}
+
 }

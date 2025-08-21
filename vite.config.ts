@@ -20,38 +20,49 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    // Enable source maps for debugging
-    sourcemap: mode === 'development',
-    
-    // Optimize chunk splitting
+    // Enable gzip compression and optimize chunks
+    cssCodeSplit: true,
     rollupOptions: {
       output: {
         manualChunks: {
-          // Vendor chunks for better caching
-          'react-vendor': ['react', 'react-dom'],
-          'router-vendor': ['react-router-dom'],
-          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-tabs'],
-          'utils-vendor': ['clsx', 'class-variance-authority', 'tailwind-merge'],
-          'supabase-vendor': ['@supabase/supabase-js'],
-          'query-vendor': ['@tanstack/react-query'],
+          // Core React libraries
+          vendor: ['react', 'react-dom'],
+          // Router in separate chunk for better caching
+          router: ['react-router-dom'],
+          // UI libraries split into smaller chunks
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
+          'ui-tabs': ['@radix-ui/react-tabs', '@radix-ui/react-accordion', '@radix-ui/react-alert-dialog'],
+          'ui-form': ['@radix-ui/react-label', '@radix-ui/react-checkbox', '@radix-ui/react-radio-group'],
+          // Backend and data fetching
+          supabase: ['@supabase/supabase-js'],
+          query: ['@tanstack/react-query'],
+          // Utility libraries
+          utils: ['clsx', 'tailwind-merge', 'date-fns', 'zod'],
+          // Charts and visualization (if used heavily)
+          charts: ['recharts'],
         },
       },
     },
-    
+    // Optimize chunk size warnings
+    chunkSizeWarningLimit: 1000,
     // Enable minification
     minify: 'terser',
     terserOptions: {
       compress: {
         drop_console: mode === 'production',
-        drop_debugger: mode === 'production',
+        drop_debugger: true,
+        passes: 2, // Multiple passes for better compression
+      },
+      mangle: {
+        safari10: true, // Safari 10 compatibility
       },
     },
-    
-    // Optimize chunk size warnings
-    chunkSizeWarningLimit: 1000,
+    // Target modern browsers for better optimization
+    target: 'es2020',
+    // Enable source maps for production debugging
+    sourcemap: mode !== 'production',
   },
-  
-  // Optimize dependencies
+  // Optimize dependency pre-bundling
   optimizeDeps: {
     include: [
       'react',
@@ -60,10 +71,5 @@ export default defineConfig(({ mode }) => ({
       '@tanstack/react-query',
       '@supabase/supabase-js',
     ],
-  },
-  
-  // CSS optimization
-  css: {
-    devSourcemap: mode === 'development',
   },
 }));

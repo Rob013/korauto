@@ -12,6 +12,7 @@ interface FilterState {
   mileageRange: number[];
   sortBy: string;
   searchTerm?: string;
+  showFilters?: boolean; // Add showFilters to track filter panel state
 }
 
 interface NavigationContextType {
