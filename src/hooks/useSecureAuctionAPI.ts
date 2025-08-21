@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { filterTestCars } from "@/utils/carFilters";
 
 interface Lot {
   buy_now?: number;
@@ -373,35 +374,8 @@ export const useSecureAuctionAPI = () => {
       const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
 
       // FIRST: Filter out test/emergency cars before any other filtering
-      let filteredCars = (data.data || []).filter(car => {
-        // Remove cars with emergency or test IDs
-        if (car.id && (
-          car.id.startsWith('emergency-') || 
-          car.id.startsWith('test-') || 
-          car.id.startsWith('sample-') ||
-          car.id.startsWith('mock-')
-        )) {
-          return false;
-        }
-
-        // Remove cars with test data indicators in external_id
-        if (car.external_id && (
-          car.external_id.startsWith('emergency-') || 
-          car.external_id.startsWith('test-') || 
-          car.external_id.startsWith('sample-') ||
-          car.external_id.startsWith('mock-')
-        )) {
-          return false;
-        }
-
-        // Remove mock cars that have generic image URLs (likely test data)
-        if (car.image_url && car.image_url.includes('unsplash.com') && 
-            (!car.vin || car.vin.length < 10)) {
-          return false;
-        }
-
-        return true;
-      });
+      // This addresses the "18 test cars" issue when selecting brands
+      let filteredCars = filterTestCars(data.data || []);
 
       console.log(`🧹 Filtered out test cars: ${(data.data || []).length - filteredCars.length} test cars removed, ${filteredCars.length} real cars remaining`);
 

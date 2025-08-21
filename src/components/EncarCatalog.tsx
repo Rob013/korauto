@@ -21,6 +21,7 @@ import {
 import CarCard from "@/components/CarCard";
 import { useSecureAuctionAPI } from "@/hooks/useSecureAuctionAPI";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
+import { filterTestCars } from "@/utils/carFilters";
 
 import { useSearchParams } from "react-router-dom";
 import {
@@ -116,35 +117,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Filter cars to remove test/emergency cars and apply grade filtering
   const filteredCars = useMemo(() => {
     // First filter out test/emergency cars (addressing the "18 test cars" issue)
-    const realCars = cars.filter((car) => {
-      // Remove cars with emergency or test IDs
-      if (car.id && (
-        car.id.startsWith('emergency-') || 
-        car.id.startsWith('test-') || 
-        car.id.startsWith('sample-') ||
-        car.id.startsWith('mock-')
-      )) {
-        return false;
-      }
-
-      // Remove cars with test data indicators in external_id
-      if (car.external_id && (
-        car.external_id.startsWith('emergency-') || 
-        car.external_id.startsWith('test-') || 
-        car.external_id.startsWith('sample-') ||
-        car.external_id.startsWith('mock-')
-      )) {
-        return false;
-      }
-
-      // Remove mock cars that have generic image URLs (likely test data)
-      if (car.image_url && car.image_url.includes('unsplash.com') && 
-          (!car.vin || car.vin.length < 10)) {
-        return false;
-      }
-
-      return true;
-    });
+    const realCars = filterTestCars(cars);
 
     // Apply grade filtering only if a specific grade is selected
     if (!filters.grade_iaai || filters.grade_iaai === 'all') {
@@ -463,30 +436,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       const allCars = data.data || [];
       
       // Apply the same filtering as current cars - remove test cars and apply grade filtering
-      const filteredAllCars = allCars.filter((car: any) => {
-        // Filter out test/emergency cars (same logic as in filteredCars)
-        if (car.id && (
-          car.id.startsWith('emergency-') || 
-          car.id.startsWith('test-') || 
-          car.id.startsWith('sample-') ||
-          car.id.startsWith('mock-')
-        )) {
-          return false;
-        }
-
-        if (car.external_id && (
-          car.external_id.startsWith('emergency-') || 
-          car.external_id.startsWith('test-') || 
-          car.external_id.startsWith('sample-') ||
-          car.external_id.startsWith('mock-')
-        )) {
-          return false;
-        }
-
-        if (car.image_url && car.image_url.includes('unsplash.com') && 
-            (!car.vin || car.vin.length < 10)) {
-          return false;
-        }
+      const filteredAllCars = filterTestCars(allCars).filter((car: any) => {
 
         // Apply grade filtering if specified
         if (filters.grade_iaai && filters.grade_iaai !== 'all') {
@@ -514,6 +464,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setModels([]);
     setGenerations([]);
     try {
+      // Fetch models for the selected manufacturer
+      // This ensures only real cars for the selected brand are shown before model selection
       if (manufacturerId) {
         console.log(`[handleManufacturerChange] Fetching models...`);
         const modelData = await fetchModels(manufacturerId);
