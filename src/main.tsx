@@ -1,6 +1,5 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
-import { AppErrorBoundary } from '@/components/AppErrorBoundary'
 import './index.css'
 import { ThemeProvider } from "@/components/ThemeProvider"
 import { NavigationProvider } from './contexts/NavigationContext.tsx'
@@ -19,11 +18,9 @@ if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
 }
 
 createRoot(document.getElementById("root")!).render(
-  <AppErrorBoundary>
-    <ThemeProvider defaultTheme="system" storageKey="korauto-ui-theme">
-      <NavigationProvider>
-        <App />
-      </NavigationProvider>
-    </ThemeProvider>
-  </AppErrorBoundary>
+  <ThemeProvider defaultTheme="system" storageKey="korauto-ui-theme">
+    <NavigationProvider>
+      <App />
+    </NavigationProvider>
+  </ThemeProvider>
 );
