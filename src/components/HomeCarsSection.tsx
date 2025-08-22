@@ -21,6 +21,7 @@ import { ArrowUpDown } from "lucide-react";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
 import { useDailyRotatingCars } from "@/hooks/useDailyRotatingCars";
 import { filterOutTestCars } from "@/utils/testCarFilter";
+import { fallbackCars, fallbackManufacturers } from "@/data/fallbackData";
 
 interface APIFilters {
   manufacturer_id?: string;
@@ -253,16 +254,18 @@ const HomeCarsSection = memo(() => {
     });
   };
 
-  // Type conversion to match the sorting hook interface
+  // Type conversion to match the sorting hook interface - use fallback data if API fails
   const carsForSorting = useMemo(() => {
-    const cleanedCars = filterOutTestCars(cars);
+    // Use fallback data when there's an error and no cars loaded
+    const sourceCars = (error && cars.length === 0) ? fallbackCars : cars;
+    const cleanedCars = filterOutTestCars(sourceCars);
     return cleanedCars.map((car) => ({
       ...car,
       status: String(car.status || ""),
       lot_number: String(car.lot_number || ""),
       cylinders: Number(car.cylinders || 0),
     }));
-  }, [cars]);
+  }, [cars, error]);
 
   // Check if any meaningful filters are applied (using pendingFilters for homepage)
   const hasFilters = useMemo(() => {
@@ -518,10 +521,12 @@ const HomeCarsSection = memo(() => {
         </div>
 
         {error && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-center gap-2 mb-6 sm:mb-8 p-4 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg mx-2 sm:mx-0">
-            <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5 sm:mt-0" />
-            <span className="text-yellow-800 dark:text-yellow-200 text-sm sm:text-base text-left sm:text-center">
-              Problem me lidhjen API: {error}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-center gap-2 mb-6 sm:mb-8 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg mx-2 sm:mx-0">
+            <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-500 flex-shrink-0 mt-0.5 sm:mt-0" />
+            <span className="text-blue-800 dark:text-blue-200 text-sm sm:text-base text-left sm:text-center">
+              {cars.length === 0 
+                ? "Shfaqen makina të përzgjedhura. Për përditësime të reja, kontaktoni: +38348181116"
+                : "Problem me lidhjen API: Disa funksione mund të jenë të kufizuara."}
             </span>
           </div>
         )}
@@ -531,7 +536,7 @@ const HomeCarsSection = memo(() => {
           <div className="mb-6 sm:mb-8">
             <EncarStyleFilter
               filters={pendingFilters}
-              manufacturers={manufacturers}
+              manufacturers={manufacturers.length > 0 ? manufacturers : fallbackManufacturers}
               models={models}
               filterCounts={filterCounts}
               onFiltersChange={handleFiltersChange}
