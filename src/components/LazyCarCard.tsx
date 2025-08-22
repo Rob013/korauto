@@ -6,6 +6,7 @@ import { useNavigation } from "@/contexts/NavigationContext";
 import { Car, Gauge, Settings, Fuel, Palette, Shield, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
 interface LazyCarCardProps {
   id: string;
@@ -273,21 +274,21 @@ const LazyCarCard = memo(({
     >
       <div className="relative h-40 sm:h-52 lg:h-56 bg-muted overflow-hidden">
         {image ? (
-          <img 
-            src={image} 
-            alt={`${year} ${make} ${model} car image`} 
-            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
+          <OptimizedImage
+            src={image}
+            alt={`${year} ${make} ${model} car image`}
+            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 mobile-optimized-image ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
             onLoad={() => setImageLoaded(true)}
-            onError={(e) => {
-              e.currentTarget.src = "/placeholder.svg";
-              setImageLoaded(true);
-            }}
+            onError={() => setImageLoaded(true)}
             loading="lazy"
-            decoding="async"
-            width="300"
-            height="200"
+            decode="async"
+            fetchPriority="auto"
+            quality={85}
+            format="auto"
+            width={300}
+            height={200}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-muted" aria-label="No image available">
