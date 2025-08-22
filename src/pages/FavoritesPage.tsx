@@ -124,17 +124,17 @@ const FavoritesPage = () => {
         <Header />
         <div className="container-responsive py-16 text-center">
           <Heart className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
-          <h1 className="text-3xl font-bold mb-4">Login Required</h1>
+          <h1 className="text-3xl font-bold mb-4">Duhet të Kyçeni</h1>
           <p className="text-muted-foreground mb-8">
-            Please login to view your favorite cars
+            Ju lutemi kyçuni për të parë makinat tuaja të preferuara
           </p>
           <div className="space-x-4">
             <Button onClick={() => navigate('/auth')}>
-              Login / Sign Up
+              Kyçu / Regjistrohu
             </Button>
             <Button variant="outline" onClick={() => navigate('/')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Return Home
+              Kthehu në Kryefaqe
             </Button>
           </div>
         </div>
@@ -168,27 +168,27 @@ const FavoritesPage = () => {
           <div className="flex items-center gap-3">
             <Heart className="h-8 w-8 text-red-500" />
             <div>
-              <h1 className="text-3xl font-bold">My Favorite Cars</h1>
+              <h1 className="text-3xl font-bold">Makinat e Mia të Preferuara</h1>
               <p className="text-muted-foreground">
-                {favorites.length} saved car{favorites.length !== 1 ? 's' : ''}
+                {favorites.length} makinë{favorites.length !== 1 ? 'a' : ''} e ruajtur
               </p>
             </div>
           </div>
           <Button variant="outline" onClick={() => navigate('/')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Browse
+            Kthehu për të Shfletuar
           </Button>
         </div>
 
         {favorites.length === 0 ? (
           <div className="text-center py-16">
             <Heart className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
-            <h2 className="text-2xl font-semibold mb-4">No Favorites Yet</h2>
+            <h2 className="text-2xl font-semibold mb-4">Asnjë të Preferuar Akoma</h2>
             <p className="text-muted-foreground mb-8">
-              Start browsing cars and click the heart icon to save your favorites
+              Filloni të shfletoni makinat dhe klikoni ikonën e zemrës për të ruajtur të preferuarat tuaja
             </p>
             <Button onClick={() => navigate('/')}>
-              Browse Cars
+              Shfleto Makinat
             </Button>
           </div>
         ) : (

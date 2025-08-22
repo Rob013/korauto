@@ -272,30 +272,30 @@ export const CookieManagementDashboard: React.FC = () => {
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <Label htmlFor="theme">Theme</Label>
+                  <Label htmlFor="theme">Tema</Label>
                   <select
                     id="theme"
                     value={preferences?.theme || 'system'}
                     onChange={(e) => updatePreferences({ theme: e.target.value as 'light' | 'dark' | 'system' })}
                     className="w-full mt-1 p-2 border rounded-md"
                   >
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                    <option value="system">System</option>
+                    <option value="light">E Lehtë</option>
+                    <option value="dark">E Errët</option>
+                    <option value="system">Sistemi</option>
                   </select>
                 </div>
                 
                 <div>
-                  <Label htmlFor="language">Language</Label>
+                  <Label htmlFor="language">Gjuha</Label>
                   <select
                     id="language"
-                    value={preferences?.language || 'en'}
+                    value={preferences?.language || 'sq'}
                     onChange={(e) => updatePreferences({ language: e.target.value })}
                     className="w-full mt-1 p-2 border rounded-md"
                   >
-                    <option value="en">English</option>
-                    <option value="ko">Korean</option>
-                    <option value="ja">Japanese</option>
+                    <option value="sq">Shqip</option>
+                    <option value="en">Anglisht</option>
+                    <option value="ko">Koreane</option>
                   </select>
                 </div>
                 
@@ -306,7 +306,7 @@ export const CookieManagementDashboard: React.FC = () => {
                     checked={preferences?.notifications || false}
                     onChange={(e) => updatePreferences({ notifications: e.target.checked })}
                   />
-                  <Label htmlFor="notifications">Enable Notifications</Label>
+                  <Label htmlFor="notifications">Aktivizo Njoftimet</Label>
                 </div>
                 
                 <div className="flex items-center space-x-2">
@@ -316,7 +316,7 @@ export const CookieManagementDashboard: React.FC = () => {
                     checked={preferences?.autoSave || false}
                     onChange={(e) => updatePreferences({ autoSave: e.target.checked })}
                   />
-                  <Label htmlFor="autoSave">Auto Save</Label>
+                  <Label htmlFor="autoSave">Ruajtja Automatike</Label>
                 </div>
               </div>
             </CardContent>

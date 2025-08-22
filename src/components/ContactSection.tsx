@@ -51,9 +51,9 @@ const ContactSection = () => {
             </CardContent>
           </Card>
 
-          <Card className="text-center hover:shadow-lg transition-shadow duration-300 h-full">
+          <Card className="text-center card-hover modern-card h-full">
             <CardHeader>
-              <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
+              <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4 interactive-element">
                 <Clock className="h-6 w-6 text-primary-foreground" />
               </div>
               <CardTitle className="text-lg">Orari</CardTitle>
