@@ -452,19 +452,38 @@ export class PerformanceAuditor {
           case 'Button too small for touch interaction':
             (element as HTMLElement).style.minHeight = '44px';
             (element as HTMLElement).style.minWidth = '44px';
+            (element as HTMLElement).style.padding = '8px 16px';
             fixedCount++;
             break;
             
           case 'Image aspect ratio distortion':
             (element as HTMLElement).style.objectFit = 'cover';
+            (element as HTMLElement).style.objectPosition = 'center';
             fixedCount++;
             break;
             
           case 'Missing alt text for accessibility':
             if (element.tagName === 'IMG') {
-              (element as HTMLImageElement).alt = 'Car image';
+              (element as HTMLImageElement).alt = element.getAttribute('data-description') || 'Car image';
               fixedCount++;
             }
+            break;
+            
+          case 'Poor color contrast':
+            (element as HTMLElement).style.filter = 'contrast(1.2)';
+            fixedCount++;
+            break;
+            
+          case 'Missing focus outline':
+            (element as HTMLElement).style.outline = '2px solid hsl(var(--ring))';
+            (element as HTMLElement).style.outlineOffset = '2px';
+            fixedCount++;
+            break;
+            
+          case 'Layout shift causing':
+            (element as HTMLElement).style.minHeight = element.offsetHeight + 'px';
+            (element as HTMLElement).style.minWidth = element.offsetWidth + 'px';
+            fixedCount++;
             break;
         }
       } catch (e) {
@@ -473,6 +492,121 @@ export class PerformanceAuditor {
     }
     
     return fixedCount;
+  }
+
+  /**
+   * Comprehensive accessibility audit
+   */
+  public async runAccessibilityAudit(): Promise<AlignmentIssue[]> {
+    const accessibilityIssues: AlignmentIssue[] = [];
+    
+    // Check for missing alt text on images
+    const images = document.querySelectorAll('img');
+    images.forEach((img) => {
+      if (!img.alt || img.alt.trim() === '') {
+        const rect = img.getBoundingClientRect();
+        accessibilityIssues.push({
+          element: this.getElementSelector(img),
+          issue: 'Missing alt text for accessibility',
+          severity: 'high',
+          suggested_fix: 'Add descriptive alt text for screen readers',
+          position: {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height
+          }
+        });
+      }
+    });
+
+    // Check for proper heading hierarchy
+    const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    let lastLevel = 0;
+    headings.forEach((heading) => {
+      const level = parseInt(heading.tagName.substring(1));
+      if (level > lastLevel + 1) {
+        const rect = heading.getBoundingClientRect();
+        accessibilityIssues.push({
+          element: this.getElementSelector(heading),
+          issue: 'Improper heading hierarchy',
+          severity: 'medium',
+          suggested_fix: 'Use proper heading order (h1, h2, h3, etc.)',
+          position: {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height
+          }
+        });
+      }
+      lastLevel = level;
+    });
+
+    // Check for interactive elements without focus states
+    const interactiveElements = document.querySelectorAll('button, a, input, select, textarea');
+    interactiveElements.forEach((element) => {
+      const styles = window.getComputedStyle(element);
+      if (styles.outline === 'none' && !styles.boxShadow.includes('ring')) {
+        const rect = element.getBoundingClientRect();
+        accessibilityIssues.push({
+          element: this.getElementSelector(element),
+          issue: 'Missing focus outline',
+          severity: 'medium',
+          suggested_fix: 'Add focus outline for keyboard navigation',
+          position: {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height
+          }
+        });
+      }
+    });
+
+    // Check for color contrast issues
+    const textElements = document.querySelectorAll('p, span, div, h1, h2, h3, h4, h5, h6, a, button, label');
+    textElements.forEach((element) => {
+      const styles = window.getComputedStyle(element);
+      const color = styles.color;
+      const backgroundColor = styles.backgroundColor;
+      
+      // Simple contrast check (simplified)
+      if (this.hasLowContrast(color, backgroundColor)) {
+        const rect = element.getBoundingClientRect();
+        accessibilityIssues.push({
+          element: this.getElementSelector(element),
+          issue: 'Poor color contrast',
+          severity: 'high',
+          suggested_fix: 'Improve color contrast ratio to meet WCAG standards',
+          position: {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height
+          }
+        });
+      }
+    });
+
+    return accessibilityIssues;
+  }
+
+  /**
+   * Simple contrast ratio check
+   */
+  private hasLowContrast(color: string, backgroundColor: string): boolean {
+    // This is a simplified check - in a real implementation,
+    // you would calculate the actual contrast ratio
+    if (backgroundColor === 'rgba(0, 0, 0, 0)' || backgroundColor === 'transparent') {
+      return false; // Can't check without background
+    }
+    
+    // Very basic check for obvious low contrast
+    const isLightText = color.includes('rgb(255') || color.includes('white');
+    const isLightBackground = backgroundColor.includes('rgb(255') || backgroundColor.includes('white');
+    
+    return isLightText === isLightBackground;
   }
 
   /**

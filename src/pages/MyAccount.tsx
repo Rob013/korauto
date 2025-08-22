@@ -57,8 +57,8 @@ const MyAccount = () => {
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     toast({
-      title: "Logged out",
-      description: "Successfully signed out of your account",
+      title: "U Dolët",
+      description: "U dolët me sukses nga llogaria juaj",
     });
     navigate('/');
   };
@@ -79,13 +79,13 @@ const MyAccount = () => {
       if (error) throw error;
 
       toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully",
+        title: "Profili u përditësua",
+        description: "Profili juaj u përditësua me sukses",
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to update profile",
+        title: "Gabim",
+        description: "Dështoi përditësimi i profilit",
         variant: "destructive"
       });
     }
@@ -96,7 +96,7 @@ const MyAccount = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading your account...</p>
+          <p className="text-muted-foreground">Po ngarkohet llogaria juaj...</p>
         </div>
       </div>
     );
@@ -128,7 +128,7 @@ const MyAccount = () => {
               onClick={handleSignOut}
             >
               <LogOut className="h-4 w-4 mr-2" />
-              Logout
+              Dilni
             </Button>
           </div>
         </div>
@@ -154,18 +154,18 @@ const MyAccount = () => {
               </div>
               
               <div>
-                <Label htmlFor="displayName">Display Name</Label>
+                <Label htmlFor="displayName">Emri për Shfaqje</Label>
                 <Input 
                   id="displayName" 
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Enter your display name"
+                  placeholder="Shkruani emrin tuaj për shfaqje"
                 />
               </div>
 
               <Button onClick={updateProfile} className="w-full">
                 <Settings className="h-4 w-4 mr-2" />
-                Update Profile
+                Përditëso Profilin
               </Button>
             </CardContent>
           </Card>
@@ -175,7 +175,7 @@ const MyAccount = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="h-5 w-5 text-primary" />
-                Account Actions
+                Veprimet e Llogarisë
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -184,46 +184,46 @@ const MyAccount = () => {
                 <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
                   <h3 className="font-semibold text-primary mb-2 flex items-center gap-2">
                     <Shield className="h-4 w-4" />
-                    Administrator
+                    Administratori
                   </h3>
                   <p className="text-sm text-muted-foreground mb-3">
-                    You have administrator privileges for this application.
+                    Ju keni privilegje administratori për këtë aplikacion.
                   </p>
                   <Button 
                     onClick={() => navigate('/admin')} 
                     className="w-full bg-primary hover:bg-primary/90"
                   >
                     <Shield className="h-4 w-4 mr-2" />
-                    Admin Dashboard
+                    Paneli i Administratorit
                   </Button>
                 </div>
               )}
 
               <div className="space-y-3">
-                <h3 className="font-semibold text-foreground">Quick Actions</h3>
+                <h3 className="font-semibold text-foreground">Veprime të Shpejta</h3>
                 <Button 
                   variant="outline" 
                   onClick={() => navigate('/favorites')} 
                   className="w-full"
                 >
-                  View Favorite Cars
+                  Shikoni Makinat e Preferuara
                 </Button>
                 <Button 
                   variant="outline" 
                   onClick={() => navigate('/catalog')} 
                   className="w-full"
                 >
-                  Browse Cars
+                  Shfletoni Makinat
                 </Button>
               </div>
 
               <div className="pt-4 border-t border-border">
-                <h3 className="font-semibold text-foreground mb-3">Account Info</h3>
+                <h3 className="font-semibold text-foreground mb-3">Informacionet e Llogarisë</h3>
                 <div className="space-y-2 text-sm text-muted-foreground">
-                  <p>Created: {new Date(user.created_at).toLocaleDateString()}</p>
-                  <p>Last Sign In: {new Date(user.last_sign_in_at || user.created_at).toLocaleDateString()}</p>
+                  <p>Krijuar: {new Date(user.created_at).toLocaleDateString()}</p>
+                  <p>Kyçja e Fundit: {new Date(user.last_sign_in_at || user.created_at).toLocaleDateString()}</p>
                   {profile && (
-                    <p>Profile Updated: {new Date(profile.updated_at).toLocaleDateString()}</p>
+                    <p>Profili u Përditësua: {new Date(profile.updated_at).toLocaleDateString()}</p>
                   )}
                 </div>
               </div>

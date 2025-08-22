@@ -51,19 +51,19 @@ const FloatingPerformanceWidget = ({
   };
 
   return (
-    <div className={`fixed ${positionClasses[position]} z-50 max-w-sm`}>
-      <Card className="shadow-2xl border-2">
+    <div className={`fixed ${positionClasses[position]} z-50 max-w-sm floating-animation`}>
+      <Card className="shadow-2xl border-2 glass-card hover-lift-gentle transition-all duration-300">
         <CardContent className="p-3">
           {isMinimized ? (
             // Minimized view
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2">
-                <Activity className="h-4 w-4 text-blue-500" />
-                <span className="text-sm font-medium">Performance</span>
+                <Activity className="h-4 w-4 text-blue-500 animate-pulse" />
+                <span className="text-sm font-medium">Performanca</span>
                 {metrics && (
                   <Badge 
                     variant="secondary" 
-                    className={`${getScoreColor(metrics.overallScore)} text-white text-xs`}
+                    className={`${getScoreColor(metrics.overallScore)} text-white text-xs hover-scale-gentle`}
                   >
                     {metrics.overallScore.toFixed(0)}
                   </Badge>
@@ -75,7 +75,7 @@ const FloatingPerformanceWidget = ({
                   variant="ghost"
                   onClick={runQuickCheck}
                   disabled={isLoading}
-                  className="h-6 w-6 p-0"
+                  className="h-6 w-6 p-0 hover-scale-gentle"
                 >
                   <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
                 </Button>
@@ -83,7 +83,7 @@ const FloatingPerformanceWidget = ({
                   size="sm"
                   variant="ghost"
                   onClick={() => setIsMinimized(false)}
-                  className="h-6 w-6 p-0"
+                  className="h-6 w-6 p-0 hover-scale-gentle"
                 >
                   <Maximize2 className="h-3 w-3" />
                 </Button>
@@ -91,7 +91,7 @@ const FloatingPerformanceWidget = ({
                   size="sm"
                   variant="ghost"
                   onClick={() => setIsVisible(false)}
-                  className="h-6 w-6 p-0"
+                  className="h-6 w-6 p-0 hover-scale-gentle"
                 >
                   <X className="h-3 w-3" />
                 </Button>
@@ -99,18 +99,18 @@ const FloatingPerformanceWidget = ({
             </div>
           ) : (
             // Expanded view
-            <div className="space-y-3">
+            <div className="space-y-3 animate-scale-in">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-blue-500" />
-                  <span className="font-medium">Performance Monitor</span>
+                  <Activity className="h-4 w-4 text-blue-500 animate-pulse" />
+                  <span className="font-medium">Monitor i Performancës</span>
                 </div>
                 <div className="flex gap-1">
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => setIsMinimized(true)}
-                    className="h-6 w-6 p-0"
+                    className="h-6 w-6 p-0 hover-scale-gentle"
                   >
                     <Minimize2 className="h-3 w-3" />
                   </Button>
