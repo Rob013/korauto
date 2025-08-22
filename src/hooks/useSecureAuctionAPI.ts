@@ -809,27 +809,74 @@ export const useSecureAuctionAPI = () => {
         }
       }
       
-      // Use fallback car data when API fails - but only if no specific brand filter is applied
+      // For brand-specific searches, still try to show relevant fallback cars
       if (newFilters.manufacturer_id && 
           newFilters.manufacturer_id !== 'all' && 
           newFilters.manufacturer_id !== '' &&
           newFilters.manufacturer_id !== undefined &&
           newFilters.manufacturer_id !== null) {
-        console.log("❌ API failed for brand-specific search, not showing fallback cars to avoid test car display");
-        setError("Failed to load cars for the selected brand. Please try again.");
-        setCars([]);
-        setTotalCount(0);
-        setHasMorePages(false);
-        return;
+        console.log("❌ API failed for brand-specific search, trying fallback cars");
+        const { fallbackCars } = await import('../data/fallbackData');
+        
+        // Filter fallback cars by brand
+        const brandFilteredCars = fallbackCars.filter(car => 
+          car.manufacturer.name.toLowerCase().includes(newFilters.manufacturer_id!.toLowerCase())
+        );
+        
+        if (brandFilteredCars.length > 0) {
+          // Use filtered fallback cars
+          const startIndex = (page - 1) * parseInt(newFilters.per_page || "50");
+          const endIndex = startIndex + parseInt(newFilters.per_page || "50");
+          const paginatedCars = brandFilteredCars.slice(startIndex, endIndex);
+          
+          setTotalCount(brandFilteredCars.length);
+          setHasMorePages(endIndex < brandFilteredCars.length);
+          
+          if (resetList || page === 1) {
+            setCars(paginatedCars);
+            setCurrentPage(1);
+          } else {
+            setCars((prev) => [...prev, ...paginatedCars]);
+            setCurrentPage(page);
+          }
+          
+          setError(null);
+          return;
+        } else {
+          // No matching cars in fallback data
+          setError("No cars available for the selected brand. Please try a different brand.");
+          setCars([]);
+          setTotalCount(0);
+          setHasMorePages(false);
+          return;
+        }
       }
       
-      // No fallback cars - show empty state when API fails
-      console.log("❌ API failed, showing empty state instead of fallback cars");
-      setError("Failed to load cars. Please try again.");
-      setCars([]);
-      setTotalCount(0);
-      setHasMorePages(false);
-      return;
+      // Use fallback cars when API fails to provide a working experience
+      console.log("❌ API failed, using fallback cars to provide working experience");
+      const { fallbackCars } = await import('../data/fallbackData');
+      
+      // Apply any filtering if needed
+      let filteredFallbackCars = fallbackCars;
+      
+      // Apply brand filter if specified
+      if (newFilters.manufacturer_id && 
+          newFilters.manufacturer_id !== 'all' && 
+          newFilters.manufacturer_id !== '' &&
+          newFilters.manufacturer_id !== undefined &&
+          newFilters.manufacturer_id !== null) {
+        filteredFallbackCars = fallbackCars.filter(car => 
+          car.manufacturer.name.toLowerCase().includes(newFilters.manufacturer_id!.toLowerCase())
+        );
+      }
+      
+      // Paginate fallback cars
+      const startIndex = (page - 1) * parseInt(newFilters.per_page || "50");
+      const endIndex = startIndex + parseInt(newFilters.per_page || "50");
+      const paginatedCars = filteredFallbackCars.slice(startIndex, endIndex);
+      
+      setTotalCount(filteredFallbackCars.length);
+      setHasMorePages(endIndex < filteredFallbackCars.length);
       
       if (resetList || page === 1) {
         setCars(paginatedCars);

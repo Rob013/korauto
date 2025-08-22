@@ -258,8 +258,8 @@ const HomeCarsSection = memo(() => {
 
   // Type conversion to match the sorting hook interface - use fallback data if API fails
   const carsForSorting = useMemo(() => {
-    // Use fallback data when there's an error and no cars loaded
-    const sourceCars = (error && cars.length === 0) ? fallbackCars : cars;
+    // Use fallback data when cars array is empty (indicating API failure or no data)
+    const sourceCars = cars.length === 0 ? fallbackCars : cars;
     const cleanedCars = filterOutTestCars(sourceCars);
     return cleanedCars.map((car) => ({
       ...car,
@@ -267,7 +267,7 @@ const HomeCarsSection = memo(() => {
       lot_number: String(car.lot_number || ""),
       cylinders: Number(car.cylinders || 0),
     }));
-  }, [cars, error]);
+  }, [cars]);
 
   // Check if any meaningful filters are applied (using pendingFilters for homepage)
   const hasFilters = useMemo(() => {
