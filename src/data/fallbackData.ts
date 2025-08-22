@@ -19,8 +19,8 @@ export const fallbackCars = [
       buy_now: 32000,
       odometer: { km: 25000 },
       images: {
-        normal: ["https://images.unsplash.com/photo-1549924231-f129b911e442?w=800&h=600&fit=crop"],
-        big: ["https://images.unsplash.com/photo-1549924231-f129b911e442?w=800&h=600&fit=crop"]
+        normal: ["/images/placeholder-car.jpg"],
+        big: ["/images/placeholder-car.jpg"]
       },
       lot: "FB001",
       status: 1
@@ -52,8 +52,8 @@ export const fallbackCars = [
       buy_now: 28000,
       odometer: { km: 35000 },
       images: {
-        normal: ["https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=800&h=600&fit=crop"],
-        big: ["https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=800&h=600&fit=crop"]
+        normal: ["/images/placeholder-car.jpg"],
+        big: ["/images/placeholder-car.jpg"]
       },
       lot: "FB002",
       status: 1
@@ -85,8 +85,8 @@ export const fallbackCars = [
       buy_now: 24000,
       odometer: { km: 45000 },
       images: {
-        normal: ["https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&h=600&fit=crop"],
-        big: ["https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&h=600&fit=crop"]
+        normal: ["/images/placeholder-car.jpg"],
+        big: ["/images/placeholder-car.jpg"]
       },
       lot: "FB003",
       status: 1
