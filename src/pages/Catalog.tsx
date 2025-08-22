@@ -41,7 +41,9 @@ const Catalog = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <EncarCatalog highlightCarId={highlightCarId} />
+      <main>
+        <EncarCatalog highlightCarId={highlightCarId} />
+      </main>
       <Suspense fallback={<FooterSkeleton />}>
         <Footer />
       </Suspense>

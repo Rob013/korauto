@@ -52,7 +52,7 @@ const Header = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-6">
+          <nav className="hidden lg:flex items-center space-x-6" aria-label="Main navigation">
             <Link 
               to="/" 
               className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200"
@@ -96,6 +96,9 @@ const Header = () => {
               size="sm"
               className="lg:hidden focus-enhanced p-2"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-navigation"
             >
               {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
@@ -121,7 +124,7 @@ const Header = () => {
       {isMobileMenuOpen && (
         <div className="lg:hidden bg-background border-t border-border shadow-lg">
           <div className="container mx-auto px-4 py-4">
-            <nav className="flex flex-col space-y-4">
+            <nav id="mobile-navigation" className="flex flex-col space-y-4" aria-label="Mobile navigation menu">
               <Link 
                 to="/" 
                 className="text-foreground hover:text-primary font-medium transition-colors py-2 px-3 rounded-md hover:bg-primary/10"

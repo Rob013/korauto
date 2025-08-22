@@ -390,6 +390,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 value={filters.buy_now_price_from || ''}
                 onChange={(e) => updateFilter('buy_now_price_from', e.target.value)}
                 className="filter-control h-8 text-xs"
+                aria-label="Minimum price in EUR"
               />
               <Input
                 type="number"
@@ -397,6 +398,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 value={filters.buy_now_price_to || ''}
                 onChange={(e) => updateFilter('buy_now_price_to', e.target.value)}
                 className="filter-control h-8 text-xs"
+                aria-label="Maximum price in EUR"
               />
             </div>
           </div>

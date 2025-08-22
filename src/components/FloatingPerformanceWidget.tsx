@@ -96,25 +96,28 @@ const FloatingPerformanceWidget = ({
                     runA11yCheck();
                   }}
                   disabled={isLoading || isLoadingA11y}
-                  className="h-6 w-6 p-0"
+                  className="h-11 w-11 p-0 touch-target-enhanced"
+                  aria-label="Refresh performance and accessibility audit"
                 >
-                  <RefreshCw className={`h-3 w-3 ${(isLoading || isLoadingA11y) ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`h-4 w-4 ${(isLoading || isLoadingA11y) ? 'animate-spin' : ''}`} />
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={() => setIsMinimized(false)}
-                  className="h-6 w-6 p-0"
+                  className="h-11 w-11 p-0 touch-target-enhanced"
+                  aria-label="Expand performance monitor"
                 >
-                  <Maximize2 className="h-3 w-3" />
+                  <Maximize2 className="h-4 w-4" />
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={() => setIsVisible(false)}
-                  className="h-6 w-6 p-0"
+                  className="h-11 w-11 p-0 touch-target-enhanced"
+                  aria-label="Close performance monitor"
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -131,17 +134,19 @@ const FloatingPerformanceWidget = ({
                     size="sm"
                     variant="ghost"
                     onClick={() => setIsMinimized(true)}
-                    className="h-6 w-6 p-0"
+                    className="h-11 w-11 p-0 touch-target-enhanced"
+                    aria-label="Minimize performance monitor"
                   >
-                    <Minimize2 className="h-3 w-3" />
+                    <Minimize2 className="h-4 w-4" />
                   </Button>
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => setIsVisible(false)}
-                    className="h-6 w-6 p-0"
+                    className="h-11 w-11 p-0 touch-target-enhanced"
+                    aria-label="Close performance monitor"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
