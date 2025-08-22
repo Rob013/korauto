@@ -172,3 +172,5 @@ export const injectCriticalCSS = () => {
   
   document.head.insertBefore(style, document.head.firstChild);
 };
+
+export default { applyCriticalFixes, useCriticalFixes, injectCriticalCSS };
