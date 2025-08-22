@@ -80,6 +80,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
   const [sortBy, setSortBy] = useState<SortOption>("recently_added");
+  const [hasUserSelectedSort, setHasUserSelectedSort] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -179,9 +180,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   
   // Memoized cars to sort (global vs current page)
   const carsToSort = useMemo(() => {
-    // When in default state, use daily rotating cars instead of regular sorting
-    if (isDefaultState && !isSortingGlobal) {
-      console.log(`🎲 Using daily rotating cars: ${dailyRotatingCars.length} cars (default state)`);
+    // Only use daily rotating cars when in default state AND user hasn't explicitly selected a sort option
+    if (isDefaultState && !hasUserSelectedSort && !isSortingGlobal) {
+      console.log(`🎲 Using daily rotating cars: ${dailyRotatingCars.length} cars (default state, no explicit sort)`);
       return dailyRotatingCars;
     }
     
@@ -191,20 +192,20 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       console.log(`🎯 Sorting ${result.length} cars (global: ${isSortingGlobal && allCarsForSorting.length > 0}, total available: ${totalCount})`);
     }
     return result;
-  }, [isSortingGlobal, allCarsForSorting, carsForSorting, totalCount, isDefaultState, dailyRotatingCars]);
+  }, [isSortingGlobal, allCarsForSorting, carsForSorting, totalCount, isDefaultState, hasUserSelectedSort, dailyRotatingCars]);
   
-  const sortedCars = useSortedCars(carsToSort, isDefaultState ? "recently_added" : sortBy);
+  const sortedCars = useSortedCars(carsToSort, sortBy);
   
   // Memoized current page cars from sorted results
   const carsForCurrentPage = useMemo(() => {
-    // When using daily rotating cars in default state, don't apply additional sorting/pagination
-    if (isDefaultState && !isSortingGlobal) {
+    // When using daily rotating cars (default state with no explicit sort), don't apply additional pagination
+    if (isDefaultState && !hasUserSelectedSort && !isSortingGlobal) {
       return sortedCars; // Daily rotating cars already limited to 50
     }
     
-    // Always apply pagination when not in default state, regardless of global sorting mode
+    // Always apply pagination when not using daily rotating cars, regardless of global sorting mode
     return sortedCars.slice((currentPage - 1) * 50, currentPage * 50);
-  }, [sortedCars, currentPage, isDefaultState, isSortingGlobal]);
+  }, [sortedCars, currentPage, isDefaultState, hasUserSelectedSort, isSortingGlobal]);
 
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -401,6 +402,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setLoadedPages(1);
     setModels([]);
     setGenerations([]);
+    setHasUserSelectedSort(false); // Reset to allow daily rotating cars again
     fetchCars(1, {}, true);
     setSearchParams({});
   }, [fetchCars, setSearchParams]);
@@ -1149,6 +1151,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     value={sortBy}
                     onValueChange={(value: SortOption) => {
                       setSortBy(value);
+                      setHasUserSelectedSort(true); // Mark that user has explicitly chosen a sort option
                       // Reset to page 1 when sort changes to show users the first page of newly sorted results
                       setCurrentPage(1);
                       // Update URL to reflect page reset
