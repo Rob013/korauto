@@ -82,7 +82,7 @@ const Header = () => {
               className="text-foreground hover:text-primary font-medium transition-colors hover:scale-105 duration-200 flex items-center gap-1"
             >
               <Heart className="h-4 w-4" />
-              Favorites
+              Të Preferuarat
             </Link>
           </nav>
 
@@ -157,7 +157,7 @@ const Header = () => {
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 <Heart className="h-4 w-4" />
-                Favorites
+                Të Preferuarat
               </Link>
               <button 
                 className="flex items-center gap-2 text-foreground hover:text-primary font-medium transition-colors py-2 px-3 rounded-md hover:bg-primary/10 w-full text-left"
@@ -175,7 +175,7 @@ const Header = () => {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="w-full text-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
+                  className="w-full btn-enhanced text-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
                   onClick={() => {
                     setIsMobileMenuOpen(false);
                     navigate("/catalog");
@@ -185,7 +185,7 @@ const Header = () => {
                 </Button>
                 <Button 
                   size="sm" 
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200"
+                  className="w-full btn-enhanced bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200"
                   onClick={() => {
                     setIsMobileMenuOpen(false);
                     window.open('https://wa.me/38348181116', '_blank');
