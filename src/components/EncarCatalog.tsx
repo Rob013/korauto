@@ -1200,7 +1200,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           </div>
 
           {/* Error State */}
-          {error && (
+          {error && carsForCurrentPage.length === 0 && (
             <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-8">
               <p className="text-destructive font-medium">Error: {error}</p>
             </div>
@@ -1239,7 +1239,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           )}
 
           {/* No Results State */}
-          {shouldShowCars && !loading && !isRestoringState && !isFilterLoading && cars.length === 0 && (
+          {shouldShowCars && !loading && !isRestoringState && !isFilterLoading && carsForCurrentPage.length === 0 && (
             <div className="text-center py-12">
               <p className="text-muted-foreground">
                 No cars found matching your filters.
@@ -1262,7 +1262,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           )}
 
           {/* Cars Grid/List - Show cars without requiring filters */}
-          {shouldShowCars && cars.length > 0 && (
+          {shouldShowCars && carsForCurrentPage.length > 0 && (
             <div className="relative">
               {/* Loading Overlay for Cars Grid */}
               {isFilterLoading && (
