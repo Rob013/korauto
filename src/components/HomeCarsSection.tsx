@@ -20,6 +20,7 @@ import {
 import { ArrowUpDown } from "lucide-react";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
 import { useDailyRotatingCars } from "@/hooks/useDailyRotatingCars";
+import { filterOutTestCars } from "@/utils/testCarFilter";
 
 interface APIFilters {
   manufacturer_id?: string;
@@ -253,12 +254,15 @@ const HomeCarsSection = memo(() => {
   };
 
   // Type conversion to match the sorting hook interface
-  const carsForSorting = cars.map((car) => ({
-    ...car,
-    status: String(car.status || ""),
-    lot_number: String(car.lot_number || ""),
-    cylinders: Number(car.cylinders || 0),
-  }));
+  const carsForSorting = useMemo(() => {
+    const cleanedCars = filterOutTestCars(cars);
+    return cleanedCars.map((car) => ({
+      ...car,
+      status: String(car.status || ""),
+      lot_number: String(car.lot_number || ""),
+      cylinders: Number(car.cylinders || 0),
+    }));
+  }, [cars]);
 
   // Check if any meaningful filters are applied (using pendingFilters for homepage)
   const hasFilters = useMemo(() => {
