@@ -48,6 +48,7 @@ import {
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
+import { fallbackCars, fallbackManufacturers } from "@/data/fallbackData";
 import { filterOutTestCars } from "@/utils/testCarFilter";
 
 interface EncarCatalogProps {
@@ -153,11 +154,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
            (!filters.grade_iaai || filters.grade_iaai === 'all');
   }, [filters]);
 
-  // Memoized client-side grade filtering for better performance - now using utility
+  // Memoized client-side grade filtering for better performance - now using utility with fallback data
   const filteredCars = useMemo(() => {
-    const cleanedCars = filterOutTestCars(cars);
+    // Use fallback data when there's an error and no cars loaded
+    const sourceCars = (error && cars.length === 0) ? fallbackCars : cars;
+    const cleanedCars = filterOutTestCars(sourceCars);
     return applyGradeFilter(cleanedCars, filters.grade_iaai);
-  }, [cars, filters.grade_iaai]);
+  }, [cars, filters.grade_iaai, error]);
   
   // console.log(`📊 Filter Results: ${filteredCars.length} cars match (total loaded: ${cars.length}, total count from API: ${totalCount}, grade filter: ${filters.grade_iaai || 'none'})`);
 
@@ -1018,7 +1021,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           <div className={`${isMobile ? '' : ''}`}>
             <EncarStyleFilter
             filters={filters}
-            manufacturers={manufacturers}
+            manufacturers={manufacturers.length > 0 ? manufacturers : fallbackManufacturers}
             models={models}
             filterCounts={filterCounts}
             loadingCounts={loadingCounts}
