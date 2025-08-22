@@ -131,8 +131,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
   // Helper function to check if filters are in default "all brands" state
   const isDefaultState = useMemo(() => {
-    // Default state means no meaningful filters are applied
-    return !filters.manufacturer_id && 
+    // Default state means no meaningful filters are applied OR manufacturer is explicitly set to "all"
+    return (!filters.manufacturer_id || filters.manufacturer_id === 'all') && 
            !filters.model_id && 
            !filters.generation_id &&
            !filters.color &&
@@ -196,10 +196,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       return sortedCars; // Daily rotating cars already limited to 50
     }
     
-    return isSortingGlobal && allCarsForSorting.length > 0 
-      ? sortedCars.slice((currentPage - 1) * 50, currentPage * 50)
-      : sortedCars;
-  }, [isSortingGlobal, allCarsForSorting.length, sortedCars, currentPage, isDefaultState]);
+    // Always apply pagination when not in default state, regardless of global sorting mode
+    return sortedCars.slice((currentPage - 1) * 50, currentPage * 50);
+  }, [sortedCars, currentPage, isDefaultState, isSortingGlobal]);
 
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);

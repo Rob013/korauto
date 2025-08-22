@@ -53,19 +53,24 @@ export interface FilterCounts {
 export const extractGradesFromTitle = (title: string): string[] => {
   const grades: string[] = [];
   const patterns = [
-    /\b(\d+\.?\d*\s?(?:TDI|TFSI|FSI|TSI|CDI|T|D|I|E|H))\b/gi, // Include all engine types
-    /\b(\d+\.?\d*)\s*l?i?t?e?r?\s*(?:TDI|TFSI|FSI|TSI|CDI|T|D|I|E|H)\b/gi,
-    /\b(\d+\.?\d*[iIdDeEhH])\b/gi, // Specific patterns for all engine types: 520i, 530d, 530e, etc.
-    /\b(\d+\.?\d*)\s*(?:hybrid|electric|diesel|petrol|gasoline)\b/gi, // Full word variants
+    /\b(\d+\.?\d*)\s*(?:TDI|TFSI|FSI|TSI|CDI)\b/gi, // Engine tech abbreviations
+    /\b(\d+\.?\d*)\s*(?:diesel|petrol|gasoline|hybrid|electric)\b/gi, // Full fuel type words
+    /\b(\d+\.?\d*)\s*(?:turbo|liter?|l)\s*(?:diesel|petrol|gasoline|hybrid|electric)?\b/gi, // Engine displacement and turbo
   ];
   
   patterns.forEach(pattern => {
     const matches = title.match(pattern);
     if (matches) {
       matches.forEach(match => {
-        const cleaned = match.trim();
-        if (cleaned && !grades.includes(cleaned)) {
-          grades.push(cleaned);
+        const cleaned = match.trim().toLowerCase();
+        // Normalize the engine specification format
+        const normalized = cleaned
+          .replace(/\bl\b/g, 'liter')
+          .replace(/\bgas(oline)?\b/g, 'petrol')
+          .replace(/(\d+\.?\d*)\s*(tdi|tfsi|fsi|tsi|cdi|diesel|petrol|gasoline|hybrid|electric|turbo|liter)/gi, '$1 $2');
+        
+        if (normalized && !grades.includes(normalized)) {
+          grades.push(normalized);
         }
       });
     }
@@ -232,16 +237,16 @@ export const addPaginationToFilters = (filters: APIFilters, perPage: number = 50
  */
 export const getFallbackGrades = (manufacturerId: string): Array<{ value: string; label: string }> => {
   const fallbacks: { [key: string]: string[] } = {
-    '9': ['320d', '320i', '325d', '330d', '330i', '335d', '335i', 'M3', 'M5', 'X3', 'X5'], // BMW
-    '16': ['220d', '250', '300', '350', '400', '450', '500', 'AMG'], // Mercedes-Benz
-    '1': ['30 TDI', '35 TDI', '40 TDI', '45 TDI', '50 TDI', '55 TFSI', '30 TFSI', '35 TFSI', '40 TFSI', '45 TFSI', '30', '35', '40', '45', '50', '55', 'RS', 'S'], // Audi
-    '147': ['1.4 TSI', '1.6 TDI', '1.8 TSI', '2.0 TDI', '2.0 TSI', 'GTI', 'R'], // Volkswagen
-    '148': ['2.0T', '2.5L', '1.8L Hybrid', 'Electric Motor', 'Elite', 'Premium', 'Sport', 'Comfort'], // Generic
-    '2': ['Civic', 'Accord', 'CR-V', 'HR-V'], // Honda
-    '3': ['Corolla', 'Camry', 'RAV4', 'Highlander'], // Toyota
-    '4': ['Altima', 'Maxima', 'Rogue', 'Murano'], // Nissan
-    '5': ['Focus', 'Fiesta', 'Mondeo', 'Kuga'], // Ford
-    '6': ['Cruze', 'Malibu', 'Equinox', 'Tahoe'], // Chevrolet
+    '9': ['2.0 diesel', '3.0 diesel', '2.0 petrol', '3.0 petrol', '1.6 diesel', '2.5 petrol', '4.0 petrol'], // BMW
+    '16': ['2.2 diesel', '2.5 petrol', '3.0 diesel', '3.5 petrol', '4.0 petrol', '4.5 petrol', '5.0 petrol'], // Mercedes-Benz
+    '1': ['2.0 TDI', '3.0 TDI', '2.0 TFSI', '3.0 TFSI', '1.4 TFSI', '1.8 TFSI', '2.5 TFSI'], // Audi
+    '147': ['1.4 TSI', '1.6 TDI', '1.8 TSI', '2.0 TDI', '2.0 TSI'], // Volkswagen
+    '148': ['2.0 turbo', '2.5 petrol', '1.8 hybrid', '1.6 diesel'], // Generic
+    '2': ['1.5 petrol', '2.0 petrol', '1.6 diesel', '2.4 petrol', '1.8 hybrid'], // Honda
+    '3': ['1.8 petrol', '2.0 petrol', '2.5 petrol', '1.6 hybrid', '2.0 hybrid'], // Toyota
+    '4': ['2.5 petrol', '3.5 petrol', '1.6 turbo', '2.0 petrol'], // Nissan
+    '5': ['1.0 turbo', '1.5 turbo', '2.0 petrol', '1.6 diesel', '2.0 diesel'], // Ford
+    '6': ['1.4 turbo', '1.8 petrol', '2.0 petrol', '1.6 diesel'], // Chevrolet
   };
   
   return (fallbacks[manufacturerId] || []).map(grade => ({ value: grade, label: grade }));
