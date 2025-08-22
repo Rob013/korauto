@@ -407,10 +407,12 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           <Button
             variant="ghost"
             onClick={() => toggleSection('more')}
-            className="w-full justify-between text-xs h-7"
+            className="w-full justify-between text-xs h-11 touch-target-enhanced"
+            aria-label={expandedSections.includes('more') ? "Hide additional filters" : "Show additional filters"}
+            aria-expanded={expandedSections.includes('more')}
           >
             More Filters
-            {expandedSections.includes('more') ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            {expandedSections.includes('more') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
 
           {expandedSections.includes('more') && (
@@ -573,10 +575,11 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           <div className="pt-2 border-t flex-shrink-0">
             <Button 
               onClick={handleSearchClick} 
-              className="w-full h-8 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs"
+              className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-sm touch-target-enhanced"
               size="sm"
+              aria-label="Search cars with current filters"
             >
-              <Search className="h-3 w-3 mr-1.5" />
+              <Search className="h-4 w-4 mr-2" />
               Search Cars
             </Button>
           </div>

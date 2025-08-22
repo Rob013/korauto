@@ -995,8 +995,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 variant="ghost" 
                 size="sm" 
                 onClick={handleClearFilters}
-                className={`lg:hidden flex items-center gap-1 ${isMobile ? 'h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground text-xs' : 'h-8 px-2'}`}
+                className={`lg:hidden flex items-center gap-1 ${isMobile ? 'h-11 px-3 hover:bg-primary-foreground/20 text-primary-foreground text-xs touch-target-enhanced' : 'h-8 px-2'}`}
+                aria-label="Clear all filters"
               >
+                <X className="h-4 w-4" />
                 <span className="text-xs">Clear</span>
               </Button>
               {/* Only show close button on mobile */}
@@ -1008,9 +1010,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     setShowFilters(false);
                     setHasExplicitlyClosed(true); // Mark as explicitly closed
                   }}
-                  className="flex items-center gap-1 h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground"
+                  className="flex items-center gap-1 h-11 w-11 p-0 touch-target-enhanced hover:bg-primary-foreground/20 text-primary-foreground"
+                  aria-label="Close filter panel"
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-4 w-4" />
+                  <span className="text-xs">Close</span>
                 </Button>
               )}
             </div>
