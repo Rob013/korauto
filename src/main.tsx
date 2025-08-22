@@ -9,6 +9,10 @@ import App from './App.tsx'
 import './index.css'
 import { ThemeProvider } from "@/components/ThemeProvider"
 import { NavigationProvider } from './contexts/NavigationContext.tsx'
+import { injectCriticalCSS } from './utils/criticalFixes'
+
+// Inject critical CSS immediately for performance
+injectCriticalCSS();
 
 // Enhanced service worker registration for performance
 if ('serviceWorker' in navigator) {
