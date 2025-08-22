@@ -116,7 +116,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
         }}
         loading={priority ? 'eager' : 'lazy'}
         decoding="async"
-        fetchPriority={priority ? 'high' : 'auto'}
+        fetchpriority={priority ? 'high' : 'auto'}
         onLoad={handleLoad}
         onError={handleError}
         width={width}
