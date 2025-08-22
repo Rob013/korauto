@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { findGenerationYears } from "@/data/generationYears";
+import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from '../utils/grade-categorization';
 
 // Simple cache to prevent redundant API calls
 const apiCache = new Map<string, { data: any; timestamp: number }>();
@@ -1531,26 +1532,31 @@ export const useSecureAuctionAPI = () => {
         console.log('🚫 Filtered out engine codes:', filteredOut);
       }
       
-      const grades = Array.from(gradesMap.entries())
+      const rawGrades = Array.from(gradesMap.entries())
         .filter(([value]) => isMeaningfulVariant(value))
         .map(([value, count]) => ({
           value,
           label: value,
           count
-        }))
-        .sort((a, b) => b.count - a.count); // Sort by popularity first
+        }));
 
-      console.log('📊 Extracted variants:', grades.length, 'unique variants:', grades.slice(0, 10).map(g => `${g.value}(${g.count})`));
+      console.log('📊 Raw extracted variants:', rawGrades.length, 'unique variants:', rawGrades.slice(0, 10).map(g => `${g.value}(${g.count})`));
+      
+      // Apply categorization and organization
+      const categorizedGrades = categorizeAndOrganizeGrades(rawGrades);
+      const organizedGrades = flattenCategorizedGrades(categorizedGrades);
+      
+      console.log('🗂️ Organized into', categorizedGrades.length, 'categories');
       
       // If no variants found from API, try fallback
-      if (grades.length === 0) {
+      if (organizedGrades.length === 0) {
         console.log('⚠️ No variants found from API, trying fallback...');
         const fallback = getFallbackGrades(manufacturerId);
         console.log('🔄 Fallback variants:', fallback);
         return fallback;
       }
       
-      const result = grades;
+      const result = organizedGrades;
       setGradesCache(prev => ({ ...prev, [key]: result }));
       return result;
     } catch (err) {
