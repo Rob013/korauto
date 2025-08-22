@@ -1386,13 +1386,17 @@ export const useSecureAuctionAPI = () => {
     // Always return fallback instantly for manufacturer-only filtering for speed
     if (!modelId && !generationId && manufacturerId) {
       const fallback = getFallbackGrades(manufacturerId);
+      // Apply categorization to fallback grades
+      const categorizedFallback = categorizeAndOrganizeGrades(fallback);
+      const organizedFallback = flattenCategorizedGrades(categorizedFallback);
+      
       // Start async fetch to update cache but don't wait
       setTimeout(() => {
         if (!gradesCache[cacheKey]) {
           _fetchGradesAsync(manufacturerId, modelId, generationId, cacheKey);
         }
       }, 0);
-      return fallback;
+      return organizedFallback;
     }
     
     // Use cache if available
@@ -1552,8 +1556,11 @@ export const useSecureAuctionAPI = () => {
       if (organizedGrades.length === 0) {
         console.log('⚠️ No variants found from API, trying fallback...');
         const fallback = getFallbackGrades(manufacturerId);
-        console.log('🔄 Fallback variants:', fallback);
-        return fallback;
+        // Apply categorization to fallback grades
+        const categorizedFallback = categorizeAndOrganizeGrades(fallback);
+        const organizedFallback = flattenCategorizedGrades(categorizedFallback);
+        console.log('🔄 Fallback variants:', organizedFallback);
+        return organizedFallback;
       }
       
       const result = organizedGrades;
@@ -1562,9 +1569,12 @@ export const useSecureAuctionAPI = () => {
     } catch (err) {
       console.error("❌ Error fetching grades:", err);
       const fallback = getFallbackGrades(manufacturerId);
+      // Apply categorization to fallback grades in error case too
+      const categorizedFallback = categorizeAndOrganizeGrades(fallback);
+      const organizedFallback = flattenCategorizedGrades(categorizedFallback);
       const key = cacheKey || `${manufacturerId || ''}-${modelId || ''}-${generationId || ''}`;
-      setGradesCache(prev => ({ ...prev, [key]: fallback }));
-      return fallback;
+      setGradesCache(prev => ({ ...prev, [key]: organizedFallback }));
+      return organizedFallback;
     }
   };
 
