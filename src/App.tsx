@@ -3,11 +3,13 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InstallPrompt } from "./components/InstallPrompt";
 import FloatingPerformanceWidget from "./components/FloatingPerformanceWidget";
+import AccessibilityWidget from "./components/AccessibilityWidget";
 import { useResourcePreloader } from "./hooks/useResourcePreloader";
+import { useAccessibility } from "./hooks/useAccessibility";
 
 // Lazy load all pages for better code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -32,30 +34,32 @@ const AdminSyncDashboard = lazy(() => import("./components/AdminSyncDashboard"))
 const CookieManagementDashboard = lazy(() => import("./components/CookieManagementDashboard"));
 
 const PageSkeleton = () => (
-  <div className="min-h-screen bg-background">
+  <div className="min-h-screen bg-background" role="progressbar" aria-label="Loading page content">
     <div className="animate-pulse">
       {/* Header skeleton */}
-      <header className="border-b">
+      <header className="border-b" role="banner">
         <div className="container-responsive py-4">
           <div className="flex items-center justify-between">
-            <Skeleton className="h-8 w-32" />
-            <div className="flex items-center space-x-4">
-              <Skeleton className="h-8 w-20" />
-              <Skeleton className="h-8 w-20" />
-              <Skeleton className="h-8 w-20" />
-            </div>
+            <Skeleton className="h-8 w-32" aria-label="Loading logo" />
+            <nav aria-label="Loading navigation">
+              <div className="flex items-center space-x-4">
+                <Skeleton className="h-8 w-20" aria-label="Loading navigation item" />
+                <Skeleton className="h-8 w-20" aria-label="Loading navigation item" />
+                <Skeleton className="h-8 w-20" aria-label="Loading navigation item" />
+              </div>
+            </nav>
           </div>
         </div>
       </header>
       
       {/* Content skeleton */}
-      <main className="container-responsive py-8">
+      <main className="container-responsive py-8" role="main" id="main-content">
         <div className="space-y-6">
-          <Skeleton className="h-12 w-3/4" />
-          <Skeleton className="h-6 w-1/2" />
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <Skeleton className="h-12 w-3/4" aria-label="Loading page title" />
+          <Skeleton className="h-6 w-1/2" aria-label="Loading page description" />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" role="grid" aria-label="Loading content grid">
             {[...Array(6)].map((_, i) => (
-              <Skeleton key={i} className="h-48 w-full" />
+              <Skeleton key={i} className="h-48 w-full" role="gridcell" aria-label={`Loading content item ${i + 1}`} />
             ))}
           </div>
         </div>
@@ -65,11 +69,11 @@ const PageSkeleton = () => (
 );
 
 const AdminSyncSkeleton = () => (
-  <div className="space-y-4">
-    <Skeleton className="h-8 w-64" />
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+  <div className="space-y-4" role="progressbar" aria-label="Loading admin dashboard">
+    <Skeleton className="h-8 w-64" aria-label="Loading admin title" />
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" role="grid" aria-label="Loading admin content">
       {[...Array(6)].map((_, i) => (
-        <Skeleton key={i} className="h-32 w-full" />
+        <Skeleton key={i} className="h-32 w-full" role="gridcell" aria-label={`Loading admin item ${i + 1}`} />
       ))}
     </div>
   </div>
@@ -105,6 +109,30 @@ const queryClient = new QueryClient({
 const App = () => {
   // Initialize resource preloading for better performance
   const { preloadRouteResources } = useResourcePreloader();
+  
+  // Initialize accessibility features
+  const { announce, isEnabled: accessibilityEnabled } = useAccessibility({
+    enabled: true,
+    autoFix: true,
+    announcements: true
+  });
+
+  // Announce page changes for screen readers
+  useEffect(() => {
+    const handleRouteChange = () => {
+      if (accessibilityEnabled) {
+        const title = document.title;
+        announce(`Navigated to ${title}`, 'polite');
+      }
+    };
+
+    // Listen for route changes
+    window.addEventListener('popstate', handleRouteChange);
+    
+    return () => {
+      window.removeEventListener('popstate', handleRouteChange);
+    };
+  }, [announce, accessibilityEnabled]);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -204,6 +232,7 @@ const App = () => {
         </BrowserRouter>
         <InstallPrompt />
         <FloatingPerformanceWidget />
+        <AccessibilityWidget enabled={process.env.NODE_ENV === 'development'} />
       </TooltipProvider>
     </QueryClientProvider>
   );

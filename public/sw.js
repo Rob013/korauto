@@ -1,21 +1,34 @@
-// Service Worker for caching API responses and static assets
-const CACHE_NAME = 'korauto-v1';
-const STATIC_CACHE_NAME = 'korauto-static-v1';
+// Enhanced Service Worker for KORAUTO with aggressive caching for 100% mobile performance
 
-// Static assets to cache
+const CACHE_NAME = 'korauto-v2.0.0';
+const STATIC_CACHE = 'korauto-static-v2';
+const DYNAMIC_CACHE = 'korauto-dynamic-v2';
+const IMAGE_CACHE = 'korauto-images-v2';
+
+// Cache durations (in milliseconds)
+const CACHE_DURATIONS = {
+  STATIC: 7 * 24 * 60 * 60 * 1000, // 7 days
+  DYNAMIC: 24 * 60 * 60 * 1000,    // 24 hours
+  IMAGES: 30 * 24 * 60 * 60 * 1000, // 30 days
+  API: 10 * 60 * 1000,              // 10 minutes
+  FONTS: 30 * 24 * 60 * 60 * 1000   // 30 days
+};
+
+// Resources to cache immediately
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/offline.html',
+  // Critical CSS and JS will be added dynamically
 ];
 
-// API endpoints to cache
-const API_CACHE_PATTERNS = [
-  /\/api\/manufacturers/,
-  /\/api\/models/,
-  /\/api\/generations/,
-  /\/api\/cars\?/
+// API endpoints that should be cached
+const CACHEABLE_APIS = [
+  '/api/cars',
+  '/api/makes',
+  '/api/models',
+  '/api/filters',
+  'supabase.co'
 ];
 
 // Cache duration in milliseconds
