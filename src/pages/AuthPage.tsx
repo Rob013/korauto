@@ -53,12 +53,12 @@ const AuthPage = () => {
       if (error) throw error;
 
       toast({
-        title: "Account Created!",
-        description: "Please check your email to confirm your account.",
+        title: "Llogaria u Krijua!",
+        description: "Ju lutemi kontrolloni emailin tuaj për të konfirmuar llogarinë.",
       });
     } catch (error: any) {
       toast({
-        title: "Sign Up Failed",
+        title: "Regjistimi Dështoi",
         description: error.message,
         variant: "destructive",
       });
@@ -80,8 +80,8 @@ const AuthPage = () => {
       if (error) throw error;
 
       toast({
-        title: "Welcome back!",
-        description: "Successfully logged in.",
+        title: "Mirë se erdhët përsëri!",
+        description: "Hyrja u krye me sukses.",
       });
       
       // Check if user is admin or specific email and redirect accordingly
@@ -102,7 +102,7 @@ const AuthPage = () => {
       }
     } catch (error: any) {
       toast({
-        title: "Login Failed",
+        title: "Hyrja Dështoi",
         description: error.message,
         variant: "destructive",
       });
@@ -114,8 +114,8 @@ const AuthPage = () => {
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     toast({
-      title: "Logged out",
-      description: "See you again soon!",
+      title: "Dilni nga llogaria",
+      description: "Shihemi sërish së shpejti!",
     });
   };
 
@@ -124,8 +124,8 @@ const AuthPage = () => {
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle>Welcome, {user.email}!</CardTitle>
-            <p className="text-muted-foreground">You are logged in</p>
+            <CardTitle>Mirë se vini, {user.email}!</CardTitle>
+            <p className="text-muted-foreground">Ju jeni të lidhur</p>
           </CardHeader>
           <CardContent className="space-y-4">
             <Button 
@@ -133,14 +133,14 @@ const AuthPage = () => {
               className="w-full"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Return to Homepage
+              Kthehu në Faqen Kryesore
             </Button>
             <Button 
               variant="outline" 
               onClick={handleSignOut}
               className="w-full"
             >
-              Sign Out
+              Dilni
             </Button>
           </CardContent>
         </Card>
@@ -152,16 +152,16 @@ const AuthPage = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">KORAUTO Account</CardTitle>
+          <CardTitle className="text-2xl">Llogaria KORAUTO</CardTitle>
           <p className="text-muted-foreground">
-            Sign in or create an account to save your favorite cars
+            Hyni ose krijoni një llogari për të ruajtur makinat tuaja të preferuara
           </p>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsTrigger value="signin">Hyni</TabsTrigger>
+              <TabsTrigger value="signup">Regjistrohuni</TabsTrigger>
             </TabsList>
             
             <TabsContent value="signin" className="space-y-4">
@@ -169,7 +169,7 @@ const AuthPage = () => {
                 <div>
                   <Input
                     type="email"
-                    placeholder="Email"
+                    placeholder="Email-i"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -178,7 +178,7 @@ const AuthPage = () => {
                 <div>
                   <Input
                     type="password"
-                    placeholder="Password"
+                    placeholder="Fjalëkalimi"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -186,7 +186,7 @@ const AuthPage = () => {
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   <LogIn className="h-4 w-4 mr-2" />
-                  {loading ? "Signing in..." : "Sign In"}
+                  {loading ? "Po hyni..." : "Hyni"}
                 </Button>
               </form>
               
@@ -197,7 +197,7 @@ const AuthPage = () => {
                 <div>
                   <Input
                     type="text"
-                    placeholder="Display Name"
+                    placeholder="Emri për Shfaqje"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     required
@@ -206,7 +206,7 @@ const AuthPage = () => {
                 <div>
                   <Input
                     type="email"
-                    placeholder="Email"
+                    placeholder="Email-i"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -215,7 +215,7 @@ const AuthPage = () => {
                 <div>
                   <Input
                     type="password"
-                    placeholder="Password"
+                    placeholder="Fjalëkalimi"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -223,7 +223,7 @@ const AuthPage = () => {
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   <UserPlus className="h-4 w-4 mr-2" />
-                  {loading ? "Creating account..." : "Create Account"}
+                  {loading ? "Po krijohet llogaria..." : "Krijo Llogari"}
                 </Button>
               </form>
             </TabsContent>
