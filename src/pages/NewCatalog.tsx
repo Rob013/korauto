@@ -276,7 +276,7 @@ const CatalogContent: React.FC = () => {
                     <span>•</span>
                     <span className="flex items-center gap-1">
                       <div className="animate-spin rounded-full h-3 w-3 border-b border-primary"></div>
-                      Loading...
+                      Duke ngarkuar...
                     </span>
                   </>
                 )}

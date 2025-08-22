@@ -743,10 +743,76 @@ All colors MUST be HSL.
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   }
 
-  /* Smooth filter panel transitions */
+  /* Smooth filter panel transitions - Enhanced */
   .filter-panel {
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.1),
+      0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark .filter-panel {
+    background: rgba(0, 0, 0, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Modern filter section animations */
+  .filter-section {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .filter-section:hover {
+    transform: translateY(-1px);
+  }
+
+  /* Filter control enhanced animations */
+  .filter-control {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 8px;
+  }
+
+  .filter-control:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+  }
+
+  .filter-control:focus {
+    box-shadow: 
+      0 0 0 3px hsl(var(--primary) / 0.2),
+      0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+  }
+
+  /* Modern button animations */
+  .filter-button {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .filter-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+  }
+
+  .filter-button:hover::before {
+    left: 100%;
+  }
+
+  .filter-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   }
 
   /* Better text readability on mobile - More compact */
@@ -895,7 +961,7 @@ All colors MUST be HSL.
   }
 }
 
-/* Enhanced filter animations */
+/* Enhanced filter animations - Modern and smooth */
 @keyframes slideInFromLeft {
   from {
     transform: translateX(-100%);
@@ -918,12 +984,80 @@ All colors MUST be HSL.
   }
 }
 
+/* Modern filter section expand/collapse */
+@keyframes expandDown {
+  from {
+    opacity: 0;
+    transform: scaleY(0.95) translateY(-10px);
+    transform-origin: top;
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1) translateY(0);
+    transform-origin: top;
+  }
+}
+
+@keyframes collapseUp {
+  from {
+    opacity: 1;
+    transform: scaleY(1) translateY(0);
+    transform-origin: top;
+  }
+  to {
+    opacity: 0;
+    transform: scaleY(0.95) translateY(-10px);
+    transform-origin: top;
+  }
+}
+
+/* Smooth filter item animations */
+@keyframes filterItemFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Modern button hover effect */
+@keyframes buttonGlow {
+  0% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+  }
+}
+
 .filter-enter {
-  animation: slideInFromLeft 300ms ease-out;
+  animation: slideInFromLeft 350ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .filter-exit {
-  animation: slideOutToLeft 300ms ease-in;
+  animation: slideOutToLeft 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.filter-section-expand {
+  animation: expandDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.filter-section-collapse {
+  animation: collapseUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.filter-item-enter {
+  animation: filterItemFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.filter-button-glow:hover {
+  animation: buttonGlow 2s ease-in-out infinite;
 }
 
 /* Improved lot number visibility */

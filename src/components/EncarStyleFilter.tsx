@@ -240,49 +240,49 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   // Compact mode for sidebar
   if (compact) {
     return (
-      <div className="space-y-2 h-full flex flex-col">
+      <div className="space-y-2 h-full flex flex-col filter-panel">
         <div className="flex items-center justify-between flex-shrink-0">
-          <h3 className="text-sm font-semibold">Search Cars</h3>
+          <h3 className="text-sm font-semibold gradient-text">Kërko Makinat</h3>
           <div className="flex items-center gap-1">
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={onClearFilters}
-              className="text-muted-foreground hover:text-destructive flex items-center gap-1 h-6 px-1.5"
+              className="text-muted-foreground hover:text-destructive flex items-center gap-1 h-6 px-1.5 filter-button"
             >
               <X className="h-3 w-3" />
-              <span className="text-xs">Clear</span>
+              <span className="text-xs">Pastro</span>
             </Button>
             {onCloseFilter && (
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={onCloseFilter}
-                className="text-muted-foreground hover:text-foreground flex items-center gap-1 h-6 px-1.5"
+                className="text-muted-foreground hover:text-foreground flex items-center gap-1 h-6 px-1.5 filter-button"
               >
                 <X className="h-3 w-3" />
-                <span className="text-xs">Close</span>
+                <span className="text-xs">Mbyll</span>
               </Button>
             )}
           </div>
         </div>
         
         {/* Scrollable filter content */}
-        <div className="flex-1 overflow-y-auto space-y-2 pb-2">
+        <div className="flex-1 overflow-y-auto space-y-2 pb-2 animate-fade-in-up">
           <div className="space-y-2">
-          <div className="space-y-1 filter-section">
+          <div className="space-y-1 filter-section modern-card p-3">
             <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
               <Car className="h-2.5 w-2.5" />
-              Brand
+              Marka
             </Label>
             <AdaptiveSelect 
               value={filters.manufacturer_id || 'all'} 
               onValueChange={(value) => updateFilter('manufacturer_id', value)}
-              placeholder="Select brand"
+              placeholder="Zgjidhni markën"
               className="filter-control h-8 text-xs"
               options={[
-                // In strict mode, show "All Brands" only when no specific brand is selected
-                ...(isStrictMode && filters.manufacturer_id ? [] : [{ value: 'all', label: 'All Brands' }]),
+                // In strict mode, show "Të gjitha Markat" only when no specific brand is selected
+                ...(isStrictMode && filters.manufacturer_id ? [] : [{ value: 'all', label: 'Të gjitha Markat' }]),
                 ...sortedManufacturers.map((manufacturer) => ({
                   value: manufacturer.id.toString(),
                   label: (
@@ -298,20 +298,20 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
             />
           </div>
 
-          <div className="space-y-1 filter-section">
+          <div className="space-y-1 filter-section modern-card p-3">
             <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
               <Settings className="h-2.5 w-2.5" />
-              Model
+              Modeli
             </Label>
             <AdaptiveSelect 
               value={filters.model_id || 'all'} 
               onValueChange={(value) => updateFilter('model_id', value)}
               disabled={!filters.manufacturer_id}
-              placeholder={filters.manufacturer_id ? "Select model" : "Select brand first"}
+              placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"}
               className="filter-control h-8 text-xs"
               options={[
-                // In strict mode, show "All Models" only when no specific model is selected or not in strict mode
-                ...(isStrictMode && filters.model_id ? [] : [{ value: 'all', label: 'All Models' }]),
+                // In strict mode, show "Të gjithë Modelet" only when no specific model is selected or not in strict mode
+                ...(isStrictMode && filters.model_id ? [] : [{ value: 'all', label: 'Të gjithë Modelet' }]),
                 ...models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => ({
                   value: model.id.toString(),
                   label: `${model.name} (${model.cars_qty})`
@@ -321,9 +321,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           </div>
 
           {/* Year presets - Fast year selections under model */}
-          <div className="space-y-1 filter-section">
+          <div className="space-y-1 filter-section modern-card p-3">
             <Label className="filter-label text-xs text-muted-foreground flex items-center gap-1">
-              Year Range: 
+              Diapazoni i Viteve: 
               <span className="text-xs text-primary bg-primary/10 px-1 rounded" title="Optimized for instant results">⚡</span>
             </Label>
             <div className="year-buttons flex flex-wrap gap-1">
@@ -337,7 +337,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                       : "outline"
                   }
                   size="sm"
-                  className="h-6 px-2 text-xs"
+                  className="h-6 px-2 text-xs filter-button-glow"
                   onClick={() => handleYearRangePreset(preset)}
                   title={`⚡ Instant filter: From ${preset.from} to present (${preset.to})`} // Added optimization indicator
                 >
@@ -348,28 +348,28 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           </div>
 
           {/* Enhanced Year Filter - From/To dropdowns */}
-          <div className="space-y-1 filter-section">
+          <div className="space-y-1 filter-section modern-card p-3">
             <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
               <Calendar className="h-2.5 w-2.5" />
-              Year Range
+              Diapazoni i Viteve
             </Label>
             <div className="grid grid-cols-2 gap-1.5">
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">From</Label>
+                <Label className="text-xs text-muted-foreground">Nga</Label>
                 <AdaptiveSelect 
                   value={filters.from_year || 'all'} 
                   onValueChange={(value) => updateFilter('from_year', value)}
-                  placeholder="All years"
+                  placeholder="Të gjithë vitet"
                   className="filter-control h-8 text-xs"
                   options={yearOptions}
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">To</Label>
+                <Label className="text-xs text-muted-foreground">Deri</Label>
                 <AdaptiveSelect 
                   value={filters.to_year || 'all'} 
                   onValueChange={(value) => updateFilter('to_year', value)}
-                  placeholder="All years"
+                  placeholder="Të gjithë vitet"
                   className="filter-control h-8 text-xs"
                   options={yearOptions}
                 />
@@ -378,22 +378,22 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           </div>
 
           {/* Price Range */}
-          <div className="space-y-1 filter-section">
+          <div className="space-y-1 filter-section modern-card p-3">
             <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
               <DollarSign className="h-2.5 w-2.5" />
-              Price (EUR)
+              Çmimi (EUR)
             </Label>
             <div className="grid grid-cols-2 gap-1.5">
               <Input
                 type="number"
-                placeholder="From"
+                placeholder="Nga"
                 value={filters.buy_now_price_from || ''}
                 onChange={(e) => updateFilter('buy_now_price_from', e.target.value)}
                 className="filter-control h-8 text-xs"
               />
               <Input
                 type="number"
-                placeholder="To"
+                placeholder="Deri"
                 value={filters.buy_now_price_to || ''}
                 onChange={(e) => updateFilter('buy_now_price_to', e.target.value)}
                 className="filter-control h-8 text-xs"
@@ -405,29 +405,29 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           <Button
             variant="ghost"
             onClick={() => toggleSection('more')}
-            className="w-full justify-between text-xs h-7"
+            className="w-full justify-between text-xs h-7 filter-button"
           >
-            More Filters
+            Më Shumë Filtra
             {expandedSections.includes('more') ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
           </Button>
 
           {expandedSections.includes('more') && (
-            <div className="space-y-2 pt-2 border-t">
+            <div className="space-y-2 pt-2 border-t filter-section-expand">
               {/* Grade/Engine and Trim Level first */}
               <div className="space-y-2">
-                <div className="space-y-1 filter-section">
+                <div className="space-y-1 filter-section modern-card p-3">
                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
                     <Cog className="h-2.5 w-2.5" />
-                    Grade/Engine
+                    Kategoria/Motori
                   </Label>
                   <AdaptiveSelect 
                     value={filters.grade_iaai || 'all'} 
                     onValueChange={(value) => updateFilter('grade_iaai', value)}
                     disabled={!filters.manufacturer_id}
-                    placeholder={filters.manufacturer_id ? "All Grades" : "Select brand first"}
+                    placeholder={filters.manufacturer_id ? "Të gjitha Kategoriat" : "Zgjidhni markën së pari"}
                     className="filter-control h-8 text-xs"
                     options={[
-                      { value: 'all', label: 'All Grades' },
+                      { value: 'all', label: 'Të gjitha Kategoriat' },
                       ...grades.map((grade) => ({
                         value: grade.value,
                         label: `${grade.label}${grade.count ? ` (${grade.count})` : ''}`
@@ -439,16 +439,16 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 <div className="space-y-1 filter-section">
                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
                     <Cog className="h-2.5 w-2.5" />
-                    Trim Level
+                    Niveli i Trim
                   </Label>
                   <AdaptiveSelect 
                     value={filters.trim_level || 'all'} 
                     onValueChange={(value) => updateFilter('trim_level', value)}
                     disabled={!filters.manufacturer_id}
-                    placeholder={filters.manufacturer_id ? "All Trim Levels" : "Select brand first"}
+                    placeholder={filters.manufacturer_id ? "Të gjithë Nivelet e Trim" : "Zgjidhni markën së pari"}
                     className="filter-control h-8 text-xs"
                     options={[
-                      { value: 'all', label: 'All Trim Levels' },
+                      { value: 'all', label: 'Të gjithë Nivelet e Trim' },
                       ...trimLevels.map((trim) => ({
                         value: trim.value,
                         label: `${trim.label}${trim.count ? ` (${trim.count})` : ''}`
@@ -460,16 +460,16 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 <div className="space-y-1 filter-section">
                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
                     <Palette className="h-2.5 w-2.5" />
-                    Color
+                    Ngjyra
                   </Label>
                   <AdaptiveSelect 
                     value={filters.color || 'all'} 
                     onValueChange={(value) => updateFilter('color', value)}
-                    placeholder="Any color"
+                    placeholder="Çdo ngjyrë"
                     className="filter-control h-8 text-xs"
                     options={[
-                      // In strict mode, show "Any color" only when no specific color is selected or not in strict mode
-                      ...(isStrictMode && filters.color ? [] : [{ value: 'all', label: 'Any color' }]),
+                      // In strict mode, show "Çdo ngjyrë" only when no specific color is selected or not in strict mode
+                      ...(isStrictMode && filters.color ? [] : [{ value: 'all', label: 'Çdo ngjyrë' }]),
                       ...Object.entries(COLOR_OPTIONS).map(([name, id]) => ({
                         value: id.toString(),
                         label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
@@ -481,16 +481,16 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 <div className="space-y-1 filter-section">
                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
                     <Fuel className="h-2.5 w-2.5" />
-                    Fuel
+                    Karburanti
                   </Label>
                   <AdaptiveSelect 
                     value={filters.fuel_type || 'all'} 
                     onValueChange={(value) => updateFilter('fuel_type', value)}
-                    placeholder="Any type"
+                    placeholder="Çdo tip"
                     className="filter-control h-8 text-xs"
                     options={[
-                      // In strict mode, show "Any type" only when no specific fuel type is selected or not in strict mode
-                      ...(isStrictMode && filters.fuel_type ? [] : [{ value: 'all', label: 'Any type' }]),
+                      // In strict mode, show "Çdo tip" only when no specific fuel type is selected or not in strict mode
+                      ...(isStrictMode && filters.fuel_type ? [] : [{ value: 'all', label: 'Çdo tip' }]),
                       ...Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => ({
                         value: id.toString(),
                         label: name.charAt(0).toUpperCase() + name.slice(1)
@@ -507,11 +507,11 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   <AdaptiveSelect 
                     value={filters.transmission || 'all'} 
                     onValueChange={(value) => updateFilter('transmission', value)}
-                    placeholder="Any type"
+                    placeholder="Çdo tip"
                     className="filter-control h-8 text-xs"
                     options={[
-                      // In strict mode, show "Any type" only when no specific transmission is selected or not in strict mode
-                      ...(isStrictMode && filters.transmission ? [] : [{ value: 'all', label: 'Any type' }]),
+                      // In strict mode, show "Çdo tip" only when no specific transmission is selected or not in strict mode
+                      ...(isStrictMode && filters.transmission ? [] : [{ value: 'all', label: 'Çdo tip' }]),
                       ...Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => ({
                         value: id.toString(),
                         label: name.charAt(0).toUpperCase() + name.slice(1)
@@ -523,15 +523,15 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 <div className="space-y-1 filter-section">
                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
                     <Car className="h-2.5 w-2.5" />
-                    Body Type
+                    Lloji i Trupit
                   </Label>
                   <AdaptiveSelect 
                     value={filters.body_type || 'all'} 
                     onValueChange={(value) => updateFilter('body_type', value)}
-                    placeholder="Any type"
+                    placeholder="Çdo tip"
                     className="filter-control h-8 text-xs"
                     options={[
-                      { value: 'all', label: 'Any type' },
+                      { value: 'all', label: 'Çdo tip' },
                       ...Object.entries(BODY_TYPE_OPTIONS).map(([name, id]) => ({
                         value: id.toString(),
                         label: name.charAt(0).toUpperCase() + name.slice(1)
@@ -544,19 +544,19 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 <div className="space-y-1 filter-section">
                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
                     <MapPin className="h-2.5 w-2.5" />
-                    Mileage (km)
+                    Kilometrazhi (km)
                   </Label>
                   <div className="grid grid-cols-2 gap-1.5">
                     <Input
                       type="number"
-                      placeholder="From"
+                      placeholder="Nga"
                       value={filters.odometer_from_km || ''}
                       onChange={(e) => updateFilter('odometer_from_km', e.target.value)}
                       className="filter-control h-8 text-xs"
                     />
                     <Input
                       type="number"
-                      placeholder="To"
+                      placeholder="Deri"
                       value={filters.odometer_to_km || ''}
                       onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
                       className="filter-control h-8 text-xs"
@@ -571,11 +571,11 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           <div className="pt-2 border-t flex-shrink-0">
             <Button 
               onClick={handleSearchClick} 
-              className="w-full h-8 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs"
+              className="w-full h-8 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs filter-button-glow"
               size="sm"
             >
               <Search className="h-3 w-3 mr-1.5" />
-              Search Cars
+              Kërko Makinat
             </Button>
           </div>
           </div>
@@ -587,18 +587,18 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   // Homepage style - compact single row
   if (isHomepage) {
     return (
-      <Card className="p-4 bg-gradient-to-r from-card via-card/95 to-card border-border/50 shadow-sm">
+      <Card className="modern-card p-6 bg-gradient-to-r from-card via-card/95 to-card border-border/50 shadow-lg animate-fade-in-up">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Car className="h-5 w-5 text-primary" />
-              <h3 className="text-lg font-semibold">Kërko Makinën</h3>
+              <h3 className="text-lg font-semibold gradient-text">Kërko Makinën</h3>
             </div>
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={onClearFilters}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground filter-button"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -737,7 +737,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           <div className="mt-4 flex justify-center">
             <Button 
               onClick={handleSearchClick} 
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-8 py-3 h-12 text-base"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-8 py-3 h-12 text-base filter-button-glow transform transition-all hover:scale-105"
               size="lg"
             >
               <Search className="h-5 w-5 mr-2" />
@@ -751,18 +751,18 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
   // Catalog style - expanded with sections
   return (
-    <Card className="p-4 space-y-4 bg-card border-border">
+    <Card className="modern-card p-4 space-y-4 bg-card border-border">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Filter className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-semibold">Filtrat e Kërkimit</h3>
+          <h3 className="text-lg font-semibold gradient-text">Filtrat e Kërkimit</h3>
         </div>
         <Button 
           variant="outline" 
           size="sm" 
           onClick={onClearFilters} 
           disabled={isLoading}
-          className="text-xs"
+          className="text-xs filter-button"
         >
           {isLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <X className="h-3 w-3 mr-1" />}
           Pastro të gjitha
@@ -774,7 +774,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
         <Button
           variant="ghost"
           onClick={() => toggleSection('basic')}
-          className="w-full justify-between p-2 h-auto"
+          className="w-full justify-between p-2 h-auto filter-button"
         >
           <div className="flex items-center gap-2">
             <Car className="h-4 w-4 text-primary" />
@@ -784,8 +784,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
         </Button>
 
         {expandedSections.includes('basic') && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-muted/30 rounded-lg">
-            <div className="space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-muted/30 rounded-lg filter-section-expand">
+            <div className="space-y-2 filter-item-enter">
               <Label className="text-sm font-medium">Marka</Label>
               <AdaptiveSelect 
                 value={filters.manufacturer_id || 'all'} 
@@ -809,7 +809,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 filter-item-enter">
               <Label className="text-sm font-medium">Modeli</Label>
               <AdaptiveSelect 
                 value={filters.model_id || 'all'} 
@@ -835,7 +835,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
         <Button
           variant="ghost"
           onClick={() => toggleSection('advanced')}
-          className="w-full justify-between p-2 h-auto"
+          className="w-full justify-between p-2 h-auto filter-button"
         >
           <div className="flex items-center gap-2">
             <Settings className="h-4 w-4 text-primary" />
@@ -845,7 +845,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
         </Button>
 
         {expandedSections.includes('advanced') && (
-          <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
+          <div className="space-y-4 p-3 bg-muted/30 rounded-lg filter-section-expand">
             {/* Price */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-3">
@@ -926,21 +926,21 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   <Label className="text-xs text-muted-foreground mb-2 block">Custom Year Range:</Label>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">From Year</Label>
+                      <Label className="text-xs text-muted-foreground">Nga Viti</Label>
                       <AdaptiveSelect 
                         value={filters.from_year || 'all'} 
                         onValueChange={(value) => updateFilter('from_year', value)}
-                        placeholder="All years"
+                        placeholder="Të gjithë vitet"
                         className="h-8 text-xs"
                         options={yearOptions}
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">To Year</Label>
+                      <Label className="text-xs text-muted-foreground">Deri në Vitin</Label>
                       <AdaptiveSelect 
                         value={filters.to_year || 'all'} 
                         onValueChange={(value) => updateFilter('to_year', value)}
-                        placeholder="All years"
+                        placeholder="Të gjithë vitet"
                         className="h-8 text-xs"
                         options={yearOptions}
                       />
@@ -952,16 +952,16 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               <div className="space-y-2">
                 <Label className="text-sm font-medium flex items-center gap-2">
                   <Cog className="h-3 w-3" />
-                  Grade/Engine
+                  Kategoria/Motori
                 </Label>
                 <AdaptiveSelect 
                   value={filters.grade_iaai || 'all'} 
                   onValueChange={(value) => updateFilter('grade_iaai', value)}
                   disabled={!filters.manufacturer_id || isLoadingGrades}
-                  placeholder={isLoadingGrades ? "Loading..." : "Select grade"}
+                  placeholder={isLoadingGrades ? "Duke ngarkuar..." : "Zgjidhni kategorinë"}
                   options={[
-                    // In strict mode, show "All Grades" only when no specific grade is selected or not in strict mode
-                    ...(isStrictMode && filters.grade_iaai ? [] : [{ value: 'all', label: 'All Grades' }]),
+                    // In strict mode, show "Të gjitha Kategoriat" only when no specific grade is selected or not in strict mode
+                    ...(isStrictMode && filters.grade_iaai ? [] : [{ value: 'all', label: 'Të gjitha Kategoriat' }]),
                     ...grades.map((grade) => ({
                       value: grade.value,
                       label: grade.label
