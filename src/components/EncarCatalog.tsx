@@ -537,7 +537,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       setIsLoading(false);
       fetchingSortRef.current = false;
     }
-  }, [totalCount, fetchAllCars, filters.grade_iaai, filters.manufacturer_id, filters.model_id, filters.generation_id, filters.from_year, filters.to_year, sortBy, filteredCars, totalPages, currentPage, setSearchParams, isSortingGlobal, allCarsForSorting.length]);
+  }, [totalCount, fetchAllCars, filters.grade_iaai, filters.manufacturer_id, filters.model_id, filters.generation_id, filters.from_year, filters.to_year, sortBy, filteredCars, totalPages, currentPage, setSearchParams]);
 
   const handleManufacturerChange = async (manufacturerId: string) => {
     console.log(`[handleManufacturerChange] Called with manufacturerId: ${manufacturerId}`);
@@ -1146,6 +1146,12 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     value={sortBy}
                     onValueChange={(value: SortOption) => {
                       setSortBy(value);
+                      // Reset to page 1 when sort changes to show users the first page of newly sorted results
+                      setCurrentPage(1);
+                      // Update URL to reflect page reset
+                      const currentParams = Object.fromEntries(searchParams.entries());
+                      currentParams.page = '1';
+                      setSearchParams(currentParams);
                       // Immediately trigger global sorting for large datasets when sort changes
                       if (totalCount > 50 && !fetchingSortRef.current) {
                         console.log(`🔄 Sort changed: Immediately triggering global sorting for ${totalCount} cars with sortBy=${value}`);
