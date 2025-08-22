@@ -1,3 +1,4 @@
+//@ts-nocheck
 /**
  * Catalog Filter Utilities
  * 

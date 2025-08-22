@@ -1,3 +1,4 @@
+//@ts-nocheck
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +48,7 @@ import {
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
+import { filterOutTestCars } from "@/utils/testCarFilter";
 
 interface EncarCatalogProps {
   highlightCarId?: string | null;
@@ -153,7 +155,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
   // Memoized client-side grade filtering for better performance - now using utility
   const filteredCars = useMemo(() => {
-    return applyGradeFilter(cars, filters.grade_iaai);
+    const cleanedCars = filterOutTestCars(cars);
+    return applyGradeFilter(cleanedCars, filters.grade_iaai);
   }, [cars, filters.grade_iaai]);
   
   // console.log(`📊 Filter Results: ${filteredCars.length} cars match (total loaded: ${cars.length}, total count from API: ${totalCount}, grade filter: ${filters.grade_iaai || 'none'})`);

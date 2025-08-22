@@ -11,6 +11,7 @@ export interface Model {
   name: string;
   manufacturer_id: number;
   cars_qty?: number;
+  car_count?: number;
 }
 
 export interface Lot {
