@@ -6,7 +6,6 @@ import { useNavigation } from "@/contexts/NavigationContext";
 import { Car, Gauge, Settings, Fuel, Palette, Shield, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { OptimizedImage } from "@/components/OptimizedImage";
 
 interface LazyCarCardProps {
   id: string;
@@ -258,59 +257,40 @@ const LazyCarCard = memo(({
   }
 
   return (
-    <article 
+    <div 
       ref={cardRef}
       className="bg-card rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border border-border cursor-pointer group touch-manipulation mobile-card-compact"
       onClick={handleCardClick}
-      role="button"
-      tabIndex={0}
-      aria-label={`${year} ${make} ${model} - $${price?.toLocaleString() || 'N/A'} - View details`}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          handleCardClick(e as any);
-        }
-      }}
     >
       <div className="relative h-40 sm:h-52 lg:h-56 bg-muted overflow-hidden">
         {image ? (
-          <OptimizedImage
-            src={image}
-            alt={`${year} ${make} ${model} car image`}
-            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 mobile-optimized-image ${
+          <img 
+            src={image} 
+            alt={`${year} ${make} ${model}`} 
+            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
             onLoad={() => setImageLoaded(true)}
-            onError={() => setImageLoaded(true)}
+            onError={(e) => {
+              e.currentTarget.src = "/placeholder.svg";
+              setImageLoaded(true);
+            }}
             loading="lazy"
-            decode="async"
-            fetchPriority="auto"
-            quality={85}
-            format="auto"
-            width={300}
-            height={200}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-muted" aria-label="No image available">
-            <Car className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" aria-hidden="true" />
+          <div className="w-full h-full flex items-center justify-center bg-muted">
+            <Car className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
           </div>
         )}
         
         {/* Status Badge - More compact on mobile */}
         {(status === 3 || sale_status === 'sold') ? (
-          <div 
-            className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-red-600 text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded text-xs font-bold shadow-lg z-10"
-            role="status"
-            aria-label="This car is sold out"
-          >
+          <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-red-600 text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded text-xs font-bold shadow-lg z-10">
             SOLD OUT
           </div>
         ) : (
           lot && (
-            <div 
-              className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-primary text-primary-foreground px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs font-semibold"
-              aria-label={`Lot number ${lot}`}
-            >
+            <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-primary text-primary-foreground px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs font-semibold">
               #{lot}
             </div>
           )
@@ -320,14 +300,9 @@ const LazyCarCard = memo(({
         {user && (
           <button
             onClick={handleFavoriteToggle}
-            className="absolute top-1 sm:top-2 left-1 sm:left-2 p-1.5 sm:p-2 bg-black/50 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity z-10 enhanced-touch-target"
-            aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-            type="button"
+            className="absolute top-1 sm:top-2 left-1 sm:left-2 p-1.5 sm:p-2 bg-black/50 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
           >
-            <Heart 
-              className={`h-3 w-3 sm:h-4 sm:w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} 
-              aria-hidden="true"
-            />
+            <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
           </button>
         )}
       </div>
@@ -346,26 +321,26 @@ const LazyCarCard = memo(({
         <div className="space-y-0.5 sm:space-y-1 mb-2 sm:mb-3 card-details text-xs">
           {mileage && (
             <div className="flex items-center gap-1">
-              <Gauge className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" aria-hidden="true" />
-              <span className="truncate" aria-label={`Mileage: ${mileage}`}>{mileage}</span>
+              <Gauge className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
+              <span className="truncate">{mileage}</span>
             </div>
           )}
           {transmission && (
             <div className="flex items-center gap-1">
-              <Settings className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" aria-hidden="true" />
-              <span className="capitalize truncate" aria-label={`Transmission: ${transmission}`}>{transmission}</span>
+              <Settings className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
+              <span className="capitalize truncate">{transmission}</span>
             </div>
           )}
           {fuel && (
             <div className="flex items-center gap-1">
-              <Fuel className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" aria-hidden="true" />
-              <span className="capitalize truncate" aria-label={`Fuel type: ${fuel}`}>{fuel}</span>
+              <Fuel className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
+              <span className="capitalize truncate">{fuel}</span>
             </div>
           )}
           {color && (
             <div className="flex items-center gap-1">
-              <Palette className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" aria-hidden="true" />
-              <span className="capitalize truncate" aria-label={`Color: ${color}`}>{color}</span>
+              <Palette className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
+              <span className="capitalize truncate">{color}</span>
             </div>
           )}
         </div>
@@ -373,8 +348,8 @@ const LazyCarCard = memo(({
         {/* Status Indicators - More compact */}
         {insurance_v2?.accidentCnt === 0 && (
           <div className="mb-1.5 sm:mb-2">
-            <Badge variant="secondary" className="text-xs px-1.5 sm:px-2 py-0" aria-label="Clean accident record">
-              <Shield className="h-2 w-2 mr-1" aria-hidden="true" />
+            <Badge variant="secondary" className="text-xs px-1.5 sm:px-2 py-0">
+              <Shield className="h-2 w-2 mr-1" />
               Clean Record
             </Badge>
           </div>
@@ -382,8 +357,8 @@ const LazyCarCard = memo(({
 
         {/* Pricing - More compact */}
         <div className="flex flex-col gap-0.5 sm:gap-1 mb-1.5 sm:mb-2">
-          <span className="card-price text-base sm:text-lg lg:text-xl font-bold text-primary" aria-label={`Price: ${price?.toLocaleString()} euros`}>
-            €{price?.toLocaleString() || 'N/A'}
+          <span className="card-price text-base sm:text-lg lg:text-xl font-bold text-primary">
+            €{price.toLocaleString()}
           </span>
           <span className="text-xs text-muted-foreground">
             Deri ne portin e Durresit
@@ -396,7 +371,7 @@ const LazyCarCard = memo(({
           </p>
         </div>
       </div>
-    </article>
+    </div>
   );
 });
 

@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { optimizeImageUrl, getGlobalLazyLoader } from '@/utils/imageOptimization';
+import React, { useEffect } from 'react';
+import { useImagePreload } from '@/hooks/useImagePreload';
 
 interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src?: string;
@@ -8,9 +8,8 @@ interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> 
   priority?: boolean;
   quality?: number;
   width?: number;
-  height?: number;
-  format?: 'webp' | 'avif' | 'jpg' | 'png' | 'auto';
   enableLazyLoad?: boolean;
+  enableProgressiveLoad?: boolean;
   onLoad?: () => void;
   onError?: () => void;
 }
@@ -20,66 +19,44 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   alt,
   className = '',
   priority = false,
-  quality = 85,
-  format = 'auto',
+  quality = 80,
   width = 300,
-  height = 200,
   enableLazyLoad = true,
+  enableProgressiveLoad = true,
   onLoad,
   onError,
   ...props
 }) => {
-  const imgRef = useRef<HTMLImageElement>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isError, setIsError] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Optimize the image URL
-  const optimizedSrc = src ? optimizeImageUrl(src, { quality, format }) : '';
+  
+  const {
+    imgRef,
+    isLoaded,
+    isError,
+    isLoading,
+    optimizedSrc,
+    shouldShowPlaceholder
+  } = useImagePreload(src, {
+    priority,
+    quality,
+    width,
+    enableLazyLoad,
+    enableProgressiveLoad
+  });
 
   useEffect(() => {
-    if (!src) {
-      setIsError(true);
-      setIsLoading(false);
-      return;
-    }
-
-    const img = imgRef.current;
-    if (!img) return;
-
-    if (enableLazyLoad && !priority) {
-      // Use lazy loading
-      const lazyLoader = getGlobalLazyLoader();
-      img.dataset.src = optimizedSrc;
-      img.classList.add('loading');
-      lazyLoader.observe(img);
-    } else {
-      // Load immediately
-      img.src = optimizedSrc;
-    }
-  }, [optimizedSrc, enableLazyLoad, priority]);
-
-  const handleLoad = () => {
-    setIsLoaded(true);
-    setIsLoading(false);
-    onLoad?.();
-  };
-
-  const handleError = () => {
-    setIsError(true);
-    setIsLoading(false);
-    onError?.();
-  };
+    if (isLoaded && onLoad) onLoad();
+    if (isError && onError) onError();
+  }, [isLoaded, isError, onLoad, onError]);
 
   return (
     <div className={`relative overflow-hidden ${className}`}>
       {/* Placeholder/Loading state */}
-      {(isLoading || (!isLoaded && !isError)) && (
+      {shouldShowPlaceholder && (
         <div 
           className="absolute inset-0 bg-muted animate-pulse flex items-center justify-center"
           style={{ 
-            aspectRatio: `${width}/${height}`,
-            minHeight: `${height}px`
+            aspectRatio: `${width}/160`,
+            minHeight: '160px'
           }}
         >
           {isLoading && (
@@ -93,8 +70,8 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
         <div 
           className="absolute inset-0 bg-muted flex items-center justify-center"
           style={{ 
-            aspectRatio: `${width}/${height}`,
-            minHeight: `${height}px`
+            aspectRatio: `${width}/160`,
+            minHeight: '160px'
           }}
         >
           <div className="text-xs text-muted-foreground">Image failed to load</div>
@@ -104,23 +81,20 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
       {/* Actual image */}
       <img
         ref={imgRef}
+        src={!enableLazyLoad || priority ? optimizedSrc : ''}
         alt={alt}
-        className={`w-full h-full object-cover transition-opacity duration-300 mobile-optimized-image ${
+        className={`w-full h-full object-cover transition-opacity duration-300 optimized-image ${
           isLoaded ? 'opacity-100' : 'opacity-0'
         }`}
         style={{ 
-          aspectRatio: `${width}/${height}`,
+          aspectRatio: `${width}/160`,
           objectFit: 'cover',
-          minHeight: `${height}px`,
+          // Prevent layout shifts
+          minHeight: '160px',
           backgroundColor: 'hsl(var(--muted))'
         }}
         loading={priority ? 'eager' : 'lazy'}
         decoding="async"
-        fetchPriority={priority ? 'high' : 'auto'}
-        onLoad={handleLoad}
-        onError={handleError}
-        width={width}
-        height={height}
         {...props}
       />
     </div>
