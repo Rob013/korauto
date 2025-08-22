@@ -11,7 +11,9 @@ import { fetchCarsWithKeyset, SortOption } from '@/services/carsApi';
 import { supabase } from '@/integrations/supabase/client';
 
 // Access the mocked supabase
-const mockSupabase = supabase as any;
+const mockSupabase = supabase as {
+  rpc: ReturnType<typeof vi.fn>
+};
 
 describe('Cars API - Global Sorting & Keyset Pagination', () => {
   beforeEach(() => {
