@@ -1,12 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, Phone, MapPin, Clock } from "lucide-react";
+import { useInView } from "@/hooks/useInView";
 
 const ContactSection = () => {
+  const { ref, isInView } = useInView({ threshold: 0.1, triggerOnce: true });
+  
   return (
-    <section id="contact" className="py-4 sm:py-6 lg:py-8 bg-background">
+    <section ref={ref} id="contact" className={`py-4 sm:py-6 lg:py-8 bg-background transition-all duration-1000 ${isInView ? 'animate-fade-in-up' : 'opacity-0'}`}>
       <div className="container-responsive">
         <div className="text-center mb-4 sm:mb-6">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground">Na Kontaktoni</h2>
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground gradient-text">Na Kontaktoni</h2>
           <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
             Lidhuni me ekipin tonë për inspektime, pyetje, ose mbështetje.
           </p>
@@ -103,10 +106,10 @@ const ContactSection = () => {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-6xl mx-auto mt-6">
-          <Card className="text-center hover:shadow-lg transition-shadow duration-300 h-full">
+        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-6xl mx-auto mt-6 ${isInView ? 'stagger-animation' : ''}`}>
+          <Card className="text-center card-hover modern-card h-full">
             <CardHeader>
-              <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
+              <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4 interactive-element">
                 <Phone className="h-6 w-6 text-primary-foreground" />
               </div>
               <CardTitle className="text-lg">Rajmond</CardTitle>

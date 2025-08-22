@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { AlertCircle } from "lucide-react";
 import { useSecureAuctionAPI } from "@/hooks/useSecureAuctionAPI";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
+import { useInView } from "@/hooks/useInView";
 import {
   useSortedCars,
   getSortOptions,
@@ -44,6 +45,7 @@ interface APIFilters {
 
 const HomeCarsSection = memo(() => {
   const navigate = useNavigate();
+  const { ref, isInView } = useInView({ threshold: 0.1, triggerOnce: true });
   const {
     cars,
     loading,
@@ -498,10 +500,10 @@ const HomeCarsSection = memo(() => {
   };
 
   return (
-    <section id="cars" className="py-4 sm:py-6 lg:py-8 bg-secondary/30">
+    <section ref={ref} id="cars" className={`py-4 sm:py-6 lg:py-8 bg-secondary/30 transition-all duration-1000 ${isInView ? 'animate-fade-in-up' : 'opacity-0'}`}>
       <div className="container-responsive">
         <div className="text-center mb-4 sm:mb-6">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground gradient-text">
             Makinat e Disponueshme
           </h2>
 
@@ -510,7 +512,7 @@ const HomeCarsSection = memo(() => {
               variant="outline"
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
-              className="w-full sm:w-auto border-primary text-primary hover:bg-primary hover:text-primary-foreground min-h-[44px]"
+              className="w-full sm:w-auto btn-enhanced border-primary text-primary hover:bg-primary hover:text-primary-foreground min-h-[44px]"
             >
               {showFilters ? "Fshih Filtrat" : "Shfaq Filtrat"}
             </Button>
@@ -579,12 +581,12 @@ const HomeCarsSection = memo(() => {
 
         {/* Car Cards */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0 stagger-animation">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="bg-card rounded-lg p-4 animate-pulse">
-                <div className="h-48 bg-muted rounded mb-4"></div>
-                <div className="h-4 bg-muted rounded mb-2"></div>
-                <div className="h-4 bg-muted rounded w-3/4"></div>
+              <div key={i} className="modern-card p-4 pulse-enhanced">
+                <div className="h-48 bg-gradient-to-r from-muted via-muted/50 to-muted rounded mb-4"></div>
+                <div className="h-4 bg-gradient-to-r from-muted via-muted/50 to-muted rounded mb-2"></div>
+                <div className="h-4 bg-gradient-to-r from-muted via-muted/50 to-muted rounded w-3/4"></div>
               </div>
             ))}
           </div>
@@ -596,7 +598,7 @@ const HomeCarsSection = memo(() => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0">
+            <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0 ${isInView ? 'stagger-animation' : ''}`}>
               {displayedCars.map((car) => {
                 const lot = car.lots?.[0];
                 const usdPrice = lot?.buy_now || 25000;
@@ -639,7 +641,7 @@ const HomeCarsSection = memo(() => {
                   onClick={() => setShowAllCars(true)}
                   variant="outline"
                   size="lg"
-                  className="bg-card border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3"
+                  className="btn-enhanced bg-card border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3"
                 >
                   Shiko të gjitha ({carsToDisplay.length} makina)
                 </Button>

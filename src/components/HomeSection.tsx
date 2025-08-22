@@ -13,7 +13,6 @@ const HomeSection = () => {
                 className="w-full h-full object-contain dark:invert transition-all duration-300 hover-lift" 
               />
             </div>
-            </div>
           </div>
           
           <h1 className="text-4xl md:text-6xl font-bold mb-4 text-foreground">
@@ -63,6 +62,7 @@ const HomeSection = () => {
           onClick={() => document.getElementById('cars')?.scrollIntoView({ behavior: 'smooth' })}
         />
       </div>
-    </section>;
+    </section>
 };
+
 export default HomeSection;

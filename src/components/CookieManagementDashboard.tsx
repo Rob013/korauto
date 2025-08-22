@@ -96,8 +96,8 @@ export const CookieManagementDashboard: React.FC = () => {
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Cookie Management Dashboard</h1>
-          <p className="text-muted-foreground">Monitor and manage application cookies with size limits</p>
+          <h1 className="text-3xl font-bold">Paneli i Menaxhimit të Cookie-ve</h1>
+          <p className="text-muted-foreground">Monitoroni dhe menaxhoni cookie-t e aplikacionit me kufizime madhësie</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={refreshStats} variant="outline" size="sm">
@@ -168,10 +168,10 @@ export const CookieManagementDashboard: React.FC = () => {
 
       <Tabs defaultValue="cookies" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="cookies">All Cookies</TabsTrigger>
-          <TabsTrigger value="session">Session Management</TabsTrigger>
-          <TabsTrigger value="preferences">User Preferences</TabsTrigger>
-          <TabsTrigger value="add">Add Cookie</TabsTrigger>
+          <TabsTrigger value="cookies">Të gjitha Cookie-t</TabsTrigger>
+          <TabsTrigger value="session">Menaxhimi i Sesionit</TabsTrigger>
+          <TabsTrigger value="preferences">Preferencat e Përdoruesit</TabsTrigger>
+          <TabsTrigger value="add">Shto Cookie</TabsTrigger>
         </TabsList>
 
         {/* Cookie List */}
@@ -266,8 +266,8 @@ export const CookieManagementDashboard: React.FC = () => {
         <TabsContent value="preferences">
           <Card>
             <CardHeader>
-              <CardTitle>User Preferences</CardTitle>
-              <CardDescription>Manage application preferences stored in cookies</CardDescription>
+              <CardTitle>Preferencat e Përdoruesit</CardTitle>
+              <CardDescription>Menaxhoni preferencat e aplikacionit të ruajtura në cookie</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">

@@ -408,7 +408,7 @@ const CarCard = ({
 
   return (
     <div
-      className="bg-card rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-border cursor-pointer group touch-manipulation relative"
+      className="modern-card card-hover overflow-hidden border border-border cursor-pointer group touch-manipulation relative"
       onClick={handleCardClick}
       style={{
         // Prevent layout shifts by setting fixed dimensions
@@ -421,7 +421,7 @@ const CarCard = ({
           <OptimizedImage
             src={image}
             alt={`${year} ${make} ${model}`}
-            className="w-full h-full group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full group-hover:scale-110 transition-transform duration-500 ease-out"
             width={280}
             priority={false}
             enableLazyLoad={true}
@@ -499,12 +499,12 @@ const CarCard = ({
               size="sm"
               variant="ghost"
               onClick={handleFavoriteToggle}
-              className="h-8 w-8 p-0 hover:bg-muted touch-target"
+              className="h-8 w-8 p-0 hover:bg-muted touch-target interactive-element hover:scale-110 transition-all duration-200"
               style={{ minHeight: '44px', minWidth: '44px' }}
             >
               <Heart
-                className={`h-4 w-4 ${
-                  isFavorite ? "fill-red-500 text-red-500" : ""
+                className={`h-4 w-4 transition-all duration-200 ${
+                  isFavorite ? "fill-red-500 text-red-500 animate-bounce-in" : "hover:text-red-400"
                 }`}
               />
             </Button>
