@@ -292,6 +292,10 @@ const CustomSelect: React.FC<AdaptiveSelectProps> = ({
   };
 
   const handleSelect = (optionValue: string) => {
+    // Don't allow selection of separator items
+    if (optionValue.startsWith('separator-')) {
+      return;
+    }
     onValueChange(optionValue);
     setIsOpen(false);
   };
@@ -313,16 +317,31 @@ const CustomSelect: React.FC<AdaptiveSelectProps> = ({
       
       {isOpen && (
         <AdaptiveSelectContent>
-          {options.map((option) => (
-            <AdaptiveSelectItem
-              key={option.value}
-              value={option.value}
-              onSelect={handleSelect}
-              isSelected={option.value === value}
-            >
-              {option.label}
-            </AdaptiveSelectItem>
-          ))}
+          {options.map((option) => {
+            // Handle separator items differently
+            if (option.value.startsWith('separator-')) {
+              return (
+                <div
+                  key={option.value}
+                  className="px-2 py-1 text-xs font-medium text-muted-foreground border-b border-border text-center"
+                >
+                  {option.label}
+                </div>
+              );
+            }
+            
+            return (
+              <AdaptiveSelectItem
+                key={option.value}
+                value={option.value}
+                onSelect={handleSelect}
+                isSelected={option.value === value}
+                className={option.disabled ? "opacity-50 cursor-not-allowed" : ""}
+              >
+                {option.label}
+              </AdaptiveSelectItem>
+            );
+          })}
         </AdaptiveSelectContent>
       )}
     </div>

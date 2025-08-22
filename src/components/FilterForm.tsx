@@ -410,7 +410,8 @@ const FilterForm = memo<FilterFormProps>(({
                     [{ value: 'no-grades', label: 'No grades found', disabled: true }] :
                     grades.map((grade) => ({
                       value: grade.value,
-                      label: `${grade.label}${grade.count ? ` (${grade.count})` : ''}`
+                      label: `${grade.label}${grade.count ? ` (${grade.count})` : ''}`,
+                      disabled: grade.value.startsWith('separator-') // Disable separator items
                     }))
                   )
                 ]}
