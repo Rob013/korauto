@@ -200,13 +200,46 @@ All colors MUST be HSL.
     @apply min-h-[44px] min-w-[44px];
   }
 
+  /* Enhanced touch targets for professional mobile experience */
+  .touch-target-enhanced {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
+  }
+
+  /* Ensure all buttons meet touch guidelines */
+  button:not(.touch-target):not(.touch-target-enhanced) {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Enhanced touch for interactive elements */
+  .interactive-element {
+    @apply min-h-[44px] min-w-[44px] cursor-pointer;
+  }
+
   .mobile-padding {
     @apply px-3 sm:px-4 lg:px-6;
   }
 
   /* Button enhancements */
   .btn-enhanced {
-    @apply transition-all duration-200 transform hover:scale-105 active:scale-95;
+    @apply transition-all duration-200 transform hover:scale-105 active:scale-95 min-h-[44px] min-w-[44px];
+  }
+
+  /* Professional button sizing for all variants */
+  .btn-sm {
+    @apply min-h-[44px] min-w-[44px] px-4 py-2;
+  }
+
+  .btn-icon {
+    @apply min-h-[44px] min-w-[44px] p-2;
+  }
+
+  .btn-compact {
+    @apply min-h-[40px] min-w-[40px] px-3 py-2;
+  }
+
+  /* Year filter buttons optimization */
+  .year-filter-btn {
+    @apply min-h-[44px] min-w-[66px] px-3 py-2 text-sm;
   }
 
   /* Card enhancements */
