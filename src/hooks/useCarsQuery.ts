@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useCallback, useState, useEffect, useMemo } from 'react';
 import { FilterState } from '@/hooks/useFiltersFromUrl';
 import { buildQueryParams } from '@/utils/buildQueryParams';
+import { fetchCarsWithKeyset, Car as ApiCar, CarsApiResponse, SortOption } from '@/services/carsApi';
 
 interface Car {
   id: string;
@@ -24,6 +25,7 @@ interface CarsResponse {
   page: number;
   totalPages: number;
   hasMore: boolean;
+  nextCursor?: string;
 }
 
 interface Model {
@@ -32,15 +34,92 @@ interface Model {
   brandId: string;
 }
 
-// Mock API function - replace with actual API call
+// Convert API car to UI car format
+const convertApiCarToUICar = (apiCar: ApiCar): Car => ({
+  id: apiCar.id,
+  make: apiCar.make,
+  model: apiCar.model,
+  year: apiCar.year,
+  price: apiCar.price,
+  mileage: apiCar.mileage,
+  fuel: apiCar.fuel,
+  transmission: apiCar.transmission,
+  bodyType: '', // Not in API response
+  color: apiCar.color,
+  location: apiCar.location,
+  images: apiCar.images ? (Array.isArray(apiCar.images) ? apiCar.images : []) : []
+});
+
+// Map UI sort to API sort
+const mapSortToApi = (sort?: string): SortOption => {
+  switch (sort) {
+    case 'price_asc':
+      return 'price_asc';
+    case 'price_desc':
+      return 'price_desc';
+    case 'year_desc':
+      return 'rank_desc'; // Use rank for year sorting
+    case 'year_asc':
+      return 'rank_asc';
+    case 'mileage_asc':
+    case 'mileage_desc':
+    case 'recently_added':
+    default:
+      return 'price_asc';
+  }
+};
+
+// New API function using keyset pagination
 const fetchCars = async (
+  params: ReturnType<typeof buildQueryParams>,
+  signal?: AbortSignal,
+  cursor?: string
+): Promise<CarsResponse> => {
+  try {
+    const apiResponse = await fetchCarsWithKeyset({
+      filters: {
+        make: params.brand,
+        model: params.model,
+        yearMin: params.yearMin?.toString(),
+        yearMax: params.yearMax?.toString(),
+        priceMin: params.priceMin?.toString(),
+        priceMax: params.priceMax?.toString(),
+        fuel: params.fuel,
+        search: params.search
+      },
+      sort: mapSortToApi(params.sort),
+      limit: parseInt(params.pageSize || '24'),
+      cursor
+    });
+
+    const convertedCars = apiResponse.items.map(convertApiCarToUICar);
+    const pageSize = parseInt(params.pageSize || '24');
+    const currentPage = parseInt(params.page || '1');
+
+    return {
+      cars: convertedCars,
+      total: apiResponse.total,
+      page: currentPage,
+      totalPages: Math.ceil(apiResponse.total / pageSize),
+      hasMore: !!apiResponse.nextCursor,
+      nextCursor: apiResponse.nextCursor
+    };
+  } catch (error) {
+    console.error('Error fetching cars with keyset pagination:', error);
+    
+    // Fallback to mock data if API fails
+    return fetchCarsFallback(params, signal);
+  }
+};
+
+// Fallback function using existing mock data logic
+const fetchCarsFallback = async (
   params: ReturnType<typeof buildQueryParams>,
   signal?: AbortSignal
 ): Promise<CarsResponse> => {
   // When no brand filter is applied, use the same secure auction API data as homepage
   if (!params.brand || params.brand === '' || params.brand === 'all') {
     const { createFallbackCars } = await import('@/hooks/useSecureAuctionAPI');
-    const { useDailyRotatingCars } = await import('@/hooks/useDailyRotatingCars');
     
     // Get cars from secure auction API (same as homepage)
     const allCars = createFallbackCars({});
@@ -129,28 +208,6 @@ const fetchCars = async (
     totalPages: mockResponse.totalPages,
     hasMore: mockResponse.hasMore
   };
-  
-  /* Original API call - uncomment when API is available
-  const searchParams = new URLSearchParams();
-  
-  // Add all params to search string
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) searchParams.append(key, value.toString());
-  });
-
-  const response = await fetch(`/api/cars?${searchParams.toString()}`, {
-    signal,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch cars: ${response.statusText}`);
-  }
-
-  return response.json();
-  */
 };
 
 // Mock API function for models
@@ -198,6 +255,7 @@ export const useCarsQuery = (filters: FilterState) => {
   const [accumulatedCars, setAccumulatedCars] = useState<Car[]>([]);
   const [currentTotal, setCurrentTotal] = useState(0);
   const [currentHasMore, setCurrentHasMore] = useState(false);
+  const [currentCursor, setCurrentCursor] = useState<string | undefined>();
   
   // Create a key for filters without page to track when filters change
   const filtersWithoutPage = { ...filters };
@@ -212,16 +270,30 @@ export const useCarsQuery = (filters: FilterState) => {
   const nonSortFiltersKey = JSON.stringify(filtersWithoutPageAndSort);
   const nonSortFiltersKeyRef = useRef(nonSortFiltersKey);
 
-  // Reset accumulated cars when filters change (except page and sort)
+  // Reset accumulated cars when filters or sort change
+  useEffect(() => {
+    if (filtersKey !== filtersKeyRef.current) {
+      setAccumulatedCars([]);
+      setCurrentCursor(undefined);
+      filtersKeyRef.current = filtersKey;
+    }
+  }, [filtersKey]);
+
+  // Reset accumulated cars when non-sort filters change
   useEffect(() => {
     if (nonSortFiltersKey !== nonSortFiltersKeyRef.current) {
       setAccumulatedCars([]);
+      setCurrentCursor(undefined);
       nonSortFiltersKeyRef.current = nonSortFiltersKey;
     }
   }, [nonSortFiltersKey]);
 
-  // Create query key from URL params for proper caching
-  const queryKey = ['cars', buildQueryParams(filters)];
+  // For cursor-based pagination, we need to determine the cursor to use
+  const isFirstPage = (filters.page || 1) === 1;
+  const cursorToUse = isFirstPage ? undefined : currentCursor;
+
+  // Create query key that includes cursor for proper caching
+  const queryKey = ['cars', buildQueryParams(filters), cursorToUse];
 
   // Cancel previous request
   const cancelPreviousRequest = useCallback(() => {
@@ -243,7 +315,7 @@ export const useCarsQuery = (filters: FilterState) => {
       const startTime = performance.now();
       
       try {
-        const response = await fetchCars(buildQueryParams(filters), combinedSignal);
+        const response = await fetchCars(buildQueryParams(filters), combinedSignal, cursorToUse);
         
         const endTime = performance.now();
         const duration = endTime - startTime;
@@ -255,6 +327,11 @@ export const useCarsQuery = (filters: FilterState) => {
             queryKey,
             duration,
           });
+        }
+        
+        // Update cursor for next page
+        if (response.nextCursor) {
+          setCurrentCursor(response.nextCursor);
         }
         
         return response;
@@ -273,30 +350,6 @@ export const useCarsQuery = (filters: FilterState) => {
       return failureCount < 2;
     },
   });
-
-  // Simple sort function for cars
-  const sortCars = useCallback((cars: Car[], sortType: string): Car[] => {
-    const sorted = [...cars];
-    
-    switch (sortType) {
-      case 'price_asc':
-        return sorted.sort((a, b) => a.price - b.price);
-      case 'price_desc':
-        return sorted.sort((a, b) => b.price - a.price);
-      case 'year_desc':
-        return sorted.sort((a, b) => b.year - a.year);
-      case 'year_asc':
-        return sorted.sort((a, b) => a.year - b.year);
-      case 'mileage_asc':
-        return sorted.sort((a, b) => (a.mileage || 0) - (b.mileage || 0));
-      case 'mileage_desc':
-        return sorted.sort((a, b) => (b.mileage || 0) - (a.mileage || 0));
-      case 'recently_added':
-      default:
-        // For recently added, maintain original order or sort by ID
-        return sorted.sort((a, b) => b.id.localeCompare(a.id));
-    }
-  }, []);
 
   // Update accumulated cars when new data comes in
   useEffect(() => {
@@ -321,10 +374,8 @@ export const useCarsQuery = (filters: FilterState) => {
     }
   }, [carsQuery.data, filters.page]);
 
-  // Apply sorting to accumulated cars when sort changes
-  const sortedAccumulatedCars = useMemo(() => {
-    return sortCars(accumulatedCars, filters.sort || 'recently_added');
-  }, [accumulatedCars, filters.sort, sortCars]);
+  // Return cars as-is since sorting is now done globally on the server
+  const displayCars = accumulatedCars;
 
   // Models query for dependent filtering
   const modelsQuery = useQuery({
@@ -337,31 +388,32 @@ export const useCarsQuery = (filters: FilterState) => {
     enabled: !!filters.brand,
   });
 
-  // Prefetch next page when current data is available
+  // Prefetch next page when current data is available with cursor
   const prefetchNextPage = useCallback(() => {
-    if (currentHasMore) {
+    if (currentHasMore && currentCursor) {
       const nextPageFilters = { ...filters, page: (filters.page || 1) + 1 };
-      const nextPageQueryKey = ['cars', buildQueryParams(nextPageFilters)];
+      const nextPageQueryKey = ['cars', buildQueryParams(nextPageFilters), currentCursor];
       
       queryClient.prefetchQuery({
         queryKey: nextPageQueryKey,
         queryFn: async ({ signal }) => {
-          return fetchCars(buildQueryParams(nextPageFilters), signal);
+          return fetchCars(buildQueryParams(nextPageFilters), signal, currentCursor);
         },
         staleTime: 45000,
       });
     }
-  }, [currentHasMore, filters, queryClient]);
+  }, [currentHasMore, currentCursor, filters, queryClient]);
 
   // Invalidate queries when filters change significantly
   const invalidateQueries = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['cars'] });
     setAccumulatedCars([]);
+    setCurrentCursor(undefined);
   }, [queryClient]);
 
   return {
-    // Data - return sorted accumulated cars
-    cars: sortedAccumulatedCars,
+    // Data - return cars with global sorting applied
+    cars: displayCars,
     total: currentTotal,
     totalPages: Math.ceil(currentTotal / (filters.pageSize || 20)),
     hasMore: currentHasMore,
