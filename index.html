@@ -2,16 +2,29 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <!-- Enhanced mobile viewport for better performance -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
+    <meta name="format-detection" content="telephone=no, date=no, email=no, address=no" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    
     <title>KORAUTO - Premium Cars from South Korea</title>
     <meta name="description" content="Find your perfect car from South Korea with best price and quality. Professional car inspection services and premium vehicle imports." />
     <meta name="author" content="KORAUTO" />
+    <meta name="keywords" content="korean cars, car import, car inspection, premium vehicles, south korea" />
     
-    <!-- Performance Optimization -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <!-- Enhanced Performance Optimization -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="dns-prefetch" href="https://iyezkczshcgbcgpswpyg.supabase.co">
     <link rel="dns-prefetch" href="https://korautoks.com">
+    <link rel="preload" href="/lovable-uploads/7a3e2aa4-2a3b-4320-b33c-72d3d7721cfd.png" as="image" type="image/png">
+    
+    <!-- Resource Hints for Critical Assets -->
+    <link rel="modulepreload" href="/src/main.tsx">
+    <link rel="prefetch" href="/src/pages/Catalog.tsx">
+    <link rel="prefetch" href="/src/pages/CarDetails.tsx">
     
     <!-- Critical CSS will be inlined by Vite -->
     
@@ -20,17 +33,23 @@
     <link rel="apple-touch-icon" href="/lovable-uploads/7a3e2aa4-2a3b-4320-b33c-72d3d7721cfd.png">
     <link rel="shortcut icon" href="/lovable-uploads/7a3e2aa4-2a3b-4320-b33c-72d3d7721cfd.png">
     <meta name="theme-color" content="#1f2937">
+    <meta name="color-scheme" content="light dark">
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json">
     
-    <!-- iOS PWA -->
+    <!-- Enhanced iOS PWA Support -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="KORAUTO">
+    <meta name="apple-touch-fullscreen" content="yes">
     
     <!-- Android PWA -->
     <meta name="mobile-web-app-capable" content="yes">
+    
+    <!-- Accessibility Enhancements -->
+    <meta name="screen-reader-compatible" content="true">
+    <meta name="assistive-technology-compatible" content="true">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:title" content="KORAUTO - Premium Cars from South Korea" />
@@ -54,13 +73,121 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-
       gtag('config', 'G-EK3E1KLL6V');
     </script>
+    
+    <!-- Performance and Accessibility Inline Optimizations -->
+    <script>
+      // Critical performance optimizations
+      if ('loading' in HTMLImageElement.prototype) {
+        document.documentElement.classList.add('native-lazy-loading');
+      }
+      
+      // Accessibility setup
+      if ('speechSynthesis' in window) {
+        document.documentElement.classList.add('speech-synthesis-supported');
+      }
+      
+      // Reduce motion if preferred
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.documentElement.classList.add('reduce-motion');
+      }
+      
+      // High contrast mode detection
+      if (window.matchMedia('(prefers-contrast: high)').matches) {
+        document.documentElement.classList.add('high-contrast');
+      }
+    </script>
+    
+    <style>
+      /* Critical accessibility and performance styles - loaded immediately */
+      .sr-only {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        padding: 0 !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        clip: rect(0, 0, 0, 0) !important;
+        white-space: nowrap !important;
+        border: 0 !important;
+      }
+      
+      .skip-nav {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 9999;
+      }
+      
+      .skip-link {
+        position: absolute;
+        top: -40px;
+        left: 8px;
+        background: #000;
+        color: #fff;
+        padding: 8px 16px;
+        text-decoration: none;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 500;
+        transition: top 0.2s ease;
+        z-index: 10000;
+      }
+      
+      .skip-link:focus {
+        top: 8px;
+        outline: 2px solid #fff;
+        outline-offset: 2px;
+      }
+      
+      /* Loading performance optimization */
+      img[loading="lazy"] {
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      
+      img[loading="lazy"].loaded {
+        opacity: 1;
+      }
+      
+      /* Accessibility focus improvements */
+      *:focus-visible {
+        outline: 2px solid #2563eb !important;
+        outline-offset: 2px !important;
+        border-radius: 4px !important;
+      }
+      
+      /* High contrast mode */
+      .high-contrast * {
+        border-color: ButtonText !important;
+        color: ButtonText !important;
+      }
+      
+      /* Reduced motion */
+      .reduce-motion * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    </style>
   </head>
 
   <body>
-    <div id="root"></div>
+    <!-- Skip Navigation for Screen Readers -->
+    <nav class="skip-nav" aria-label="Skip navigation">
+      <a href="#main-content" class="skip-link">Skip to main content</a>
+      <a href="#navigation" class="skip-link">Skip to navigation</a>
+      <a href="#footer" class="skip-link">Skip to footer</a>
+    </nav>
+    
+    <!-- Main App Root -->
+    <div id="root" role="application" aria-label="KORAUTO Car Catalog Application"></div>
+    
+    <!-- Screen Reader Announcements -->
+    <div id="screen-reader-announcements" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+    
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
