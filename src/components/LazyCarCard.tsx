@@ -96,6 +96,9 @@ const LazyCarCard = memo(({
 
   // Intersection Observer for lazy loading
   useEffect(() => {
+    // Disable lazy loading for now - always show content immediately
+    setIsIntersecting(true);
+    
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
