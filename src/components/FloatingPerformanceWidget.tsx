@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useQuickAudit } from "@/hooks/usePerformanceAudit";
+import { useQuickAccessibilityAudit } from "@/hooks/useAccessibilityAudit";
 import { 
   Activity, 
   X, 
@@ -10,7 +11,8 @@ import {
   Maximize2,
   RefreshCw,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  Eye
 } from "lucide-react";
 
 interface FloatingPerformanceWidgetProps {
@@ -25,11 +27,15 @@ const FloatingPerformanceWidget = ({
   const [isMinimized, setIsMinimized] = useState(true);
   const [isVisible, setIsVisible] = useState(enabled);
   const { metrics, isLoading, runQuickCheck } = useQuickAudit();
+  const { metrics: accessibilityMetrics, isLoading: isLoadingA11y, runQuickCheck: runA11yCheck } = useQuickAccessibilityAudit();
 
-  // Auto-run audit on mount
+  // Auto-run audits on mount
   useEffect(() => {
     if (enabled) {
-      const timer = setTimeout(runQuickCheck, 2000);
+      const timer = setTimeout(() => {
+        runQuickCheck();
+        runA11yCheck();
+      }, 2000);
       return () => clearTimeout(timer);
     }
   }, [enabled, runQuickCheck]);
@@ -69,15 +75,30 @@ const FloatingPerformanceWidget = ({
                   </Badge>
                 )}
               </div>
+              <div className="flex items-center gap-2">
+                <Eye className="h-4 w-4 text-purple-500" />
+                <span className="text-sm font-medium">A11y</span>
+                {accessibilityMetrics && (
+                  <Badge 
+                    variant="secondary" 
+                    className={`${getScoreColor(accessibilityMetrics.overallScore)} text-white text-xs`}
+                  >
+                    {accessibilityMetrics.overallScore.toFixed(0)}
+                  </Badge>
+                )}
+              </div>
               <div className="flex gap-1">
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={runQuickCheck}
-                  disabled={isLoading}
+                  onClick={() => {
+                    runQuickCheck();
+                    runA11yCheck();
+                  }}
+                  disabled={isLoading || isLoadingA11y}
                   className="h-6 w-6 p-0"
                 >
-                  <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`h-3 w-3 ${(isLoading || isLoadingA11y) ? 'animate-spin' : ''}`} />
                 </Button>
                 <Button
                   size="sm"
@@ -125,73 +146,126 @@ const FloatingPerformanceWidget = ({
                 </div>
               </div>
 
-              {isLoading ? (
+              {(isLoading || isLoadingA11y) ? (
                 <div className="flex items-center justify-center py-4">
                   <RefreshCw className="h-6 w-6 animate-spin text-blue-500" />
                   <span className="ml-2 text-sm">Analyzing...</span>
                 </div>
-              ) : metrics ? (
-                <div className="space-y-2">
-                  {/* Overall Score */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Overall Score</span>
-                    <Badge 
-                      variant="secondary" 
-                      className={`${getScoreColor(metrics.overallScore)} text-white`}
-                    >
-                      {metrics.overallScore.toFixed(1)}/100
-                    </Badge>
-                  </div>
+              ) : metrics || accessibilityMetrics ? (
+                <div className="space-y-3">
+                  {/* Performance Section */}
+                  {metrics && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <Activity className="h-4 w-4 text-blue-500" />
+                        <span>Performance</span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Overall Score</span>
+                        <Badge 
+                          variant="secondary" 
+                          className={`${getScoreColor(metrics.overallScore)} text-white`}
+                        >
+                          {metrics.overallScore.toFixed(1)}/100
+                        </Badge>
+                      </div>
 
-                  {/* Quick metrics */}
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <span className="text-muted-foreground">Layout Shifts</span>
-                      <div className={metrics.layoutShifts < 0.1 ? 'text-green-600' : 'text-red-600'}>
-                        {metrics.layoutShifts.toFixed(3)}
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="text-muted-foreground">Layout Shifts</span>
+                          <div className={metrics.layoutShifts < 0.1 ? 'text-green-600' : 'text-red-600'}>
+                            {metrics.layoutShifts.toFixed(3)}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Animation</span>
+                          <div className={metrics.animationFrameRate >= 90 ? 'text-green-600' : 'text-red-600'}>
+                            {metrics.animationFrameRate.toFixed(0)}%
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Images</span>
+                          <div className={metrics.imageLoadTime < 1000 ? 'text-green-600' : 'text-red-600'}>
+                            {metrics.imageLoadTime.toFixed(0)}ms
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Scroll</span>
+                          <div className={metrics.scrollPerformance >= 90 ? 'text-green-600' : 'text-red-600'}>
+                            {metrics.scrollPerformance.toFixed(0)}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Animation</span>
-                      <div className={metrics.animationFrameRate >= 90 ? 'text-green-600' : 'text-red-600'}>
-                        {metrics.animationFrameRate.toFixed(0)}%
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Images</span>
-                      <div className={metrics.imageLoadTime < 1000 ? 'text-green-600' : 'text-red-600'}>
-                        {metrics.imageLoadTime.toFixed(0)}ms
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Scroll</span>
-                      <div className={metrics.scrollPerformance >= 90 ? 'text-green-600' : 'text-red-600'}>
-                        {metrics.scrollPerformance.toFixed(0)}
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Issues summary */}
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Issues Found</span>
-                    <div className="flex items-center gap-1">
-                      {metrics.alignmentIssues.length === 0 ? (
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <>
-                          <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                          <span>{metrics.alignmentIssues.length}</span>
-                        </>
-                      )}
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Issues Found</span>
+                        <div className="flex items-center gap-1">
+                          {metrics.alignmentIssues.length === 0 ? (
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <>
+                              <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                              <span>{metrics.alignmentIssues.length}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
+
+                  {/* Accessibility Section */}
+                  {accessibilityMetrics && (
+                    <div className="space-y-2 border-t pt-2">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <Eye className="h-4 w-4 text-purple-500" />
+                        <span>Accessibility</span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Overall Score</span>
+                        <Badge 
+                          variant="secondary" 
+                          className={`${getScoreColor(accessibilityMetrics.overallScore)} text-white`}
+                        >
+                          {accessibilityMetrics.overallScore.toFixed(1)}/100
+                        </Badge>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="text-muted-foreground">Checks Passed</span>
+                          <div className="text-green-600">
+                            {accessibilityMetrics.passedChecks}/{accessibilityMetrics.totalChecks}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Issues</span>
+                          <div className={accessibilityMetrics.issues.length === 0 ? 'text-green-600' : 'text-red-600'}>
+                            {accessibilityMetrics.issues.length}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm">
+                        <span>WCAG Level</span>
+                        <div className="text-sm">
+                          {accessibilityMetrics.overallScore >= 95 ? 'AAA' : 
+                           accessibilityMetrics.overallScore >= 85 ? 'AA' : 'A'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Actions */}
                   <div className="flex gap-2 pt-2">
                     <Button 
                       size="sm" 
-                      onClick={runQuickCheck}
-                      disabled={isLoading}
+                      onClick={() => {
+                        runQuickCheck();
+                        runA11yCheck();
+                      }}
+                      disabled={isLoading || isLoadingA11y}
                       className="flex-1 text-xs h-7"
                     >
                       Re-scan
@@ -208,7 +282,10 @@ const FloatingPerformanceWidget = ({
                 </div>
               ) : (
                 <div className="text-center py-4">
-                  <Button size="sm" onClick={runQuickCheck}>
+                  <Button size="sm" onClick={() => {
+                    runQuickCheck();
+                    runA11yCheck();
+                  }}>
                     Run Quick Audit
                   </Button>
                 </div>
