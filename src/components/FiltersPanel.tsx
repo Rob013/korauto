@@ -529,7 +529,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
           <h4 className="text-sm font-medium text-destructive">Ju lutemi korrigoni gabimet e mëposhtme:</h4>
           <ul className="mt-1 text-sm text-destructive">
             {validationErrors.map((error, index) => (
-              <li key={index}>• {error}</li>
+              <li key={`error-${error}-${index}`}>• {error}</li>
             ))}
           </ul>
         </div>
