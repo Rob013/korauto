@@ -1,6 +1,7 @@
 // Service Worker for caching API responses and static assets
 const CACHE_NAME = 'korauto-v1';
 const STATIC_CACHE_NAME = 'korauto-static-v1';
+const ASSETS_CACHE_NAME = 'korauto-assets-v1';
 
 // Static assets to cache
 const STATIC_ASSETS = [
@@ -22,7 +23,9 @@ const API_CACHE_PATTERNS = [
 const CACHE_DURATION = {
   API: 5 * 60 * 1000, // 5 minutes for API responses
   STATIC: 24 * 60 * 60 * 1000, // 24 hours for static assets
-  IMAGES: 60 * 60 * 1000 // 1 hour for images
+  IMAGES: 60 * 60 * 1000, // 1 hour for images
+  ASSETS: 7 * 24 * 60 * 60 * 1000, // 7 days for versioned assets (JS/CSS)
+  FONTS: 30 * 24 * 60 * 60 * 1000 // 30 days for fonts
 };
 
 // Install event - cache static assets
@@ -41,7 +44,7 @@ self.addEventListener('activate', (event) => {
       .then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
-            if (cacheName !== CACHE_NAME && cacheName !== STATIC_CACHE_NAME) {
+            if (cacheName !== CACHE_NAME && cacheName !== STATIC_CACHE_NAME && cacheName !== ASSETS_CACHE_NAME) {
               return caches.delete(cacheName);
             }
           })
@@ -61,6 +64,23 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Handle build assets (JS, CSS files with hashes)
+  if (url.pathname.startsWith('/assets/') || 
+      url.pathname.endsWith('.js') || 
+      url.pathname.endsWith('.css')) {
+    event.respondWith(handleAssetRequest(request));
+    return;
+  }
+
+  // Handle font files
+  if (url.pathname.includes('/fonts/') || 
+      url.pathname.endsWith('.woff2') || 
+      url.pathname.endsWith('.woff') || 
+      url.pathname.endsWith('.ttf')) {
+    event.respondWith(handleFontRequest(request));
+    return;
+  }
+
   // Handle API requests
   if (API_CACHE_PATTERNS.some(pattern => pattern.test(url.pathname))) {
     event.respondWith(handleAPIRequest(request));
@@ -68,7 +88,13 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Handle image requests
-  if (request.destination === 'image') {
+  if (request.destination === 'image' || 
+      url.pathname.endsWith('.png') || 
+      url.pathname.endsWith('.jpg') || 
+      url.pathname.endsWith('.jpeg') || 
+      url.pathname.endsWith('.gif') || 
+      url.pathname.endsWith('.webp') || 
+      url.pathname.includes('/lovable-uploads/')) {
     event.respondWith(handleImageRequest(request));
     return;
   }
@@ -185,4 +211,54 @@ async function handleStaticRequest(request) {
   }
   
   return networkResponse;
+}
+
+// Handle build assets (JS/CSS) with long cache and cache-first strategy
+async function handleAssetRequest(request) {
+  const cache = await caches.open(ASSETS_CACHE_NAME);
+  const cachedResponse = await cache.match(request);
+
+  // Assets with hashes can be cached indefinitely
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+
+  try {
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      // Cache successful responses
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch (error) {
+    // Return cached version if network fails
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    throw error;
+  }
+}
+
+// Handle font files with very long cache
+async function handleFontRequest(request) {
+  const cache = await caches.open(ASSETS_CACHE_NAME);
+  const cachedResponse = await cache.match(request);
+
+  // Fonts rarely change, cache them for long periods
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+
+  try {
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch (error) {
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    throw error;
+  }
 }
