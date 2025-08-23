@@ -154,6 +154,8 @@ const EncarCarCard = ({
 
   const handleShareClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    const carUrl = `${window.location.origin}/car/${id}`;
+    navigator.clipboard.writeText(carUrl);
     toast({
       title: "Link Copied",
       description: "Car listing link copied to clipboard",
