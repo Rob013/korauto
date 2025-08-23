@@ -978,9 +978,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         className={`
         fixed lg:relative z-40 glass-card transition-transform duration-300 ease-in-out
         ${showFilters ? 'translate-x-0' : '-translate-x-full'}
-        ${isMobile ? 'top-0 left-0 bottom-0 w-screen h-dvh overflow-y-auto safe-area-inset rounded-none !right-auto' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0 overflow-y-auto rounded-lg'} 
+        ${isMobile ? 'top-0 left-0 bottom-0 w-screen h-dvh overflow-y-auto safe-area-inset rounded-none' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0 overflow-y-auto rounded-lg'} 
         lg:shadow-none
-      `}>
+      `}
+        style={isMobile ? { right: 'auto', minWidth: '100vw' } : {}}>
         <div className={`${isMobile ? 'mobile-filter-compact filter-header bg-primary text-primary-foreground' : 'p-3 sm:p-4 border-b flex-shrink-0'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
