@@ -909,7 +909,13 @@ const CarDetails = memo(() => {
       } catch (apiError) {
         console.error("Failed to fetch car data:", apiError);
         if (isMounted) {
-          setError("Car not found");
+          // Provide more specific error message based on the error type
+          const errorMessage = apiError instanceof Error 
+            ? (apiError.message.includes('fetch') 
+                ? `Network error: Unable to connect to car database. Please check your internet connection and try again.`
+                : `Error fetching car data: ${apiError.message}`)
+            : "Car not found in our database";
+          setError(errorMessage);
           setLoading(false);
         }
       }
@@ -975,6 +981,13 @@ const CarDetails = memo(() => {
               </div>
             </div>
           </div>
+          {process.env.NODE_ENV === 'development' && (
+            <div className="text-center mt-8">
+              <p className="text-sm text-muted-foreground">
+                Loading car details for ID: {lot}...
+              </p>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -996,10 +1009,32 @@ const CarDetails = memo(() => {
             <h1 className="text-2xl font-bold text-foreground mb-2">
               Makina Nuk u Gjet
             </h1>
-            <p className="text-muted-foreground">
-              Makina që po kërkoni nuk mund të gjindet në bazën tonë të të
-              dhënave.
+            <p className="text-muted-foreground mb-4">
+              {error || "Makina që po kërkoni nuk mund të gjindet në bazën tonë të të dhënave."}
             </p>
+            {process.env.NODE_ENV === 'development' && (
+              <div className="text-xs text-muted-foreground/70 mt-6 p-4 bg-muted/30 rounded-lg max-w-md mx-auto">
+                <p className="font-semibold mb-2">Development Info:</p>
+                <p>Car ID: {lot}</p>
+                <p>Error: {error}</p>
+                <p className="mt-2">This might be due to network restrictions in the development environment.</p>
+              </div>
+            )}
+            <div className="mt-6 space-y-2">
+              <Button
+                onClick={() => navigate("/catalog")}
+                className="mx-2"
+              >
+                Shiko Katalogun
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => window.location.reload()}
+                className="mx-2"
+              >
+                Provo Përsëri
+              </Button>
+            </div>
           </div>
         </div>
       </div>
