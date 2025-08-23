@@ -855,10 +855,33 @@ All colors MUST be HSL.
     padding-right: max(12px, env(safe-area-inset-right));
   }
 
-  /* Better touch targets - More compact */
+  /* Better touch targets and button accessibility */
   button, [role="button"] {
-    min-height: 40px;
-    min-width: 40px;
+    min-height: 44px;
+    min-width: 44px;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  /* Enhanced button focus states */
+  button:focus-visible, [role="button"]:focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+  }
+  
+  /* Filter button specific enhancements */
+  .filter-button-enhanced {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+  }
+  
+  .filter-button-enhanced:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+  }
+  
+  .filter-button-enhanced:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
   /* Enhanced filter button visibility */
@@ -937,13 +960,24 @@ All colors MUST be HSL.
   }
 
   .mobile-filter-compact .year-buttons {
-    gap: 4px;
+    gap: 6px;
   }
 
   .mobile-filter-compact .year-buttons button {
-    padding: 4px 8px;
-    font-size: 11px;
-    min-height: 28px;
+    padding: 6px 12px;
+    font-size: 12px;
+    min-height: 44px;
+    border-radius: 6px;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .mobile-filter-compact .year-buttons button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .mobile-filter-compact .year-buttons button:active {
+    transform: scale(0.98);
   }
 }
 

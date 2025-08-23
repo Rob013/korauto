@@ -248,7 +248,13 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               variant="ghost" 
               size="sm" 
               onClick={onClearFilters}
-              className="text-muted-foreground hover:text-destructive flex items-center gap-1 h-6 px-1.5"
+              className="
+                text-muted-foreground hover:text-destructive flex items-center gap-1 h-8 px-2
+                transition-all duration-200 min-h-[44px] min-w-[44px] active:scale-95
+                focus:outline-none focus:ring-2 focus:ring-destructive/50 focus:ring-offset-1
+              "
+              aria-label="Pastro të gjitha filtrat"
+              title="Pastro të gjitha filtrat"
             >
               <X className="h-3 w-3" />
               <span className="text-xs">Pastro</span>
@@ -258,7 +264,13 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 variant="ghost" 
                 size="sm" 
                 onClick={onCloseFilter}
-                className="text-muted-foreground hover:text-foreground flex items-center gap-1 h-6 px-1.5"
+                className="
+                  text-muted-foreground hover:text-foreground flex items-center gap-1 h-8 px-2
+                  transition-all duration-200 min-h-[44px] min-w-[44px] active:scale-95
+                  focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-1
+                "
+                aria-label="Mbyll panelin e filtrave"
+                title="Mbyll panelin e filtrave"
               >
                 <X className="h-3 w-3" />
                 <span className="text-xs">Mbyll</span>
@@ -337,9 +349,14 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                       : "outline"
                   }
                   size="sm"
-                  className="h-6 px-2 text-xs"
+                  className="
+                    h-8 px-3 text-xs transition-all duration-200 
+                    min-h-[44px] min-w-[44px] active:scale-95
+                    focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-1
+                  "
                   onClick={() => handleYearRangePreset(preset)}
-                  title={`⚡ Instant filter: From ${preset.from} to present (${preset.to})`} // Added optimization indicator
+                  title={`⚡ Instant filter: From ${preset.from} to present (${preset.to})`}
+                  aria-label={`Filter cars from ${preset.from} to ${preset.to}`}
                 >
                   {preset.label}
                 </Button>
@@ -401,11 +418,18 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
             </div>
           </div>
 
-          {/* Additional Filters Toggle */}
+          {/* Additional Filters Toggle - Enhanced accessibility */}
           <Button
             variant="ghost"
             onClick={() => toggleSection('more')}
-            className="w-full justify-between text-xs h-7"
+            className="
+              w-full justify-between text-xs h-8 px-2 
+              transition-all duration-200 hover:bg-accent active:scale-98
+              focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-1
+              min-h-[44px]
+            "
+            aria-label={expandedSections.includes('more') ? 'Fshih filtrat shtesë' : 'Shfaq filtrat shtesë'}
+            aria-expanded={expandedSections.includes('more')}
           >
             Më Shumë Filtra
             {expandedSections.includes('more') ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
@@ -567,14 +591,21 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
             </div>
           )}
 
-          {/* Search Button */}
-          <div className="pt-2 border-t flex-shrink-0">
+          {/* Search Button - Enhanced visibility and accessibility */}
+          <div className="pt-3 border-t flex-shrink-0">
             <Button 
               onClick={handleSearchClick} 
-              className="w-full h-8 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs"
+              className="
+                w-full h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm
+                transition-all duration-200 ease-in-out shadow-md hover:shadow-lg active:scale-98
+                focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
+                min-h-[44px]
+              "
               size="sm"
+              aria-label="Kërko makinat me këto filtra"
+              title="Kërko makinat me këto filtra"
             >
-              <Search className="h-3 w-3 mr-1.5" />
+              <Search className="h-4 w-4 mr-2" />
               Kërko Makinat
             </Button>
           </div>
@@ -706,9 +737,13 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                           : "outline"
                       }
                       size="sm"
-                      className="h-8 px-3 text-xs"
+                      className="
+                        h-8 px-3 text-xs transition-all duration-200
+                        focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-1
+                      "
                       onClick={() => handleYearRangePreset(preset)}
-                      title={`⚡ Instant filter: From ${preset.from} to present (${preset.to})`} // Added optimization indicator
+                      title={`⚡ Instant filter: From ${preset.from} to present (${preset.to})`}
+                      aria-label={`Filter cars from ${preset.from} to ${preset.to}`}
                     >
                       {preset.label}
                     </Button>
@@ -897,9 +932,13 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                             : "outline"
                         }
                         size="sm"
-                        className="h-7 px-2 text-xs"
+                        className="
+                          h-8 px-3 text-xs transition-all duration-200
+                          focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-1
+                        "
                         onClick={() => handleYearRangePreset(preset)}
-                        title={`⚡ Instant filter: From ${preset.from} to present (${preset.to})`} // Added optimization indicator
+                        title={`⚡ Instant filter: From ${preset.from} to present (${preset.to})`}
+                        aria-label={`Filter cars from ${preset.from} to ${preset.to}`}
                       >
                         {preset.label}
                       </Button>
@@ -908,12 +947,18 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 px-2 text-xs text-muted-foreground"
+                        className="
+                          h-8 px-3 text-xs text-muted-foreground transition-all duration-200
+                          hover:text-destructive hover:border-destructive
+                          focus:outline-none focus:ring-2 focus:ring-destructive/50 focus:ring-offset-1
+                        "
                         onClick={() => onFiltersChange({
                           ...filters,
                           from_year: undefined,
                           to_year: undefined
                         })}
+                        title="Pastro filtrin e viteve"
+                        aria-label="Pastro filtrin e viteve"
                       >
                         <X className="h-3 w-3" />
                       </Button>
