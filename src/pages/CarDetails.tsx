@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, memo, useMemo } from "react";
+import { useEffect, useState, useCallback, memo, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { trackPageView, trackCarView, trackFavorite } from "@/utils/analytics";
@@ -34,6 +34,7 @@ import {
   Share2,
   Heart,
   ChevronRight,
+  ChevronLeft,
   Expand,
   Copy,
   ChevronDown,
@@ -46,6 +47,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
+import { generateCarMetaTags } from "@/utils/seoUtils";
+import { SEO } from "@/components/SEO";
+import { useSwipeGesture } from "@/hooks/useSwipeGesture";
+import { useIsMobile } from "@/hooks/use-mobile";
 interface CarDetails {
   id: string;
   make: string;
@@ -381,6 +386,31 @@ const CarDetails = memo(() => {
   const [showEngineSection, setShowEngineSection] = useState(false);
   const [isPlaceholderImage, setIsPlaceholderImage] = useState(false);
 
+  // Mobile detection and refs for swipe/arrow navigation - Always initialize these hooks first
+  const isMobile = useIsMobile();
+  const mainImageRef = useRef<HTMLDivElement>(null);
+
+  // Image navigation functions - defined as stable callbacks
+  const handlePrevImage = useCallback(() => {
+    if (car?.images && car.images.length > 1) {
+      setSelectedImageIndex(prev => prev > 0 ? prev - 1 : car.images.length - 1);
+    }
+  }, [car?.images]);
+
+  const handleNextImage = useCallback(() => {
+    if (car?.images && car.images.length > 1) {
+      setSelectedImageIndex(prev => prev < car.images.length - 1 ? prev + 1 : 0);
+    }
+  }, [car?.images]);
+
+  // Setup swipe gestures for mobile - always call the hook with stable options
+  useSwipeGesture(mainImageRef, {
+    onSwipeLeft: car?.images && car.images.length > 1 ? handleNextImage : () => {},
+    onSwipeRight: car?.images && car.images.length > 1 ? handlePrevImage : () => {},
+    minSwipeDistance: 50,
+    maxVerticalDistance: 100
+  });
+
   // Reset placeholder state when image selection changes
   useEffect(() => {
     setIsPlaceholderImage(false);
@@ -596,6 +626,7 @@ const CarDetails = memo(() => {
     let isMounted = true;
     const fetchCarDetails = async () => {
       if (!lot) return;
+
       try {
         // Try to fetch from cache using OR condition for all possible matches
         console.log("Searching for car with lot:", lot);
@@ -975,8 +1006,22 @@ const CarDetails = memo(() => {
     );
   }
   const images = car.images || [car.image].filter(Boolean);
+  const metaTags = useMemo(() => {
+    return generateCarMetaTags(car, lot || '');
+  }, [car, lot]);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+      <SEO
+        title={metaTags.title}
+        description={metaTags.description}
+        image={metaTags.image}
+        url={metaTags.url}
+        type="product"
+        price={car?.price}
+        currency="EUR"
+      />
+      
       <div className="container-responsive py-6 max-w-7xl">
         {/* Header with Actions - Improved Mobile Layout */}
         <div className="flex flex-col gap-4 mb-6 md:mb-8">
@@ -1086,9 +1131,10 @@ const CarDetails = memo(() => {
           {/* Left Column - Images and Gallery */}
           <div className="lg:col-span-2 xl:col-span-3 space-y-4">
             {/* Compact Main Image */}
-            <Card className="shadow-md border overflow-hidden">
+            <Card className="glass-card border-0 shadow-2xl overflow-hidden rounded-xl">
               <CardContent className="p-0">
                 <div
+                  ref={mainImageRef}
                   className="relative h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] xl:h-[700px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer"
                   onClick={() => setIsImageZoomOpen(true)}
                 >
@@ -1126,6 +1172,36 @@ const CarDetails = memo(() => {
                   <div className="absolute bottom-2 right-2 bg-black/50 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Expand className="h-3 w-3 text-white" />
                   </div>
+                  
+                  {/* Desktop Navigation Arrows - Only show when not on mobile and multiple images */}
+                  {!isMobile && images.length > 1 && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePrevImage();
+                        }}
+                        className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-all duration-200 h-10 w-10"
+                        disabled={selectedImageIndex === 0}
+                      >
+                        <ChevronLeft className="h-5 w-5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleNextImage();
+                        }}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-all duration-200 h-10 w-10"
+                        disabled={selectedImageIndex === images.length - 1}
+                      >
+                        <ChevronRight className="h-5 w-5" />
+                      </Button>
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -1158,7 +1234,7 @@ const CarDetails = memo(() => {
             )}
 
             {/* Enhanced Vehicle Specifications */}
-            <Card className="shadow-md border">
+            <Card className="glass-card border-0 shadow-xl rounded-xl">
               <CardContent className="p-4">
                 <div className="flex flex-col gap-3 mb-4">
                   <h3 className="text-lg font-bold flex items-center text-foreground">
@@ -1198,7 +1274,7 @@ const CarDetails = memo(() => {
                 {/* Enhanced Specifications Grid - Better Mobile Layout */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                   {/* Basic Info */}
-                  <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center justify-between p-3 bg-white/5 dark:bg-black/10 backdrop-blur-sm border border-white/10 dark:border-white/5 rounded-lg hover:bg-white/10 dark:hover:bg-black/15 transition-all duration-200">
                     <div className="flex items-center gap-2">
                       <Car className="h-4 w-4 text-primary flex-shrink-0" />
                       <span className="font-medium text-foreground">Marka</span>
@@ -1208,7 +1284,7 @@ const CarDetails = memo(() => {
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center justify-between p-3 bg-white/5 dark:bg-black/10 backdrop-blur-sm border border-white/10 dark:border-white/5 rounded-lg hover:bg-white/10 dark:hover:bg-black/15 transition-all duration-200">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
                       <span className="font-medium text-foreground">Viti</span>
@@ -1268,7 +1344,7 @@ const CarDetails = memo(() => {
             </Card>
 
             {/* Enhanced Detailed Information Section */}
-            <Card className="shadow-lg border-0">
+            <Card className="glass-panel border-0 shadow-2xl rounded-xl">
               <CardContent className="p-4 lg:p-6">
                 <div className="flex flex-col gap-3 mb-4">
                   <h3 className="text-lg lg:text-xl font-bold flex items-center text-foreground">
@@ -1895,7 +1971,7 @@ const CarDetails = memo(() => {
           {/* Right Column - Enhanced Contact Card */}
           <div className="lg:col-span-1 xl:col-span-1 space-y-4">
             {/* Enhanced Contact & Inspection Card */}
-            <Card className="shadow-lg border sticky top-4">
+            <Card className="glass-panel border-0 shadow-2xl sticky top-4 rounded-xl">
               <CardContent className="p-4">
                 <h3 className="text-lg font-bold mb-4 text-center text-foreground">
                   Kontakt & Inspektim

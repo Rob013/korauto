@@ -976,10 +976,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       <div 
         ref={filterPanelRef}
         className={`
-        fixed lg:relative z-40 bg-card border-r transition-transform duration-300 ease-in-out
+        fixed lg:relative z-40 glass-card transition-transform duration-300 ease-in-out
         ${showFilters ? 'translate-x-0' : '-translate-x-full'}
-        ${isMobile ? 'top-0 left-0 right-0 bottom-0 w-full h-dvh overflow-y-auto safe-area-inset' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0 overflow-y-auto'} 
-        lg:shadow-none shadow-xl
+        ${isMobile ? 'top-0 left-0 right-0 bottom-0 w-full h-dvh overflow-y-auto safe-area-inset rounded-none' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0 overflow-y-auto rounded-lg'} 
+        lg:shadow-none
       `}>
         <div className={`${isMobile ? 'mobile-filter-compact filter-header bg-primary text-primary-foreground' : 'p-3 sm:p-4 border-b flex-shrink-0'}`}>
           <div className="flex items-center justify-between">
@@ -999,7 +999,16 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 variant="ghost" 
                 size="sm" 
                 onClick={handleClearFilters}
-                className={`lg:hidden flex items-center gap-1 ${isMobile ? 'h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground text-xs' : 'h-8 px-2'}`}
+                className={`
+                  lg:hidden flex items-center gap-1 transition-all duration-200
+                  ${isMobile 
+                    ? 'h-8 px-2 hover:bg-primary-foreground/20 text-primary-foreground text-xs min-h-[44px] min-w-[44px] active:scale-95' 
+                    : 'h-8 px-2 hover:bg-accent'
+                  }
+                  focus:outline-none focus:ring-2 focus:ring-primary-foreground/50 focus:ring-offset-1
+                `}
+                aria-label="Pastro të gjitha filtrat"
+                title="Pastro të gjitha filtrat"
               >
                 <span className="text-xs">Clear</span>
               </Button>
@@ -1012,9 +1021,15 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     setShowFilters(false);
                     setHasExplicitlyClosed(true); // Mark as explicitly closed
                   }}
-                  className="flex items-center gap-1 h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground"
+                  className="
+                    flex items-center gap-1 h-8 px-2 hover:bg-primary-foreground/20 text-primary-foreground
+                    transition-all duration-200 min-h-[44px] min-w-[44px] active:scale-95
+                    focus:outline-none focus:ring-2 focus:ring-primary-foreground/50 focus:ring-offset-1
+                  "
+                  aria-label="Mbyll panelin e filtrave"
+                  title="Mbyll panelin e filtrave"
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-4 w-4" />
                 </Button>
               )}
             </div>
@@ -1099,7 +1114,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   <span className="hidden xs:inline text-xs">Back</span>
                 </Button>
                 
-                {/* Filter Toggle Button - Solid styling with no effects */}
+                {/* Filter Toggle Button - Enhanced styling and accessibility */}
                 <Button
                   variant="default"
                   size="lg"
@@ -1113,13 +1128,24 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                       setHasExplicitlyClosed(true); // Mark as explicitly closed when manually closing
                     }
                   }}
-                  className="flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground"
+                  className={`
+                    flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base
+                    transition-all duration-200 ease-in-out
+                    ${showFilters 
+                      ? 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-md' 
+                      : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl'
+                    }
+                    focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
+                    min-h-[44px] min-w-[44px] active:scale-95
+                  `}
+                  aria-label={showFilters ? 'Fshih filtrat e kërkimit' : 'Shfaq filtrat e kërkimit'}
+                  title={showFilters ? 'Fshih filtrat e kërkimit' : 'Shfaq filtrat e kërkimit'}
                 >
                   {showFilters ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
                   <span className="hidden xs:inline">{showFilters ? 'Fshih Filtrat' : 'Shfaq Filtrat'}</span>
                   <span className="xs:hidden">Filtrat</span>
                   {hasSelectedCategories && !showFilters && (
-                    <span className="ml-1 text-xs bg-primary-foreground/20 px-2 py-1 rounded-full animate-bounce">
+                    <span className="ml-1 text-xs bg-primary-foreground/20 px-2 py-1 rounded-full animate-bounce shadow-sm">
                       {Object.values(filters).filter(Boolean).length}
                     </span>
                   )}
