@@ -372,9 +372,13 @@ const HomeCarsSection = memo(() => {
   }, []);
 
   const handleFiltersChange = (newFilters: APIFilters) => {
-    // Check if generation is being selected
-    if (newFilters.generation_id && newFilters.generation_id !== filters.generation_id) {
-      // Smooth redirect to catalog with all current filters
+    // Check if any meaningful filter is being applied
+    const hasAnyFilter = Object.entries(newFilters).some(([key, value]) => 
+      value && value !== ''
+    );
+    
+    if (hasAnyFilter) {
+      // Redirect to catalog with filters as URL params for all filter types
       const searchParams = new URLSearchParams();
       Object.entries(newFilters).forEach(([key, value]) => {
         if (value && value !== '') {
@@ -387,36 +391,14 @@ const HomeCarsSection = memo(() => {
       
       // Clear any existing scroll restoration data
       sessionStorage.removeItem('encar-catalog-scroll');
-      console.log('🚀 Homepage: Cleared scroll data and navigating to catalog');
+      console.log('🚀 Homepage: Redirecting to catalog with filters:', newFilters);
       
       // Navigate to catalog
       navigate(`/catalog?${searchParams.toString()}`);
-      return;
-    }
-    
-    // Check if advanced filters are being applied (not manufacturer, model, or generation)
-    const hasAdvancedFilters = Object.entries(newFilters).some(([key, value]) => 
-      !['manufacturer_id', 'model_id', 'generation_id'].includes(key) && value && value !== ''
-    );
-    
-    if (hasAdvancedFilters) {
-      // Redirect to catalog with filters as URL params
-      const searchParams = new URLSearchParams();
-      Object.entries(newFilters).forEach(([key, value]) => {
-        if (value && value !== '') {
-          searchParams.set(key, value);
-        }
-      });
-      
-      // Add flag to indicate navigation from homepage filters
-      searchParams.set('fromHomepage', 'true');
-      
-      navigate(`/catalog?${searchParams.toString()}`);
     } else {
-      // Store filters as pending for basic filters (manufacturer, model)
-      // Don't apply them immediately - wait for search button click
+      // No filters applied, just update pending filters
       setPendingFilters(newFilters);
-      console.log('Stored pending filters:', newFilters);
+      console.log('No filters applied, stored as pending:', newFilters);
     }
   };
 
