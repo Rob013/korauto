@@ -33,6 +33,7 @@ import {
   MessageCircle,
   Share2,
   Heart,
+  ChevronLeft,
   ChevronRight,
   Expand,
   Copy,
@@ -46,6 +47,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
+import { useImageSwipe } from "@/hooks/useImageSwipe";
 interface CarDetails {
   id: string;
   make: string;
@@ -975,6 +977,25 @@ const CarDetails = memo(() => {
     );
   }
   const images = car.images || [car.image].filter(Boolean);
+  
+  // Add swipe functionality for car detail photos
+  const {
+    currentIndex: swipeCurrentIndex,
+    containerRef: imageContainerRef,
+    goToNext,
+    goToPrevious,
+    goToIndex,
+  } = useImageSwipe({ 
+    images, 
+    onImageChange: (index) => setSelectedImageIndex(index) 
+  });
+
+  // Sync swipe current index with selected image index
+  useEffect(() => {
+    if (swipeCurrentIndex !== selectedImageIndex) {
+      goToIndex(selectedImageIndex);
+    }
+  }, [selectedImageIndex, swipeCurrentIndex, goToIndex]);
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       <div className="container-responsive py-6 max-w-7xl">
@@ -1089,6 +1110,7 @@ const CarDetails = memo(() => {
             <Card className="glass-card border-0 shadow-2xl overflow-hidden rounded-xl">
               <CardContent className="p-0">
                 <div
+                  ref={imageContainerRef}
                   className="relative h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] xl:h-[700px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer"
                   onClick={() => setIsImageZoomOpen(true)}
                 >
@@ -1117,6 +1139,50 @@ const CarDetails = memo(() => {
                       <Car className="h-16 w-16 text-muted-foreground" />
                     </div>
                   )}
+                  
+                  {/* Navigation arrows for swipe - only show if multiple images */}
+                  {images.length > 1 && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 hover:bg-black/70 text-white rounded-full w-10 h-10 p-0 hidden sm:flex z-10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          goToPrevious();
+                        }}
+                      >
+                        <ChevronLeft className="h-5 w-5" />
+                      </Button>
+                      
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 hover:bg-black/70 text-white rounded-full w-10 h-10 p-0 hidden sm:flex z-10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          goToNext();
+                        }}
+                      >
+                        <ChevronRight className="h-5 w-5" />
+                      </Button>
+                    </>
+                  )}
+                  
+                  {/* Image counter for mobile */}
+                  {images.length > 1 && (
+                    <div className="absolute top-2 left-2 bg-black/50 text-white text-sm px-2 py-1 rounded backdrop-blur-sm">
+                      {selectedImageIndex + 1}/{images.length}
+                    </div>
+                  )}
+                  
+                  {/* Swipe hint for mobile */}
+                  {images.length > 1 && (
+                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white text-xs bg-black/50 px-2 py-1 rounded sm:hidden">
+                      Swipe to see more photos
+                    </div>
+                  )}
+                  
                   {car.lot && (
                     <Badge className="absolute top-2 right-2 bg-primary/90 backdrop-blur-sm text-primary-foreground px-2 py-1 text-xs font-medium shadow-lg">
                       Lot #{car.lot}

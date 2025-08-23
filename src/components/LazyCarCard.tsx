@@ -6,7 +6,6 @@ import { useNavigation } from "@/contexts/NavigationContext";
 import { Car, Gauge, Settings, Fuel, Palette, Shield, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ImageCarousel } from "@/components/ImageCarousel";
 
 interface LazyCarCardProps {
   id: string;
@@ -266,38 +265,32 @@ const LazyCarCard = memo(({
       onClick={handleCardClick}
     >
       <div className="relative h-40 sm:h-52 lg:h-56 bg-muted overflow-hidden">
-        {/* Use ImageCarousel if multiple images are available, otherwise fallback to single image */}
-        {images && images.length > 1 ? (
-          <ImageCarousel
-            images={images}
-            alt={`${year} ${make} ${model}`}
-            className="w-full h-full"
-            showArrows={true}
-            showDots={true}
+        {/* Always show single image - swipe functionality removed from car cards */}
+        {(image || (images && images.length > 0)) ? (
+          <img 
+            src={image || images?.[0]} 
+            alt={`${year} ${make} ${model}`} 
+            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+            onLoad={() => setImageLoaded(true)}
+            onError={(e) => {
+              e.currentTarget.src = "/placeholder.svg";
+              setImageLoaded(true);
+            }}
+            loading="lazy"
           />
         ) : (
-          // Single image or fallback
-          <>
-            {(image || (images && images.length > 0)) ? (
-              <img 
-                src={image || images?.[0]} 
-                alt={`${year} ${make} ${model}`} 
-                className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
-                  imageLoaded ? 'opacity-100' : 'opacity-0'
-                }`}
-                onLoad={() => setImageLoaded(true)}
-                onError={(e) => {
-                  e.currentTarget.src = "/placeholder.svg";
-                  setImageLoaded(true);
-                }}
-                loading="lazy"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-muted">
-                <Car className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
-              </div>
-            )}
-          </>
+          <div className="w-full h-full flex items-center justify-center bg-muted">
+            <Car className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
+          </div>
+        )}
+        
+        {/* Add indicator if multiple images are available */}
+        {images && images.length > 1 && (
+          <div className="absolute bottom-1 left-1 bg-black/50 text-white text-xs px-2 py-0.5 rounded">
+            +{images.length - 1} more
+          </div>
         )}
         
         {/* Status Badge - More compact on mobile */}
