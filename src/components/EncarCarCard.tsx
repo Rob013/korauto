@@ -136,14 +136,17 @@ const EncarCarCard = ({
     // Save current page and any filter state before navigating
     setPreviousPage(window.location.pathname + window.location.search);
     
+    // Use lot if available, fallback to id - this ensures CarDetails can find the car
+    const carIdentifier = lot || id;
+    
     // On mobile, open in new tab to preserve the current catalog state
     // On desktop, navigate in the same tab for better user experience
     if (isMobile) {
       // Open in new tab on mobile to preserve filter state and scroll position
-      window.open(`/car/${id}`, '_blank');
+      window.open(`/car/${carIdentifier}`, '_blank');
     } else {
       // Navigate in same tab on desktop
-      navigate(`/car/${id}`);
+      navigate(`/car/${carIdentifier}`);
     }
   };
 
@@ -171,13 +174,22 @@ const EncarCarCard = ({
     <Card 
       className="group cursor-pointer bg-white border border-gray-200 hover:border-primary/50 hover:shadow-xl transition-all duration-300 overflow-hidden rounded-xl"
       onClick={handleCardClick}
+      role="button"
+      aria-label={`Shiko detajet për ${year} ${make} ${model} - Çmimi ${price.toLocaleString()}€`}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleCardClick();
+        }
+      }}
     >
       {/* Large Image Section - 60-70% of card height */}
       <div className="relative h-56 bg-gray-100 overflow-hidden">
         {image ? (
           <img
             src={image}
-            alt={`${year} ${make} ${model}`}
+            alt={`${year} ${make} ${model} - Makina e importuar nga Koreja`}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
             onError={(e) => {
               e.currentTarget.src = "https://via.placeholder.com/400x300/f5f5f5/999999?text=No+Image";
@@ -185,7 +197,7 @@ const EncarCarCard = ({
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-            <Car className="h-16 w-16 text-gray-400" />
+            <Car className="h-16 w-16 text-gray-400" aria-hidden="true" />
           </div>
         )}
 
