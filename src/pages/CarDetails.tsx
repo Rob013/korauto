@@ -46,6 +46,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
+import { generateCarMetaTags } from "@/utils/seoUtils";
+import { SEO } from "@/components/SEO";
 interface CarDetails {
   id: string;
   make: string;
@@ -975,8 +977,22 @@ const CarDetails = memo(() => {
     );
   }
   const images = car.images || [car.image].filter(Boolean);
+  const metaTags = useMemo(() => {
+    return generateCarMetaTags(car, lot || '');
+  }, [car, lot]);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+      <SEO
+        title={metaTags.title}
+        description={metaTags.description}
+        image={metaTags.image}
+        url={metaTags.url}
+        type="product"
+        price={car?.price}
+        currency="EUR"
+      />
+      
       <div className="container-responsive py-6 max-w-7xl">
         {/* Header with Actions - Improved Mobile Layout */}
         <div className="flex flex-col gap-4 mb-6 md:mb-8">
