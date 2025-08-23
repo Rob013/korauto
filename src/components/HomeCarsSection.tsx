@@ -372,34 +372,10 @@ const HomeCarsSection = memo(() => {
   }, []);
 
   const handleFiltersChange = (newFilters: APIFilters) => {
-    // Check if any meaningful filter is being applied
-    const hasAnyFilter = Object.entries(newFilters).some(([key, value]) => 
-      value && value !== ''
-    );
-    
-    if (hasAnyFilter) {
-      // Redirect to catalog with filters as URL params for all filter types
-      const searchParams = new URLSearchParams();
-      Object.entries(newFilters).forEach(([key, value]) => {
-        if (value && value !== '') {
-          searchParams.set(key, value);
-        }
-      });
-      
-      // Add flag to indicate navigation from homepage filters
-      searchParams.set('fromHomepage', 'true');
-      
-      // Clear any existing scroll restoration data
-      sessionStorage.removeItem('encar-catalog-scroll');
-      console.log('🚀 Homepage: Redirecting to catalog with filters:', newFilters);
-      
-      // Navigate to catalog
-      navigate(`/catalog?${searchParams.toString()}`);
-    } else {
-      // No filters applied, just update pending filters
-      setPendingFilters(newFilters);
-      console.log('No filters applied, stored as pending:', newFilters);
-    }
+    // Always store filters as pending without auto-redirecting
+    // User must click "Kërko Makinat" button to navigate to catalog
+    setPendingFilters(newFilters);
+    console.log('Filters stored as pending:', newFilters);
   };
 
   const handleSearchCars = () => {
