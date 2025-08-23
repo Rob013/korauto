@@ -355,8 +355,8 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     // Auto-refresh every 30 seconds to get latest counts
     const refreshInterval = setInterval(() => {
       getSyncStatus();
-      // Get fresh active car count (excludes sold cars > 24h)
-      supabase.from('active_cars').select('id', { count: 'exact', head: true })
+      // Get fresh car count
+      supabase.from('cars').select('id', { count: 'exact', head: true })
         .then(({ count }) => {
           if (count !== null) {
             setTotalCount(count);

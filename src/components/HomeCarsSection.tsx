@@ -290,9 +290,6 @@ const HomeCarsSection = memo(() => {
 
   // Apply daily rotating cars when no filters are applied, showing 50 cars same as catalog
   const dailyRotatingCars = useDailyRotatingCars(carsForSorting, hasFilters, 50);
-  
-  // Always call useSortedCars at top level to follow rules of hooks
-  const sortedCars = useSortedCars(carsForSorting, sortBy);
 
   // Use daily rotating cars when no filters, otherwise use sorted cars
   const carsToDisplay = useMemo(() => {
@@ -300,8 +297,8 @@ const HomeCarsSection = memo(() => {
       return dailyRotatingCars;
     }
     // When filters are applied, use sorted cars
-    return sortedCars;
-  }, [hasFilters, dailyRotatingCars, sortedCars]);
+    return useSortedCars(carsForSorting, sortBy);
+  }, [hasFilters, dailyRotatingCars, carsForSorting, sortBy]);
 
   // Show 50 cars by default (daily rotation) to match catalog
   const defaultDisplayCount = 50;
@@ -375,10 +372,52 @@ const HomeCarsSection = memo(() => {
   }, []);
 
   const handleFiltersChange = (newFilters: APIFilters) => {
-    // Always store filters as pending without auto-redirecting
-    // User must click "Kërko Makinat" button to navigate to catalog
-    setPendingFilters(newFilters);
-    console.log('Filters stored as pending:', newFilters);
+    // Check if generation is being selected
+    if (newFilters.generation_id && newFilters.generation_id !== filters.generation_id) {
+      // Smooth redirect to catalog with all current filters
+      const searchParams = new URLSearchParams();
+      Object.entries(newFilters).forEach(([key, value]) => {
+        if (value && value !== '') {
+          searchParams.set(key, value);
+        }
+      });
+      
+      // Add flag to indicate navigation from homepage filters
+      searchParams.set('fromHomepage', 'true');
+      
+      // Clear any existing scroll restoration data
+      sessionStorage.removeItem('encar-catalog-scroll');
+      console.log('🚀 Homepage: Cleared scroll data and navigating to catalog');
+      
+      // Navigate to catalog
+      navigate(`/catalog?${searchParams.toString()}`);
+      return;
+    }
+    
+    // Check if advanced filters are being applied (not manufacturer, model, or generation)
+    const hasAdvancedFilters = Object.entries(newFilters).some(([key, value]) => 
+      !['manufacturer_id', 'model_id', 'generation_id'].includes(key) && value && value !== ''
+    );
+    
+    if (hasAdvancedFilters) {
+      // Redirect to catalog with filters as URL params
+      const searchParams = new URLSearchParams();
+      Object.entries(newFilters).forEach(([key, value]) => {
+        if (value && value !== '') {
+          searchParams.set(key, value);
+        }
+      });
+      
+      // Add flag to indicate navigation from homepage filters
+      searchParams.set('fromHomepage', 'true');
+      
+      navigate(`/catalog?${searchParams.toString()}`);
+    } else {
+      // Store filters as pending for basic filters (manufacturer, model)
+      // Don't apply them immediately - wait for search button click
+      setPendingFilters(newFilters);
+      console.log('Stored pending filters:', newFilters);
+    }
   };
 
   const handleSearchCars = () => {

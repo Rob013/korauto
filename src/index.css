@@ -515,73 +515,17 @@ All colors MUST be HSL.
     transform: scale(1.02);
   }
 
-  /* Enhanced Glass morphism effect */
+  /* Glass morphism effect */
   .glass-card {
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    box-shadow: 
-      0 12px 40px -8px rgba(0, 0, 0, 0.18),
-      0 6px 20px -4px rgba(0, 0, 0, 0.12),
-      0 2px 8px -2px rgba(0, 0, 0, 0.08),
-      inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
   }
 
   .dark .glass-card {
-    background: rgba(0, 0, 0, 0.20);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 
-      0 12px 40px -8px rgba(0, 0, 0, 0.35),
-      0 6px 20px -4px rgba(0, 0, 0, 0.25),
-      0 2px 8px -2px rgba(0, 0, 0, 0.18),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  }
-
-  .glass-card:hover {
-    transform: translateY(-6px);
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    box-shadow: 
-      0 20px 60px -12px rgba(0, 0, 0, 0.25),
-      0 10px 30px -8px rgba(0, 0, 0, 0.18),
-      0 4px 12px -4px rgba(0, 0, 0, 0.12),
-      inset 0 1px 0 rgba(255, 255, 255, 0.20);
-  }
-
-  .dark .glass-card:hover {
-    background: rgba(0, 0, 0, 0.30);
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    box-shadow: 
-      0 20px 60px -12px rgba(0, 0, 0, 0.45),
-      0 10px 30px -8px rgba(0, 0, 0, 0.35),
-      0 4px 12px -4px rgba(0, 0, 0, 0.25),
-      inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  }
-
-  /* Glass panel for filter and details sections */
-  .glass-panel {
-    background: rgba(255, 255, 255, 0.06);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 
-      0 16px 48px -8px rgba(0, 0, 0, 0.12),
-      0 8px 24px -4px rgba(0, 0, 0, 0.08),
-      0 3px 10px -2px rgba(0, 0, 0, 0.06),
-      inset 0 1px 0 rgba(255, 255, 255, 0.12);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .dark .glass-panel {
-    background: rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    box-shadow: 
-      0 16px 48px -8px rgba(0, 0, 0, 0.28),
-      0 8px 24px -4px rgba(0, 0, 0, 0.18),
-      0 3px 10px -2px rgba(0, 0, 0, 0.12),
-      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   /* Stagger animation for lists */
@@ -855,33 +799,10 @@ All colors MUST be HSL.
     padding-right: max(12px, env(safe-area-inset-right));
   }
 
-  /* Better touch targets and button accessibility */
+  /* Better touch targets - More compact */
   button, [role="button"] {
-    min-height: 44px;
-    min-width: 44px;
-    transition: all 0.2s ease-in-out;
-  }
-  
-  /* Enhanced button focus states */
-  button:focus-visible, [role="button"]:focus-visible {
-    outline: 2px solid hsl(var(--primary));
-    outline-offset: 2px;
-  }
-  
-  /* Filter button specific enhancements */
-  .filter-button-enhanced {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-  }
-  
-  .filter-button-enhanced:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    transform: translateY(-1px);
-  }
-  
-  .filter-button-enhanced:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    min-height: 40px;
+    min-width: 40px;
   }
 
   /* Enhanced filter button visibility */
@@ -928,7 +849,7 @@ All colors MUST be HSL.
 
   /* Ensure filter content is properly scrollable - More compact */
   .mobile-filter-content {
-    height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 4rem);
+    height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
@@ -960,24 +881,13 @@ All colors MUST be HSL.
   }
 
   .mobile-filter-compact .year-buttons {
-    gap: 6px;
+    gap: 4px;
   }
 
   .mobile-filter-compact .year-buttons button {
-    padding: 6px 12px;
-    font-size: 12px;
-    min-height: 44px;
-    border-radius: 6px;
-    transition: all 0.2s ease-in-out;
-  }
-  
-  .mobile-filter-compact .year-buttons button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-  
-  .mobile-filter-compact .year-buttons button:active {
-    transform: scale(0.98);
+    padding: 4px 8px;
+    font-size: 11px;
+    min-height: 28px;
   }
 }
 

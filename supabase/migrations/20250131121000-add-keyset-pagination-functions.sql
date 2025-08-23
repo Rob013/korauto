@@ -99,12 +99,12 @@ BEGIN
   -- Build order clause
   order_clause := 'ORDER BY ' || p_sort_field || ' ' || p_sort_dir || ' NULLS LAST, cars.id ASC';
 
-  -- Build and execute query using active_cars view to automatically exclude sold cars > 24h
+  -- Build and execute query
   query_sql := 'SELECT cars.id, cars.make, cars.model, cars.year, cars.price, cars.price_cents, cars.rank_score, ' ||
                'cars.mileage, cars.fuel, cars.transmission, cars.color, cars.location, ' ||
                'cars.image_url, cars.images, cars.title, cars.created_at ' ||
-               'FROM public.active_cars cars ' ||
-               'WHERE ' || p_sort_field || ' IS NOT NULL' ||
+               'FROM public.cars ' ||
+               'WHERE is_active = true AND is_archived = false AND ' || p_sort_field || ' IS NOT NULL' ||
                filter_conditions || cursor_condition || ' ' ||
                order_clause || ' LIMIT ' || p_limit;
 
@@ -159,7 +159,7 @@ BEGIN
                                              ' OR color ILIKE ' || quote_literal('%' || (p_filters->>'search') || '%') || ')';
   END IF;
 
-  count_sql := 'SELECT COUNT(*) FROM public.active_cars WHERE true' || filter_conditions;
+  count_sql := 'SELECT COUNT(*) FROM public.cars WHERE is_active = true AND is_archived = false' || filter_conditions;
   
   EXECUTE count_sql INTO result_count;
   RETURN result_count;

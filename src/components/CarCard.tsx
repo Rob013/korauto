@@ -336,8 +336,8 @@ const CarCard = ({
     e.stopPropagation();
     if (!user) {
       toast({
-        title: "Identifikimi i nevojshëm",
-        description: "Ju lutem identifikohuni për të ruajtur makinat e preferuara",
+        title: "Login Required",
+        description: "Please login to save favorite cars",
       });
       navigate("/auth");
       return;
@@ -352,8 +352,8 @@ const CarCard = ({
           .eq("car_id", id);
         setIsFavorite(false);
         toast({
-          title: "Hequr nga të preferuarat",
-          description: "Makina u hoq nga të preferuarat tuaja",
+          title: "Removed from favorites",
+          description: "Car removed from your favorites",
         });
       } else {
         // Add to favorites
@@ -368,15 +368,15 @@ const CarCard = ({
         });
         setIsFavorite(true);
         toast({
-          title: "Shtuar në të preferuarat",
-          description: "Makina u ruajt në të preferuarat tuaja",
+          title: "Added to favorites",
+          description: "Car saved to your favorites",
         });
       }
     } catch (error) {
       console.error("Error toggling favorite:", error);
       toast({
-        title: "Gabim",
-        description: "Dështoi përditësimi i të preferuarave",
+        title: "Error",
+        description: "Failed to update favorites",
         variant: "destructive",
       });
     }
@@ -408,7 +408,7 @@ const CarCard = ({
 
   return (
     <div
-      className="glass-card card-hover overflow-hidden cursor-pointer group touch-manipulation relative rounded-lg"
+      className="modern-card card-hover overflow-hidden border border-border cursor-pointer group touch-manipulation relative"
       onClick={handleCardClick}
       style={{
         // Prevent layout shifts by setting fixed dimensions
@@ -438,7 +438,7 @@ const CarCard = ({
         {/* Sold Out Badge - Takes priority over lot number */}
         {status === 3 || sale_status === "sold" ? (
           <div className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded text-xs font-bold shadow-lg z-10">
-            E SHITUR
+            SOLD OUT
           </div>
         ) : (
           lot && (

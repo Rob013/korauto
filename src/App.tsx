@@ -9,8 +9,6 @@ import { InstallPrompt } from "./components/InstallPrompt";
 import FloatingPerformanceWidget from "./components/FloatingPerformanceWidget";
 import { useResourcePreloader } from "./hooks/useResourcePreloader";
 import { AccessibilityEnhancer } from "./utils/accessibilityEnhancer";
-import { SEO } from "./components/SEO";
-import { getDefaultMetaTags } from "./utils/seoUtils";
 
 // Lazy load all pages for better code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -120,18 +118,9 @@ const App = () => {
     };
   }, []);
 
-  const defaultMeta = getDefaultMetaTags();
-
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <SEO
-          title={defaultMeta.title}
-          description={defaultMeta.description}
-          image={defaultMeta.image}
-          url={defaultMeta.url}
-          type="website"
-        />
         <Toaster />
         <Sonner />
         <BrowserRouter>
