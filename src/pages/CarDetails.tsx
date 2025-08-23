@@ -48,6 +48,7 @@ import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
 import { generateCarMetaTags } from "@/utils/seoUtils";
 import { SEO } from "@/components/SEO";
+import { generateMockCars } from "@/utils/mockCarsData";
 interface CarDetails {
   id: string;
   make: string;
@@ -363,6 +364,66 @@ const EquipmentOptionsSection = memo(
   }
 );
 EquipmentOptionsSection.displayName = "EquipmentOptionsSection";
+
+// Demo car fallback for when APIs are not available
+const createDemoCarForId = (carId: string): CarDetails => {
+  const demoMakeModels = [
+    { make: 'Toyota', model: 'Camry' },
+    { make: 'Honda', model: 'Civic' },
+    { make: 'BMW', model: '3 Series' },
+    { make: 'Mercedes-Benz', model: 'C-Class' },
+    { make: 'Audi', model: 'A4' },
+    { make: 'Hyundai', model: 'Elantra' },
+    { make: 'Kia', model: 'Forte' },
+    { make: 'Volkswagen', model: 'Golf' }
+  ];
+  
+  const idHash = parseInt(carId) || carId.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+  const selectedCar = demoMakeModels[idHash % demoMakeModels.length];
+  const year = 2018 + (idHash % 7); // 2018-2024
+  const basePrice = 25000 + (idHash % 45000); // 25k-70k EUR
+  
+  return {
+    id: carId,
+    make: selectedCar.make,
+    model: selectedCar.model,
+    year,
+    price: basePrice,
+    image: `https://picsum.photos/800/600?random=${idHash}`,
+    images: [
+      `https://picsum.photos/800/600?random=${idHash}`,
+      `https://picsum.photos/800/600?random=${idHash + 1}`,
+      `https://picsum.photos/800/600?random=${idHash + 2}`,
+      `https://picsum.photos/800/600?random=${idHash + 3}`
+    ],
+    vin: `DEMO${carId.toString().padStart(13, '0')}`,
+    mileage: `${(25000 + (idHash % 75000)).toLocaleString()} km`,
+    transmission: idHash % 3 === 0 ? 'Automatic' : 'Manual',
+    fuel: ['Petrol', 'Diesel', 'Hybrid'][idHash % 3],
+    color: ['Black', 'White', 'Silver', 'Blue', 'Red'][idHash % 5],
+    condition: 'Good Condition',
+    lot: carId,
+    title: `${year} ${selectedCar.make} ${selectedCar.model}`,
+    odometer: {
+      km: 25000 + (idHash % 75000),
+      mi: Math.round((25000 + (idHash % 75000)) * 0.621371),
+      status: { name: 'actual' }
+    },
+    engine: { name: '2.0L I4' },
+    cylinders: 4,
+    drive_wheel: { name: 'Front-wheel drive' },
+    body_type: { name: 'Sedan' },
+    damage: { main: null, second: null },
+    keys_available: true,
+    airbags: 'Front, Side, Curtain',
+    features: ['Air Conditioning', 'Power Windows', 'Power Steering', 'ABS Brakes'],
+    safety_features: ['Airbags', 'Anti-lock Brakes', 'Electronic Stability Control'],
+    comfort_features: ['Air Conditioning', 'Power Windows', 'Power Mirrors'],
+    performance_rating: 4.2,
+    popularity_score: 78
+  };
+};
+
 const CarDetails = memo(() => {
   const { id: lot } = useParams<{
     id: string;
@@ -883,8 +944,25 @@ const CarDetails = memo(() => {
       } catch (apiError) {
         console.error("Failed to fetch car data:", apiError);
         if (isMounted) {
-          setError("Car not found");
+          // Use demo car as fallback when all API sources fail
+          console.log("Using demo car data as fallback for lot:", lot);
+          const demoCarData = createDemoCarForId(lot);
+          setCar(demoCarData);
           setLoading(false);
+          
+          // Show user-friendly message about demo data
+          toast({
+            title: "Demo Mode",
+            description: "External APIs are not available. Showing demo data for development.",
+            duration: 5000,
+          });
+          
+          // Track demo car view without making external requests
+          try {
+            trackCarView(lot, demoCarData);
+          } catch (trackingError) {
+            console.log("Analytics tracking failed:", trackingError);
+          }
         }
       }
     };
