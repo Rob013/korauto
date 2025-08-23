@@ -973,12 +973,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Collapsible Filter Sidebar - Optimized for mobile */}
+      {(showFilters || !isMobile) && (
       <div 
         ref={filterPanelRef}
         className={`
         fixed lg:relative z-40 glass-card transition-transform duration-300 ease-in-out
-        ${showFilters ? 'translate-x-0' : '-translate-x-full'}
-        ${isMobile ? 'top-0 left-0 right-0 bottom-0 w-full h-dvh overflow-y-auto safe-area-inset rounded-none' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0 overflow-y-auto rounded-lg'} 
+        ${showFilters ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        ${isMobile ? 'top-16 left-0 right-0 bottom-0 w-full h-[calc(100dvh-4rem)] overflow-y-auto safe-area-inset rounded-none' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0 overflow-y-auto rounded-lg'} 
         lg:shadow-none
       `}>
         <div className={`${isMobile ? 'mobile-filter-compact filter-header bg-primary text-primary-foreground' : 'p-3 sm:p-4 border-b flex-shrink-0'}`}>
@@ -1000,9 +1001,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 size="sm" 
                 onClick={handleClearFilters}
                 className={`
-                  lg:hidden flex items-center gap-1 transition-all duration-200
+                  lg:hidden flex items-center justify-center gap-1 transition-all duration-200
                   ${isMobile 
-                    ? 'h-8 px-2 hover:bg-primary-foreground/20 text-primary-foreground text-xs min-h-[44px] min-w-[44px] active:scale-95' 
+                    ? 'h-12 w-12 px-2 hover:bg-primary-foreground/20 text-primary-foreground text-xs min-h-[44px] min-w-[44px] active:scale-95 rounded-lg' 
                     : 'h-8 px-2 hover:bg-accent'
                   }
                   focus:outline-none focus:ring-2 focus:ring-primary-foreground/50 focus:ring-offset-1
@@ -1010,7 +1011,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 aria-label="Pastro të gjitha filtrat"
                 title="Pastro të gjitha filtrat"
               >
-                <span className="text-xs">Clear</span>
+                <span className="text-xs sr-only sm:not-sr-only">Clear</span>
+                <X className="h-4 w-4 sm:hidden" />
               </Button>
               {/* Only show close button on mobile */}
               {isMobile && (
@@ -1022,14 +1024,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     setHasExplicitlyClosed(true); // Mark as explicitly closed
                   }}
                   className="
-                    flex items-center gap-1 h-8 px-2 hover:bg-primary-foreground/20 text-primary-foreground
-                    transition-all duration-200 min-h-[44px] min-w-[44px] active:scale-95
+                    flex items-center justify-center gap-1 h-12 w-12 px-2 hover:bg-primary-foreground/20 text-primary-foreground
+                    transition-all duration-200 min-h-[44px] min-w-[44px] active:scale-95 rounded-lg
                     focus:outline-none focus:ring-2 focus:ring-primary-foreground/50 focus:ring-offset-1
                   "
                   aria-label="Mbyll panelin e filtrave"
                   title="Mbyll panelin e filtrave"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-5 w-5" />
                 </Button>
               )}
             </div>
@@ -1079,6 +1081,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           </div>
         </div>
       </div>
+      )}
 
       {/* Overlay for mobile - stronger backdrop on mobile */}
       {showFilters && (
@@ -1130,13 +1133,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   }}
                   className={`
                     flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base
-                    transition-all duration-200 ease-in-out
+                    transition-all duration-200 ease-in-out rounded-lg
                     ${showFilters 
                       ? 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-md' 
                       : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl'
                     }
                     focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
-                    min-h-[44px] min-w-[44px] active:scale-95
+                    min-h-[48px] min-w-[48px] active:scale-95
                   `}
                   aria-label={showFilters ? 'Fshih filtrat e kërkimit' : 'Shfaq filtrat e kërkimit'}
                   title={showFilters ? 'Fshih filtrat e kërkimit' : 'Shfaq filtrat e kërkimit'}
