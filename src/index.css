@@ -558,23 +558,23 @@ All colors MUST be HSL.
 
   /* Glass panel for filter and details sections */
   .glass-panel {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     box-shadow: 
-      0 12px 40px -8px rgba(0, 0, 0, 0.08),
-      0 6px 20px -4px rgba(0, 0, 0, 0.05),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      0 12px 40px -8px rgba(0, 0, 0, 0.12),
+      0 6px 20px -4px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
   }
 
   .dark .glass-panel {
-    background: rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 
-      0 12px 40px -8px rgba(0, 0, 0, 0.2),
-      0 6px 20px -4px rgba(0, 0, 0, 0.12),
-      inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      0 12px 40px -8px rgba(0, 0, 0, 0.3),
+      0 6px 20px -4px rgba(0, 0, 0, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
   }
 
   /* Stagger animation for lists */

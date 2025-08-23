@@ -1047,11 +1047,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               }
             }}
             onCloseFilter={() => {
-              if (isMobile) {
-                setShowFilters(false);
-                setHasExplicitlyClosed(true); // Mark as explicitly closed
-              }
-              // Do nothing on desktop - filters stay open
+              setShowFilters(false);
+              setHasExplicitlyClosed(true); // Mark as explicitly closed
             }}
           />
           
