@@ -1,6 +1,7 @@
--- Supabase RPC functions for keyset pagination with global sorting
+-- Fix RPC functions to use active_cars view for proper sold car exclusion
+-- This ensures cars sold more than 24 hours ago are hidden from frontend
 
--- Function to get cars with keyset pagination
+-- Update cars_keyset_page function to use active_cars view
 CREATE OR REPLACE FUNCTION cars_keyset_page(
   p_filters JSONB DEFAULT '{}',
   p_sort_field TEXT DEFAULT 'price_cents',
@@ -112,7 +113,7 @@ BEGIN
 END;
 $$;
 
--- Function to get filtered car count
+-- Update cars_filtered_count function to use active_cars view
 CREATE OR REPLACE FUNCTION cars_filtered_count(
   p_filters JSONB DEFAULT '{}'
 )
