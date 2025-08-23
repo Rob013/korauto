@@ -25,9 +25,158 @@ const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => P
 
 // Create fallback car data for testing when API is not available
 export const createFallbackCars = (filters: any = {}): any[] => {
-  // No more fallback cars - always return empty array
-  console.log(`🚫 Fallback cars disabled - returning empty array`);
-  return [];
+  // Import fallback cars from data file using dynamic import
+  import('@/data/fallbackData').then(module => {
+    console.log(`🔄 Using fallback cars (${module.fallbackCars.length} cars available)`);
+  });
+  
+  // For now, create static fallback data inline
+  const fallbackCars = [
+    {
+      id: "fb-car-1",
+      title: "2022 Toyota Camry Hybrid",
+      manufacturer: { name: "Toyota" },
+      model: { name: "Camry" },
+      year: 2022,
+      price: 32000,
+      currency: "USD",
+      odometer: 25000,
+      fuel: { name: "Hybrid" },
+      transmission: { name: "Automatic" },
+      color: { name: "Silver" },
+      grade: "4.5",
+      vin: "1HGBH41JXMN109188",
+      lot_number: "FB001",
+      lots: [{
+        buy_now: 32000,
+        odometer: { km: 25000 },
+        images: {
+          normal: ["/placeholder.svg"],
+          big: ["/placeholder.svg"]
+        },
+        lot: "FB001",
+        status: 1
+      }],
+      location: "Prishtinë, Kosovo",
+      features: ["Hybrid Engine", "Automatic Transmission", "Low Mileage"],
+      is_premium: false,
+      seats_count: 5,
+      accidents_count: 0,
+      inspection_available: true,
+      status: "1"
+    },
+    {
+      id: "fb-car-2", 
+      title: "2021 Honda CR-V AWD",
+      manufacturer: { name: "Honda" },
+      model: { name: "CR-V" },
+      year: 2021,
+      price: 28000,
+      currency: "USD",
+      odometer: 35000,
+      fuel: { name: "Gasoline" },
+      transmission: { name: "CVT" },
+      color: { name: "Black" },
+      grade: "4.0",
+      vin: "2HKRM4H75CH100234",
+      lot_number: "FB002",
+      lots: [{
+        buy_now: 28000,
+        odometer: { km: 35000 },
+        images: {
+          normal: ["/placeholder.svg"],
+          big: ["/placeholder.svg"]
+        },
+        lot: "FB002",
+        status: 1
+      }],
+      location: "Prishtinë, Kosovo",
+      features: ["All-Wheel Drive", "CVT Transmission", "Excellent Condition"],
+      is_premium: true,
+      seats_count: 5,
+      accidents_count: 0,
+      inspection_available: true,
+      status: "1"
+    },
+    {
+      id: "fb-car-3",
+      title: "2020 Hyundai Tucson Limited",
+      manufacturer: { name: "Hyundai" }, 
+      model: { name: "Tucson" },
+      year: 2020,
+      price: 24000,
+      currency: "USD",
+      odometer: 45000,
+      fuel: { name: "Gasoline" },
+      transmission: { name: "Automatic" },
+      color: { name: "White" },
+      grade: "4.2",
+      vin: "KM8J33A26LU123456",
+      lot_number: "FB003",
+      lots: [{
+        buy_now: 24000,
+        odometer: { km: 45000 },
+        images: {
+          normal: ["/placeholder.svg"],
+          big: ["/placeholder.svg"]
+        },
+        lot: "FB003",
+        status: 1
+      }],
+      location: "Prishtinë, Kosovo",
+      features: ["Limited Edition", "Leather Seats", "Panoramic Sunroof"],
+      is_premium: false,
+      seats_count: 5,
+      accidents_count: 1,
+      inspection_available: true,
+      status: "1"
+    }
+  ];
+  
+  console.log(`🔄 Using fallback cars (${fallbackCars.length} cars available)`);
+  
+  // Apply basic filtering if specified
+  let filteredCars = [...fallbackCars];
+  
+  if (filters.manufacturer_id || filters.manufacturer) {
+    const manufacturerName = filters.manufacturer || 
+      (filters.manufacturer_id && getManufacturerNameById(filters.manufacturer_id));
+    if (manufacturerName) {
+      filteredCars = filteredCars.filter(car => 
+        car.manufacturer?.name?.toLowerCase() === manufacturerName.toLowerCase()
+      );
+    }
+  }
+  
+  if (filters.year_from) {
+    filteredCars = filteredCars.filter(car => car.year >= parseInt(filters.year_from));
+  }
+  
+  if (filters.year_to) {
+    filteredCars = filteredCars.filter(car => car.year <= parseInt(filters.year_to));
+  }
+  
+  if (filters.price_from) {
+    filteredCars = filteredCars.filter(car => (car.lots?.[0]?.buy_now || car.price) >= parseInt(filters.price_from));
+  }
+  
+  if (filters.price_to) {
+    filteredCars = filteredCars.filter(car => (car.lots?.[0]?.buy_now || car.price) <= parseInt(filters.price_to));
+  }
+  
+  return filteredCars;
+};
+
+// Helper function to get manufacturer name by ID
+const getManufacturerNameById = (id: string): string | null => {
+  const manufacturerMap: { [key: string]: string } = {
+    '1': 'Toyota',
+    '2': 'Honda', 
+    '3': 'Hyundai',
+    '4': 'Kia',
+    '5': 'Nissan'
+  };
+  return manufacturerMap[id] || null;
 };
 
 // Create fallback generation data for testing when API is not available
@@ -823,12 +972,17 @@ export const useSecureAuctionAPI = () => {
         return;
       }
       
-      // No fallback cars - show empty state when API fails
-      console.log("❌ API failed, showing empty state instead of fallback cars");
-      setError("Failed to load cars. Please try again.");
-      setCars([]);
-      setTotalCount(0);
+      // Use fallback cars when API fails
+      console.log("❌ API failed, using fallback cars");
+      const fallbackCarsData = createFallbackCars(filters);
+      setCars(fallbackCarsData);
+      setTotalCount(fallbackCarsData.length);
       setHasMorePages(false);
+      if (fallbackCarsData.length === 0) {
+        setError("No cars found matching your filters.");
+      } else {
+        setError(null);
+      }
       return;
       
       if (resetList || page === 1) {
@@ -1935,9 +2089,9 @@ export const useSecureAuctionAPI = () => {
         return [];
       }
       
-      // No fallback cars for global sorting - return empty array
-      console.log("❌ API failed for global sorting, returning empty array instead of fallback cars");
-      return [];
+      // Use fallback cars for global sorting
+      console.log("❌ API failed for global sorting, using fallback cars");
+      return createFallbackCars(filters);
     }
   };
 
