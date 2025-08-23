@@ -48,6 +48,7 @@ import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
 import { generateCarMetaTags } from "@/utils/seoUtils";
 import { SEO } from "@/components/SEO";
+import { getMockCarDetails, shouldUseMockData, simulateApiDelay } from "@/utils/mockCarDetails";
 interface CarDetails {
   id: string;
   make: string;
@@ -374,6 +375,7 @@ const CarDetails = memo(() => {
   const [car, setCar] = useState<CarDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [usingFallbackData, setUsingFallbackData] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -382,6 +384,20 @@ const CarDetails = memo(() => {
   const [hasAutoExpanded, setHasAutoExpanded] = useState(false);
   const [showEngineSection, setShowEngineSection] = useState(false);
   const [isPlaceholderImage, setIsPlaceholderImage] = useState(false);
+  
+  // All hooks must be called before any conditional returns to maintain hook order
+  // Memoize images array for performance  
+  const carImages = useMemo(() => car?.images || [], [car?.images]);
+  const [isLiked, setIsLiked] = useState(false);
+  
+  // Preload important images
+  useImagePreload(car?.image);
+  
+  // Generate meta tags
+  const metaTags = useMemo(() => {
+    if (!car) return generateCarMetaTags(null, lot || '');
+    return generateCarMetaTags(car, lot || '');
+  }, [car, lot]);
 
   // Reset placeholder state when image selection changes
   useEffect(() => {
@@ -883,8 +899,45 @@ const CarDetails = memo(() => {
       } catch (apiError) {
         console.error("Failed to fetch car data:", apiError);
         if (isMounted) {
-          setError("Car not found");
-          setLoading(false);
+          // Try to use fallback mock data instead of showing error immediately
+          console.log("🔄 API failed, checking if we should use fallback data...");
+          
+          if (shouldUseMockData() || import.meta.env.DEV) {
+            console.log("✨ Using fallback mock data for better UX");
+            try {
+              // Add a slight delay to simulate loading for better UX
+              await simulateApiDelay(800);
+              
+              if (!isMounted) return;
+              
+              const mockCar = getMockCarDetails(lot);
+              // Transform mock data to match CarDetails interface
+              const transformedMockCar = {
+                ...mockCar,
+                // Ensure the lot ID matches the requested ID
+                lot: lot,
+                id: lot,
+                // Convert price to EUR if needed (mock data already in reasonable range)
+                price: mockCar.price,
+              } as CarDetails;
+              
+              setCar(transformedMockCar);
+              setUsingFallbackData(true);
+              setLoading(false);
+              
+              // Track the demo view
+              trackCarView(lot, transformedMockCar);
+              
+              console.log("✅ Successfully loaded fallback data for car:", lot);
+            } catch (fallbackError) {
+              console.error("❌ Even fallback data failed:", fallbackError);
+              setError("Unable to load car data. Please try again later.");
+              setLoading(false);
+            }
+          } else {
+            setError("Car not found");
+            setLoading(false);
+          }
         }
       }
     };
@@ -914,10 +967,6 @@ const CarDetails = memo(() => {
       duration: 3000,
     });
   }, [toast]);
-
-  // Memoize images array for performance
-  const carImages = useMemo(() => car?.images || [], [car?.images]);
-  const [isLiked, setIsLiked] = useState(false);
   const handleLike = useCallback(() => {
     setIsLiked(!isLiked);
     toast({
@@ -928,26 +977,87 @@ const CarDetails = memo(() => {
       duration: 3000,
     });
   }, [isLiked, toast]);
-
-  // Preload important images
-  useImagePreload(car?.image);
+  
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container-responsive py-8">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-muted rounded w-32"></div>
-            <div className="h-64 bg-muted rounded"></div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="h-6 bg-muted rounded w-3/4"></div>
-                <div className="h-4 bg-muted rounded w-1/2"></div>
-                <div className="h-32 bg-muted rounded"></div>
+          {/* Back button skeleton */}
+          <div className="animate-pulse mb-6">
+            <div className="h-10 bg-muted rounded w-32"></div>
+          </div>
+          
+          {/* Loading message */}
+          <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 border border-blue-200 dark:border-blue-800/30 rounded-lg">
+            <div className="flex items-center gap-3">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+              <div>
+                <div className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                  Loading Car Details...
+                </div>
+                <div className="text-sm text-blue-700 dark:text-blue-200">
+                  Fetching information for car #{lot}
+                </div>
               </div>
-              <div className="space-y-4">
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6 animate-pulse">
+            {/* Left Column - Main Image Skeleton */}
+            <div className="lg:col-span-2 xl:col-span-3 space-y-4">
+              <div className="bg-muted rounded-xl h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] xl:h-[700px] flex items-center justify-center">
+                <div className="text-center space-y-2">
+                  <div className="h-16 w-16 bg-muted-foreground/10 rounded-full mx-auto flex items-center justify-center">
+                    <Car className="h-8 w-8 text-muted-foreground/30" />
+                  </div>
+                  <div className="h-4 bg-muted-foreground/20 rounded w-32 mx-auto"></div>
+                </div>
+              </div>
+              
+              {/* Thumbnail row skeleton */}
+              <div className="flex gap-2 overflow-hidden">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-20 w-20 bg-muted rounded-lg flex-shrink-0" />
+                ))}
+              </div>
+            </div>
+
+            {/* Right Column - Car Info Skeleton */}
+            <div className="lg:col-span-1 xl:col-span-1 space-y-4">
+              {/* Title skeleton */}
+              <div className="space-y-2">
+                <div className="h-8 bg-muted rounded w-3/4"></div>
                 <div className="h-6 bg-muted rounded w-1/2"></div>
-                <div className="h-24 bg-muted rounded"></div>
               </div>
+              
+              {/* Price skeleton */}
+              <div className="h-12 bg-gradient-to-r from-muted to-muted/70 rounded-lg"></div>
+              
+              {/* Basic info skeleton */}
+              <div className="space-y-3">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                    <div className="h-4 bg-muted rounded w-20"></div>
+                    <div className="h-4 bg-muted rounded w-16"></div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Action buttons skeleton */}
+              <div className="flex gap-2">
+                <div className="h-10 bg-muted rounded flex-1"></div>
+                <div className="h-10 bg-muted rounded flex-1"></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Additional sections skeleton */}
+          <div className="mt-8 space-y-6 animate-pulse">
+            <div className="h-6 bg-muted rounded w-48"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-32 bg-muted rounded"></div>
+              ))}
             </div>
           </div>
         </div>
@@ -996,9 +1106,6 @@ const CarDetails = memo(() => {
     );
   }
   const images = car.images || [car.image].filter(Boolean);
-  const metaTags = useMemo(() => {
-    return generateCarMetaTags(car, lot || '');
-  }, [car, lot]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
@@ -1121,6 +1228,26 @@ const CarDetails = memo(() => {
             </Button>
           </div>
         </div>
+
+        {/* Demo/Fallback Data Notice */}
+        {usingFallbackData && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 border border-blue-200 dark:border-blue-800/50 rounded-lg">
+            <div className="flex items-start gap-3">
+              <div className="p-1 bg-blue-100 dark:bg-blue-900/50 rounded-full">
+                <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                  Demo Mode
+                </h3>
+                <p className="text-sm text-blue-700 dark:text-blue-200">
+                  You're viewing demo car data. In production, this would show real car details from our database. 
+                  The API calls are currently blocked in this environment for security reasons.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Compact Main Content - Enhanced Mobile-First Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
