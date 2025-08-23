@@ -154,9 +154,18 @@ const EncarCarCard = ({
 
   const handleShareClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    toast({
-      title: "Link Copied",
-      description: "Car listing link copied to clipboard",
+    const carUrl = `${window.location.origin}/car/${id}`;
+    navigator.clipboard.writeText(carUrl).then(() => {
+      toast({
+        title: "Link Copied",
+        description: "Car listing link copied to clipboard",
+      });
+    }).catch(() => {
+      toast({
+        title: "Error",
+        description: "Failed to copy link to clipboard",
+        variant: "destructive",
+      });
     });
   };
 
