@@ -596,8 +596,11 @@ const CarDetails = memo(() => {
   }, []);
   useEffect(() => {
     let isMounted = true;
+    let abortController = new AbortController();
+    
     const fetchCarDetails = async () => {
       if (!lot) return;
+      
       try {
         // Try to fetch from cache using OR condition for all possible matches
         console.log("Searching for car with lot:", lot);
@@ -888,6 +891,7 @@ const CarDetails = memo(() => {
     fetchCarDetails();
     return () => {
       isMounted = false;
+      abortController.abort();
     };
   }, [lot, convertUSDtoEUR]);
   const handleContactWhatsApp = useCallback(() => {
@@ -931,6 +935,11 @@ const CarDetails = memo(() => {
     return (
       <div className="min-h-screen bg-background">
         <div className="container-responsive py-8">
+          <div className="text-center mb-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+            <h2 className="text-xl font-semibold text-foreground mb-2">Loading Car Details...</h2>
+            <p className="text-muted-foreground">Fetching information for lot #{lot}</p>
+          </div>
           <div className="animate-pulse space-y-6">
             <div className="h-8 bg-muted rounded w-32"></div>
             <div className="h-64 bg-muted rounded"></div>
@@ -965,12 +974,31 @@ const CarDetails = memo(() => {
           <div className="text-center py-12">
             <AlertTriangle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-foreground mb-2">
-              Makina Nuk u Gjet
+              Car Details Temporarily Unavailable
             </h1>
-            <p className="text-muted-foreground">
-              Makina që po kërkoni nuk mund të gjindet në bazën tonë të të
-              dhënave.
+            <p className="text-muted-foreground mb-4">
+              We're having trouble loading the details for car lot #{lot}. This may be due to connectivity issues or the car may no longer be available.
             </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto mb-6">
+              <h3 className="font-semibold text-blue-800 mb-2">Try these options:</h3>
+              <ul className="text-blue-700 text-sm space-y-1 text-left">
+                <li>• Refresh this page to try loading again</li>
+                <li>• Check your internet connection</li>
+                <li>• Browse other available cars in our catalog</li>
+                <li>• Contact us if you need help finding this specific car</li>
+              </ul>
+            </div>
+            <div className="flex gap-3 justify-center flex-wrap">
+              <Button onClick={() => window.location.reload()} variant="default" size="lg">
+                🔄 Try Again
+              </Button>
+              <Button onClick={() => navigate("/catalog")} variant="outline" size="lg">
+                🚗 Browse Cars
+              </Button>
+              <Button onClick={() => navigate("/contacts")} variant="outline" size="lg">
+                📞 Contact Us
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -993,7 +1021,7 @@ const CarDetails = memo(() => {
         currency="EUR"
       />
       
-      <div className="container-responsive py-6 max-w-7xl">
+      <div className="container-responsive py-6 max-w-7xl">        
         {/* Header with Actions - Improved Mobile Layout */}
         <div className="flex flex-col gap-4 mb-6 md:mb-8">
           {/* Navigation Buttons */}
@@ -1007,15 +1035,37 @@ const CarDetails = memo(() => {
                 console.log("Document referrer:", document.referrer);
                 console.log("History length:", window.history.length);
 
-                // Try multiple methods in order of preference
+                // Method 1: Use saved previous page from NavigationContext (highest priority)
                 if (previousPage && previousPage !== window.location.href) {
                   console.log("🔙 Using saved previous page:", previousPage);
                   navigate(previousPage);
-                } else if (
+                  return;
+                }
+
+                // Method 2: Try to get saved scroll and filter state from sessionStorage
+                const savedScrollData = sessionStorage.getItem(
+                  "encar-catalog-scroll"
+                );
+                if (savedScrollData) {
+                  try {
+                    const { url, timestamp } = JSON.parse(savedScrollData);
+                    // Only use recent saved URLs (within 10 minutes)
+                    const isRecent = Date.now() - timestamp < 600000;
+                    if (url && url.includes("/catalog") && isRecent) {
+                      console.log("🔙 Using saved catalog URL from scroll data:", url);
+                      navigate(url);
+                      return;
+                    }
+                  } catch (error) {
+                    console.warn("Failed to parse saved scroll data:", error);
+                  }
+                }
+
+                // Method 3: Use document referrer if from same domain
+                if (
                   document.referrer &&
                   document.referrer !== window.location.href
                 ) {
-                  // If the referrer is from our domain, use it
                   const referrerUrl = new URL(document.referrer);
                   const currentUrl = new URL(window.location.href);
                   if (referrerUrl.origin === currentUrl.origin) {
@@ -1026,33 +1076,17 @@ const CarDetails = memo(() => {
                     window.location.href = document.referrer;
                     return;
                   }
-                } else if (window.history.length > 1) {
+                }
+
+                // Method 4: Use browser back if history exists
+                if (window.history.length > 1) {
                   console.log("🔙 Using browser back");
                   window.history.back();
                   return;
                 }
 
-                // Final fallbacks - try to preserve state
-                console.log("🔙 Using fallback to catalog");
-
-                // Try to get saved scroll and filter state from sessionStorage
-                const savedScrollData = sessionStorage.getItem(
-                  "encar-catalog-scroll"
-                );
-                if (savedScrollData) {
-                  try {
-                    const { url } = JSON.parse(savedScrollData);
-                    if (url && url.includes("/catalog")) {
-                      console.log("🔙 Using saved catalog URL:", url);
-                      navigate(url);
-                      return;
-                    }
-                  } catch (error) {
-                    console.warn("Failed to parse saved scroll data:", error);
-                  }
-                }
-
-                // Last resort - clean catalog
+                // Method 5: Last resort - clean catalog
+                console.log("🔙 Using fallback to clean catalog");
                 navigate("/catalog");
               }}
               className="flex-1 sm:flex-none shadow-sm border-2 hover:shadow-md transition-all h-10 px-4"

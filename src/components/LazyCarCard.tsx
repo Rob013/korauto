@@ -217,8 +217,11 @@ const LazyCarCard = memo(({
     // This prevents the filter panel from reopening when user returns to catalog
     sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
     
-    navigate(`/car/${lot}`);
-  }, [setPreviousPage, lot, navigate]);
+    // Use lot if available, fallback to id - this ensures CarDetails can find the car
+    const carIdentifier = lot || id;
+    
+    navigate(`/car/${carIdentifier}`);
+  }, [setPreviousPage, lot, id, navigate]);
 
   const handleDetailsClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -229,8 +232,11 @@ const LazyCarCard = memo(({
     // This prevents the filter panel from reopening when user returns to catalog
     sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
     
-    navigate(`/car/${lot}`);
-  }, [setPreviousPage, lot, navigate]);
+    // Use lot if available, fallback to id - this ensures CarDetails can find the car
+    const carIdentifier = lot || id;
+    
+    navigate(`/car/${carIdentifier}`);
+  }, [setPreviousPage, lot, id, navigate]);
 
   // Don't render content until intersection
   if (!isIntersecting) {
@@ -261,12 +267,21 @@ const LazyCarCard = memo(({
       ref={cardRef}
       className="glass-card overflow-hidden cursor-pointer group touch-manipulation mobile-card-compact rounded-lg"
       onClick={handleCardClick}
+      role="button"
+      aria-label={`Shiko detajet për ${year} ${make} ${model} - Çmimi ${price.toLocaleString()}€`}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleCardClick(e as any);
+        }
+      }}
     >
       <div className="relative h-40 sm:h-52 lg:h-56 bg-muted overflow-hidden">
         {image ? (
           <img 
             src={image} 
-            alt={`${year} ${make} ${model}`} 
+            alt={`${year} ${make} ${model} - Makina e importuar nga Koreja`} 
             className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
@@ -279,7 +294,7 @@ const LazyCarCard = memo(({
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-muted">
-            <Car className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
+            <Car className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" aria-hidden="true" />
           </div>
         )}
         
@@ -301,8 +316,9 @@ const LazyCarCard = memo(({
           <button
             onClick={handleFavoriteToggle}
             className="absolute top-1 sm:top-2 left-1 sm:left-2 p-1.5 sm:p-2 bg-black/50 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+            aria-label={isFavorite ? `Hiq nga të preferuarat ${year} ${make} ${model}` : `Shto në të preferuarat ${year} ${make} ${model}`}
           >
-            <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+            <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} aria-hidden="true" />
           </button>
         )}
       </div>
