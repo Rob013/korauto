@@ -969,12 +969,27 @@ const CarDetails = memo(() => {
           <div className="text-center py-12">
             <AlertTriangle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-foreground mb-2">
-              Makina Nuk u Gjet
+              Car Data Temporarily Unavailable
             </h1>
-            <p className="text-muted-foreground">
-              Makina që po kërkoni nuk mund të gjindet në bazën tonë të të
-              dhënave.
+            <p className="text-muted-foreground mb-4">
+              We're experiencing connectivity issues. The car details for lot #{lot} cannot be loaded at the moment.
             </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto mb-6">
+              <h3 className="font-semibold text-blue-800 mb-2">What you can do:</h3>
+              <ul className="text-blue-700 text-sm space-y-1 text-left">
+                <li>• Try refreshing the page</li>
+                <li>• Check your internet connection</li>
+                <li>• Contact us for assistance</li>
+              </ul>
+            </div>
+            <div className="flex gap-3 justify-center">
+              <Button onClick={() => window.location.reload()} variant="default">
+                Refresh Page
+              </Button>
+              <Button onClick={() => navigate("/catalog")} variant="outline">
+                Browse Catalog
+              </Button>
+            </div>
           </div>
         </div>
       </div>
