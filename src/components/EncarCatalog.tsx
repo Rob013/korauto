@@ -976,10 +976,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       <div 
         ref={filterPanelRef}
         className={`
-        fixed lg:relative z-40 bg-card border-r transition-transform duration-300 ease-in-out
+        fixed lg:relative z-40 glass-card transition-transform duration-300 ease-in-out
         ${showFilters ? 'translate-x-0' : '-translate-x-full'}
-        ${isMobile ? 'top-0 left-0 right-0 bottom-0 w-full h-dvh overflow-y-auto safe-area-inset' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0 overflow-y-auto'} 
-        lg:shadow-none shadow-xl
+        ${isMobile ? 'top-0 left-0 right-0 bottom-0 w-full h-dvh overflow-y-auto safe-area-inset rounded-none' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0 overflow-y-auto rounded-lg'} 
+        lg:shadow-none
       `}>
         <div className={`${isMobile ? 'mobile-filter-compact filter-header bg-primary text-primary-foreground' : 'p-3 sm:p-4 border-b flex-shrink-0'}`}>
           <div className="flex items-center justify-between">
