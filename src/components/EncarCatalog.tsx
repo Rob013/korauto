@@ -975,6 +975,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       {/* Collapsible Filter Sidebar - Optimized for mobile */}
       <div 
         ref={filterPanelRef}
+        data-filter-panel
         className={`
         fixed lg:relative z-40 glass-card transition-transform duration-300 ease-in-out
         ${showFilters ? 'translate-x-0' : '-translate-x-full'}
@@ -1009,10 +1010,12 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   variant="ghost" 
                   size="sm" 
                   onClick={() => {
+                    console.log("Close button clicked, isMobile:", isMobile);
                     setShowFilters(false);
                     setHasExplicitlyClosed(true); // Mark as explicitly closed
                   }}
                   className="flex items-center gap-1 h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground"
+                  title="Mbyll filtrat"
                 >
                   <X className="h-3 w-3" />
                 </Button>
@@ -1039,19 +1042,37 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             onFetchTrimLevels={fetchTrimLevels}
             compact={true}
             onSearchCars={() => {
-              // Apply search/filters but keep panel open on desktop
+              console.log("Search button clicked, isMobile:", isMobile);
+              // Apply search/filters
               fetchCars(1, { ...filters, per_page: "50" }, true);
-              if (isMobile) {
-                setShowFilters(false); // Only hide on mobile
-                setHasExplicitlyClosed(true); // Mark as explicitly closed on mobile
-              }
+              
+              // Force close filter panel on mobile (and desktop for consistency)
+              setShowFilters(false);
+              setHasExplicitlyClosed(true);
+              
+              // Additional CSS force close as backup
+              setTimeout(() => {
+                const filterPanel = document.querySelector('[data-filter-panel]');
+                if (filterPanel) {
+                  (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
+                  (filterPanel as HTMLElement).style.visibility = 'hidden';
+                }
+              }, 100);
             }}
             onCloseFilter={() => {
-              if (isMobile) {
-                setShowFilters(false);
-                setHasExplicitlyClosed(true); // Mark as explicitly closed
-              }
-              // Do nothing on desktop - filters stay open
+              console.log("Close filter called, isMobile:", isMobile);
+              // Force close the filter panel regardless of mobile detection
+              setShowFilters(false);
+              setHasExplicitlyClosed(true);
+              
+              // Additional CSS force close as backup
+              setTimeout(() => {
+                const filterPanel = document.querySelector('[data-filter-panel]');
+                if (filterPanel) {
+                  (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
+                  (filterPanel as HTMLElement).style.visibility = 'hidden';
+                }
+              }, 100);
             }}
           />
           
@@ -1310,6 +1331,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                         year={car.year}
                         price={price}
                         image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]}
+                        images={[
+                          ...(lot?.images?.normal || []),
+                          ...(lot?.images?.big || [])
+                        ].filter(Boolean)} // Combine normal and big images, filter out undefined
                         vin={car.vin}
                         mileage={
                           lot?.odometer?.km

@@ -257,8 +257,19 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={onCloseFilter}
+                onClick={() => {
+                  console.log("EncarStyleFilter close button clicked");
+                  onCloseFilter();
+                  // Force close the filter panel if parent handlers don't work
+                  setTimeout(() => {
+                    const filterPanel = document.querySelector('[data-filter-panel]');
+                    if (filterPanel) {
+                      (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
+                    }
+                  }, 100);
+                }}
                 className="text-muted-foreground hover:text-foreground flex items-center gap-1 h-6 px-1.5"
+                title="Mbyll filtrat"
               >
                 <X className="h-3 w-3" />
                 <span className="text-xs">Mbyll</span>

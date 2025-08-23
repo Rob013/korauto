@@ -180,6 +180,26 @@ All colors MUST be HSL.
       0 4px 25px -5px rgba(0, 0, 0, 0.1);
   }
 
+  /* Dark mode card touch effect */
+  .dark .card-touch-effect {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark .card-touch-effect:active {
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3), 
+                0 8px 32px -8px rgba(255, 255, 255, 0.2);
+    transform: scale(0.98);
+  }
+
+  /* Mobile card touch effect for better responsiveness */
+  @media (max-width: 768px) {
+    .dark .card-touch-effect:active {
+      box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.4), 
+                  0 12px 24px -8px rgba(255, 255, 255, 0.3);
+      transform: scale(0.96);
+    }
+  }
+
   /* Button animations */
   .btn-enhanced {
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
