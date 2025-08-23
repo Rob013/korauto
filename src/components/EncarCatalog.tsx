@@ -998,14 +998,19 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={handleClearFilters}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleClearFilters();
+                }}
                 className={`
                   lg:hidden flex items-center gap-1 transition-all duration-200
                   ${isMobile 
-                    ? 'h-8 px-2 hover:bg-primary-foreground/20 text-primary-foreground text-xs min-h-[44px] min-w-[44px] active:scale-95' 
+                    ? 'relative z-50 h-8 px-2 hover:bg-primary-foreground/20 text-primary-foreground text-xs min-h-[44px] min-w-[44px] active:scale-95' 
                     : 'h-8 px-2 hover:bg-accent'
                   }
                   focus:outline-none focus:ring-2 focus:ring-primary-foreground/50 focus:ring-offset-1
+                  pointer-events-auto
                 `}
                 aria-label="Pastro të gjitha filtrat"
                 title="Pastro të gjitha filtrat"
@@ -1017,14 +1022,17 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     setShowFilters(false);
                     setHasExplicitlyClosed(true); // Mark as explicitly closed
                   }}
                   className="
-                    flex items-center gap-1 h-8 px-2 hover:bg-primary-foreground/20 text-primary-foreground
+                    relative z-50 flex items-center gap-1 h-8 px-2 hover:bg-primary-foreground/20 text-primary-foreground
                     transition-all duration-200 min-h-[44px] min-w-[44px] active:scale-95
                     focus:outline-none focus:ring-2 focus:ring-primary-foreground/50 focus:ring-offset-1
+                    pointer-events-auto
                   "
                   aria-label="Mbyll panelin e filtrave"
                   title="Mbyll panelin e filtrave"
@@ -1118,7 +1126,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 <Button
                   variant="default"
                   size="lg"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     // Issue #2 FIXED: Allow toggling filters manually and reset explicit close flag
                     const newShowState = !showFilters;
                     setShowFilters(newShowState);
@@ -1129,14 +1139,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     }
                   }}
                   className={`
-                    flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base
+                    relative z-50 flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base
                     transition-all duration-200 ease-in-out
                     ${showFilters 
                       ? 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-md' 
                       : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl'
                     }
                     focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
-                    min-h-[44px] min-w-[44px] active:scale-95
+                    min-h-[44px] min-w-[44px] active:scale-95 pointer-events-auto
                   `}
                   aria-label={showFilters ? 'Fshih filtrat e kërkimit' : 'Shfaq filtrat e kërkimit'}
                   title={showFilters ? 'Fshih filtrat e kërkimit' : 'Shfaq filtrat e kërkimit'}
