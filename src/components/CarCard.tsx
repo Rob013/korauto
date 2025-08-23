@@ -391,17 +391,14 @@ const CarCard = ({
     };
     sessionStorage.setItem("encar-catalog-scroll", JSON.stringify(scrollData));
 
-    // Use lot if available, fallback to id - this ensures CarDetails can find the car
-    const carIdentifier = lot || id;
-
     console.log(
-      `🚗 Clicked car with ID: ${id}, lot: ${lot}, using: ${carIdentifier}, saved scroll: ${window.scrollY}px`
+      `🚗 Clicked car with ID: ${id}, lot: ${lot}, saved scroll: ${window.scrollY}px`
     );
 
     // Save current page for back navigation
     setPreviousPage(window.location.pathname + window.location.search);
     // Open car details in new tab
-    window.open(`/car/${carIdentifier}`, '_blank');
+    window.open(`/car/${lot}`, '_blank');
   };
 
   // Don't render the component if it should be hidden
@@ -413,15 +410,6 @@ const CarCard = ({
     <div
       className="glass-card card-hover overflow-hidden cursor-pointer group touch-manipulation relative rounded-lg"
       onClick={handleCardClick}
-      role="button"
-      aria-label={`Shiko detajet për ${year} ${make} ${model} - Çmimi ${price.toLocaleString()}€`}
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          handleCardClick();
-        }
-      }}
       style={{
         // Prevent layout shifts by setting fixed dimensions
         minHeight: '320px',
@@ -432,7 +420,7 @@ const CarCard = ({
         {image ? (
           <OptimizedImage
             src={image}
-            alt={`${year} ${make} ${model} - Makina e importuar nga Koreja`}
+            alt={`${year} ${make} ${model}`}
             className="w-full h-full group-hover:scale-110 transition-transform duration-500 ease-out"
             width={280}
             priority={false}
@@ -444,7 +432,7 @@ const CarCard = ({
             className="w-full h-full flex items-center justify-center bg-muted"
             style={{ aspectRatio: '280/160' }}
           >
-            <Car className="h-16 w-16 text-muted-foreground" aria-hidden="true" />
+            <Car className="h-16 w-16 text-muted-foreground" />
           </div>
         )}
         {/* Sold Out Badge - Takes priority over lot number */}

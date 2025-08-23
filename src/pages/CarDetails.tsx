@@ -48,7 +48,6 @@ import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
 import { generateCarMetaTags } from "@/utils/seoUtils";
 import { SEO } from "@/components/SEO";
-import { generateMockCars } from "@/utils/mockCarsData";
 interface CarDetails {
   id: string;
   make: string;
@@ -170,7 +169,7 @@ const EquipmentOptionsSection = memo(
                     : options.standard.slice(0, INITIAL_SHOW_COUNT)
                   ).map((option, index) => (
                     <Badge
-                      key={`standard-${option}-${index}`}
+                      key={index}
                       variant="secondary"
                       className="justify-center py-1.5 px-3 text-xs font-medium bg-primary/10 text-primary border-0 hover:bg-primary/20 transition-colors"
                     >
@@ -206,7 +205,7 @@ const EquipmentOptionsSection = memo(
                     : options.choice.slice(0, INITIAL_SHOW_COUNT)
                   ).map((option, index) => (
                     <Badge
-                      key={`choice-${option}-${index}`}
+                      key={index}
                       variant="outline"
                       className="justify-center py-1.5 px-3 text-xs font-medium bg-accent/10 text-accent-foreground border-accent/30 hover:bg-accent/20 transition-colors"
                     >
@@ -239,7 +238,7 @@ const EquipmentOptionsSection = memo(
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                   {options.tuning.map((option, index) => (
                     <Badge
-                      key={`tuning-${option}-${index}`}
+                      key={index}
                       variant="destructive"
                       className="justify-center py-1.5 px-3 text-xs font-medium bg-destructive/10 text-destructive border-0 hover:bg-destructive/20 transition-colors"
                     >
@@ -263,7 +262,7 @@ const EquipmentOptionsSection = memo(
                     : features.slice(0, INITIAL_SHOW_COUNT)
                   ).map((feature, index) => (
                     <Badge
-                      key={`feature-${feature}-${index}`}
+                      key={index}
                       variant="outline"
                       className="justify-center py-1.5 px-3 text-xs font-medium bg-muted/10 text-muted-foreground border-muted/40 hover:bg-muted/20 transition-colors"
                     >
@@ -299,7 +298,7 @@ const EquipmentOptionsSection = memo(
                     : safetyFeatures.slice(0, INITIAL_SHOW_COUNT)
                   ).map((feature, index) => (
                     <Badge
-                      key={`safety-${feature}-${index}`}
+                      key={index}
                       variant="outline"
                       className="justify-center py-1.5 px-3 text-xs font-medium bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20 transition-colors"
                     >
@@ -335,7 +334,7 @@ const EquipmentOptionsSection = memo(
                     : comfortFeatures.slice(0, INITIAL_SHOW_COUNT)
                   ).map((feature, index) => (
                     <Badge
-                      key={`comfort-${feature}-${index}`}
+                      key={index}
                       variant="secondary"
                       className="justify-center py-1.5 px-3 text-xs font-medium bg-secondary/10 text-secondary-foreground border-0 hover:bg-secondary/20 transition-colors"
                     >
@@ -364,66 +363,6 @@ const EquipmentOptionsSection = memo(
   }
 );
 EquipmentOptionsSection.displayName = "EquipmentOptionsSection";
-
-// Demo car fallback for when APIs are not available
-const createDemoCarForId = (carId: string): CarDetails => {
-  const demoMakeModels = [
-    { make: 'Toyota', model: 'Camry' },
-    { make: 'Honda', model: 'Civic' },
-    { make: 'BMW', model: '3 Series' },
-    { make: 'Mercedes-Benz', model: 'C-Class' },
-    { make: 'Audi', model: 'A4' },
-    { make: 'Hyundai', model: 'Elantra' },
-    { make: 'Kia', model: 'Forte' },
-    { make: 'Volkswagen', model: 'Golf' }
-  ];
-  
-  const idHash = parseInt(carId) || carId.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-  const selectedCar = demoMakeModels[idHash % demoMakeModels.length];
-  const year = 2018 + (idHash % 7); // 2018-2024
-  const basePrice = 25000 + (idHash % 45000); // 25k-70k EUR
-  
-  return {
-    id: carId,
-    make: selectedCar.make,
-    model: selectedCar.model,
-    year,
-    price: basePrice,
-    image: `https://picsum.photos/800/600?random=${idHash}`,
-    images: [
-      `https://picsum.photos/800/600?random=${idHash}`,
-      `https://picsum.photos/800/600?random=${idHash + 1}`,
-      `https://picsum.photos/800/600?random=${idHash + 2}`,
-      `https://picsum.photos/800/600?random=${idHash + 3}`
-    ],
-    vin: `DEMO${carId.toString().padStart(13, '0')}`,
-    mileage: `${(25000 + (idHash % 75000)).toLocaleString()} km`,
-    transmission: idHash % 3 === 0 ? 'Automatic' : 'Manual',
-    fuel: ['Petrol', 'Diesel', 'Hybrid'][idHash % 3],
-    color: ['Black', 'White', 'Silver', 'Blue', 'Red'][idHash % 5],
-    condition: 'Good Condition',
-    lot: carId,
-    title: `${year} ${selectedCar.make} ${selectedCar.model}`,
-    odometer: {
-      km: 25000 + (idHash % 75000),
-      mi: Math.round((25000 + (idHash % 75000)) * 0.621371),
-      status: { name: 'actual' }
-    },
-    engine: { name: '2.0L I4' },
-    cylinders: 4,
-    drive_wheel: { name: 'Front-wheel drive' },
-    body_type: { name: 'Sedan' },
-    damage: { main: null, second: null },
-    keys_available: true,
-    airbags: 'Front, Side, Curtain',
-    features: ['Air Conditioning', 'Power Windows', 'Power Steering', 'ABS Brakes'],
-    safety_features: ['Airbags', 'Anti-lock Brakes', 'Electronic Stability Control'],
-    comfort_features: ['Air Conditioning', 'Power Windows', 'Power Mirrors'],
-    performance_rating: 4.2,
-    popularity_score: 78
-  };
-};
-
 const CarDetails = memo(() => {
   const { id: lot } = useParams<{
     id: string;
@@ -657,11 +596,8 @@ const CarDetails = memo(() => {
   }, []);
   useEffect(() => {
     let isMounted = true;
-    let abortController = new AbortController();
-    
     const fetchCarDetails = async () => {
       if (!lot) return;
-      
       try {
         // Try to fetch from cache using OR condition for all possible matches
         console.log("Searching for car with lot:", lot);
@@ -944,21 +880,14 @@ const CarDetails = memo(() => {
       } catch (apiError) {
         console.error("Failed to fetch car data:", apiError);
         if (isMounted) {
-          // Use demo car as fallback when all API sources fail
-          console.log("Using demo car data as fallback for lot:", lot);
-          const demoCarData = createDemoCarForId(lot);
-          setCar(demoCarData);
+          setError("Car not found");
           setLoading(false);
-          
-          // Simple error message without toast to avoid hook issues
-          console.log("Demo Mode: External APIs are not available. Showing demo data for development.");
         }
       }
     };
     fetchCarDetails();
     return () => {
       isMounted = false;
-      abortController.abort();
     };
   }, [lot, convertUSDtoEUR]);
   const handleContactWhatsApp = useCallback(() => {
@@ -1222,7 +1151,7 @@ const CarDetails = memo(() => {
               <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-16 gap-2">
                 {images.slice(0, 24).map((image, index) => (
                   <button
-                    key={`image-${index}-${image.slice(-10)}`}
+                    key={index}
                     onClick={() => setSelectedImageIndex(index)}
                     aria-label={`Shiko imazhin ${index + 1} nga ${images.length}`}
                     className={`relative h-12 sm:h-14 md:h-16 bg-muted rounded-md overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
@@ -1608,7 +1537,7 @@ const CarDetails = memo(() => {
                                           const isGood = value === "goodness" || value === "proper" || value === "doesn't exist";
                                           return (
                                             <div
-                                              key={`mobile-preview-${key}-${index}`}
+                                              key={index}
                                               className={`w-2 h-2 rounded-full ${isGood ? 'bg-green-500' : 'bg-red-500'}`}
                                               title={`${key}: ${value}`}
                                             />
@@ -1642,7 +1571,7 @@ const CarDetails = memo(() => {
                                           const isGood = value === "goodness" || value === "proper" || value === "doesn't exist";
                                           return (
                                             <div
-                                              key={`desktop-preview-${key}-${index}`}
+                                              key={index}
                                               className={`w-2 h-2 rounded-full ${isGood ? 'bg-green-500' : 'bg-red-500'}`}
                                               title={`${key}: ${value}`}
                                             />
@@ -1842,7 +1771,7 @@ const CarDetails = memo(() => {
                                   {car.details.insurance.owner_changes.map(
                                     (change: any, index: number) => (
                                       <div
-                                        key={`owner-change-${change.change_type}-${change.date}-${index}`}
+                                        key={index}
                                         className="p-4 bg-card rounded-lg border border-purple-500/20 hover:shadow-md transition-shadow"
                                       >
                                         <div className="flex justify-between items-start">
@@ -1907,7 +1836,7 @@ const CarDetails = memo(() => {
                                   {car.details.maintenance_history.map(
                                     (record: any, index: number) => (
                                       <div
-                                        key={`maintenance-${record.service_type || record.type || 'service'}-${record.date || index}`}
+                                        key={index}
                                         className="p-4 bg-card rounded-lg border border-yellow-500/20 hover:shadow-md transition-shadow"
                                       >
                                         <div className="flex justify-between items-start">

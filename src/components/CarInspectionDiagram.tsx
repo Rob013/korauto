@@ -363,7 +363,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
                       <div className="text-sm text-muted-foreground mb-1">Detaje:</div>
                       <div className="flex flex-wrap gap-1">
                         {getPartStatus(selectedPart).map((status, index) => (
-                          <Badge key={`status-${status.title}-${index}`} variant="outline" className="text-xs">
+                          <Badge key={index} variant="outline" className="text-xs">
                             {status.title}
                           </Badge>
                         ))}
