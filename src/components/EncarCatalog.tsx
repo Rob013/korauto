@@ -261,7 +261,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       const scrollData = {
         scrollTop: window.scrollY,
         timestamp: Date.now(),
-        url: window.location.pathname + window.location.search, // Save current URL with filters
       };
       sessionStorage.setItem(SCROLL_STORAGE_KEY, JSON.stringify(scrollData));
     }

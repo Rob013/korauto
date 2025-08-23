@@ -224,7 +224,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Filter className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-semibold text-foreground">Filtrat e Kërkimit</h3>
+          <h3 className="text-lg font-semibold">Filtrat e Kërkimit</h3>
         </div>
         <div className="flex items-center gap-2">
           {activeFiltersCount > 0 && (
@@ -241,7 +241,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       {selectedFilters.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {selectedFilters.map((chip) => (
-            <Badge key={chip.key} variant="default" className="flex items-center gap-1 text-primary-foreground">
+            <Badge key={chip.key} variant="default" className="flex items-center gap-1">
               <span className="text-xs">{chip.label}: {chip.value}</span>
               <Button
                 variant="ghost"
@@ -258,7 +258,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
 
       {/* Search */}
       <div className="space-y-2">
-        <Label htmlFor="search" className="flex items-center gap-2 text-foreground">
+        <Label htmlFor="search" className="flex items-center gap-2">
           <Search className="h-4 w-4" />
           Kërko
         </Label>
@@ -284,7 +284,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
         >
           <div className="flex items-center gap-2">
             <Car className="h-4 w-4 text-primary" />
-            <span className="font-medium text-foreground">Filtrat Bazë</span>
+            <span className="font-medium">Filtrat Bazë</span>
           </div>
           {expandedSections.includes('basic') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
@@ -293,7 +293,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
           <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
             {/* Brand */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-foreground">
+              <Label className="flex items-center gap-2">
                 <Car className="h-4 w-4" />
                 Marka
               </Label>
@@ -313,7 +313,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
 
             {/* Model (dependent on brand) */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-foreground">
+              <Label className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
                 Modeli
               </Label>
@@ -337,7 +337,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
 
             {/* Year Range */}
             <div className="space-y-3">
-              <Label className="flex items-center gap-2 text-foreground">
+              <Label className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
                 Vitet
               </Label>
@@ -359,7 +359,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
 
             {/* Price Range */}
             <div className="space-y-3">
-              <Label className="flex items-center gap-2 text-foreground">
+              <Label className="flex items-center gap-2">
                 <DollarSign className="h-4 w-4" />
                 Çmimi (€)
               </Label>
@@ -391,7 +391,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
         >
           <div className="flex items-center gap-2">
             <Settings className="h-4 w-4 text-primary" />
-            <span className="font-medium text-foreground">Filtrat e Avancuar</span>
+            <span className="font-medium">Filtrat e Avancuar</span>
           </div>
           {expandedSections.includes('advanced') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
@@ -400,7 +400,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
           <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
             {/* Fuel Type */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-foreground">
+              <Label className="flex items-center gap-2">
                 <Fuel className="h-4 w-4" />
                 Lloji i Karburantit
               </Label>
@@ -420,7 +420,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
 
             {/* Transmission */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-foreground">
+              <Label className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
                 Transmisioni
               </Label>
@@ -440,7 +440,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
 
             {/* Mileage Range */}
             <div className="space-y-3">
-              <Label className="flex items-center gap-2 text-foreground">
+              <Label className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
                 Kilometrazhi (km)
               </Label>
@@ -462,7 +462,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
 
             {/* Body Type */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-foreground">
+              <Label className="flex items-center gap-2">
                 <Car className="h-4 w-4" />
                 Lloji i Trupit
               </Label>
@@ -482,7 +482,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
 
             {/* Color */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-foreground">
+              <Label className="flex items-center gap-2">
                 <Palette className="h-4 w-4" />
                 Ngjyra
               </Label>
@@ -502,7 +502,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
 
             {/* Location */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-foreground">
+              <Label className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
                 Vendndodhja
               </Label>
