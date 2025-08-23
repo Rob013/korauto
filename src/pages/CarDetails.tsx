@@ -1007,15 +1007,37 @@ const CarDetails = memo(() => {
                 console.log("Document referrer:", document.referrer);
                 console.log("History length:", window.history.length);
 
-                // Try multiple methods in order of preference
+                // Method 1: Use saved previous page from NavigationContext (highest priority)
                 if (previousPage && previousPage !== window.location.href) {
                   console.log("🔙 Using saved previous page:", previousPage);
                   navigate(previousPage);
-                } else if (
+                  return;
+                }
+
+                // Method 2: Try to get saved scroll and filter state from sessionStorage
+                const savedScrollData = sessionStorage.getItem(
+                  "encar-catalog-scroll"
+                );
+                if (savedScrollData) {
+                  try {
+                    const { url, timestamp } = JSON.parse(savedScrollData);
+                    // Only use recent saved URLs (within 10 minutes)
+                    const isRecent = Date.now() - timestamp < 600000;
+                    if (url && url.includes("/catalog") && isRecent) {
+                      console.log("🔙 Using saved catalog URL from scroll data:", url);
+                      navigate(url);
+                      return;
+                    }
+                  } catch (error) {
+                    console.warn("Failed to parse saved scroll data:", error);
+                  }
+                }
+
+                // Method 3: Use document referrer if from same domain
+                if (
                   document.referrer &&
                   document.referrer !== window.location.href
                 ) {
-                  // If the referrer is from our domain, use it
                   const referrerUrl = new URL(document.referrer);
                   const currentUrl = new URL(window.location.href);
                   if (referrerUrl.origin === currentUrl.origin) {
@@ -1026,33 +1048,17 @@ const CarDetails = memo(() => {
                     window.location.href = document.referrer;
                     return;
                   }
-                } else if (window.history.length > 1) {
+                }
+
+                // Method 4: Use browser back if history exists
+                if (window.history.length > 1) {
                   console.log("🔙 Using browser back");
                   window.history.back();
                   return;
                 }
 
-                // Final fallbacks - try to preserve state
-                console.log("🔙 Using fallback to catalog");
-
-                // Try to get saved scroll and filter state from sessionStorage
-                const savedScrollData = sessionStorage.getItem(
-                  "encar-catalog-scroll"
-                );
-                if (savedScrollData) {
-                  try {
-                    const { url } = JSON.parse(savedScrollData);
-                    if (url && url.includes("/catalog")) {
-                      console.log("🔙 Using saved catalog URL:", url);
-                      navigate(url);
-                      return;
-                    }
-                  } catch (error) {
-                    console.warn("Failed to parse saved scroll data:", error);
-                  }
-                }
-
-                // Last resort - clean catalog
+                // Method 5: Last resort - clean catalog
+                console.log("🔙 Using fallback to clean catalog");
                 navigate("/catalog");
               }}
               className="flex-1 sm:flex-none shadow-sm border-2 hover:shadow-md transition-all h-10 px-4"
