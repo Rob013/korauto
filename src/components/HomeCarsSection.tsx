@@ -290,6 +290,9 @@ const HomeCarsSection = memo(() => {
 
   // Apply daily rotating cars when no filters are applied, showing 50 cars same as catalog
   const dailyRotatingCars = useDailyRotatingCars(carsForSorting, hasFilters, 50);
+  
+  // Always call useSortedCars at top level to follow rules of hooks
+  const sortedCars = useSortedCars(carsForSorting, sortBy);
 
   // Use daily rotating cars when no filters, otherwise use sorted cars
   const carsToDisplay = useMemo(() => {
@@ -297,8 +300,8 @@ const HomeCarsSection = memo(() => {
       return dailyRotatingCars;
     }
     // When filters are applied, use sorted cars
-    return useSortedCars(carsForSorting, sortBy);
-  }, [hasFilters, dailyRotatingCars, carsForSorting, sortBy]);
+    return sortedCars;
+  }, [hasFilters, dailyRotatingCars, sortedCars]);
 
   // Show 50 cars by default (daily rotation) to match catalog
   const defaultDisplayCount = 50;
