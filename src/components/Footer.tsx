@@ -71,6 +71,7 @@ const Footer = () => {
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="hover:text-gray-300 transition-colors"
+                  aria-label="Ndiqni ne Facebook"
                 >
                   <Facebook className="h-5 w-5" />
                 </a>
@@ -79,6 +80,7 @@ const Footer = () => {
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="hover:text-gray-300 transition-colors"
+                  aria-label="Ndiqni ne Instagram"
                 >
                   <Instagram className="h-5 w-5" />
                 </a>
