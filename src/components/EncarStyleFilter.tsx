@@ -241,43 +241,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   if (compact) {
     return (
       <div className="space-y-2 h-full flex flex-col">
-        <div className="flex items-center justify-between flex-shrink-0">
-          <h3 className="text-sm font-semibold">Kërko Makinat</h3>
-          <div className="flex items-center gap-1">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onClearFilters}
-              className="
-                text-muted-foreground hover:text-destructive flex items-center gap-1 h-8 px-2
-                transition-all duration-200 min-h-[44px] min-w-[44px] active:scale-95
-                focus:outline-none focus:ring-2 focus:ring-destructive/50 focus:ring-offset-1
-              "
-              aria-label="Pastro të gjitha filtrat"
-              title="Pastro të gjitha filtrat"
-            >
-              <X className="h-3 w-3" />
-              <span className="text-xs">Pastro</span>
-            </Button>
-            {onCloseFilter && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={onCloseFilter}
-                className="
-                  text-muted-foreground hover:text-foreground flex items-center gap-1 h-8 px-2
-                  transition-all duration-200 min-h-[44px] min-w-[44px] active:scale-95
-                  focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-1
-                "
-                aria-label="Mbyll panelin e filtrave"
-                title="Mbyll panelin e filtrave"
-              >
-                <X className="h-3 w-3" />
-                <span className="text-xs">Mbyll</span>
-              </Button>
-            )}
-          </div>
-        </div>
+        {/* No header in compact mode - parent EncarCatalog handles the header */}
         
         {/* Scrollable filter content */}
         <div className="flex-1 overflow-y-auto space-y-2 pb-2">
@@ -772,8 +736,10 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           <div className="mt-4 flex justify-center">
             <Button 
               onClick={handleSearchClick} 
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-8 py-3 h-12 text-base"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-8 py-3 h-12 text-base min-h-[48px] transition-all duration-200 active:scale-98 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
               size="lg"
+              aria-label="Kërko makinat me këto filtra"
+              title="Kërko makinat me këto filtra"
             >
               <Search className="h-5 w-5 mr-2" />
               Kërko Makinat
