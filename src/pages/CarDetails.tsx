@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, memo, useMemo, useRef } from "react";
+import { useEffect, useState, useCallback, memo, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { trackPageView, trackCarView, trackFavorite } from "@/utils/analytics";
@@ -34,7 +34,6 @@ import {
   Share2,
   Heart,
   ChevronRight,
-  ChevronLeft,
   Expand,
   Copy,
   ChevronDown,
@@ -49,8 +48,6 @@ import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
 import { generateCarMetaTags } from "@/utils/seoUtils";
 import { SEO } from "@/components/SEO";
-import { useSwipeGesture } from "@/hooks/useSwipeGesture";
-import { useIsMobile } from "@/hooks/use-mobile";
 interface CarDetails {
   id: string;
   make: string;
@@ -110,113 +107,6 @@ interface CarDetails {
   details?: any;
   lots?: any[];
 }
-
-// Helper function to get fallback car by lot ID (outside component to avoid hooks issues)
-const getFallbackCarById = (lotId: string) => {
-  const fallbackCars = [
-    {
-      id: "fb-car-1",
-      title: "2022 Toyota Camry Hybrid",
-      manufacturer: { name: "Toyota" },
-      model: { name: "Camry" },
-      year: 2022,
-      price: 32000,
-      currency: "USD",
-      odometer: 25000,
-      fuel: { name: "Hybrid" },
-      transmission: { name: "Automatic" },
-      color: { name: "Silver" },
-      grade: "4.5",
-      vin: "1HGBH41JXMN109188",
-      lot_number: "FB001",
-      lots: [{
-        buy_now: 32000,
-        odometer: { km: 25000 },
-        images: {
-          normal: ["/placeholder.svg"],
-          big: ["/placeholder.svg"]
-        },
-        lot: "FB001",
-        status: 1
-      }],
-      location: "Prishtinë, Kosovo",
-      features: ["Hybrid Engine", "Automatic Transmission", "Low Mileage"],
-      is_premium: false,
-      seats_count: 5,
-      accidents_count: 0,
-      inspection_available: true,
-      status: "1"
-    },
-    {
-      id: "fb-car-2", 
-      title: "2021 Honda CR-V AWD",
-      manufacturer: { name: "Honda" },
-      model: { name: "CR-V" },
-      year: 2021,
-      price: 28000,
-      currency: "USD",
-      odometer: 35000,
-      fuel: { name: "Gasoline" },
-      transmission: { name: "CVT" },
-      color: { name: "Black" },
-      grade: "4.0",
-      vin: "2HKRM4H75CH100234",
-      lot_number: "FB002",
-      lots: [{
-        buy_now: 28000,
-        odometer: { km: 35000 },
-        images: {
-          normal: ["/placeholder.svg"],
-          big: ["/placeholder.svg"]
-        },
-        lot: "FB002",
-        status: 1
-      }],
-      location: "Prishtinë, Kosovo",
-      features: ["All-Wheel Drive", "CVT Transmission", "Excellent Condition"],
-      is_premium: true,
-      seats_count: 5,
-      accidents_count: 0,
-      inspection_available: true,
-      status: "1"
-    },
-    {
-      id: "fb-car-3",
-      title: "2020 Hyundai Tucson Limited",
-      manufacturer: { name: "Hyundai" }, 
-      model: { name: "Tucson" },
-      year: 2020,
-      price: 24000,
-      currency: "USD",
-      odometer: 45000,
-      fuel: { name: "Gasoline" },
-      transmission: { name: "Automatic" },
-      color: { name: "White" },
-      grade: "4.2",
-      vin: "KM8J33A26LU123456",
-      lot_number: "FB003",
-      lots: [{
-        buy_now: 24000,
-        odometer: { km: 45000 },
-        images: {
-          normal: ["/placeholder.svg"],
-          big: ["/placeholder.svg"]
-        },
-        lot: "FB003",
-        status: 1
-      }],
-      location: "Prishtinë, Kosovo",
-      features: ["Limited Edition", "Leather Seats", "Panoramic Sunroof"],
-      is_premium: false,
-      seats_count: 5,
-      accidents_count: 1,
-      inspection_available: true,
-      status: "1"
-    }
-  ];
-  
-  return fallbackCars.find(car => car.lot_number === lotId);
-};
 
 // Equipment Options Section Component with Show More functionality
 interface EquipmentOptionsProps {
@@ -493,31 +383,6 @@ const CarDetails = memo(() => {
   const [showEngineSection, setShowEngineSection] = useState(false);
   const [isPlaceholderImage, setIsPlaceholderImage] = useState(false);
 
-  // Mobile detection and refs for swipe/arrow navigation - Always initialize these hooks first
-  const isMobile = useIsMobile();
-  const mainImageRef = useRef<HTMLDivElement>(null);
-
-  // Image navigation functions - defined as stable callbacks
-  const handlePrevImage = useCallback(() => {
-    if (car?.images && car.images.length > 1) {
-      setSelectedImageIndex(prev => prev > 0 ? prev - 1 : car.images.length - 1);
-    }
-  }, [car?.images]);
-
-  const handleNextImage = useCallback(() => {
-    if (car?.images && car.images.length > 1) {
-      setSelectedImageIndex(prev => prev < car.images.length - 1 ? prev + 1 : 0);
-    }
-  }, [car?.images]);
-
-  // Setup swipe gestures for mobile - always call the hook with stable options
-  useSwipeGesture(mainImageRef, {
-    onSwipeLeft: car?.images && car.images.length > 1 ? handleNextImage : () => {},
-    onSwipeRight: car?.images && car.images.length > 1 ? handlePrevImage : () => {},
-    minSwipeDistance: 50,
-    maxVerticalDistance: 100
-  });
-
   // Reset placeholder state when image selection changes
   useEffect(() => {
     setIsPlaceholderImage(false);
@@ -538,7 +403,6 @@ const CarDetails = memo(() => {
       }
     }
   }, [car, hasAutoExpanded]);
-  
   const API_BASE_URL = "https://auctionsapi.com/api";
   const API_KEY = "d00985c77981fe8d26be16735f932ed1";
 
@@ -734,7 +598,6 @@ const CarDetails = memo(() => {
     let isMounted = true;
     const fetchCarDetails = async () => {
       if (!lot) return;
-
       try {
         // Try to fetch from cache using OR condition for all possible matches
         console.log("Searching for car with lot:", lot);
@@ -1017,51 +880,7 @@ const CarDetails = memo(() => {
       } catch (apiError) {
         console.error("Failed to fetch car data:", apiError);
         if (isMounted) {
-          // Try fallback cars before showing error
-          const fallbackCar = getFallbackCarById(lot);
-          if (fallbackCar) {
-            console.log("🔄 Using fallback car data for lot:", lot);
-            const basePrice = fallbackCar.lots?.[0]?.buy_now || fallbackCar.price || 25000;
-            const price = convertUSDtoEUR(Math.round(basePrice + 2200));
-            
-            const transformedCar: CarDetails = {
-              id: fallbackCar.id,
-              make: fallbackCar.manufacturer?.name || "Unknown",
-              model: fallbackCar.model?.name || "Unknown", 
-              year: fallbackCar.year || 2020,
-              price,
-              image: fallbackCar.lots?.[0]?.images?.normal?.[0] || "/placeholder.svg",
-              images: fallbackCar.lots?.[0]?.images?.normal || ["/placeholder.svg"],
-              vin: fallbackCar.vin,
-              mileage: fallbackCar.lots?.[0]?.odometer?.km
-                ? `${fallbackCar.lots[0].odometer.km.toLocaleString()} km`
-                : undefined,
-              transmission: fallbackCar.transmission?.name,
-              fuel: fallbackCar.fuel?.name,
-              color: fallbackCar.color?.name,
-              condition: "Good Condition",
-              lot: fallbackCar.lot_number,
-              title: fallbackCar.title,
-              features: fallbackCar.features || [],
-              safety_features: ["Airbag System", "ABS Brakes"],
-              comfort_features: ["Air Conditioning", "Power Windows"],
-              performance_rating: 4.5,
-              popularity_score: 85,
-            };
-            
-            setCar(transformedCar);
-            setLoading(false);
-            trackCarView(lot, transformedCar);
-            return;
-          }
-          
-          // Provide more specific error message based on the error type
-          const errorMessage = apiError instanceof Error 
-            ? (apiError.message.includes('fetch') 
-                ? `Network error: Unable to connect to car database. Please check your internet connection and try again.`
-                : `Error fetching car data: ${apiError.message}`)
-            : "Car not found in our database";
-          setError(errorMessage);
+          setError("Car not found");
           setLoading(false);
         }
       }
@@ -1092,13 +911,8 @@ const CarDetails = memo(() => {
     });
   }, [toast]);
 
-  // Memoize images array for performance - moved before any conditional returns
+  // Memoize images array for performance
   const carImages = useMemo(() => car?.images || [], [car?.images]);
-  const metaTags = useMemo(() => {
-    if (!car) return { title: '', description: '', image: '', url: '' };
-    return generateCarMetaTags(car, lot || '');
-  }, [car, lot]);
-  
   const [isLiked, setIsLiked] = useState(false);
   const handleLike = useCallback(() => {
     setIsLiked(!isLiked);
@@ -1132,13 +946,6 @@ const CarDetails = memo(() => {
               </div>
             </div>
           </div>
-          {process.env.NODE_ENV === 'development' && (
-            <div className="text-center mt-8">
-              <p className="text-sm text-muted-foreground">
-                Loading car details for ID: {lot}...
-              </p>
-            </div>
-          )}
         </div>
       </div>
     );
@@ -1160,38 +967,19 @@ const CarDetails = memo(() => {
             <h1 className="text-2xl font-bold text-foreground mb-2">
               Makina Nuk u Gjet
             </h1>
-            <p className="text-muted-foreground mb-4">
-              {error || "Makina që po kërkoni nuk mund të gjindet në bazën tonë të të dhënave."}
+            <p className="text-muted-foreground">
+              Makina që po kërkoni nuk mund të gjindet në bazën tonë të të
+              dhënave.
             </p>
-            {process.env.NODE_ENV === 'development' && (
-              <div className="text-xs text-muted-foreground/70 mt-6 p-4 bg-muted/30 rounded-lg max-w-md mx-auto">
-                <p className="font-semibold mb-2">Development Info:</p>
-                <p>Car ID: {lot}</p>
-                <p>Error: {error}</p>
-                <p className="mt-2">This might be due to network restrictions in the development environment.</p>
-              </div>
-            )}
-            <div className="mt-6 space-y-2">
-              <Button
-                onClick={() => navigate("/catalog")}
-                className="mx-2"
-              >
-                Shiko Katalogun
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => window.location.reload()}
-                className="mx-2"
-              >
-                Provo Përsëri
-              </Button>
-            </div>
           </div>
         </div>
       </div>
     );
   }
   const images = car.images || [car.image].filter(Boolean);
+  const metaTags = useMemo(() => {
+    return generateCarMetaTags(car, lot || '');
+  }, [car, lot]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
@@ -1317,7 +1105,6 @@ const CarDetails = memo(() => {
             <Card className="glass-card border-0 shadow-2xl overflow-hidden rounded-xl">
               <CardContent className="p-0">
                 <div
-                  ref={mainImageRef}
                   className="relative h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] xl:h-[700px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer"
                   onClick={() => setIsImageZoomOpen(true)}
                 >
@@ -1355,36 +1142,6 @@ const CarDetails = memo(() => {
                   <div className="absolute bottom-2 right-2 bg-black/50 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Expand className="h-3 w-3 text-white" />
                   </div>
-                  
-                  {/* Desktop Navigation Arrows - Only show when not on mobile and multiple images */}
-                  {!isMobile && images.length > 1 && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handlePrevImage();
-                        }}
-                        className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-all duration-200 h-10 w-10"
-                        disabled={selectedImageIndex === 0}
-                      >
-                        <ChevronLeft className="h-5 w-5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleNextImage();
-                        }}
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-all duration-200 h-10 w-10"
-                        disabled={selectedImageIndex === images.length - 1}
-                      >
-                        <ChevronRight className="h-5 w-5" />
-                      </Button>
-                    </>
-                  )}
                 </div>
               </CardContent>
             </Card>

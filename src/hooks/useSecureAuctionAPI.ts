@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { findGenerationYears } from "@/data/generationYears";
 import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from '../utils/grade-categorization';
-import { fallbackCars } from '@/data/fallbackData';
 
 // Simple cache to prevent redundant API calls
 const apiCache = new Map<string, { data: any; timestamp: number }>();
@@ -26,46 +25,9 @@ const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => P
 
 // Create fallback car data for testing when API is not available
 export const createFallbackCars = (filters: any = {}): any[] => {
-  console.log(`🔄 Using fallback cars (${fallbackCars.length} cars available)`);
-  
-  // Don't show fallback cars when a specific brand is selected (to avoid showing test cars)
-  if (filters.manufacturer_id && filters.manufacturer_id !== 'all' && filters.manufacturer_id !== '') {
-    console.log(`❌ Not showing fallback cars for specific brand filter: ${filters.manufacturer_id}`);
-    return [];
-  }
-  
-  // Apply basic filtering if specified
-  let filteredCars = [...fallbackCars];
-  
-  if (filters.year_from) {
-    filteredCars = filteredCars.filter(car => car.year >= parseInt(filters.year_from));
-  }
-  
-  if (filters.year_to) {
-    filteredCars = filteredCars.filter(car => car.year <= parseInt(filters.year_to));
-  }
-  
-  if (filters.price_from) {
-    filteredCars = filteredCars.filter(car => (car.lots?.[0]?.buy_now || car.price) >= parseInt(filters.price_from));
-  }
-  
-  if (filters.price_to) {
-    filteredCars = filteredCars.filter(car => (car.lots?.[0]?.buy_now || car.price) <= parseInt(filters.price_to));
-  }
-  
-  return filteredCars;
-};
-
-// Helper function to get manufacturer name by ID
-const getManufacturerNameById = (id: string): string | null => {
-  const manufacturerMap: { [key: string]: string } = {
-    '1': 'Toyota',
-    '2': 'Honda', 
-    '3': 'Hyundai',
-    '4': 'Kia',
-    '5': 'Nissan'
-  };
-  return manufacturerMap[id] || null;
+  // No more fallback cars - always return empty array
+  console.log(`🚫 Fallback cars disabled - returning empty array`);
+  return [];
 };
 
 // Create fallback generation data for testing when API is not available
@@ -861,17 +823,12 @@ export const useSecureAuctionAPI = () => {
         return;
       }
       
-      // Use fallback cars when API fails
-      console.log("❌ API failed, using fallback cars");
-      const fallbackCarsData = createFallbackCars(filters);
-      setCars(fallbackCarsData);
-      setTotalCount(fallbackCarsData.length);
+      // No fallback cars - show empty state when API fails
+      console.log("❌ API failed, showing empty state instead of fallback cars");
+      setError("Failed to load cars. Please try again.");
+      setCars([]);
+      setTotalCount(0);
       setHasMorePages(false);
-      if (fallbackCarsData.length === 0) {
-        setError("No cars found matching your filters.");
-      } else {
-        setError(null);
-      }
       return;
       
       if (resetList || page === 1) {
@@ -1978,9 +1935,9 @@ export const useSecureAuctionAPI = () => {
         return [];
       }
       
-      // Use fallback cars for global sorting
-      console.log("❌ API failed for global sorting, using fallback cars");
-      return createFallbackCars(filters);
+      // No fallback cars for global sorting - return empty array
+      console.log("❌ API failed for global sorting, returning empty array instead of fallback cars");
+      return [];
     }
   };
 

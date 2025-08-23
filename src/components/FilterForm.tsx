@@ -234,8 +234,6 @@ const FilterForm = memo<FilterFormProps>(({
             onClick={onClearFilters} 
             disabled={isLoading}
             className="text-xs px-2 py-1 h-6 ml-2 text-muted-foreground hover:text-destructive"
-            aria-label="Pastro të gjitha filtrat"
-            title="Pastro të gjitha filtrat"
           >
             {isLoading ? (
               <Loader2 className="h-3 w-3 animate-spin" />
@@ -343,8 +341,6 @@ const FilterForm = memo<FilterFormProps>(({
                   };
                   onFiltersChange(updatedFilters);
                 }}
-                aria-label="Pastro filtrin e viteve"
-                title="Pastro filtrin e viteve"
               >
                 <X className="h-3 w-3" />
               </Button>

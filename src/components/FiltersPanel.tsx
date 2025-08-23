@@ -230,13 +230,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
           {activeFiltersCount > 0 && (
             <Badge variant="secondary">{activeFiltersCount}</Badge>
           )}
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onClearFilters}
-            aria-label="Pastro të gjitha filtrat"
-            title="Pastro të gjitha filtrat"
-          >
+          <Button variant="outline" size="sm" onClick={onClearFilters}>
             <X className="h-3 w-3 mr-1" />
             Pastro të gjitha
           </Button>
@@ -254,8 +248,6 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 size="sm"
                 className="h-auto w-auto p-0 hover:bg-transparent"
                 onClick={() => removeFilter(chip.key)}
-                aria-label={`Hiq filtrin ${chip.label}: ${chip.value}`}
-                title={`Hiq filtrin ${chip.label}: ${chip.value}`}
               >
                 <X className="h-3 w-3" />
               </Button>
@@ -289,19 +281,16 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
           variant="ghost"
           onClick={() => toggleSection('basic')}
           className="w-full justify-between p-2 h-auto"
-          aria-expanded={expandedSections.includes('basic')}
-          aria-controls="basic-filters-section"
-          aria-label={`${expandedSections.includes('basic') ? 'Mbyll' : 'Hap'} filtrat bazë`}
         >
           <div className="flex items-center gap-2">
             <Car className="h-4 w-4 text-primary" />
-            <span className="font-medium" id="basic-filters-heading">Filtrat Bazë</span>
+            <span className="font-medium">Filtrat Bazë</span>
           </div>
           {expandedSections.includes('basic') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
 
         {expandedSections.includes('basic') && (
-          <div className="space-y-4 p-3 bg-muted/30 rounded-lg" id="basic-filters-section" role="region" aria-labelledby="basic-filters-heading">
+          <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
             {/* Brand */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
@@ -399,19 +388,16 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
           variant="ghost"
           onClick={() => toggleSection('advanced')}
           className="w-full justify-between p-2 h-auto"
-          aria-expanded={expandedSections.includes('advanced')}
-          aria-controls="advanced-filters-section"
-          aria-label={`${expandedSections.includes('advanced') ? 'Mbyll' : 'Hap'} filtrat e avancuar`}
         >
           <div className="flex items-center gap-2">
             <Settings className="h-4 w-4 text-primary" />
-            <span className="font-medium" id="advanced-filters-heading">Filtrat e Avancuar</span>
+            <span className="font-medium">Filtrat e Avancuar</span>
           </div>
           {expandedSections.includes('advanced') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
 
         {expandedSections.includes('advanced') && (
-          <div className="space-y-4 p-3 bg-muted/30 rounded-lg" id="advanced-filters-section" role="region" aria-labelledby="advanced-filters-heading">
+          <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
             {/* Fuel Type */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">

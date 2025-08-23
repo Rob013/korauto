@@ -247,16 +247,11 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onClearFilters();
-              }}
+              onClick={onClearFilters}
               className="
-                relative z-50 text-muted-foreground hover:text-destructive flex items-center gap-1 h-8 px-2
+                text-muted-foreground hover:text-destructive flex items-center gap-1 h-8 px-2
                 transition-all duration-200 min-h-[44px] min-w-[44px] active:scale-95
                 focus:outline-none focus:ring-2 focus:ring-destructive/50 focus:ring-offset-1
-                pointer-events-auto
               "
               aria-label="Pastro të gjitha filtrat"
               title="Pastro të gjitha filtrat"
@@ -268,16 +263,11 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onCloseFilter();
-                }}
+                onClick={onCloseFilter}
                 className="
-                  relative z-50 text-muted-foreground hover:text-foreground flex items-center gap-1 h-8 px-2
+                  text-muted-foreground hover:text-foreground flex items-center gap-1 h-8 px-2
                   transition-all duration-200 min-h-[44px] min-w-[44px] active:scale-95
                   focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-1
-                  pointer-events-auto
                 "
                 aria-label="Mbyll panelin e filtrave"
                 title="Mbyll panelin e filtrave"
@@ -820,19 +810,16 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           variant="ghost"
           onClick={() => toggleSection('basic')}
           className="w-full justify-between p-2 h-auto"
-          aria-expanded={expandedSections.includes('basic')}
-          aria-controls="encar-basic-filters-section"
-          aria-label={`${expandedSections.includes('basic') ? 'Mbyll' : 'Hap'} filtrat bazë`}
         >
           <div className="flex items-center gap-2">
             <Car className="h-4 w-4 text-primary" />
-            <span className="font-medium" id="encar-basic-filters-heading">Filtrat Bazë</span>
+            <span className="font-medium">Filtrat Bazë</span>
           </div>
           {expandedSections.includes('basic') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
 
         {expandedSections.includes('basic') && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-white/5 dark:bg-black/10 backdrop-blur-sm rounded-lg border border-white/10 dark:border-white/5" id="encar-basic-filters-section" role="region" aria-labelledby="encar-basic-filters-heading">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-white/5 dark:bg-black/10 backdrop-blur-sm rounded-lg border border-white/10 dark:border-white/5">
             <div className="space-y-2">
               <Label className="text-sm font-medium">Marka</Label>
               <AdaptiveSelect 
@@ -884,19 +871,16 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           variant="ghost"
           onClick={() => toggleSection('advanced')}
           className="w-full justify-between p-2 h-auto"
-          aria-expanded={expandedSections.includes('advanced')}
-          aria-controls="encar-advanced-filters-section"
-          aria-label={`${expandedSections.includes('advanced') ? 'Mbyll' : 'Hap'} filtrat e avancuar`}
         >
           <div className="flex items-center gap-2">
             <Settings className="h-4 w-4 text-primary" />
-            <span className="font-medium" id="encar-advanced-filters-heading">Filtrat e Avancuar</span>
+            <span className="font-medium">Filtrat e Avancuar</span>
           </div>
           {expandedSections.includes('advanced') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
 
         {expandedSections.includes('advanced') && (
-          <div className="space-y-4 p-3 bg-white/5 dark:bg-black/10 backdrop-blur-sm rounded-lg border border-white/10 dark:border-white/5" id="encar-advanced-filters-section" role="region" aria-labelledby="encar-advanced-filters-heading">
+          <div className="space-y-4 p-3 bg-white/5 dark:bg-black/10 backdrop-blur-sm rounded-lg border border-white/10 dark:border-white/5">
             {/* Price */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-3">

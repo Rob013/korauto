@@ -978,10 +978,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         className={`
         fixed lg:relative z-40 glass-card transition-transform duration-300 ease-in-out
         ${showFilters ? 'translate-x-0' : '-translate-x-full'}
-        ${isMobile ? 'top-0 left-0 bottom-0 w-screen h-dvh overflow-y-auto safe-area-inset rounded-none' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0 overflow-y-auto rounded-lg'} 
+        ${isMobile ? 'top-0 left-0 right-0 bottom-0 w-full h-dvh overflow-y-auto safe-area-inset rounded-none' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0 overflow-y-auto rounded-lg'} 
         lg:shadow-none
-      `}
-        style={isMobile ? { right: 'auto', minWidth: '100vw' } : {}}>
+      `}>
         <div className={`${isMobile ? 'mobile-filter-compact filter-header bg-primary text-primary-foreground' : 'p-3 sm:p-4 border-b flex-shrink-0'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -999,19 +998,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleClearFilters();
-                }}
+                onClick={handleClearFilters}
                 className={`
                   lg:hidden flex items-center gap-1 transition-all duration-200
                   ${isMobile 
-                    ? 'relative z-50 h-8 px-2 hover:bg-primary-foreground/20 text-primary-foreground text-xs min-h-[44px] min-w-[44px] active:scale-95' 
+                    ? 'h-8 px-2 hover:bg-primary-foreground/20 text-primary-foreground text-xs min-h-[44px] min-w-[44px] active:scale-95' 
                     : 'h-8 px-2 hover:bg-accent'
                   }
                   focus:outline-none focus:ring-2 focus:ring-primary-foreground/50 focus:ring-offset-1
-                  pointer-events-auto
                 `}
                 aria-label="Pastro të gjitha filtrat"
                 title="Pastro të gjitha filtrat"
@@ -1023,17 +1017,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
+                  onClick={() => {
                     setShowFilters(false);
                     setHasExplicitlyClosed(true); // Mark as explicitly closed
                   }}
                   className="
-                    relative z-50 flex items-center gap-1 h-8 px-2 hover:bg-primary-foreground/20 text-primary-foreground
+                    flex items-center gap-1 h-8 px-2 hover:bg-primary-foreground/20 text-primary-foreground
                     transition-all duration-200 min-h-[44px] min-w-[44px] active:scale-95
                     focus:outline-none focus:ring-2 focus:ring-primary-foreground/50 focus:ring-offset-1
-                    pointer-events-auto
                   "
                   aria-label="Mbyll panelin e filtrave"
                   title="Mbyll panelin e filtrave"
@@ -1127,9 +1118,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 <Button
                   variant="default"
                   size="lg"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
+                  onClick={() => {
                     // Issue #2 FIXED: Allow toggling filters manually and reset explicit close flag
                     const newShowState = !showFilters;
                     setShowFilters(newShowState);
@@ -1140,14 +1129,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     }
                   }}
                   className={`
-                    relative z-50 flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base
+                    flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base
                     transition-all duration-200 ease-in-out
                     ${showFilters 
                       ? 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-md' 
                       : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl'
                     }
                     focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
-                    min-h-[44px] min-w-[44px] active:scale-95 pointer-events-auto
+                    min-h-[44px] min-w-[44px] active:scale-95
                   `}
                   aria-label={showFilters ? 'Fshih filtrat e kërkimit' : 'Shfaq filtrat e kërkimit'}
                   title={showFilters ? 'Fshih filtrat e kërkimit' : 'Shfaq filtrat e kërkimit'}

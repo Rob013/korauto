@@ -186,8 +186,6 @@ const CatalogContent: React.FC = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => setFilterPanelCollapsed(true)}
-                    aria-label="Mbyll panelin e filtrave"
-                    title="Mbyll panelin e filtrave"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -228,8 +226,6 @@ const CatalogContent: React.FC = () => {
                       setFilterPanelCollapsed(false);
                     }}
                     className="flex items-center gap-2"
-                    aria-label={`Shfaq filtrat${activeFiltersCount > 0 ? ` (${activeFiltersCount} aktiv)` : ''}`}
-                    title={`Shfaq filtrat${activeFiltersCount > 0 ? ` (${activeFiltersCount} aktiv)` : ''}`}
                   >
                     <Filter className="h-4 w-4" />
                     Show Filters

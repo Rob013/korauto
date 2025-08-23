@@ -40,8 +40,8 @@ describe('Brand Filter Test Car Fix', () => {
     const result = createFallbackCars(filters);
     
     result.forEach(car => {
-      if (car.lots?.[0]?.images?.normal) {
-        car.lots[0].images.normal.forEach((image: string) => {
+      if (car.images?.normal) {
+        car.images.normal.forEach((image: string) => {
           expect(image).not.toContain('-demo.jpg');
         });
       }
@@ -54,8 +54,8 @@ describe('Brand Filter Test Car Fix', () => {
     const result = createFallbackCars(filters);
     
     result.forEach(car => {
-      if (car.lots?.[0]?.images?.normal && car.lots[0].images.normal.length > 0) {
-        expect(car.lots[0].images.normal[0]).toBe('/images/placeholder-car.jpg');
+      if (car.images?.normal && car.images.normal.length > 0) {
+        expect(car.images.normal[0]).toBe('/images/car-placeholder.jpg');
       }
     });
   });
