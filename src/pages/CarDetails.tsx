@@ -48,6 +48,7 @@ import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
 import { useImageSwipe } from "@/hooks/useImageSwipe";
+import { fallbackCars } from "@/data/fallbackData";
 interface CarDetails {
   id: string;
   make: string;
@@ -880,7 +881,58 @@ const CarDetails = memo(() => {
       } catch (apiError) {
         console.error("Failed to fetch car data:", apiError);
         if (isMounted) {
-          setError("Car not found");
+          // Try to find the car in fallback data as a last resort
+          const fallbackCar = fallbackCars.find(
+            car => car.id === lot || car.lot_number === lot
+          );
+          
+          if (fallbackCar && fallbackCar.lots?.[0]) {
+            console.log("Using fallback car data for:", lot);
+            const lotData = fallbackCar.lots[0];
+            const basePrice = lotData.buy_now || fallbackCar.price || 25000;
+            const price = convertUSDtoEUR(Math.round(basePrice + 2200));
+            
+            const transformedCar: CarDetails = {
+              id: fallbackCar.id,
+              make: fallbackCar.manufacturer?.name || "Unknown",
+              model: fallbackCar.model?.name || "Unknown",
+              year: fallbackCar.year || 2020,
+              price,
+              image: lotData.images?.normal?.[0] || lotData.images?.big?.[0] || "/placeholder.svg",
+              images: lotData.images?.normal || lotData.images?.big || [],
+              vin: fallbackCar.vin,
+              mileage: lotData.odometer?.km
+                ? `${lotData.odometer.km.toLocaleString()} km`
+                : undefined,
+              transmission: fallbackCar.transmission?.name,
+              fuel: fallbackCar.fuel?.name,
+              color: fallbackCar.color?.name,
+              condition: "Good Condition",
+              lot: fallbackCar.lot_number,
+              title: fallbackCar.title,
+              odometer: lotData.odometer,
+              features: fallbackCar.features || [],
+              safety_features: ["ABS", "Airbags", "Stability Control"],
+              comfort_features: ["Air Conditioning", "Power Windows"],
+              performance_rating: 4.5,
+              popularity_score: 85,
+            };
+            
+            setCar(transformedCar);
+            setLoading(false);
+            return;
+          }
+          
+          // If no fallback data found, show appropriate error message
+          const errorMessage = apiError instanceof Error 
+            ? (apiError.message.includes("Failed to fetch") 
+              ? "Unable to connect to the server. Please check your internet connection and try again."
+              : apiError.message.includes("404") 
+              ? `Car with ID ${lot} is not available. This car may have been sold or removed.`
+              : "Car not found")
+            : "Car not found";
+            
+          setError(errorMessage);
           setLoading(false);
         }
       }
@@ -911,7 +963,36 @@ const CarDetails = memo(() => {
     });
   }, [toast]);
 
-  // Memoize images array for performance
+  // Memoize images array for performance - compute before early returns
+  const images = useMemo(() => {
+    if (car?.images?.length) {
+      return car.images;
+    }
+    if (car?.image) {
+      return [car.image];
+    }
+    return [];
+  }, [car?.images, car?.image]);
+
+  // Add swipe functionality for car detail photos - must be before early returns
+  const {
+    currentIndex: swipeCurrentIndex,
+    containerRef: imageContainerRef,
+    goToNext,
+    goToPrevious,
+    goToIndex,
+  } = useImageSwipe({ 
+    images, 
+    onImageChange: (index) => setSelectedImageIndex(index) 
+  });
+
+  // Sync swipe current index with selected image index
+  useEffect(() => {
+    if (swipeCurrentIndex !== selectedImageIndex) {
+      goToIndex(selectedImageIndex);
+    }
+  }, [selectedImageIndex, swipeCurrentIndex, goToIndex]);
+
   const carImages = useMemo(() => car?.images || [], [car?.images]);
   const [isLiked, setIsLiked] = useState(false);
   const handleLike = useCallback(() => {
@@ -976,26 +1057,7 @@ const CarDetails = memo(() => {
       </div>
     );
   }
-  const images = car.images || [car.image].filter(Boolean);
   
-  // Add swipe functionality for car detail photos
-  const {
-    currentIndex: swipeCurrentIndex,
-    containerRef: imageContainerRef,
-    goToNext,
-    goToPrevious,
-    goToIndex,
-  } = useImageSwipe({ 
-    images, 
-    onImageChange: (index) => setSelectedImageIndex(index) 
-  });
-
-  // Sync swipe current index with selected image index
-  useEffect(() => {
-    if (swipeCurrentIndex !== selectedImageIndex) {
-      goToIndex(selectedImageIndex);
-    }
-  }, [selectedImageIndex, swipeCurrentIndex, goToIndex]);
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       <div className="container-responsive py-6 max-w-7xl">
