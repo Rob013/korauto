@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { findGenerationYears } from "@/data/generationYears";
 import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from '../utils/grade-categorization';
+import { fallbackCars } from '@/data/fallbackData';
 
 // Simple cache to prevent redundant API calls
 const apiCache = new Map<string, { data: any; timestamp: number }>();
@@ -25,128 +26,16 @@ const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => P
 
 // Create fallback car data for testing when API is not available
 export const createFallbackCars = (filters: any = {}): any[] => {
-  // Import fallback cars from data file using dynamic import
-  import('@/data/fallbackData').then(module => {
-    console.log(`🔄 Using fallback cars (${module.fallbackCars.length} cars available)`);
-  });
-  
-  // For now, create static fallback data inline
-  const fallbackCars = [
-    {
-      id: "fb-car-1",
-      title: "2022 Toyota Camry Hybrid",
-      manufacturer: { name: "Toyota" },
-      model: { name: "Camry" },
-      year: 2022,
-      price: 32000,
-      currency: "USD",
-      odometer: 25000,
-      fuel: { name: "Hybrid" },
-      transmission: { name: "Automatic" },
-      color: { name: "Silver" },
-      grade: "4.5",
-      vin: "1HGBH41JXMN109188",
-      lot_number: "FB001",
-      lots: [{
-        buy_now: 32000,
-        odometer: { km: 25000 },
-        images: {
-          normal: ["/placeholder.svg"],
-          big: ["/placeholder.svg"]
-        },
-        lot: "FB001",
-        status: 1
-      }],
-      location: "Prishtinë, Kosovo",
-      features: ["Hybrid Engine", "Automatic Transmission", "Low Mileage"],
-      is_premium: false,
-      seats_count: 5,
-      accidents_count: 0,
-      inspection_available: true,
-      status: "1"
-    },
-    {
-      id: "fb-car-2", 
-      title: "2021 Honda CR-V AWD",
-      manufacturer: { name: "Honda" },
-      model: { name: "CR-V" },
-      year: 2021,
-      price: 28000,
-      currency: "USD",
-      odometer: 35000,
-      fuel: { name: "Gasoline" },
-      transmission: { name: "CVT" },
-      color: { name: "Black" },
-      grade: "4.0",
-      vin: "2HKRM4H75CH100234",
-      lot_number: "FB002",
-      lots: [{
-        buy_now: 28000,
-        odometer: { km: 35000 },
-        images: {
-          normal: ["/placeholder.svg"],
-          big: ["/placeholder.svg"]
-        },
-        lot: "FB002",
-        status: 1
-      }],
-      location: "Prishtinë, Kosovo",
-      features: ["All-Wheel Drive", "CVT Transmission", "Excellent Condition"],
-      is_premium: true,
-      seats_count: 5,
-      accidents_count: 0,
-      inspection_available: true,
-      status: "1"
-    },
-    {
-      id: "fb-car-3",
-      title: "2020 Hyundai Tucson Limited",
-      manufacturer: { name: "Hyundai" }, 
-      model: { name: "Tucson" },
-      year: 2020,
-      price: 24000,
-      currency: "USD",
-      odometer: 45000,
-      fuel: { name: "Gasoline" },
-      transmission: { name: "Automatic" },
-      color: { name: "White" },
-      grade: "4.2",
-      vin: "KM8J33A26LU123456",
-      lot_number: "FB003",
-      lots: [{
-        buy_now: 24000,
-        odometer: { km: 45000 },
-        images: {
-          normal: ["/placeholder.svg"],
-          big: ["/placeholder.svg"]
-        },
-        lot: "FB003",
-        status: 1
-      }],
-      location: "Prishtinë, Kosovo",
-      features: ["Limited Edition", "Leather Seats", "Panoramic Sunroof"],
-      is_premium: false,
-      seats_count: 5,
-      accidents_count: 1,
-      inspection_available: true,
-      status: "1"
-    }
-  ];
-  
   console.log(`🔄 Using fallback cars (${fallbackCars.length} cars available)`);
+  
+  // Don't show fallback cars when a specific brand is selected (to avoid showing test cars)
+  if (filters.manufacturer_id && filters.manufacturer_id !== 'all' && filters.manufacturer_id !== '') {
+    console.log(`❌ Not showing fallback cars for specific brand filter: ${filters.manufacturer_id}`);
+    return [];
+  }
   
   // Apply basic filtering if specified
   let filteredCars = [...fallbackCars];
-  
-  if (filters.manufacturer_id || filters.manufacturer) {
-    const manufacturerName = filters.manufacturer || 
-      (filters.manufacturer_id && getManufacturerNameById(filters.manufacturer_id));
-    if (manufacturerName) {
-      filteredCars = filteredCars.filter(car => 
-        car.manufacturer?.name?.toLowerCase() === manufacturerName.toLowerCase()
-      );
-    }
-  }
   
   if (filters.year_from) {
     filteredCars = filteredCars.filter(car => car.year >= parseInt(filters.year_from));
