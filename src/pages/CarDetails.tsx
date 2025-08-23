@@ -596,11 +596,8 @@ const CarDetails = memo(() => {
   }, []);
   useEffect(() => {
     let isMounted = true;
-    let abortController = new AbortController();
-    
     const fetchCarDetails = async () => {
       if (!lot) return;
-      
       try {
         // Try to fetch from cache using OR condition for all possible matches
         console.log("Searching for car with lot:", lot);
@@ -891,7 +888,6 @@ const CarDetails = memo(() => {
     fetchCarDetails();
     return () => {
       isMounted = false;
-      abortController.abort();
     };
   }, [lot, convertUSDtoEUR]);
   const handleContactWhatsApp = useCallback(() => {
