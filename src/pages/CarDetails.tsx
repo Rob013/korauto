@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, memo, useMemo } from "react";
+import { useEffect, useState, useCallback, memo, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { trackPageView, trackCarView, trackFavorite } from "@/utils/analytics";
@@ -7,6 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
 import {
   ArrowLeft,
@@ -33,6 +35,7 @@ import {
   MessageCircle,
   Share2,
   Heart,
+  ChevronLeft,
   ChevronRight,
   Expand,
   Copy,
@@ -382,6 +385,12 @@ const CarDetails = memo(() => {
   const [hasAutoExpanded, setHasAutoExpanded] = useState(false);
   const [showEngineSection, setShowEngineSection] = useState(false);
   const [isPlaceholderImage, setIsPlaceholderImage] = useState(false);
+  
+  // Mobile detection
+  const isMobile = useIsMobile();
+  
+  // Ref for main image container for swipe gestures
+  const mainImageRef = useRef<HTMLDivElement>(null);
 
   // Reset placeholder state when image selection changes
   useEffect(() => {
@@ -910,9 +919,7 @@ const CarDetails = memo(() => {
       duration: 3000,
     });
   }, [toast]);
-
   // Memoize images array for performance
-  const carImages = useMemo(() => car?.images || [], [car?.images]);
   const [isLiked, setIsLiked] = useState(false);
   const handleLike = useCallback(() => {
     setIsLiked(!isLiked);
@@ -924,6 +931,54 @@ const CarDetails = memo(() => {
       duration: 3000,
     });
   }, [isLiked, toast]);
+
+  // Image navigation functions
+  const images = useMemo(() => car?.images || [car?.image].filter(Boolean), [car]);
+  
+  const goToPreviousImage = useCallback(() => {
+    if (images.length > 1) {
+      setSelectedImageIndex((prevIndex) => 
+        prevIndex === 0 ? images.length - 1 : prevIndex - 1
+      );
+    }
+  }, [images.length]);
+
+  const goToNextImage = useCallback(() => {
+    if (images.length > 1) {
+      setSelectedImageIndex((prevIndex) => 
+        prevIndex === images.length - 1 ? 0 : prevIndex + 1
+      );
+    }
+  }, [images.length]);
+
+  // Swipe gestures for mobile
+  useSwipeGesture(mainImageRef, {
+    onSwipeLeft: goToNextImage,
+    onSwipeRight: goToPreviousImage,
+    minSwipeDistance: 50,
+    maxVerticalDistance: 100,
+  });
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (images.length <= 1) return;
+      
+      switch (event.key) {
+        case 'ArrowLeft':
+          event.preventDefault();
+          goToPreviousImage();
+          break;
+        case 'ArrowRight':
+          event.preventDefault();
+          goToNextImage();
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [goToPreviousImage, goToNextImage, images.length]);
 
   // Preload important images
   useImagePreload(car?.image);
@@ -976,7 +1031,6 @@ const CarDetails = memo(() => {
       </div>
     );
   }
-  const images = car.images || [car.image].filter(Boolean);
   const metaTags = useMemo(() => {
     return generateCarMetaTags(car, lot || '');
   }, [car, lot]);
@@ -1105,6 +1159,7 @@ const CarDetails = memo(() => {
             <Card className="glass-card border-0 shadow-2xl overflow-hidden rounded-xl">
               <CardContent className="p-0">
                 <div
+                  ref={mainImageRef}
                   className="relative h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] xl:h-[700px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer"
                   onClick={() => setIsImageZoomOpen(true)}
                 >
@@ -1138,6 +1193,44 @@ const CarDetails = memo(() => {
                       Lot #{car.lot}
                     </Badge>
                   )}
+                  
+                  {/* Navigation Arrows for Desktop - Only show if multiple images */}
+                  {!isMobile && images.length > 1 && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          goToPreviousImage();
+                        }}
+                        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                        aria-label="Previous image"
+                      >
+                        <ChevronLeft className="h-6 w-6" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          goToNextImage();
+                        }}
+                        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                        aria-label="Next image"
+                      >
+                        <ChevronRight className="h-6 w-6" />
+                      </Button>
+                    </>
+                  )}
+                  
+                  {/* Image Counter */}
+                  {images.length > 1 && (
+                    <div className="absolute bottom-2 left-2 bg-black/50 backdrop-blur-sm rounded-lg px-2 py-1 text-white text-sm">
+                      {selectedImageIndex + 1} / {images.length}
+                    </div>
+                  )}
+                  
                   {/* Zoom icon */}
                   <div className="absolute bottom-2 right-2 bg-black/50 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Expand className="h-3 w-3 text-white" />
