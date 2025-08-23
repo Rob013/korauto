@@ -170,7 +170,7 @@ const EquipmentOptionsSection = memo(
                     : options.standard.slice(0, INITIAL_SHOW_COUNT)
                   ).map((option, index) => (
                     <Badge
-                      key={index}
+                      key={`standard-${option}-${index}`}
                       variant="secondary"
                       className="justify-center py-1.5 px-3 text-xs font-medium bg-primary/10 text-primary border-0 hover:bg-primary/20 transition-colors"
                     >
@@ -206,7 +206,7 @@ const EquipmentOptionsSection = memo(
                     : options.choice.slice(0, INITIAL_SHOW_COUNT)
                   ).map((option, index) => (
                     <Badge
-                      key={index}
+                      key={`choice-${option}-${index}`}
                       variant="outline"
                       className="justify-center py-1.5 px-3 text-xs font-medium bg-accent/10 text-accent-foreground border-accent/30 hover:bg-accent/20 transition-colors"
                     >
@@ -239,7 +239,7 @@ const EquipmentOptionsSection = memo(
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                   {options.tuning.map((option, index) => (
                     <Badge
-                      key={index}
+                      key={`tuning-${option}-${index}`}
                       variant="destructive"
                       className="justify-center py-1.5 px-3 text-xs font-medium bg-destructive/10 text-destructive border-0 hover:bg-destructive/20 transition-colors"
                     >
@@ -263,7 +263,7 @@ const EquipmentOptionsSection = memo(
                     : features.slice(0, INITIAL_SHOW_COUNT)
                   ).map((feature, index) => (
                     <Badge
-                      key={index}
+                      key={`feature-${feature}-${index}`}
                       variant="outline"
                       className="justify-center py-1.5 px-3 text-xs font-medium bg-muted/10 text-muted-foreground border-muted/40 hover:bg-muted/20 transition-colors"
                     >
@@ -299,7 +299,7 @@ const EquipmentOptionsSection = memo(
                     : safetyFeatures.slice(0, INITIAL_SHOW_COUNT)
                   ).map((feature, index) => (
                     <Badge
-                      key={index}
+                      key={`safety-${feature}-${index}`}
                       variant="outline"
                       className="justify-center py-1.5 px-3 text-xs font-medium bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20 transition-colors"
                     >
@@ -335,7 +335,7 @@ const EquipmentOptionsSection = memo(
                     : comfortFeatures.slice(0, INITIAL_SHOW_COUNT)
                   ).map((feature, index) => (
                     <Badge
-                      key={index}
+                      key={`comfort-${feature}-${index}`}
                       variant="secondary"
                       className="justify-center py-1.5 px-3 text-xs font-medium bg-secondary/10 text-secondary-foreground border-0 hover:bg-secondary/20 transition-colors"
                     >
@@ -1222,7 +1222,7 @@ const CarDetails = memo(() => {
               <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-16 gap-2">
                 {images.slice(0, 24).map((image, index) => (
                   <button
-                    key={index}
+                    key={`image-${index}-${image.slice(-10)}`}
                     onClick={() => setSelectedImageIndex(index)}
                     aria-label={`Shiko imazhin ${index + 1} nga ${images.length}`}
                     className={`relative h-12 sm:h-14 md:h-16 bg-muted rounded-md overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
@@ -1608,7 +1608,7 @@ const CarDetails = memo(() => {
                                           const isGood = value === "goodness" || value === "proper" || value === "doesn't exist";
                                           return (
                                             <div
-                                              key={index}
+                                              key={`mobile-preview-${key}-${index}`}
                                               className={`w-2 h-2 rounded-full ${isGood ? 'bg-green-500' : 'bg-red-500'}`}
                                               title={`${key}: ${value}`}
                                             />
@@ -1642,7 +1642,7 @@ const CarDetails = memo(() => {
                                           const isGood = value === "goodness" || value === "proper" || value === "doesn't exist";
                                           return (
                                             <div
-                                              key={index}
+                                              key={`desktop-preview-${key}-${index}`}
                                               className={`w-2 h-2 rounded-full ${isGood ? 'bg-green-500' : 'bg-red-500'}`}
                                               title={`${key}: ${value}`}
                                             />
@@ -1842,7 +1842,7 @@ const CarDetails = memo(() => {
                                   {car.details.insurance.owner_changes.map(
                                     (change: any, index: number) => (
                                       <div
-                                        key={index}
+                                        key={`owner-change-${change.change_type}-${change.date}-${index}`}
                                         className="p-4 bg-card rounded-lg border border-purple-500/20 hover:shadow-md transition-shadow"
                                       >
                                         <div className="flex justify-between items-start">
@@ -1907,7 +1907,7 @@ const CarDetails = memo(() => {
                                   {car.details.maintenance_history.map(
                                     (record: any, index: number) => (
                                       <div
-                                        key={index}
+                                        key={`maintenance-${record.service_type || record.type || 'service'}-${record.date || index}`}
                                         className="p-4 bg-card rounded-lg border border-yellow-500/20 hover:shadow-md transition-shadow"
                                       >
                                         <div className="flex justify-between items-start">
