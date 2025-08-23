@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X, ZoomIn, ZoomOut, RotateCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { useSwipeGesture } from "@/hooks/useSwipeGesture";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ImageZoomProps {
   src: string;
@@ -16,6 +18,8 @@ interface ImageZoomProps {
 export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex = 0, onImageChange }: ImageZoomProps) => {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
+  const isMobile = useIsMobile();
+  const imageContainerRef = useRef<HTMLDivElement>(null);
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.2, 3));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.2, 0.5));
@@ -44,6 +48,14 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
     if (e.key === 'ArrowRight') handleNextImage();
     if (e.key === 'Escape') onClose();
   };
+
+  // Setup swipe gestures for mobile - always call the hook with stable functions
+  useSwipeGesture(imageContainerRef, {
+    onSwipeLeft: images.length > 1 && onImageChange ? handleNextImage : () => {},
+    onSwipeRight: images.length > 1 && onImageChange ? handlePrevImage : () => {},
+    minSwipeDistance: 50,
+    maxVerticalDistance: 100
+  });
 
   // Add keyboard listeners
   useEffect(() => {
@@ -126,15 +138,17 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
             </Button>
           </div>
 
-          {/* Image */}
-          <img
-            src={src}
-            alt={alt}
-            className="max-w-full max-h-full object-contain transition-transform duration-200"
-            style={{
-              transform: `scale(${zoom}) rotate(${rotation}deg)`,
-            }}
-          />
+          {/* Image Container with swipe support */}
+          <div ref={imageContainerRef} className="flex items-center justify-center">
+            <img
+              src={src}
+              alt={alt}
+              className="max-w-full max-h-full object-contain transition-transform duration-200"
+              style={{
+                transform: `scale(${zoom}) rotate(${rotation}deg)`,
+              }}
+            />
+          </div>
 
           {/* Image counter and zoom indicator */}
           <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-2 rounded flex flex-col gap-1 text-sm">

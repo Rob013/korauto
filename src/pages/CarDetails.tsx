@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, memo, useMemo } from "react";
+import { useEffect, useState, useCallback, memo, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { trackPageView, trackCarView, trackFavorite } from "@/utils/analytics";
@@ -34,6 +34,7 @@ import {
   Share2,
   Heart,
   ChevronRight,
+  ChevronLeft,
   Expand,
   Copy,
   ChevronDown,
@@ -48,6 +49,8 @@ import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
 import { generateCarMetaTags } from "@/utils/seoUtils";
 import { SEO } from "@/components/SEO";
+import { useSwipeGesture } from "@/hooks/useSwipeGesture";
+import { useIsMobile } from "@/hooks/use-mobile";
 interface CarDetails {
   id: string;
   make: string;
@@ -383,6 +386,31 @@ const CarDetails = memo(() => {
   const [showEngineSection, setShowEngineSection] = useState(false);
   const [isPlaceholderImage, setIsPlaceholderImage] = useState(false);
 
+  // Mobile detection and refs for swipe/arrow navigation - Always initialize these hooks first
+  const isMobile = useIsMobile();
+  const mainImageRef = useRef<HTMLDivElement>(null);
+
+  // Image navigation functions - defined as stable callbacks
+  const handlePrevImage = useCallback(() => {
+    if (car?.images && car.images.length > 1) {
+      setSelectedImageIndex(prev => prev > 0 ? prev - 1 : car.images.length - 1);
+    }
+  }, [car?.images]);
+
+  const handleNextImage = useCallback(() => {
+    if (car?.images && car.images.length > 1) {
+      setSelectedImageIndex(prev => prev < car.images.length - 1 ? prev + 1 : 0);
+    }
+  }, [car?.images]);
+
+  // Setup swipe gestures for mobile - always call the hook with stable options
+  useSwipeGesture(mainImageRef, {
+    onSwipeLeft: car?.images && car.images.length > 1 ? handleNextImage : () => {},
+    onSwipeRight: car?.images && car.images.length > 1 ? handlePrevImage : () => {},
+    minSwipeDistance: 50,
+    maxVerticalDistance: 100
+  });
+
   // Reset placeholder state when image selection changes
   useEffect(() => {
     setIsPlaceholderImage(false);
@@ -598,6 +626,7 @@ const CarDetails = memo(() => {
     let isMounted = true;
     const fetchCarDetails = async () => {
       if (!lot) return;
+
       try {
         // Try to fetch from cache using OR condition for all possible matches
         console.log("Searching for car with lot:", lot);
@@ -1105,6 +1134,7 @@ const CarDetails = memo(() => {
             <Card className="glass-card border-0 shadow-2xl overflow-hidden rounded-xl">
               <CardContent className="p-0">
                 <div
+                  ref={mainImageRef}
                   className="relative h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] xl:h-[700px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer"
                   onClick={() => setIsImageZoomOpen(true)}
                 >
@@ -1142,6 +1172,36 @@ const CarDetails = memo(() => {
                   <div className="absolute bottom-2 right-2 bg-black/50 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Expand className="h-3 w-3 text-white" />
                   </div>
+                  
+                  {/* Desktop Navigation Arrows - Only show when not on mobile and multiple images */}
+                  {!isMobile && images.length > 1 && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePrevImage();
+                        }}
+                        className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-all duration-200 h-10 w-10"
+                        disabled={selectedImageIndex === 0}
+                      >
+                        <ChevronLeft className="h-5 w-5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleNextImage();
+                        }}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-all duration-200 h-10 w-10"
+                        disabled={selectedImageIndex === images.length - 1}
+                      >
+                        <ChevronRight className="h-5 w-5" />
+                      </Button>
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>
