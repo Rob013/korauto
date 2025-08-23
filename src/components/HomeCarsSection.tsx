@@ -7,6 +7,7 @@ import { AlertCircle } from "lucide-react";
 import { useSecureAuctionAPI } from "@/hooks/useSecureAuctionAPI";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useInView } from "@/hooks/useInView";
+import { useMobileFilter } from "@/hooks/use-mobile-filter";
 import {
   useSortedCars,
   getSortOptions,
@@ -374,12 +375,18 @@ const HomeCarsSection = memo(() => {
     loadManufacturers();
   }, []);
 
-  const handleFiltersChange = (newFilters: APIFilters) => {
-    // Always store filters as pending without auto-redirecting
-    // User must click "Kërko Makinat" button to navigate to catalog
-    setPendingFilters(newFilters);
-    console.log('Filters stored as pending:', newFilters);
-  };
+  // Use mobile filter hook for enhanced behavior
+  const { isMobile, handleMobileFiltersChange } = useMobileFilter({
+    onFiltersChange: (newFilters: APIFilters) => {
+      // Always store filters as pending without auto-redirecting
+      // User must click "Kërko Makinat" button to navigate to catalog
+      setPendingFilters(newFilters);
+      console.log('📱 Homepage filters stored as pending:', newFilters);
+    },
+    isHomepage: true
+  });
+
+  const handleFiltersChange = handleMobileFiltersChange;
 
   const handleSearchCars = () => {
     // Always redirect to catalog with current pending filters

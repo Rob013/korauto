@@ -859,6 +859,7 @@ All colors MUST be HSL.
   button, [role="button"] {
     min-height: 40px;
     min-width: 40px;
+    touch-action: manipulation; /* Prevents double-tap to zoom on mobile */
   }
 
   /* Enhanced filter button visibility */
@@ -867,6 +868,9 @@ All colors MUST be HSL.
     top: 12px;
     z-index: 20;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    touch-action: manipulation; /* Better mobile interaction */
+    min-height: 44px; /* iOS recommended minimum */
+    min-width: 44px;
   }
 
   /* Smooth filter panel transitions */
@@ -1018,6 +1022,27 @@ All colors MUST be HSL.
     padding: 3px 6px;
     font-size: 10px;
     min-height: 24px;
+  }
+
+  /* Mobile-specific button optimizations */
+  .mobile-filter-compact button {
+    touch-action: manipulation;
+    min-height: 40px; /* Better touch target */
+    position: relative;
+    z-index: 1; /* Ensure buttons are above other elements */
+  }
+
+  /* Prevent text selection on buttons for better UX */
+  .mobile-filter-compact button {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* Better tap highlight for mobile browsers */
+  .mobile-filter-compact button {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
   }
 }
 

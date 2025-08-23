@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { 
   Filter, 
   X, 
@@ -98,6 +99,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingGrades, setIsLoadingGrades] = useState(false);
   const [expandedSections, setExpandedSections] = useState<string[]>(['basic']);
+  const isMobile = useIsMobile();
 
   // Track if strict filtering mode is enabled - using utility
   const isStrictMode = useMemo(() => isStrictFilterMode(filters), [filters]);
@@ -106,6 +108,11 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     const actualValue = value === 'all' || value === 'any' ? undefined : value;
     
     setIsLoading(true);
+    
+    // Enhanced logging for mobile debugging
+    if (isMobile && isHomepage) {
+      console.log(`📱 Mobile homepage filter update: ${key} = ${actualValue}`);
+    }
     
     if (key === 'manufacturer_id') {
       onManufacturerChange?.(actualValue || '');
@@ -130,10 +137,14 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     // Faster response for year filters - reduced timeout for better responsiveness
     const timeout = (key === 'from_year' || key === 'to_year') ? 25 : 100;
     setTimeout(() => setIsLoading(false), timeout);
-  }, [filters, onFiltersChange, onManufacturerChange, onModelChange]);
+  }, [filters, onFiltersChange, onManufacturerChange, onModelChange, isMobile, isHomepage]);
 
   // Enhanced search handler for consistent catalog navigation
   const handleSearchClick = useCallback(() => {
+    if (isMobile && isHomepage) {
+      console.log('📱 Mobile homepage search button clicked');
+    }
+    
     if (onSearchCars) {
       onSearchCars();
     } else if (isHomepage) {
@@ -144,9 +155,10 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           searchParams.set(key, value);
         }
       });
+      console.log('🔗 Redirecting to catalog with filters:', searchParams.toString());
       window.location.href = `/catalog?${searchParams.toString()}`;
     }
-  }, [onSearchCars, isHomepage, filters]);
+  }, [onSearchCars, isHomepage, filters, isMobile]);
 
   // Handle year range preset selection - immediate application for better UX
   const handleYearRangePreset = useCallback((preset: { label: string; from: number; to: number }) => {
@@ -248,20 +260,24 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               variant="ghost" 
               size="sm" 
               onClick={onClearFilters}
-              className="text-muted-foreground hover:text-destructive flex items-center gap-1 h-6 px-1.5"
+              className={`text-muted-foreground hover:text-destructive flex items-center gap-1 ${isMobile ? 'h-10 px-3' : 'h-6 px-1.5'} mobile-filter-button`}
+              aria-label="Pastro filtrat"
+              style={{ touchAction: 'manipulation' }}
             >
-              <X className="h-3 w-3" />
-              <span className="text-xs">Pastro</span>
+              <X className={`${isMobile ? 'h-4 w-4' : 'h-3 w-3'}`} />
+              <span className={`${isMobile ? 'text-sm' : 'text-xs'}`}>Pastro</span>
             </Button>
             {onCloseFilter && (
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={onCloseFilter}
-                className="text-muted-foreground hover:text-foreground flex items-center gap-1 h-6 px-1.5"
+                className={`text-muted-foreground hover:text-foreground flex items-center gap-1 ${isMobile ? 'h-10 px-3' : 'h-6 px-1.5'} mobile-filter-button`}
+                aria-label="Mbyll filtrat"
+                style={{ touchAction: 'manipulation' }}
               >
-                <X className="h-3 w-3" />
-                <span className="text-xs">Mbyll</span>
+                <X className={`${isMobile ? 'h-4 w-4' : 'h-3 w-3'}`} />
+                <span className={`${isMobile ? 'text-sm' : 'text-xs'}`}>Mbyll</span>
               </Button>
             )}
           </div>
@@ -571,10 +587,12 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           <div className="pt-2 border-t flex-shrink-0">
             <Button 
               onClick={handleSearchClick} 
-              className="w-full h-8 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs"
+              className={`w-full ${isMobile ? 'h-12 text-sm' : 'h-8 text-xs'} bg-primary hover:bg-primary/90 text-primary-foreground font-medium mobile-filter-button`}
               size="sm"
+              aria-label="Kërko makinat"
+              style={{ touchAction: 'manipulation' }}
             >
-              <Search className="h-3 w-3 mr-1.5" />
+              <Search className={`${isMobile ? 'h-4 w-4' : 'h-3 w-3'} mr-1.5`} />
               Kërko Makinat
             </Button>
           </div>
@@ -737,10 +755,12 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           <div className="mt-4 flex justify-center">
             <Button 
               onClick={handleSearchClick} 
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-8 py-3 h-12 text-base"
+              className={`bg-primary hover:bg-primary/90 text-primary-foreground font-medium ${isMobile ? 'px-12 py-4 h-14 text-lg' : 'px-8 py-3 h-12 text-base'} mobile-filter-button`}
               size="lg"
+              aria-label="Kërko makinat"
+              style={{ touchAction: 'manipulation' }}
             >
-              <Search className="h-5 w-5 mr-2" />
+              <Search className={`${isMobile ? 'h-6 w-6' : 'h-5 w-5'} mr-2`} />
               Kërko Makinat
             </Button>
           </div>
