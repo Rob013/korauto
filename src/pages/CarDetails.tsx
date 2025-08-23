@@ -1086,7 +1086,7 @@ const CarDetails = memo(() => {
           {/* Left Column - Images and Gallery */}
           <div className="lg:col-span-2 xl:col-span-3 space-y-4">
             {/* Compact Main Image */}
-            <Card className="shadow-md border overflow-hidden">
+            <Card className="glass-card border-0 shadow-2xl overflow-hidden rounded-xl">
               <CardContent className="p-0">
                 <div
                   className="relative h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] xl:h-[700px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer"
@@ -1158,7 +1158,7 @@ const CarDetails = memo(() => {
             )}
 
             {/* Enhanced Vehicle Specifications */}
-            <Card className="shadow-md border">
+            <Card className="glass-card border-0 shadow-xl rounded-xl">
               <CardContent className="p-4">
                 <div className="flex flex-col gap-3 mb-4">
                   <h3 className="text-lg font-bold flex items-center text-foreground">
@@ -1198,7 +1198,7 @@ const CarDetails = memo(() => {
                 {/* Enhanced Specifications Grid - Better Mobile Layout */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                   {/* Basic Info */}
-                  <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center justify-between p-3 bg-white/5 dark:bg-black/10 backdrop-blur-sm border border-white/10 dark:border-white/5 rounded-lg hover:bg-white/10 dark:hover:bg-black/15 transition-all duration-200">
                     <div className="flex items-center gap-2">
                       <Car className="h-4 w-4 text-primary flex-shrink-0" />
                       <span className="font-medium text-foreground">Marka</span>
@@ -1208,7 +1208,7 @@ const CarDetails = memo(() => {
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center justify-between p-3 bg-white/5 dark:bg-black/10 backdrop-blur-sm border border-white/10 dark:border-white/5 rounded-lg hover:bg-white/10 dark:hover:bg-black/15 transition-all duration-200">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
                       <span className="font-medium text-foreground">Viti</span>
@@ -1268,7 +1268,7 @@ const CarDetails = memo(() => {
             </Card>
 
             {/* Enhanced Detailed Information Section */}
-            <Card className="shadow-lg border-0">
+            <Card className="glass-panel border-0 shadow-2xl rounded-xl">
               <CardContent className="p-4 lg:p-6">
                 <div className="flex flex-col gap-3 mb-4">
                   <h3 className="text-lg lg:text-xl font-bold flex items-center text-foreground">
@@ -1895,7 +1895,7 @@ const CarDetails = memo(() => {
           {/* Right Column - Enhanced Contact Card */}
           <div className="lg:col-span-1 xl:col-span-1 space-y-4">
             {/* Enhanced Contact & Inspection Card */}
-            <Card className="shadow-lg border sticky top-4">
+            <Card className="glass-panel border-0 shadow-2xl sticky top-4 rounded-xl">
               <CardContent className="p-4">
                 <h3 className="text-lg font-bold mb-4 text-center text-foreground">
                   Kontakt & Inspektim

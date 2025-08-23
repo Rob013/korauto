@@ -751,7 +751,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
   // Catalog style - expanded with sections
   return (
-    <Card className="p-4 space-y-4 bg-card border-border">
+    <Card className="glass-panel p-4 space-y-4 border-0 rounded-xl">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Filter className="h-5 w-5 text-primary" />
@@ -784,7 +784,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
         </Button>
 
         {expandedSections.includes('basic') && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-muted/30 rounded-lg">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-white/5 dark:bg-black/10 backdrop-blur-sm rounded-lg border border-white/10 dark:border-white/5">
             <div className="space-y-2">
               <Label className="text-sm font-medium">Marka</Label>
               <AdaptiveSelect 
@@ -845,7 +845,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
         </Button>
 
         {expandedSections.includes('advanced') && (
-          <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
+          <div className="space-y-4 p-3 bg-white/5 dark:bg-black/10 backdrop-blur-sm rounded-lg border border-white/10 dark:border-white/5">
             {/* Price */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-3">
