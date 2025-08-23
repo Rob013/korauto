@@ -247,11 +247,16 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={onClearFilters}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onClearFilters();
+              }}
               className="
-                text-muted-foreground hover:text-destructive flex items-center gap-1 h-8 px-2
+                relative z-50 text-muted-foreground hover:text-destructive flex items-center gap-1 h-8 px-2
                 transition-all duration-200 min-h-[44px] min-w-[44px] active:scale-95
                 focus:outline-none focus:ring-2 focus:ring-destructive/50 focus:ring-offset-1
+                pointer-events-auto
               "
               aria-label="Pastro të gjitha filtrat"
               title="Pastro të gjitha filtrat"
@@ -263,11 +268,16 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={onCloseFilter}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onCloseFilter();
+                }}
                 className="
-                  text-muted-foreground hover:text-foreground flex items-center gap-1 h-8 px-2
+                  relative z-50 text-muted-foreground hover:text-foreground flex items-center gap-1 h-8 px-2
                   transition-all duration-200 min-h-[44px] min-w-[44px] active:scale-95
                   focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-1
+                  pointer-events-auto
                 "
                 aria-label="Mbyll panelin e filtrave"
                 title="Mbyll panelin e filtrave"
