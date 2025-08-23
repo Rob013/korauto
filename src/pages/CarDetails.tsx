@@ -935,6 +935,11 @@ const CarDetails = memo(() => {
     return (
       <div className="min-h-screen bg-background">
         <div className="container-responsive py-8">
+          <div className="text-center mb-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+            <h2 className="text-xl font-semibold text-foreground mb-2">Loading Car Details...</h2>
+            <p className="text-muted-foreground">Fetching information for lot #{lot}</p>
+          </div>
           <div className="animate-pulse space-y-6">
             <div className="h-8 bg-muted rounded w-32"></div>
             <div className="h-64 bg-muted rounded"></div>
@@ -969,25 +974,29 @@ const CarDetails = memo(() => {
           <div className="text-center py-12">
             <AlertTriangle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-foreground mb-2">
-              Car Data Temporarily Unavailable
+              Car Details Temporarily Unavailable
             </h1>
             <p className="text-muted-foreground mb-4">
-              We're experiencing connectivity issues. The car details for lot #{lot} cannot be loaded at the moment.
+              We're having trouble loading the details for car lot #{lot}. This may be due to connectivity issues or the car may no longer be available.
             </p>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto mb-6">
-              <h3 className="font-semibold text-blue-800 mb-2">What you can do:</h3>
+              <h3 className="font-semibold text-blue-800 mb-2">Try these options:</h3>
               <ul className="text-blue-700 text-sm space-y-1 text-left">
-                <li>• Try refreshing the page</li>
+                <li>• Refresh this page to try loading again</li>
                 <li>• Check your internet connection</li>
-                <li>• Contact us for assistance</li>
+                <li>• Browse other available cars in our catalog</li>
+                <li>• Contact us if you need help finding this specific car</li>
               </ul>
             </div>
-            <div className="flex gap-3 justify-center">
-              <Button onClick={() => window.location.reload()} variant="default">
-                Refresh Page
+            <div className="flex gap-3 justify-center flex-wrap">
+              <Button onClick={() => window.location.reload()} variant="default" size="lg">
+                🔄 Try Again
               </Button>
-              <Button onClick={() => navigate("/catalog")} variant="outline">
-                Browse Catalog
+              <Button onClick={() => navigate("/catalog")} variant="outline" size="lg">
+                🚗 Browse Cars
+              </Button>
+              <Button onClick={() => navigate("/contacts")} variant="outline" size="lg">
+                📞 Contact Us
               </Button>
             </div>
           </div>
@@ -1012,7 +1021,7 @@ const CarDetails = memo(() => {
         currency="EUR"
       />
       
-      <div className="container-responsive py-6 max-w-7xl">
+      <div className="container-responsive py-6 max-w-7xl">        
         {/* Header with Actions - Improved Mobile Layout */}
         <div className="flex flex-col gap-4 mb-6 md:mb-8">
           {/* Navigation Buttons */}
