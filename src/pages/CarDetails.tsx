@@ -1137,6 +1137,7 @@ const CarDetails = memo(() => {
                   <button
                     key={index}
                     onClick={() => setSelectedImageIndex(index)}
+                    aria-label={`Shiko imazhin ${index + 1} nga ${images.length}`}
                     className={`relative h-12 sm:h-14 md:h-16 bg-muted rounded-md overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
                       selectedImageIndex === index
                         ? "border-primary shadow-md ring-2 ring-primary/50"

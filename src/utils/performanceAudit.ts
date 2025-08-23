@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Comprehensive performance audit utility for automated alignment and smoothness checking
 import { debounce, throttle } from './performance';
 

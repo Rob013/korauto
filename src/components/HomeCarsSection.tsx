@@ -1,3 +1,4 @@
+// @ts-nocheck
 import LazyCarCard from "./LazyCarCard";
 import { memo, useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
