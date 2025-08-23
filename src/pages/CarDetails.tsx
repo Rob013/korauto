@@ -950,19 +950,8 @@ const CarDetails = memo(() => {
           setCar(demoCarData);
           setLoading(false);
           
-          // Show user-friendly message about demo data
-          toast({
-            title: "Demo Mode",
-            description: "External APIs are not available. Showing demo data for development.",
-            duration: 5000,
-          });
-          
-          // Track demo car view without making external requests
-          try {
-            trackCarView(lot, demoCarData);
-          } catch (trackingError) {
-            console.log("Analytics tracking failed:", trackingError);
-          }
+          // Simple error message without toast to avoid hook issues
+          console.log("Demo Mode: External APIs are not available. Showing demo data for development.");
         }
       }
     };
