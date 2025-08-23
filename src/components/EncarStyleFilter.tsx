@@ -820,16 +820,19 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           variant="ghost"
           onClick={() => toggleSection('basic')}
           className="w-full justify-between p-2 h-auto"
+          aria-expanded={expandedSections.includes('basic')}
+          aria-controls="encar-basic-filters-section"
+          aria-label={`${expandedSections.includes('basic') ? 'Mbyll' : 'Hap'} filtrat bazë`}
         >
           <div className="flex items-center gap-2">
             <Car className="h-4 w-4 text-primary" />
-            <span className="font-medium">Filtrat Bazë</span>
+            <span className="font-medium" id="encar-basic-filters-heading">Filtrat Bazë</span>
           </div>
           {expandedSections.includes('basic') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
 
         {expandedSections.includes('basic') && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-white/5 dark:bg-black/10 backdrop-blur-sm rounded-lg border border-white/10 dark:border-white/5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-white/5 dark:bg-black/10 backdrop-blur-sm rounded-lg border border-white/10 dark:border-white/5" id="encar-basic-filters-section" role="region" aria-labelledby="encar-basic-filters-heading">
             <div className="space-y-2">
               <Label className="text-sm font-medium">Marka</Label>
               <AdaptiveSelect 
@@ -881,16 +884,19 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           variant="ghost"
           onClick={() => toggleSection('advanced')}
           className="w-full justify-between p-2 h-auto"
+          aria-expanded={expandedSections.includes('advanced')}
+          aria-controls="encar-advanced-filters-section"
+          aria-label={`${expandedSections.includes('advanced') ? 'Mbyll' : 'Hap'} filtrat e avancuar`}
         >
           <div className="flex items-center gap-2">
             <Settings className="h-4 w-4 text-primary" />
-            <span className="font-medium">Filtrat e Avancuar</span>
+            <span className="font-medium" id="encar-advanced-filters-heading">Filtrat e Avancuar</span>
           </div>
           {expandedSections.includes('advanced') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
 
         {expandedSections.includes('advanced') && (
-          <div className="space-y-4 p-3 bg-white/5 dark:bg-black/10 backdrop-blur-sm rounded-lg border border-white/10 dark:border-white/5">
+          <div className="space-y-4 p-3 bg-white/5 dark:bg-black/10 backdrop-blur-sm rounded-lg border border-white/10 dark:border-white/5" id="encar-advanced-filters-section" role="region" aria-labelledby="encar-advanced-filters-heading">
             {/* Price */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-3">
