@@ -254,15 +254,15 @@ const FilterForm = memo<FilterFormProps>(({
       {/* Basic Filters - Optimized mobile layout */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
         <div className="space-y-1">
-          <Label htmlFor="manufacturer" className="text-xs font-medium truncate">Brand</Label>
+          <Label htmlFor="manufacturer" className="text-xs font-medium truncate">Marka</Label>
           <AdaptiveSelect 
             value={filters.manufacturer_id || 'all'} 
             onValueChange={handleBrandChange} 
             disabled={isLoading}
-            placeholder={isLoading ? "Loading..." : "All Brands"}
+            placeholder={isLoading ? "Po ngarkon..." : "Të gjitha Markat"}
             className="h-8 text-xs"
             options={[
-              { value: 'all', label: 'All Brands' },
+              { value: 'all', label: 'Të gjitha Markat' },
               ...sortedManufacturers.map((manufacturer) => ({
                 value: manufacturer.id.toString(),
                 label: (
@@ -276,15 +276,15 @@ const FilterForm = memo<FilterFormProps>(({
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="model" className="text-xs font-medium truncate">Model</Label>
+          <Label htmlFor="model" className="text-xs font-medium truncate">Modeli</Label>
           <AdaptiveSelect 
             value={filters.model_id || 'all'} 
             onValueChange={(value) => updateFilter('model_id', value)}
             disabled={!filters.manufacturer_id || isLoading}
-            placeholder={isLoading ? "Loading..." : (filters.manufacturer_id ? "All Models" : "Select Brand First")}
+            placeholder={isLoading ? "Po ngarkon..." : (filters.manufacturer_id ? "Të gjithë Modelet" : "Zgjidhni markën së pari")}
             className="h-8 text-xs"
             options={[
-              { value: 'all', label: 'All Models' },
+              { value: 'all', label: 'Të gjithë Modelet' },
               ...(models && models.length > 0 ? 
                 models
                   .filter((model) => model.cars_qty && model.cars_qty > 0)
@@ -300,7 +300,7 @@ const FilterForm = memo<FilterFormProps>(({
 
         <div className="space-y-1">
           <Label htmlFor="year_presets" className="text-xs font-medium truncate flex items-center gap-1">
-            Quick Year Selection 
+            Zgjedhja e Shpejtë e Vitit 
             <span className="text-xs text-primary bg-primary/10 px-1 rounded" title="Optimized for instant results">⚡</span>
           </Label>
           <div className="flex flex-wrap gap-1">
@@ -349,14 +349,14 @@ const FilterForm = memo<FilterFormProps>(({
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="from_year" className="text-xs font-medium truncate">From Year</Label>
+          <Label htmlFor="from_year" className="text-xs font-medium truncate">Nga Viti</Label>
           <AdaptiveSelect 
             value={filters.from_year || 'any'} 
             onValueChange={(value) => updateFilter('from_year', value)}
-            placeholder="All years"
+            placeholder="Të gjithë vitet"
             className="h-8 text-xs"
             options={[
-              { value: 'any', label: 'All years' },
+              { value: 'any', label: 'Të gjithë vitet' },
               ...years.map((year) => ({
                 value: year.toString(),
                 label: year.toString()
@@ -366,14 +366,14 @@ const FilterForm = memo<FilterFormProps>(({
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="to_year" className="text-xs font-medium truncate">To Year</Label>
+          <Label htmlFor="to_year" className="text-xs font-medium truncate">Deri në Vit</Label>
           <AdaptiveSelect 
             value={filters.to_year || 'any'} 
             onValueChange={(value) => updateFilter('to_year', value)}
-            placeholder="All years"
+            placeholder="Të gjithë vitet"
             className="h-8 text-xs"
             options={[
-              { value: 'any', label: 'All years' },
+              { value: 'any', label: 'Të gjithë vitet' },
               ...years.map((year) => ({
                 value: year.toString(),
                 label: year.toString()
@@ -395,19 +395,19 @@ const FilterForm = memo<FilterFormProps>(({
         <div className="border-t pt-3 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
             <div className="space-y-1">
-              <Label htmlFor="grade" className="text-xs font-medium">Grade/Engine</Label>
+              <Label htmlFor="grade" className="text-xs font-medium">Grada/Motori</Label>
               <AdaptiveSelect 
                 value={filters.grade_iaai || 'all'} 
                 onValueChange={(value) => updateFilter('grade_iaai', value)}
                 disabled={!filters.manufacturer_id || isLoading}
-                placeholder={filters.manufacturer_id ? "All Grades" : "Select Brand First"}
+                placeholder={filters.manufacturer_id ? "Të gjitha Gradat" : "Zgjidhni markën së pari"}
                 className="h-8 text-xs sm:text-sm"
                 options={[
-                  { value: 'all', label: 'All Grades' },
+                  { value: 'all', label: 'Të gjitha Gradat' },
                   ...(grades.length === 0 && isLoadingGrades ? 
-                    [{ value: 'loading', label: 'Loading grades...', disabled: true }] :
+                    [{ value: 'loading', label: 'Po ngarkon gradat...', disabled: true }] :
                     grades.length === 0 && filters.manufacturer_id ? 
-                    [{ value: 'no-grades', label: 'No grades found', disabled: true }] :
+                    [{ value: 'no-grades', label: 'Nuk u gjetën grada', disabled: true }] :
                     grades.map((grade) => ({
                       value: grade.value,
                       label: `${grade.label}${grade.count ? ` (${grade.count})` : ''}`,
@@ -419,17 +419,17 @@ const FilterForm = memo<FilterFormProps>(({
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="trim_level" className="text-xs font-medium">Trim Level</Label>
+              <Label htmlFor="trim_level" className="text-xs font-medium">Niveli i Pajisjes</Label>
               <AdaptiveSelect 
                 value={filters.trim_level || 'all'} 
                 onValueChange={(value) => updateFilter('trim_level', value)}
                 disabled={!filters.manufacturer_id || isLoading}
-                placeholder={filters.manufacturer_id ? "All Trim Levels" : "Select Brand First"}
+                placeholder={filters.manufacturer_id ? "Të gjithë Nivelet e Pajisjes" : "Zgjidhni markën së pari"}
                 className="h-8 text-xs sm:text-sm"
                 options={[
-                  { value: 'all', label: 'All Trim Levels' },
+                  { value: 'all', label: 'Të gjithë Nivelet e Pajisjes' },
                   ...(trimLevels.length === 0 && filters.manufacturer_id ? 
-                    [{ value: 'no-trims', label: 'No trim levels found', disabled: true }] :
+                    [{ value: 'no-trims', label: 'Nuk u gjetën nivele pajisje', disabled: true }] :
                     trimLevels.map((trim) => ({
                       value: trim.value,
                       label: `${trim.label}${trim.count ? ` (${trim.count})` : ''}`
