@@ -1422,7 +1422,7 @@ const CarDetails = memo(() => {
                             car.insurance_v2.floodTotalLossCnt > 0 && (
                               <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
                                 <span className="text-sm">
-                                  demtime:
+                                  Dëmtime nga Përmbytja:
                                 </span>
                                 <Badge variant="destructive">
                                   {car.insurance_v2.floodTotalLossCnt}
@@ -1710,7 +1710,7 @@ const CarDetails = memo(() => {
                                       <div className="flex items-center gap-2 mb-2">
                                         <Settings className="h-4 w-4 text-green-600" />
                                         <span className="text-sm font-semibold text-foreground">
-                                          riparime
+                                          Riparime
                                         </span>
                                       </div>
                                       <p className="text-sm text-muted-foreground">
@@ -1732,7 +1732,7 @@ const CarDetails = memo(() => {
                                       <div className="flex items-center gap-2 mb-2">
                                         <Car className="h-4 w-4 text-green-600" />
                                         <span className="text-sm font-semibold text-foreground">
-                                          demtime
+                                          Dëmtime nga Përmbytja
                                         </span>
                                       </div>
                                       <p className="text-sm text-muted-foreground">
