@@ -16,7 +16,7 @@ import { getDefaultMetaTags } from "./utils/seoUtils";
 const Index = lazy(() => import("./pages/Index"));
 const Catalog = lazy(() => import("./pages/Catalog"));
 const NewCatalog = lazy(() => import("./pages/NewCatalog"));
-const CarDetails = lazy(() => import("./pages/CarDetails"));
+const CarDetails = lazy(() => import("./components/CarDetailsWrapper"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AuthPage = lazy(() => import("./pages/AuthPage"));
 const FavoritesPage = lazy(() => import("./pages/FavoritesPage"));
