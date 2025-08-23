@@ -520,12 +520,31 @@ All colors MUST be HSL.
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    box-shadow: 
+      0 4px 24px -8px rgba(0, 0, 0, 0.1),
+      0 2px 8px -4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark .glass-card {
     background: rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 
+      0 4px 24px -8px rgba(255, 255, 255, 0.1),
+      0 2px 8px -4px rgba(255, 255, 255, 0.05);
+  }
+
+  .glass-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      0 8px 40px -12px rgba(0, 0, 0, 0.15),
+      0 4px 16px -8px rgba(0, 0, 0, 0.1);
+  }
+
+  .dark .glass-card:hover {
+    box-shadow: 
+      0 8px 40px -12px rgba(255, 255, 255, 0.15),
+      0 4px 16px -8px rgba(255, 255, 255, 0.08);
   }
 
   /* Stagger animation for lists */

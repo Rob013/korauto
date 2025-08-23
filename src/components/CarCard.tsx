@@ -408,7 +408,7 @@ const CarCard = ({
 
   return (
     <div
-      className="modern-card card-hover overflow-hidden border border-border cursor-pointer group touch-manipulation relative"
+      className="glass-card card-hover overflow-hidden cursor-pointer group touch-manipulation relative rounded-lg"
       onClick={handleCardClick}
       style={{
         // Prevent layout shifts by setting fixed dimensions
