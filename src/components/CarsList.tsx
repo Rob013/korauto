@@ -4,6 +4,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import LoadingLogo from "@/components/LoadingLogo";
 
 interface Car {
   id: string;
@@ -285,10 +286,7 @@ const CarsList: React.FC<CarsListProps> = ({
       {/* Loading More Indicator */}
       {isLoading && cars.length > 0 && (
         <div className="flex justify-center py-8">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
-            <span>Loading more cars...</span>
-          </div>
+          <LoadingLogo size="md" />
         </div>
       )}
 

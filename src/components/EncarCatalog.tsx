@@ -1231,12 +1231,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
           {/* Loading State */}
           {(loading && cars.length === 0) || isRestoringState || isFilterLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin mr-2" />
-              <span>
-                {isRestoringState ? "Restoring your view..." : 
-                 isFilterLoading ? "Switching brand..." : "Loading cars..."}
-              </span>
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <LoadingLogo size="lg" />
+              {/* No text needed - logo shows loading state */}
             </div>
           ) : null}
 
@@ -1280,7 +1277,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           {/* Filter Loading State */}
           {isFilterLoading && cars.length === 0 && (
             <div className="flex items-center justify-center py-12">
-              {/* Loading without text or spinner */}
+              <LoadingLogo size="lg" />
             </div>
           )}
 
@@ -1291,9 +1288,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               {isFilterLoading && (
                 <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
                   <div className="bg-card border border-border rounded-lg p-6 shadow-lg">
-                    <div className="flex items-center gap-3">
-                      {/* Loading without text or spinner */}
-                    </div>
+                    <LoadingLogo size="md" />
                   </div>
                 </div>
               )}
@@ -1378,10 +1373,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               {/* Loading indicator for load more */}
               {loading && cars.length > 0 && (
                 <div className="flex justify-center py-8">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
-                    <span>Loading more cars...</span>
-                  </div>
+                  <LoadingLogo size="md" />
                 </div>
               )}
             </div>

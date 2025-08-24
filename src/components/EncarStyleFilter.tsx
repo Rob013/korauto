@@ -625,7 +625,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               <AdaptiveSelect 
                 value={filters.manufacturer_id || 'all'} 
                 onValueChange={(value) => updateFilter('manufacturer_id', value)}
-                placeholder={isLoading ? "Loading..." : "Zgjidhni markën"}
+                placeholder={isLoading ? "" : "Zgjidhni markën"}
                 className="h-11"
                 disabled={isLoading}
                 options={[
