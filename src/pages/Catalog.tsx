@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import PerformanceAuditWidget from "@/components/PerformanceAuditWidget";
 import { Activity } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Footer = lazy(() => import("@/components/Footer"));
 
@@ -33,6 +34,7 @@ const Catalog = () => {
   const [searchParams] = useSearchParams();
   const highlightCarId = searchParams.get('highlight');
   const [showAudit, setShowAudit] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     // Track catalog page view
@@ -42,22 +44,43 @@ const Catalog = () => {
     });
   }, [highlightCarId]);
 
+  // Check admin status
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session?.user) {
+          const { data: adminCheck } = await supabase.rpc("is_admin");
+          setIsAdmin(adminCheck || false);
+        }
+      } catch (error) {
+        console.error("Failed to check admin status:", error);
+        setIsAdmin(false);
+      }
+    };
+    checkAdminStatus();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
-      {/* Development Audit Tool */}
-      <div className="fixed top-20 right-4 z-50">
-        <Button
-          onClick={() => setShowAudit(!showAudit)}
-          variant="outline"
-          size="sm"
-          className="bg-background/95 backdrop-blur-sm"
-        >
-          <Activity className="h-4 w-4 mr-2" />
-          {showAudit ? 'Hide Audit' : 'Show Audit'}
-        </Button>
-      </div>
+      {/* Development Audit Tool - Only visible to administrators */}
+      {isAdmin && (
+        <div className="fixed top-20 right-4 z-50">
+          <Button
+            onClick={() => setShowAudit(!showAudit)}
+            variant="outline"
+            size="sm"
+            className="bg-background/95 backdrop-blur-sm"
+          >
+            <Activity className="h-4 w-4 mr-2" />
+            {showAudit ? 'Hide Audit' : 'Show Audit'}
+          </Button>
+        </div>
+      )}
       
       {showAudit && (
         <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-40 overflow-auto p-4">

@@ -63,7 +63,7 @@ const HomeCarsSection = memo(() => {
   const { convertUSDtoEUR } = useCurrencyAPI();
   const [sortBy, setSortBy] = useState<SortOption>("popular");
   const [showAllCars, setShowAllCars] = useState(false);
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
 
   const [filters, setFilters] = useState<APIFilters>({});
   const [pendingFilters, setPendingFilters] = useState<APIFilters>({});
