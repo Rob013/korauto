@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InstallPrompt } from "./components/InstallPrompt";
-import FloatingPerformanceWidget from "./components/FloatingPerformanceWidget";
 import { useResourcePreloader } from "./hooks/useResourcePreloader";
 import { AccessibilityEnhancer } from "./utils/accessibilityEnhancer";
 
@@ -215,7 +214,6 @@ const App = () => {
           </Routes>
         </BrowserRouter>
         <InstallPrompt />
-        <FloatingPerformanceWidget />
       </TooltipProvider>
     </QueryClientProvider>
   );
