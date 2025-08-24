@@ -374,6 +374,9 @@ const HomeCarsSection = memo(() => {
   const handleFiltersChange = (newFilters: APIFilters) => {
     // Check if generation is being selected
     if (newFilters.generation_id && newFilters.generation_id !== filters.generation_id) {
+      // Close the filter panel before navigation
+      setShowFilters(false);
+      
       // Smooth redirect to catalog with all current filters
       const searchParams = new URLSearchParams();
       Object.entries(newFilters).forEach(([key, value]) => {
@@ -400,6 +403,9 @@ const HomeCarsSection = memo(() => {
     );
     
     if (hasAdvancedFilters) {
+      // Close the filter panel before navigation
+      setShowFilters(false);
+      
       // Redirect to catalog with filters as URL params
       const searchParams = new URLSearchParams();
       Object.entries(newFilters).forEach(([key, value]) => {
@@ -421,6 +427,9 @@ const HomeCarsSection = memo(() => {
   };
 
   const handleSearchCars = () => {
+    // Close the filter panel after search
+    setShowFilters(false);
+    
     // Always redirect to catalog with current pending filters
     const searchParams = new URLSearchParams();
     Object.entries(pendingFilters).forEach(([key, value]) => {
