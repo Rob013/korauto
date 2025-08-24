@@ -910,7 +910,11 @@ const CarDetails = memo(() => {
               condition: "Good Condition",
               lot: fallbackCar.lot_number,
               title: fallbackCar.title,
-              odometer: lotData.odometer,
+              odometer: lotData.odometer ? {
+                km: lotData.odometer.km,
+                mi: Math.round(lotData.odometer.km * 0.621371),
+                status: { name: "Verified" }
+              } : undefined,
               features: fallbackCar.features || [],
               safety_features: ["ABS", "Airbags", "Stability Control"],
               comfort_features: ["Air Conditioning", "Power Windows"],

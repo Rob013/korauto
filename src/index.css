@@ -535,15 +535,18 @@ All colors MUST be HSL.
     transform: scale(1.02);
   }
 
-  /* Enhanced Glass morphism effect */
+  /* Enhanced Glass morphism effect with modern 3D shadows */
   .glass-card {
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.15);
     box-shadow: 
-      0 8px 32px -8px rgba(0, 0, 0, 0.12),
-      0 4px 16px -4px rgba(0, 0, 0, 0.08),
+      /* Deep black shadow for 3D depth in light mode */
+      0 8px 32px -8px rgba(0, 0, 0, 0.25),
+      0 4px 20px -4px rgba(0, 0, 0, 0.15),
+      0 2px 8px -2px rgba(0, 0, 0, 0.1),
+      /* Subtle inner highlight */
       inset 0 1px 0 rgba(255, 255, 255, 0.1);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -552,18 +555,26 @@ All colors MUST be HSL.
     background: rgba(0, 0, 0, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 
-      0 8px 32px -8px rgba(0, 0, 0, 0.25),
-      0 4px 16px -4px rgba(0, 0, 0, 0.15),
+      /* White glow shadow for 3D depth in dark mode */
+      0 8px 32px -8px rgba(255, 255, 255, 0.12),
+      0 4px 20px -4px rgba(255, 255, 255, 0.08), 
+      0 2px 8px -2px rgba(255, 255, 255, 0.04),
+      /* Enhanced dark base shadow */
+      0 12px 40px -8px rgba(0, 0, 0, 0.4),
+      /* Subtle inner highlight */
       inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
   .glass-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-6px) scale(1.02);
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 
-      0 16px 48px -12px rgba(0, 0, 0, 0.18),
-      0 8px 24px -8px rgba(0, 0, 0, 0.12),
+      /* Enhanced black shadow on hover for light mode */
+      0 20px 60px -12px rgba(0, 0, 0, 0.3),
+      0 12px 32px -8px rgba(0, 0, 0, 0.2),
+      0 6px 16px -4px rgba(0, 0, 0, 0.15),
+      /* Enhanced inner highlight */
       inset 0 1px 0 rgba(255, 255, 255, 0.15);
   }
 
@@ -571,8 +582,12 @@ All colors MUST be HSL.
     background: rgba(0, 0, 0, 0.25);
     border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: 
-      0 16px 48px -12px rgba(0, 0, 0, 0.35),
-      0 8px 24px -8px rgba(0, 0, 0, 0.25),
+      /* Enhanced white glow on hover for dark mode */
+      0 20px 60px -12px rgba(255, 255, 255, 0.18),
+      0 12px 32px -8px rgba(255, 255, 255, 0.12),
+      0 6px 16px -4px rgba(255, 255, 255, 0.08),
+      /* Enhanced darker base shadow */
+      0 16px 50px -8px rgba(0, 0, 0, 0.5),
       inset 0 1px 0 rgba(255, 255, 255, 0.08);
   }
 
