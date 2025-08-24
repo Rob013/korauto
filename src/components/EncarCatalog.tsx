@@ -95,29 +95,17 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [isFilterLoading, setIsFilterLoading] = useState(false);
   const isMobile = useIsMobile();
   
-  // Initialize showFilters - always open on desktop, toggleable on mobile
+  // Initialize showFilters - always start closed, only open when user explicitly clicks filter button
   const [showFilters, setShowFilters] = useState(() => {
-    if (isMobile) {
-      // On mobile, try to restore the previous filter panel state
-      const savedFilterState = sessionStorage.getItem('mobile-filter-panel-state');
-      if (savedFilterState !== null) {
-        return JSON.parse(savedFilterState);
-      }
-      // Default to closed on mobile
-      return false;
-    }
-    // Always open on desktop (unclosable)
-    return true;
+    // Always start with filters closed when navigating to catalog
+    // This ensures filter panel is hidden after "Kthehu te Makinat" or any external navigation
+    return false;
   });
   
   // Track if user has explicitly closed the filter panel to prevent auto-reopening
   const [hasExplicitlyClosed, setHasExplicitlyClosed] = useState(() => {
-    if (isMobile) {
-      const savedFilterState = sessionStorage.getItem('mobile-filter-panel-state');
-      // If state is explicitly false, user has closed it
-      return savedFilterState === 'false';
-    }
-    return false;
+    // Start as explicitly closed since we always begin with filters hidden
+    return true;
   });
 
   // Catalog lock state - prevents accidental swipe gestures on mobile
@@ -947,8 +935,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Save filter panel state to sessionStorage on mobile when it changes
   useEffect(() => {
     if (isMobile) {
-      sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(showFilters));
-      // Also save explicit close state to maintain consistency
+      // Only save when user explicitly opens the panel, but always start closed on navigation
+      // This ensures filter panel stays closed after "Kthehu te Makinat" or page navigation
+      sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
       sessionStorage.setItem('mobile-filter-explicit-close', JSON.stringify(hasExplicitlyClosed));
     }
   }, [showFilters, hasExplicitlyClosed, isMobile]);
@@ -985,7 +974,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         data-filter-panel
         className={`
         fixed lg:relative z-40 glass-card transition-transform duration-300 ease-in-out
-        ${showFilters ? 'translate-x-0' : '-translate-x-full'}
+        ${showFilters ? 'translate-x-0' : '-translate-x-full lg:hidden'}
         ${isMobile ? 'top-0 left-0 right-0 bottom-0 w-full h-dvh overflow-y-auto safe-area-inset rounded-none' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0 overflow-y-auto rounded-lg'} 
         lg:shadow-none
       `}>

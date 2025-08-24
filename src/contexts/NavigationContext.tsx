@@ -86,10 +86,9 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({ children
           }, 100);
         }
         
-        // Restore filter panel state if specified
-        if (pageState.filterPanelState !== undefined) {
-          sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(pageState.filterPanelState));
-        }
+        // Always keep filter panel closed when restoring state
+        // This ensures filter panel stays hidden after "Kthehu te Makinat" navigation
+        sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
         
         return true;
       }
@@ -111,10 +110,9 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({ children
               }, 100);
             }
             
-            // Restore filter panel state if specified
-            if (parsedState.filterPanelState !== undefined) {
-              sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(parsedState.filterPanelState));
-            }
+            // Always keep filter panel closed when restoring state from sessionStorage
+            // This ensures filter panel stays hidden after "Kthehu te Makinat" navigation
+            sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
             
             return true;
           }
