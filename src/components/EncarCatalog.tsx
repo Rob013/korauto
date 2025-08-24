@@ -20,6 +20,7 @@ import {
   Lock,
   Unlock,
 } from "lucide-react";
+import LoadingLogo from "@/components/LoadingLogo";
 import LazyCarCard from "@/components/LazyCarCard";
 import { useSecureAuctionAPI, createFallbackManufacturers } from "@/hooks/useSecureAuctionAPI";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
