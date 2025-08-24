@@ -1,9 +1,12 @@
-import { useEffect, lazy, Suspense } from "react";
+import { useEffect, lazy, Suspense, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { trackPageView } from "@/utils/analytics";
 import Header from "@/components/Header";
 import EncarCatalog from "@/components/EncarCatalog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import PerformanceAuditWidget from "@/components/PerformanceAuditWidget";
+import { Activity } from "lucide-react";
 
 const Footer = lazy(() => import("@/components/Footer"));
 
@@ -29,6 +32,7 @@ const FooterSkeleton = () => (
 const Catalog = () => {
   const [searchParams] = useSearchParams();
   const highlightCarId = searchParams.get('highlight');
+  const [showAudit, setShowAudit] = useState(false);
 
   useEffect(() => {
     // Track catalog page view
@@ -41,6 +45,28 @@ const Catalog = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
+      
+      {/* Development Audit Tool */}
+      <div className="fixed top-20 right-4 z-50">
+        <Button
+          onClick={() => setShowAudit(!showAudit)}
+          variant="outline"
+          size="sm"
+          className="bg-background/95 backdrop-blur-sm"
+        >
+          <Activity className="h-4 w-4 mr-2" />
+          {showAudit ? 'Hide Audit' : 'Show Audit'}
+        </Button>
+      </div>
+      
+      {showAudit && (
+        <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-40 overflow-auto p-4">
+          <div className="container-responsive py-8">
+            <PerformanceAuditWidget />
+          </div>
+        </div>
+      )}
+      
       <EncarCatalog highlightCarId={highlightCarId} />
       <Suspense fallback={<FooterSkeleton />}>
         <Footer />
