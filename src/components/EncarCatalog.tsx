@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { AdaptiveSelect } from "@/components/ui/adaptive-select";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigation } from "@/contexts/NavigationContext";
 import {
   Loader2,
   Search,
@@ -60,6 +61,7 @@ interface EncarCatalogProps {
 
 const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const { toast } = useToast();
+  const { restorePageState } = useNavigation();
   const {
     cars,
     setCars, // ✅ Import setCars
@@ -762,17 +764,21 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         newSearchParams.delete('fromHomepage');
         window.history.replaceState({}, '', `${window.location.pathname}?${newSearchParams.toString()}`);
       } else {
-        // Quick scroll restoration without complex timing checks
+        // Try to restore complete page state from navigation context first
         setTimeout(() => {
-          const savedData = sessionStorage.getItem(SCROLL_STORAGE_KEY);
-          if (savedData) {
-            try {
-              const { scrollTop } = JSON.parse(savedData);
-              if (scrollTop > 0) {
-                window.scrollTo({ top: scrollTop, behavior: 'auto' });
+          const stateRestored = restorePageState();
+          if (!stateRestored) {
+            // Fallback to sessionStorage scroll restoration
+            const savedData = sessionStorage.getItem(SCROLL_STORAGE_KEY);
+            if (savedData) {
+              try {
+                const { scrollTop } = JSON.parse(savedData);
+                if (scrollTop > 0) {
+                  window.scrollTo({ top: scrollTop, behavior: 'auto' });
+                }
+              } catch (error) {
+                // Ignore scroll restoration errors
               }
-            } catch (error) {
-              // Ignore scroll restoration errors
             }
           }
         }, 100); // Small delay to ensure DOM is ready
