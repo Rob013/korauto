@@ -61,7 +61,7 @@ const LazyCarCard = memo(({
   archive_reason
 }: LazyCarCardProps) => {
   const navigate = useNavigate();
-  const { setPreviousPage } = useNavigation();
+  const { setCompletePageState } = useNavigation();
   const { toast } = useToast();
   const [isFavorite, setIsFavorite] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -213,26 +213,40 @@ const LazyCarCard = memo(({
   const handleCardClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setPreviousPage(window.location.pathname + window.location.search);
     
-    // Issue #1 FIXED: Save filter panel as closed when navigating to car details
-    // This prevents the filter panel from reopening when user returns to catalog
+    // Save complete page state including scroll position and filter panel state
+    const currentFilterPanelState = sessionStorage.getItem('mobile-filter-panel-state');
+    setCompletePageState({
+      url: window.location.pathname + window.location.search,
+      scrollPosition: window.scrollY,
+      filterPanelState: currentFilterPanelState ? JSON.parse(currentFilterPanelState) : false,
+      timestamp: Date.now()
+    });
+    
+    // Close filter panel when navigating to car details (if it's open)
     sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
     
     navigate(`/car/${lot}`);
-  }, [setPreviousPage, lot, navigate]);
+  }, [setCompletePageState, lot, navigate]);
 
   const handleDetailsClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setPreviousPage(window.location.pathname + window.location.search);
     
-    // Issue #1 FIXED: Save filter panel as closed when navigating to car details
-    // This prevents the filter panel from reopening when user returns to catalog
+    // Save complete page state including scroll position and filter panel state
+    const currentFilterPanelState = sessionStorage.getItem('mobile-filter-panel-state');
+    setCompletePageState({
+      url: window.location.pathname + window.location.search,
+      scrollPosition: window.scrollY,
+      filterPanelState: currentFilterPanelState ? JSON.parse(currentFilterPanelState) : false,
+      timestamp: Date.now()
+    });
+    
+    // Close filter panel when navigating to car details (if it's open)
     sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
     
     navigate(`/car/${lot}`);
-  }, [setPreviousPage, lot, navigate]);
+  }, [setCompletePageState, lot, navigate]);
 
   // Don't render content until intersection
   if (!isIntersecting) {

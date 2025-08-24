@@ -370,7 +370,7 @@ const CarDetails = memo(() => {
   }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { goBack, previousPage, filterState } = useNavigation();
+  const { goBack, restorePageState, pageState } = useNavigation();
   const { convertUSDtoEUR, processFloodDamageText } = useCurrencyAPI();
   const [car, setCar] = useState<CarDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1072,59 +1072,20 @@ const CarDetails = memo(() => {
             <Button
               variant="outline"
               onClick={() => {
-                // Smart back navigation with multiple fallbacks
                 console.log("🔙 Attempting to go back...");
-                console.log("Previous page from context:", previousPage);
-                console.log("Document referrer:", document.referrer);
-                console.log("History length:", window.history.length);
-
-                // Try multiple methods in order of preference
-                if (previousPage && previousPage !== window.location.href) {
-                  console.log("🔙 Using saved previous page:", previousPage);
-                  navigate(previousPage);
-                } else if (
-                  document.referrer &&
-                  document.referrer !== window.location.href
-                ) {
-                  // If the referrer is from our domain, use it
-                  const referrerUrl = new URL(document.referrer);
-                  const currentUrl = new URL(window.location.href);
-                  if (referrerUrl.origin === currentUrl.origin) {
-                    console.log(
-                      "🔙 Using document referrer:",
-                      document.referrer
-                    );
-                    window.location.href = document.referrer;
-                    return;
-                  }
-                } else if (window.history.length > 1) {
-                  console.log("🔙 Using browser back");
-                  window.history.back();
-                  return;
+                console.log("Page state from context:", pageState);
+                
+                // Use the enhanced navigation context which handles state restoration
+                if (pageState && pageState.url) {
+                  console.log("🔙 Using saved page state:", pageState.url);
+                  // Navigate to the saved URL and restore state
+                  navigate(pageState.url);
+                  // Let the target page handle state restoration through restorePageState
+                } else {
+                  // Fallback to the original goBack logic
+                  console.log("🔙 Using goBack fallback");
+                  goBack();
                 }
-
-                // Final fallbacks - try to preserve state
-                console.log("🔙 Using fallback to catalog");
-
-                // Try to get saved scroll and filter state from sessionStorage
-                const savedScrollData = sessionStorage.getItem(
-                  "encar-catalog-scroll"
-                );
-                if (savedScrollData) {
-                  try {
-                    const { url } = JSON.parse(savedScrollData);
-                    if (url && url.includes("/catalog")) {
-                      console.log("🔙 Using saved catalog URL:", url);
-                      navigate(url);
-                      return;
-                    }
-                  } catch (error) {
-                    console.warn("Failed to parse saved scroll data:", error);
-                  }
-                }
-
-                // Last resort - clean catalog
-                navigate("/catalog");
               }}
               className="flex-1 sm:flex-none shadow-sm border-2 hover:shadow-md transition-all h-10 px-4"
             >
