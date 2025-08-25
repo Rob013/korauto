@@ -1,6 +1,4 @@
 
-// @ts-nocheck
-
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -194,6 +192,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Apply daily rotating cars when in default state, same as homepage
   const dailyRotatingCars = useDailyRotatingCars(carsForSorting, !isDefaultState, 50);
   
+  // Always call useSortedCars hook (hooks must be called unconditionally)
+  const sortedResults = useSortedCars(carsForSorting, sortBy);
+  
   // Memoized cars to display - uses global sorting when available
   const carsToDisplay = useMemo(() => {
     // Check if global sorting is ready and should be used
@@ -210,7 +211,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
     
     // Use regular sorted cars with pagination
-    const sortedResults = useSortedCars(carsForSorting, sortBy);
     const paginatedResults = sortedResults.slice((currentPage - 1) * 50, currentPage * 50);
     console.log(`📄 Using regular sorted cars for page ${currentPage}: ${paginatedResults.length} cars`);
     return paginatedResults;
@@ -222,8 +222,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     isDefaultState,
     hasUserSelectedSort,
     dailyRotatingCars,
-    carsForSorting,
-    sortBy
+    sortedResults
   ]);
 
   const [searchTerm, setSearchTerm] = useState(filters.search || "");

@@ -594,20 +594,61 @@ export class PerformanceAuditor {
   }
 
   /**
-   * Simple contrast ratio check
+   * Improved contrast ratio check using actual luminance calculation
    */
   private hasLowContrast(color: string, backgroundColor: string): boolean {
-    // This is a simplified check - in a real implementation,
-    // you would calculate the actual contrast ratio
-    if (backgroundColor === 'rgba(0, 0, 0, 0)' || backgroundColor === 'transparent') {
-      return false; // Can't check without background
+    // Skip transparent backgrounds - they inherit from parent
+    if (backgroundColor === 'rgba(0, 0, 0, 0)' || backgroundColor === 'transparent' || backgroundColor === '') {
+      return false;
     }
     
-    // Very basic check for obvious low contrast
-    const isLightText = color.includes('rgb(255') || color.includes('white');
-    const isLightBackground = backgroundColor.includes('rgb(255') || backgroundColor.includes('white');
-    
-    return isLightText === isLightBackground;
+    try {
+      // Parse colors and calculate luminance-based contrast ratio
+      const textLuminance = this.getLuminance(color);
+      const bgLuminance = this.getLuminance(backgroundColor);
+      
+      if (textLuminance === null || bgLuminance === null) {
+        return false; // Can't calculate, assume OK
+      }
+      
+      // Calculate contrast ratio
+      const contrast = (Math.max(textLuminance, bgLuminance) + 0.05) / (Math.min(textLuminance, bgLuminance) + 0.05);
+      
+      // WCAG AA standard is 4.5:1 for normal text, 3:1 for large text
+      return contrast < 4.5;
+    } catch (e) {
+      return false; // Error in calculation, assume OK
+    }
+  }
+
+  /**
+   * Calculate relative luminance of a color
+   */
+  private getLuminance(color: string): number | null {
+    try {
+      // Create a temporary element to get computed RGB values
+      const temp = document.createElement('div');
+      temp.style.color = color;
+      document.body.appendChild(temp);
+      const computedColor = window.getComputedStyle(temp).color;
+      document.body.removeChild(temp);
+      
+      // Parse RGB values
+      const rgb = computedColor.match(/\d+/g);
+      if (!rgb || rgb.length < 3) return null;
+      
+      const [r, g, b] = rgb.map(val => {
+        const normalized = parseInt(val) / 255;
+        return normalized <= 0.03928 
+          ? normalized / 12.92 
+          : Math.pow((normalized + 0.055) / 1.055, 2.4);
+      });
+      
+      // Calculate luminance using the standard formula
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    } catch (e) {
+      return null;
+    }
   }
 
   /**

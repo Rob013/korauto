@@ -87,7 +87,7 @@ describe('User Workflow Sorting - End to End Test', () => {
     let allCarsForSorting: any[] = [];
     const fetchingSortRef = { current: false };
     
-    let mockCars = generateMockCars(554);
+    const mockCars = generateMockCars(554);
     let globalSortCallCount = 0;
     
     // Mock the fetchAllCarsForSorting function

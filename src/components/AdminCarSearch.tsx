@@ -1,6 +1,4 @@
 
-// @ts-nocheck
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -72,7 +70,7 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
     try {
       console.log('🔍 Comprehensive search for:', term);
 
-      let allResults: CarSearchResult[] = [];
+      const allResults: CarSearchResult[] = [];
 
       // 1. First search in cached cars (fastest) - Enhanced with exact and partial matches
       console.log('🔍 Searching cached database...');

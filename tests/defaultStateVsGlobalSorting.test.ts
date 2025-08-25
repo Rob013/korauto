@@ -17,7 +17,7 @@ describe('Default State vs Global Sorting', () => {
     expect(isDefaultState).toBe(false); // User has applied filters
     
     // Simulate the state when filters are applied
-    let totalCount = 554; // Large dataset after filtering
+    const totalCount = 554; // Large dataset after filtering
     let sortBy = 'recently_added';
     let isSortingGlobal = false;
     let allCarsForSorting: any[] = [];

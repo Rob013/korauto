@@ -101,18 +101,21 @@ export const useResourcePreloader = () => {
     }
   }, []);
 
-  // Auto-preload critical assets on hook initialization
+  // Auto-preload critical assets on hook initialization (delayed to avoid warnings)
   useEffect(() => {
-    // Use requestIdleCallback for non-critical preloading
+    // Use requestIdleCallback for non-critical preloading with longer delay
     if ('requestIdleCallback' in window) {
       window.requestIdleCallback(() => {
-        preloadCriticalAssets();
+        // Add delay to ensure fonts/images are actually needed
+        setTimeout(() => {
+          preloadCriticalAssets();
+        }, 3000); // Wait 3 seconds before preloading
       });
     } else {
-      // Fallback for browsers without requestIdleCallback
+      // Fallback for browsers without requestIdleCallback - longer delay
       setTimeout(() => {
         preloadCriticalAssets();
-      }, 100);
+      }, 5000);
     }
   }, [preloadCriticalAssets]);
 
