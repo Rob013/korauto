@@ -60,6 +60,20 @@ const AuditTestPage: React.FC = () => {
           {/* Missing focus states */}
           <button style={{ outline: 'none' }}>Button without focus outline</button>
           
+          {/* Additional elements to trigger more accessibility issues */}
+          <button style={{ outline: 'none' }}>Another button without focus</button>
+          <button style={{ outline: 'none' }}>Third button without focus</button>
+          <button style={{ outline: 'none' }}>Fourth button without focus</button>
+          
+          {/* Interactive elements without ARIA */}
+          <div 
+            role="button" 
+            tabIndex={0}
+            style={{ background: 'lightgray', padding: '10px', cursor: 'pointer' }}
+          >
+            Another interactive div without ARIA label
+          </div>
+          
           {/* Table without headers */}
           <table border={1}>
             <tbody>

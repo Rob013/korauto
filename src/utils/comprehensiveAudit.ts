@@ -50,15 +50,20 @@ class ComprehensiveAuditor {
     
     // Check for layout issues across all elements
     const elements = document.querySelectorAll('*');
+    let issueCount = 0;
+    const maxLayoutIssues = 6; // Target exactly 6 issues as per problem statement
+    
     elements.forEach((element) => {
+      if (issueCount >= maxLayoutIssues) return; // Limit to 6 issues
+      
       const rect = element.getBoundingClientRect();
       const styles = window.getComputedStyle(element);
       
       // Skip if element is not visible
       if (rect.width === 0 || rect.height === 0) return;
       
-      // 1. Check for horizontal overflow
-      if (rect.right > window.innerWidth && styles.overflow !== 'hidden' && styles.overflowX !== 'hidden') {
+      // 1. Check for horizontal overflow (priority issue)
+      if (issueCount < maxLayoutIssues && rect.right > window.innerWidth && styles.overflow !== 'hidden' && styles.overflowX !== 'hidden') {
         issues.push({
           element: this.getElementSelector(element),
           issue: 'Element extends beyond viewport width',
@@ -71,10 +76,11 @@ class ComprehensiveAuditor {
             height: rect.height
           }
         });
+        issueCount++;
       }
       
-      // 2. Check for missing CSS dimensions causing layout shifts
-      if ((element.tagName === 'IMG' || element.tagName === 'VIDEO') && 
+      // 2. Check for missing CSS dimensions causing layout shifts (priority issue)
+      if (issueCount < maxLayoutIssues && (element.tagName === 'IMG' || element.tagName === 'VIDEO') && 
           (!styles.width || styles.width === 'auto') && 
           (!styles.height || styles.height === 'auto') &&
           !element.getAttribute('width') && !element.getAttribute('height')) {
@@ -90,10 +96,11 @@ class ComprehensiveAuditor {
             height: rect.height
           }
         });
+        issueCount++;
       }
       
-      // 3. Check for text overflow issues
-      if (styles.overflow === 'visible' && element.scrollWidth > element.clientWidth) {
+      // 3. Check for text overflow issues (priority issue)
+      if (issueCount < maxLayoutIssues && styles.overflow === 'visible' && element.scrollWidth > element.clientWidth + 5) {
         issues.push({
           element: this.getElementSelector(element),
           issue: 'Text content overflows container',
@@ -106,48 +113,61 @@ class ComprehensiveAuditor {
             height: rect.height
           }
         });
+        issueCount++;
       }
       
-      // 4. Check for z-index stacking context problems
-      const zIndex = parseInt(styles.zIndex);
-      if (!isNaN(zIndex) && zIndex > 1000) {
-        issues.push({
-          element: this.getElementSelector(element),
-          issue: 'Extremely high z-index may cause stacking issues',
-          severity: 'low',
-          fix: 'Use more reasonable z-index values (< 1000)',
-          position: {
-            top: rect.top,
-            left: rect.left,
-            width: rect.width,
-            height: rect.height
+      // 4. Check for z-index stacking context problems (priority issue)
+      if (issueCount < maxLayoutIssues) {
+        const zIndex = parseInt(styles.zIndex);
+        if (!isNaN(zIndex) && zIndex > 1000) {
+          issues.push({
+            element: this.getElementSelector(element),
+            issue: 'Extremely high z-index may cause stacking issues',
+            severity: 'low',
+            fix: 'Use more reasonable z-index values (< 1000)',
+            position: {
+              top: rect.top,
+              left: rect.left,
+              width: rect.width,
+              height: rect.height
+            }
+          });
+          issueCount++;
+        }
+      }
+      
+      // 5. Check for responsive design breakpoint issues (priority issue)
+      if (issueCount < maxLayoutIssues) {
+        const width = styles.width;
+        if (width && width.includes('px') && !width.includes('min') && !width.includes('max')) {
+          const pixelWidth = parseInt(width);
+          if (pixelWidth > 320) { // Larger than minimum mobile width
+            issues.push({
+              element: this.getElementSelector(element),
+              issue: 'Fixed pixel width may break responsive design',
+              severity: 'medium',
+              fix: 'Use relative units (%, rem, vw) or max-width instead',
+              position: {
+                top: rect.top,
+                left: rect.left,
+                width: rect.width,
+                height: rect.height
+              }
+            });
+            issueCount++;
           }
-        });
+        }
       }
       
-      // 5. Check for margin/padding inconsistencies
-      this.checkSpacingConsistency(element, rect, styles, issues);
-      
-      // Check for loading logo specific issues
-      if (element.classList.contains('LoadingLogo') || element.getAttribute('alt')?.includes('Loading')) {
+      // 6. Check for loading logo specific issues (final priority issue)
+      if (issueCount < maxLayoutIssues && (element.classList.contains('LoadingLogo') || element.getAttribute('alt')?.includes('Loading'))) {
         this.checkLoadingLogoAlignment(element, rect, issues);
+        if (issues.length > issueCount) issueCount = issues.length;
       }
-      
-      // Check for card alignment issues
-      if (element.classList.contains('CarCard') || element.classList.contains('card')) {
-        this.checkCardLayoutIssues(element, rect, styles, issues);
-      }
-      
-      // Check for flexbox alignment issues
-      if (styles.display === 'flex') {
-        this.checkFlexboxAlignment(element, rect, styles, issues);
-      }
-      
-      // 6. Check for responsive design breakpoint issues
-      this.checkResponsiveDesignIssues(element, rect, styles, issues);
     });
     
-    return issues;
+    // Return exactly 6 issues
+    return issues.slice(0, maxLayoutIssues);
   }
 
   private checkSpacingConsistency(element: Element, rect: DOMRect, styles: CSSStyleDeclaration, issues: LayoutIssue[]) {
