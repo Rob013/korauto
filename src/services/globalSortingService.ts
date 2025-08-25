@@ -1,6 +1,10 @@
 /**
  * Global Sorting Service
- * Handles fetching and sorting of ALL filtered cars across pages
+ * @deprecated - This service is deprecated as sorting is now handled globally on the backend
+ * using keyset pagination. Use fetchCarsWithKeyset from @/services/carsApi instead.
+ * 
+ * This file is kept for backwards compatibility but all client-side sorting 
+ * has been moved to the backend for better performance and consistency.
  */
 
 import { APIFilters } from '@/utils/catalog-filter';

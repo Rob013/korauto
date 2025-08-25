@@ -1,6 +1,10 @@
 /**
  * Global Car Sorting Hook
- * Manages global sorting state and operations for all filtered cars
+ * @deprecated - This hook is deprecated as sorting is now handled globally on the backend
+ * using keyset pagination. Use fetchCarsWithKeyset from @/services/carsApi instead.
+ * 
+ * This file is kept for backwards compatibility but all client-side sorting 
+ * has been moved to the backend for better performance and consistency.
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
@@ -44,6 +48,10 @@ interface UseGlobalCarSortingReturn {
   };
 }
 
+/**
+ * @deprecated - This hook is deprecated. Use fetchCarsWithKeyset from @/services/carsApi instead.
+ * Backend sorting with keyset pagination provides better performance and consistency.
+ */
 export const useGlobalCarSorting = ({
   fetchAllCars,
   currentCars,
@@ -53,6 +61,8 @@ export const useGlobalCarSorting = ({
   enableCaching = true,
   validationEnabled = false
 }: UseGlobalCarSortingOptions): UseGlobalCarSortingReturn => {
+  
+  console.warn('⚠️ useGlobalCarSorting is deprecated. Use fetchCarsWithKeyset from @/services/carsApi instead.');
   
   // Service instance
   const sortingService = useRef(new GlobalSortingService());
