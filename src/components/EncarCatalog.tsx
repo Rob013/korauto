@@ -51,6 +51,8 @@ import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { useGlobalCarSorting } from "@/hooks/useGlobalCarSorting";
+// TODO: Migrate this component to use useCarsQuery and fetchCarsWithKeyset 
+// for consistent backend sorting like NewCatalog.tsx
 import { CarWithRank } from "@/utils/chronologicalRanking";
 import { filterOutTestCars } from "@/utils/testCarFilter";
 import { fallbackCars } from "@/data/fallbackData";

@@ -15,6 +15,48 @@ The system provides stable, deterministic sorting across the entire filtered dat
 
 ## API Endpoint
 
+### HTTP API Endpoint: `/api/cars`
+
+The system exposes a public HTTP API endpoint for external access:
+
+```
+GET /api/cars?sort=price_asc&limit=24&cursor=<base64_cursor>&make=Toyota&priceMin=20000
+```
+
+**Query Parameters:**
+- `sort` - Sort option: `price_asc`, `price_desc`, `rank_asc`, `rank_desc` (default: `price_asc`)
+- `limit` - Number of results per page: 1-100 (default: 24)
+- `cursor` - Base64-encoded cursor for pagination (optional)
+- Filter parameters: `make`, `model`, `yearMin`, `yearMax`, `priceMin`, `priceMax`, `fuel`, `search`
+
+**Response Format:**
+```json
+{
+  "items": [
+    {
+      "id": "string",
+      "make": "string", 
+      "model": "string",
+      "year": number,
+      "price": number,
+      "price_cents": number,
+      "rank_score": number,
+      "mileage": number,
+      "fuel": "string",
+      "transmission": "string",
+      "color": "string",
+      "location": "string",
+      "image_url": "string",
+      "images": "object",
+      "title": "string",
+      "created_at": "string"
+    }
+  ],
+  "nextCursor": "string (optional)",
+  "total": number
+}
+```
+
 ### Direct Service Call
 
 ```typescript
