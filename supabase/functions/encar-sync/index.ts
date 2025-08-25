@@ -164,7 +164,7 @@ Deno.serve(async (req) => {
     
     let totalCarsProcessed = 0
     let totalArchivedProcessed = 0
-    let errors: string[] = []
+    const errors: string[] = []
 
     try {
       // Step 1: Process active cars from /api/cars endpoint

@@ -7,8 +7,8 @@ describe('Catalog Sorting Edge Cases', () => {
     // Simulate scenario where user changes sort before cars are loaded
     let totalCount = 0;
     let sortBy = 'recently_added';
-    let isSortingGlobal = false;
-    let allCarsForSorting: any[] = [];
+    const isSortingGlobal = false;
+    const allCarsForSorting: any[] = [];
     const fetchingSortRef = { current: false };
     
     let globalSortCallCount = 0;
@@ -79,7 +79,7 @@ describe('Catalog Sorting Edge Cases', () => {
 
   it('should handle state transitions correctly', async () => {
     // Simulate the complete state transition from loading to sorted
-    let state = {
+    const state = {
       totalCount: 0,
       sortBy: 'recently_added',
       isSortingGlobal: false,
