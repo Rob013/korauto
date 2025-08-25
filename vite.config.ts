@@ -29,10 +29,18 @@ export default defineConfig(({ mode }) => ({
           vendor: ['react', 'react-dom'],
           // Router in separate chunk for better caching
           router: ['react-router-dom'],
-          // UI libraries split into smaller chunks
-          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
-          'ui-tabs': ['@radix-ui/react-tabs', '@radix-ui/react-accordion', '@radix-ui/react-alert-dialog'],
-          'ui-form': ['@radix-ui/react-label', '@radix-ui/react-checkbox', '@radix-ui/react-radio-group'],
+          // All Radix UI components in single chunk to avoid dependency issues
+          ui: [
+            '@radix-ui/react-dialog', 
+            '@radix-ui/react-dropdown-menu', 
+            '@radix-ui/react-select',
+            '@radix-ui/react-tabs', 
+            '@radix-ui/react-accordion', 
+            '@radix-ui/react-alert-dialog',
+            '@radix-ui/react-label', 
+            '@radix-ui/react-checkbox', 
+            '@radix-ui/react-radio-group'
+          ],
           // Backend and data fetching
           supabase: ['@supabase/supabase-js'],
           query: ['@tanstack/react-query'],
