@@ -1116,12 +1116,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   <span className="hidden xs:inline text-xs">Back</span>
                 </Button>
                 
-                {/* Filter Toggle Button - Solid styling with no effects */}
+                {/* Filter Toggle Button - Works on both mobile and desktop */}
                 <Button
                   variant="default"
                   size="lg"
                   onClick={() => {
-                    // Issue #2 FIXED: Allow toggling filters manually and reset explicit close flag
                     const newShowState = !showFilters;
                     setShowFilters(newShowState);
                     if (newShowState) {
