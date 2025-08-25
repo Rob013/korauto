@@ -37,7 +37,7 @@ const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
       to: [{ email }],
       subject: emailSubject
     }],
-    from: { email: 'no-reply@korauto.com', name: 'KORAUTO' },
+    from: { email: 'info.rgshpk@gmail.com', name: 'KORAUTO' },
     content: [{
       type: 'text/html',
       value: emailBody
@@ -55,7 +55,7 @@ const response = await fetch('https://api.resend.com/emails', {
     'Content-Type': 'application/json',
   },
   body: JSON.stringify({
-    from: 'KORAUTO <no-reply@korauto.com>',
+    from: 'KORAUTO <info.rgshpk@gmail.com>',
     to: [email],
     subject: emailSubject,
     html: emailBody
@@ -66,7 +66,7 @@ const response = await fetch('https://api.resend.com/emails', {
 ### Option 3: Mailgun
 ```typescript
 const formData = new FormData();
-formData.append('from', 'KORAUTO <no-reply@korauto.com>');
+formData.append('from', 'KORAUTO <info.rgshpk@gmail.com>');
 formData.append('to', email);
 formData.append('subject', emailSubject);
 formData.append('html', emailBody);
