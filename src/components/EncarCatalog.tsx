@@ -55,6 +55,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useGlobalCarSorting } from "@/hooks/useGlobalCarSorting";
 import { CarWithRank } from "@/utils/chronologicalRanking";
 import { filterOutTestCars } from "@/utils/testCarFilter";
+import { fallbackCars } from "@/data/fallbackData";
 
 interface EncarCatalogProps {
   highlightCarId?: string | null;
@@ -93,6 +94,23 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isFilterLoading, setIsFilterLoading] = useState(false);
   const isMobile = useIsMobile();
+  
+  // Global sorting hook
+  const {
+    globalSortingState,
+    initializeGlobalSorting,
+    getCarsForCurrentPage,
+    clearGlobalSorting,
+    shouldUseGlobalSorting,
+    isGlobalSortingReady,
+    getPageInfo
+  } = useGlobalCarSorting({
+    fetchAllCars,
+    currentCars: cars,
+    filters,
+    totalCount,
+    carsPerPage: 50
+  });
   
   // Initialize showFilters - always start closed, only open when user explicitly clicks filter button
   const [showFilters, setShowFilters] = useState(() => {
@@ -322,8 +340,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setCurrentPage(1); // Reset to first page when filters change
     
     // Reset global sorting when filters change
-    setIsSortingGlobal(false);
-    setAllCarsForSorting([]);
+    clearGlobalSorting();
     
     // Use 50 cars per page for proper pagination
     const filtersWithPagination = addPaginationToFilters(newFilters, 50);
@@ -452,7 +469,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setCurrentPage(nextPage);
     
     // If global sorting is active, don't fetch new cars - just update the page for slicing
-    if (isSortingGlobal && allCarsForSorting.length > 0) {
+    if (globalSortingState.isGlobalSorting && globalSortingState.allCars.length > 0) {
       // Update URL with new page
       const currentParams = Object.fromEntries(searchParams.entries());
       currentParams.page = nextPage.toString();
@@ -470,7 +487,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     const currentParams = Object.fromEntries(searchParams.entries());
     currentParams.page = nextPage.toString();
     setSearchParams(currentParams);
-  }, [currentPage, isSortingGlobal, allCarsForSorting.length, searchParams, setSearchParams, filters, fetchCars]);
+  }, [currentPage, globalSortingState.isGlobalSorting, globalSortingState.allCars.length, searchParams, setSearchParams, filters, fetchCars]);
 
   const handleLoadMore = useCallback(() => {
     // Legacy function for backward compatibility
@@ -488,7 +505,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
 
     // Only skip if the exact same sort request was completed successfully
-    if (sortKey === lastSortParamsRef.current && isSortingGlobal && allCarsForSorting.length > 0) {
+    if (sortKey === lastSortParamsRef.current && globalSortingState.isGlobalSorting && globalSortingState.allCars.length > 0) {
       console.log(`✅ Using cached sort data for: ${sortKey}`);
       return;
     }
@@ -496,14 +513,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     if (totalCount <= 50) {
       // For small datasets, use current filtered cars instead of fetching
       console.log(`📝 Small dataset (${totalCount} cars), using filtered cars for sorting`);
-      setAllCarsForSorting(filteredCars);
-      setIsSortingGlobal(true);
+      // Global sorting hook will handle this internally
+      return;
       lastSortParamsRef.current = sortKey;
       return;
     }
     
     fetchingSortRef.current = true;
-    setIsSortingGlobal(true);
+    // Global sorting hook will handle the state internally
     setIsLoading(true);
     
     try {
@@ -517,7 +534,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         return matchesGradeFilter(car, filters.grade_iaai);
       });
       
-      setAllCarsForSorting(filteredAllCars);
+      // Global sorting hook will handle storing the results
       lastSortParamsRef.current = sortKey;
       
       // Check if current page is beyond available pages and reset to page 1 if needed
@@ -534,8 +551,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       console.log(`✅ Global sorting: Loaded ${filteredAllCars.length} cars for sorting across ${maxPages} pages`);
     } catch (err) {
       console.error('❌ Error fetching all cars for global sorting:', err);
-      setIsSortingGlobal(false);
-      setAllCarsForSorting([]);
+      clearGlobalSorting();
     } finally {
       setIsLoading(false);
       fetchingSortRef.current = false;
@@ -1040,33 +1056,29 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               // Apply search/filters
               fetchCars(1, { ...filters, per_page: "50" }, true);
               
-              // Force close filter panel on mobile (and desktop for consistency)
+              // Close filter panel 
               setShowFilters(false);
               setHasExplicitlyClosed(true);
               
-              // Additional CSS force close as backup
-              setTimeout(() => {
-                const filterPanel = document.querySelector('[data-filter-panel]');
-                if (filterPanel) {
-                  (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
-                  (filterPanel as HTMLElement).style.visibility = 'hidden';
-                }
-              }, 100);
+              // Clear any inline styles that might conflict
+              const filterPanel = document.querySelector('[data-filter-panel]') as HTMLElement;
+              if (filterPanel) {
+                filterPanel.style.removeProperty('transform');
+                filterPanel.style.removeProperty('visibility');
+              }
             }}
             onCloseFilter={() => {
               console.log("Close filter called, isMobile:", isMobile);
-              // Force close the filter panel regardless of mobile detection
+              // Close the filter panel
               setShowFilters(false);
               setHasExplicitlyClosed(true);
               
-              // Additional CSS force close as backup
-              setTimeout(() => {
-                const filterPanel = document.querySelector('[data-filter-panel]');
-                if (filterPanel) {
-                  (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
-                  (filterPanel as HTMLElement).style.visibility = 'hidden';
-                }
-              }, 100);
+              // Clear any inline styles that might conflict
+              const filterPanel = document.querySelector('[data-filter-panel]') as HTMLElement;
+              if (filterPanel) {
+                filterPanel.style.removeProperty('transform');
+                filterPanel.style.removeProperty('visibility');
+              }
             }}
           />
           
@@ -1114,7 +1126,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   <span className="hidden xs:inline text-xs">Back</span>
                 </Button>
                 
-                {/* Filter Toggle Button - Enhanced mobile reliability */}
+                {/* Filter Toggle Button - Fixed to prevent transparency issue */}
 <Button
   variant="default"
   size="lg"
@@ -1127,7 +1139,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     
     const newShowState = !showFilters;
     
-    // Force state update with callback to ensure it's applied
+    // Update state - React will handle the CSS classes properly
     setShowFilters(newShowState);
     
     // Update explicit close tracking
@@ -1139,22 +1151,12 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       console.log("Closing filters, set explicit close flag");
     }
     
-    // On mobile, add additional DOM manipulation as backup
-    if (isMobile) {
-      setTimeout(() => {
-        const filterPanel = document.querySelector('[data-filter-panel]') as HTMLElement;
-        if (filterPanel) {
-          if (newShowState) {
-            filterPanel.style.transform = 'translateX(0)';
-            filterPanel.style.visibility = 'visible';
-            console.log("Mobile: Forced filter panel to show");
-          } else {
-            filterPanel.style.transform = 'translateX(-100%)';
-            filterPanel.style.visibility = 'hidden';
-            console.log("Mobile: Forced filter panel to hide");
-          }
-        }
-      }, 50); // Small delay to ensure state update has propagated
+    // Clear any previous inline styles that might conflict with CSS classes
+    const filterPanel = document.querySelector('[data-filter-panel]') as HTMLElement;
+    if (filterPanel) {
+      filterPanel.style.removeProperty('transform');
+      filterPanel.style.removeProperty('visibility');
+      console.log("Cleared inline styles to prevent conflicts");
     }
   }}
   className="flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 transition-transform"

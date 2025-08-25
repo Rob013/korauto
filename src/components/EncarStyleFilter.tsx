@@ -260,13 +260,12 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 onClick={() => {
                   console.log("EncarStyleFilter close button clicked");
                   onCloseFilter();
-                  // Force close the filter panel if parent handlers don't work
-                  setTimeout(() => {
-                    const filterPanel = document.querySelector('[data-filter-panel]');
-                    if (filterPanel) {
-                      (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
-                    }
-                  }, 100);
+                  // Clear any inline styles that might conflict
+                  const filterPanel = document.querySelector('[data-filter-panel]') as HTMLElement;
+                  if (filterPanel) {
+                    filterPanel.style.removeProperty('transform');
+                    filterPanel.style.removeProperty('visibility');
+                  }
                 }}
                 className="text-muted-foreground hover:text-foreground flex items-center gap-1 h-6 px-1.5"
                 title="Mbyll filtrat"
