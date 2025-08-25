@@ -15,6 +15,7 @@ const AuthPage = () => {
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [showResendConfirmation, setShowResendConfirmation] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -39,22 +40,39 @@ const AuthPage = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             display_name: displayName
           },
-          emailRedirectTo: `${window.location.origin}/`
+          emailRedirectTo: `${window.location.origin}/auth/confirm`
         }
       });
 
       if (error) throw error;
 
+      // Send custom confirmation email
+      if (data.user && !data.user.email_confirmed_at) {
+        try {
+          await supabase.functions.invoke('send-confirmation-email', {
+            body: {
+              email,
+              display_name: displayName,
+              confirmation_url: `${window.location.origin}/auth/confirm?token=${data.user.id}&type=signup`
+            }
+          });
+          console.log('📧 Confirmation email sent successfully');
+        } catch (emailError) {
+          console.error('📧 Failed to send confirmation email:', emailError);
+          // Don't fail the signup if email sending fails
+        }
+      }
+
       toast({
-        title: "Llogaria u Krijua!",
-        description: "Ju lutemi kontrolloni emailin tuaj për të konfirmuar llogarinë.",
+        title: "Llogaria u Krijua! 📧",
+        description: "Ju lutemi kontrolloni emailin tuaj për të konfirmuar llogarinë. Kontrolloni edhe dosjen e spam-it.",
       });
     } catch (error: any) {
       toast({
@@ -70,14 +88,27 @@ const AuthPage = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setShowResendConfirmation(false);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Check if error is due to email not being confirmed
+        if (error.message.includes('email not confirmed') || error.message.includes('signup requires email confirmation')) {
+          setShowResendConfirmation(true);
+          throw new Error('Ju lutemi konfirmoni emailin tuaj përpara se të hyni. Kontrolloni inbox-in dhe dosjen e spam-it.');
+        }
+        throw error;
+      }
+
+      if (data.user && !data.user.email_confirmed_at) {
+        setShowResendConfirmation(true);
+        throw new Error('Ju lutemi konfirmoni emailin tuaj përpara se të hyni.');
+      }
 
       toast({
         title: "Mirë se erdhët përsëri!",
@@ -103,6 +134,46 @@ const AuthPage = () => {
     } catch (error: any) {
       toast({
         title: "Hyrja Dështoi",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!email) {
+      toast({
+        title: "Email i nevojshëm",
+        description: "Ju lutemi shkruani emailin tuaj të regjistrimit.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/confirm`
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Email konfirmimi u dërgua! 📧",
+        description: "Kontrolloni emailin tuaj dhe dosjen e spam-it.",
+      });
+      
+      setShowResendConfirmation(false);
+    } catch (error: any) {
+      toast({
+        title: "Dështoi dërgimi i emailit",
         description: error.message,
         variant: "destructive",
       });
@@ -188,6 +259,24 @@ const AuthPage = () => {
                   <LogIn className="h-4 w-4 mr-2" />
                   {loading ? "Po hyni..." : "Hyni"}
                 </Button>
+                
+                {showResendConfirmation && (
+                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-700 mb-2">
+                      Nuk keni konfirmuar emailin ende?
+                    </p>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleResendConfirmation}
+                      disabled={loading}
+                      className="w-full"
+                    >
+                      Dërgo përsëri emailin e konfirmimit
+                    </Button>
+                  </div>
+                )}
               </form>
               
             </TabsContent>
