@@ -1116,21 +1116,51 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   <span className="hidden xs:inline text-xs">Back</span>
                 </Button>
                 
-                {/* Filter Toggle Button - Works on both mobile and desktop */}
-                <Button
-                  variant="default"
-                  size="lg"
-                  onClick={() => {
-                    const newShowState = !showFilters;
-                    setShowFilters(newShowState);
-                    if (newShowState) {
-                      setHasExplicitlyClosed(false); // Reset explicit close flag when manually opening
-                    } else {
-                      setHasExplicitlyClosed(true); // Mark as explicitly closed when manually closing
-                    }
-                  }}
-                  className="flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground"
-                >
+                {/* Filter Toggle Button - Enhanced mobile reliability */}
+<Button
+  variant="default"
+  size="lg"
+  onClick={(e) => {
+    // Prevent event bubbling and ensure click is processed
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log("Filter toggle clicked, current showFilters:", showFilters, "isMobile:", isMobile);
+    
+    const newShowState = !showFilters;
+    
+    // Force state update with callback to ensure it's applied
+    setShowFilters(newShowState);
+    
+    // Update explicit close tracking
+    if (newShowState) {
+      setHasExplicitlyClosed(false);
+      console.log("Opening filters, reset explicit close flag");
+    } else {
+      setHasExplicitlyClosed(true);
+      console.log("Closing filters, set explicit close flag");
+    }
+    
+    // On mobile, add additional DOM manipulation as backup
+    if (isMobile) {
+      setTimeout(() => {
+        const filterPanel = document.querySelector('[data-filter-panel]') as HTMLElement;
+        if (filterPanel) {
+          if (newShowState) {
+            filterPanel.style.transform = 'translateX(0)';
+            filterPanel.style.visibility = 'visible';
+            console.log("Mobile: Forced filter panel to show");
+          } else {
+            filterPanel.style.transform = 'translateX(-100%)';
+            filterPanel.style.visibility = 'hidden';
+            console.log("Mobile: Forced filter panel to hide");
+          }
+        }
+      }, 50); // Small delay to ensure state update has propagated
+    }
+  }}
+  className="flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 transition-transform"
+>
                   {showFilters ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
                   <span className="hidden xs:inline">{showFilters ? 'Fshih Filtrat' : 'Shfaq Filtrat'}</span>
                   <span className="xs:hidden">Filtrat</span>
