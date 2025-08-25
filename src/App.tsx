@@ -16,6 +16,7 @@ const NewCatalog = lazy(() => import("./pages/NewCatalog"));
 const CarDetails = lazy(() => import("./pages/CarDetails"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AuthPage = lazy(() => import("./pages/AuthPage"));
+const EmailConfirmationPage = lazy(() => import("./pages/EmailConfirmationPage"));
 const FavoritesPage = lazy(() => import("./pages/FavoritesPage"));
 const InspectionServices = lazy(() => import("./pages/InspectionServices"));
 const MyAccount = lazy(() => import("./pages/MyAccount"));
@@ -158,6 +159,11 @@ const App = () => {
             <Route path="/auth" element={
               <Suspense fallback={<PageSkeleton />}>
                 <AuthPage />
+              </Suspense>
+            } />
+            <Route path="/auth/confirm" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <EmailConfirmationPage />
               </Suspense>
             } />
             <Route path="/account" element={
