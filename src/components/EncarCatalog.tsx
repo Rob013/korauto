@@ -44,7 +44,7 @@ import {
 import { useSearchParams } from "react-router-dom";
 import {
   useSortedCars,
-  getSortOptions,
+  getEncarSortOptions,
   SortOption,
 } from "@/hooks/useSortedCars";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
@@ -1251,7 +1251,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     }}
                     placeholder="Sort"
                     className="w-24 sm:w-32 h-7 text-xs pl-6"
-                    options={getSortOptions().map((option) => ({
+                    options={getEncarSortOptions().map((option) => ({
                       value: option.value,
                       label: option.label
                     }))}
