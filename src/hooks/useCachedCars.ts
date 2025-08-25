@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuctionAPI } from './useAuctionAPI';
+import { useSecureAuctionAPI } from './useSecureAuctionAPI';
 
 interface CachedCar {
   id: string;
@@ -28,7 +28,7 @@ export const useCachedCars = () => {
   const [cachedCars, setCachedCars] = useState<CachedCar[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { cars: apiCars, loading: apiLoading, error: apiError, fetchCars } = useAuctionAPI();
+  const { cars: apiCars, loading: apiLoading, error: apiError, fetchCars } = useSecureAuctionAPI();
 
   const fetchCachedCars = async () => {
     try {
