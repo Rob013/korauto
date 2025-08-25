@@ -1,17 +1,13 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { SearchReq } from '@/lib/search/types';
+import { useFilterStore } from '@/store/filterStore';
 
 interface FilterState {
-  filterMake: string;
-  filterYear: string;
-  filterFuel: string;
-  filterColor: string;
-  filterTransmission: string;
-  filterBodyType: string;
-  filterCondition: string;
-  priceRange: number[];
-  mileageRange: number[];
-  sortBy: string;
-  searchTerm?: string;
+  filters: SearchReq['filters'];
+  sort: SearchReq['sort'];
+  page: number;
+  pageSize: number;
+  query: string;
   showFilters?: boolean; // Add showFilters to track filter panel state
 }
 
@@ -19,6 +15,7 @@ interface PageState {
   url: string;
   scrollPosition: number;
   filterPanelState?: boolean;
+  filterState?: FilterState; // Add complete filter state
   timestamp: number;
 }
 
@@ -31,6 +28,7 @@ interface NavigationContextType {
   clearPreviousPage: () => void;
   goBack: () => void;
   restorePageState: () => boolean;
+  getCurrentFilterState?: () => FilterState | null; // Add method to get current filter state
 }
 
 const NavigationContext = createContext<NavigationContextType | undefined>(undefined);
@@ -51,6 +49,9 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({ children
   const [previousPage, setPreviousPageState] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<FilterState | null>(null);
   const [pageState, setPageState] = useState<PageState | null>(null);
+  
+  // Get access to filter store for state capture and restoration
+  const filterStore = useFilterStore();
 
   const setPreviousPage = (page: string, filters?: FilterState) => {
     setPreviousPageState(page);
@@ -59,7 +60,22 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({ children
     }
   };
 
+  const getCurrentFilterState = (): FilterState | null => {
+    return {
+      filters: filterStore.filters,
+      sort: filterStore.sort,
+      page: filterStore.page,
+      pageSize: filterStore.pageSize,
+      query: filterStore.query,
+    };
+  };
+
   const setCompletePageState = (newPageState: PageState) => {
+    // If filterState is not provided, capture current filter state
+    if (!newPageState.filterState) {
+      newPageState.filterState = getCurrentFilterState();
+    }
+    
     setPageState(newPageState);
     setPreviousPageState(newPageState.url);
     
@@ -79,6 +95,12 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({ children
       // Check if the saved state is recent (within 30 minutes)
       const isRecent = Date.now() - pageState.timestamp < 1800000;
       if (isRecent) {
+        // Restore filter state if available
+        if (pageState.filterState) {
+          filterStore.setState(pageState.filterState);
+          console.log('🔄 Restored filter state:', pageState.filterState);
+        }
+        
         // Restore scroll position
         if (pageState.scrollPosition > 0) {
           setTimeout(() => {
@@ -102,6 +124,12 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({ children
           if (isRecent) {
             setPageState(parsedState);
             setPreviousPageState(parsedState.url);
+            
+            // Restore filter state if available
+            if (parsedState.filterState) {
+              filterStore.setState(parsedState.filterState);
+              console.log('🔄 Restored filter state from sessionStorage:', parsedState.filterState);
+            }
             
             // Restore scroll position
             if (parsedState.scrollPosition > 0) {
@@ -150,6 +178,7 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({ children
     clearPreviousPage,
     goBack,
     restorePageState,
+    getCurrentFilterState,
   };
 
   return (
