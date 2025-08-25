@@ -26,6 +26,7 @@ const DiagramDemo = lazy(() => import("./pages/DiagramDemo"));
 // Removed demo import - was only for testing layout improvements
 const AdminCarSearchDemo = lazy(() => import("./pages/AdminCarSearchDemo"));
 const PerformanceDashboard = lazy(() => import("./components/PerformanceDashboard"));
+const AuditTestPage = lazy(() => import("./pages/AuditTestPage"));
 
 // Lazy load admin components for better code splitting
 const AdminSyncDashboard = lazy(() => import("./components/AdminSyncDashboard"));
@@ -203,6 +204,11 @@ const App = () => {
             <Route path="/cookie-management" element={
               <Suspense fallback={<PageSkeleton />}>
                 <CookieManagementDashboard />
+              </Suspense>
+            } />
+            <Route path="/audit-test" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <AuditTestPage />
               </Suspense>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

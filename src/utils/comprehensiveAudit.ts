@@ -48,7 +48,7 @@ class ComprehensiveAuditor {
   private async checkLayoutIssues(): Promise<LayoutIssue[]> {
     const issues: LayoutIssue[] = [];
     
-    // Check for overflow issues
+    // Check for layout issues across all elements
     const elements = document.querySelectorAll('*');
     elements.forEach((element) => {
       const rect = element.getBoundingClientRect();
@@ -57,7 +57,7 @@ class ComprehensiveAuditor {
       // Skip if element is not visible
       if (rect.width === 0 || rect.height === 0) return;
       
-      // Check for horizontal overflow
+      // 1. Check for horizontal overflow
       if (rect.right > window.innerWidth && styles.overflow !== 'hidden' && styles.overflowX !== 'hidden') {
         issues.push({
           element: this.getElementSelector(element),
@@ -73,6 +73,61 @@ class ComprehensiveAuditor {
         });
       }
       
+      // 2. Check for missing CSS dimensions causing layout shifts
+      if ((element.tagName === 'IMG' || element.tagName === 'VIDEO') && 
+          (!styles.width || styles.width === 'auto') && 
+          (!styles.height || styles.height === 'auto') &&
+          !element.getAttribute('width') && !element.getAttribute('height')) {
+        issues.push({
+          element: this.getElementSelector(element),
+          issue: 'Missing dimensions causing potential layout shifts',
+          severity: 'high',
+          fix: 'Set explicit width and height or aspect-ratio CSS',
+          position: {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height
+          }
+        });
+      }
+      
+      // 3. Check for text overflow issues
+      if (styles.overflow === 'visible' && element.scrollWidth > element.clientWidth) {
+        issues.push({
+          element: this.getElementSelector(element),
+          issue: 'Text content overflows container',
+          severity: 'medium',
+          fix: 'Add text-overflow: ellipsis or increase container width',
+          position: {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height
+          }
+        });
+      }
+      
+      // 4. Check for z-index stacking context problems
+      const zIndex = parseInt(styles.zIndex);
+      if (!isNaN(zIndex) && zIndex > 1000) {
+        issues.push({
+          element: this.getElementSelector(element),
+          issue: 'Extremely high z-index may cause stacking issues',
+          severity: 'low',
+          fix: 'Use more reasonable z-index values (< 1000)',
+          position: {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height
+          }
+        });
+      }
+      
+      // 5. Check for margin/padding inconsistencies
+      this.checkSpacingConsistency(element, rect, styles, issues);
+      
       // Check for loading logo specific issues
       if (element.classList.contains('LoadingLogo') || element.getAttribute('alt')?.includes('Loading')) {
         this.checkLoadingLogoAlignment(element, rect, issues);
@@ -87,9 +142,89 @@ class ComprehensiveAuditor {
       if (styles.display === 'flex') {
         this.checkFlexboxAlignment(element, rect, styles, issues);
       }
+      
+      // 6. Check for responsive design breakpoint issues
+      this.checkResponsiveDesignIssues(element, rect, styles, issues);
     });
     
     return issues;
+  }
+
+  private checkSpacingConsistency(element: Element, rect: DOMRect, styles: CSSStyleDeclaration, issues: LayoutIssue[]) {
+    // Check for inconsistent margins
+    const marginTop = parseFloat(styles.marginTop);
+    const marginBottom = parseFloat(styles.marginBottom);
+    const marginLeft = parseFloat(styles.marginLeft);
+    const marginRight = parseFloat(styles.marginRight);
+    
+    // Check if element has siblings with different spacing
+    const parent = element.parentElement;
+    if (parent) {
+      const siblings = Array.from(parent.children).filter(child => 
+        child !== element && child.getBoundingClientRect().width > 0
+      );
+      
+      if (siblings.length > 0) {
+        const siblingStyles = window.getComputedStyle(siblings[0]);
+        const siblingMarginTop = parseFloat(siblingStyles.marginTop);
+        
+        if (Math.abs(marginTop - siblingMarginTop) > 8) { // 8px tolerance
+          issues.push({
+            element: this.getElementSelector(element),
+            issue: 'Inconsistent margin spacing with sibling elements',
+            severity: 'low',
+            fix: 'Use consistent margin values or CSS classes',
+            position: {
+              top: rect.top,
+              left: rect.left,
+              width: rect.width,
+              height: rect.height
+            }
+          });
+        }
+      }
+    }
+  }
+
+  private checkResponsiveDesignIssues(element: Element, rect: DOMRect, styles: CSSStyleDeclaration, issues: LayoutIssue[]) {
+    // Check for fixed widths that might break on mobile
+    const width = styles.width;
+    if (width && width.includes('px') && !width.includes('min') && !width.includes('max')) {
+      const pixelWidth = parseInt(width);
+      if (pixelWidth > 320) { // Larger than minimum mobile width
+        issues.push({
+          element: this.getElementSelector(element),
+          issue: 'Fixed pixel width may break responsive design',
+          severity: 'medium',
+          fix: 'Use relative units (%, rem, vw) or max-width instead',
+          position: {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height
+          }
+        });
+      }
+    }
+    
+    // Check for elements that are too narrow on desktop
+    if (window.innerWidth > 768 && rect.width < 200 && element.tagName !== 'IMG' && element.tagName !== 'SVG') {
+      const textContent = element.textContent?.trim();
+      if (textContent && textContent.length > 20) {
+        issues.push({
+          element: this.getElementSelector(element),
+          issue: 'Element may be too narrow for content on desktop',
+          severity: 'low',
+          fix: 'Consider increasing min-width for better readability',
+          position: {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height
+          }
+        });
+      }
+    }
   }
 
   private checkLoadingLogoAlignment(element: Element, rect: DOMRect, issues: LayoutIssue[]) {
