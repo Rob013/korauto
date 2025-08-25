@@ -55,6 +55,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useGlobalCarSorting } from "@/hooks/useGlobalCarSorting";
 import { CarWithRank } from "@/utils/chronologicalRanking";
 import { filterOutTestCars } from "@/utils/testCarFilter";
+import { fallbackCars } from "@/data/fallbackData";
 
 interface EncarCatalogProps {
   highlightCarId?: string | null;
@@ -85,6 +86,26 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     loadMore,
   } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
+  
+  // Global sorting hook
+  const {
+    globalSortingState,
+    initializeGlobalSorting,
+    getCarsForCurrentPage,
+    shouldUseGlobalSorting,
+    isGlobalSortingReady,
+    getPageInfo,
+    clearGlobalSorting,
+  } = useGlobalCarSorting({
+    fetchAllCars,
+    currentCars: cars,
+    filters,
+    totalCount,
+    carsPerPage: 50,
+    enableCaching: true,
+    validationEnabled: false
+  });
+  
   const [sortBy, setSortBy] = useState<SortOption>("recently_added");
   const [hasUserSelectedSort, setHasUserSelectedSort] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -322,8 +343,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setCurrentPage(1); // Reset to first page when filters change
     
     // Reset global sorting when filters change
-    setIsSortingGlobal(false);
-    setAllCarsForSorting([]);
+    clearGlobalSorting();
     
     // Use 50 cars per page for proper pagination
     const filtersWithPagination = addPaginationToFilters(newFilters, 50);
@@ -452,7 +472,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setCurrentPage(nextPage);
     
     // If global sorting is active, don't fetch new cars - just update the page for slicing
-    if (isSortingGlobal && allCarsForSorting.length > 0) {
+    if (globalSortingState.isGlobalSorting && globalSortingState.rankedCars.length > 0) {
       // Update URL with new page
       const currentParams = Object.fromEntries(searchParams.entries());
       currentParams.page = nextPage.toString();
@@ -470,7 +490,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     const currentParams = Object.fromEntries(searchParams.entries());
     currentParams.page = nextPage.toString();
     setSearchParams(currentParams);
-  }, [currentPage, isSortingGlobal, allCarsForSorting.length, searchParams, setSearchParams, filters, fetchCars]);
+  }, [currentPage, globalSortingState.isGlobalSorting, globalSortingState.rankedCars.length, searchParams, setSearchParams, filters, fetchCars]);
 
   const handleLoadMore = useCallback(() => {
     // Legacy function for backward compatibility
@@ -488,22 +508,22 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
 
     // Only skip if the exact same sort request was completed successfully
-    if (sortKey === lastSortParamsRef.current && isSortingGlobal && allCarsForSorting.length > 0) {
+    if (sortKey === lastSortParamsRef.current && globalSortingState.isGlobalSorting && globalSortingState.rankedCars.length > 0) {
       console.log(`✅ Using cached sort data for: ${sortKey}`);
       return;
     }
 
     if (totalCount <= 50) {
-      // For small datasets, use current filtered cars instead of fetching
-      console.log(`📝 Small dataset (${totalCount} cars), using filtered cars for sorting`);
-      setAllCarsForSorting(filteredCars);
-      setIsSortingGlobal(true);
+      // For small datasets, the global sorting hook handles this automatically
+      console.log(`📝 Small dataset (${totalCount} cars), letting global sorting hook handle it`);
+      // setAllCarsForSorting(filteredCars);
+      // setIsSortingGlobal(true);
       lastSortParamsRef.current = sortKey;
       return;
     }
     
     fetchingSortRef.current = true;
-    setIsSortingGlobal(true);
+    // setIsSortingGlobal(true); // Handled by global sorting hook
     setIsLoading(true);
     
     try {
@@ -517,7 +537,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         return matchesGradeFilter(car, filters.grade_iaai);
       });
       
-      setAllCarsForSorting(filteredAllCars);
+      // setAllCarsForSorting(filteredAllCars); // Handled by global sorting hook
       lastSortParamsRef.current = sortKey;
       
       // Check if current page is beyond available pages and reset to page 1 if needed
@@ -534,8 +554,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       console.log(`✅ Global sorting: Loaded ${filteredAllCars.length} cars for sorting across ${maxPages} pages`);
     } catch (err) {
       console.error('❌ Error fetching all cars for global sorting:', err);
-      setIsSortingGlobal(false);
-      setAllCarsForSorting([]);
+      // setIsSortingGlobal(false); // Handled by global sorting hook
+      // setAllCarsForSorting([]); // Handled by global sorting hook
     } finally {
       setIsLoading(false);
       fetchingSortRef.current = false;
