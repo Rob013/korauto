@@ -300,12 +300,6 @@ const LazyCarCard = memo(({
           </div>
         )}
         
-        {/* Add indicator if multiple images are available */}
-        {images && images.length > 1 && (
-          <div className="absolute bottom-1 left-1 bg-black/50 text-white text-xs px-2 py-0.5 rounded">
-            +{images.length - 1} more
-          </div>
-        )}
         
         {/* Status Badge - More compact on mobile */}
         {(status === 3 || sale_status === 'sold') ? (
