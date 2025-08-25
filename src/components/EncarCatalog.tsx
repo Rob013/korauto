@@ -85,6 +85,25 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     loadMore,
   } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
+  
+  // Global sorting hook
+  const {
+    globalSortingState,
+    initializeGlobalSorting,
+    getCarsForCurrentPage,
+    shouldUseGlobalSorting,
+    isGlobalSortingReady,
+    getPageInfo,
+  } = useGlobalCarSorting({
+    fetchAllCars,
+    currentCars: cars,
+    filters,
+    totalCount,
+    carsPerPage: 50,
+    enableCaching: true,
+    validationEnabled: false
+  });
+  
   const [sortBy, setSortBy] = useState<SortOption>("recently_added");
   const [hasUserSelectedSort, setHasUserSelectedSort] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
