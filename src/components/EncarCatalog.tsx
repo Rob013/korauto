@@ -148,6 +148,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
   // Helper function to check if filters are in default "all brands" state
   const isDefaultState = useMemo(() => {
+    // Handle case where filters might be undefined during initial render
+    if (!filters) return true;
+    
     // Default state means no meaningful filters are applied OR manufacturer is explicitly set to "all"
     return (!filters.manufacturer_id || filters.manufacturer_id === 'all') && 
            !filters.model_id && 
@@ -172,9 +175,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const filteredCars = useMemo(() => {
     // Use fallback data when there's an error and no cars loaded
     const sourceCars = (error && cars.length === 0) ? fallbackCars : cars;
-    const cleanedCars = filterOutTestCars(sourceCars);
-    return applyGradeFilter(cleanedCars, filters.grade_iaai);
-  }, [cars, filters.grade_iaai, error]);
+    const cleanedCars = filterOutTestCars(sourceCars || []);
+    return applyGradeFilter(cleanedCars, filters?.grade_iaai) || [];
+  }, [cars, filters?.grade_iaai, error]);
   
   // console.log(`📊 Filter Results: ${filteredCars.length} cars match (total loaded: ${cars.length}, total count from API: ${totalCount}, grade filter: ${filters.grade_iaai || 'none'})`);
 
@@ -427,7 +430,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
   const handleSearch = useCallback(() => {
     const newFilters = {
-      ...filters,
+      ...(filters || {}),
       search: searchTerm.trim() || undefined,
     };
     handleFiltersChange(newFilters);
@@ -560,7 +563,22 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       setIsLoading(false);
       fetchingSortRef.current = false;
     }
-  }, [totalCount, fetchAllCars, filters.grade_iaai, filters.manufacturer_id, filters.model_id, filters.generation_id, filters.from_year, filters.to_year, sortBy, filteredCars, totalPages, currentPage, setSearchParams]);
+  }, [
+    totalCount, 
+    fetchAllCars, 
+    filters?.grade_iaai, 
+    filters?.manufacturer_id, 
+    filters?.model_id, 
+    filters?.generation_id, 
+    filters?.from_year, 
+    filters?.to_year, 
+    sortBy, 
+    // Remove filteredCars from dependencies as it's computed and can cause infinite loops
+    // filteredCars,
+    totalPages || 0, 
+    currentPage, 
+    setSearchParams
+  ]);
 
   const handleManufacturerChange = async (manufacturerId: string) => {
     console.log(`[handleManufacturerChange] Called with manufacturerId: ${manufacturerId}`);
@@ -883,7 +901,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
     
     setTotalPages(effectivePages);
-  }, [totalCount, filteredCars, filters.grade_iaai, isGlobalSortingReady, globalSortingState.totalCars, globalSortingState.totalPages]);
+  }, [totalCount, filteredCars, filters?.grade_iaai, isGlobalSortingReady, globalSortingState.totalCars, globalSortingState.totalPages]);
 
   // Initialize global sorting when sortBy changes or totalCount becomes available
   useEffect(() => {
@@ -902,9 +920,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
   // Track when categories are selected 
   useEffect(() => {
-    const hasCategories = filters.manufacturer_id && filters.model_id;
+    const hasCategories = filters?.manufacturer_id && filters?.model_id;
     setHasSelectedCategories(!!hasCategories);
-  }, [filters.manufacturer_id, filters.model_id]);
+  }, [filters?.manufacturer_id, filters?.model_id]);
 
   // Effect to highlight and scroll to specific car by lot number
   useEffect(() => {
