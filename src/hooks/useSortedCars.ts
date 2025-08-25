@@ -2,7 +2,7 @@
 import { useMemo } from 'react';
 import { filterCarsWithRealPricing } from '@/utils/carPricing';
 
-export type SortOption = 'recently_added' | 'price_low' | 'price_high' | 'year_new' | 'year_old' | 'mileage_low' | 'mileage_high' | 'make_az' | 'make_za' | 'popular';
+export type SortOption = 'recently_added' | 'oldest_first' | 'price_low' | 'price_high' | 'year_new' | 'year_old' | 'mileage_low' | 'mileage_high' | 'make_az' | 'make_za' | 'popular';
 
 // Use a generic type that works with both secure API cars and other car types
 interface FlexibleCar {
@@ -82,6 +82,13 @@ export const useSortedCars = (cars: FlexibleCar[], sortBy: SortOption) => {
           return bDate - aDate; // Most recent first
         }
         
+        case 'oldest_first': {
+          // Sort by sale_date if available, otherwise by ID (assuming newer IDs = more recent)
+          const aDate = aLot?.sale_date ? new Date(aLot.sale_date).getTime() : parseInt(a.id) || 0;
+          const bDate = bLot?.sale_date ? new Date(bLot.sale_date).getTime() : parseInt(b.id) || 0;
+          return aDate - bDate; // Oldest first
+        }
+        
         case 'price_low':
           return aPrice - bPrice;
         
@@ -133,6 +140,19 @@ export const useSortedCars = (cars: FlexibleCar[], sortBy: SortOption) => {
   }, [cars, sortBy]);
 };
 
+// EncarCatalog-specific sort options that match NewEncarCatalog exactly
+export const getEncarSortOptions = () => [
+  { value: 'recently_added', label: 'Recently Added' },
+  { value: 'oldest_first', label: 'Oldest First' },
+  { value: 'price_low', label: 'Price: Low to High' },
+  { value: 'price_high', label: 'Price: High to Low' },
+  { value: 'mileage_low', label: 'Mileage: Low to High' },
+  { value: 'mileage_high', label: 'Mileage: High to Low' },
+  { value: 'year_new', label: 'Year: Newest First' },
+  { value: 'year_old', label: 'Year: Oldest First' },
+];
+
+// Original sort options (Albanian) for backward compatibility
 export const getSortOptions = () => [
   { value: 'recently_added', label: 'Më të fundit të shtuar' },
   { value: 'price_low', label: 'Çmimi: Nga më i ulet' },
