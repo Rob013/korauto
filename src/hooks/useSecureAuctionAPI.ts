@@ -777,15 +777,13 @@ export const useSecureAuctionAPI = () => {
         console.log(`✅ Trim level filter "${selectedTrimLevel}": ${filteredCars.length} cars match out of ${data.data?.length || 0} total`);
       }
 
-      // Set metadata from response (but adjust total count for client-side filtering)
-      const totalFiltered = (selectedVariant && selectedVariant !== 'all') || (selectedTrimLevel && selectedTrimLevel !== 'all') 
-        ? filteredCars.length 
-        : (data.meta?.total || 0);
-      setTotalCount(totalFiltered);
+      // Always use server-side total count regardless of client-side filtering
+      // Client-side filtering should not affect the total count or pagination logic
+      setTotalCount(data.meta?.total || 0);
       setHasMorePages(page < (data.meta?.last_page || 1));
 
       console.log(
-        `✅ API Success - Fetched ${filteredCars.length} cars from page ${page}, total: ${totalFiltered}`
+        `✅ API Success - Fetched ${filteredCars.length} cars from page ${page}, server total: ${data.meta?.total || 0}, filtered displayed: ${filteredCars.length}`
       );
 
       if (resetList || page === 1) {
