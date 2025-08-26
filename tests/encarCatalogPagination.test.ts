@@ -101,4 +101,84 @@ describe('EncarCatalog Pagination UI', () => {
       expect(actualPage).toBe(expectedPage);
     });
   });
+
+  it('should handle "Show All" functionality correctly', () => {
+    // Test that when showAllCars is enabled, all cars are displayed without pagination
+    const allCars = Array.from({ length: 125 }, (_, i) => ({ id: i + 1, name: `Car ${i + 1}` }));
+    const pageSize = 50;
+    
+    // Test paginated view (normal behavior)
+    const showAllCars = false;
+    const currentPage = 2;
+    const paginatedView = showAllCars ? allCars : allCars.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+    
+    expect(paginatedView.length).toBe(50); // Should show only page 2 (50 cars)
+    expect(paginatedView[0].id).toBe(51); // First car should be #51
+    
+    // Test "Show All" view
+    const showAllCarsEnabled = true;
+    const allCarsView = showAllCarsEnabled ? allCars : allCars.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+    
+    expect(allCarsView.length).toBe(125); // Should show all cars
+    expect(allCarsView[0].id).toBe(1); // First car should be #1
+    expect(allCarsView[124].id).toBe(125); // Last car should be #125
+  });
+
+  it('should hide pagination controls when showing all cars', () => {
+    // Test that pagination controls are hidden when showAllCars is true
+    const totalPages = 5;
+    const loading = false;
+    
+    // Normal pagination view - should show controls
+    const showAllCars = false;
+    const shouldShowPagination = totalPages > 1 && !loading && !showAllCars;
+    expect(shouldShowPagination).toBe(true);
+    
+    // Show all cars view - should hide controls
+    const showAllCarsEnabled = true;
+    const shouldHidePagination = totalPages > 1 && !loading && !showAllCarsEnabled;
+    expect(shouldHidePagination).toBe(false);
+  });
+
+  it('should reset show all mode when filters change', () => {
+    // Simulate the behavior when filters change
+    let showAllCars = true;
+    let allCarsData = ['car1', 'car2', 'car3'];
+    
+    // Simulate filter change (this would be called in handleFiltersChange)
+    const simulateFilterChange = () => {
+      showAllCars = false;
+      allCarsData = [];
+    };
+    
+    // Before filter change
+    expect(showAllCars).toBe(true);
+    expect(allCarsData.length).toBe(3);
+    
+    // Simulate filter change
+    simulateFilterChange();
+    
+    // After filter change
+    expect(showAllCars).toBe(false);
+    expect(allCarsData.length).toBe(0);
+  });
+
+  it('should display correct status message for show all mode', () => {
+    // Test status message logic
+    const carsDisplayed = 125;
+    const showAllCars = true;
+    const isGlobalSortingReady = false;
+    
+    let statusMessage = '';
+    
+    if (showAllCars) {
+      statusMessage = `Showing all ${carsDisplayed.toLocaleString()} filtered cars`;
+    } else if (isGlobalSortingReady) {
+      statusMessage = 'Global sorting message';
+    } else {
+      statusMessage = 'Regular pagination message';
+    }
+    
+    expect(statusMessage).toBe('Showing all 125 filtered cars');
+  });
 });

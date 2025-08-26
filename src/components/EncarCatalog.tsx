@@ -115,6 +115,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [isFilterLoading, setIsFilterLoading] = useState(false);
+  const [showAllCars, setShowAllCars] = useState(false); // New state for showing all cars
+  const [allCarsData, setAllCarsData] = useState<any[]>([]); // Store all cars when fetched
   const isMobile = useIsMobile();
   
   // Initialize showFilters - always start closed, only open when user explicitly clicks filter button
@@ -198,9 +200,16 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   
   // Always call useSortedCars hook (hooks must be called unconditionally)
   const sortedResults = useSortedCars(carsForSorting, sortBy);
+  const sortedAllCarsResults = useSortedCars(allCarsData, sortBy); // Add sorting for all cars data
   
   // Memoized cars to display - uses global sorting when available
   const carsToDisplay = useMemo(() => {
+    // Priority 0: Show all cars when user has selected "Show All" option
+    if (showAllCars && allCarsData.length > 0) {
+      console.log(`🌟 Showing all ${sortedAllCarsResults.length} cars (Show All mode active)`);
+      return sortedAllCarsResults;
+    }
+    
     // Priority 1: Global sorting (when available and dataset is large enough)
     if (isGlobalSortingReady() && shouldUseGlobalSorting()) {
       const rankedCarsForPage = getCarsForCurrentPage(currentPage);
@@ -220,6 +229,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     console.log(`📄 Using regular sorted cars for page ${currentPage}: ${paginatedResults.length} cars (fallback or loading state)`);
     return paginatedResults;
   }, [
+    showAllCars,
+    allCarsData,
+    sortedAllCarsResults,
+    sortBy,
     isGlobalSortingReady, 
     shouldUseGlobalSorting, 
     getCarsForCurrentPage, 
@@ -389,6 +402,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Set filter loading state immediately for better UX
     setIsFilterLoading(true);
     
+    // Reset "Show All" mode when filters change
+    setShowAllCars(false);
+    setAllCarsData([]);
+    
     // Update UI immediately for responsiveness
     setFilters(newFilters);
     
@@ -473,6 +490,41 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     currentParams.page = page.toString();
     setSearchParams(currentParams);
   }, [filters, fetchCars, setSearchParams, isGlobalSortingReady, getPageInfo]);
+
+  // Function to fetch and display all cars
+  const handleShowAllCars = useCallback(async () => {
+    if (showAllCars) {
+      // If already showing all cars, switch back to pagination
+      setShowAllCars(false);
+      setAllCarsData([]);
+      setCurrentPage(1);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      console.log(`🔄 Fetching all cars with current filters...`);
+      const allCars = await fetchAllCars(filters);
+      
+      // Apply the same client-side filtering as the current filtered cars
+      const filteredAllCars = allCars.filter((car: any) => {
+        return matchesGradeFilter(car, filters.grade_iaai);
+      });
+      
+      setAllCarsData(filteredAllCars);
+      setShowAllCars(true);
+      console.log(`✅ Loaded ${filteredAllCars.length} cars for "Show All" view`);
+    } catch (error) {
+      console.error('❌ Error fetching all cars:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load all cars. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [showAllCars, filters, fetchAllCars, toast]);
 
   // Function to fetch all cars for sorting across all pages
   const fetchAllCarsForSorting = useCallback(async () => {
@@ -1229,6 +1281,18 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     }))}
                   />
                 </div>
+
+                {/* Show All Cars Toggle Button */}
+                <Button
+                  variant={showAllCars ? "default" : "outline"}
+                  size="sm"
+                  onClick={handleShowAllCars}
+                  disabled={loading || isLoading}
+                  className="h-7 px-2 flex items-center gap-1 text-xs whitespace-nowrap"
+                  title={showAllCars ? "Switch back to pagination" : "Show all filtered cars"}
+                >
+                  {showAllCars ? "Show Pages" : "Show All"}
+                </Button>
               </div>
             </div>
             
@@ -1239,8 +1303,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               </h1>
               <p className="text-muted-foreground text-xs sm:text-sm">
                 {(() => {
-                  // Show different counts based on sorting mode
-                  if (isGlobalSortingReady()) {
+                  // Show different counts based on display mode
+                  if (showAllCars) {
+                    return `Showing all ${carsToDisplay.length.toLocaleString()} filtered cars`;
+                  } else if (isGlobalSortingReady()) {
                     return `${globalSortingState.totalCars.toLocaleString()} cars sorted globally • Page ${currentPage} of ${totalPages} • Showing ${carsToDisplay.length} cars`;
                   } else {
                     return `${totalCount.toLocaleString()} cars ${filters.grade_iaai && filters.grade_iaai !== 'all' ? `filtered by ${filters.grade_iaai}` : 'total'} • Page ${currentPage} of ${totalPages} • Showing ${carsToDisplay.length} cars`;
@@ -1391,8 +1457,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 })}
               </div>
 
-              {/* Pagination Controls - replacing load more */}
-              {totalPages > 1 && !loading && (
+              {/* Pagination Controls - hide when showing all cars */}
+              {totalPages > 1 && !loading && !showAllCars && (
                 <div className="flex justify-center items-center gap-4 mt-6">
                   <Button
                     onClick={() => handlePageChange(currentPage - 1)}
