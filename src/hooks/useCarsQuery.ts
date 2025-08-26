@@ -358,17 +358,25 @@ export const useCarsQuery = (filters: FilterState) => {
       const isFirstPage = (filters.page || 1) === 1;
       
       setCurrentTotal(total);
-      setCurrentHasMore(hasMore);
       
       if (isFirstPage) {
         // Replace cars on first page (new search/filter/sort)
         setAccumulatedCars(cars);
+        setCurrentHasMore(hasMore);
       } else {
         // Append cars for subsequent pages
         setAccumulatedCars(prev => {
           const existingIds = new Set(prev.map(car => car.id));
           const newCars = cars.filter(car => !existingIds.has(car.id));
-          return [...prev, ...newCars];
+          const updatedAccumulated = [...prev, ...newCars];
+          
+          // Recalculate hasMore based on accumulated cars vs total
+          // For cursor-based pagination, trust the API's hasMore
+          // For paginated results, calculate based on accumulated count vs total
+          const calculatedHasMore = hasMore && updatedAccumulated.length < total;
+          setCurrentHasMore(calculatedHasMore);
+          
+          return updatedAccumulated;
         });
       }
     }
