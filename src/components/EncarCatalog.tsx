@@ -173,21 +173,32 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
   // Memoized client-side grade filtering for better performance - now using utility with fallback data
   const filteredCars = useMemo(() => {
+    // Safety guard: ensure cars and error are properly initialized
+    const safeCars = cars || [];
+    const safeError = error || null;
+    
     // Use fallback data when there's an error and no cars loaded
-    const sourceCars = (error && cars.length === 0) ? fallbackCars : cars;
+    const sourceCars = (safeError && safeCars.length === 0) ? fallbackCars : safeCars;
     const cleanedCars = filterOutTestCars(sourceCars || []);
-    return applyGradeFilter(cleanedCars, filters?.grade_iaai) || [];
+    
+    // Safety guard: ensure filters exists before accessing grade filter
+    const gradeFilter = filters?.grade_iaai;
+    
+    return applyGradeFilter(cleanedCars, gradeFilter) || [];
   }, [cars, filters?.grade_iaai, error]);
   
   // console.log(`📊 Filter Results: ${filteredCars.length} cars match (total loaded: ${cars.length}, total count from API: ${totalCount}, grade filter: ${filters.grade_iaai || 'none'})`);
 
   // Memoized cars for sorting to prevent unnecessary re-computations
   const carsForSorting = useMemo(() => {
-    return filteredCars.map((car) => ({
+    // Safety guard: ensure filteredCars is properly initialized
+    const safeCars = filteredCars || [];
+    
+    return safeCars.map((car) => ({
       ...car,
-      status: String(car.status || ""),
-      lot_number: String(car.lot_number || ""),
-      cylinders: Number(car.cylinders || 0),
+      status: String(car?.status || ""),
+      lot_number: String(car?.lot_number || ""),
+      cylinders: Number(car?.cylinders || 0),
     }));
   }, [filteredCars]);
   
@@ -199,21 +210,32 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   
   // Memoized cars to display - uses global sorting when available
   const carsToDisplay = useMemo(() => {
+    // Safety guard: ensure functions and state are properly initialized
+    if (!isGlobalSortingReady || !shouldUseGlobalSorting || !getCarsForCurrentPage) {
+      // If global sorting hooks aren't ready, fall back to regular sorting
+      const safeResults = sortedResults || [];
+      const paginatedResults = safeResults.slice((currentPage - 1) * 50, currentPage * 50);
+      console.log(`📄 Fallback: Using regular sorted cars for page ${currentPage}: ${paginatedResults.length} cars (hooks not ready)`);
+      return paginatedResults;
+    }
+    
     // Priority 1: Global sorting (when available and dataset is large enough)
     if (isGlobalSortingReady() && shouldUseGlobalSorting()) {
       const rankedCarsForPage = getCarsForCurrentPage(currentPage);
-      console.log(`🎯 Using globally sorted cars for page ${currentPage}: ${rankedCarsForPage.length} cars (${globalSortingState.currentSortBy} sort)`);
-      return rankedCarsForPage;
+      console.log(`🎯 Using globally sorted cars for page ${currentPage}: ${rankedCarsForPage.length} cars (${globalSortingState?.currentSortBy || 'unknown'} sort)`);
+      return rankedCarsForPage || [];
     }
     
     // Priority 2: Daily rotating cars (only for default state without user sort selection)
     if (isDefaultState && !hasUserSelectedSort && !shouldUseGlobalSorting()) {
-      console.log(`🎲 Using daily rotating cars: ${dailyRotatingCars.length} cars (default state, no explicit sort, small dataset)`);
-      return dailyRotatingCars;
+      const safeDailyRotatingCars = dailyRotatingCars || [];
+      console.log(`🎲 Using daily rotating cars: ${safeDailyRotatingCars.length} cars (default state, no explicit sort, small dataset)`);
+      return safeDailyRotatingCars;
     }
     
     // Priority 3: Regular sorted cars with pagination (fallback)
-    const paginatedResults = sortedResults.slice((currentPage - 1) * 50, currentPage * 50);
+    const safeResults = sortedResults || [];
+    const paginatedResults = safeResults.slice((currentPage - 1) * 50, currentPage * 50);
     console.log(`📄 Using regular sorted cars for page ${currentPage}: ${paginatedResults.length} cars (fallback or loading state)`);
     return paginatedResults;
   }, [
@@ -221,14 +243,17 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     shouldUseGlobalSorting, 
     getCarsForCurrentPage, 
     currentPage,
-    globalSortingState.currentSortBy,
+    globalSortingState?.currentSortBy,
     isDefaultState,
     hasUserSelectedSort,
     dailyRotatingCars,
     sortedResults
   ]);
 
-  const [searchTerm, setSearchTerm] = useState(filters.search || "");
+  const [searchTerm, setSearchTerm] = useState(() => {
+    // Safety guard: ensure filters exists before accessing search property
+    return filters?.search || "";
+  });
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [manufacturers, setManufacturers] = useState<
     {
@@ -383,39 +408,51 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   );
 
   const handleFiltersChange = useCallback(async (newFilters: APIFilters) => {
+    // Safety guard: ensure newFilters is properly defined
+    const safeFilters = newFilters || {};
+    
     // Set filter loading state immediately for better UX
     setIsFilterLoading(true);
     
     // Update UI immediately for responsiveness
-    setFilters(newFilters);
+    setFilters(safeFilters);
     
     // Clear global sorting when filters change
-    clearGlobalSorting();
+    if (clearGlobalSorting) {
+      clearGlobalSorting();
+    }
+    
+    // Safety guard: ensure filters exists before comparison
+    const currentFilters = filters || {};
     
     // Check if this is a year range change - use optimized filtering for better UX - using utility
-    const isYearChange = isYearRangeChange(newFilters, filters);
+    const isYearChange = isYearRangeChange(safeFilters, currentFilters);
     
-    if (isYearChange) {
+    if (isYearChange && handleOptimizedYearFilter) {
       console.log('🚀 Using optimized year filtering for instant response');
       
       // Use optimized year filtering for instant feedback
       const result = await handleOptimizedYearFilter(
-        newFilters.from_year, 
-        newFilters.to_year, 
-        newFilters
+        safeFilters.from_year, 
+        safeFilters.to_year, 
+        safeFilters
       );
       
       // If we got instant results, temporarily show them
-      if (result && result.data.length > 0) {
+      if (result && result.data.length > 0 && setCars && setTotalCount) {
         setCars(result.data);
         setTotalCount(result.totalCount);
       }
     } else {
       // Clear previous data immediately to show loading state for non-year filters
-      setCars([]);
+      if (setCars) {
+        setCars([]);
+      }
       
       // Apply other filters with debouncing to reduce API calls
-      debouncedApplyFilters(newFilters);
+      if (debouncedApplyFilters) {
+        debouncedApplyFilters(safeFilters);
+      }
     }
   }, [debouncedApplyFilters, handleOptimizedYearFilter, filters, setCars, setFilters, setTotalCount, clearGlobalSorting]);
 
@@ -431,11 +468,18 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   }, [fetchCars, setSearchParams, setFilters]);
 
   const handleSearch = useCallback(() => {
+    // Safety guard: ensure filters exists and searchTerm is properly initialized
+    const currentFilters = filters || {};
+    const safeTerm = searchTerm || "";
+    
     const newFilters = {
-      ...(filters || {}),
-      search: searchTerm.trim() || undefined,
+      ...currentFilters,
+      search: safeTerm.trim() || undefined,
     };
-    handleFiltersChange(newFilters);
+    
+    if (handleFiltersChange) {
+      handleFiltersChange(newFilters);
+    }
   }, [filters, searchTerm, handleFiltersChange]);
 
   const handlePageChange = useCallback((page: number) => {
