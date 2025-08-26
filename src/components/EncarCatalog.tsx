@@ -18,6 +18,8 @@ import {
   PanelLeftClose,
   Lock,
   Unlock,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import LoadingLogo from "@/components/LoadingLogo";
 import LazyCarCard from "@/components/LazyCarCard";
@@ -208,8 +210,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     
     // Priority 2: Daily rotating cars (only for default state without user sort selection)
     if (isDefaultState && !hasUserSelectedSort && !shouldUseGlobalSorting()) {
-      console.log(`🎲 Using daily rotating cars: ${dailyRotatingCars.length} cars (default state, no explicit sort, small dataset)`);
-      return dailyRotatingCars;
+      const paginatedDailyRotatingCars = dailyRotatingCars.slice((currentPage - 1) * 50, currentPage * 50);
+      console.log(`🎲 Using daily rotating cars for page ${currentPage}: ${paginatedDailyRotatingCars.length} cars (default state, no explicit sort, small dataset)`);
+      return paginatedDailyRotatingCars;
     }
     
     // Priority 3: Regular sorted cars with pagination (fallback)
@@ -470,37 +473,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     currentParams.page = page.toString();
     setSearchParams(currentParams);
   }, [filters, fetchCars, setSearchParams, isGlobalSortingReady, getPageInfo]);
-
-  const loadMoreCars = useCallback(() => {
-    // Implement proper "load more" functionality
-    const nextPage = currentPage + 1;
-    setCurrentPage(nextPage);
-    
-    // If global sorting is active, don't fetch new cars - just update the page for slicing
-    if (globalSortingState.isGlobalSorting && globalSortingState.rankedCars.length > 0) {
-      // Update URL with new page
-      const currentParams = Object.fromEntries(searchParams.entries());
-      currentParams.page = nextPage.toString();
-      setSearchParams(currentParams);
-      console.log(`📄 Global sorting: Loading more cars for page ${nextPage}`);
-      return;
-    }
-    
-    // Fetch cars for the next page and append them to the existing list
-    const filtersWithPagination = addPaginationToFilters(filters, 50);
-    
-    fetchCars(nextPage, filtersWithPagination, false); // Don't reset list, append instead
-    
-    // Update URL with new page
-    const currentParams = Object.fromEntries(searchParams.entries());
-    currentParams.page = nextPage.toString();
-    setSearchParams(currentParams);
-  }, [currentPage, globalSortingState.isGlobalSorting, globalSortingState.rankedCars.length, searchParams, setSearchParams, filters, fetchCars]);
-
-  const handleLoadMore = useCallback(() => {
-    // Legacy function for backward compatibility
-    loadMoreCars();
-  }, [loadMoreCars]);
 
   // Function to fetch all cars for sorting across all pages
   const fetchAllCarsForSorting = useCallback(async () => {
@@ -1419,20 +1391,33 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 })}
               </div>
 
-              {/* Load More Button - replacing pagination */}
-              {hasMorePages && !loading && (
-                <div className="flex justify-center mt-6">
+              {/* Pagination Controls - replacing load more */}
+              {totalPages > 1 && !loading && (
+                <div className="flex justify-center items-center gap-4 mt-6">
                   <Button
-                    onClick={() => loadMoreCars()}
+                    onClick={() => handlePageChange(currentPage - 1)}
                     variant="outline"
-                    size="lg"
+                    size="sm"
+                    disabled={currentPage <= 1 || loading}
                     className="flex items-center gap-2"
-                    disabled={loading}
                   >
-                    Load More Cars
-                    <div className="text-xs text-muted-foreground ml-2">
-                      ({cars.length} of {totalCount} shown)
-                    </div>
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  
+                  <span className="text-sm px-2 text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  
+                  <Button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage >= totalPages || loading}
+                    className="flex items-center gap-2"
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
               )}
