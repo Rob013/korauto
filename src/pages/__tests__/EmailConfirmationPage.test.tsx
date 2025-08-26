@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import { BrowserRouter } from 'react-router-dom';
 import EmailConfirmationPage from '@/pages/EmailConfirmationPage';
 import { supabase } from '@/integrations/supabase/client';
@@ -83,9 +84,16 @@ describe('EmailConfirmationPage', () => {
     mockSearchParams.set('token', 'test-token');
     mockSearchParams.set('type', 'signup');
     
-    const mockUser = { id: 'user-id', email: 'test@example.com' };
+    const mockUser = { 
+      id: 'user-id', 
+      email: 'test@example.com',
+      app_metadata: {},
+      user_metadata: {},
+      aud: 'authenticated',
+      created_at: new Date().toISOString()
+    };
     vi.mocked(supabase.auth.verifyOtp).mockResolvedValue({
-      data: { user: mockUser },
+      data: { user: mockUser, session: null },
       error: null
     });
     
@@ -107,8 +115,10 @@ describe('EmailConfirmationPage', () => {
     mockSearchParams.set('type', 'signup');
     
     vi.mocked(supabase.auth.verifyOtp).mockResolvedValue({
-      data: { user: null },
-      error: { message: 'Invalid token' }
+      data: { user: null, session: null },
+      error: { 
+        message: 'Invalid token'
+      } as any
     });
     
     renderEmailConfirmationPage();

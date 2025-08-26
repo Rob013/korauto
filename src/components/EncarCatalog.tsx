@@ -89,7 +89,7 @@ interface FlexibleCar {
 }
 
 const EncarCatalog = ({ highlightCarId, className = '' }: EncarCatalogProps) => {
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+  const API_BASE_URL = import.meta.env.VITE_API_URL || '';
   const [isMobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [manufacturers, setManufacturers] = useState([]);
   const [models, setModels] = useState([]);
