@@ -101,7 +101,7 @@ export class GlobalSortingService {
   /**
    * Validates if a global sort is needed
    */
-  shouldUseGlobalSorting(totalCars: number, threshold: number = 30): boolean {
+  shouldUseGlobalSorting(totalCars: number, threshold: number = 50): boolean {
     return totalCars > threshold;
   }
 
