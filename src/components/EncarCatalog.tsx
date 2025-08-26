@@ -18,8 +18,6 @@ import {
   PanelLeftClose,
   Lock,
   Unlock,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import LoadingLogo from "@/components/LoadingLogo";
 import LazyCarCard from "@/components/LazyCarCard";
@@ -1457,34 +1455,28 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 })}
               </div>
 
-              {/* Pagination Controls - hide when showing all cars */}
-              {totalPages > 1 && !loading && !showAllCars && (
-                <div className="flex justify-center items-center gap-4 mt-6">
+              {/* Load More Button - show when there are more pages available */}
+              {hasMorePages && !loading && !showAllCars && carsToDisplay.length > 0 && (
+                <div className="flex justify-center py-8">
                   <Button
-                    onClick={() => handlePageChange(currentPage - 1)}
+                    onClick={loadMore}
                     variant="outline"
-                    size="sm"
-                    disabled={currentPage <= 1 || loading}
+                    size="lg"
                     className="flex items-center gap-2"
                   >
-                    <ChevronLeft className="h-4 w-4" />
-                    Previous
+                    Load More Cars
+                    <div className="text-xs text-muted-foreground ml-2">
+                      ({carsToDisplay.length} of {totalCount ? totalCount.toLocaleString() : 'many'} shown)
+                    </div>
                   </Button>
-                  
-                  <span className="text-sm px-2 text-muted-foreground">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  
-                  <Button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    variant="outline"
-                    size="sm"
-                    disabled={currentPage >= totalPages || loading}
-                    className="flex items-center gap-2"
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+                </div>
+              )}
+
+              {/* End of Results */}
+              {!hasMorePages && carsToDisplay.length > 0 && !showAllCars && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>You've reached the end of the results</p>
+                  <p className="text-sm mt-1">{carsToDisplay.length} cars total</p>
                 </div>
               )}
               
