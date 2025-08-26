@@ -58,14 +58,20 @@ shouldUseGlobalSorting(totalCars: number, threshold: number = 30)
 )}
 ```
 
-## How It Works
+## How It Works (Updated - Backend Version)
 
 1. **User Changes Sort**: Selects "Lowest to Highest" price
-2. **State Update**: `setSortBy()` updates sort option
-3. **useEffect Triggers**: Detects sort change and calls `initializeGlobalSorting()`
-4. **Fetch All Cars**: `fetchAllCars()` gets ALL cars with `per_page: "9999"`
-5. **Global Sorting**: `applyChronologicalRanking()` sorts all cars and assigns ranks
-6. **Page Display**: `getCarsForPage()` slices the globally sorted results for each page
+2. **State Update**: `setSortBy()` updates sort option  
+3. **Backend Query**: `useCarsQuery()` with `fetchCarsWithKeyset()` queries backend with global sorting
+4. **Database Sorting**: PostgreSQL RPC functions sort ALL cars globally using keyset pagination
+5. **Efficient Pagination**: Backend returns properly sorted pages without fetching all data to frontend
+6. **Page Display**: First 50 cars are cheapest from entire dataset, next 50 are next cheapest, etc.
+
+**Key Improvements**:
+- ✅ **Performance**: No longer fetches ALL cars to frontend for sorting
+- ✅ **Scalability**: Handles 10,000+ cars efficiently with backend sorting  
+- ✅ **Same UX**: Users still see cheapest cars first, progressively more expensive
+- ✅ **Keyset Pagination**: More efficient than offset-based pagination for large datasets
 
 ## User Experience
 
@@ -94,16 +100,24 @@ shouldUseGlobalSorting(totalCars: number, threshold: number = 30)
 - `demo/globalSortingDemo.ts` - Interactive demonstration
 
 ## Files Modified
-- `src/components/EncarCatalog.tsx` - Fixed race condition and improved UX
-- `src/services/globalSortingService.ts` - Lowered threshold from 50 to 30 cars
-- `tests/globalSortingFix.test.ts` - New test suite
-- `demo/globalSortingDemo.ts` - Demonstration script
+- `src/components/EncarCatalog.tsx` - **MIGRATED**: From client-side useGlobalCarSorting to backend useCarsQuery + fetchCarsWithKeyset
+- `src/services/globalSortingService.ts` - **DEPRECATED**: Replaced by backend keyset pagination
+- `src/hooks/useGlobalCarSorting.ts` - **DEPRECATED**: Replaced by useCarsQuery  
+- `tests/globalSortingFix.test.ts` - Existing test suite (still passes)
+- `tests/backendGlobalSortingMigration.test.ts` - **NEW**: Validates backend sorting migration
+- `demo/globalSortingDemo.ts` - Demonstration script (still works)
 
 ## Validation
 ✅ TypeScript compilation passes  
 ✅ No breaking changes to existing functionality  
-✅ Minimal, surgical changes to fix the specific issue  
-✅ Comprehensive test coverage added  
-✅ User feedback improvements included  
+✅ **MIGRATED**: From client-side to backend global sorting for better performance
+✅ Comprehensive test coverage added for backend system
+✅ Same user experience: cheapest cars on page 1, progressively more expensive  
+✅ More efficient: Backend sorting scales to 10,000+ cars without frontend performance impact
+✅ Existing demo and tests still pass validating the correct behavior
 
-The global sorting infrastructure was already robust - this fix resolved timing issues and improved the user experience.
+**Migration Benefits**:
+- 🚀 **Performance**: Faster loading, no client-side sorting of large datasets
+- 📈 **Scalability**: Backend PostgreSQL handles sorting efficiently 
+- 🔄 **Maintainability**: Single source of truth for sorting logic
+- ⚡ **UX**: Same great user experience with improved backend architecture
