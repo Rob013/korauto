@@ -69,28 +69,31 @@ const LazyCarCard = memo(({
   const [isIntersecting, setIsIntersecting] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  // Check if this sold car should be hidden (sold more than 24 hours ago)
+  // Simplified logic: trust the database filtering, only hide in clear edge cases
   const shouldHideSoldCar = () => {
-    if (!is_archived || !archived_at || archive_reason !== 'sold') {
-      return false; // Not a sold car
+    // Only hide if it's definitively a sold car that's clearly old
+    if (is_archived && archived_at && archive_reason === 'sold') {
+      try {
+        const archivedTime = new Date(archived_at);
+        
+        // Check if date is valid
+        if (isNaN(archivedTime.getTime())) {
+          return true; // Hide cars with invalid dates as safety measure
+        }
+        
+        const now = new Date();
+        const hoursSinceArchived = (now.getTime() - archivedTime.getTime()) / (1000 * 60 * 60);
+        
+        // Only hide if clearly over 24 hours (with small buffer for timing differences)
+        return hoursSinceArchived > 24.5; // 30-minute buffer to account for timing differences
+      } catch (error) {
+        // In case of any error, hide the car as a safety measure
+        return true;
+      }
     }
     
-    try {
-      const archivedTime = new Date(archived_at);
-      
-      // Check if date is valid
-      if (isNaN(archivedTime.getTime())) {
-        return true; // Hide cars with invalid dates as safety measure
-      }
-      
-      const now = new Date();
-      const hoursSinceArchived = (now.getTime() - archivedTime.getTime()) / (1000 * 60 * 60);
-      
-      return hoursSinceArchived > 24; // Hide if sold more than 24 hours ago
-    } catch (error) {
-      // In case of any error, hide the car as a safety measure
-      return true;
-    }
+    // Default: show the car (trust database filtering)
+    return false;
   };
 
   const hideSoldCar = shouldHideSoldCar();

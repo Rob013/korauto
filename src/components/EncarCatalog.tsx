@@ -199,28 +199,29 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   
   // Memoized cars to display - uses global sorting when available
   const carsToDisplay = useMemo(() => {
-    // Check if global sorting is ready and should be used
+    // Priority 1: Global sorting (when available and dataset is large enough)
     if (isGlobalSortingReady() && shouldUseGlobalSorting()) {
       const rankedCarsForPage = getCarsForCurrentPage(currentPage);
-      console.log(`🎯 Using globally sorted cars for page ${currentPage}: ${rankedCarsForPage.length} cars`);
+      console.log(`🎯 Using globally sorted cars for page ${currentPage}: ${rankedCarsForPage.length} cars (${globalSortingState.currentSortBy} sort)`);
       return rankedCarsForPage;
     }
     
-    // Fallback to traditional sorting for small datasets or when global sorting isn't ready
-    if (isDefaultState && !hasUserSelectedSort) {
-      console.log(`🎲 Using daily rotating cars: ${dailyRotatingCars.length} cars (default state, no explicit sort)`);
+    // Priority 2: Daily rotating cars (only for default state without user sort selection)
+    if (isDefaultState && !hasUserSelectedSort && !shouldUseGlobalSorting()) {
+      console.log(`🎲 Using daily rotating cars: ${dailyRotatingCars.length} cars (default state, no explicit sort, small dataset)`);
       return dailyRotatingCars;
     }
     
-    // Use regular sorted cars with pagination
+    // Priority 3: Regular sorted cars with pagination (fallback)
     const paginatedResults = sortedResults.slice((currentPage - 1) * 50, currentPage * 50);
-    console.log(`📄 Using regular sorted cars for page ${currentPage}: ${paginatedResults.length} cars`);
+    console.log(`📄 Using regular sorted cars for page ${currentPage}: ${paginatedResults.length} cars (fallback or loading state)`);
     return paginatedResults;
   }, [
     isGlobalSortingReady, 
     shouldUseGlobalSorting, 
     getCarsForCurrentPage, 
     currentPage,
+    globalSortingState.currentSortBy,
     isDefaultState,
     hasUserSelectedSort,
     dailyRotatingCars,
@@ -908,13 +909,15 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   useEffect(() => {
     if (totalCount > 0) {
       if (shouldUseGlobalSorting()) {
-        console.log(`🔄 Initializing global sorting: totalCount=${totalCount}, sortBy=${sortBy}`);
+        console.log(`🔄 Initializing global sorting: totalCount=${totalCount}, sortBy=${sortBy}, hasUserSelectedSort=${hasUserSelectedSort}`);
         initializeGlobalSorting(sortBy);
       } else {
         console.log(`📝 Small dataset (${totalCount} cars), using regular sorting`);
+        // Clear any existing global sorting for small datasets
+        clearGlobalSorting();
       }
     }
-  }, [sortBy, totalCount, shouldUseGlobalSorting, initializeGlobalSorting]);
+  }, [sortBy, totalCount, shouldUseGlobalSorting, initializeGlobalSorting, clearGlobalSorting, hasUserSelectedSort]);
 
   // Show cars without requiring brand and model selection
   const shouldShowCars = true;
@@ -1243,11 +1246,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                       const currentParams = Object.fromEntries(searchParams.entries());
                       currentParams.page = '1';
                       setSearchParams(currentParams);
-                      // Initialize global sorting for the new sort option
-                      if (shouldUseGlobalSorting()) {
-                        console.log(`🔄 Sort changed: Initializing global sorting for ${totalCount} cars with sortBy=${value}`);
-                        initializeGlobalSorting(value);
-                      }
+                      // Note: Global sorting initialization is handled by the useEffect that watches sortBy changes
+                      // This prevents duplicate calls and ensures proper state management
                     }}
                     placeholder="Sort"
                     className="w-24 sm:w-32 h-7 text-xs pl-6"
@@ -1274,6 +1274,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     return `${totalCount.toLocaleString()} cars ${filters.grade_iaai && filters.grade_iaai !== 'all' ? `filtered by ${filters.grade_iaai}` : 'total'} • Page ${currentPage} of ${totalPages} • Showing ${carsToDisplay.length} cars`;
                   }
                 })()}
+
                 {yearFilterProgress === 'instant' && (
                   <span className="ml-2 text-primary text-xs">⚡ Instant results</span>
                 )}
