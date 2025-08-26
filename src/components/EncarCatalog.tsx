@@ -1274,9 +1274,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     return `${totalCount.toLocaleString()} cars ${filters.grade_iaai && filters.grade_iaai !== 'all' ? `filtered by ${filters.grade_iaai}` : 'total'} • Page ${currentPage} of ${totalPages} • Showing ${carsToDisplay.length} cars`;
                   }
                 })()}
-                {globalSortingState.isLoading && (
-                  <span className="ml-2 text-primary text-xs">🔄 Sorting all cars globally...</span>
-                )}
+
                 {yearFilterProgress === 'instant' && (
                   <span className="ml-2 text-primary text-xs">⚡ Instant results</span>
                 )}
