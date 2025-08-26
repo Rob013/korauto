@@ -200,14 +200,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   
   // Always call useSortedCars hook (hooks must be called unconditionally)
   const sortedResults = useSortedCars(carsForSorting, sortBy);
+  const sortedAllCarsResults = useSortedCars(allCarsData, sortBy); // Add sorting for all cars data
   
   // Memoized cars to display - uses global sorting when available
   const carsToDisplay = useMemo(() => {
     // Priority 0: Show all cars when user has selected "Show All" option
     if (showAllCars && allCarsData.length > 0) {
-      const sortedAllCars = useSortedCars(allCarsData, sortBy);
-      console.log(`🌟 Showing all ${sortedAllCars.length} cars (Show All mode active)`);
-      return sortedAllCars;
+      console.log(`🌟 Showing all ${sortedAllCarsResults.length} cars (Show All mode active)`);
+      return sortedAllCarsResults;
     }
     
     // Priority 1: Global sorting (when available and dataset is large enough)
@@ -231,6 +231,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   }, [
     showAllCars,
     allCarsData,
+    sortedAllCarsResults,
     sortBy,
     isGlobalSortingReady, 
     shouldUseGlobalSorting, 
