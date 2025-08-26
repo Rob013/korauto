@@ -32,16 +32,25 @@ const bodyTypes = ['Sedan', 'SUV', 'Hatchback', 'Coupe', 'Wagon'];
 const colors = ['Black', 'White', 'Silver', 'Gray', 'Blue', 'Red', 'Green'];
 const locations = ['Seoul', 'Busan', 'Incheon', 'Daegu', 'Ulsan', 'Daejeon'];
 
-// Generate mock cars
+// Seeded random function for deterministic data generation
+const seededRandom = (seed: number) => {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+};
+
+// Generate mock cars with deterministic seeded random
 export const generateMockCars = (count: number, startId: number = 1): MockCar[] => {
   const cars: MockCar[] = [];
   
   for (let i = 0; i < count; i++) {
-    const make = carMakes[Math.floor(Math.random() * carMakes.length)];
-    const model = carModels[make][Math.floor(Math.random() * carModels[make].length)];
-    const year = 2015 + Math.floor(Math.random() * 10); // 2015-2024
-    const basePrice = 15000 + Math.floor(Math.random() * 85000); // 15k-100k
-    const mileage = Math.floor(Math.random() * 200000); // 0-200k km
+    // Use startId + i as seed for deterministic generation
+    const seed = startId + i;
+    
+    const make = carMakes[Math.floor(seededRandom(seed * 1) * carMakes.length)];
+    const model = carModels[make][Math.floor(seededRandom(seed * 2) * carModels[make].length)];
+    const year = 2015 + Math.floor(seededRandom(seed * 3) * 10); // 2015-2024
+    const basePrice = 15000 + Math.floor(seededRandom(seed * 4) * 85000); // 15k-100k
+    const mileage = Math.floor(seededRandom(seed * 5) * 200000); // 0-200k km
     
     cars.push({
       id: `car-${startId + i}`,
@@ -50,11 +59,11 @@ export const generateMockCars = (count: number, startId: number = 1): MockCar[] 
       year,
       price: basePrice,
       mileage,
-      fuel: fuelTypes[Math.floor(Math.random() * fuelTypes.length)],
-      transmission: transmissions[Math.floor(Math.random() * transmissions.length)],
-      bodyType: bodyTypes[Math.floor(Math.random() * bodyTypes.length)],
-      color: colors[Math.floor(Math.random() * colors.length)],
-      location: locations[Math.floor(Math.random() * locations.length)],
+      fuel: fuelTypes[Math.floor(seededRandom(seed * 6) * fuelTypes.length)],
+      transmission: transmissions[Math.floor(seededRandom(seed * 7) * transmissions.length)],
+      bodyType: bodyTypes[Math.floor(seededRandom(seed * 8) * bodyTypes.length)],
+      color: colors[Math.floor(seededRandom(seed * 9) * colors.length)],
+      location: locations[Math.floor(seededRandom(seed * 10) * locations.length)],
       images: [`https://picsum.photos/400/300?random=${startId + i}`]
     });
   }
@@ -62,8 +71,8 @@ export const generateMockCars = (count: number, startId: number = 1): MockCar[] 
   return cars;
 };
 
-// Generate a larger dataset for testing
-export const mockCarsDatabase = generateMockCars(500);
+// Generate a larger dataset for testing - increased to ensure multiple pages
+export const mockCarsDatabase = generateMockCars(2000);
 
 // Mock API response structure
 export interface MockCarsResponse {
