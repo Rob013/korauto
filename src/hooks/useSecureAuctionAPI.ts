@@ -678,7 +678,10 @@ export const useSecureAuctionAPI = () => {
     if (resetList) {
       setFilters(newFilters);
       setLoading(true);
-      setCurrentPage(1);
+      // Don't reset page to 1 if we're explicitly requesting a different page
+      if (page === 1) {
+        setCurrentPage(1);
+      }
     }
     setError(null);
 
@@ -788,7 +791,7 @@ export const useSecureAuctionAPI = () => {
 
       if (resetList || page === 1) {
         setCars(filteredCars);
-        setCurrentPage(1);
+        setCurrentPage(page); // Set the actual requested page, not always 1
       } else {
         setCars((prev) => [...prev, ...filteredCars]);
         setCurrentPage(page);
