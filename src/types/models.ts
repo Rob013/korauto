@@ -1,3 +1,4 @@
+
 export interface Manufacturer {
   id: number;
   name: string;
@@ -36,7 +37,7 @@ export interface CachedCarData {
   year: number;
   vin: string;
   lot_number: string;
-  car_data: Record<string, any>;
+  car_data: Record<string, any> | string; // Allow both types
   price: number;
   mileage: string;
   color: string;
