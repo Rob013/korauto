@@ -50,10 +50,9 @@ import {
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
-import { useGlobalCarSorting } from "@/hooks/useGlobalCarSorting";
-// TODO: Migrate this component to use useCarsQuery and fetchCarsWithKeyset 
-// for consistent backend sorting like NewCatalog.tsx
-import { CarWithRank } from "@/utils/chronologicalRanking";
+import { fetchCarsWithKeyset, SortOption as BackendSortOption } from "@/services/carsApi";
+import { useBackendCarSorting } from "@/hooks/useBackendCarSorting";
+import { SimplePriceSorting } from "@/components/SimplePriceSorting";
 import { filterOutTestCars } from "@/utils/testCarFilter";
 import { fallbackCars } from "@/data/fallbackData";
 
@@ -87,24 +86,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
   
-  // Global sorting hook
-  const {
-    globalSortingState,
-    initializeGlobalSorting,
-    getCarsForCurrentPage,
-    shouldUseGlobalSorting,
-    isGlobalSortingReady,
-    getPageInfo,
-    clearGlobalSorting,
-  } = useGlobalCarSorting({
-    fetchAllCars,
-    currentCars: cars,
-    filters,
-    totalCount,
-    carsPerPage: 50,
-    enableCaching: true,
-    validationEnabled: false
-  });
+  // Global price sorting state
+  const [globalSortedCars, setGlobalSortedCars] = useState<any[]>([]);
   
   const [sortBy, setSortBy] = useState<SortOption>("recently_added");
   const [hasUserSelectedSort, setHasUserSelectedSort] = useState(false);
@@ -341,13 +324,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     maxVerticalDistance: 120
   });
 
-  // Internal function to actually apply filters - now using utilities
+  // Internal function to apply filters with backend sorting
   const applyFiltersInternal = useCallback((newFilters: APIFilters) => {
     setFilters(newFilters);
     setCurrentPage(1); // Reset to first page when filters change
-    
-    // Reset global sorting when filters change
-    clearGlobalSorting();
     
     // Use 50 cars per page for proper pagination
     const filtersWithPagination = addPaginationToFilters(newFilters, 50);
@@ -1236,11 +1216,19 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     value={sortBy}
                     onValueChange={(value: SortOption) => {
                       setSortBy(value);
-                      setHasUserSelectedSort(true); // Mark that user has explicitly chosen a sort option
-                      // Reset to page 1 when sort changes to show users the first page of newly sorted results
+                      setHasUserSelectedSort(true);
                       setCurrentPage(1);
+                      
+                      // Global price sorting for all cars
+                      if (totalCount > 50 && (value === 'price_low' || value === 'price_high')) {
+                        console.log(`🔄 Fetching ALL ${totalCount} cars for global ${value} sorting`);
+                        const allCarsFilters = { ...filters, per_page: totalCount.toString() };
+                        fetchCars(1, allCarsFilters, true);
+                      }
+                      
                       // Update URL to reflect page reset
                       const currentParams = Object.fromEntries(searchParams.entries());
+                      currentParams.page = '1';
                       currentParams.page = '1';
                       setSearchParams(currentParams);
                       // Initialize global sorting for the new sort option
@@ -1363,7 +1351,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     : 'lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7'
                 } ${isFilterLoading ? 'opacity-50' : ''}`}
               >
-                {carsToDisplay.map((car: CarWithRank | any) => {
+                {carsToDisplay.map((car: any) => {
                   const lot = car.lots?.[0];
                   const usdPrice = lot?.buy_now || 25000;
                   const price = convertUSDtoEUR(Math.round(usdPrice + 2200));
@@ -1408,10 +1396,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                         final_price={car.final_price || lot?.final_price}
                         insurance_v2={(lot as any)?.insurance_v2}
                         details={(lot as any)?.details}
-                        // Add ranking info if available
-                        rank={(car as CarWithRank).rank}
-                        pageNumber={(car as CarWithRank).pageNumber}
-                        positionInPage={(car as CarWithRank).positionInPage}
                       />
                     </div>
                   );
