@@ -37,7 +37,7 @@ export interface CachedCarData {
   year: number;
   vin: string;
   lot_number: string;
-  car_data: Record<string, any> | string; // Allow both types
+  car_data: any; // Allow any type for flexibility
   price: number;
   mileage: string;
   color: string;

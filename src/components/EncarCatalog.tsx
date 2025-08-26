@@ -20,8 +20,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast"
-import { EncarCarCard } from '@/components/EncarCarCard';
-import { MobileFiltersSheet } from '@/components/MobileFiltersSheet';
+import EncarCarCard from '@/components/EncarCarCard';
 import { useSortedCars, SortOption, getEncarSortOptions } from '@/hooks/useSortedCars';
 import { useBackendCarSorting } from '@/hooks/useBackendCarSorting';
 import { usePriceSorting } from '@/hooks/usePriceSorting';
@@ -42,7 +41,7 @@ interface FlexibleCar {
   vin?: string;
   transmission?: { name: string };
   fuel?: { name: string };
-  color?: string;
+  color?: { name: string };
   condition?: string;
   lot_number?: string;
   title?: string;
@@ -89,7 +88,7 @@ interface FlexibleCar {
   popularity_score?: number;
 }
 
-export const EncarCatalog = ({ highlightCarId, className = '' }: EncarCatalogProps) => {
+const EncarCatalog = ({ highlightCarId, className = '' }: EncarCatalogProps) => {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
   const [isMobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [manufacturers, setManufacturers] = useState([]);
@@ -131,7 +130,11 @@ export const EncarCatalog = ({ highlightCarId, className = '' }: EncarCatalogPro
     },
     onError: (error: string) => {
       console.error('Backend sorting error:', error);
-      toast.error('Failed to sort cars');
+      toast({
+        title: "Error",
+        description: "Failed to sort cars",
+        variant: "destructive"
+      });
     }
   });
 
@@ -186,7 +189,11 @@ export const EncarCatalog = ({ highlightCarId, className = '' }: EncarCatalogPro
 
     } catch (error) {
       console.error('❌ Error fetching cars:', error);
-      toast.error('Failed to load cars');
+      toast({
+        title: "Error",
+        description: "Failed to load cars",
+        variant: "destructive"
+      });
       setCars([]);
       setTotalCount(0);
     } finally {
@@ -213,7 +220,11 @@ export const EncarCatalog = ({ highlightCarId, className = '' }: EncarCatalogPro
       setManufacturers(manufacturersWithImages);
     } catch (error) {
       console.error('❌ Error fetching manufacturers:', error);
-      toast.error('Failed to load manufacturers');
+      toast({
+        title: "Error", 
+        description: "Failed to load manufacturers",
+        variant: "destructive"
+      });
       setManufacturers([]);
     } finally {
       setLoadingManufacturers(false);
@@ -235,7 +246,11 @@ export const EncarCatalog = ({ highlightCarId, className = '' }: EncarCatalogPro
       setModels(data.data);
     } catch (error) {
       console.error('❌ Error fetching models:', error);
-      toast.error('Failed to load models');
+      toast({
+        title: "Error",
+        description: "Failed to load models",
+        variant: "destructive"
+      });
       setModels([]);
     } finally {
       setLoadingModels(false);
@@ -323,11 +338,15 @@ export const EncarCatalog = ({ highlightCarId, className = '' }: EncarCatalogPro
         } catch (error) {
           console.error('Failed to fetch with backend sorting:', error);
           // Fallback to client-side sorting with current cars
-          await sortCarsGlobally(cars, newSortBy, setCars);
+          await sortCarsGlobally(cars, newSortBy, (sortedCars) => {
+            setCars(sortedCars.map(car => ({ ...car, year: car.year || 2000 })));
+          });
         }
       } else {
         // Use existing all cars for sorting
-        await sortCarsGlobally(allCarsForSorting, newSortBy, setCars);
+        await sortCarsGlobally(allCarsForSorting, newSortBy, (sortedCars) => {
+          setCars(sortedCars.map(car => ({ ...car, year: car.year || 2000 })));
+        });
       }
     } else {
       // For small datasets or non-price sorting, just re-fetch
@@ -350,26 +369,7 @@ export const EncarCatalog = ({ highlightCarId, className = '' }: EncarCatalogPro
 
   return (
     <div className={`min-h-screen bg-background ${className}`}>
-      {isMobile && (
-        <MobileFiltersSheet
-          isOpen={isMobileFiltersOpen}
-          onClose={() => setMobileFiltersOpen(false)}
-          manufacturers={manufacturers}
-          models={models}
-          selectedManufacturer={selectedManufacturer}
-          selectedModel={selectedModel}
-          searchQuery={searchQuery}
-          filters={filters}
-          loadingManufacturers={loadingManufacturers}
-          loadingModels={loadingModels}
-          onManufacturerChange={handleManufacturerChange}
-          onModelChange={handleModelChange}
-          onSearchChange={handleSearchChange}
-          onSearchSubmit={handleSearchSubmit}
-          onFilterChange={handleFilterChange}
-          onClearFilters={handleClearFilters}
-        />
-      )}
+      {/* Mobile filters will be added later */}
       
       <div className="container mx-auto px-4 py-4">
         
@@ -487,8 +487,17 @@ export const EncarCatalog = ({ highlightCarId, className = '' }: EncarCatalogPro
                 {carsForCurrentPage.map((car) => (
                   <EncarCarCard
                     key={car.id}
-                    car={car}
-                    isHighlighted={car.id === highlightCarId}
+                    id={car.id}
+                    make={car.manufacturer?.name || ''}
+                    model={car.model?.name || ''}
+                    year={car.year}
+                    price={car.lots?.[0]?.buy_now || 0}
+                    image={car.lots?.[0]?.images?.normal?.[0]}
+                    mileage={car.lots?.[0]?.odometer?.km ? `${car.lots[0].odometer.km} km` : ''}
+                    fuel={car.fuel?.name}
+                    transmission={car.transmission?.name}
+                    color={car.color?.name}
+                     lot={car.lots?.[0]?.lot}
                   />
                 ))}
               </div>
@@ -503,3 +512,5 @@ export const EncarCatalog = ({ highlightCarId, className = '' }: EncarCatalogPro
     </div>
   );
 };
+
+export { EncarCatalog };

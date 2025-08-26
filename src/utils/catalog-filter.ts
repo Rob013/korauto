@@ -171,3 +171,46 @@ export const parseBuyNowQueryParams = (query: ParsedUrlQuery): APIFilters => {
 
   return filters;
 };
+
+// Utility functions
+export const sortManufacturers = (manufacturers: any[]) => {
+  return manufacturers.sort((a, b) => a.name.localeCompare(b.name));
+};
+
+export const generateYearRange = (startYear: number = 1990, endYear: number = new Date().getFullYear()) => {
+  const years = [];
+  for (let year = endYear; year >= startYear; year--) {
+    years.push(year);
+  }
+  return years;
+};
+
+export const generateYearPresets = () => {
+  const currentYear = new Date().getFullYear();
+  return [
+    { label: 'Last 3 years', from: currentYear - 2, to: currentYear },
+    { label: 'Last 5 years', from: currentYear - 4, to: currentYear },
+    { label: 'Last 10 years', from: currentYear - 9, to: currentYear },
+  ];
+};
+
+export const isStrictFilterMode = (filters: APIFilters): boolean => {
+  return !!(filters.manufacturer_id && filters.manufacturer_id !== 'all');
+};
+
+export const getFallbackGrades = () => {
+  return [
+    { value: 'all', label: 'All Grades' },
+    { value: 'A', label: 'Grade A' },
+    { value: 'B', label: 'Grade B' },
+    { value: 'C', label: 'Grade C' },
+  ];
+};
+
+export const debounce = (func: Function, delay: number) => {
+  let timeoutId: NodeJS.Timeout;
+  return (...args: any[]) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func.apply(null, args), delay);
+  };
+};
