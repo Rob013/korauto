@@ -19,7 +19,7 @@ interface FloatingPerformanceWidgetProps {
 }
 
 const FloatingPerformanceWidget = ({ 
-  enabled = process.env.NODE_ENV === 'development',
+  enabled = import.meta.env.DEV,
   position = 'bottom-right' 
 }: FloatingPerformanceWidgetProps) => {
   const [isMinimized, setIsMinimized] = useState(true);
