@@ -359,7 +359,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     const searchParams = filtersToURLParams(newFilters);
     searchParams.set('page', '1');
     setSearchParams(searchParams);
-  }, [fetchCars, setSearchParams]);
+  }, [fetchCars, setSearchParams, setFilters, clearGlobalSorting]);
 
   // Optimized year filtering hook for better performance
   const {
@@ -377,8 +377,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   });
 
   // Debounced version for performance - Reduced debounce time for year filters - using catalog utility
-  const debouncedApplyFilters = useCallback(
-    catalogDebounce(applyFiltersInternal, 150), // Reduced from 300ms for faster response
+  const debouncedApplyFilters = useMemo(
+    () => catalogDebounce(applyFiltersInternal, 150), // Reduced from 300ms for faster response
     [applyFiltersInternal]
   );
 
@@ -428,7 +428,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setHasUserSelectedSort(false); // Reset to allow daily rotating cars again
     fetchCars(1, {}, true);
     setSearchParams({});
-  }, [fetchCars, setSearchParams]);
+  }, [fetchCars, setSearchParams, setFilters]);
 
   const handleSearch = useCallback(() => {
     const newFilters = {
@@ -469,7 +469,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     const currentParams = Object.fromEntries(searchParams.entries());
     currentParams.page = page.toString();
     setSearchParams(currentParams);
-  }, [filters, fetchCars, setSearchParams, isGlobalSortingReady, getPageInfo]);
+  }, [filters, fetchCars, setSearchParams, isGlobalSortingReady, getPageInfo, searchParams]);
 
   const loadMoreCars = useCallback(() => {
     // Implement proper "load more" functionality
@@ -505,7 +505,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Function to fetch all cars for sorting across all pages
   const fetchAllCarsForSorting = useCallback(async () => {
     // Create a unique key for current sort parameters to prevent duplicate calls
-    const sortKey = `${totalCount}-${sortBy}-${filters.grade_iaai || ''}-${filters.manufacturer_id || ''}-${filters.model_id || ''}-${filters.generation_id || ''}-${filters.from_year || ''}-${filters.to_year || ''}`;
+    const sortKey = `${totalCount}-${sortBy}-${filters?.grade_iaai || ''}-${filters?.manufacturer_id || ''}-${filters?.model_id || ''}-${filters?.generation_id || ''}-${filters?.from_year || ''}-${filters?.to_year || ''}`;
     
     if (fetchingSortRef.current) {
       console.log(`⏳ Already fetching sort data, skipping duplicate request`);
@@ -539,7 +539,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       
       // Apply the same client-side filtering as the current filtered cars - using utility
       const filteredAllCars = allCars.filter((car: any) => {
-        return matchesGradeFilter(car, filters.grade_iaai);
+        return matchesGradeFilter(car, filters?.grade_iaai);
       });
       
       // setAllCarsForSorting(filteredAllCars); // Handled by global sorting hook
@@ -568,18 +568,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   }, [
     totalCount, 
     fetchAllCars, 
-    filters?.grade_iaai, 
-    filters?.manufacturer_id, 
-    filters?.model_id, 
-    filters?.generation_id, 
-    filters?.from_year, 
-    filters?.to_year, 
+    filters,
     sortBy, 
-    // Remove filteredCars from dependencies as it's computed and can cause infinite loops
-    // filteredCars,
-    totalPages || 0, 
+    totalPages, 
     currentPage, 
-    setSearchParams
+    setSearchParams,
+    globalSortingState.isGlobalSorting,
+    globalSortingState.rankedCars.length,
+    searchParams
   ]);
 
   const handleManufacturerChange = async (manufacturerId: string) => {
@@ -819,7 +815,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     };
 
     loadInitialData();
-  }, []); // Only run on mount
+  }, [searchParams, fetchCars, fetchGenerations, fetchManufacturers, fetchModels, restorePageState, setFilters]); // Include only essential dependencies
 
   // OPTIMIZED: Simplified scroll position saving with less frequent updates
   useEffect(() => {
@@ -844,7 +840,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       window.removeEventListener("scroll", handleScroll);
       clearTimeout(scrollTimeout);
     };
-  }, []); // Remove dependencies to prevent unnecessary re-binding
+  }, [saveScrollPosition]); // Include saveScrollPosition in dependencies
 
   // OPTIMIZED: Load filter counts with reduced API calls and better debouncing
   useEffect(() => {
@@ -865,7 +861,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // PERFORMANCE: Longer debounce and only load when necessary
     const timeoutId = setTimeout(loadFilterCounts, 500);
     return () => clearTimeout(timeoutId);
-  }, [filters, manufacturers.length]); // Only depend on manufacturers.length, not the full array
+  }, [filters, manufacturers, fetchFilterCounts]); // Include all dependencies
 
   // OPTIMIZED: Load initial counts only once when manufacturers are first loaded
   useEffect(() => {
@@ -884,7 +880,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     };
 
     loadInitialCounts();
-  }, [manufacturers.length]); // Only run when manufacturers are first loaded
+  }, [manufacturers, filterCounts, fetchFilterCounts]); // Include all dependencies
 
   // Calculate total pages - updated for global sorting
   useEffect(() => {
