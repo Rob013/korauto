@@ -138,8 +138,8 @@ const FilterForm = memo<FilterFormProps>(({
   const sortedManufacturers = useMemo(() => sortManufacturers(manufacturers), [manufacturers]);
 
   // Using utility for fallback grades
-  const getFallbackGradesForManufacturer = useCallback(() => {
-    return getFallbackGrades();
+  const getFallbackGradesForManufacturer = useCallback((manufacturerId: string) => {
+    return getFallbackGrades(manufacturerId);
   }, []);
 
   // Debounced fetch grades when manufacturer or model changes
@@ -151,7 +151,7 @@ const FilterForm = memo<FilterFormProps>(({
     timeoutId = setTimeout(() => {
       if (filters.manufacturer_id && onFetchGrades && !cancelled) {
         // Set fallback immediately for instant response
-        const fallback = getFallbackGradesForManufacturer();
+        const fallback = getFallbackGradesForManufacturer(filters.manufacturer_id);
         setGrades(fallback);
         setIsLoadingGrades(true);
         
@@ -304,7 +304,7 @@ const FilterForm = memo<FilterFormProps>(({
             <span className="text-xs text-primary bg-primary/10 px-1 rounded" title="Optimized for instant results">⚡</span>
           </Label>
           <div className="flex flex-wrap gap-1">
-            {generateYearPresets().slice(0, 5).map((preset) => (
+            {generateYearPresets(currentYear).slice(0, 5).map((preset) => (
               <Button
                 key={preset.label}
                 variant={

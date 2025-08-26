@@ -165,12 +165,12 @@ export const measurePerformance = (name: string, fn: () => void | Promise<void>)
       const endTime = performance.now();
       const duration = endTime - startTime;
       
-      if (import.meta.env.DEV) {
+      if (process.env.NODE_ENV === 'development') {
         console.log(`⏱️ ${name}: ${duration.toFixed(2)}ms`);
       }
       
       // Report to analytics in production
-      if (import.meta.env.PROD && 'analytics' in window) {
+      if (process.env.NODE_ENV === 'production' && 'analytics' in window) {
         (window as any).analytics?.track('Performance Metric', {
           name,
           duration,

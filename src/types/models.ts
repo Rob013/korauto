@@ -1,6 +1,3 @@
-
-import { Json } from '@/integrations/supabase/types';
-
 export interface Manufacturer {
   id: number;
   name: string;
@@ -39,7 +36,7 @@ export interface CachedCarData {
   year: number;
   vin: string;
   lot_number: string;
-  car_data: Json; // Use proper Json type from Supabase
+  car_data: Record<string, any>;
   price: number;
   mileage: string;
   color: string;

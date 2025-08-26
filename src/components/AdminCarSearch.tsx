@@ -109,7 +109,7 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
         if (!error && cars && cars.length > 0) {
           cars.forEach(car => {
             if (!allCachedCars.some(existing => existing.api_id === car.api_id)) {
-              allCachedCars.push(car as CachedCarData);
+              allCachedCars.push(car);
             }
           });
         }

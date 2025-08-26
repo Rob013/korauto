@@ -60,21 +60,15 @@ export const useCachedCars = () => {
       const now = new Date();
       const fourHoursAgo = new Date(now.getTime() - 4 * 60 * 60 * 1000);
       
-      // Fetch from API if cache is empty OR if cache is outdated
+      // Only fetch from API if cache is empty or very outdated
       if (cachedCars.length === 0) {
-        console.log('Cache is empty, fetching from API...');
-        await fetchCars();
-      } else {
-        // Check if existing cache is outdated
         const hasRecentData = cachedCars.some(car => 
           new Date(car.last_api_sync) > fourHoursAgo
         );
         
         if (!hasRecentData) {
-          console.log('Cache is outdated, fetching from API...');
+          console.log('Cache is empty or outdated, fetching from API...');
           await fetchCars();
-        } else {
-          console.log('Using fresh cached data');
         }
       }
       

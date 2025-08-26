@@ -2,7 +2,7 @@ import { useEffect, lazy, Suspense } from "react";
 import { useSearchParams } from "react-router-dom";
 import { trackPageView } from "@/utils/analytics";
 import Header from "@/components/Header";
-import { EncarCatalog } from "@/components/EncarCatalog";
+import EncarCatalog from "@/components/EncarCatalog";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const Footer = lazy(() => import("@/components/Footer"));
