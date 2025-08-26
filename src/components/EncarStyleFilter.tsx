@@ -165,7 +165,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   const years = useMemo(() => generateYearRange(currentYear), [currentYear]);
   
   // Enhanced year range presets using utility
-  const yearRangePresets = useMemo(() => generateYearPresets(currentYear), [currentYear]);
+  const yearRangePresets = useMemo(() => generateYearPresets(), []);
 
   // Year options for dropdowns - strict mode aware
   const yearOptions = useMemo(() => [
