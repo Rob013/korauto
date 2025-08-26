@@ -26,7 +26,7 @@ import { useBackendCarSorting } from '@/hooks/useBackendCarSorting';
 import { usePriceSorting } from '@/hooks/usePriceSorting';
 import { APIFilters, buildBuyNowQueryParams, defaultFilters } from '@/utils/catalog-filter';
 import { filterCarsWithRealPricing } from '@/utils/carPricing';
-import { suppressCarDataType } from '@/utils/typeSuppress';
+import { supabase } from '@/integrations/supabase/client';
 
 interface EncarCatalogProps {
   highlightCarId?: string | null;
@@ -150,48 +150,46 @@ const EncarCatalog = ({ highlightCarId, className = '' }: EncarCatalogProps) => 
     setIsLoading(true);
     
     try {
-      const queryParams = buildBuyNowQueryParams({
-        ...newFilters,
-        per_page: newFilters.per_page || '50'
-      });
-      
-      const response = await fetch(`${API_BASE_URL}/api/cars?${queryParams}`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      console.log('🔄 Fetching cars from Supabase...', { filters: newFilters, page });
+      const { data, error } = await supabase.functions.invoke('secure-cars-api', {
+        body: {
+          endpoint: 'cars',
+          filters: {
+            ...newFilters,
+            page: page.toString(),
+            per_page: newFilters.per_page || '30',
+            simple_paginate: '0'
+          }
+        }
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (error) {
+        throw new Error(`Supabase function error: ${error.message}`);
       }
 
-      const data = await response.json();
+      if (!data?.data) {
+        throw new Error('No cars data received');
+      }
+
       console.log('✅ API Response received:', {
-        totalCars: data.total_count,
-        currentPage: data.current_page,
-        carsOnPage: data.data?.length || 0
+        totalCars: data.total_count || data.data.length,
+        currentPage: page,
+        carsReceived: data.data.length
       });
 
-      // Convert API cars to FlexibleCar format
-      const convertedCars = (data.data || []).map((car: any) => ({
+      const carsWithYear = data.data.map((car: any) => ({
         ...car,
-        year: car.year || 2000, // Ensure year exists
+        year: car.year || new Date().getFullYear() - 5 // Default fallback year
       }));
 
-      setCars(convertedCars);
-      setTotalCount(data.total_count || 0);
-      setCurrentPage(data.current_page || 1);
-
-      // For sorting purposes, we need all cars if dataset is large
-      if (data.total_count > 50 && (sortOption === 'price_low' || sortOption === 'price_high')) {
-        console.log('🔄 Large dataset detected, will fetch all cars for global sorting');
-      }
-
+      setCars(carsWithYear);
+      setTotalCount(data.total_count || data.data.length);
+      setCurrentPage(page);
     } catch (error) {
       console.error('❌ Error fetching cars:', error);
       toast({
-        title: "Error",
-        description: "Failed to load cars",
+        title: "Error", 
+        description: "Failed to load cars. Please try again.",
         variant: "destructive"
       });
       setCars([]);
@@ -199,24 +197,36 @@ const EncarCatalog = ({ highlightCarId, className = '' }: EncarCatalogProps) => 
     } finally {
       setIsLoading(false);
     }
-  }, [filters, sortBy]);
+  }, [filters, sortBy, toast]);
 
   const fetchManufacturers = useCallback(async () => {
     setLoadingManufacturers(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/manufacturers`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      console.log('🔄 Fetching manufacturers from Supabase...');
+      const { data, error } = await supabase.functions.invoke('secure-cars-api', {
+        body: {
+          endpoint: 'manufacturers/cars',
+          filters: {
+            per_page: '1000',
+            simple_paginate: '0'
+          }
+        }
       });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      
+      if (error) {
+        throw new Error(`Supabase function error: ${error.message}`);
       }
-      const data = await response.json();
+      
+      if (!data?.data) {
+        throw new Error('No manufacturers data received');
+      }
+      
       const manufacturersWithImages = data.data.map((manufacturer: any) => ({
         ...manufacturer,
         image: manufacturer.image || undefined,
       }));
+      
+      console.log('✅ Manufacturers loaded:', manufacturersWithImages.length);
       setManufacturers(manufacturersWithImages);
     } catch (error) {
       console.error('❌ Error fetching manufacturers:', error);
@@ -229,7 +239,7 @@ const EncarCatalog = ({ highlightCarId, className = '' }: EncarCatalogProps) => 
     } finally {
       setLoadingManufacturers(false);
     }
-  }, []);
+  }, [toast]);
 
   const fetchModels = useCallback(async (manufacturerId: string) => {
     setLoadingModels(true);
