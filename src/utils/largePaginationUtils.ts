@@ -141,22 +141,20 @@ export function getPaginationStats(
   
   if (info.totalItems === 0) {
     return {
-      displayText: 'No items found',
-      shortText: '0 items',
-      showing: 'Showing 0 items'
+      displayText: 'No cars found',
+      shortText: '0 cars',
+      showing: 'Showing 0 cars'
     };
   }
 
-  const startNum = formatPaginationNumber(info.startIndex + 1);
-  const endNum = formatPaginationNumber(info.endIndex);
   const totalFormatted = formatPaginationNumber(info.totalItems);
   const pageFormatted = formatPaginationNumber(info.currentPage);
   const totalPagesFormatted = formatPaginationNumber(info.totalPages);
 
   return {
-    displayText: `${totalFormatted} items total • Page ${pageFormatted} of ${totalPagesFormatted} • Showing ${info.itemsOnCurrentPage} items`,
-    shortText: `${totalFormatted} items`,
-    showing: `Showing ${startNum}-${endNum} of ${totalFormatted}`
+    displayText: `${totalFormatted} cars across ${totalPagesFormatted} pages • Page ${pageFormatted} of ${totalPagesFormatted} • Showing ${info.itemsOnCurrentPage} cars per page`,
+    shortText: `${totalFormatted} cars`,
+    showing: `Page ${pageFormatted} of ${totalPagesFormatted} • ${info.itemsOnCurrentPage} cars shown`
   };
 }
 
