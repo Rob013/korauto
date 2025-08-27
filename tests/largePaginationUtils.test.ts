@@ -138,25 +138,25 @@ describe('Large Pagination Utils', () => {
     it('should generate correct stats for Audi A5 scenario', () => {
       const stats = getPaginationStats(4, 187, 50);
       
-      expect(stats.displayText).toBe('187 items total • Page 4 of 4 • Showing 37 items');
-      expect(stats.shortText).toBe('187 items');
-      expect(stats.showing).toBe('Showing 151-187 of 187');
+      expect(stats.displayText).toBe('187 cars across 4 pages • Page 4 of 4 • Showing 37 cars per page');
+      expect(stats.shortText).toBe('187 cars');
+      expect(stats.showing).toBe('Page 4 of 4 • 37 cars shown');
     });
 
     it('should generate correct stats for large dataset', () => {
       const stats = getPaginationStats(1800, 180000, 50);
       
-      expect(stats.displayText).toBe('180,000 items total • Page 1,800 of 3,600 • Showing 50 items');
-      expect(stats.shortText).toBe('180,000 items');
-      expect(stats.showing).toBe('Showing 89,951-90,000 of 180,000');
+      expect(stats.displayText).toBe('180,000 cars across 3,600 pages • Page 1,800 of 3,600 • Showing 50 cars per page');
+      expect(stats.shortText).toBe('180,000 cars');
+      expect(stats.showing).toBe('Page 1,800 of 3,600 • 50 cars shown');
     });
 
     it('should handle empty dataset', () => {
       const stats = getPaginationStats(1, 0, 50);
       
-      expect(stats.displayText).toBe('No items found');
-      expect(stats.shortText).toBe('0 items');
-      expect(stats.showing).toBe('Showing 0 items');
+      expect(stats.displayText).toBe('No cars found');
+      expect(stats.shortText).toBe('0 cars');
+      expect(stats.showing).toBe('Showing 0 cars');
     });
   });
 
@@ -263,7 +263,7 @@ describe('Large Pagination Utils', () => {
         expect(info.startIndex + 1).toBe(expectedStart);
         expect(info.endIndex).toBe(expectedEnd);
         
-        expect(stats.showing).toContain(`${expectedStart.toLocaleString()}-${expectedEnd.toLocaleString()}`);
+        expect(stats.showing).toContain(`Page ${page.toLocaleString()} of ${expectedPages.toLocaleString()} • ${info.itemsOnCurrentPage} cars shown`);
       });
     });
 
@@ -309,7 +309,7 @@ describe('Large Pagination Utils', () => {
       // Results should be accurate
       expect(info.currentPage).toBe(largePage);
       expect(apiParams.page).toBe(largePage.toString());
-      expect(stats.displayText).toContain('2,500');
+      expect(stats.displayText).toContain('500,000 cars across');
     });
   });
 });
