@@ -51,11 +51,12 @@ import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { useGlobalCarSorting } from "@/hooks/useGlobalCarSorting";
-// TODO: Migrate this component to use useCarsQuery and fetchCarsWithKeyset 
-// for consistent backend sorting like NewCatalog.tsx
+import { useBackendCarSorting } from "@/hooks/useBackendCarSorting";
+// Migrating to backend sorting approach for better performance and consistency
 import { CarWithRank } from "@/utils/chronologicalRanking";
 import { filterOutTestCars } from "@/utils/testCarFilter";
 import { fallbackCars } from "@/data/fallbackData";
+import { SortingStatusIndicator, CompactSortingStatus } from "@/components/ui/SortingStatusIndicator";
 
 interface EncarCatalogProps {
   highlightCarId?: string | null;
@@ -87,7 +88,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
   
-  // Global sorting hook
+  // Global sorting hook (deprecated - fallback only)
   const {
     globalSortingState,
     initializeGlobalSorting,
@@ -105,6 +106,22 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     enableCaching: true,
     validationEnabled: false
   });
+
+  // Backend sorting hook (preferred approach)
+  const {
+    isBackendSorting,
+    isLoading: backendLoading,
+    error: backendError,
+    totalPages: backendTotalPages,
+    getCarsForPage: getBackendCarsForPage,
+    shouldUseBackendSorting,
+    canUseBackendSorting,
+  } = useBackendCarSorting({
+    currentCars: cars,
+    filters,
+    totalCount,
+    carsPerPage: 50,
+  });
   
   const [sortBy, setSortBy] = useState<SortOption>("recently_added");
   const [hasUserSelectedSort, setHasUserSelectedSort] = useState(false);
@@ -115,6 +132,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [isFilterLoading, setIsFilterLoading] = useState(false);
   const [showAllCars, setShowAllCars] = useState(false); // New state for showing all cars
   const [allCarsData, setAllCarsData] = useState<any[]>([]); // Store all cars when fetched
+  const [backendSortedCars, setBackendSortedCars] = useState<any[]>([]); // Store backend sorted cars
   const isMobile = useIsMobile();
   
   // Initialize showFilters - always start closed, only open when user explicitly clicks filter button
@@ -201,7 +219,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const sortedResults = useSortedCars(carsForSorting, sortBy);
   const sortedAllCarsResults = useSortedCars(allCarsData, sortBy); // Add sorting for all cars data
   
-  // Memoized cars to display - uses global sorting when available
+  // Memoized cars to display - prioritizes backend sorting, falls back to client-side
   const carsToDisplay = useMemo(() => {
     // Priority 0: Show all cars when user has selected "Show All" option
     if (showAllCars && allCarsData.length > 0) {
@@ -209,35 +227,40 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       return sortedAllCarsResults;
     }
     
-    // Priority 1: Global sorting (when available and dataset is large enough)
+    // Priority 1: Backend sorting (preferred approach for large datasets)
+    if (shouldUseBackendSorting() && canUseBackendSorting(sortBy) && backendSortedCars.length > 0) {
+      console.log(`🚀 Using backend sorted cars for page ${currentPage}: ${backendSortedCars.length} cars (${sortBy} sort)`);
+      return backendSortedCars;
+    }
+    
+    // Priority 2: Legacy global sorting (fallback for compatibility)
     if (isGlobalSortingReady() && shouldUseGlobalSorting()) {
       const rankedCarsForPage = getCarsForCurrentPage(currentPage);
-      console.log(`🎯 Using globally sorted cars for page ${currentPage}: ${rankedCarsForPage.length} cars (${globalSortingState.currentSortBy} sort)`);
+      console.log(`🎯 Using legacy global sorting for page ${currentPage}: ${rankedCarsForPage.length} cars (${globalSortingState.currentSortBy} sort)`);
       return rankedCarsForPage;
     }
     
-    // Priority 2: Daily rotating cars (only for default state without user sort selection)
-    if (isDefaultState && !hasUserSelectedSort && !shouldUseGlobalSorting()) {
-      // For server-side pagination, use all daily rotating cars without client-side slicing
-      // Server already provides the correct page data
+    // Priority 3: Daily rotating cars (only for default state without user sort selection)
+    if (isDefaultState && !hasUserSelectedSort && !shouldUseGlobalSorting() && !shouldUseBackendSorting()) {
       console.log(`🎲 Using daily rotating cars for page ${currentPage}: ${dailyRotatingCars.length} cars (default state, no explicit sort, small dataset)`);
       return dailyRotatingCars;
     }
     
-    // Priority 3: Regular sorted cars (fallback)
-    // For server-side pagination, use all sorted results without client-side slicing
-    // Server already provides the correct page data
+    // Priority 4: Regular sorted cars (final fallback)
     console.log(`📄 Using regular sorted cars for page ${currentPage}: ${sortedResults.length} cars (fallback or loading state)`);
     return sortedResults;
   }, [
     showAllCars,
     allCarsData,
     sortedAllCarsResults,
+    shouldUseBackendSorting,
+    canUseBackendSorting,
     sortBy,
+    backendSortedCars,
+    currentPage,
     isGlobalSortingReady, 
     shouldUseGlobalSorting, 
     getCarsForCurrentPage, 
-    currentPage,
     globalSortingState.currentSortBy,
     isDefaultState,
     hasUserSelectedSort,
@@ -929,6 +952,33 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
   }, [sortBy, totalCount, shouldUseGlobalSorting, initializeGlobalSorting, clearGlobalSorting, hasUserSelectedSort]);
 
+  // Backend sorting effect - fetches cars using keyset pagination
+  useEffect(() => {
+    const fetchBackendSortedCars = async () => {
+      if (shouldUseBackendSorting() && canUseBackendSorting(sortBy) && hasUserSelectedSort) {
+        console.log(`🚀 Fetching backend sorted cars: totalCount=${totalCount}, sortBy=${sortBy}, page=${currentPage}`);
+        
+        try {
+          const backendCars = await getBackendCarsForPage(currentPage, sortBy);
+          setBackendSortedCars(backendCars);
+          console.log(`✅ Backend sorting completed: ${backendCars.length} cars fetched for page ${currentPage}`);
+        } catch (error) {
+          console.error('❌ Backend sorting failed:', error);
+          // Clear backend sorted cars on error to fall back to legacy approach
+          setBackendSortedCars([]);
+        }
+      } else {
+        // Clear backend sorted cars when not using backend sorting
+        setBackendSortedCars([]);
+      }
+    };
+
+    // Only fetch if we have user-selected sort and sufficient data
+    if (hasUserSelectedSort && totalCount > 0) {
+      fetchBackendSortedCars();
+    }
+  }, [sortBy, currentPage, totalCount, hasUserSelectedSort, shouldUseBackendSorting, canUseBackendSorting, getBackendCarsForPage]);
+
   // Show cars without requiring brand and model selection
   const shouldShowCars = true;
 
@@ -1275,16 +1325,29 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 Car Catalog
               </h1>
-              <p className="text-muted-foreground text-xs sm:text-sm">
-                {totalCount.toLocaleString()} cars across {totalPages.toLocaleString()} pages • Page {currentPage} of {totalPages.toLocaleString()} • Showing {carsToDisplay.length} cars per page
-
-                {yearFilterProgress === 'instant' && (
-                  <span className="ml-2 text-primary text-xs">⚡ Instant results</span>
-                )}
-                {yearFilterProgress === 'loading' && (
-                  <span className="ml-2 text-primary text-xs">🔄 Loading complete results...</span>
-                )}
-              </p>
+              <div className="text-sm text-muted-foreground space-y-1">
+                <p>
+                  {isBackendSorting && backendSortedCars.length > 0 
+                    ? `${backendSortedCars.length} results • Page ${currentPage} of ${totalPages}`
+                    : `${totalCount} results • Page ${currentPage} of ${totalPages}`
+                  }
+                  {showAllCars && (
+                    <span className="ml-2 text-blue-600 text-xs">🌟 Showing all cars</span>
+                  )}
+                </p>
+                <SortingStatusIndicator
+                  isGlobalSorting={isGlobalSortingReady() && shouldUseGlobalSorting()}
+                  isLoading={globalSortingState.isLoading}
+                  isBackendSorting={isBackendSorting}
+                  backendLoading={backendLoading}
+                  totalCars={isBackendSorting && backendSortedCars.length > 0 ? backendSortedCars.length : totalCount}
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  sortOption={sortBy}
+                  carsOnCurrentPage={carsToDisplay.length}
+                  yearFilterProgress={yearFilterProgress}
+                />
+              </div>
             </div>
           </div>
 

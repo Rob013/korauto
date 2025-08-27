@@ -213,7 +213,7 @@ export const getCarRankingInfo = (
 };
 
 /**
- * Validates if chronological ranking is consistent
+ * Validates if chronological ranking is consistent across all pages
  */
 export const validateChronologicalRanking = (
   rankedCars: CarWithRank[],
@@ -241,6 +241,112 @@ export const validateChronologicalRanking = (
   }
   
   return true;
+};
+
+/**
+ * Enhanced validation for cross-page ranking consistency
+ * Specifically checks that ranking is consistent across page boundaries
+ */
+export const validateCrossPageRanking = (
+  rankedCars: CarWithRank[],
+  carsPerPage: number = 50,
+  sortBy: SortOption
+): {
+  isValid: boolean;
+  errors: string[];
+  pageValidations: Array<{
+    page: number;
+    isValid: boolean;
+    errors: string[];
+  }>;
+} => {
+  const errors: string[] = [];
+  const pageValidations: Array<{
+    page: number;
+    isValid: boolean;
+    errors: string[];
+  }> = [];
+
+  if (rankedCars.length === 0) {
+    return { isValid: true, errors: [], pageValidations: [] };
+  }
+
+  const totalPages = Math.ceil(rankedCars.length / carsPerPage);
+
+  // Validate each page individually
+  for (let page = 1; page <= totalPages; page++) {
+    const pageErrors: string[] = [];
+    const pageCars = getCarsForPage(rankedCars, page, carsPerPage);
+    
+    // Check ranking within page
+    for (let i = 0; i < pageCars.length; i++) {
+      const expectedRank = (page - 1) * carsPerPage + i + 1;
+      const expectedPageNumber = page;
+      const expectedPositionInPage = i + 1;
+      
+      if (pageCars[i].rank !== expectedRank) {
+        pageErrors.push(`Page ${page}, position ${i + 1}: expected rank ${expectedRank}, got ${pageCars[i].rank}`);
+      }
+      
+      if (pageCars[i].pageNumber !== expectedPageNumber) {
+        pageErrors.push(`Page ${page}, position ${i + 1}: expected pageNumber ${expectedPageNumber}, got ${pageCars[i].pageNumber}`);
+      }
+      
+      if (pageCars[i].positionInPage !== expectedPositionInPage) {
+        pageErrors.push(`Page ${page}, position ${i + 1}: expected positionInPage ${expectedPositionInPage}, got ${pageCars[i].positionInPage}`);
+      }
+    }
+    
+    // Check sort order within page
+    for (let i = 1; i < pageCars.length; i++) {
+      if (!isCorrectOrder(pageCars[i - 1], pageCars[i], sortBy)) {
+        pageErrors.push(`Page ${page}: sort order violation between position ${i} and ${i + 1}`);
+      }
+    }
+    
+    // Check page boundary consistency
+    if (page > 1) {
+      const prevPageCars = getCarsForPage(rankedCars, page - 1, carsPerPage);
+      const lastPrevCar = prevPageCars[prevPageCars.length - 1];
+      const firstCurrCar = pageCars[0];
+      
+      // Check rank continuity
+      if (firstCurrCar.rank !== lastPrevCar.rank + 1) {
+        pageErrors.push(`Page boundary ${page - 1} to ${page}: rank discontinuity (${lastPrevCar.rank} -> ${firstCurrCar.rank})`);
+      }
+      
+      // Check sort order continuity
+      if (!isCorrectOrder(lastPrevCar, firstCurrCar, sortBy)) {
+        pageErrors.push(`Page boundary ${page - 1} to ${page}: sort order violation`);
+      }
+    }
+    
+    pageValidations.push({
+      page,
+      isValid: pageErrors.length === 0,
+      errors: pageErrors
+    });
+    
+    errors.push(...pageErrors);
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    pageValidations
+  };
+};
+
+/**
+ * Quick validation function specifically for ranking consistency
+ * Returns true if all rankings are correct across all pages
+ */
+export const isRankingConsistentAcrossPages = (
+  rankedCars: CarWithRank[],
+  carsPerPage: number = 50
+): boolean => {
+  const validation = validateCrossPageRanking(rankedCars, carsPerPage, 'recently_added');
+  return validation.isValid;
 };
 
 /**
