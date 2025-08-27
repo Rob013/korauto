@@ -250,9 +250,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const paginationStats = useMemo(() => {
     const itemsPerPage = 50; // Standard page size used throughout the app
     
-    // Use the utility function directly - it already handles the correct display format
-    return getPaginationStats(currentPage, totalCount, itemsPerPage);
-  }, [currentPage, totalCount]);
+    // Use the utility function with actual displayed cars count to show accurate pagination info
+    return getPaginationStats(currentPage, totalCount, itemsPerPage, carsToDisplay.length);
+  }, [currentPage, totalCount, carsToDisplay.length]);
 
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);

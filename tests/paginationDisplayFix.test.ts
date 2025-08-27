@@ -17,19 +17,33 @@ describe('Pagination Display Fix', () => {
       expect(stats.shortText).toBe('217 cars');
     });
 
-    it('should show correct pagination text when component would have 0 carsToDisplay', () => {
-      // This simulates what happens when carsToDisplay.length is 0 
-      // but the pagination utility should still show the correct expected items per page
+    it('should show correct pagination text for page 2 of 5 with actual displayed items', () => {
+      // This simulates the fix where actual displayed cars are passed
       const currentPage = 2;
       const totalItems = 217;
       const itemsPerPage = 50;
+      const actualDisplayed = 0; // This is the problem case - 0 cars actually displayed
 
-      const stats = getPaginationStats(currentPage, totalItems, itemsPerPage);
+      const stats = getPaginationStats(currentPage, totalItems, itemsPerPage, actualDisplayed);
 
-      // Should NOT show "Showing 0 cars per page" but rather "Showing 50 cars per page"
-      expect(stats.displayText).not.toContain('Showing 0 cars per page');
+      // Should show actual displayed items (0) instead of theoretical (50)
+      expect(stats.displayText).toBe('217 cars across 5 pages • Page 2 of 5 • Showing 0 cars per page');
+      expect(stats.showing).toBe('Page 2 of 5 • 0 cars shown');
+      expect(stats.shortText).toBe('217 cars');
+    });
+
+    it('should show correct pagination text when actual items match theoretical', () => {
+      // Normal case where actual displayed matches theoretical
+      const currentPage = 2;
+      const totalItems = 217;
+      const itemsPerPage = 50;
+      const actualDisplayed = 50; // Actual matches theoretical
+
+      const stats = getPaginationStats(currentPage, totalItems, itemsPerPage, actualDisplayed);
+
       expect(stats.displayText).toBe('217 cars across 5 pages • Page 2 of 5 • Showing 50 cars per page');
       expect(stats.showing).toBe('Page 2 of 5 • 50 cars shown');
+      expect(stats.shortText).toBe('217 cars');
     });
   });
 

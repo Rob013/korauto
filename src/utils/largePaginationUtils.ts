@@ -131,7 +131,8 @@ export function isValidPageNumber(
 export function getPaginationStats(
   currentPage: number,
   totalItems: number,
-  itemsPerPage: number = 50
+  itemsPerPage: number = 50,
+  actualDisplayedItems?: number
 ): {
   displayText: string;
   shortText: string;
@@ -150,11 +151,14 @@ export function getPaginationStats(
   const totalFormatted = formatPaginationNumber(info.totalItems);
   const pageFormatted = formatPaginationNumber(info.currentPage);
   const totalPagesFormatted = formatPaginationNumber(info.totalPages);
+  
+  // Use actual displayed items if provided, otherwise fall back to theoretical calculation
+  const itemsToShow = actualDisplayedItems !== undefined ? actualDisplayedItems : info.itemsOnCurrentPage;
 
   return {
-    displayText: `${totalFormatted} cars across ${totalPagesFormatted} pages • Page ${pageFormatted} of ${totalPagesFormatted} • Showing ${info.itemsOnCurrentPage} cars per page`,
+    displayText: `${totalFormatted} cars across ${totalPagesFormatted} pages • Page ${pageFormatted} of ${totalPagesFormatted} • Showing ${itemsToShow} cars per page`,
     shortText: `${totalFormatted} cars`,
-    showing: `Page ${pageFormatted} of ${totalPagesFormatted} • ${info.itemsOnCurrentPage} cars shown`
+    showing: `Page ${pageFormatted} of ${totalPagesFormatted} • ${itemsToShow} cars shown`
   };
 }
 
