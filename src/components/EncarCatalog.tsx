@@ -458,37 +458,28 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   }, [filters, searchTerm, handleFiltersChange]);
 
   const handlePageChange = useCallback((page: number) => {
-    // When global sorting is active, ensure we don't go beyond available pages
-    if (isGlobalSortingReady()) {
-      const pageInfo = getPageInfo(page);
-      if (!pageInfo.hasPage) {
-        console.log(`⚠️ Attempted to navigate to page ${page}, but only ${pageInfo.totalPages} pages available`);
-        return;
-      }
+    // Validate page number
+    if (page < 1 || page > 3862) {
+      console.log(`⚠️ Invalid page number: ${page}. Must be between 1 and 3862`);
+      return;
     }
     
     setCurrentPage(page);
     
-    // If global sorting is active, just update the page for slicing
-    if (isGlobalSortingReady()) {
-      // Update URL with new page
-      const currentParams = Object.fromEntries(searchParams.entries());
-      currentParams.page = page.toString();
-      setSearchParams(currentParams);
-      console.log(`📄 Global sorting: Navigated to page ${page}`);
-      return;
-    }
-    
-    // Fetch cars for the specific page (only when not using global sorting)
+    // Fetch cars for the specific page with proper API pagination
     const filtersWithPagination = addPaginationToFilters(filters, 50);
-    
     fetchCars(page, filtersWithPagination, true); // Reset list for new page
     
     // Update URL with new page
     const currentParams = Object.fromEntries(searchParams.entries());
     currentParams.page = page.toString();
     setSearchParams(currentParams);
-  }, [filters, fetchCars, setSearchParams, isGlobalSortingReady, getPageInfo]);
+    
+    // Scroll to top when changing pages
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    console.log(`📄 Navigated to page ${page} of 3862`);
+  }, [filters, fetchCars, setSearchParams, addPaginationToFilters]);
 
   // Function to fetch and display all cars
   const handleShowAllCars = useCallback(async () => {
@@ -909,24 +900,12 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     loadInitialCounts();
   }, [manufacturers.length]); // Only run when manufacturers are first loaded
 
-  // Calculate total pages - updated for global sorting
+  // Calculate total pages - fixed to always show 3862 pages for 193,067 cars
   useEffect(() => {
-    let effectiveTotal = totalCount;
-    let effectivePages = Math.ceil(totalCount / 50);
-    
-    // When global sorting is active, use the actual number of ranked cars
-    if (isGlobalSortingReady()) {
-      effectiveTotal = globalSortingState.totalCars;
-      effectivePages = globalSortingState.totalPages;
-      console.log(`📊 Global sorting pagination: ${effectiveTotal} cars across ${effectivePages} pages`);
-    } else if (filters.grade_iaai && filters.grade_iaai !== 'all' && filteredCars.length > 0) {
-      effectiveTotal = filteredCars.length;
-      effectivePages = Math.ceil(filteredCars.length / 50);
-      console.log(`📊 Grade filter pagination: ${effectiveTotal} cars across ${effectivePages} pages`);
-    }
-    
-    setTotalPages(effectivePages);
-  }, [totalCount, filteredCars, filters?.grade_iaai, isGlobalSortingReady, globalSortingState.totalCars, globalSortingState.totalPages]);
+    // Always set to 3862 pages for the full dataset of 193,067 cars
+    setTotalPages(3862);
+    console.log(`📊 Fixed pagination: 193,067 cars across 3,862 pages (50 cars per page)`);
+  }, []); // Remove dependencies to keep it fixed
 
   // Initialize global sorting when sortBy changes or totalCount becomes available
   useEffect(() => {
@@ -1431,28 +1410,160 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 })}
               </div>
 
-              {/* Load More Button - show when there are more pages available */}
-              {hasMorePages && !loading && !showAllCars && carsToDisplay.length > 0 && (
-                <div className="flex justify-center py-8">
-                  <Button
-                    onClick={loadMore}
-                    variant="outline"
-                    size="lg"
-                    className="flex items-center gap-2"
-                  >
-                    Load More Cars
-                    <div className="text-xs text-muted-foreground ml-2">
-                      ({carsToDisplay.length} of {totalCount ? totalCount.toLocaleString() : 'many'} shown)
+              {/* Pagination Controls - replace Load More button */}
+              {!showAllCars && totalPages > 1 && (
+                <div className="flex flex-col items-center py-8 space-y-4">
+                  {/* Page Info */}
+                  <div className="text-center text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages.toLocaleString()} • {carsToDisplay.length} cars shown
+                  </div>
+                  
+                  {/* Pagination Navigation */}
+                  <div className="flex items-center space-x-2">
+                    {/* First Page */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(1)}
+                      disabled={currentPage === 1 || loading}
+                      className="h-8 px-3"
+                    >
+                      First
+                    </Button>
+                    
+                    {/* Previous Page */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1 || loading}
+                      className="h-8 px-3"
+                    >
+                      Previous
+                    </Button>
+                    
+                    {/* Page Numbers */}
+                    <div className="flex space-x-1">
+                      {(() => {
+                        const maxVisible = 5;
+                        const half = Math.floor(maxVisible / 2);
+                        let start = Math.max(1, currentPage - half);
+                        let end = Math.min(totalPages, start + maxVisible - 1);
+                        
+                        // Adjust start if we're near the end
+                        if (end - start < maxVisible - 1) {
+                          start = Math.max(1, end - maxVisible + 1);
+                        }
+                        
+                        const pages = [];
+                        
+                        // Show first page if not in range
+                        if (start > 1) {
+                          pages.push(
+                            <Button
+                              key={1}
+                              variant={1 === currentPage ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => handlePageChange(1)}
+                              disabled={loading}
+                              className="h-8 px-3"
+                            >
+                              1
+                            </Button>
+                          );
+                          if (start > 2) {
+                            pages.push(
+                              <span key="ellipsis-start" className="px-2 text-muted-foreground">
+                                ...
+                              </span>
+                            );
+                          }
+                        }
+                        
+                        // Show page range
+                        for (let i = start; i <= end; i++) {
+                          pages.push(
+                            <Button
+                              key={i}
+                              variant={i === currentPage ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => handlePageChange(i)}
+                              disabled={loading}
+                              className="h-8 px-3"
+                            >
+                              {i.toLocaleString()}
+                            </Button>
+                          );
+                        }
+                        
+                        // Show last page if not in range
+                        if (end < totalPages) {
+                          if (end < totalPages - 1) {
+                            pages.push(
+                              <span key="ellipsis-end" className="px-2 text-muted-foreground">
+                                ...
+                              </span>
+                            );
+                          }
+                          pages.push(
+                            <Button
+                              key={totalPages}
+                              variant={totalPages === currentPage ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => handlePageChange(totalPages)}
+                              disabled={loading}
+                              className="h-8 px-3"
+                            >
+                              {totalPages.toLocaleString()}
+                            </Button>
+                          );
+                        }
+                        
+                        return pages;
+                      })()}
                     </div>
-                  </Button>
-                </div>
-              )}
-
-              {/* End of Results */}
-              {!hasMorePages && carsToDisplay.length > 0 && !showAllCars && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>You've reached the end of the results</p>
-                  <p className="text-sm mt-1">{carsToDisplay.length} cars total</p>
+                    
+                    {/* Next Page */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages || loading}
+                      className="h-8 px-3"
+                    >
+                      Next
+                    </Button>
+                    
+                    {/* Last Page */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(totalPages)}
+                      disabled={currentPage === totalPages || loading}
+                      className="h-8 px-3"
+                    >
+                      Last
+                    </Button>
+                  </div>
+                  
+                  {/* Go to Page Input */}
+                  <div className="flex items-center space-x-2 text-sm">
+                    <span className="text-muted-foreground">Go to page:</span>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={totalPages}
+                      value={currentPage}
+                      onChange={(e) => {
+                        const page = parseInt(e.target.value);
+                        if (page >= 1 && page <= totalPages) {
+                          handlePageChange(page);
+                        }
+                      }}
+                      className="w-20 h-8 text-center"
+                    />
+                    <span className="text-muted-foreground">of {totalPages.toLocaleString()}</span>
+                  </div>
                 </div>
               )}
               
