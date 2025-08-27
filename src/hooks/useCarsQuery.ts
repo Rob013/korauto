@@ -25,7 +25,6 @@ interface CarsResponse {
   page: number;
   totalPages: number;
   hasMore: boolean;
-  hasPrev: boolean;
   nextCursor?: string;
 }
 
@@ -90,9 +89,8 @@ const fetchCars = async (
         search: params.search
       },
       sort: mapSortToApi(params.sort),
-      page: parseInt(params.page || '1'),
-      pageSize: parseInt(params.pageSize || '24'),
-      useLimitOffset: true // Use LIMIT/OFFSET as requested in problem statement
+      limit: parseInt(params.pageSize || '24'),
+      cursor
     });
 
     const convertedCars = apiResponse.items.map(convertApiCarToUICar);
@@ -102,10 +100,9 @@ const fetchCars = async (
     return {
       cars: convertedCars,
       total: apiResponse.total,
-      page: apiResponse.page,
-      totalPages: Math.ceil(apiResponse.total / (apiResponse.pageSize || pageSize)),
-      hasMore: apiResponse.hasNext,
-      hasPrev: apiResponse.hasPrev,
+      page: currentPage,
+      totalPages: Math.ceil(apiResponse.total / pageSize),
+      hasMore: !!apiResponse.nextCursor,
       nextCursor: apiResponse.nextCursor
     };
   } catch (error) {
@@ -197,8 +194,7 @@ const fetchCarsFallback = async (
       total: convertedCars.length,
       page: page,
       totalPages: Math.ceil(convertedCars.length / pageSize),
-      hasMore: endIndex < convertedCars.length,
-      hasPrev: page > 1
+      hasMore: endIndex < convertedCars.length
     };
   }
   
@@ -211,8 +207,7 @@ const fetchCarsFallback = async (
     total: mockResponse.total,
     page: mockResponse.page,
     totalPages: mockResponse.totalPages,
-    hasMore: mockResponse.hasMore,
-    hasPrev: mockResponse.page > 1
+    hasMore: mockResponse.hasMore
   };
 };
 
@@ -360,7 +355,7 @@ export const useCarsQuery = (filters: FilterState) => {
   // Update accumulated cars when new data comes in
   useEffect(() => {
     if (carsQuery.data) {
-      const { cars, total, hasMore, hasPrev } = carsQuery.data;
+      const { cars, total, hasMore } = carsQuery.data;
       const isFirstPage = (filters.page || 1) === 1;
       
       setCurrentTotal(total);
@@ -376,8 +371,11 @@ export const useCarsQuery = (filters: FilterState) => {
           const newCars = cars.filter(car => !existingIds.has(car.id));
           const updatedAccumulated = [...prev, ...newCars];
           
-          // For LIMIT/OFFSET pagination, trust the API's hasMore calculation
-          setCurrentHasMore(hasMore);
+          // Recalculate hasMore based on accumulated cars vs total
+          // For cursor-based pagination, trust the API's hasMore
+          // For paginated results, calculate based on accumulated count vs total
+          const calculatedHasMore = hasMore && updatedAccumulated.length < total;
+          setCurrentHasMore(calculatedHasMore);
           
           return updatedAccumulated;
         });

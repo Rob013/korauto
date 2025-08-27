@@ -1,10 +1,4 @@
-/**
- * @deprecated - This hook uses client-side sorting which has been deprecated.
- * For new code, use fetchCarsWithKeyset or fetchCarsWithLimitOffset from @/services/carsApi 
- * which provides global database sorting with better performance and consistency.
- * 
- * This hook will be removed in a future version.
- */
+//@ts-nocheck
 import { useMemo } from 'react';
 import { filterCarsWithRealPricing } from '@/utils/carPricing';
 
@@ -67,12 +61,6 @@ interface FlexibleCar {
 }
 
 export const useSortedCars = (cars: FlexibleCar[], sortBy: SortOption) => {
-  // Add deprecation warning
-  console.warn(
-    '⚠️ useSortedCars is deprecated. Use fetchCarsWithKeyset or fetchCarsWithLimitOffset from @/services/carsApi instead. ' +
-    'Global database sorting provides better performance and consistency.'
-  );
-
   return useMemo(() => {
     if (!cars || cars.length === 0) return [];
 

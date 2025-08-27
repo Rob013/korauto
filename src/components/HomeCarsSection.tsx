@@ -7,7 +7,11 @@ import { AlertCircle } from "lucide-react";
 import { useSecureAuctionAPI } from "@/hooks/useSecureAuctionAPI";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useInView } from "@/hooks/useInView";
-import { getSortOptions, SortOption } from "@/hooks/useSortedCars";
+import {
+  useSortedCars,
+  getSortOptions,
+  SortOption,
+} from "@/hooks/useSortedCars";
 import {
   Select,
   SelectContent,
@@ -19,7 +23,6 @@ import { ArrowUpDown } from "lucide-react";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
 import { useDailyRotatingCars } from "@/hooks/useDailyRotatingCars";
 import { filterOutTestCars } from "@/utils/testCarFilter";
-import { filterCarsWithRealPricing } from "@/utils/carPricing";
 import { fallbackCars, fallbackManufacturers } from "@/data/fallbackData";
 
 interface APIFilters {
@@ -289,32 +292,13 @@ const HomeCarsSection = memo(() => {
   const dailyRotatingCars = useDailyRotatingCars(carsForSorting, hasFilters, 50);
 
   // Use daily rotating cars when no filters, otherwise use sorted cars
-  // Apply filters to cars
-  const filteredCars = useMemo(() => {
-    if (!cars || !cars.length) return [];
-    
-    // Apply filters here without client-side sorting
-    // For homepage, we rely on the API's default sorting (popularity/date)
-    return filterCarsWithRealPricing(cars.filter(car => {
-      // Apply filters but don't sort - let API handle sorting
-      if (filters.manufacturer_id && car.manufacturer?.id !== Number(filters.manufacturer_id)) return false;
-      if (filters.model_id && car.model?.id !== Number(filters.model_id)) return false;
-      if (filters.generation_id && car.generation?.id !== Number(filters.generation_id)) return false;
-      // Add other filter logic as needed
-      return true;
-    }));
-  }, [cars, filters]);
-
-  // Use daily rotating cars for default display, filtered cars when filters applied
   const carsToDisplay = useMemo(() => {
     if (!hasFilters) {
       return dailyRotatingCars;
     }
-    // When filters are applied, use filtered cars without client-side sorting
-    // The API should handle sorting globally
-    console.warn('⚠️ HomeCarsSection is using filtered results without global sorting. Consider using fetchCarsWithKeyset for consistency.');
-    return filteredCars;
-  }, [hasFilters, dailyRotatingCars, filteredCars]);
+    // When filters are applied, use sorted cars
+    return useSortedCars(carsForSorting, sortBy);
+  }, [hasFilters, dailyRotatingCars, carsForSorting, sortBy]);
 
   // Show 50 cars by default (daily rotation) to match catalog
   const defaultDisplayCount = 50;

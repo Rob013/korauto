@@ -133,11 +133,6 @@ const App = () => {
             } />
             <Route path="/catalog" element={
               <Suspense fallback={<PageSkeleton />}>
-                <NewCatalog />
-              </Suspense>
-            } />
-            <Route path="/catalog-legacy" element={
-              <Suspense fallback={<PageSkeleton />}>
                 <Catalog />
               </Suspense>
             } />

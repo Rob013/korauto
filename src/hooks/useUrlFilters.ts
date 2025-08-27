@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { useThrottledUrlUpdate } from './useThrottledUrlUpdate';
+import { useSearchParams } from 'react-router-dom';
 import { useFilterStore } from '@/store/filterStore';
 import { SearchReq, DEFAULT_SORT, DEFAULT_PAGE_SIZE } from '@/lib/search/types';
 import { normalizeFilters } from '@/lib/search/buildFilter';
@@ -11,7 +11,7 @@ const DEBOUNCE_MS = 300;
  * Uses compact JSON format for filters in URL
  */
 export const useUrlFilters = () => {
-  const { searchParams, updateUrl } = useThrottledUrlUpdate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { setState } = useFilterStore();
   const timeoutRef = useRef<NodeJS.Timeout>();
   const isInitializedRef = useRef(false);
@@ -32,7 +32,7 @@ export const useUrlFilters = () => {
   }, []); // Only run on mount
 
   // Debounced function to update URL
-  const updateUrlParams = useCallback((state: {
+  const updateUrl = useCallback((state: {
     filters: SearchReq['filters'];
     sort: SearchReq['sort'];
     page: number;
@@ -46,13 +46,13 @@ export const useUrlFilters = () => {
     timeoutRef.current = setTimeout(() => {
       try {
         const params = stateToUrlParams(state);
-        updateUrl(params);
+        setSearchParams(params, { replace: true });
         console.log('🔗 Updated URL with params:', Object.fromEntries(params.entries()));
       } catch (error) {
         console.warn('⚠️ Failed to update URL:', error);
       }
     }, DEBOUNCE_MS);
-  }, [updateUrl]);
+  }, [setSearchParams]);
 
   // Subscribe to store changes
   const store = useFilterStore();
@@ -60,14 +60,14 @@ export const useUrlFilters = () => {
   useEffect(() => {
     if (!isInitializedRef.current) return;
     
-    updateUrlParams({
+    updateUrl({
       filters: store.filters,
       sort: store.sort,
       page: store.page,
       pageSize: store.pageSize,
       query: store.query,
     });
-  }, [store.filters, store.sort, store.page, store.pageSize, store.query, updateUrlParams]);
+  }, [store.filters, store.sort, store.page, store.pageSize, store.query, updateUrl]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
