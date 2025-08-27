@@ -982,17 +982,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
   }, [loading]);
 
-  // Save filter panel state to sessionStorage on mobile when it changes
-  useEffect(() => {
-    if (isMobile) {
-      // Only save when user explicitly opens the panel, but always start closed on navigation
-      // This ensures filter panel stays closed after "Kthehu te Makinat" or page navigation
-      sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
-      sessionStorage.setItem('mobile-filter-explicit-close', JSON.stringify(hasExplicitlyClosed));
-    }
-  }, [showFilters, hasExplicitlyClosed, isMobile]);
-
-  // Clear filter panel state when actually navigating away from catalog
+  // Clear filter panel state when navigating away from catalog
   useEffect(() => {
     const clearStateOnNavigation = () => {
       // Only clear if we're navigating to a different page (not opening new tabs)
@@ -1002,15 +992,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       }
     };
 
-    const clearStateOnUnload = () => {
-      // Don't clear on beforeunload as it might interfere with new tab opening
-      // The state will be useful for back navigation
-    };
-
-    window.addEventListener('beforeunload', clearStateOnUnload);
-    
     return () => {
-      window.removeEventListener('beforeunload', clearStateOnUnload);
       // Clear state when navigating away from catalog page
       clearStateOnNavigation();
     };
@@ -1056,9 +1038,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   variant="ghost" 
                   size="sm" 
                   onClick={() => {
-                    console.log("Close button clicked, isMobile:", isMobile);
                     setShowFilters(false);
-                    setHasExplicitlyClosed(true); // Mark as explicitly closed
+                    setHasExplicitlyClosed(true);
                   }}
                   className="flex items-center gap-1 h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground"
                   title="Mbyll filtrat"
@@ -1171,43 +1152,15 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   variant="default"
   size="lg"
   onClick={(e) => {
-    // Prevent event bubbling and ensure click is processed
+    // Prevent event bubbling
     e.preventDefault();
     e.stopPropagation();
     
-    console.log("Filter toggle clicked, current showFilters:", showFilters, "isMobile:", isMobile);
-    
     const newShowState = !showFilters;
     
-    // Force state update with callback to ensure it's applied
+    // Update state in single batch - React will handle the DOM updates
     setShowFilters(newShowState);
-    
-    // Update explicit close tracking
-    if (newShowState) {
-      setHasExplicitlyClosed(false);
-      console.log("Opening filters, reset explicit close flag");
-    } else {
-      setHasExplicitlyClosed(true);
-      console.log("Closing filters, set explicit close flag");
-    }
-    
-    // On mobile, add additional DOM manipulation as backup
-    if (isMobile) {
-      setTimeout(() => {
-        const filterPanel = document.querySelector('[data-filter-panel]') as HTMLElement;
-        if (filterPanel) {
-          if (newShowState) {
-            filterPanel.style.transform = 'translateX(0)';
-            filterPanel.style.visibility = 'visible';
-            console.log("Mobile: Forced filter panel to show");
-          } else {
-            filterPanel.style.transform = 'translateX(-100%)';
-            filterPanel.style.visibility = 'hidden';
-            console.log("Mobile: Forced filter panel to hide");
-          }
-        }
-      }, 50); // Small delay to ensure state update has propagated
-    }
+    setHasExplicitlyClosed(!newShowState);
   }}
   className="flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 transition-transform"
 >
