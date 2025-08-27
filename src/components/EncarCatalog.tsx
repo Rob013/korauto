@@ -41,7 +41,7 @@ import {
   debounce as catalogDebounce
 } from "@/utils/catalog-filter";
 
-import { useSearchParams } from "react-router-dom";
+import { useThrottledUrlUpdate } from "@/hooks/useThrottledUrlUpdate";
 import {
   useSortedCars,
   getEncarSortOptions,
@@ -108,7 +108,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   
   const [sortBy, setSortBy] = useState<SortOption>("recently_added");
   const [hasUserSelectedSort, setHasUserSelectedSort] = useState(false);
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { searchParams, updateUrl } = useThrottledUrlUpdate();
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -373,10 +373,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     fetchCars(1, filtersWithPagination, true);
 
     // Update URL with all non-empty filter values - now using utility
-    const searchParams = filtersToURLParams(newFilters);
-    searchParams.set('page', '1');
-    setSearchParams(searchParams);
-  }, [fetchCars, setSearchParams]);
+    const urlParams = filtersToURLParams(newFilters);
+    urlParams.set('page', '1');
+    updateUrl(urlParams);
+  }, [fetchCars, updateUrl]);
 
   // Optimized year filtering hook for better performance
   const {
@@ -448,8 +448,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setGenerations([]);
     setHasUserSelectedSort(false); // Reset to allow daily rotating cars again
     fetchCars(1, {}, true);
-    setSearchParams({});
-  }, [fetchCars, setSearchParams]);
+    updateUrl({});
+  }, [fetchCars, updateUrl]);
 
   const handleSearch = useCallback(() => {
     const newFilters = {
@@ -475,13 +475,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Update URL with new page
     const currentParams = Object.fromEntries(searchParams.entries());
     currentParams.page = page.toString();
-    setSearchParams(currentParams);
+    updateUrl(currentParams);
     
     // Scroll to top when changing pages
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
     console.log(`📄 Navigated to page ${page} of ${totalPages} with filters:`, filtersWithPagination);
-  }, [filters, fetchCars, setSearchParams, addPaginationToFilters, totalPages]);
+  }, [filters, fetchCars, updateUrl, addPaginationToFilters, totalPages]);
 
   // Function to fetch and display all cars
   const handleShowAllCars = useCallback(async () => {
@@ -569,7 +569,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         // Update URL to reflect page reset
         const currentParams = Object.fromEntries(searchParams.entries());
         currentParams.page = '1';
-        setSearchParams(currentParams);
+        updateUrl(currentParams);
       }
       
       console.log(`✅ Global sorting: Loaded ${filteredAllCars.length} cars for sorting across ${maxPages} pages`);
@@ -595,7 +595,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // filteredCars,
     totalPages || 0, 
     currentPage, 
-    setSearchParams
+    updateUrl
   ]);
 
   const handleManufacturerChange = async (manufacturerId: string) => {
@@ -658,7 +658,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           paramsToSet[key] = value.toString();
         }
       });
-      setSearchParams(paramsToSet);
+      updateUrl(paramsToSet);
       
     } catch (error) {
       console.error('[handleManufacturerChange] Error:', error);
@@ -718,7 +718,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           paramsToSet[key] = value.toString();
         }
       });
-      setSearchParams(paramsToSet);
+      updateUrl(paramsToSet);
       
     } catch (error) {
       console.error('[handleModelChange] Error:', error);
@@ -1255,7 +1255,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                       // Update URL to reflect page reset
                       const currentParams = Object.fromEntries(searchParams.entries());
                       currentParams.page = '1';
-                      setSearchParams(currentParams);
+                      updateUrl(currentParams);
                       // Note: Global sorting initialization is handled by the useEffect that watches sortBy changes
                       // This prevents duplicate calls and ensures proper state management
                     }}
