@@ -40,6 +40,7 @@ import {
   addPaginationToFilters,
   debounce as catalogDebounce
 } from "@/utils/catalog-filter";
+import { getPaginationStats } from "@/utils/largePaginationUtils";
 
 import { useSearchParams } from "react-router-dom";
 import {
@@ -244,6 +245,12 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     dailyRotatingCars,
     sortedResults
   ]);
+
+  // Calculate pagination statistics using the utility function
+  const paginationStats = useMemo(() => {
+    const itemsPerPage = 50; // Standard page size used throughout the app
+    return getPaginationStats(currentPage, totalCount, itemsPerPage);
+  }, [currentPage, totalCount]);
 
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -1276,7 +1283,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 Car Catalog
               </h1>
               <p className="text-muted-foreground text-xs sm:text-sm">
-                {totalCount.toLocaleString()} cars across {totalPages.toLocaleString()} pages • Page {currentPage} of {totalPages.toLocaleString()} • Showing {carsToDisplay.length} cars per page
+                {paginationStats.displayText}
 
                 {yearFilterProgress === 'instant' && (
                   <span className="ml-2 text-primary text-xs">⚡ Instant results</span>
@@ -1423,7 +1430,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 <div className="flex flex-col items-center py-8 space-y-4">
                   {/* Page Info */}
                   <div className="text-center text-sm text-muted-foreground">
-                    Page {currentPage} of {totalPages.toLocaleString()} • {carsToDisplay.length} cars shown
+                    {paginationStats.showing}
                   </div>
                   
                   {/* Pagination Navigation */}
