@@ -218,15 +218,17 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     
     // Priority 2: Daily rotating cars (only for default state without user sort selection)
     if (isDefaultState && !hasUserSelectedSort && !shouldUseGlobalSorting()) {
-      const paginatedDailyRotatingCars = dailyRotatingCars.slice((currentPage - 1) * 50, currentPage * 50);
-      console.log(`🎲 Using daily rotating cars for page ${currentPage}: ${paginatedDailyRotatingCars.length} cars (default state, no explicit sort, small dataset)`);
-      return paginatedDailyRotatingCars;
+      // For server-side pagination, use all daily rotating cars without client-side slicing
+      // Server already provides the correct page data
+      console.log(`🎲 Using daily rotating cars for page ${currentPage}: ${dailyRotatingCars.length} cars (default state, no explicit sort, small dataset)`);
+      return dailyRotatingCars;
     }
     
-    // Priority 3: Regular sorted cars with pagination (fallback)
-    const paginatedResults = sortedResults.slice((currentPage - 1) * 50, currentPage * 50);
-    console.log(`📄 Using regular sorted cars for page ${currentPage}: ${paginatedResults.length} cars (fallback or loading state)`);
-    return paginatedResults;
+    // Priority 3: Regular sorted cars (fallback)
+    // For server-side pagination, use all sorted results without client-side slicing
+    // Server already provides the correct page data
+    console.log(`📄 Using regular sorted cars for page ${currentPage}: ${sortedResults.length} cars (fallback or loading state)`);
+    return sortedResults;
   }, [
     showAllCars,
     allCarsData,

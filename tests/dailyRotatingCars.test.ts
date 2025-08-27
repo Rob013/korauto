@@ -6,9 +6,16 @@ import { renderHook } from '@testing-library/react';
 const mockCars = Array.from({ length: 100 }, (_, i) => ({
   id: `car-${i}`,
   manufacturer: { name: `Brand-${i % 10}` },
+  model: { name: `Model-${i % 5}` },
+  year: 2015 + (i % 8), // Years 2015-2022
+  vin: `KMHJ381${String(i).padStart(7, '0')}ABC`, // Valid VIN format without 'test'
+  lot_number: `LOT${String(i).padStart(6, '0')}`,
+  title: `Brand-${i % 10} Model-${i % 5} ${2015 + (i % 8)}`,
   lots: [{
+    buy_now: 15000 + (i * 1000), // Prices from 15,000 to 114,000
     images: {
-      normal: [`image-${i}.jpg`]
+      normal: [`image-${i}.jpg`],
+      big: [`big-image-${i}.jpg`]
     }
   }]
 }));
@@ -41,6 +48,10 @@ describe('Daily Rotating Cars', () => {
     const { result } = renderHook(() => 
       useDailyRotatingCars(mockCars, false, 25)
     );
+    
+    console.log('Mock cars sample:', mockCars.slice(0, 2));
+    console.log('Result:', result.current);
+    console.log('Result length:', result.current.length);
     
     expect(result.current.length).toBe(25);
   });
