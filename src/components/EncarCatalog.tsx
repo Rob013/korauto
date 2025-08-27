@@ -249,8 +249,23 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Calculate pagination statistics using the utility function
   const paginationStats = useMemo(() => {
     const itemsPerPage = 50; // Standard page size used throughout the app
-    return getPaginationStats(currentPage, totalCount, itemsPerPage);
-  }, [currentPage, totalCount]);
+    const actualItemsOnPage = carsToDisplay.length; // Use actual cars being displayed
+    
+    // Get base pagination info using totalCount for navigation
+    const basePaginationStats = getPaginationStats(currentPage, totalCount, itemsPerPage);
+    
+    // Override the display text to show actual cars being displayed
+    const totalFormatted = totalCount.toLocaleString();
+    const pageFormatted = currentPage.toLocaleString();
+    const totalPages = totalCount > 0 ? Math.ceil(totalCount / itemsPerPage) : 0;
+    const totalPagesFormatted = totalPages.toLocaleString();
+    
+    return {
+      ...basePaginationStats,
+      displayText: `${totalFormatted} cars across ${totalPagesFormatted} pages • Page ${pageFormatted} of ${totalPagesFormatted} • Showing ${actualItemsOnPage} cars per page`,
+      showing: `Page ${pageFormatted} of ${totalPagesFormatted} • ${actualItemsOnPage} cars shown`
+    };
+  }, [currentPage, totalCount, carsToDisplay.length]);
 
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
