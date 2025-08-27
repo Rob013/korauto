@@ -25,6 +25,10 @@ export interface CarsApiParams {
   sort?: SortOption | FrontendSortOption;
   limit?: number;
   cursor?: string;
+  // New LIMIT/OFFSET parameters
+  page?: number;
+  pageSize?: number;
+  useLimitOffset?: boolean; // Flag to use LIMIT/OFFSET instead of cursor
 }
 
 export interface Car {
@@ -48,8 +52,12 @@ export interface Car {
 
 export interface CarsApiResponse {
   items: Car[];
-  nextCursor?: string;
   total: number;
+  page: number;
+  pageSize: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+  nextCursor?: string; // Keep for backward compatibility
 }
 
 // Parse cursor string "value|id" 
@@ -148,8 +156,21 @@ export async function fetchCarsWithKeyset(params: CarsApiParams): Promise<CarsAp
     filters = {},
     sort = 'price_asc',
     limit = 24,
-    cursor
+    cursor,
+    page = 1,
+    pageSize = 24,
+    useLimitOffset = false
   } = params;
+
+  // Use LIMIT/OFFSET pagination if requested, otherwise use cursor-based
+  if (useLimitOffset) {
+    return fetchCarsWithLimitOffset({
+      filters,
+      sort,
+      page,
+      pageSize
+    });
+  }
 
   // Parse sort parameters
   const { field: sortField, direction: sortDir } = getSortParams(sort);
@@ -221,14 +242,91 @@ export async function fetchCarsWithKeyset(params: CarsApiParams): Promise<CarsAp
       nextCursor = createCursor(sortField, sortValue, lastItem.id);
     }
 
+    // Calculate pagination info for cursor-based approach
+    const estimatedPage = Math.floor((totalCount || 0) / limit) + 1;
+    const hasNext = !!nextCursor;
+    const hasPrev = !!cursorData; // If we have a cursor, we're not on the first page
+
     return {
       items,
-      nextCursor,
-      total: totalCount || 0
+      total: totalCount || 0,
+      page: estimatedPage,
+      pageSize: limit,
+      hasNext,
+      hasPrev,
+      nextCursor
     };
 
   } catch (error) {
     console.error('Error in fetchCarsWithKeyset:', error);
+    throw error;
+  }
+}
+
+// New function for LIMIT/OFFSET pagination as requested in problem statement
+export async function fetchCarsWithLimitOffset(params: {
+  filters?: CarFilters;
+  sort?: SortOption | FrontendSortOption;
+  page?: number;
+  pageSize?: number;
+}): Promise<CarsApiResponse> {
+  const {
+    filters = {},
+    sort = 'price_asc',
+    page = 1,
+    pageSize = 24
+  } = params;
+
+  // Parse sort parameters
+  const { field: sortField, direction: sortDir } = getSortParams(sort);
+  
+  // Prepare filters for RPC call
+  const rpcFilters = { ...filters };
+
+  try {
+    // Get total count (for pagination info)
+    const { data: totalCount, error: countError } = await supabase
+      .rpc('cars_filtered_count', { p_filters: rpcFilters });
+
+    if (countError) {
+      console.error('Error getting car count:', countError);
+      throw countError;
+    }
+
+    // Get paginated results using LIMIT/OFFSET pagination
+    const { data: cars, error: carsError } = await supabase
+      .rpc('cars_limit_offset_page', {
+        p_filters: rpcFilters,
+        p_sort_field: sortField,
+        p_sort_dir: sortDir,
+        p_page: page,
+        p_page_size: pageSize
+      });
+
+    if (carsError) {
+      console.error('Error fetching cars:', carsError);
+      throw carsError;
+    }
+
+    const items = cars || [];
+    const total = totalCount || 0;
+    const totalPages = Math.ceil(total / pageSize);
+    
+    // Calculate pagination flags
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    return {
+      items,
+      total,
+      page,
+      pageSize,
+      hasNext,
+      hasPrev
+    };
+
+  } catch (error) {
+    console.error('Error in fetchCarsWithLimitOffset:', error);
     throw error;
   }
 }
@@ -250,6 +348,19 @@ export async function fetchCarsApi(searchParams: URLSearchParams): Promise<CarsA
   const sort = (searchParams.get('sort') as SortOption | FrontendSortOption) || 'price_asc';
   const limit = parseInt(searchParams.get('limit') || '24');
   const cursor = searchParams.get('cursor') || undefined;
+  
+  // Support both pagination methods
+  const page = parseInt(searchParams.get('page') || '1');
+  const pageSize = parseInt(searchParams.get('pageSize') || '24');
+  const useLimitOffset = searchParams.has('page') || searchParams.get('useLimitOffset') === 'true';
 
-  return fetchCarsWithKeyset({ filters, sort, limit, cursor });
+  return fetchCarsWithKeyset({ 
+    filters, 
+    sort, 
+    limit, 
+    cursor, 
+    page, 
+    pageSize, 
+    useLimitOffset 
+  });
 }
