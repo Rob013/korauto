@@ -42,8 +42,14 @@ const handler = async (req: Request): Promise<Response> => {
     const limit = parseInt(searchParams.get('limit') || '24');
     const cursor = searchParams.get('cursor') || null;
 
-    // Validate sort parameter
-    const validSorts = ['price_asc', 'price_desc', 'rank_asc', 'rank_desc'];
+    // Validate sort parameter (extended to support new fields)
+    const validSorts = ['price_asc', 'price_desc', 'rank_asc', 'rank_desc',
+                       'year_asc', 'year_desc', 'mileage_asc', 'mileage_desc', 
+                       'make_asc', 'make_desc', 'created_asc', 'created_desc',
+                       // Frontend sort options for backwards compatibility
+                       'price_low', 'price_high', 'year_new', 'year_old', 
+                       'mileage_low', 'mileage_high', 'make_az', 'make_za', 
+                       'recently_added', 'oldest_first', 'popular'];
     if (!validSorts.includes(sort)) {
       return new Response(
         JSON.stringify({ 
@@ -69,9 +75,48 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Map frontend sort options to backend sort options
+    const mapFrontendSortToBackend = (sort: string): string => {
+      // If it's already a backend sort option, return as-is
+      if (['price_asc', 'price_desc', 'rank_asc', 'rank_desc', 'year_asc', 'year_desc', 
+           'mileage_asc', 'mileage_desc', 'make_asc', 'make_desc', 'created_asc', 'created_desc'].includes(sort)) {
+        return sort;
+      }
+
+      // Map frontend options to backend options
+      switch (sort) {
+        case 'price_low':
+          return 'price_asc';
+        case 'price_high':
+          return 'price_desc';
+        case 'year_new':
+          return 'year_desc';
+        case 'year_old':
+          return 'year_asc';
+        case 'mileage_low':
+          return 'mileage_asc';
+        case 'mileage_high':
+          return 'mileage_desc';
+        case 'make_az':
+          return 'make_asc';
+        case 'make_za':
+          return 'make_desc';
+        case 'recently_added':
+          return 'created_desc';
+        case 'oldest_first':
+          return 'created_asc';
+        case 'popular':
+          return 'rank_desc';
+        default:
+          return 'price_asc';
+      }
+    };
+
     // Map sort option to database field and direction
     const getSortParams = (sort: string): { field: string; direction: string } => {
-      switch (sort) {
+      const backendSort = mapFrontendSortToBackend(sort);
+      
+      switch (backendSort) {
         case 'price_asc':
           return { field: 'price_cents', direction: 'ASC' };
         case 'price_desc':
@@ -80,6 +125,22 @@ const handler = async (req: Request): Promise<Response> => {
           return { field: 'rank_score', direction: 'ASC' };
         case 'rank_desc':
           return { field: 'rank_score', direction: 'DESC' };
+        case 'year_asc':
+          return { field: 'year', direction: 'ASC' };
+        case 'year_desc':
+          return { field: 'year', direction: 'DESC' };
+        case 'mileage_asc':
+          return { field: 'mileage', direction: 'ASC' };
+        case 'mileage_desc':
+          return { field: 'mileage', direction: 'DESC' };
+        case 'make_asc':
+          return { field: 'make', direction: 'ASC' };
+        case 'make_desc':
+          return { field: 'make', direction: 'DESC' };
+        case 'created_asc':
+          return { field: 'created_at', direction: 'ASC' };
+        case 'created_desc':
+          return { field: 'created_at', direction: 'DESC' };
         default:
           return { field: 'price_cents', direction: 'ASC' };
       }
@@ -166,7 +227,32 @@ const handler = async (req: Request): Promise<Response> => {
     let nextCursor: string | undefined;
     if (items.length === limit && items.length > 0) {
       const lastItem = items[items.length - 1];
-      const sortValue = sortField === 'price_cents' ? lastItem.price_cents : lastItem.rank_score;
+      let sortValue;
+      
+      // Get the appropriate sort value based on the sort field
+      switch (sortField) {
+        case 'price_cents':
+          sortValue = lastItem.price_cents;
+          break;
+        case 'rank_score':
+          sortValue = lastItem.rank_score;
+          break;
+        case 'year':
+          sortValue = lastItem.year;
+          break;
+        case 'mileage':
+          sortValue = lastItem.mileage;
+          break;
+        case 'make':
+          sortValue = lastItem.make;
+          break;
+        case 'created_at':
+          sortValue = lastItem.created_at;
+          break;
+        default:
+          sortValue = lastItem.price_cents;
+      }
+      
       nextCursor = createCursor(sortField, sortValue, lastItem.id);
     }
 

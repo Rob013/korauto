@@ -12,11 +12,17 @@ export interface CarFilters {
   search?: string;
 }
 
-export type SortOption = 'price_asc' | 'price_desc' | 'rank_asc' | 'rank_desc';
+export type SortOption = 'price_asc' | 'price_desc' | 'rank_asc' | 'rank_desc' | 
+  'year_asc' | 'year_desc' | 'mileage_asc' | 'mileage_desc' | 'make_asc' | 'make_desc' |
+  'created_asc' | 'created_desc';
+
+// Frontend sort option mapping to backend sort options
+export type FrontendSortOption = 'recently_added' | 'oldest_first' | 'price_low' | 'price_high' | 
+  'year_new' | 'year_old' | 'mileage_low' | 'mileage_high' | 'make_az' | 'make_za' | 'popular';
 
 export interface CarsApiParams {
   filters?: CarFilters;
-  sort?: SortOption;
+  sort?: SortOption | FrontendSortOption;
   limit?: number;
   cursor?: string;
 }
@@ -66,9 +72,48 @@ function createCursor(sortField: string, sortValue: any, id: string): string {
   return btoa(cursorValue);
 }
 
+// Map frontend sort options to backend sort options
+export function mapFrontendSortToBackend(sort: SortOption | FrontendSortOption): SortOption {
+  // If it's already a backend sort option, return as-is
+  if (['price_asc', 'price_desc', 'rank_asc', 'rank_desc', 'year_asc', 'year_desc', 
+       'mileage_asc', 'mileage_desc', 'make_asc', 'make_desc', 'created_asc', 'created_desc'].includes(sort as SortOption)) {
+    return sort as SortOption;
+  }
+
+  // Map frontend options to backend options
+  switch (sort as FrontendSortOption) {
+    case 'price_low':
+      return 'price_asc';
+    case 'price_high':
+      return 'price_desc';
+    case 'year_new':
+      return 'year_desc';
+    case 'year_old':
+      return 'year_asc';
+    case 'mileage_low':
+      return 'mileage_asc';
+    case 'mileage_high':
+      return 'mileage_desc';
+    case 'make_az':
+      return 'make_asc';
+    case 'make_za':
+      return 'make_desc';
+    case 'recently_added':
+      return 'created_desc';
+    case 'oldest_first':
+      return 'created_asc';
+    case 'popular':
+      return 'rank_desc';
+    default:
+      return 'price_asc';
+  }
+}
+
 // Map sort option to database field and direction
-function getSortParams(sort: SortOption): { field: string; direction: string } {
-  switch (sort) {
+export function getSortParams(sort: SortOption | FrontendSortOption): { field: string; direction: string } {
+  const backendSort = mapFrontendSortToBackend(sort);
+  
+  switch (backendSort) {
     case 'price_asc':
       return { field: 'price_cents', direction: 'ASC' };
     case 'price_desc':
@@ -77,6 +122,22 @@ function getSortParams(sort: SortOption): { field: string; direction: string } {
       return { field: 'rank_score', direction: 'ASC' };
     case 'rank_desc':
       return { field: 'rank_score', direction: 'DESC' };
+    case 'year_asc':
+      return { field: 'year', direction: 'ASC' };
+    case 'year_desc':
+      return { field: 'year', direction: 'DESC' };
+    case 'mileage_asc':
+      return { field: 'mileage', direction: 'ASC' };
+    case 'mileage_desc':
+      return { field: 'mileage', direction: 'DESC' };
+    case 'make_asc':
+      return { field: 'make', direction: 'ASC' };
+    case 'make_desc':
+      return { field: 'make', direction: 'DESC' };
+    case 'created_asc':
+      return { field: 'created_at', direction: 'ASC' };
+    case 'created_desc':
+      return { field: 'created_at', direction: 'DESC' };
     default:
       return { field: 'price_cents', direction: 'ASC' };
   }
@@ -131,7 +192,32 @@ export async function fetchCarsWithKeyset(params: CarsApiParams): Promise<CarsAp
     let nextCursor: string | undefined;
     if (items.length === limit) {
       const lastItem = items[items.length - 1];
-      const sortValue = sortField === 'price_cents' ? lastItem.price_cents : lastItem.rank_score;
+      let sortValue;
+      
+      // Get the appropriate sort value based on the sort field
+      switch (sortField) {
+        case 'price_cents':
+          sortValue = lastItem.price_cents;
+          break;
+        case 'rank_score':
+          sortValue = lastItem.rank_score;
+          break;
+        case 'year':
+          sortValue = lastItem.year;
+          break;
+        case 'mileage':
+          sortValue = lastItem.mileage;
+          break;
+        case 'make':
+          sortValue = lastItem.make;
+          break;
+        case 'created_at':
+          sortValue = lastItem.created_at;
+          break;
+        default:
+          sortValue = lastItem.price_cents;
+      }
+      
       nextCursor = createCursor(sortField, sortValue, lastItem.id);
     }
 
@@ -161,7 +247,7 @@ export async function fetchCarsApi(searchParams: URLSearchParams): Promise<CarsA
   if (searchParams.has('fuel')) filters.fuel = searchParams.get('fuel')!;
   if (searchParams.has('search')) filters.search = searchParams.get('search')!;
 
-  const sort = (searchParams.get('sort') as SortOption) || 'price_asc';
+  const sort = (searchParams.get('sort') as SortOption | FrontendSortOption) || 'price_asc';
   const limit = parseInt(searchParams.get('limit') || '24');
   const cursor = searchParams.get('cursor') || undefined;
 

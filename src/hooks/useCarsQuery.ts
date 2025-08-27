@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useCallback, useState, useEffect, useMemo } from 'react';
 import { FilterState } from '@/hooks/useFiltersFromUrl';
 import { buildQueryParams } from '@/utils/buildQueryParams';
-import { fetchCarsWithKeyset, Car as ApiCar, CarsApiResponse, SortOption } from '@/services/carsApi';
+import { fetchCarsWithKeyset, Car as ApiCar, CarsApiResponse, SortOption, FrontendSortOption } from '@/services/carsApi';
 
 interface Car {
   id: string;
@@ -51,19 +51,20 @@ const convertApiCarToUICar = (apiCar: ApiCar): Car => ({
 });
 
 // Map UI sort to API sort
-const mapSortToApi = (sort?: string): SortOption => {
+const mapSortToApi = (sort?: string): SortOption | FrontendSortOption => {
+  // The backend now supports frontend sort options directly, so we can pass them through
+  // But we'll still map some common ones for clarity
   switch (sort) {
     case 'price_asc':
-      return 'price_asc';
     case 'price_desc':
-      return 'price_desc';
     case 'year_desc':
-      return 'rank_desc'; // Use rank for year sorting
     case 'year_asc':
-      return 'rank_asc';
     case 'mileage_asc':
     case 'mileage_desc':
     case 'recently_added':
+    case 'oldest_first':
+    case 'popular':
+      return sort as SortOption | FrontendSortOption;
     default:
       return 'price_asc';
   }
