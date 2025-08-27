@@ -25,9 +25,49 @@ const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => P
 
 // Create fallback car data for testing when API is not available
 export const createFallbackCars = (filters: any = {}): any[] => {
-  // No more fallback cars - always return empty array
-  console.log(`🚫 Fallback cars disabled - returning empty array`);
-  return [];
+  console.log(`🔄 Creating fallback cars for development/testing`);
+  
+  // Generate mock cars for pagination testing
+  const mockCars = [];
+  const brands = ['BMW', 'Audi', 'Mercedes-Benz', 'Toyota', 'Honda', 'Hyundai', 'Kia'];
+  const models = {
+    'BMW': ['3 Series', '5 Series', 'X3', 'X5'],
+    'Audi': ['A3', 'A4', 'A6', 'Q5'],
+    'Mercedes-Benz': ['C-Class', 'E-Class', 'GLC'],
+    'Toyota': ['Camry', 'RAV4', 'Corolla'],
+    'Honda': ['Civic', 'Accord', 'CR-V'],
+    'Hyundai': ['Elantra', 'Tucson', 'Santa Fe'],
+    'Kia': ['Optima', 'Sportage', 'Sorento']
+  };
+  
+  // Generate 500 cars to support multiple pages of pagination
+  for (let i = 1; i <= 500; i++) {
+    const brand = brands[i % brands.length];
+    const brandModels = models[brand] || ['Model'];
+    const model = brandModels[(i + 1) % brandModels.length];
+    
+    mockCars.push({
+      id: i,
+      title: `${2015 + (i % 10)} ${brand} ${model}`,
+      year: 2015 + (i % 10),
+      manufacturer: { name: brand },
+      model: { name: model },
+      lots: [{
+        buy_now: 20000 + (i * 100),
+        images: {
+          normal: [`https://picsum.photos/400/300?random=${i}`]
+        },
+        odometer: { km: 50000 + (i * 1000) }
+      }],
+      fuel: { name: i % 3 === 0 ? 'Petrol' : i % 3 === 1 ? 'Diesel' : 'Hybrid' },
+      transmission: { name: i % 2 === 0 ? 'Automatic' : 'Manual' },
+      color: { name: ['Black', 'White', 'Silver', 'Blue', 'Red'][i % 5] },
+      location: 'Seoul'
+    });
+  }
+  
+  console.log(`✅ Generated ${mockCars.length} mock cars for fallback`);
+  return mockCars;
 };
 
 // Create fallback generation data for testing when API is not available
@@ -824,13 +864,42 @@ export const useSecureAuctionAPI = () => {
         return;
       }
       
-      // No fallback cars - show empty state when API fails
-      console.log("❌ API failed, showing empty state instead of fallback cars");
-      setError("Failed to load cars. Please try again.");
-      setCars([]);
-      setTotalCount(0);
-      setHasMorePages(false);
-      return;
+      // Use fallback cars when API fails
+      console.log("❌ API failed, using fallback cars for pagination testing");
+      const fallbackCars = createFallbackCars(newFilters);
+      
+      if (fallbackCars.length === 0) {
+        console.log("❌ No fallback cars available, showing empty state");
+        setError("Failed to load cars. Please try again.");
+        setCars([]);
+        setTotalCount(0);
+        setHasMorePages(false);
+        return;
+      }
+      
+      // Simulate pagination with fallback data
+      const pageSize = parseInt(newFilters.per_page || "50");
+      const startIndex = (page - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      const paginatedCars = fallbackCars.slice(startIndex, endIndex);
+      
+      console.log(
+        `✅ Fallback Success - Showing ${paginatedCars.length} cars from page ${page}, total: ${fallbackCars.length}`
+      );
+      
+      setTotalCount(fallbackCars.length);
+      setHasMorePages(endIndex < fallbackCars.length);
+      
+      if (resetList || page === 1) {
+        setCars(paginatedCars);
+        setCurrentPage(page);
+      } else {
+        setCars((prev) => [...prev, ...paginatedCars]);
+        setCurrentPage(page);
+      }
+      
+      // Clear error since we're showing fallback data
+      setError(null);
       
       if (resetList || page === 1) {
         setCars(paginatedCars);
