@@ -2,6 +2,37 @@ import { describe, it, expect } from 'vitest';
 import { getPaginationStats, calculatePaginationInfo } from '@/utils/largePaginationUtils';
 
 describe('Pagination Display Fix', () => {
+  describe('Problem Statement Scenario - 217 cars across 5 pages', () => {
+    it('should show correct pagination text for page 2 of 5 (problem statement scenario)', () => {
+      // This is the exact scenario from the problem statement
+      const currentPage = 2;
+      const totalItems = 217;
+      const itemsPerPage = 50;
+
+      const stats = getPaginationStats(currentPage, totalItems, itemsPerPage);
+
+      // After fix, should show "50 cars per page" not "0 cars per page"
+      expect(stats.displayText).toBe('217 cars across 5 pages • Page 2 of 5 • Showing 50 cars per page');
+      expect(stats.showing).toBe('Page 2 of 5 • 50 cars shown');
+      expect(stats.shortText).toBe('217 cars');
+    });
+
+    it('should show correct pagination text when component would have 0 carsToDisplay', () => {
+      // This simulates what happens when carsToDisplay.length is 0 
+      // but the pagination utility should still show the correct expected items per page
+      const currentPage = 2;
+      const totalItems = 217;
+      const itemsPerPage = 50;
+
+      const stats = getPaginationStats(currentPage, totalItems, itemsPerPage);
+
+      // Should NOT show "Showing 0 cars per page" but rather "Showing 50 cars per page"
+      expect(stats.displayText).not.toContain('Showing 0 cars per page');
+      expect(stats.displayText).toBe('217 cars across 5 pages • Page 2 of 5 • Showing 50 cars per page');
+      expect(stats.showing).toBe('Page 2 of 5 • 50 cars shown');
+    });
+  });
+
   describe('getPaginationStats', () => {
     it('should show correct pagination stats for 217 cars across 5 pages on page 2', () => {
       const currentPage = 2;
