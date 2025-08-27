@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useThrottledUrlUpdate } from './useThrottledUrlUpdate';
 
 export interface FilterState {
   // Exact match filters
@@ -29,7 +29,7 @@ export interface FilterState {
 }
 
 export const useFiltersFromUrl = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { searchParams, updateUrl } = useThrottledUrlUpdate();
 
   // Read filters from URL
   const filters: FilterState = {
@@ -68,13 +68,13 @@ export const useFiltersFromUrl = () => {
     if (!cleanFilters.page) cleanFilters.page = '1';
     if (!cleanFilters.sort) cleanFilters.sort = 'price_asc';
 
-    setSearchParams(cleanFilters, { replace: options?.replace });
-  }, [filters, setSearchParams]);
+    updateUrl(cleanFilters, { replace: options?.replace });
+  }, [filters, updateUrl]);
 
   // Clear all filters except page and sort
   const clearFilters = useCallback(() => {
-    setSearchParams({ page: '1', sort: filters.sort || 'price_asc' });
-  }, [setSearchParams, filters.sort]);
+    updateUrl({ page: '1', sort: filters.sort || 'price_asc' });
+  }, [updateUrl, filters.sort]);
 
   // Update single filter
   const updateFilter = useCallback((key: keyof FilterState, value: any) => {
