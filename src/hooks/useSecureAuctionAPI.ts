@@ -52,6 +52,8 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       year: 2015 + (i % 10),
       manufacturer: { name: brand },
       model: { name: model },
+      vin: `KMHJ381${String(i).padStart(7, '0')}ABC`, // Valid VIN format (17 characters)
+      lot_number: `LOT${String(i).padStart(6, '0')}`, // Valid lot number
       lots: [{
         buy_now: 20000 + (i * 100),
         images: {
