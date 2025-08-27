@@ -23,6 +23,7 @@ import { useCarsResults, useCarsFacets, useCarsSearchPrefetch } from '@/hooks/us
 import { CarsGrid } from '@/components/results/CarsGrid';
 import { Facet } from '@/components/filters/Facet';
 import { RangeFacet } from '@/components/filters/RangeFacet';
+import { CheckNewUpdates } from '@/components/CheckNewUpdates';
 import { SearchReq, SortOption, FACET_FIELDS } from '@/lib/search/types';
 
 interface NewEncarCatalogProps {
@@ -183,6 +184,11 @@ export const NewEncarCatalog = ({ highlightCarId, className = '' }: NewEncarCata
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold mb-4">Cars Catalog</h1>
+          
+          {/* Check for Updates */}
+          <div className="mb-6">
+            <CheckNewUpdates />
+          </div>
           
           {/* Search and Controls */}
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">

@@ -5,6 +5,7 @@ import { useFiltersFromUrl } from '@/hooks/useFiltersFromUrl';
 import { useCarsQuery } from '@/hooks/useCarsQuery';
 import FiltersPanel from '@/components/FiltersPanel';
 import CarsList from '@/components/CarsList';
+import { CheckNewUpdates } from '@/components/CheckNewUpdates';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -281,6 +282,11 @@ const CatalogContent: React.FC = () => {
                   </>
                 )}
               </div>
+            </div>
+
+            {/* Check for Updates */}
+            <div className="mb-6">
+              <CheckNewUpdates />
             </div>
 
             {/* Active Filters Display */}
