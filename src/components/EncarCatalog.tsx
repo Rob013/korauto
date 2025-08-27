@@ -51,7 +51,6 @@ import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { useGlobalCarSorting } from "@/hooks/useGlobalCarSorting";
-import { useEncarSortedQuery } from "@/hooks/useEncarSortedQuery";
 // TODO: Migrate this component to use useCarsQuery and fetchCarsWithKeyset 
 // for consistent backend sorting like NewCatalog.tsx
 import { CarWithRank } from "@/utils/chronologicalRanking";
@@ -88,28 +87,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
   
-  // Modern backend sorting hook (replaces deprecated client-side global sorting)
-  const {
-    cars: backendSortedCars,
-    totalCount: backendTotalCount,
-    totalPages: backendTotalPages,
-    currentPage: backendCurrentPage,
-    hasMorePages: backendHasMorePages,
-    isGlobalSorting: backendIsGlobalSorting,
-    sortBy: backendSortBy,
-    isLoading: backendIsLoading,
-    isError: backendIsError,
-    error: backendError,
-    refetch: backendRefetch
-  } = useEncarSortedQuery({
-    filters,
-    sortBy,
-    currentPage,
-    carsPerPage: 50,
-    enabled: true // Always enabled for modern approach
-  });
-
-  // Legacy global sorting hook (deprecated - kept for backwards compatibility)
+  // Global sorting hook
   const {
     globalSortingState,
     initializeGlobalSorting,
@@ -223,7 +201,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const sortedResults = useSortedCars(carsForSorting, sortBy);
   const sortedAllCarsResults = useSortedCars(allCarsData, sortBy); // Add sorting for all cars data
   
-  // Memoized cars to display - prioritizes modern backend sorting
+  // Memoized cars to display - uses global sorting when available
   const carsToDisplay = useMemo(() => {
     // Priority 0: Show all cars when user has selected "Show All" option
     if (showAllCars && allCarsData.length > 0) {
@@ -231,21 +209,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       return sortedAllCarsResults;
     }
     
-    // Priority 1: Modern backend global sorting (when available and preferred)
-    if (backendIsGlobalSorting && backendSortedCars.length > 0) {
-      console.log(`🚀 Using backend global sorting for page ${currentPage}: ${backendSortedCars.length} cars (${backendSortBy} sort)`);
-      console.log(`📊 Backend sorting stats: ${backendTotalCount} total cars across ${backendTotalPages} pages`);
-      return backendSortedCars;
-    }
-    
-    // Priority 2: Legacy global sorting (when available and dataset is large enough)
+    // Priority 1: Global sorting (when available and dataset is large enough)
     if (isGlobalSortingReady() && shouldUseGlobalSorting()) {
       const rankedCarsForPage = getCarsForCurrentPage(currentPage);
-      console.log(`🎯 Using legacy globally sorted cars for page ${currentPage}: ${rankedCarsForPage.length} cars (${globalSortingState.currentSortBy} sort)`);
+      console.log(`🎯 Using globally sorted cars for page ${currentPage}: ${rankedCarsForPage.length} cars (${globalSortingState.currentSortBy} sort)`);
       return rankedCarsForPage;
     }
     
-    // Priority 3: Daily rotating cars (only for default state without user sort selection)
+    // Priority 2: Daily rotating cars (only for default state without user sort selection)
     if (isDefaultState && !hasUserSelectedSort && !shouldUseGlobalSorting()) {
       // For server-side pagination, use all daily rotating cars without client-side slicing
       // Server already provides the correct page data
@@ -253,7 +224,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       return dailyRotatingCars;
     }
     
-    // Priority 4: Regular sorted cars (fallback)
+    // Priority 3: Regular sorted cars (fallback)
     // For server-side pagination, use all sorted results without client-side slicing
     // Server already provides the correct page data
     console.log(`📄 Using regular sorted cars for page ${currentPage}: ${sortedResults.length} cars (fallback or loading state)`);
@@ -262,16 +233,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     showAllCars,
     allCarsData,
     sortedAllCarsResults,
-    backendIsGlobalSorting,
-    backendSortedCars,
-    currentPage,
-    backendSortBy,
-    backendTotalCount,
-    backendTotalPages,
     sortBy,
     isGlobalSortingReady, 
     shouldUseGlobalSorting, 
     getCarsForCurrentPage, 
+    currentPage,
     globalSortingState.currentSortBy,
     isDefaultState,
     hasUserSelectedSort,
@@ -1310,20 +1276,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 Car Catalog
               </h1>
               <p className="text-muted-foreground text-xs sm:text-sm">
-                {/* Use backend totals when available, otherwise fallback to legacy */}
-                {backendIsGlobalSorting 
-                  ? `${backendTotalCount.toLocaleString()} cars across ${backendTotalPages.toLocaleString()} pages • Page ${currentPage} of ${backendTotalPages.toLocaleString()} • Showing ${carsToDisplay.length} cars per page (Backend Global Sorting)`
-                  : `${totalCount.toLocaleString()} cars across ${totalPages.toLocaleString()} pages • Page ${currentPage} of ${totalPages.toLocaleString()} • Showing ${carsToDisplay.length} cars per page`
-                }
+                {totalCount.toLocaleString()} cars across {totalPages.toLocaleString()} pages • Page {currentPage} of {totalPages.toLocaleString()} • Showing {carsToDisplay.length} cars per page
 
                 {yearFilterProgress === 'instant' && (
                   <span className="ml-2 text-primary text-xs">⚡ Instant results</span>
                 )}
                 {yearFilterProgress === 'loading' && (
                   <span className="ml-2 text-primary text-xs">🔄 Loading complete results...</span>
-                )}
-                {backendIsGlobalSorting && (
-                  <span className="ml-2 text-green-600 text-xs">🚀 Global sorting active</span>
                 )}
               </p>
             </div>
@@ -1336,13 +1295,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             </div>
           )}
 
-          {/* Loading State - includes backend sorting loading */}
-          {((loading && cars.length === 0) || backendIsLoading || isRestoringState || isFilterLoading) ? (
+          {/* Loading State */}
+          {(loading && cars.length === 0) || isRestoringState || isFilterLoading ? (
             <div className="flex flex-col items-center justify-center py-12 space-y-4">
               <LoadingLogo size="lg" />
-              {backendIsLoading && (
-                <p className="text-sm text-muted-foreground">🚀 Loading globally sorted results...</p>
-              )}
               {/* No text needed - logo shows loading state */}
             </div>
           ) : null}
@@ -1467,10 +1423,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 <div className="flex flex-col items-center py-8 space-y-4">
                   {/* Page Info */}
                   <div className="text-center text-sm text-muted-foreground">
-                    Page {currentPage} of {backendIsGlobalSorting ? backendTotalPages.toLocaleString() : totalPages.toLocaleString()} • {carsToDisplay.length} cars shown
-                    {backendIsGlobalSorting && (
-                      <span className="block text-xs text-green-600 mt-1">🚀 Globally sorted across all filtered cars</span>
-                    )}
+                    Page {currentPage} of {totalPages.toLocaleString()} • {carsToDisplay.length} cars shown
                   </div>
                   
                   {/* Pagination Navigation */}
@@ -1480,7 +1433,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                       variant="outline"
                       size="sm"
                       onClick={() => handlePageChange(1)}
-                      disabled={currentPage === 1 || loading || backendIsLoading}
+                      disabled={currentPage === 1 || loading}
                       className="h-8 px-3"
                     >
                       First
@@ -1491,7 +1444,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                       variant="outline"
                       size="sm"
                       onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1 || loading || backendIsLoading}
+                      disabled={currentPage === 1 || loading}
                       className="h-8 px-3"
                     >
                       Previous
@@ -1500,11 +1453,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     {/* Page Numbers */}
                     <div className="flex space-x-1">
                       {(() => {
-                        const effectiveTotalPages = backendIsGlobalSorting ? backendTotalPages : totalPages;
                         const maxVisible = 5;
                         const half = Math.floor(maxVisible / 2);
                         let start = Math.max(1, currentPage - half);
-                        let end = Math.min(effectiveTotalPages, start + maxVisible - 1);
+                        let end = Math.min(totalPages, start + maxVisible - 1);
                         
                         // Adjust start if we're near the end
                         if (end - start < maxVisible - 1) {
@@ -1521,7 +1473,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                               variant={1 === currentPage ? "default" : "outline"}
                               size="sm"
                               onClick={() => handlePageChange(1)}
-                              disabled={loading || backendIsLoading}
+                              disabled={loading}
                               className="h-8 px-3"
                             >
                               1
