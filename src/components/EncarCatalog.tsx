@@ -366,7 +366,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     clearGlobalSorting();
     
     // Use 50 cars per page for proper pagination
-    const filtersWithPagination = addPaginationToFilters(newFilters, 50);
+    const filtersWithPagination = addPaginationToFilters(newFilters, 50, 1);
     
     fetchCars(1, filtersWithPagination, true);
 
@@ -467,7 +467,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setCurrentPage(page);
     
     // Fetch cars for the specific page with proper API pagination
-    const filtersWithPagination = addPaginationToFilters(filters, 50);
+    const filtersWithPagination = addPaginationToFilters(filters, 50, page);
     fetchCars(page, filtersWithPagination, true); // Reset list for new page
     
     // Update URL with new page
@@ -478,7 +478,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Scroll to top when changing pages
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
-    console.log(`📄 Navigated to page ${page} of 3862`);
+    console.log(`📄 Navigated to page ${page} of 3862 with filters:`, filtersWithPagination);
   }, [filters, fetchCars, setSearchParams, addPaginationToFilters]);
 
   // Function to fetch and display all cars
@@ -790,7 +790,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         // Load cars last - this is the most expensive operation
         const initialFilters = {
           ...urlFilters,
-          per_page: "50"
+          per_page: "50",
+          page: urlCurrentPage.toString()
         };
         
         await fetchCars(urlCurrentPage, initialFilters, true);

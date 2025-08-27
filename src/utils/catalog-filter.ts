@@ -226,10 +226,11 @@ export const isYearRangeChange = (newFilters: APIFilters, currentFilters: APIFil
 /**
  * Creates filters with pagination
  */
-export const addPaginationToFilters = (filters: APIFilters, perPage: number = 50): APIFilters => {
+export const addPaginationToFilters = (filters: APIFilters, perPage: number = 50, page: number = 1): APIFilters => {
   return {
     ...filters,
-    per_page: perPage.toString()
+    per_page: perPage.toString(),
+    page: page.toString()
   };
 };
 
