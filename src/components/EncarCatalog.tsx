@@ -534,7 +534,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       return;
     }
 
-    if (totalCount <= 50) {
+    if (!shouldUseGlobalSorting()) {
       // For small datasets, the global sorting hook handles this automatically
       console.log(`📝 Small dataset (${totalCount} cars), letting global sorting hook handle it`);
       // setAllCarsForSorting(filteredCars);
