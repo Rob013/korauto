@@ -459,8 +459,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
   const handlePageChange = useCallback((page: number) => {
     // Validate page number
-    if (page < 1 || page > 3862) {
-      console.log(`⚠️ Invalid page number: ${page}. Must be between 1 and 3862`);
+    if (page < 1 || page > totalPages) {
+      console.log(`⚠️ Invalid page number: ${page}. Must be between 1 and ${totalPages}`);
       return;
     }
     
@@ -478,8 +478,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Scroll to top when changing pages
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
-    console.log(`📄 Navigated to page ${page} of 3862 with filters:`, filtersWithPagination);
-  }, [filters, fetchCars, setSearchParams, addPaginationToFilters]);
+    console.log(`📄 Navigated to page ${page} of ${totalPages} with filters:`, filtersWithPagination);
+  }, [filters, fetchCars, setSearchParams, addPaginationToFilters, totalPages]);
 
   // Function to fetch and display all cars
   const handleShowAllCars = useCallback(async () => {
@@ -901,12 +901,17 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     loadInitialCounts();
   }, [manufacturers.length]); // Only run when manufacturers are first loaded
 
-  // Calculate total pages - fixed to always show 3862 pages for 193,067 cars
+  // Calculate total pages based on actual total count
   useEffect(() => {
-    // Always set to 3862 pages for the full dataset of 193,067 cars
-    setTotalPages(3862);
-    console.log(`📊 Fixed pagination: 193,067 cars across 3,862 pages (50 cars per page)`);
-  }, []); // Remove dependencies to keep it fixed
+    if (totalCount > 0) {
+      const calculatedPages = Math.ceil(totalCount / 50);
+      setTotalPages(calculatedPages);
+      console.log(`📊 Calculated pagination: ${totalCount} cars across ${calculatedPages} pages (50 cars per page)`);
+    } else {
+      setTotalPages(0);
+      console.log(`📊 No cars available: ${totalCount} cars, 0 pages`);
+    }
+  }, [totalCount]); // Update when totalCount changes
 
   // Initialize global sorting when sortBy changes or totalCount becomes available
   useEffect(() => {
@@ -1269,7 +1274,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 Car Catalog
               </h1>
               <p className="text-muted-foreground text-xs sm:text-sm">
-                193,067 cars across 3,862 pages • Page {currentPage} of 3,862 • Showing {carsToDisplay.length} cars per page
+                {totalCount.toLocaleString()} cars across {totalPages.toLocaleString()} pages • Page {currentPage} of {totalPages.toLocaleString()} • Showing {carsToDisplay.length} cars per page
 
                 {yearFilterProgress === 'instant' && (
                   <span className="ml-2 text-primary text-xs">⚡ Instant results</span>

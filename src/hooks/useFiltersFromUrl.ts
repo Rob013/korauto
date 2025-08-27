@@ -78,8 +78,8 @@ export const useFiltersFromUrl = () => {
 
   // Update single filter
   const updateFilter = useCallback((key: keyof FilterState, value: any) => {
-    // For sort changes, don't reset page to maintain accumulated cars
-    if (key === 'sort') {
+    // For sort and page changes, don't reset page to maintain accumulated cars
+    if (key === 'sort' || key === 'page') {
       updateFilters({ [key]: value });
     } else {
       // Reset to page 1 when any other filter changes
