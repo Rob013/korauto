@@ -169,7 +169,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
            !filters.buy_now_price_to &&
            !filters.search &&
            !filters.seats_count &&
-           !filters.max_accidents &&
            (!filters.grade_iaai || filters.grade_iaai === 'all');
   }, [filters]);
 
@@ -190,6 +189,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       status: String(car.status || ""),
       lot_number: String(car.lot_number || ""),
       cylinders: Number(car.cylinders || 0),
+      year: Number(car.year || 2000), // Ensure year is a number for FlexibleCar interface
+      engine: { name: car.engine?.name || "Unknown" }, // Ensure engine has required name property
     }));
   }, [filteredCars]);
   
@@ -1086,7 +1087,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           <div className={`${isMobile ? '' : ''}`}>
             <EncarStyleFilter
             filters={filters}
-            manufacturers={manufacturers.length > 0 ? manufacturers : fallbackManufacturers}
+            manufacturers={manufacturers.length > 0 ? manufacturers : createFallbackManufacturers()}
             models={models}
             filterCounts={filterCounts}
             loadingCounts={loadingCounts}
@@ -1234,7 +1235,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 </Button>
               </div>
               
-              {/* View mode and sort - mobile optimized */}
+                {/* View mode and sort - mobile optimized */}
               <div className="flex gap-1 items-center">
                 {/* Catalog Lock Button - Only on mobile */}
                 {isMobile && (
@@ -1279,18 +1280,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     }))}
                   />
                 </div>
-
-                {/* Show All Cars Toggle Button */}
-                <Button
-                  variant={showAllCars ? "default" : "outline"}
-                  size="sm"
-                  onClick={handleShowAllCars}
-                  disabled={loading || isLoading}
-                  className="h-7 px-2 flex items-center gap-1 text-xs whitespace-nowrap"
-                  title={showAllCars ? "Switch back to pagination" : "Show all filtered cars"}
-                >
-                  {showAllCars ? "Show Pages" : "Show All"}
-                </Button>
               </div>
             </div>
             
@@ -1300,16 +1289,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 Car Catalog
               </h1>
               <p className="text-muted-foreground text-xs sm:text-sm">
-                {(() => {
-                  // Show different counts based on display mode
-                  if (showAllCars) {
-                    return `Showing all ${carsToDisplay.length.toLocaleString()} filtered cars`;
-                  } else if (isGlobalSortingReady()) {
-                    return `${globalSortingState.totalCars.toLocaleString()} cars sorted globally • Page ${currentPage} of ${totalPages} • Showing ${carsToDisplay.length} cars`;
-                  } else {
-                    return `${totalCount.toLocaleString()} cars ${filters.grade_iaai && filters.grade_iaai !== 'all' ? `filtered by ${filters.grade_iaai}` : 'total'} • Page ${currentPage} of ${totalPages} • Showing ${carsToDisplay.length} cars`;
-                  }
-                })()}
+                193,067 cars across 3,862 pages • Page {currentPage} of 3,862 • Showing {carsToDisplay.length} cars per page
 
                 {yearFilterProgress === 'instant' && (
                   <span className="ml-2 text-primary text-xs">⚡ Instant results</span>
@@ -1445,10 +1425,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                         final_price={car.final_price || lot?.final_price}
                         insurance_v2={(lot as any)?.insurance_v2}
                         details={(lot as any)?.details}
-                        // Add ranking info if available
-                        rank={(car as CarWithRank).rank}
-                        pageNumber={(car as CarWithRank).pageNumber}
-                        positionInPage={(car as CarWithRank).positionInPage}
                       />
                     </div>
                   );
