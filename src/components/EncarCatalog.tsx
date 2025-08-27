@@ -56,6 +56,7 @@ import { useBackendCarSorting } from "@/hooks/useBackendCarSorting";
 import { CarWithRank } from "@/utils/chronologicalRanking";
 import { filterOutTestCars } from "@/utils/testCarFilter";
 import { fallbackCars } from "@/data/fallbackData";
+import { SortingStatusIndicator, CompactSortingStatus } from "@/components/ui/SortingStatusIndicator";
 
 interface EncarCatalogProps {
   highlightCarId?: string | null;
@@ -1324,25 +1325,29 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 Car Catalog
               </h1>
-              <p className="text-muted-foreground text-xs sm:text-sm">
-                {totalCount.toLocaleString()} cars across {totalPages.toLocaleString()} pages • Page {currentPage} of {totalPages.toLocaleString()} • Showing {carsToDisplay.length} cars per page
-
-                {yearFilterProgress === 'instant' && (
-                  <span className="ml-2 text-primary text-xs">⚡ Instant results</span>
-                )}
-                {yearFilterProgress === 'loading' && (
-                  <span className="ml-2 text-primary text-xs">🔄 Loading complete results...</span>
-                )}
-                {backendLoading && (
-                  <span className="ml-2 text-primary text-xs">🚀 Sorting globally via backend...</span>
-                )}
-                {isBackendSorting && backendSortedCars.length > 0 && (
-                  <span className="ml-2 text-green-600 text-xs">✅ Global backend sorting active</span>
-                )}
-                {globalSortingState.isLoading && !backendLoading && (
-                  <span className="ml-2 text-primary text-xs">🔄 Sorting all cars globally...</span>
-                )}
-              </p>
+              <div className="text-sm text-muted-foreground space-y-1">
+                <p>
+                  {isBackendSorting && backendSortedCars.length > 0 
+                    ? `${backendSortedCars.length} results • Page ${currentPage} of ${totalPages}`
+                    : `${totalCount} results • Page ${currentPage} of ${totalPages}`
+                  }
+                  {showAllCars && (
+                    <span className="ml-2 text-blue-600 text-xs">🌟 Showing all cars</span>
+                  )}
+                </p>
+                <SortingStatusIndicator
+                  isGlobalSorting={isGlobalSortingReady() && shouldUseGlobalSorting()}
+                  isLoading={globalSortingState.isLoading}
+                  isBackendSorting={isBackendSorting}
+                  backendLoading={backendLoading}
+                  totalCars={isBackendSorting && backendSortedCars.length > 0 ? backendSortedCars.length : totalCount}
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  sortOption={sortBy}
+                  carsOnCurrentPage={carsToDisplay.length}
+                  yearFilterProgress={yearFilterProgress}
+                />
+              </div>
             </div>
           </div>
 
