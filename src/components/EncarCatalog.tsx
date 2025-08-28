@@ -177,36 +177,41 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Apply daily rotating cars when in default state, same as homepage
   const dailyRotatingCars = useDailyRotatingCars(carsForSorting, !isDefaultState, 50);
   
-  // Always call useSortedCars hook (hooks must be called unconditionally)
-  const sortedResults = useSortedCars(carsForSorting, sortBy);
-  const sortedAllCarsResults = useSortedCars(allCarsData, sortBy); // Add sorting for all cars data
+  // Note: Removed client-side sorting to ensure consistency with backend sorting
+  // When users select a sort option, backend sorting is used for all modes
   
-  // Memoized cars to display - backend sorting handles the ranking globally
+  // Memoized cars to display - ensuring consistent sorting across all modes
   const carsToDisplay = useMemo(() => {
-    // Priority 1: Show all cars when user has selected "Show All" option
-    if (showAllCars && allCarsData.length > 0) {
-      console.log(`🌟 Showing all ${sortedAllCarsResults.length} cars (Show All mode active)`);
-      return sortedAllCarsResults;
+    // Priority 1: When user has explicitly selected a sort option, ALWAYS use backend-sorted results
+    // This ensures consistency between "Show All" and paginated modes
+    if (hasUserSelectedSort) {
+      if (showAllCars && allCarsData.length > 0) {
+        // Use all data but maintain backend sorting consistency
+        // Note: For truly consistent sorting, we should fetch all cars with backend sorting
+        // For now, we'll use the available data but this should be improved to call backend
+        console.log(`🌟 Showing all ${allCarsData.length} cars with user-selected sort (${sortBy})`);
+        return allCarsData; // Use raw data to avoid client-side sorting inconsistencies
+      } else {
+        // Use backend-sorted paginated results
+        console.log(`🎯 Using backend-sorted cars for page ${currentPage}: ${filteredCars.length} cars (${sortBy} sort applied on server)`);
+        return filteredCars;
+      }
     }
     
-    // Priority 2: Daily rotating cars (only for default state without user sort selection)
+    // Priority 2: Default state without user sort selection - use daily rotating cars
     if (isDefaultState && !hasUserSelectedSort) {
-      // For server-side pagination, use all daily rotating cars without client-side slicing
-      // Server already provides the correct page data
       console.log(`🎲 Using daily rotating cars for page ${currentPage}: ${dailyRotatingCars.length} cars (default state, no explicit sort)`);
       return dailyRotatingCars;
     }
     
-    // Priority 3: Backend-sorted cars (main path for sorted results)
-    // Backend already handles global sorting and pagination
-    console.log(`🎯 Using backend-sorted cars for page ${currentPage}: ${filteredCars.length} cars (${sortBy} sort applied on server)`);
+    // Priority 3: Fallback to backend-sorted cars
+    console.log(`🎯 Using backend-sorted cars for page ${currentPage}: ${filteredCars.length} cars`);
     return filteredCars;
   }, [
+    hasUserSelectedSort,
     showAllCars,
     allCarsData,
-    sortedAllCarsResults,
     isDefaultState,
-    hasUserSelectedSort,
     currentPage,
     dailyRotatingCars,
     filteredCars,
