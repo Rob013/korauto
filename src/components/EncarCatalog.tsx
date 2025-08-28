@@ -513,16 +513,20 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     
     fetchCars(page, filtersWithPagination, true); // Reset list for new page
     
-    // Update URL with new page
+    // Update URL with new page while preserving sort and other parameters
     const currentParams = Object.fromEntries(searchParams.entries());
     currentParams.page = page.toString();
+    // Ensure sort parameter is preserved if user has selected a sort option
+    if (hasUserSelectedSort && sortBy !== 'recently_added') {
+      currentParams.sort = sortBy;
+    }
     setSearchParams(currentParams);
     
     // Scroll to top when changing pages
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
     console.log(`📄 Navigated to page ${page} of ${totalPages} with filters:`, filtersWithPagination);
-  }, [filters, fetchCars, setSearchParams, addPaginationToFilters, totalPages]);
+  }, [filters, fetchCars, setSearchParams, addPaginationToFilters, totalPages, sortBy, hasUserSelectedSort]);
 
   // Function to fetch and display all cars
   const handleShowAllCars = useCallback(async () => {
@@ -704,17 +708,21 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       const fromHomepage = searchParams.get('fromHomepage');
       const isFromHomepage = fromHomepage === 'true';
 
-      // Get filters and pagination state from URL parameters
+      // Get filters, pagination and sort state from URL parameters
       const urlFilters: APIFilters = {};
       let urlLoadedPages = 1;
       let urlCurrentPage = 1;
+      let urlSortBy: SortOption | null = null;
 
       for (const [key, value] of searchParams.entries()) {
         if (key === "loadedPages") {
           urlLoadedPages = parseInt(value) || 1;
         } else if (key === "page") {
           urlCurrentPage = parseInt(value) || 1;
-        } else if (value && key !== "loadedPages" && key !== "fromHomepage" && key !== "page") {
+        } else if (key === "sort") {
+          // Handle sort parameter specially to restore sorting state
+          urlSortBy = value as SortOption;
+        } else if (value && key !== "loadedPages" && key !== "fromHomepage" && key !== "page" && key !== "sort") {
           let decodedValue = value;
           try {
             decodedValue = decodeURIComponent(value);
@@ -731,6 +739,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       // Set search term from URL
       if (urlFilters.search) {
         setSearchTerm(urlFilters.search);
+      }
+
+      // Restore sort state from URL - fix for the page restart issue
+      if (urlSortBy) {
+        setSortBy(urlSortBy);
+        setHasUserSelectedSort(true); // Mark that sorting was restored from URL
+        console.log(`🔄 Restored sort option from URL: ${urlSortBy}`);
       }
 
       // Set filters and pagination immediately for faster UI response
