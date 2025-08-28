@@ -50,10 +50,7 @@ import {
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
-import { useGlobalCarSorting } from "@/hooks/useGlobalCarSorting";
-// TODO: Migrate this component to use useCarsQuery and fetchCarsWithKeyset 
-// for consistent backend sorting like NewCatalog.tsx
-import { CarWithRank } from "@/utils/chronologicalRanking";
+import { mapFrontendSortToBackend, SortOption as BackendSortOption, FrontendSortOption } from "@/services/carsApi";
 import { filterOutTestCars } from "@/utils/testCarFilter";
 import { fallbackCars } from "@/data/fallbackData";
 
@@ -87,24 +84,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
   
-  // Global sorting hook
-  const {
-    globalSortingState,
-    initializeGlobalSorting,
-    getCarsForCurrentPage,
-    shouldUseGlobalSorting,
-    isGlobalSortingReady,
-    getPageInfo,
-    clearGlobalSorting,
-  } = useGlobalCarSorting({
-    fetchAllCars,
-    currentCars: cars,
-    filters,
-    totalCount,
-    carsPerPage: 50,
-    enableCaching: true,
-    validationEnabled: false
-  });
+  // Backend sorting - no need for client-side global sorting
   
   const [sortBy, setSortBy] = useState<SortOption>("recently_added");
   const [hasUserSelectedSort, setHasUserSelectedSort] = useState(false);
@@ -201,48 +181,36 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const sortedResults = useSortedCars(carsForSorting, sortBy);
   const sortedAllCarsResults = useSortedCars(allCarsData, sortBy); // Add sorting for all cars data
   
-  // Memoized cars to display - uses global sorting when available
+  // Memoized cars to display - backend sorting handles the ranking globally
   const carsToDisplay = useMemo(() => {
-    // Priority 0: Show all cars when user has selected "Show All" option
+    // Priority 1: Show all cars when user has selected "Show All" option
     if (showAllCars && allCarsData.length > 0) {
       console.log(`🌟 Showing all ${sortedAllCarsResults.length} cars (Show All mode active)`);
       return sortedAllCarsResults;
     }
     
-    // Priority 1: Global sorting (when available and dataset is large enough)
-    if (isGlobalSortingReady() && shouldUseGlobalSorting()) {
-      const rankedCarsForPage = getCarsForCurrentPage(currentPage);
-      console.log(`🎯 Using globally sorted cars for page ${currentPage}: ${rankedCarsForPage.length} cars (${globalSortingState.currentSortBy} sort)`);
-      return rankedCarsForPage;
-    }
-    
     // Priority 2: Daily rotating cars (only for default state without user sort selection)
-    if (isDefaultState && !hasUserSelectedSort && !shouldUseGlobalSorting()) {
+    if (isDefaultState && !hasUserSelectedSort) {
       // For server-side pagination, use all daily rotating cars without client-side slicing
       // Server already provides the correct page data
-      console.log(`🎲 Using daily rotating cars for page ${currentPage}: ${dailyRotatingCars.length} cars (default state, no explicit sort, small dataset)`);
+      console.log(`🎲 Using daily rotating cars for page ${currentPage}: ${dailyRotatingCars.length} cars (default state, no explicit sort)`);
       return dailyRotatingCars;
     }
     
-    // Priority 3: Regular sorted cars (fallback)
-    // For server-side pagination, use all sorted results without client-side slicing
-    // Server already provides the correct page data
-    console.log(`📄 Using regular sorted cars for page ${currentPage}: ${sortedResults.length} cars (fallback or loading state)`);
-    return sortedResults;
+    // Priority 3: Backend-sorted cars (main path for sorted results)
+    // Backend already handles global sorting and pagination
+    console.log(`🎯 Using backend-sorted cars for page ${currentPage}: ${filteredCars.length} cars (${sortBy} sort applied on server)`);
+    return filteredCars;
   }, [
     showAllCars,
     allCarsData,
     sortedAllCarsResults,
-    sortBy,
-    isGlobalSortingReady, 
-    shouldUseGlobalSorting, 
-    getCarsForCurrentPage, 
-    currentPage,
-    globalSortingState.currentSortBy,
     isDefaultState,
     hasUserSelectedSort,
+    currentPage,
     dailyRotatingCars,
-    sortedResults
+    filteredCars,
+    sortBy
   ]);
 
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
@@ -360,21 +328,27 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   });
 
   // Internal function to actually apply filters - now using utilities
-  const applyFiltersInternal = useCallback((newFilters: APIFilters) => {
+  const applyFiltersInternal = useCallback((newFilters: APIFilters, sortOption?: SortOption) => {
     setFilters(newFilters);
     setCurrentPage(1); // Reset to first page when filters change
     
-    // Reset global sorting when filters change
-    clearGlobalSorting();
-    
-    // Use 50 cars per page for proper pagination
+    // Use 50 cars per page for proper pagination with backend sorting
     const filtersWithPagination = addPaginationToFilters(newFilters, 50, 1);
     
-    fetchCars(1, filtersWithPagination, true);
+    // Add sort parameter for backend sorting (not in APIFilters, but passed as separate param)
+    const fetchParams = sortOption ? {
+      ...filtersWithPagination,
+      sortBy: mapFrontendSortToBackend(sortOption as FrontendSortOption)
+    } : filtersWithPagination;
+    
+    fetchCars(1, fetchParams, true);
 
     // Update URL with all non-empty filter values - now using utility
     const searchParams = filtersToURLParams(newFilters);
     searchParams.set('page', '1');
+    if (sortOption) {
+      searchParams.set('sort', sortOption);
+    }
     setSearchParams(searchParams);
   }, [fetchCars, setSearchParams]);
 
@@ -410,9 +384,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Update UI immediately for responsiveness
     setFilters(newFilters);
     
-    // Clear global sorting when filters change
-    clearGlobalSorting();
-    
     // Check if this is a year range change - use optimized filtering for better UX - using utility
     const isYearChange = isYearRangeChange(newFilters, filters);
     
@@ -435,10 +406,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       // Clear previous data immediately to show loading state for non-year filters
       setCars([]);
       
-      // Apply other filters with debouncing to reduce API calls
-      debouncedApplyFilters(newFilters);
+      // Apply other filters with backend sorting
+      applyFiltersInternal(newFilters, sortBy);
     }
-  }, [debouncedApplyFilters, handleOptimizedYearFilter, filters, setCars, setFilters, setTotalCount, clearGlobalSorting]);
+  }, [applyFiltersInternal, handleOptimizedYearFilter, filters, setCars, setFilters, setTotalCount, sortBy]);
 
   const handleClearFilters = useCallback(() => {
     setFilters({});
@@ -468,9 +439,16 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     
     setCurrentPage(page);
     
-    // Fetch cars for the specific page with proper API pagination
+    // Fetch cars for the specific page with proper API pagination and backend sorting
     const filtersWithPagination = addPaginationToFilters(filters, 50, page);
-    fetchCars(page, filtersWithPagination, true); // Reset list for new page
+    
+    // Add current sort option for backend sorting (not in APIFilters, but passed as separate param)
+    const fetchParams = {
+      ...filtersWithPagination,
+      sortBy: mapFrontendSortToBackend(sortBy as FrontendSortOption)
+    };
+    
+    fetchCars(page, fetchParams, true); // Reset list for new page
     
     // Update URL with new page
     const currentParams = Object.fromEntries(searchParams.entries());
@@ -518,85 +496,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
   }, [showAllCars, filters, fetchAllCars, toast]);
 
-  // Function to fetch all cars for sorting across all pages
+  // Legacy function - replaced with backend sorting
   const fetchAllCarsForSorting = useCallback(async () => {
-    // Create a unique key for current sort parameters to prevent duplicate calls
-    const sortKey = `${totalCount}-${sortBy}-${filters.grade_iaai || ''}-${filters.manufacturer_id || ''}-${filters.model_id || ''}-${filters.generation_id || ''}-${filters.from_year || ''}-${filters.to_year || ''}`;
-    
-    if (fetchingSortRef.current) {
-      console.log(`⏳ Already fetching sort data, skipping duplicate request`);
-      return;
-    }
-
-    // Only skip if the exact same sort request was completed successfully
-    if (sortKey === lastSortParamsRef.current && globalSortingState.isGlobalSorting && globalSortingState.rankedCars.length > 0) {
-      console.log(`✅ Using cached sort data for: ${sortKey}`);
-      return;
-    }
-
-    if (!shouldUseGlobalSorting()) {
-      // For small datasets, the global sorting hook handles this automatically
-      console.log(`📝 Small dataset (${totalCount} cars), letting global sorting hook handle it`);
-      // setAllCarsForSorting(filteredCars);
-      // setIsSortingGlobal(true);
-      lastSortParamsRef.current = sortKey;
-      return;
-    }
-    
-    fetchingSortRef.current = true;
-    // setIsSortingGlobal(true); // Handled by global sorting hook
-    setIsLoading(true);
-    
-    try {
-      console.log(`🔄 Global sorting: Fetching all ${totalCount} cars for sorting across ${totalPages} pages`);
-      
-      // Use the new fetchAllCars function to get all cars with current filters
-      const allCars = await fetchAllCars(filters);
-      
-      // Apply the same client-side filtering as the current filtered cars - using utility
-      const filteredAllCars = allCars.filter((car: any) => {
-        return matchesGradeFilter(car, filters.grade_iaai);
-      });
-      
-      // setAllCarsForSorting(filteredAllCars); // Handled by global sorting hook
-      lastSortParamsRef.current = sortKey;
-      
-      // Check if current page is beyond available pages and reset to page 1 if needed
-      const maxPages = Math.ceil(filteredAllCars.length / 50);
-      if (currentPage > maxPages && maxPages > 0) {
-        console.log(`📄 Resetting page from ${currentPage} to 1 (max available: ${maxPages})`);
-        setCurrentPage(1);
-        // Update URL to reflect page reset
-        const currentParams = Object.fromEntries(searchParams.entries());
-        currentParams.page = '1';
-        setSearchParams(currentParams);
-      }
-      
-      console.log(`✅ Global sorting: Loaded ${filteredAllCars.length} cars for sorting across ${maxPages} pages`);
-    } catch (err) {
-      console.error('❌ Error fetching all cars for global sorting:', err);
-      // setIsSortingGlobal(false); // Handled by global sorting hook
-      // setAllCarsForSorting([]); // Handled by global sorting hook
-    } finally {
-      setIsLoading(false);
-      fetchingSortRef.current = false;
-    }
-  }, [
-    totalCount, 
-    fetchAllCars, 
-    filters?.grade_iaai, 
-    filters?.manufacturer_id, 
-    filters?.model_id, 
-    filters?.generation_id, 
-    filters?.from_year, 
-    filters?.to_year, 
-    sortBy, 
-    // Remove filteredCars from dependencies as it's computed and can cause infinite loops
-    // filteredCars,
-    totalPages || 0, 
-    currentPage, 
-    setSearchParams
-  ]);
+    console.log('🔄 Legacy function - backend sorting now handles this automatically');
+  }, []);
 
   const handleManufacturerChange = async (manufacturerId: string) => {
     console.log(`[handleManufacturerChange] Called with manufacturerId: ${manufacturerId}`);
@@ -915,19 +818,29 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
   }, [totalCount]); // Update when totalCount changes
 
-  // Initialize global sorting when sortBy changes or totalCount becomes available
+  // Trigger backend sorting when sort option changes
   useEffect(() => {
-    if (totalCount > 0) {
-      if (shouldUseGlobalSorting()) {
-        console.log(`🔄 Initializing global sorting: totalCount=${totalCount}, sortBy=${sortBy}, hasUserSelectedSort=${hasUserSelectedSort}`);
-        initializeGlobalSorting(sortBy);
-      } else {
-        console.log(`📝 Small dataset (${totalCount} cars), using regular sorting`);
-        // Clear any existing global sorting for small datasets
-        clearGlobalSorting();
-      }
+    if (totalCount > 0 && hasUserSelectedSort) {
+      console.log(`🔄 Applying backend sorting: totalCount=${totalCount}, sortBy=${sortBy}`);
+      
+      // Apply current filters with new sort option
+      const filtersWithPagination = addPaginationToFilters(filters, 50, 1);
+      const fetchParams = {
+        ...filtersWithPagination,
+        sortBy: mapFrontendSortToBackend(sortBy as FrontendSortOption)
+      };
+      
+      // Reset to page 1 and fetch with new sort
+      setCurrentPage(1);
+      fetchCars(1, fetchParams, true);
+      
+      // Update URL with sort option
+      const currentParams = Object.fromEntries(searchParams.entries());
+      currentParams.page = '1';
+      currentParams.sort = sortBy;
+      setSearchParams(currentParams);
     }
-  }, [sortBy, totalCount, shouldUseGlobalSorting, initializeGlobalSorting, clearGlobalSorting, hasUserSelectedSort]);
+  }, [sortBy, hasUserSelectedSort, totalCount, filters, fetchCars, setSearchParams]);
 
   // Show cars without requiring brand and model selection
   const shouldShowCars = true;
@@ -1252,12 +1165,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                       setHasUserSelectedSort(true); // Mark that user has explicitly chosen a sort option
                       // Reset to page 1 when sort changes to show users the first page of newly sorted results
                       setCurrentPage(1);
-                      // Update URL to reflect page reset
-                      const currentParams = Object.fromEntries(searchParams.entries());
-                      currentParams.page = '1';
-                      setSearchParams(currentParams);
-                      // Note: Global sorting initialization is handled by the useEffect that watches sortBy changes
-                      // This prevents duplicate calls and ensures proper state management
+                      console.log(`🔄 User selected sort: ${value}, triggering backend sort for ${totalCount} cars`);
+                      // Note: Backend sorting is handled by useEffect that watches sortBy changes
                     }}
                     placeholder="Sort"
                     className="w-24 sm:w-32 h-7 text-xs pl-6"
@@ -1367,7 +1276,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     : 'lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7'
                 } ${isFilterLoading ? 'opacity-50' : ''}`}
               >
-                {carsToDisplay.map((car: CarWithRank | any) => {
+                {carsToDisplay.map((car: any) => {
                   const lot = car.lots?.[0];
                   const usdPrice = lot?.buy_now || 25000;
                   const price = convertUSDtoEUR(Math.round(usdPrice + 2200));
