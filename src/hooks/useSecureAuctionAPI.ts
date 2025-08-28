@@ -1,5 +1,5 @@
 //@ts-nocheck
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { findGenerationYears } from "@/data/generationYears";
 import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from '../utils/grade-categorization';
@@ -712,7 +712,7 @@ export const useSecureAuctionAPI = () => {
     }
   };
 
-  const fetchCars = async (
+  const fetchCars = useCallback(async (
     page: number = 1,
     newFilters: APIFilters = filters,
     resetList: boolean = true
@@ -916,7 +916,7 @@ export const useSecureAuctionAPI = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
   const fetchManufacturers = async (): Promise<Manufacturer[]> => {
     try {
