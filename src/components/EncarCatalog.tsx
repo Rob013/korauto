@@ -327,7 +327,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     maxVerticalDistance: 120
   });
 
-  // Internal function to actually apply filters - now using utilities
+  // Internal function to actually apply filters with proper sorting
   const applyFiltersInternal = useCallback((newFilters: APIFilters, sortOption?: SortOption) => {
     setFilters(newFilters);
     setCurrentPage(1); // Reset to first page when filters change
@@ -335,13 +335,46 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Use 50 cars per page for proper pagination with backend sorting
     const filtersWithPagination = addPaginationToFilters(newFilters, 50, 1);
     
-    // Add sort parameter for backend sorting (not in APIFilters, but passed as separate param)
-    const fetchParams = sortOption ? {
-      ...filtersWithPagination,
-      sortBy: mapFrontendSortToBackend(sortOption as FrontendSortOption)
-    } : filtersWithPagination;
+    // Add sort parameters in the format expected by secure auction API
+    if (sortOption) {
+      // Map frontend sort to API sort parameters (sort_by and sort_direction)
+      switch (sortOption) {
+        case 'price_low':
+          filtersWithPagination.sort_by = 'price';
+          filtersWithPagination.sort_direction = 'asc';
+          break;
+        case 'price_high':
+          filtersWithPagination.sort_by = 'price';
+          filtersWithPagination.sort_direction = 'desc';
+          break;
+        case 'year_new':
+          filtersWithPagination.sort_by = 'year';
+          filtersWithPagination.sort_direction = 'desc';
+          break;
+        case 'year_old':
+          filtersWithPagination.sort_by = 'year';
+          filtersWithPagination.sort_direction = 'asc';
+          break;
+        case 'mileage_low':
+          filtersWithPagination.sort_by = 'mileage';
+          filtersWithPagination.sort_direction = 'asc';
+          break;
+        case 'mileage_high':
+          filtersWithPagination.sort_by = 'mileage';
+          filtersWithPagination.sort_direction = 'desc';
+          break;
+        case 'recently_added':
+          filtersWithPagination.sort_by = 'created_at';
+          filtersWithPagination.sort_direction = 'desc';
+          break;
+        case 'oldest_first':
+          filtersWithPagination.sort_by = 'created_at';
+          filtersWithPagination.sort_direction = 'asc';
+          break;
+      }
+    }
     
-    fetchCars(1, fetchParams, true);
+    fetchCars(1, filtersWithPagination, true);
 
     // Update URL with all non-empty filter values - now using utility
     const searchParams = filtersToURLParams(newFilters);
@@ -442,13 +475,43 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Fetch cars for the specific page with proper API pagination and backend sorting
     const filtersWithPagination = addPaginationToFilters(filters, 50, page);
     
-    // Add current sort option for backend sorting (not in APIFilters, but passed as separate param)
-    const fetchParams = {
-      ...filtersWithPagination,
-      sortBy: mapFrontendSortToBackend(sortBy as FrontendSortOption)
-    };
+    // Add current sort option for backend sorting using secure auction API format
+    switch (sortBy) {
+      case 'price_low':
+        filtersWithPagination.sort_by = 'price';
+        filtersWithPagination.sort_direction = 'asc';
+        break;
+      case 'price_high':
+        filtersWithPagination.sort_by = 'price';
+        filtersWithPagination.sort_direction = 'desc';
+        break;
+      case 'year_new':
+        filtersWithPagination.sort_by = 'year';
+        filtersWithPagination.sort_direction = 'desc';
+        break;
+      case 'year_old':
+        filtersWithPagination.sort_by = 'year';
+        filtersWithPagination.sort_direction = 'asc';
+        break;
+      case 'mileage_low':
+        filtersWithPagination.sort_by = 'mileage';
+        filtersWithPagination.sort_direction = 'asc';
+        break;
+      case 'mileage_high':
+        filtersWithPagination.sort_by = 'mileage';
+        filtersWithPagination.sort_direction = 'desc';
+        break;
+      case 'recently_added':
+        filtersWithPagination.sort_by = 'created_at';
+        filtersWithPagination.sort_direction = 'desc';
+        break;
+      case 'oldest_first':
+        filtersWithPagination.sort_by = 'created_at';
+        filtersWithPagination.sort_direction = 'asc';
+        break;
+    }
     
-    fetchCars(page, fetchParams, true); // Reset list for new page
+    fetchCars(page, filtersWithPagination, true); // Reset list for new page
     
     // Update URL with new page
     const currentParams = Object.fromEntries(searchParams.entries());
@@ -823,16 +886,48 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     if (totalCount > 0 && hasUserSelectedSort) {
       console.log(`🔄 Applying backend sorting: totalCount=${totalCount}, sortBy=${sortBy}`);
       
-      // Apply current filters with new sort option
+      // Apply current filters with new sort option using secure auction API format
       const filtersWithPagination = addPaginationToFilters(filters, 50, 1);
-      const fetchParams = {
-        ...filtersWithPagination,
-        sortBy: mapFrontendSortToBackend(sortBy as FrontendSortOption)
-      };
+      
+      // Add sort parameters in secure auction API format
+      switch (sortBy) {
+        case 'price_low':
+          filtersWithPagination.sort_by = 'price';
+          filtersWithPagination.sort_direction = 'asc';
+          break;
+        case 'price_high':
+          filtersWithPagination.sort_by = 'price';
+          filtersWithPagination.sort_direction = 'desc';
+          break;
+        case 'year_new':
+          filtersWithPagination.sort_by = 'year';
+          filtersWithPagination.sort_direction = 'desc';
+          break;
+        case 'year_old':
+          filtersWithPagination.sort_by = 'year';
+          filtersWithPagination.sort_direction = 'asc';
+          break;
+        case 'mileage_low':
+          filtersWithPagination.sort_by = 'mileage';
+          filtersWithPagination.sort_direction = 'asc';
+          break;
+        case 'mileage_high':
+          filtersWithPagination.sort_by = 'mileage';
+          filtersWithPagination.sort_direction = 'desc';
+          break;
+        case 'recently_added':
+          filtersWithPagination.sort_by = 'created_at';
+          filtersWithPagination.sort_direction = 'desc';
+          break;
+        case 'oldest_first':
+          filtersWithPagination.sort_by = 'created_at';
+          filtersWithPagination.sort_direction = 'asc';
+          break;
+      }
       
       // Reset to page 1 and fetch with new sort
       setCurrentPage(1);
-      fetchCars(1, fetchParams, true);
+      fetchCars(1, filtersWithPagination, true);
       
       // Update URL with sort option
       const currentParams = Object.fromEntries(searchParams.entries());
