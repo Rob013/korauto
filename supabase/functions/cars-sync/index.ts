@@ -66,14 +66,14 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
   const API_BASE_URL = 'https://auctionsapi.com/api';
   
-  // MAXIMUM SPEED settings - ULTRA FAST MODE
-  const MAX_PARALLEL_REQUESTS = 12; // Maximum parallel requests for ultra speed
-  const BATCH_SIZE = 100; // Maximum batch size for blazing fast processing
-  const MIN_DELAY = 50; // Minimum safe delay for maximum throughput
-  const MAX_RETRIES = 250; // Ultra-persistent retries - never give up
-  const RATE_LIMIT_MAX_RETRIES = 1000; // Maximum rate limit retries for persistence
-  const API_TIMEOUT = 60000; // 60 second timeout for faster failures and recovery
-  const ULTRA_FAST_MODE = true; // Enable maximum ultra-fast processing
+  // SAFE FAST MODE - Optimized for speed without getting stuck
+  const MAX_PARALLEL_REQUESTS = 6; // Safe parallel requests for optimal speed
+  const BATCH_SIZE = 75; // Large but safe batch size for fast processing
+  const MIN_DELAY = 100; // Safe delay to avoid rate limiting
+  const MAX_RETRIES = 150; // High but reasonable retries
+  const RATE_LIMIT_MAX_RETRIES = 200; // Safe rate limit retries to avoid endless loops
+  const API_TIMEOUT = 75000; // 75 second timeout for balance of speed and stability
+  const ULTRA_FAST_MODE = true; // Enable fast but safe processing
   
   console.log('🚀 Starting ULTRA-FAST sync with bulletproof rate limit handling...');
   
@@ -645,18 +645,18 @@ Deno.serve(async (req) => {
         pagesProcessed: 0,
         startedAt: new Date().toISOString(),
         features: [
-          '⚡ 12x parallel page processing (MAXIMUM)',
-          '🔥 100-car batch database writes (DOUBLED)', 
-          '🛡️ 250 retries per request (ULTRA)',
-          '💪 1000 rate limit retries (NEVER GIVE UP)',
+          '⚡ 6x parallel page processing (SAFE FAST)',
+          '🔥 75-car batch database writes (OPTIMIZED)', 
+          '🛡️ 150 retries per request (PERSISTENT)',
+          '💪 200 rate limit retries (SAFE LIMIT)',
           '🎯 Never stops until complete',
           '📊 Real-time progress tracking',
-          '🚀 Ultra-fast mode enabled',
+          '🚀 Safe fast mode enabled',
           '🔄 2000 auto-restarts available',
-          '⚡ 50ms minimum delays (MAXIMUM SPEED)',
-          '🏃‍♂️ 60s timeout for faster recovery'
+          '⚡ 100ms delays (SAFE SPEED)',
+          '🏃‍♂️ 75s timeout for stability'
         ],
-        note: 'ULTRA-MAX SPEED sync running in background. 12x parallel processing, 1000 rate limit retries, 100-car batches. Resuming from 13,000 cars at MAXIMUM possible speed. Check sync_status table for live progress.'
+        note: 'SAFE FAST MODE sync running in background. 6x parallel processing, 200 safe rate limit retries, 75-car batches. Optimized for maximum speed without getting stuck. Resuming from 13,000 cars. Check sync_status table for live progress.'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
