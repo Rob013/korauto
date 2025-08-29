@@ -1,87 +1,140 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+
+interface SyncStatus {
+  id: string;
+  sync_type: string;
+  status: string; // Make this flexible since it comes from database
+  current_page: number;
+  total_pages: number;
+  records_processed: number;
+  error_message?: string;
+  started_at: string;
+  completed_at?: string;
+  last_activity_at: string;
+}
+
+type SyncStatusType = 'running' | 'completed' | 'failed' | 'paused' | 'pending';
 
 export const FullCarsSyncTrigger = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [progress, setProgress] = useState<string>('');
   const { toast } = useToast();
 
+  // Poll sync status every 5 seconds when sync is running
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    if (syncStatus?.status === 'running') {
+      interval = setInterval(async () => {
+        await fetchSyncStatus();
+      }, 5000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [syncStatus?.status]);
+
+  // Fetch current sync status
+  const fetchSyncStatus = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('sync_status')
+        .select('*')
+        .eq('id', 'cars-sync-main')
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+        console.error('Error fetching sync status:', error);
+        return;
+      }
+
+      if (data) {
+        setSyncStatus(data);
+        updateProgressMessage(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch sync status:', error);
+    }
+  };
+
+  const updateProgressMessage = (status: SyncStatus) => {
+    const { status: syncState, current_page, records_processed, started_at } = status;
+    const startTime = new Date(started_at);
+    const elapsedMinutes = Math.floor((Date.now() - startTime.getTime()) / 60000);
+
+    switch (syncState) {
+      case 'running':
+        setProgress(`Running: Page ${current_page}, ${records_processed.toLocaleString()} cars synced (${elapsedMinutes}m elapsed)`);
+        break;
+      case 'completed':
+        setProgress(`✅ Completed: ${records_processed.toLocaleString()} cars synchronized successfully!`);
+        break;
+      case 'failed':
+        setProgress(`❌ Failed: ${status.error_message || 'Unknown error occurred'}`);
+        break;
+      case 'paused':
+        setProgress(`⏸️ Paused: ${records_processed.toLocaleString()} cars synced, paused due to rate limits`);
+        break;
+      default:
+        setProgress('Ready to sync');
+    }
+  };
+
+  // Load initial status on component mount
+  useEffect(() => {
+    fetchSyncStatus();
+  }, []);
+
   const startFullSync = async () => {
     setIsLoading(true);
-    setProgress('Starting full cars sync...');
+    setProgress('Starting intelligent sync system...');
 
     try {
       toast({
-        title: "Starting Full Cars Sync",
-        description: "Syncing cars in batches to avoid timeouts. This will take several minutes...",
+        title: "Starting Smart Cars Sync",
+        description: "Intelligent sync system will handle all errors and sync all cars. This runs in the background.",
       });
 
-      let totalSynced = 0;
-      let batchNumber = 1;
-      let shouldContinue = true;
-
-      // Run multiple batches to get all cars
-      while (shouldContinue && batchNumber <= 100) { // Max 100 batches for safety
-        setProgress(`Syncing batch ${batchNumber}... Total synced so far: ${totalSynced}`);
-        
-        // Call the cars-sync edge function
-        const { data, error } = await supabase.functions.invoke('cars-sync', {
-          body: { fullSync: true, batchNumber }
-        });
-
-        if (error) {
-          console.error('Batch sync error:', error);
-          // If error object has success: false, it might still contain data
-          if (error.success === false) {
-            setProgress(`Batch ${batchNumber} completed with issues. Total synced: ${totalSynced}`);
-            break;
-          } else {
-            throw error;
-          }
+      // Call the smart cars-sync edge function
+      const { data, error } = await supabase.functions.invoke('cars-sync', {
+        body: { 
+          fullSync: true,
+          smartSync: true 
         }
+      });
 
-        if (data) {
-          totalSynced += data.totalSynced || 0;
-          console.log(`Batch ${batchNumber}: synced ${data.totalSynced} cars, total: ${totalSynced}`);
-          
-          // Check if we should continue (if we got a full batch of 50 pages = ~2500 cars)
-          if (data.pagesProcessed < 50 || data.totalSynced < 1000) {
-            shouldContinue = false; // Likely reached the end
-          }
-        } else {
-          shouldContinue = false;
-        }
-        
-        batchNumber++;
-        
-        // Short delay between batches
-        if (shouldContinue) {
-          await new Promise(resolve => setTimeout(resolve, 3000));
-        }
+      if (error) {
+        throw error;
       }
 
-      setProgress(`Sync completed! ${totalSynced} cars synchronized in ${batchNumber - 1} batches`);
+      // Check if error is actually success with error flag
+      if (data && !data.success && data.error) {
+        throw new Error(data.error);
+      }
+
+      setProgress('Smart sync started successfully! Monitoring progress...');
       
       toast({
-        title: "Sync Completed Successfully!",
-        description: `${totalSynced} cars have been synchronized to the database in ${batchNumber - 1} batches.`,
+        title: "Smart Sync Started!",
+        description: "The system is now syncing all cars in the background. Progress will update automatically.",
       });
 
-      // Refresh the page to show updated data
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
+      // Start polling for updates
+      setTimeout(fetchSyncStatus, 2000);
 
     } catch (error) {
       console.error('Sync failed:', error);
-      setProgress('Sync failed. Please try again.');
+      setProgress('Sync failed to start. Please try again.');
       
       toast({
-        title: "Sync Failed",
-        description: error.message || "Failed to sync cars. Please try again.",
+        title: "Sync Failed to Start",
+        description: error.message || "Failed to start sync. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -89,33 +142,164 @@ export const FullCarsSyncTrigger = () => {
     }
   };
 
+  const resumeSync = async () => {
+    if (!syncStatus || syncStatus.status !== 'paused') return;
+    await startFullSync();
+  };
+
+  const getStatusIcon = () => {
+    if (!syncStatus) return <Clock className="h-4 w-4" />;
+    
+    switch (syncStatus.status) {
+      case 'running':
+        return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
+      case 'completed':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'failed':
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case 'paused':
+        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+      default:
+        return <Clock className="h-4 w-4" />;
+    }
+  };
+
+  const getProgressPercentage = () => {
+    if (!syncStatus || !syncStatus.records_processed) return 0;
+    // Estimate based on typical API having ~200k cars
+    const estimatedTotal = 200000;
+    return Math.min(100, (syncStatus.records_processed / estimatedTotal) * 100);
+  };
+
+  const isActive = syncStatus?.status === 'running';
+  const canResume = syncStatus?.status === 'paused';
+  const isCompleted = syncStatus?.status === 'completed';
+
   return (
     <div className="p-6 border rounded-lg bg-card">
-      <h3 className="text-lg font-semibold mb-4">Full Cars Database Sync</h3>
-      <p className="text-muted-foreground mb-4">
-        Synchronize all 190,000+ cars from the API to the database. This process may take several minutes.
-      </p>
+      <div className="flex items-center gap-2 mb-4">
+        {getStatusIcon()}
+        <h3 className="text-lg font-semibold">Smart Cars Database Sync</h3>
+      </div>
       
-      {progress && (
-        <div className="mb-4 p-3 bg-muted rounded">
-          <p className="text-sm">{progress}</p>
+      <p className="text-muted-foreground mb-4">
+        Intelligent sync system that handles all 190,000+ cars with automatic error recovery, 
+        rate limit management, and daily updates. Runs automatically at 2 AM UTC daily.
+      </p>
+
+      {/* Progress Bar */}
+      {syncStatus && syncStatus.records_processed > 0 && (
+        <div className="mb-4">
+          <div className="flex justify-between text-sm text-muted-foreground mb-1">
+            <span>Progress</span>
+            <span>{syncStatus.records_processed.toLocaleString()} cars synced</span>
+          </div>
+          <div className="w-full bg-muted rounded-full h-2">
+            <div 
+              className="bg-primary h-2 rounded-full transition-all duration-500" 
+              style={{ width: `${getProgressPercentage()}%` }}
+            />
+          </div>
         </div>
       )}
       
-      <Button 
-        onClick={startFullSync} 
-        disabled={isLoading}
-        className="w-full"
-      >
-        {isLoading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Syncing Cars...
-          </>
-        ) : (
-          'Start Full Cars Sync'
+      {/* Status Information */}
+      {progress && (
+        <div className="mb-4 p-3 bg-muted rounded">
+          <p className="text-sm font-mono">{progress}</p>
+          {syncStatus?.last_activity_at && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Last update: {new Date(syncStatus.last_activity_at).toLocaleString()}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Sync Status Details */}
+      {syncStatus && (
+        <div className="mb-4 text-sm space-y-1">
+          <div className="flex justify-between">
+            <span>Status:</span>
+            <span className={`font-medium ${
+              isCompleted ? 'text-green-600' : 
+              isActive ? 'text-blue-600' : 
+              syncStatus.status === 'failed' ? 'text-red-600' : 
+              'text-yellow-600'
+            }`}>
+              {syncStatus.status.charAt(0).toUpperCase() + syncStatus.status.slice(1)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span>Current Page:</span>
+            <span>{syncStatus.current_page?.toLocaleString() || 0}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Cars Synced:</span>
+            <span>{syncStatus.records_processed?.toLocaleString() || 0}</span>
+          </div>
+          {syncStatus.started_at && (
+            <div className="flex justify-between">
+              <span>Started:</span>
+              <span>{new Date(syncStatus.started_at).toLocaleString()}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Action Buttons */}
+      <div className="space-y-2">
+        {!isActive && !canResume && (
+          <Button 
+            onClick={startFullSync} 
+            disabled={isLoading}
+            className="w-full"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Starting Smart Sync...
+              </>
+            ) : (
+              'Start Smart Cars Sync'
+            )}
+          </Button>
         )}
-      </Button>
+
+        {canResume && (
+          <Button 
+            onClick={resumeSync} 
+            disabled={isLoading}
+            className="w-full"
+            variant="outline"
+          >
+            <Loader2 className="mr-2 h-4 w-4" />
+            Resume Paused Sync
+          </Button>
+        )}
+
+        {isActive && (
+          <div className="w-full p-3 bg-blue-50 dark:bg-blue-950 rounded border text-center">
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              Smart sync is running in the background...
+            </p>
+          </div>
+        )}
+
+        {isCompleted && (
+          <div className="w-full p-3 bg-green-50 dark:bg-green-950 rounded border text-center">
+            <p className="text-sm text-green-700 dark:text-green-300">
+              Sync completed! Cars are updated daily at 2 AM UTC.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Daily Sync Info */}
+      <div className="mt-4 pt-4 border-t text-xs text-muted-foreground">
+        <p>🕐 <strong>Automatic Daily Sync:</strong> Runs at 2 AM UTC to update cars and remove sold ones</p>
+        <p>🔄 <strong>Smart Recovery:</strong> Handles rate limits, API errors, and database issues automatically</p>
+        <p>📊 <strong>Progress Tracking:</strong> Real-time updates and resumable sync operations</p>
+      </div>
     </div>
   );
 };

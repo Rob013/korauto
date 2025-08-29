@@ -346,16 +346,19 @@ export type Database = {
       sync_status: {
         Row: {
           archived_lots_processed: number | null
+          batch_number: number | null
           cars_processed: number | null
           completed_at: string | null
           created_at: string
           current_page: number | null
           error_message: string | null
           id: string
+          is_scheduled: boolean | null
           last_activity_at: string | null
           last_archived_sync_at: string | null
           last_cars_sync_at: string | null
           last_successful_url: string | null
+          max_pages: number | null
           next_url: string | null
           records_processed: number | null
           retry_count: number | null
@@ -367,16 +370,19 @@ export type Database = {
         }
         Insert: {
           archived_lots_processed?: number | null
+          batch_number?: number | null
           cars_processed?: number | null
           completed_at?: string | null
           created_at?: string
           current_page?: number | null
           error_message?: string | null
           id?: string
+          is_scheduled?: boolean | null
           last_activity_at?: string | null
           last_archived_sync_at?: string | null
           last_cars_sync_at?: string | null
           last_successful_url?: string | null
+          max_pages?: number | null
           next_url?: string | null
           records_processed?: number | null
           retry_count?: number | null
@@ -388,16 +394,19 @@ export type Database = {
         }
         Update: {
           archived_lots_processed?: number | null
+          batch_number?: number | null
           cars_processed?: number | null
           completed_at?: string | null
           created_at?: string
           current_page?: number | null
           error_message?: string | null
           id?: string
+          is_scheduled?: boolean | null
           last_activity_at?: string | null
           last_archived_sync_at?: string | null
           last_cars_sync_at?: string | null
           last_successful_url?: string | null
+          max_pages?: number | null
           next_url?: string | null
           records_processed?: number | null
           retry_count?: number | null
