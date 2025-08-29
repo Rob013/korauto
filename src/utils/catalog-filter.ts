@@ -29,6 +29,8 @@ export interface APIFilters {
   seats_count?: string;
   max_accidents?: string;
   per_page?: string;
+  sort_by?: string;
+  sort_direction?: string;
 }
 
 export interface Car {
