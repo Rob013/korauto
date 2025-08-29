@@ -56,6 +56,7 @@ interface SyncProgress {
   rateLimitRetries: number;
   dbCapacityIssues: number;
   lastSuccessfulPage: number;
+  consecutiveEmptyPages: number;
   status: 'running' | 'completed' | 'failed' | 'paused';
   startTime: number;
 }
@@ -87,7 +88,7 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
   const processPageBatch = async (startPage: number, batchCount: number): Promise<void> => {
     const pagePromises = [];
     
-    for (let i = 0; i < batchCount && (startPage + i) <= 5000; i++) {
+    for (let i = 0; i < batchCount && (startPage + i) <= 20000; i++) {
       const pageNum = startPage + i;
       pagePromises.push(processSinglePage(pageNum));
     }
@@ -153,8 +154,11 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
         const cars: Car[] = data.data || [];
         
         if (cars.length === 0) {
-          console.log(`✅ Page ${pageNum} empty. Marking as complete.`);
+          progress.consecutiveEmptyPages++;
+          console.log(`✅ Page ${pageNum} empty (${progress.consecutiveEmptyPages} consecutive). Continuing...`);
           return;
+        } else {
+          progress.consecutiveEmptyPages = 0; // Reset counter on successful page
         }
 
         console.log(`⚡ SPEED Processing ${cars.length} cars from page ${pageNum}...`);
@@ -184,10 +188,8 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
         
         console.log(`🚀 Page ${pageNum} complete: ${successCount}/${cars.length} cars processed`);
         
-        // Check if this was the last page with data
-        if (cars.length < 100) {
-          console.log(`🎯 Page ${pageNum} had ${cars.length} cars (less than 100). Likely final page.`);
-        }
+        // Log page completion but don't assume it's the end
+        console.log(`🎯 Page ${pageNum} completed with ${cars.length} cars. Continuing sync...`);
         
         return; // Success!
         
@@ -213,8 +215,8 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
     }
   };
 
-  // ULTRA-FAST parallel page processing
-  while (progress.currentPage <= 5000 && progress.status === 'running') {
+  // ULTRA-FAST parallel page processing - continue until we hit end or 50 consecutive empty pages
+  while (progress.currentPage <= 20000 && progress.status === 'running' && progress.consecutiveEmptyPages < 50) {
     const startTime = Date.now();
     
     // Process multiple pages in parallel for maximum speed
@@ -241,8 +243,8 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
     await new Promise(resolve => setTimeout(resolve, MIN_DELAY));
   }
   
-  // Final status update
-  const finalStatus = progress.currentPage > 5000 ? 'completed' : 'paused';
+  // Final status update - determine completion based on multiple factors
+  const finalStatus = (progress.currentPage > 20000 || progress.consecutiveEmptyPages >= 50) ? 'completed' : 'paused';
   await updateSyncStatus(supabaseClient, {
     status: finalStatus,
     completed_at: finalStatus === 'completed' ? new Date().toISOString() : null,
@@ -473,6 +475,7 @@ Deno.serve(async (req) => {
         rateLimitRetries: 0,
         dbCapacityIssues: 0,
         lastSuccessfulPage: resumePage - 1,
+        consecutiveEmptyPages: 0,
         status: 'running',
         startTime: Date.now()
       };
@@ -484,6 +487,7 @@ Deno.serve(async (req) => {
         rateLimitRetries: 0,
         dbCapacityIssues: 0,
         lastSuccessfulPage: 0,
+        consecutiveEmptyPages: 0,
         status: 'running',
         startTime: Date.now()
       };
