@@ -66,14 +66,14 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
   const API_BASE_URL = 'https://auctionsapi.com/api';
   
-  // Ultra-aggressive settings optimized for MAXIMUM speed
-  const MAX_PARALLEL_REQUESTS = 4; // Increased parallel requests for speed
-  const BATCH_SIZE = 50; // Larger batches for faster processing
-  const MIN_DELAY = 200; // Reduced delay for faster processing
-  const MAX_RETRIES = 100; // Ultra-persistent retries
-  const RATE_LIMIT_MAX_RETRIES = 500; // Never give up on rate limits
-  const API_TIMEOUT = 90000; // 90 second timeout for stability
-  const ULTRA_FAST_MODE = true; // Enable ultra-fast processing
+  // MAXIMUM SPEED settings - ULTRA FAST MODE
+  const MAX_PARALLEL_REQUESTS = 12; // Maximum parallel requests for ultra speed
+  const BATCH_SIZE = 100; // Maximum batch size for blazing fast processing
+  const MIN_DELAY = 50; // Minimum safe delay for maximum throughput
+  const MAX_RETRIES = 250; // Ultra-persistent retries - never give up
+  const RATE_LIMIT_MAX_RETRIES = 1000; // Maximum rate limit retries for persistence
+  const API_TIMEOUT = 60000; // 60 second timeout for faster failures and recovery
+  const ULTRA_FAST_MODE = true; // Enable maximum ultra-fast processing
   
   console.log('🚀 Starting ULTRA-FAST sync with bulletproof rate limit handling...');
   
@@ -645,16 +645,18 @@ Deno.serve(async (req) => {
         pagesProcessed: 0,
         startedAt: new Date().toISOString(),
         features: [
-          '⚡ 4x parallel page processing',
-          '🔥 50-car batch database writes', 
-          '🛡️ 100 retries per request',
-          '💪 500 rate limit retries',
+          '⚡ 12x parallel page processing (MAXIMUM)',
+          '🔥 100-car batch database writes (DOUBLED)', 
+          '🛡️ 250 retries per request (ULTRA)',
+          '💪 1000 rate limit retries (NEVER GIVE UP)',
           '🎯 Never stops until complete',
           '📊 Real-time progress tracking',
           '🚀 Ultra-fast mode enabled',
-          '🔄 2000 auto-restarts available'
+          '🔄 2000 auto-restarts available',
+          '⚡ 50ms minimum delays (MAXIMUM SPEED)',
+          '🏃‍♂️ 60s timeout for faster recovery'
         ],
-        note: 'Ultra-fast sync running in background. Resuming from 13,000 cars at maximum speed. Check sync_status table for live progress.'
+        note: 'ULTRA-MAX SPEED sync running in background. 12x parallel processing, 1000 rate limit retries, 100-car batches. Resuming from 13,000 cars at MAXIMUM possible speed. Check sync_status table for live progress.'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
