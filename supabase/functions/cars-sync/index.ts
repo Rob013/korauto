@@ -49,6 +49,241 @@ interface Car {
   }[];
 }
 
+interface SyncProgress {
+  totalSynced: number;
+  currentPage: number;
+  errorCount: number;
+  rateLimitRetries: number;
+  dbCapacityIssues: number;
+  lastSuccessfulPage: number;
+  status: 'running' | 'completed' | 'failed' | 'paused';
+  startTime: number;
+}
+
+// Background sync function that can handle long operations
+async function performBackgroundSync(supabaseClient: any, progress: SyncProgress): Promise<SyncProgress> {
+  const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
+  const API_BASE_URL = 'https://auctionsapi.com/api';
+  const maxErrors = 100;
+  const maxRateLimitRetries = 50;
+  const maxPages = 5000; // Reasonable limit to prevent infinite loops
+  
+  console.log('🔄 Starting background sync process...');
+  
+  // Update sync status in database
+  await updateSyncStatus(supabaseClient, {
+    status: 'running',
+    current_page: progress.currentPage,
+    records_processed: progress.totalSynced,
+    last_activity_at: new Date().toISOString()
+  });
+
+  while (progress.currentPage <= maxPages && progress.status === 'running') {
+    try {
+      console.log(`📄 Processing page ${progress.currentPage}...`);
+      
+      // Rate limiting with exponential backoff
+      const baseDelay = Math.min(5000, 1000 * Math.pow(1.5, Math.min(progress.rateLimitRetries, 10)));
+      await new Promise(resolve => setTimeout(resolve, baseDelay));
+      
+      const response = await fetchWithRetry(
+        `${API_BASE_URL}/cars?per_page=100&page=${progress.currentPage}`,
+        { headers: { 'accept': '*/*', 'x-api-key': API_KEY } },
+        5
+      );
+      
+      if (!response.ok) {
+        if (response.status === 429) {
+          progress.rateLimitRetries++;
+          console.log(`⏰ Rate limited. Retry ${progress.rateLimitRetries}/${maxRateLimitRetries}`);
+          
+          if (progress.rateLimitRetries >= maxRateLimitRetries) {
+            console.log('❌ Too many rate limit retries. Pausing sync.');
+            progress.status = 'paused';
+            break;
+          }
+          
+          // Exponential backoff for rate limits
+          const waitTime = Math.min(60000, 5000 * Math.pow(2, Math.min(progress.rateLimitRetries, 6)));
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          continue;
+        } else {
+          progress.errorCount++;
+          console.error(`❌ API error ${response.status}: ${response.statusText}`);
+          
+          if (progress.errorCount >= maxErrors) {
+            console.log('❌ Too many API errors. Stopping sync.');
+            progress.status = 'failed';
+            break;
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          progress.currentPage++;
+          continue;
+        }
+      }
+
+      const data = await response.json();
+      const cars: Car[] = data.data || [];
+      
+      if (cars.length === 0) {
+        console.log('✅ No more cars available. Sync complete.');
+        progress.status = 'completed';
+        break;
+      }
+
+      console.log(`🔄 Processing ${cars.length} cars from page ${progress.currentPage}...`);
+
+      // Process cars in smaller batches to avoid overwhelming the database
+      const batchSize = 5;
+      for (let i = 0; i < cars.length; i += batchSize) {
+        const batch = cars.slice(i, i + batchSize);
+        
+        const results = await Promise.allSettled(
+          batch.map(car => processSingleCar(supabaseClient, car))
+        );
+        
+        results.forEach((result, index) => {
+          if (result.status === 'fulfilled' && result.value.success) {
+            progress.totalSynced++;
+          } else {
+            progress.dbCapacityIssues++;
+            console.error(`❌ Failed to process car ${batch[index].id}:`, 
+              result.status === 'rejected' ? result.reason : result.value.error);
+          }
+        });
+        
+        // Small delay between batches
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      progress.lastSuccessfulPage = progress.currentPage;
+      progress.currentPage++;
+      
+      // Update progress every 10 pages
+      if (progress.currentPage % 10 === 0) {
+        await updateSyncStatus(supabaseClient, {
+          current_page: progress.currentPage,
+          records_processed: progress.totalSynced,
+          last_activity_at: new Date().toISOString()
+        });
+        
+        console.log(`📊 Progress: Page ${progress.currentPage}, Synced: ${progress.totalSynced}, Errors: ${progress.errorCount}`);
+      }
+
+      // Check if we got fewer cars than expected (likely last page)
+      if (cars.length < 100) {
+        console.log(`📊 Got ${cars.length} cars (less than 100). Likely last page.`);
+        progress.status = 'completed';
+        break;
+      }
+      
+    } catch (error) {
+      progress.errorCount++;
+      console.error(`❌ Error processing page ${progress.currentPage}:`, error);
+      
+      if (progress.errorCount >= maxErrors) {
+        progress.status = 'failed';
+        break;
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      progress.currentPage++;
+    }
+  }
+  
+  // Final status update
+  await updateSyncStatus(supabaseClient, {
+    status: progress.status === 'running' ? 'completed' : progress.status,
+    completed_at: progress.status !== 'running' ? new Date().toISOString() : null,
+    current_page: progress.currentPage,
+    records_processed: progress.totalSynced,
+    last_activity_at: new Date().toISOString()
+  });
+  
+  console.log(`✅ Background sync ${progress.status}. Total synced: ${progress.totalSynced}`);
+  return progress;
+}
+
+async function fetchWithRetry(url: string, options: any, maxRetries: number): Promise<Response> {
+  let lastError;
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const response = await fetch(url, options);
+      return response;
+    } catch (error) {
+      lastError = error;
+      if (i < maxRetries - 1) {
+        const waitTime = Math.min(10000, 1000 * Math.pow(2, i));
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+    }
+  }
+  
+  throw lastError;
+}
+
+async function processSingleCar(supabaseClient: any, car: Car): Promise<{success: boolean, error?: string}> {
+  try {
+    const lot = car.lots?.[0];
+    const price = lot?.buy_now ? Math.round(lot.buy_now + 2300) : null;
+    const priceInCents = price ? price * 100 : null;
+    const mileageKm = lot?.odometer?.km || null;
+    
+    const carCache = {
+      id: car.id.toString(),
+      api_id: car.id.toString(),
+      make: car.manufacturer?.name || 'Unknown',
+      model: car.model?.name || 'Unknown',
+      year: car.year || 2020,
+      price: price,
+      price_cents: priceInCents,
+      mileage: mileageKm?.toString() || null,
+      rank_score: price ? (1 / price) * 1000000 : 0,
+      vin: car.vin,
+      fuel: car.fuel?.name,
+      transmission: car.transmission?.name,
+      color: car.color?.name,
+      condition: lot?.condition?.name?.replace('run_and_drives', 'Good'),
+      lot_number: lot?.lot,
+      images: JSON.stringify(lot?.images?.normal || lot?.images?.big || []),
+      car_data: JSON.stringify(car),
+      lot_data: JSON.stringify(lot || {}),
+      last_api_sync: new Date().toISOString()
+    };
+
+    const { error } = await supabaseClient
+      .from('cars_cache')
+      .upsert(carCache, { 
+        onConflict: 'id',
+        ignoreDuplicates: false 
+      });
+
+    return { success: !error, error: error?.message };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+async function updateSyncStatus(supabaseClient: any, updates: any) {
+  try {
+    const { error } = await supabaseClient
+      .from('sync_status')
+      .upsert({
+        id: 'cars-sync-main',
+        sync_type: 'full',
+        ...updates
+      }, { onConflict: 'id' });
+      
+    if (error) {
+      console.error('Failed to update sync status:', error);
+    }
+  } catch (err) {
+    console.error('Error updating sync status:', err);
+  }
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -56,11 +291,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('🚀 Starting cars sync function...');
-    console.log('📋 Request method:', req.method);
-    console.log('📋 Request headers:', Object.fromEntries(req.headers.entries()));
+    console.log('🚀 Starting smart cars sync function...');
     
-    // Check environment variables
     const supabaseUrl = 'https://qtyyiqimkysmjnaocswe.supabase.co';
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
@@ -69,271 +301,89 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'Missing SUPABASE_SERVICE_ROLE_KEY environment variable',
-          timestamp: new Date().toISOString()
+          error: 'Missing SUPABASE_SERVICE_ROLE_KEY environment variable'
         }),
         { 
-          status: 500,
+          status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
     }
-    
-    console.log('✅ Environment variables check passed');
 
     const supabaseClient = createClient(supabaseUrl, serviceRoleKey);
-    console.log('✅ Supabase client created successfully');
 
-    console.log('🚀 Starting cars sync...');
-    
-    const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
-    const API_BASE_URL = 'https://auctionsapi.com/api';
-    
-     let page = 1;
-    let totalSynced = 0;
-    let hasMorePages = true;
-    let errorCount = 0;
-    let dbCapacityIssues = 0;
-    let rateLimitRetries = 0;
-    const maxErrors = 50; // Stop if too many errors
-    const maxRateLimitRetries = 10; // Stop if too many rate limit issues
-    const maxPagesPerExecution = 50; // Limit pages to prevent timeout
-    const startTime = Date.now();
-    const maxExecutionTime = 4 * 60 * 1000; // 4 minutes max execution
-    
-    console.log('📊 Starting full sync of all available cars from API...');
-    
-    while (hasMorePages && page <= maxPagesPerExecution) { // Limit pages per execution
-      // Check execution time to prevent timeout
-      const elapsedTime = Date.now() - startTime;
-      if (elapsedTime > maxExecutionTime) {
-        console.log(`⏰ Execution time limit reached (${elapsedTime}ms). Stopping sync gracefully.`);
-        break;
-      }
-      
-      console.log(`📄 Fetching page ${page}... (elapsed: ${Math.round(elapsedTime/1000)}s)`);
-      
-      // Rate limiting: wait longer between requests to avoid overwhelming the API
-      if (page > 1) {
-        console.log(`⏰ Waiting 2 seconds before next API request...`);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
-      
-      let retryCount = 0;
-      let success = false;
-      let response;
-      
-      // Retry logic with exponential backoff for rate limiting
-      while (retryCount < 5 && !success) {
-        try {
-          response = await fetch(`${API_BASE_URL}/cars?per_page=50&page=${page}`, {
-            headers: {
-              'accept': '*/*',
-              'x-api-key': API_KEY
-            }
+    // Check for existing running sync
+    const { data: existingSync } = await supabaseClient
+      .from('sync_status')
+      .select('*')
+      .eq('id', 'cars-sync-main')
+      .eq('status', 'running')
+      .single();
+
+    if (existingSync) {
+      console.log('⏰ Sync already running. Returning existing status.');
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Sync already in progress',
+          status: 'running',
+          currentPage: existingSync.current_page,
+          totalSynced: existingSync.records_processed
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Initialize progress
+    const progress: SyncProgress = {
+      totalSynced: 0,
+      currentPage: 1,
+      errorCount: 0,
+      rateLimitRetries: 0,
+      dbCapacityIssues: 0,
+      lastSuccessfulPage: 0,
+      status: 'running',
+      startTime: Date.now()
+    };
+
+    // Start background sync process
+    EdgeRuntime.waitUntil(
+      performBackgroundSync(supabaseClient, progress)
+        .catch(error => {
+          console.error('❌ Background sync failed:', error);
+          return updateSyncStatus(supabaseClient, {
+            status: 'failed',
+            error_message: error.message,
+            completed_at: new Date().toISOString()
           });
+        })
+    );
 
-          if (response.status === 429) {
-            // Rate limited - wait with exponential backoff
-            const waitTime = Math.min(30000, (2 ** retryCount) * 1000); // Max 30 seconds
-            console.log(`⏰ Rate limited (429). Waiting ${waitTime}ms before retry ${retryCount + 1}/5...`);
-            rateLimitRetries++;
-            
-            if (rateLimitRetries >= maxRateLimitRetries) {
-              console.error('❌ Too many rate limit retries, stopping sync');
-              hasMorePages = false;
-              break;
-            }
-            
-            await new Promise(resolve => setTimeout(resolve, waitTime));
-            retryCount++;
-            continue;
-          }
-
-          if (!response.ok) {
-            console.error(`❌ API request failed: ${response.status} ${response.statusText}`);
-            errorCount++;
-            if (errorCount >= maxErrors) {
-              console.error('❌ Too many API errors, stopping sync');
-              hasMorePages = false;
-              break;
-            }
-            // Wait and retry for other errors
-            await new Promise(resolve => setTimeout(resolve, 5000));
-            retryCount++;
-            continue;
-          }
-          
-          success = true;
-        } catch (fetchError) {
-          console.error(`❌ Fetch error on attempt ${retryCount + 1}:`, fetchError);
-          retryCount++;
-          if (retryCount < 5) {
-            const waitTime = Math.min(10000, (2 ** retryCount) * 1000); // Max 10 seconds
-            await new Promise(resolve => setTimeout(resolve, waitTime));
-          }
-        }
-      }
-      
-      if (!success || !response) {
-        console.error(`❌ Failed to fetch page ${page} after 5 retries, stopping sync`);
-        break;
-      }
-
-      const data = await response.json();
-      const cars: Car[] = data.data || [];
-      
-      console.log(`📊 API Response: Page ${page}, Cars: ${cars.length}, Total Available: ${data.total || 'unknown'}`);
-      
-      if (cars.length === 0) {
-        console.log('✅ No more cars to sync - empty response');
-        hasMorePages = false;
-        break;
-      }
-
-      console.log(`🔄 Processing ${cars.length} cars from page ${page}...`);
-
-      // Process cars in batches
-      const batchSize = 10;
-      for (let i = 0; i < cars.length; i += batchSize) {
-        const batch = cars.slice(i, i + batchSize);
-        
-        await Promise.all(batch.map(async (car) => {
-          try {
-            const lot = car.lots?.[0];
-            const price = lot?.buy_now ? Math.round(lot.buy_now + 2300) : null;
-            const priceInCents = price ? price * 100 : null; // For proper sorting
-            const mileageKm = lot?.odometer?.km || null;
-            
-            const carCache = {
-              id: car.id.toString(),
-              api_id: car.id.toString(),
-              make: car.manufacturer?.name || 'Unknown',
-              model: car.model?.name || 'Unknown',
-              year: car.year || 2020,
-              price: price,
-              price_cents: priceInCents, // Add for sorting
-              mileage: mileageKm, // Store as number for sorting
-              rank_score: price ? (1 / price) * 1000000 : 0, // Higher score for cheaper cars
-              vin: car.vin,
-              fuel: car.fuel?.name,
-              transmission: car.transmission?.name,
-              color: car.color?.name,
-              condition: lot?.condition?.name?.replace('run_and_drives', 'Good'),
-              lot_number: lot?.lot,
-              images: JSON.stringify(lot?.images?.normal || lot?.images?.big || []),
-              car_data: JSON.stringify(car),
-              lot_data: JSON.stringify(lot || {}),
-              last_api_sync: new Date().toISOString()
-            };
-
-            const { error } = await supabaseClient
-              .from('cars_cache')
-              .upsert(carCache, { 
-                onConflict: 'id',
-                ignoreDuplicates: false 
-              });
-
-            if (error) {
-              console.error(`❌ Error upserting car ${car.id}:`, error);
-              dbCapacityIssues++;
-              
-              // Check if it's a database capacity issue
-              if (error.message?.includes('insufficient_resources') || 
-                  error.message?.includes('storage_full') ||
-                  error.message?.includes('quota')) {
-                console.error('🚨 Database capacity issue detected!');
-              }
-            } else {
-              totalSynced++;
-            }
-          } catch (err) {
-            console.error(`❌ Error processing car ${car.id}:`, err);
-          }
-        }));
-      }
-
-      // Continue to next page - reduced per_page from 100 to 50 to be less aggressive
-      // Check if we got fewer cars than requested (50)
-      if (cars.length < 50) {
-        console.log(`📊 Got ${cars.length} cars (less than 50), assuming last page`);
-        hasMorePages = false;
-      } else {
-        hasMorePages = true;
-      }
-      
-      page++;
-      
-      // Progress logging
-      if (page % 20 === 0) {
-        console.log(`📊 Progress: Page ${page}, Total synced: ${totalSynced}, DB errors: ${dbCapacityIssues}, Rate limit retries: ${rateLimitRetries}`);
-      }
-    }
-
-    console.log(`✅ Sync completed! Total cars synced: ${totalSynced}`);
-    console.log(`📊 Final stats: Pages processed: ${page-1}, DB errors: ${dbCapacityIssues}, API errors: ${errorCount}, Rate limit retries: ${rateLimitRetries}`);
-    
-    const executionTime = Date.now() - startTime;
-    const hitPageLimit = page > maxPagesPerExecution;
-    const hitTimeLimit = executionTime > maxExecutionTime;
-    
-    if (dbCapacityIssues > 0) {
-      console.warn(`⚠️ Database capacity issues detected: ${dbCapacityIssues} errors`);
-    }
-    
-    if (rateLimitRetries > 0) {
-      console.warn(`⚠️ Rate limiting encountered: ${rateLimitRetries} retries needed`);
-    }
-    
-    if (hitPageLimit) {
-      console.log(`📊 Reached page limit (${maxPagesPerExecution}). More cars may be available.`);
-    }
-    
-    if (hitTimeLimit) {
-      console.log(`⏰ Reached time limit (${Math.round(executionTime/1000)}s). More cars may be available.`);
-    }
-
+    // Return immediate response
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Successfully synced ${totalSynced} cars from ${page-1} pages`,
-        totalSynced,
-        pagesProcessed: page-1,
-        dbCapacityIssues,
-        apiErrors: errorCount,
-        rateLimitRetries,
-        executionTimeMs: executionTime,
-        hitPageLimit,
-        hitTimeLimit,
-        moreDataAvailable: hitPageLimit || hitTimeLimit,
-        warnings: [
-          ...(dbCapacityIssues > 0 ? ['Database capacity issues detected'] : []),
-          ...(rateLimitRetries > 0 ? ['Rate limiting encountered during sync'] : []),
-          ...(hitPageLimit ? ['Page limit reached - more data may be available'] : []),
-          ...(hitTimeLimit ? ['Time limit reached - more data may be available'] : [])
-        ]
+        message: 'Smart sync started in background',
+        status: 'running',
+        totalSynced: 0,
+        pagesProcessed: 0,
+        startedAt: new Date().toISOString(),
+        note: 'Sync is running in background. Check sync_status table for progress.'
       }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('❌ Cars sync failed:', error);
-    console.error('❌ Error stack:', error.stack);
-    console.error('❌ Error name:', error.name);
+    console.error('❌ Cars sync initialization failed:', error);
     
-    // Return 200 status with error details instead of 500 to avoid "non-2xx" error
     return new Response(
       JSON.stringify({
         success: false,
         error: error.message || 'Unknown error occurred',
-        errorName: error.name || 'UnknownError',
-        timestamp: new Date().toISOString(),
-        stack: error.stack || 'No stack trace available'
+        timestamp: new Date().toISOString()
       }),
       { 
-        status: 200, // Changed from 500 to 200 to prevent "non-2xx" error
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
