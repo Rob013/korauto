@@ -36,7 +36,6 @@ import { useNavigate } from "react-router-dom";
 import AuthLogin from "@/components/AuthLogin";
 import { CarsSyncButton } from "@/components/CarsSyncButton";
 import AdminCarSearch from "@/components/AdminCarSearch";
-import AdminCarSync from "@/components/AdminCarSync";
 import { CookieManagementDashboard } from "@/components/CookieManagementDashboard";
 import PerformanceAuditWidget from "@/components/PerformanceAuditWidget";
 
@@ -752,9 +751,8 @@ const AdminDashboard = () => {
           onValueChange={setActiveTab}
           className="space-y-3 sm:space-y-4"
         >
-          <TabsList className="grid w-full grid-cols-6 h-auto">
+          <TabsList className="grid w-full grid-cols-5 h-auto">
             <TabsTrigger value="overview" className="text-xs sm:text-sm p-2 sm:p-3">Overview</TabsTrigger>
-            <TabsTrigger value="sync" className="text-xs sm:text-sm p-2 sm:p-3">Car Sync</TabsTrigger>
             <TabsTrigger value="inspections" className="text-xs sm:text-sm p-2 sm:p-3">Inspections</TabsTrigger>
             <TabsTrigger value="analytics" className="text-xs sm:text-sm p-2 sm:p-3">Analytics</TabsTrigger>
             <TabsTrigger value="performance" className="text-xs sm:text-sm p-2 sm:p-3">Performance</TabsTrigger>
@@ -790,19 +788,9 @@ const AdminDashboard = () => {
                   <div className="text-xl sm:text-2xl font-bold text-green-900 dark:text-green-100">
                     {stats.totalCachedCars.toLocaleString()}
                   </div>
-                  <div className="flex items-center justify-between mt-1">
-                    <p className="text-xs text-green-700 dark:text-green-300">
-                      +{stats.recentCarSyncs} recently synced
-                    </p>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 px-2 text-xs text-green-700 hover:text-green-800 hover:bg-green-100"
-                      onClick={() => setActiveTab('sync')}
-                    >
-                      Sync
-                    </Button>
-                  </div>
+                  <p className="text-xs text-green-700 dark:text-green-300">
+                    +{stats.recentCarSyncs} recently synced
+                  </p>
                 </CardContent>
               </Card>
 
@@ -1118,11 +1106,6 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
-
-          <TabsContent value="sync" className="space-y-3 sm:space-y-4">
-            {/* Car Sync Dashboard */}
-            <AdminCarSync />
           </TabsContent>
 
           <TabsContent value="inspections" className="space-y-3 sm:space-y-4">
