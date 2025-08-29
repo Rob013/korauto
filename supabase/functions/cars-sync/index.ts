@@ -99,8 +99,10 @@ Deno.serve(async (req) => {
       const data = await response.json();
       const cars: Car[] = data.data || [];
       
+      console.log(`📊 API Response: Page ${page}, Cars: ${cars.length}, Total Available: ${data.total || 'unknown'}`);
+      
       if (cars.length === 0) {
-        console.log('✅ No more cars to sync');
+        console.log('✅ No more cars to sync - empty response');
         hasMorePages = false;
         break;
       }
@@ -168,9 +170,15 @@ Deno.serve(async (req) => {
         }));
       }
 
-      // Check if there are more pages
-      const hasNext = data.meta?.current_page < data.meta?.last_page;
-      hasMorePages = hasNext;
+      // Continue to next page - the API seems to return data until no more cars
+      // Instead of relying on pagination metadata, check if we got fewer cars than requested
+      if (cars.length < 100) {
+        console.log(`📊 Got ${cars.length} cars (less than 100), assuming last page`);
+        hasMorePages = false;
+      } else {
+        hasMorePages = true;
+      }
+      
       page++;
       
       // Progress logging
