@@ -134,8 +134,8 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
 
       console.log(`🔄 Processing ${cars.length} cars from page ${progress.currentPage}...`);
 
-      // Process cars in smaller batches to avoid overwhelming the database
-      const batchSize = 5;
+      // Process cars in optimized batches for maximum throughput
+      const batchSize = 20; // Increased from 5 to 20
       for (let i = 0; i < cars.length; i += batchSize) {
         const batch = cars.slice(i, i + batchSize);
         
@@ -153,22 +153,24 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
           }
         });
         
-        // Small delay between batches
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Reduced delay for faster processing
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
 
       progress.lastSuccessfulPage = progress.currentPage;
       progress.currentPage++;
       
-      // Update progress every 10 pages
-      if (progress.currentPage % 10 === 0) {
+      // Update progress every 5 pages for more frequent updates
+      if (progress.currentPage % 5 === 0) {
+        const syncRate = Math.round(progress.totalSynced / ((Date.now() - progress.startTime) / 60000));
         await updateSyncStatus(supabaseClient, {
           current_page: progress.currentPage,
           records_processed: progress.totalSynced,
-          last_activity_at: new Date().toISOString()
+          last_activity_at: new Date().toISOString(),
+          error_message: `Rate: ${syncRate} cars/min, Errors: ${progress.errorCount}, Rate limits: ${progress.rateLimitRetries}`
         });
         
-        console.log(`📊 Progress: Page ${progress.currentPage}, Synced: ${progress.totalSynced}, Errors: ${progress.errorCount}`);
+        console.log(`📊 Progress: Page ${progress.currentPage}, Synced: ${progress.totalSynced}, Rate: ${syncRate} cars/min, Errors: ${progress.errorCount}`);
       }
 
       // Check if we got fewer cars than expected (likely last page)

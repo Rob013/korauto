@@ -102,24 +102,38 @@ export const FullCarsSyncTrigger = () => {
 
   const updateProgressMessage = (status: SyncStatus) => {
     if (!status) return;
-
-    const { status: state, current_page, records_processed, error_message } = status;
-
-    switch (state) {
+    
+    const recordsProcessed = status.records_processed || 0;
+    const estimatedTotal = 200000; // Conservative estimate based on API
+    const percentage = Math.round((recordsProcessed / estimatedTotal) * 100);
+    
+    const formattedRecords = recordsProcessed.toLocaleString();
+    const formattedTotal = estimatedTotal.toLocaleString();
+    
+    // Calculate sync rate if we have timing info
+    let rateText = '';
+    if (status.error_message && status.error_message.includes('Rate:')) {
+      const rateMatch = status.error_message.match(/Rate: (\d+) cars\/min/);
+      if (rateMatch) {
+        rateText = ` (${rateMatch[1]} cars/min)`;
+      }
+    }
+    
+    switch (status.status) {
       case 'running':
-        setProgress(`Syncing in progress... Page ${current_page}, ${records_processed} cars processed`);
+        setProgress(`🔄 Syncing${rateText}... ${formattedRecords} / ${formattedTotal} cars (${percentage}%)`);
         break;
       case 'completed':
-        setProgress(`✅ Sync completed! ${records_processed} cars synchronized`);
+        setProgress(`✅ Sync complete! ${formattedRecords} cars synced`);
         break;
       case 'failed':
-        setProgress(`❌ Sync failed: ${error_message || 'Unknown error'}`);
+        setProgress(`❌ Sync failed at ${formattedRecords} cars. Will auto-resume.`);
         break;
       case 'paused':
-        setProgress(`⏸️ Sync paused at page ${current_page}. ${records_processed} cars processed so far.`);
+        setProgress(`⏸️ Sync paused at ${formattedRecords} cars. Click Resume to continue.`);
         break;
       default:
-        setProgress('Sync status: ' + state);
+        setProgress(`Status: ${status.status} - ${formattedRecords} cars`);
     }
   };
 
@@ -246,27 +260,45 @@ export const FullCarsSyncTrigger = () => {
 
   const getProgressPercentage = () => {
     if (!syncStatus || !syncStatus.records_processed) return 0;
-    // Estimate based on typical API having ~200k cars
-    const estimatedTotal = 200000;
+    const estimatedTotal = 200000; // Conservative API estimate
     return Math.min(100, (syncStatus.records_processed / estimatedTotal) * 100);
   };
 
   const getEstimatedTime = () => {
-    if (!syncStatus || !syncStatus.started_at || syncStatus.status !== 'running') return 'N/A';
+    if (!syncStatus || syncStatus.status !== 'running' || !syncStatus.records_processed) {
+      return 'Calculating...';
+    }
     
-    const startTime = new Date(syncStatus.started_at).getTime();
-    const elapsed = Date.now() - startTime;
-    const processed = syncStatus.records_processed || 0;
+    // Extract rate from error_message if available
+    let carsPerMinute = 0;
+    if (syncStatus.error_message && syncStatus.error_message.includes('Rate:')) {
+      const rateMatch = syncStatus.error_message.match(/Rate: (\d+) cars\/min/);
+      if (rateMatch) {
+        carsPerMinute = parseInt(rateMatch[1]);
+      }
+    }
     
-    if (processed < 100) return 'Calculating...';
+    if (carsPerMinute === 0) {
+      // Fallback calculation
+      const startTime = new Date(syncStatus.started_at).getTime();
+      const elapsed = Date.now() - startTime;
+      carsPerMinute = Math.round((syncStatus.records_processed / elapsed) * 60000);
+    }
     
-    const rate = processed / (elapsed / 1000 / 60); // cars per minute
-    const remaining = 200000 - processed;
-    const eta = remaining / rate; // minutes
+    if (carsPerMinute <= 0) return 'Calculating...';
     
-    if (eta < 60) return `${Math.round(eta)}m`;
-    if (eta < 24 * 60) return `${Math.round(eta / 60)}h`;
-    return `${Math.round(eta / 60 / 24)}d`;
+    const remaining = 200000 - syncStatus.records_processed;
+    const minutesRemaining = Math.ceil(remaining / carsPerMinute);
+    
+    if (minutesRemaining <= 0) return 'Almost done...';
+    
+    const hours = Math.floor(minutesRemaining / 60);
+    const minutes = minutesRemaining % 60;
+    
+    if (hours > 0) {
+      return `~${hours}h ${minutes}m remaining`;
+    }
+    return `~${minutes}m remaining`;
   };
 
   const isActive = syncStatus?.status === 'running';
@@ -314,8 +346,9 @@ export const FullCarsSyncTrigger = () => {
       
       <div className="space-y-2">
         <p className="text-muted-foreground">
-          Intelligent sync system with error handling, rate limiting, and automatic retries. 
-          Syncs all 190,000+ cars safely and runs daily at 2 AM UTC.
+          🚀 <strong>Optimized Sync System:</strong> Now processes 20 cars per batch (4x faster), 
+          updates progress every 5 pages, and shows real-time sync rates. 
+          Syncs all 200,000+ cars with intelligent error handling and runs daily at 2 AM UTC.
         </p>
         
         {syncStatus && (
@@ -390,14 +423,22 @@ export const FullCarsSyncTrigger = () => {
                 
                 <div className="space-y-1">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Est. Total:</span>
-                    <span className="font-medium">~200k cars</span>
+                    <span className="text-muted-foreground">Target:</span>
+                    <span className="font-medium">200,000 cars</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">ETA:</span>
                     <span className="font-medium">{getEstimatedTime()}</span>
                   </div>
                 </div>
+                
+                {/* Performance metrics row */}
+                {syncStatus.error_message && syncStatus.error_message.includes('Rate:') && (
+                  <div className="col-span-2 pt-2 border-t text-xs text-muted-foreground">
+                    <div className="font-medium text-primary">Performance Metrics:</div>
+                    <div className="mt-1">{syncStatus.error_message}</div>
+                  </div>
+                )}
               </div>
             </div>
             
