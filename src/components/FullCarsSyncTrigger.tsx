@@ -432,34 +432,8 @@ export const FullCarsSyncTrigger = () => {
         )}
       </div>
       
-      <div className="space-y-2">
-        <p className="text-muted-foreground">
-          🚀 <strong>MAXIMUM SPEED SYNC SYSTEM:</strong> Processes 3 pages simultaneously with 50-car database batches. 
-          Features bulletproof error handling with 20 retries per request and 100 rate-limit retries. 
-          NEVER STOPS until complete - handles any API issue automatically!
-        </p>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-          <div className="space-y-1">
-            <p><strong>🔥 Speed Features:</strong></p>
-            <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
-              <li>3x parallel page processing</li>
-              <li>50-car batch database writes</li>
-              <li>Minimal 10ms delays</li>
-              <li>45-second request timeouts</li>
-            </ul>
-          </div>
-          
-          <div className="space-y-1">
-            <p><strong>🛡️ Bulletproof Features:</strong></p>
-            <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
-              <li>20 retries per failed request</li>
-              <li>100 rate-limit retry attempts</li>
-              <li>Smart adaptive delays</li>
-              <li>Never stops until 100% complete</li>
-            </ul>
-          </div>
-        </div>
+      <div className="text-sm text-muted-foreground">
+        High-speed car sync system with automatic error recovery.
       </div>
         
       {syncStatus && (
@@ -511,60 +485,31 @@ export const FullCarsSyncTrigger = () => {
               </div>
             </div>
             
-            {/* Detailed Progress Stats */}
-            <div className="grid grid-cols-2 gap-4 text-xs bg-muted/50 p-3 rounded">
-              <div className="space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Current Page:</span>
-                  <span className="font-medium">{syncStatus.current_page?.toLocaleString() || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Status:</span>
-                  <span className={`font-medium capitalize ${
-                    isCompleted ? 'text-green-600' : 
-                    isActive ? 'text-blue-600' : 
-                    syncStatus.status === 'failed' ? 'text-red-600' : 
-                    'text-yellow-600'
-                  }`}>
-                    {syncStatus.status}
-                    {isActive && <span className="ml-1 animate-pulse">●</span>}
-                  </span>
-                </div>
+            {/* Simple Progress Stats */}
+            <div className="flex justify-between items-center text-sm bg-muted/50 p-3 rounded">
+              <div>
+                <span className="text-muted-foreground">Page:</span>
+                <span className="ml-2 font-medium">{syncStatus.current_page?.toLocaleString() || 0}</span>
               </div>
-              
-              <div className="space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Target:</span>
-                  <span className="font-medium">200,000 cars</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">ETA:</span>
-                  <span className="font-medium">{getEstimatedTime()}</span>
-                </div>
+              <div>
+                <span className="text-muted-foreground">Status:</span>
+                <span className={`ml-2 font-medium capitalize ${
+                  isCompleted ? 'text-green-600' : 
+                  isActive ? 'text-blue-600' : 
+                  syncStatus.status === 'failed' ? 'text-red-600' : 
+                  'text-yellow-600'
+                }`}>
+                  {syncStatus.status}
+                  {isActive && <span className="ml-1 animate-pulse">●</span>}
+                </span>
               </div>
-              
-              {/* Performance metrics row */}
-              {syncStatus.error_message && syncStatus.error_message.includes('Rate:') && (
-                <div className="col-span-2 pt-2 border-t text-xs text-muted-foreground">
-                  <div className="font-medium text-primary">Performance Metrics:</div>
-                  <div className="mt-1">{syncStatus.error_message}</div>
-                </div>
-              )}
+              <div>
+                <span className="text-muted-foreground">ETA:</span>
+                <span className="ml-2 font-medium">{getEstimatedTime()}</span>
+              </div>
             </div>
           </div>
           
-          {/* Additional Status Info */}
-          <div className="text-sm space-y-1 border-t pt-3">
-            {syncStatus.started_at && (
-              <p><strong>Started:</strong> {new Date(syncStatus.started_at).toLocaleString()}</p>
-            )}
-            {syncStatus.completed_at && (
-              <p><strong>Completed:</strong> {new Date(syncStatus.completed_at).toLocaleString()}</p>
-            )}
-            {syncStatus.last_activity_at && isActive && (
-              <p><strong>Last Activity:</strong> {new Date(syncStatus.last_activity_at).toLocaleString()}</p>
-            )}
-          </div>
         </div>
       )}
       
@@ -586,7 +531,7 @@ export const FullCarsSyncTrigger = () => {
               Syncing...
             </>
           ) : (
-            '🚀 Start Stable Speed Sync'
+            'Start Sync'
           )}
         </Button>
         
@@ -620,18 +565,6 @@ export const FullCarsSyncTrigger = () => {
         </div>
       )}
       
-      <div className="mt-4 p-4 bg-muted rounded-lg">
-        <h4 className="font-semibold mb-2">🔄 Stable Smart Sync Features</h4>
-        <ul className="text-sm space-y-1 text-muted-foreground">
-          <li>• <strong>🚀 STABLE SPEED:</strong> 3x parallel processing with 50-car batch writes</li>
-          <li>• <strong>🛡️ BULLETPROOF:</strong> 50 retries per request, 100 rate-limit retries</li>
-          <li>• <strong>⚡ NEVER STOPS:</strong> Handles ANY error automatically until 100% complete</li>
-          <li>• <strong>📊 REAL-TIME:</strong> Live progress with speed metrics every few seconds</li>
-          <li>• <strong>🎯 SMART RESUME:</strong> Auto-recovery from any interruption</li>
-          <li>• <strong>🔧 TIMEOUT PREVENTION:</strong> 30s timeouts prevent edge function failures</li>
-          <li>• <strong>🤖 AUTO-SCHEDULER:</strong> Background recovery system active 24/7</li>
-        </ul>
-      </div>
     </div>
   );
 };

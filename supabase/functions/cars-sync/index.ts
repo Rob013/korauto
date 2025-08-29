@@ -66,16 +66,16 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
   const API_BASE_URL = 'https://auctionsapi.com/api';
   
-  // STABLE MODE - Optimized for reliability without timeouts
-  const MAX_PARALLEL_REQUESTS = 3; // Conservative parallel requests to avoid overwhelming DB
-  const BATCH_SIZE = 50; // Smaller batch size for stable processing
-  const MIN_DELAY = 200; // Longer delay to avoid rate limiting
-  const MAX_RETRIES = 50; // Conservative retries to avoid timeouts
-  const RATE_LIMIT_MAX_RETRIES = 100; // Conservative rate limit retries
-  const API_TIMEOUT = 30000; // 30 second timeout to prevent edge function timeouts
-  const STABLE_MODE = true; // Enable stable processing mode
+  // MAXIMUM SPEED MODE - Optimized for speed without errors
+  const MAX_PARALLEL_REQUESTS = 8; // High parallel processing for maximum speed
+  const BATCH_SIZE = 75; // Larger batch size for faster processing
+  const MIN_DELAY = 50; // Minimal delay for maximum speed
+  const MAX_RETRIES = 20; // Quick retries
+  const RATE_LIMIT_MAX_RETRIES = 50; // Efficient rate limit handling
+  const API_TIMEOUT = 25000; // 25 second timeout for speed
+  const SPEED_MODE = true; // Enable maximum speed mode
   
-  console.log('🚀 Starting STABLE sync with bulletproof timeout prevention...');
+  console.log('🚀 Starting MAXIMUM SPEED sync...');
   
   // Update sync status
   await updateSyncStatus(supabaseClient, {
@@ -103,15 +103,12 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
     
     while (retryCount < MAX_RETRIES && progress.status === 'running') {
       try {
-        console.log(`🔥 SPEED Processing page ${pageNum} (attempt ${retryCount + 1})...`);
+        // Removed verbose logging for speed
         
-        // Smart adaptive delay - increase significantly with errors and retries
-        const baseDelay = MIN_DELAY + (retryCount * 200);
-        const errorDelay = progress.errorCount > 10 ? progress.errorCount * 100 : 0;
-        const adaptiveDelay = Math.min(10000, baseDelay + errorDelay);
+        // Fast adaptive delay for speed
+        const adaptiveDelay = MIN_DELAY + (retryCount * 50);
         
         if (retryCount > 0) {
-          console.log(`⏸️ Retry delay: ${adaptiveDelay}ms (attempt ${retryCount}, errors: ${progress.errorCount})`);
           await new Promise(resolve => setTimeout(resolve, adaptiveDelay));
         }
         
@@ -131,32 +128,22 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
         if (!response.ok) {
           if (response.status === 429) {
             rateLimitRetries++;
-            console.log(`⚡ ULTRA-FAST Rate limited on page ${pageNum}. Lightning retry ${rateLimitRetries}/${RATE_LIMIT_MAX_RETRIES}`);
-            
             if (rateLimitRetries >= RATE_LIMIT_MAX_RETRIES) {
-              console.log(`💀 Max rate limit retries reached for page ${pageNum}. Marking as processed to continue ULTRA-FAST sync.`);
               return; // Skip this page to continue sync
             }
             
-            // Stable backoff for rate limits
-            const backoffTime = STABLE_MODE ? 
-              Math.min(10000, 500 + (rateLimitRetries * 200)) : // Stable: 500ms base + 200ms per retry
-              Math.min(120000, 2000 * Math.pow(2, Math.min(rateLimitRetries, 6))); // Normal backoff
-            console.log(`🛡️ STABLE Rate limit backoff: ${backoffTime}ms (retry ${rateLimitRetries})`);
+            // Fast backoff for rate limits
+            const backoffTime = Math.min(5000, 200 + (rateLimitRetries * 100));
             await new Promise(resolve => setTimeout(resolve, backoffTime));
             continue;
           } else if (response.status >= 500) {
-            // Server errors - retry with stable exponential backoff
+            // Server errors - fast retry
             retryCount++;
-            const serverErrorDelay = STABLE_MODE ?
-              Math.min(5000, 300 * Math.pow(1.8, retryCount)) : // Stable: 300ms base with 1.8x multiplier
-              Math.min(10000, 500 * Math.pow(2, retryCount)); // Normal: 500ms base with 2x multiplier
-            console.log(`🔧 STABLE Server error ${response.status} on page ${pageNum}, retrying in ${serverErrorDelay}ms...`);
+            const serverErrorDelay = Math.min(3000, 100 * Math.pow(1.5, retryCount));
             await new Promise(resolve => setTimeout(resolve, serverErrorDelay));
             continue;
           } else {
-            // Client errors - skip page to continue stable sync
-            console.log(`⚠️ Client error ${response.status} on page ${pageNum}. Skipping to continue stable sync.`);
+            // Client errors - skip page
             progress.errorCount++;
             return;
           }
@@ -167,15 +154,12 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
         
         if (cars.length === 0) {
           progress.consecutiveEmptyPages++;
-          console.log(`✅ Page ${pageNum} empty (${progress.consecutiveEmptyPages} consecutive). Continuing...`);
           return;
         } else {
-          progress.consecutiveEmptyPages = 0; // Reset counter on successful page
+          progress.consecutiveEmptyPages = 0;
         }
 
-        console.log(`⚡ SPEED Processing ${cars.length} cars from page ${pageNum}...`);
-
-        // Ultra-fast batch processing with massive parallel writes
+        // Fast batch processing
         const chunks = [];
         for (let i = 0; i < cars.length; i += BATCH_SIZE) {
           chunks.push(cars.slice(i, i + BATCH_SIZE));
@@ -190,7 +174,6 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
           if (result.status === 'fulfilled') {
             successCount += result.value.success;
           } else {
-            console.error(`❌ Chunk ${index} failed for page ${pageNum}:`, result.reason);
             progress.dbCapacityIssues += chunks[index].length;
           }
         });
@@ -198,32 +181,18 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
         progress.totalSynced += successCount;
         progress.lastSuccessfulPage = Math.max(progress.lastSuccessfulPage, pageNum);
         
-        console.log(`🚀 Page ${pageNum} complete: ${successCount}/${cars.length} cars processed`);
-        
-        // Log page completion but don't assume it's the end
-        console.log(`🎯 Page ${pageNum} completed with ${cars.length} cars. Continuing sync...`);
-        
         return; // Success!
         
       } catch (error) {
         retryCount++;
         progress.errorCount++;
         
-        if (error.name === 'AbortError') {
-          console.error(`⏰ Timeout on page ${pageNum} (attempt ${retryCount}). Retrying...`);
-        } else {
-          console.error(`💥 Error processing page ${pageNum} (attempt ${retryCount}):`, error.message);
-        }
-        
         if (retryCount >= MAX_RETRIES) {
-          console.log(`💀 Max retries reached for page ${pageNum}. Continuing to next page to maintain momentum.`);
           return; // Continue sync even if this page fails
         }
         
-        // Exponential backoff for network errors - STABLE MODE
-        const errorDelay = STABLE_MODE ? 
-          Math.min(3000, 200 * Math.pow(1.6, retryCount)) : // Stable: 200ms base with 1.6x multiplier
-          Math.min(5000, 200 * Math.pow(1.8, retryCount)); // Normal: 200ms base with 1.8x multiplier
+        // Fast backoff for network errors
+        const errorDelay = Math.min(2000, 100 * Math.pow(1.4, retryCount));
         await new Promise(resolve => setTimeout(resolve, errorDelay));
       }
     }
@@ -238,26 +207,20 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
     
     progress.currentPage += MAX_PARALLEL_REQUESTS;
     
-    // More frequent progress updates for ULTRA-FAST monitoring
-    if (progress.currentPage % 2 === 0) { // Every 2 pages for real-time monitoring
+    // Progress updates every 5 pages for efficiency
+    if (progress.currentPage % 5 === 0) {
       const syncRate = Math.round(progress.totalSynced / ((Date.now() - progress.startTime) / 60000));
-      const currentRate = Math.round(MAX_PARALLEL_REQUESTS / ((Date.now() - startTime) / 60000));
       
       await updateSyncStatus(supabaseClient, {
         current_page: progress.currentPage,
         records_processed: progress.totalSynced,
         last_activity_at: new Date().toISOString(),
-        error_message: `🚀 SPEED MODE: ${syncRate} cars/min avg, ${currentRate} pages/min current, Errors: ${progress.errorCount}, DB Issues: ${progress.dbCapacityIssues}`
+        error_message: `Speed: ${syncRate} cars/min, Errors: ${progress.errorCount}`
       });
-      
-      console.log(`🚀 ULTRA-FAST Progress: Page ${progress.currentPage}, Synced: ${progress.totalSynced}, Rate: ${syncRate} cars/min, Current: ${currentRate} pages/min`);
     }
     
-    // Smart pacing - moderate delay in stable mode
-    const pacingDelay = STABLE_MODE ? 
-      Math.max(200, MIN_DELAY * (progress.errorCount > 5 ? 2 : 1)) : // Stable: 200ms min, scale with errors
-      Math.max(MIN_DELAY, MIN_DELAY * (progress.errorCount > 5 ? 3 : 1)); // Normal pacing
-    await new Promise(resolve => setTimeout(resolve, pacingDelay));
+    // Minimal pacing for maximum speed
+    await new Promise(resolve => setTimeout(resolve, MIN_DELAY));
   }
   
   // Final status update - determine completion based on multiple factors
