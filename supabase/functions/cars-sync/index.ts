@@ -69,12 +69,12 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
   // PRIORITY BRANDS SYNC FIRST
   const PRIORITY_BRANDS = ['Audi', 'Mercedes-Benz', 'Volkswagen', 'BMW'];
   
-  // MAXIMUM SPEED OPTIMIZATION - tuned for ultra-fast processing
-  const MAX_PARALLEL_PAGES = 8; // Increased parallel processing for maximum speed
-  const BATCH_SIZE = 50; // Larger batches for maximum throughput
-  const MIN_DELAY = 50; // Minimal delay for maximum speed
-  const API_TIMEOUT = 20000; // Optimized timeout for high-speed requests
-  const MAX_EXECUTION_TIME = 90000; // 90 seconds max execution to avoid timeout
+  // CONSERVATIVE OPTIMIZATION - prevent CPU timeouts
+  const MAX_PARALLEL_PAGES = 1; // Single page processing to avoid timeouts
+  const BATCH_SIZE = 5; // Small batches to prevent overwhelming CPU
+  const MIN_DELAY = 100; // Longer delays to prevent overwhelming system
+  const API_TIMEOUT = 15000; // Conservative timeout
+  const MAX_EXECUTION_TIME = 45000; // 45 seconds max execution to stay well under limits
   
   const executionStart = Date.now();
   console.log('🚀 Starting optimized sync to avoid timeouts...');
@@ -238,9 +238,10 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
     let currentPriorityPage = 1;
     let consecutiveEmptyPriorityPages = 0;
     
-    // Sync this priority brand across larger page ranges for maximum speed
-    while (currentPriorityPage <= 500 && consecutiveEmptyPriorityPages < 8 && !checkExecutionTime()) {
-      const brandProcessed = await processPriorityBatch(currentPriorityPage, priorityBrand);
+    // Conservative page-by-page processing to avoid timeouts
+    while (currentPriorityPage <= 100 && consecutiveEmptyPriorityPages < 5 && !checkExecutionTime()) {
+      // Process one page at a time to prevent CPU overload
+      const brandProcessed = await processPriorityPage(currentPriorityPage, priorityBrand);
       
       if (brandProcessed === 0) {
         consecutiveEmptyPriorityPages++;
@@ -250,22 +251,31 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
         console.log(`🎯 ${priorityBrand}: +${brandProcessed} cars (Total priority: ${priorityCarsCount})`);
       }
       
-      currentPriorityPage += MAX_PARALLEL_PAGES;
+      currentPriorityPage++;
       
-      // Update progress less frequently for maximum speed
-      if (currentPriorityPage % 50 === 0) {
+      // Update progress frequently to track small increments
+      if (currentPriorityPage % 10 === 0 || brandProcessed > 0) {
         await updateSyncStatus(supabaseClient, {
-          error_message: `🎯 PRIORITY: ${priorityBrand} - ${priorityCarsCount} priority cars synced`,
+          error_message: `🎯 PRIORITY: ${priorityBrand} page ${currentPriorityPage} - ${priorityCarsCount} priority cars synced`,
+          current_page: currentPriorityPage,
+          records_processed: priorityCarsCount,
           last_activity_at: new Date().toISOString()
         });
       }
       
-      await new Promise(resolve => setTimeout(resolve, MIN_DELAY));
+      // Longer delays to prevent system overload
+      await new Promise(resolve => setTimeout(resolve, MIN_DELAY * 2));
       
-      // Exit early if approaching timeout
+      // Exit early if approaching timeout - save progress
       if (checkExecutionTime()) {
-        console.log(`⏰ Approaching timeout - pausing ${priorityBrand} sync`);
-        break;
+        console.log(`⏰ Approaching timeout - pausing ${priorityBrand} sync at page ${currentPriorityPage}`);
+        await updateSyncStatus(supabaseClient, {
+          status: 'paused',
+          current_page: currentPriorityPage,
+          error_message: `⏰ Paused during ${priorityBrand} sync at page ${currentPriorityPage} to avoid timeout`,
+          last_activity_at: new Date().toISOString()
+        });
+        return { ...progress, status: 'paused', currentPage: currentPriorityPage };
       }
     }
     
@@ -326,24 +336,24 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
     last_activity_at: new Date().toISOString()
   });
 
-  // Ultra-fast parallel processing loop for all cars with timeout protection
-  while (progress.currentPage <= 3000 && progress.status === 'running' && progress.consecutiveEmptyPages < 20 && !checkExecutionTime()) {
-    const batchStarted = Date.now();
+  // Conservative page-by-page processing to avoid CPU overload
+  while (progress.currentPage <= 1000 && progress.status === 'running' && progress.consecutiveEmptyPages < 10 && !checkExecutionTime()) {
+    const pageStarted = Date.now();
     
-    // Process batch of pages in parallel
-    const processedInBatch = await processPageBatch(progress.currentPage);
+    // Process one page at a time to prevent CPU overload  
+    const processedInPage = await processPage(progress.currentPage);
     
-    if (processedInBatch === 0) {
+    if (processedInPage === 0) {
       progress.consecutiveEmptyPages++;
     } else {
       progress.consecutiveEmptyPages = 0;
-      progress.totalSynced += processedInBatch;
+      progress.totalSynced += processedInPage;
     }
     
-    progress.currentPage += MAX_PARALLEL_PAGES;
+    progress.currentPage++;
     
-    // Update progress every batch for better tracking
-    if (progress.currentPage % MAX_PARALLEL_PAGES === 0) {
+    // Update progress every 5 pages or when cars found
+    if (progress.currentPage % 5 === 0 || processedInPage > 0) {
       const { data: dbCount } = await supabaseClient
         .from('cars_cache')
         .select('*', { count: 'exact', head: true })
@@ -352,32 +362,32 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
       const actualCount = dbCount || progress.totalSynced;
       const syncRate = actualCount > 0 ? Math.round(actualCount / ((Date.now() - progress.startTime) / 60000)) : 0;
       const timeElapsed = ((Date.now() - progress.startTime) / 1000 / 60).toFixed(1);
-      const estimatedTotal = syncRate > 0 ? Math.round(190000 / syncRate) : 0;
-      const timeRemaining = estimatedTotal > timeElapsed ? (estimatedTotal - parseFloat(timeElapsed)).toFixed(0) : 0;
+      const progressPercent = ((progress.currentPage / 1000) * 100).toFixed(1);
       
       await updateSyncStatus(supabaseClient, {
         current_page: progress.currentPage,
         records_processed: actualCount,
         last_activity_at: new Date().toISOString(),
-        error_message: `🚀 SYNC: ${syncRate} cars/min, ${actualCount} synced, ~${timeRemaining}min remaining`
+        error_message: `🚀 SYNC: Page ${progress.currentPage}/1000 (${progressPercent}%), ${actualCount} cars, ${syncRate}/min`
       });
       
-      console.log(`🚀 SYNC: Page ${progress.currentPage}, Cars: ${actualCount}, Rate: ${syncRate}/min, ETA: ${timeRemaining}min`);
+      console.log(`🚀 SYNC: Page ${progress.currentPage}/1000 (${progressPercent}%), Cars: ${actualCount}, Rate: ${syncRate}/min`);
     }
     
-    // Check timeout and exit gracefully
+    // Check timeout and exit gracefully with exact progress
     if (checkExecutionTime()) {
-      console.log('⏰ Approaching timeout - saving progress and exiting');
+      console.log(`⏰ Approaching timeout - saving progress at page ${progress.currentPage}`);
       await updateSyncStatus(supabaseClient, {
         status: 'paused',
-        error_message: '⏰ Paused to avoid timeout - will auto-resume',
+        current_page: progress.currentPage,
+        error_message: `⏰ Paused at page ${progress.currentPage} to avoid timeout - will auto-resume`,
         last_activity_at: new Date().toISOString()
       });
-      break;
+      return { ...progress, status: 'paused' };
     }
     
-    // Minimal delay for speed
-    await new Promise(resolve => setTimeout(resolve, MIN_DELAY));
+    // Longer delays to prevent system overload
+    await new Promise(resolve => setTimeout(resolve, MIN_DELAY * 2));
   }
   
   // Final status with speed optimization results
