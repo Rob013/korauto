@@ -61,10 +61,13 @@ interface SyncProgress {
   startTime: number;
 }
 
-// Ultra-fast sync function optimized for maximum throughput
+// Ultra-fast sync function optimized for maximum throughput with priority brands
 async function performBackgroundSync(supabaseClient: any, progress: SyncProgress): Promise<SyncProgress> {
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
   const API_BASE_URL = 'https://auctionsapi.com/api';
+  
+  // PRIORITY BRANDS SYNC FIRST
+  const PRIORITY_BRANDS = ['Audi', 'Mercedes-Benz', 'Volkswagen', 'BMW'];
   
   // MAXIMUM SPEED MODE - 190,000 cars in 2 hours = ~1,583 cars/minute
   const MAX_PARALLEL_PAGES = 8; // Process 8 pages simultaneously
@@ -73,7 +76,7 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
   const API_TIMEOUT = 30000; // 30 second timeout
   const RETRY_DELAY = 500; // Fast retry on errors
   
-  console.log('🚀 Starting MAXIMUM SPEED sync - targeting 190,000+ cars in 2 hours...');
+  console.log('🚀 Starting PRIORITY SYNC - Audi, Mercedes, Volkswagen, BMW first, then all others...');
   
   // Update sync status with current database count
   const { data: currentCount } = await supabaseClient
@@ -90,7 +93,58 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
     last_activity_at: new Date().toISOString()
   });
 
-  // Single page processing optimized for speed
+  // Priority brand processing with specific make filtering
+  const processPriorityPage = async (pageNum: number, priorityMake: string): Promise<number> => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
+      
+      const response = await fetch(
+        `${API_BASE_URL}/cars?per_page=100&page=${pageNum}`,
+        { 
+          headers: { 'accept': '*/*', 'x-api-key': API_KEY },
+          signal: controller.signal
+        }
+      );
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        if (response.status === 429) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return 0;
+        }
+        return 0;
+      }
+
+      const data = await response.json();
+      const allCars: Car[] = data.data || [];
+      
+      // Filter for priority brand only
+      const priorityCars = allCars.filter(car => 
+        car.manufacturer?.name === priorityMake
+      );
+      
+      if (priorityCars.length === 0) return 0;
+
+      console.log(`🎯 Found ${priorityCars.length} ${priorityMake} cars on page ${pageNum}`);
+
+      // Process priority cars in batches
+      let processedCount = 0;
+      for (let i = 0; i < priorityCars.length; i += BATCH_SIZE) {
+        const chunk = priorityCars.slice(i, i + BATCH_SIZE);
+        const result = await processCarsChunk(supabaseClient, chunk);
+        processedCount += result.success;
+      }
+      
+      return processedCount;
+      
+    } catch (error) {
+      return 0;
+    }
+  };
+
+  // Single page processing optimized for speed (regular sync)
   const processPage = async (pageNum: number): Promise<number> => {
     try {
       const controller = new AbortController();
@@ -134,7 +188,95 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
     }
   };
 
-  // Ultra-fast parallel page processing
+  // Priority brand parallel processing
+  const processPriorityBatch = async (startPage: number, priorityMake: string): Promise<number> => {
+    const pagePromises = [];
+    
+    // Process multiple pages in parallel for each priority brand
+    for (let i = 0; i < MAX_PARALLEL_PAGES && (startPage + i) <= 3000; i++) {
+      const pageNum = startPage + i;
+      pagePromises.push(processPriorityPage(pageNum, priorityMake));
+    }
+    
+    const results = await Promise.allSettled(pagePromises);
+    let totalProcessed = 0;
+    
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        totalProcessed += result.value;
+      } else {
+        console.error(`❌ Priority page ${startPage + index} for ${priorityMake} failed:`, result.reason?.message);
+      }
+    });
+    
+    return totalProcessed;
+  };
+
+  // PHASE 1: Priority brands sync (Audi, Mercedes, Volkswagen, BMW)
+  console.log('🎯 PHASE 1: Priority brands sync - Audi, Mercedes, Volkswagen, BMW');
+  
+  await updateSyncStatus(supabaseClient, {
+    error_message: '🎯 PRIORITY SYNC: Starting Audi, Mercedes, Volkswagen, BMW sync...',
+    last_activity_at: new Date().toISOString()
+  });
+
+  let priorityCarsCount = 0;
+  for (const priorityBrand of PRIORITY_BRANDS) {
+    console.log(`🎯 Syncing ${priorityBrand} cars...`);
+    
+    await updateSyncStatus(supabaseClient, {
+      error_message: `🎯 PRIORITY SYNC: Syncing ${priorityBrand} cars...`,
+      last_activity_at: new Date().toISOString()
+    });
+    
+    let currentPriorityPage = 1;
+    let consecutiveEmptyPriorityPages = 0;
+    
+    // Sync this priority brand across all pages
+    while (currentPriorityPage <= 3000 && consecutiveEmptyPriorityPages < 10) {
+      const brandProcessed = await processPriorityBatch(currentPriorityPage, priorityBrand);
+      
+      if (brandProcessed === 0) {
+        consecutiveEmptyPriorityPages++;
+      } else {
+        consecutiveEmptyPriorityPages = 0;
+        priorityCarsCount += brandProcessed;
+        console.log(`🎯 ${priorityBrand}: +${brandProcessed} cars (Total priority: ${priorityCarsCount})`);
+      }
+      
+      currentPriorityPage += MAX_PARALLEL_PAGES;
+      
+      // Update progress periodically for priority sync
+      if (currentPriorityPage % 40 === 0) {
+        await updateSyncStatus(supabaseClient, {
+          error_message: `🎯 PRIORITY: ${priorityBrand} - ${priorityCarsCount} priority cars synced so far`,
+          last_activity_at: new Date().toISOString()
+        });
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, MIN_DELAY));
+    }
+    
+    console.log(`✅ ${priorityBrand} sync complete - ${priorityCarsCount} total priority cars`);
+  }
+  
+  // Get final count after priority sync
+  const { data: afterPriorityCount } = await supabaseClient
+    .from('cars_cache')
+    .select('*', { count: 'exact', head: true })
+    .not('price_cents', 'is', null);
+  
+  const prioritySyncedCount = afterPriorityCount || 0;
+  
+  await updateSyncStatus(supabaseClient, {
+    records_processed: prioritySyncedCount,
+    error_message: `🎯 PRIORITY SYNC COMPLETE: ${prioritySyncedCount} cars synced (Priority brands complete). Starting full sync...`,
+    last_activity_at: new Date().toISOString()
+  });
+  
+  console.log(`🎉 PRIORITY SYNC COMPLETE: ${prioritySyncedCount} cars synced (including priority brands)`);
+
+  // Ultra-fast parallel page processing for remaining cars
   const processPageBatch = async (startPage: number): Promise<number> => {
     const pagePromises = [];
     
@@ -158,7 +300,15 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
     return totalProcessed;
   };
 
-  // Ultra-fast parallel processing loop
+  // PHASE 2: Full speed sync for all remaining cars
+  console.log('🚀 PHASE 2: Full sync for all remaining cars at maximum speed');
+  
+  await updateSyncStatus(supabaseClient, {
+    error_message: '🚀 FULL SYNC: Priority complete. Now syncing all cars at maximum speed...',
+    last_activity_at: new Date().toISOString()
+  });
+
+  // Ultra-fast parallel processing loop for all cars
   while (progress.currentPage <= 3000 && progress.status === 'running' && progress.consecutiveEmptyPages < 20) {
     const batchStarted = Date.now();
     
@@ -191,10 +341,10 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
         current_page: progress.currentPage,
         records_processed: actualCount,
         last_activity_at: new Date().toISOString(),
-        error_message: `🚀 MAXIMUM SPEED: ${syncRate} cars/min, ${actualCount} synced, ~${timeRemaining}min remaining for 190K cars`
+        error_message: `🚀 FULL SYNC: ${syncRate} cars/min, ${actualCount} synced, ~${timeRemaining}min remaining for 190K cars (Priority brands complete)`
       });
       
-      console.log(`🚀 ULTRA-FAST: Page ${progress.currentPage}, Cars: ${actualCount}, Rate: ${syncRate}/min, ETA: ${timeRemaining}min`);
+      console.log(`🚀 FULL SYNC: Page ${progress.currentPage}, Cars: ${actualCount}, Rate: ${syncRate}/min, ETA: ${timeRemaining}min`);
     }
     
     // Minimal delay for maximum speed but prevent overload
@@ -580,16 +730,17 @@ Deno.serve(async (req) => {
       runSyncWithAutoRestart(supabaseClient, progress)
     );
 
-    // Return immediate response - MAXIMUM SPEED sync started
+    // Return immediate response - PRIORITY SYNC started
     return new Response(
       JSON.stringify({
         success: true,
-        message: '🚀 MAXIMUM SPEED SYNC STARTED! Ultra-fast parallel processing for 2-hour target.',
+        message: '🎯 PRIORITY SYNC STARTED! Audi, Mercedes, Volkswagen, BMW first, then ultra-fast sync for all others.',
         status: 'running',
         totalSynced: progress.totalSynced,
         pagesProcessed: 0,
         startedAt: new Date().toISOString(),
         features: [
+          '🎯 Priority sync: Audi, Mercedes, Volkswagen, BMW first',
           '🚀 8x parallel page processing',
           '📦 50-car batch writes', 
           '⚡ 100ms delays for maximum speed',
@@ -597,7 +748,7 @@ Deno.serve(async (req) => {
           '📊 Real-time ETA tracking',
           '🔥 Ultra-fast error recovery'
         ],
-        note: 'MAXIMUM SPEED sync running! 8x parallel processing, 50-car batches, 100ms delays. Targeting 190,000+ cars in 2 hours with real-time ETA.'
+        note: 'PRIORITY SYNC running! First syncing Audi, Mercedes, Volkswagen, BMW, then 8x parallel processing for all other brands. Targeting 190,000+ cars in 2 hours with real-time ETA.'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
