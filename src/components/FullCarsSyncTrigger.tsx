@@ -118,7 +118,7 @@ export const FullCarsSyncTrigger = () => {
     
     const lastActivity = sync.last_activity_at ? new Date(sync.last_activity_at) : new Date(sync.started_at || 0);
     const timeSinceActivity = Date.now() - lastActivity.getTime();
-    const STUCK_THRESHOLD = 15 * 60 * 1000; // 15 minutes
+    const STUCK_THRESHOLD = 10 * 60 * 1000; // 10 minutes (reduced from 15)
     
     return timeSinceActivity > STUCK_THRESHOLD;
   };
@@ -269,7 +269,7 @@ export const FullCarsSyncTrigger = () => {
           smartSync: true,
           resume: true,
           fromPage: syncStatus.current_page,
-          reconcileProgress: true
+          reconcileProgress: true // Always reconcile to fix stuck syncs
         }
       });
 
@@ -325,6 +325,47 @@ export const FullCarsSyncTrigger = () => {
     }
   };
 
+  const forceResetSync = async () => {
+    try {
+      toast({
+        title: "Force Resetting Sync",
+        description: "Completely resetting sync progress to start fresh...",
+      });
+
+      // Force reset the sync to start from page 1
+      const { error } = await supabase
+        .from('sync_status')
+        .update({
+          status: 'failed',
+          current_page: 1,
+          records_processed: 0,
+          error_message: 'Manually reset - restarting from beginning',
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', 'cars-sync-main');
+
+      if (error) throw error;
+
+      setIsLoading(false);
+      setIsStuckSyncDetected(false);
+      
+      toast({
+        title: "Sync Reset Complete",
+        description: "Sync has been reset. You can now start a fresh sync from the beginning.",
+      });
+      
+      // Re-check status
+      setTimeout(checkSyncStatus, 1000);
+    } catch (error) {
+      console.error('Failed to force reset sync:', error);
+      toast({
+        title: "Force Reset Failed",
+        description: error.message || "Failed to force reset sync.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getSyncStatusIcon = () => {
     if (!syncStatus) return <Clock className="h-4 w-4" />;
     
@@ -344,7 +385,8 @@ export const FullCarsSyncTrigger = () => {
 
   const canStartSync = !isLoading && (!syncStatus || ['completed', 'failed', 'idle'].includes(syncStatus.status));
   const canResumeSync = syncStatus?.status === 'paused';
-  const canForceStop = syncStatus?.status === 'running' && (isStuckSyncDetected || syncStatus.current_page > 0);
+  const canForceStop = syncStatus?.status === 'running' && !isStuckSyncDetected && syncStatus.current_page > 0;
+  const canForceReset = syncStatus?.status === 'running' && isStuckSyncDetected;
 
   const getProgressPercentage = () => {
     if (!syncStatus || !syncStatus.records_processed) return 0;
@@ -551,7 +593,17 @@ export const FullCarsSyncTrigger = () => {
             variant="destructive"
             className="flex-1"
           >
-            {isStuckSyncDetected ? 'Fix Stuck Sync' : 'Force Stop'}
+            Force Stop
+          </Button>
+        )}
+        
+        {canForceReset && (
+          <Button 
+            onClick={forceResetSync}
+            variant="destructive"
+            className="flex-1"
+          >
+            Reset Stuck Sync
           </Button>
         )}
       </div>
@@ -559,8 +611,8 @@ export const FullCarsSyncTrigger = () => {
       {isStuckSyncDetected && (
         <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm">
           <p className="text-yellow-800">
-            ⚠️ <strong>Stuck Sync Detected:</strong> The sync has been inactive for more than 15 minutes. 
-            It may have timed out. Click "Fix Stuck Sync" to reset and try again.
+            ⚠️ <strong>Stuck Sync Detected:</strong> The sync has been inactive for more than 10 minutes. 
+            It may have timed out. Click "Reset Stuck Sync" to reset progress and start fresh.
           </p>
         </div>
       )}

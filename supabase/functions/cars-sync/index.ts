@@ -615,7 +615,7 @@ async function cleanupStuckSyncs(supabaseClient: any) {
       .from('sync_status')
       .select('*')
       .eq('status', 'running')
-      .lt('last_activity_at', new Date(Date.now() - 60 * 60 * 1000).toISOString()); // 1 hour ago
+      .lt('last_activity_at', new Date(Date.now() - 10 * 60 * 1000).toISOString()); // 10 minutes ago (reduced from 1 hour)
 
     if (stuckSyncs && stuckSyncs.length > 0) {
       console.log(`🧹 Cleaning up ${stuckSyncs.length} stuck sync(s)...`);
@@ -625,7 +625,7 @@ async function cleanupStuckSyncs(supabaseClient: any) {
           .from('sync_status')
           .update({
             status: 'failed',
-            error_message: 'Auto-cleaned: Edge Function timeout after 1 hour of inactivity',
+            error_message: 'Auto-cleaned: Sync stuck for more than 10 minutes',
             completed_at: new Date().toISOString()
           })
           .eq('id', sync.id);
@@ -653,8 +653,15 @@ async function reconcileProgressPage(supabaseClient: any, reportedPage: number):
     const realCarCount = await getRealCarCount(supabaseClient);
     const estimatedPage = Math.ceil(realCarCount / 100); // 100 cars per page
     
-    // Use the higher of the two as a safety measure
-    const reconciledPage = Math.max(estimatedPage, reportedPage - 2); // Start 2 pages back for safety
+    // If we have a reasonable number of cars but reported page is way ahead,
+    // it indicates the sync got stuck - restart from the estimated page
+    if (realCarCount > 1000 && reportedPage > estimatedPage + 50) {
+      console.log(`🔄 Sync appears stuck - resetting from page ${reportedPage} to ${estimatedPage + 1}`);
+      return estimatedPage + 1; // Start just after where we should be
+    }
+    
+    // Otherwise use reported page minus a small safety buffer
+    const reconciledPage = Math.max(estimatedPage, reportedPage - 5); // Reduced buffer from 2 to 5
     
     console.log(`🔄 Progress reconciliation: Real cars: ${realCarCount}, Estimated page: ${estimatedPage}, Reported: ${reportedPage}, Using: ${reconciledPage}`);
     
