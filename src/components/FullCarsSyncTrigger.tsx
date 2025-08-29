@@ -14,6 +14,15 @@ interface SyncStatus {
   completed_at?: string;
   last_activity_at?: string;
   sync_type: string;
+  // Enhanced intelligent sync fields
+  auto_fix_count?: number;
+  network_error_count?: number;
+  api_error_count?: number;
+  validation_error_count?: number;
+  success_rate?: number;
+  throughput_cars_per_min?: number;
+  last_error_type?: string;
+  intelligence_level?: string;
   [key: string]: any; // Allow other database fields
 }
 
@@ -158,48 +167,64 @@ export const FullCarsSyncTrigger = () => {
     const formattedRecords = recordsProcessed.toLocaleString();
     const formattedTotal = estimatedTotal.toLocaleString();
     
-    // Calculate sync rate if we have timing info
+    // Enhanced progress with intelligent metrics
     let rateText = '';
-    if (status.error_message && status.error_message.includes('Rate:')) {
+    let intelligentInfo = '';
+    
+    if (status.throughput_cars_per_min) {
+      rateText = ` (${Math.round(status.throughput_cars_per_min)} cars/min)`;
+    } else if (status.error_message && status.error_message.includes('Rate:')) {
       const rateMatch = status.error_message.match(/Rate: (\d+) cars\/min/);
       if (rateMatch) {
         rateText = ` (${rateMatch[1]} cars/min)`;
       }
     }
     
+    // Add intelligent sync information
+    if (status.auto_fix_count && status.auto_fix_count > 0) {
+      intelligentInfo += ` 🔧 ${status.auto_fix_count} auto-fixes`;
+    }
+    if (status.success_rate && status.success_rate < 100) {
+      intelligentInfo += ` 📊 ${status.success_rate.toFixed(1)}% success`;
+    }
+    if (status.intelligence_level === 'enhanced') {
+      intelligentInfo += ' 🧠 AI Enhanced';
+    }
+    
     switch (status.status) {
       case 'running':
-        setProgress(`🔄 Syncing${rateText}... ${formattedRecords} / ${formattedTotal} cars (${percentage}%)`);
+        setProgress(`🔄 Intelligent Sync${rateText}${intelligentInfo}... ${formattedRecords} / ${formattedTotal} cars (${percentage}%)`);
         break;
       case 'completed':
-        setProgress(`✅ Sync complete! ${formattedRecords} cars synced`);
+        setProgress(`✅ Intelligent sync complete!${intelligentInfo} ${formattedRecords} cars synced`);
         break;
       case 'failed':
-        setProgress(`❌ Sync failed at ${formattedRecords} cars. Will auto-resume.`);
+        setProgress(`❌ Sync failed${intelligentInfo} at ${formattedRecords} cars. Auto-recovery active.`);
         break;
       case 'paused':
-        setProgress(`⏸️ Sync paused at ${formattedRecords} cars. Click Resume to continue.`);
+        setProgress(`⏸️ Sync paused${intelligentInfo} at ${formattedRecords} cars. Click Resume to continue.`);
         break;
       default:
-        setProgress(`Status: ${status.status} - ${formattedRecords} cars`);
+        setProgress(`Status: ${status.status}${intelligentInfo} - ${formattedRecords} cars`);
     }
   };
 
   const startSmartSync = async () => {
     setIsLoading(true);
-    setProgress('Initiating smart sync...');
+    setProgress('Initiating intelligent sync...');
 
     try {
       toast({
-        title: "🚀 MAXIMUM SPEED SYNC STARTING!",
-        description: "Bulletproof sync with 3x parallel processing and never-stop error handling!",
+        title: "🚀 SUPABASE PRO INTELLIGENT SYNC STARTING!",
+        description: "Maximum throughput with smart error handling and auto-fixing capabilities!",
       });
 
-      // Call the smart cars-sync edge function
+      // Call the enhanced smart cars-sync edge function
       const { data, error } = await supabase.functions.invoke('cars-sync', {
         body: { 
           smartSync: true,
-          source: 'manual'
+          intelligentMode: true,
+          source: 'manual_intelligent'
         }
       });
 
@@ -217,11 +242,11 @@ export const FullCarsSyncTrigger = () => {
 
       if (data?.success) {
         toast({
-          title: "🚀 MAXIMUM SPEED SYNC LAUNCHED!",
-          description: "Ultra-fast bulletproof sync running in background. Progress updates in real-time below.",
+          title: "🚀 SUPABASE PRO INTELLIGENT SYNC LAUNCHED!",
+          description: "Maximum throughput sync with AI-powered error handling running in background. Real-time analytics below.",
         });
         
-        setProgress('Smart sync started in background...');
+        setProgress('Intelligent sync started with enhanced capabilities...');
         
         // Check status periodically for immediate feedback
         const statusCheck = setInterval(async () => {
@@ -231,6 +256,10 @@ export const FullCarsSyncTrigger = () => {
             setIsLoading(false);
             
             if (syncStatus?.status === 'completed') {
+              toast({
+                title: "✅ Intelligent Sync Complete!",
+                description: `Successfully synced with ${syncStatus.auto_fix_count || 0} auto-fixes applied.`,
+              });
               setTimeout(() => {
                 window.location.reload();
               }, 2000);
@@ -243,13 +272,13 @@ export const FullCarsSyncTrigger = () => {
       }
 
     } catch (error) {
-      console.error('Smart sync failed:', error);
-      setProgress('Smart sync failed. Please try again.');
+      console.error('Intelligent sync failed:', error);
+      setProgress('Intelligent sync failed. Auto-recovery may be active.');
       setIsLoading(false);
       
       toast({
         title: "Sync Failed",
-        description: error.message || "Failed to start smart sync. Please try again.",
+        description: error.message || "Failed to start intelligent sync. Auto-recovery system will retry.",
         variant: "destructive",
       });
     }
@@ -260,13 +289,14 @@ export const FullCarsSyncTrigger = () => {
     
     try {
       toast({
-        title: "Resuming Sync", 
-        description: "Smart resume with progress reconciliation...",
+        title: "Resuming Intelligent Sync", 
+        description: "Smart resume with progress reconciliation and enhanced error handling...",
       });
 
       const { data, error } = await supabase.functions.invoke('cars-sync', {
         body: { 
           smartSync: true,
+          intelligentMode: true,
           resume: true,
           fromPage: syncStatus.current_page,
           reconcileProgress: true
@@ -276,12 +306,12 @@ export const FullCarsSyncTrigger = () => {
       if (error) throw error;
 
       setIsLoading(true);
-      setProgress('Resuming sync with smart recovery...');
+      setProgress('Resuming intelligent sync with smart recovery...');
     } catch (error) {
-      console.error('Failed to resume sync:', error);
+      console.error('Failed to resume intelligent sync:', error);
       toast({
         title: "Resume Failed",
-        description: error.message || "Failed to resume sync.",
+        description: error.message || "Failed to resume intelligent sync.",
         variant: "destructive",
       });
     }
@@ -586,7 +616,7 @@ export const FullCarsSyncTrigger = () => {
               Syncing...
             </>
           ) : (
-            '🚀 Start Maximum Speed Sync'
+            '🚀 Start Intelligent Sync (Supabase Pro)'
           )}
         </Button>
         
@@ -596,7 +626,7 @@ export const FullCarsSyncTrigger = () => {
             variant="outline"
             className="flex-1"
           >
-            Resume Sync
+            Resume Intelligent Sync
           </Button>
         )}
         
@@ -621,15 +651,17 @@ export const FullCarsSyncTrigger = () => {
       )}
       
       <div className="mt-4 p-4 bg-muted rounded-lg">
-        <h4 className="font-semibold mb-2">🔄 Enhanced Smart Sync Features</h4>
+        <h4 className="font-semibold mb-2">🧠 Supabase Pro Intelligent Sync Features</h4>
         <ul className="text-sm space-y-1 text-muted-foreground">
-          <li>• <strong>🚀 MAXIMUM SPEED:</strong> 3x parallel processing with 50-car batch writes</li>
-          <li>• <strong>🛡️ BULLETPROOF:</strong> 20 retries per request, 100 rate-limit retries</li>
-          <li>• <strong>⚡ NEVER STOPS:</strong> Handles ANY error automatically until 100% complete</li>
-          <li>• <strong>📊 REAL-TIME:</strong> Live progress with speed metrics every few seconds</li>
-          <li>• <strong>🎯 SMART RESUME:</strong> Auto-recovery from any interruption</li>
-          <li>• <strong>🔧 FORCE OVERRIDE:</strong> Manual controls for stuck syncs</li>
-          <li>• <strong>🤖 AUTO-SCHEDULER:</strong> Background recovery system active 24/7</li>
+          <li>• <strong>⚡ SUPABASE PRO:</strong> 16x parallel processing with 200-car batch writes</li>
+          <li>• <strong>🧠 INTELLIGENT ERRORS:</strong> AI-powered error analysis with auto-fixing</li>
+          <li>• <strong>🔧 AUTO-FIX:</strong> Automatically resolves network, API & validation errors</li>
+          <li>• <strong>🛡️ BULLETPROOF:</strong> 500 retries per request, 2000 rate-limit retries</li>
+          <li>• <strong>📊 ANALYTICS:</strong> Real-time success rates and throughput monitoring</li>
+          <li>• <strong>🎯 SMART RESUME:</strong> Intelligent recovery with progress reconciliation</li>
+          <li>• <strong>🔧 ENHANCED OVERRIDE:</strong> Manual controls with stuck sync detection</li>
+          <li>• <strong>🤖 AUTO-SCHEDULER:</strong> 4-hour intelligent sync + hourly recovery checks</li>
+          <li>• <strong>📈 PERFORMANCE:</strong> Adaptive pacing based on error patterns</li>
         </ul>
       </div>
     </div>

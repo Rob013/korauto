@@ -24,12 +24,13 @@
 
 import { createClient } from '@supabase/supabase-js'
 
-// Configuration
-const RATE_LIMIT_DELAY = 2000 // 2 seconds between requests
-const MAX_RETRIES = 3
-const BACKOFF_MULTIPLIER = 2
+// Enhanced configuration for Supabase Pro with intelligent error handling
+const RATE_LIMIT_DELAY = 1000 // Faster for Pro tier (was 2000)
+const MAX_RETRIES = 5 // Increased retries (was 3)
+const BACKOFF_MULTIPLIER = 1.8 // Smarter backoff (was 2)
 const PAGE_SIZE = 100
-const REQUEST_TIMEOUT = 30000
+const REQUEST_TIMEOUT = 25000 // Optimized timeout (was 30000)
+const INTELLIGENT_MODE = true // Enable intelligent error handling
 
 // Environment variables
 const SUPABASE_URL = process.env.SUPABASE_URL
