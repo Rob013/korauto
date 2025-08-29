@@ -38,6 +38,7 @@ import { CarsSyncButton } from "@/components/CarsSyncButton";
 import AdminCarSearch from "@/components/AdminCarSearch";
 import { CookieManagementDashboard } from "@/components/CookieManagementDashboard";
 import PerformanceAuditWidget from "@/components/PerformanceAuditWidget";
+import { FullCarsSyncTrigger } from "@/components/FullCarsSyncTrigger";
 
 // Lazy load heavy admin components
 const AdminSyncDashboard = lazy(() => 
@@ -1105,6 +1106,9 @@ const AdminDashboard = () => {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Full Cars Sync Component */}
+              <FullCarsSyncTrigger />
             </div>
           </TabsContent>
 
