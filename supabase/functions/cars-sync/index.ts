@@ -70,61 +70,150 @@ Deno.serve(async (req) => {
     let hasMorePages = true;
     let maxPages = 1000; // Allow up to 1000 pages to get all cars
     
-    // Test API key and endpoint first
+    // Test multiple API endpoints to find working one
     console.log(`🔍 Testing API connection...`);
-    const testResponse = await fetch(`${API_BASE_URL}/cars?per_page=1&page=1`, {
-      headers: {
-        'accept': '*/*',
-        'x-api-key': API_KEY
+    
+    const endpoints = [
+      `${API_BASE_URL}/cars?per_page=50&page=1`,
+      `${API_BASE_URL}/cars?per_page=100&page=1&minutes=60`,
+      `${API_BASE_URL}/cars?per_page=30&simple_paginate=0&page=1`
+    ];
+    
+    let testData = null;
+    let workingEndpoint = null;
+    
+    for (const endpoint of endpoints) {
+      try {
+        console.log(`🧪 Testing endpoint: ${endpoint}`);
+        const testResponse = await fetch(endpoint, {
+          headers: {
+            'accept': '*/*',
+            'x-api-key': API_KEY
+          }
+        });
+        
+        console.log(`📡 Response Status: ${testResponse.status}`);
+        
+        if (testResponse.ok) {
+          testData = await testResponse.json();
+          console.log(`✅ Found working endpoint with ${testData.data?.length || 0} cars`);
+          workingEndpoint = endpoint;
+          break;
+        } else if (testResponse.status === 429) {
+          console.log(`⏰ Rate limited, trying next endpoint...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      } catch (err) {
+        console.log(`❌ Endpoint failed: ${err.message}`);
       }
-    });
-    
-    console.log(`📡 API Test Response Status: ${testResponse.status}`);
-    
-    if (!testResponse.ok) {
-      throw new Error(`API test failed: ${testResponse.status} - ${testResponse.statusText}`);
     }
     
-    const testData = await testResponse.json();
-    console.log(`📊 API Test Response:`, JSON.stringify(testData, null, 2));
+    if (!testData || !workingEndpoint) {
+      throw new Error('All API endpoints failed or returned no data');
+    }
     
-    const totalCars = testData.meta?.total || testData.total || 0;
+    console.log(`📊 API Response Sample:`, JSON.stringify({
+      total_items: testData.meta?.total || testData.total || 'unknown',
+      cars_in_response: testData.data?.length || 0,
+      has_pagination: !!testData.meta || !!testData.pagination
+    }, null, 2));
+    
+    const totalCars = testData.meta?.total || testData.total || 200000; // Default estimate
     const availableCars = testData.data?.length || 0;
     
     console.log(`📊 Total cars available: ${totalCars}, cars in response: ${availableCars}`);
     
-    if (totalCars === 0 && availableCars === 0) {
-      console.log(`⚠️ No cars found in API response. This might be normal if the API has no data.`);
-      maxPages = 0;
+    if (availableCars === 0) {
+      console.log(`⚠️ No cars found in API response. Trying alternative approach...`);
+      // Instead of giving up, let's try to fetch with different parameters
+      maxPages = 100; // Start with a reasonable number and increase if needed
     } else {
       maxPages = Math.ceil(totalCars / 50); // 50 cars per page
-      if (maxPages === 0 && availableCars > 0) {
-        maxPages = 1; // At least try one page if we have cars but no total
-      }
+      if (maxPages > 5000) maxPages = 5000; // Cap at 5000 pages for safety
     }
     
+    // Try multiple endpoint patterns with rate limiting and retry logic
     while (hasMorePages && page <= maxPages) {
-      console.log(`📄 Fetching page ${page}...`);
+      console.log(`📄 Fetching page ${page} of ${maxPages}...`);
       
-      const response = await fetch(`${API_BASE_URL}/cars?per_page=50&page=${page}`, {
-        headers: {
-          'accept': '*/*',
-          'x-api-key': API_KEY
+      let cars: Car[] = [];
+      let success = false;
+      let retryCount = 0;
+      const maxRetries = 3;
+      
+      while (!success && retryCount < maxRetries) {
+        try {
+          // Try different endpoint patterns
+          const endpoints = [
+            `${API_BASE_URL}/cars?per_page=50&page=${page}`,
+            `${API_BASE_URL}/cars?per_page=100&page=${page}&minutes=60`,
+            `${API_BASE_URL}/cars?per_page=30&page=${page}&simple_paginate=0`
+          ];
+          
+          for (const endpoint of endpoints) {
+            try {
+              console.log(`🔄 Trying: ${endpoint} (attempt ${retryCount + 1})`);
+              
+              const response = await fetch(endpoint, {
+                headers: {
+                  'accept': '*/*',
+                  'x-api-key': API_KEY
+                }
+              });
+
+              if (response.status === 429) {
+                const waitTime = Math.min(2000 * Math.pow(2, retryCount), 30000);
+                console.log(`⏰ Rate limited. Waiting ${waitTime}ms...`);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+                continue; // Try next endpoint
+              }
+
+              if (!response.ok) {
+                console.log(`❌ Response ${response.status}: ${response.statusText}`);
+                continue; // Try next endpoint
+              }
+
+              const data = await response.json();
+              cars = data.data || [];
+              
+              if (cars.length > 0) {
+                console.log(`✅ Got ${cars.length} cars from page ${page}`);
+                success = true;
+                break; // Success, exit endpoint loop
+              } else {
+                console.log(`⚠️ Empty response from ${endpoint}`);
+              }
+            } catch (endpointErr) {
+              console.log(`❌ Endpoint error: ${endpointErr.message}`);
+            }
+          }
+          
+          if (!success) {
+            retryCount++;
+            if (retryCount < maxRetries) {
+              const waitTime = 5000 * retryCount;
+              console.log(`🔄 Retrying page ${page} in ${waitTime}ms... (${retryCount}/${maxRetries})`);
+              await new Promise(resolve => setTimeout(resolve, waitTime));
+            }
+          }
+        } catch (err) {
+          retryCount++;
+          console.error(`❌ Error on page ${page}, attempt ${retryCount}: ${err.message}`);
+          if (retryCount < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 3000 * retryCount));
+          }
         }
-      });
-
-      if (!response.ok) {
-        console.error(`❌ API request failed: ${response.status} ${response.statusText}`);
-        break;
       }
-
-      const data = await response.json();
-      const cars: Car[] = data.data || [];
       
-      if (cars.length === 0) {
-        console.log('✅ No more cars to sync');
-        hasMorePages = false;
-        break;
+      if (!success || cars.length === 0) {
+        console.log(`❌ Failed to get cars from page ${page} after ${maxRetries} attempts`);
+        // Don't break completely, try a few more pages
+        if (page - totalSynced > 10) {
+          console.log('🛑 Too many consecutive failures, stopping sync');
+          break;
+        }
+        page++;
+        continue;
       }
 
       console.log(`🔄 Processing ${cars.length} cars from page ${page}...`);
@@ -197,8 +286,19 @@ Deno.serve(async (req) => {
         console.log(`📊 Progress: ${page}/${maxPages} pages processed, ${totalSynced} cars synced`);
       }
       
-      // Rate limiting delay - reduced for faster sync
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Progressive rate limiting - faster for successful pages, slower after failures
+      const delay = success ? 1000 : 3000;
+      await new Promise(resolve => setTimeout(resolve, delay));
+      
+      // Update max pages if we discover more cars
+      if (page % 100 === 0 && totalSynced > 0) {
+        console.log(`🔄 Midpoint check: ${totalSynced} cars synced so far`);
+        // If we're still finding cars, extend the search
+        if (cars.length === 50 || cars.length === 100) {
+          maxPages = Math.min(maxPages + 500, 5000);
+          console.log(`📈 Extending search to ${maxPages} pages`);
+        }
+      }
     }
 
     console.log(`✅ Sync completed! Total cars synced: ${totalSynced}`);
