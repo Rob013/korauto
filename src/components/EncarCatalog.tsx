@@ -495,14 +495,18 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   <LazyCarCard
                     key={car.id || index}
                     id={car.id}
-                    make={car.make}
-                    model={car.model}
+                    make={car.make?.name || car.make}
+                    model={car.model?.name || car.model}
                     year={car.year}
                     price={car.price}
                     image={car.image_url}
                     vin={car.vin}
-                    mileage={car.mileage}
-                    transmission={car.transmission}
+                    mileage={car.mileage?.toString()}
+                    transmission={car.transmission?.name || car.transmission}
+                    fuel={car.fuel?.name || car.fuel}
+                    color={car.color?.name || car.color}
+                    lot={car.lot_number || car.lots?.[0]?.lot || car.id}
+                    title={car.title}
                   />
                 ))}
               </div>
