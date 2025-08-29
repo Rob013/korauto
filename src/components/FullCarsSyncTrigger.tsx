@@ -55,24 +55,45 @@ export const FullCarsSyncTrigger = () => {
 
   const checkSyncStatus = async () => {
     try {
-      const { data, error } = await supabase
-        .from('sync_status')
-        .select('*')
-        .eq('id', 'cars-sync-main')
-        .single();
+      // Also get actual car counts from database
+      const [syncResponse, cacheCountResponse] = await Promise.all([
+        supabase
+          .from('sync_status')
+          .select('*')
+          .eq('id', 'cars-sync-main')
+          .single(),
+        supabase
+          .from('cars_cache')
+          .select('*', { count: 'exact', head: true })
+      ]);
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error checking sync status:', error);
+      if (syncResponse.error && syncResponse.error.code !== 'PGRST116') {
+        console.error('Error checking sync status:', syncResponse.error);
         return;
       }
 
-      if (data) {
-        setSyncStatus(data);
-        updateProgressMessage(data);
+      if (syncResponse.data) {
+        // Update with real car count if sync count is 0 but we have cars
+        const realCarCount = cacheCountResponse.count || 0;
+        const syncData = { 
+          ...syncResponse.data,
+          // If sync shows 0 but we have cars, show the real count
+          records_processed: syncResponse.data.records_processed || realCarCount
+        };
         
-        if (data.status === 'running') {
+        setSyncStatus(syncData);
+        updateProgressMessage(syncData);
+        
+        if (syncData.status === 'running') {
           setIsLoading(true);
         }
+        
+        console.log('📊 Sync Status Check:', {
+          status: syncData.status,
+          syncRecordsProcessed: syncResponse.data.records_processed,
+          realCarsInCache: realCarCount,
+          usingRealCount: syncResponse.data.records_processed === 0 && realCarCount > 0
+        });
       }
     } catch (err) {
       console.error('Failed to check sync status:', err);
