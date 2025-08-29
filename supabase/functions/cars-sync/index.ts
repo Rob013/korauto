@@ -66,16 +66,16 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
   const API_BASE_URL = 'https://auctionsapi.com/api';
   
-  // MAXIMUM SPEED MODE - Optimized for speed without errors
-  const MAX_PARALLEL_REQUESTS = 8; // High parallel processing for maximum speed
-  const BATCH_SIZE = 75; // Larger batch size for faster processing
-  const MIN_DELAY = 50; // Minimal delay for maximum speed
-  const MAX_RETRIES = 20; // Quick retries
-  const RATE_LIMIT_MAX_RETRIES = 50; // Efficient rate limit handling
-  const API_TIMEOUT = 25000; // 25 second timeout for speed
-  const SPEED_MODE = true; // Enable maximum speed mode
+  // CONSERVATIVE MODE - Optimized to prevent database timeouts
+  const MAX_PARALLEL_REQUESTS = 1; // Single-threaded to avoid DB overload
+  const BATCH_SIZE = 25; // Small batch size to prevent timeouts
+  const MIN_DELAY = 1000; // 1 second delay between operations
+  const MAX_RETRIES = 10; // Quick failure detection
+  const RATE_LIMIT_MAX_RETRIES = 20; // Limited rate limit retries
+  const API_TIMEOUT = 15000; // 15 second timeout to prevent edge function timeouts
+  const CONSERVATIVE_MODE = true; // Enable conservative processing mode
   
-  console.log('🚀 Starting MAXIMUM SPEED sync...');
+  console.log('🛡️ Starting CONSERVATIVE sync to prevent database timeouts...');
   
   // Update sync status
   await updateSyncStatus(supabaseClient, {
@@ -105,10 +105,11 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
       try {
         // Removed verbose logging for speed
         
-        // Fast adaptive delay for speed
-        const adaptiveDelay = MIN_DELAY + (retryCount * 50);
+        // Conservative delays to prevent database overload
+        const adaptiveDelay = Math.max(MIN_DELAY, MIN_DELAY + (retryCount * 500));
         
         if (retryCount > 0) {
+          console.log(`⏸️ Conservative retry delay: ${adaptiveDelay}ms (attempt ${retryCount})`);
           await new Promise(resolve => setTimeout(resolve, adaptiveDelay));
         }
         
@@ -159,7 +160,7 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
           progress.consecutiveEmptyPages = 0;
         }
 
-        // Fast batch processing
+        // Conservative batch processing with single-chunk strategy
         const chunks = [];
         for (let i = 0; i < cars.length; i += BATCH_SIZE) {
           chunks.push(cars.slice(i, i + BATCH_SIZE));
@@ -207,20 +208,22 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
     
     progress.currentPage += MAX_PARALLEL_REQUESTS;
     
-    // Progress updates every 5 pages for efficiency
-    if (progress.currentPage % 5 === 0) {
+    // Progress updates every 3 pages for conservative monitoring
+    if (progress.currentPage % 3 === 0) {
       const syncRate = Math.round(progress.totalSynced / ((Date.now() - progress.startTime) / 60000));
       
       await updateSyncStatus(supabaseClient, {
         current_page: progress.currentPage,
         records_processed: progress.totalSynced,
         last_activity_at: new Date().toISOString(),
-        error_message: `Speed: ${syncRate} cars/min, Errors: ${progress.errorCount}`
+        error_message: `Conservative: ${syncRate} cars/min, DB Issues: ${progress.dbCapacityIssues}, Errors: ${progress.errorCount}`
       });
+      
+      console.log(`🛡️ Conservative Progress: Page ${progress.currentPage}, Synced: ${progress.totalSynced}, Rate: ${syncRate} cars/min`);
     }
     
-    // Minimal pacing for maximum speed
-    await new Promise(resolve => setTimeout(resolve, MIN_DELAY));
+    // Conservative pacing with mandatory delays
+    await new Promise(resolve => setTimeout(resolve, Math.max(MIN_DELAY, 1500 + (progress.dbCapacityIssues * 200))));
   }
   
   // Final status update - determine completion based on multiple factors
@@ -231,7 +234,7 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
     current_page: progress.currentPage,
     records_processed: progress.totalSynced,
     last_activity_at: new Date().toISOString(),
-    error_message: `🎯 ULTRA-FAST SYNC ${finalStatus.toUpperCase()}: ${progress.totalSynced} cars synced, ${progress.errorCount} errors handled, ${progress.dbCapacityIssues} DB issues resolved, ${progress.rateLimitRetries} rate limits overcome`
+    error_message: `🛡️ CONSERVATIVE sync ${finalStatus.toUpperCase()}: ${progress.totalSynced} cars synced, ${progress.errorCount} errors, ${progress.dbCapacityIssues} DB timeouts resolved`
   });
   
   console.log(`🏁 ULTRA-FAST sync ${finalStatus}: ${progress.totalSynced} cars, ${progress.errorCount} errors handled, ${progress.rateLimitRetries} rate limits overcome`);
@@ -377,57 +380,78 @@ async function fetchWithRetry(url: string, options: any, maxRetries: number): Pr
   throw lastError;
 }
 
-// Ultra-fast chunk processing with massive parallel database writes
+// Enhanced chunk processing with timeout protection and retry logic
 async function processCarsChunk(supabaseClient: any, cars: Car[]): Promise<{success: number, errors: number}> {
-  try {
-    const carCacheItems = cars.map(car => {
-      const lot = car.lots?.[0];
-      const price = lot?.buy_now ? Math.round(lot.buy_now + 2300) : null;
-      const priceInCents = price ? price * 100 : null;
-      const mileageKm = lot?.odometer?.km || null;
-      
-      return {
-        id: car.id.toString(),
-        api_id: car.id.toString(),
-        make: car.manufacturer?.name || 'Unknown',
-        model: car.model?.name || 'Unknown',
-        year: car.year || 2020,
-        price: price,
-        price_cents: priceInCents,
-        mileage: mileageKm?.toString() || null,
-        rank_score: price ? (1 / price) * 1000000 : 0,
-        vin: car.vin,
-        fuel: car.fuel?.name,
-        transmission: car.transmission?.name,
-        color: car.color?.name,
-        condition: lot?.condition?.name?.replace('run_and_drives', 'Good'),
-        lot_number: lot?.lot,
-        images: JSON.stringify(lot?.images?.normal || lot?.images?.big || []),
-        car_data: JSON.stringify(car),
-        lot_data: JSON.stringify(lot || {}),
-        last_api_sync: new Date().toISOString()
-      };
-    });
-
-    // Massive batch upsert for maximum speed
-    const { error, count } = await supabaseClient
-      .from('cars_cache')
-      .upsert(carCacheItems, { 
-        onConflict: 'id',
-        ignoreDuplicates: false,
-        count: 'exact'
+  const MAX_CHUNK_RETRIES = 3;
+  const TIMEOUT_DELAY = 2000; // 2 second delay on timeout retry
+  
+  for (let attempt = 1; attempt <= MAX_CHUNK_RETRIES; attempt++) {
+    try {
+      const carCacheItems = cars.map(car => {
+        const lot = car.lots?.[0];
+        const price = lot?.buy_now ? Math.round(lot.buy_now + 2300) : null;
+        const priceInCents = price ? price * 100 : null;
+        const mileageKm = lot?.odometer?.km || null;
+        
+        return {
+          id: car.id.toString(),
+          api_id: car.id.toString(),
+          make: car.manufacturer?.name || 'Unknown',
+          model: car.model?.name || 'Unknown',
+          year: car.year || 2020,
+          price: price,
+          price_cents: priceInCents,
+          mileage: mileageKm?.toString() || null,
+          rank_score: price ? (1 / price) * 1000000 : 0,
+          vin: car.vin,
+          fuel: car.fuel?.name,
+          transmission: car.transmission?.name,
+          color: car.color?.name,
+          condition: lot?.condition?.name?.replace('run_and_drives', 'Good'),
+          lot_number: lot?.lot,
+          images: JSON.stringify(lot?.images?.normal || lot?.images?.big || []),
+          car_data: JSON.stringify(car),
+          lot_data: JSON.stringify(lot || {}),
+          last_api_sync: new Date().toISOString()
+        };
       });
 
-    if (error) {
-      console.error('❌ Batch upsert error:', error);
-      return { success: 0, errors: cars.length };
-    }
+      // Conservative upsert with timeout protection
+      const { error, count } = await supabaseClient
+        .from('cars_cache')
+        .upsert(carCacheItems, { 
+          onConflict: 'id',
+          ignoreDuplicates: false,
+          count: 'exact'
+        });
 
-    return { success: count || cars.length, errors: 0 };
-  } catch (err) {
-    console.error('💥 Chunk processing error:', err);
-    return { success: 0, errors: cars.length };
+      if (error) {
+        // Check for specific timeout errors
+        if (error.code === '57014' || error.message?.includes('timeout')) {
+          console.log(`⏰ Database timeout on attempt ${attempt}/${MAX_CHUNK_RETRIES}, retrying with delay...`);
+          if (attempt < MAX_CHUNK_RETRIES) {
+            await new Promise(resolve => setTimeout(resolve, TIMEOUT_DELAY * attempt));
+            continue; // Retry
+          }
+        }
+        
+        console.error(`❌ Batch upsert error (attempt ${attempt}):`, error);
+        return { success: 0, errors: cars.length };
+      }
+
+      return { success: count || cars.length, errors: 0 };
+      
+    } catch (err) {
+      console.error(`💥 Chunk processing error (attempt ${attempt}):`, err);
+      if (attempt < MAX_CHUNK_RETRIES) {
+        await new Promise(resolve => setTimeout(resolve, TIMEOUT_DELAY * attempt));
+        continue; // Retry
+      }
+    }
   }
+  
+  // All retries failed
+  return { success: 0, errors: cars.length };
 }
 
 async function updateSyncStatus(supabaseClient: any, updates: any) {
@@ -602,24 +626,22 @@ Deno.serve(async (req) => {
         return new Response(
           JSON.stringify({
             success: true,
-            message: '🚀 STABLE SYNC STARTED! Reliable car fetching with timeout prevention.',
+            message: '🛡️ CONSERVATIVE SYNC STARTED! Database-friendly sync with timeout prevention.',
             status: 'running',
             totalSynced: progress.totalSynced,
             pagesProcessed: 0,
             startedAt: new Date().toISOString(),
-            features: [
-              '⚡ 3x parallel page processing (STABLE)',
-              '🔥 50-car batch database writes (STABLE)', 
-              '🛡️ 50 retries per request (CONSERVATIVE)',
-              '💪 100 rate limit retries (STABLE)',
-              '🎯 Never stops until complete',
-              '📊 Real-time progress tracking',
-              '🚀 Stable mode enabled',
-              '🔄 Auto-restarts available',
-              '⚡ 200ms delays (STABLE)',
-              '🏃‍♂️ 30s timeout for reliability'
-            ],
-            note: 'STABLE MODE sync running in background. 3x parallel processing, 100 rate limit retries, 50-car batches. Optimized for reliability without timeouts. Check sync_status table for live progress.'
+          features: [
+            '🛡️ Single-threaded processing (SAFE)',
+            '📦 25-car batch writes (CONSERVATIVE)', 
+            '⏱️ 1-second delays (DB-FRIENDLY)',
+            '🔄 Timeout retry logic (3x attempts)',
+            '💪 Enhanced error handling',
+            '📊 Conservative progress tracking',
+            '🛡️ Database protection mode',
+            '🚫 Prevents 57014 timeout errors'
+          ],
+            note: 'CONSERVATIVE MODE sync running in background. Single-threaded processing, timeout retry logic, 25-car batches. Optimized to prevent database timeouts (57014). Check sync_status table for progress.'
           }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
