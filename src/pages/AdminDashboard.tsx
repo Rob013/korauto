@@ -302,18 +302,14 @@ const AdminDashboard = () => {
         .select("*", { count: "exact", head: true })
         .gte("created_at", oneWeekAgo.toISOString());
 
-      // Fetch real cars cache data for analytics - only count cars with valid prices
+      // Fetch real cars cache data for analytics
       const { count: totalCachedCars } = await supabase
         .from("cars_cache")
-        .select("*", { count: "exact", head: true })
-        .not("price_cents", "is", null)
-        .gt("price_cents", 0);
+        .select("*", { count: "exact", head: true });
 
       const { count: recentCarSyncs } = await supabase
         .from("cars_cache")
         .select("*", { count: "exact", head: true })
-        .not("price_cents", "is", null)
-        .gt("price_cents", 0)
         .gte("last_api_sync", oneWeekAgo.toISOString());
 
       // Get latest sync status for real-time data

@@ -85,14 +85,12 @@ export const FullCarsSyncTrigger = () => {
           return; // Re-check status after cleanup
         }
         
-        // Update with real car count for accurate progress display
+        // Update with real car count if sync count is 0 but we have cars
         const realCarCount = cacheCountResponse.count || 0;
         const syncData = { 
           ...syncResponse.data,
-          // Always show the actual cars in database as baseline progress
-          records_processed: Math.max(syncResponse.data.records_processed || 0, realCarCount),
-          // Add the real count for reference
-          actual_cars_in_db: realCarCount
+          // If sync shows 0 but we have cars, show the real count
+          records_processed: syncResponse.data.records_processed || realCarCount
         };
         
         setSyncStatus(syncData);
@@ -120,7 +118,7 @@ export const FullCarsSyncTrigger = () => {
     
     const lastActivity = sync.last_activity_at ? new Date(sync.last_activity_at) : new Date(sync.started_at || 0);
     const timeSinceActivity = Date.now() - lastActivity.getTime();
-    const STUCK_THRESHOLD = 10 * 60 * 1000; // 10 minutes (reduced from 15)
+    const STUCK_THRESHOLD = 15 * 60 * 1000; // 15 minutes
     
     return timeSinceActivity > STUCK_THRESHOLD;
   };
@@ -154,20 +152,11 @@ export const FullCarsSyncTrigger = () => {
     if (!status) return;
     
     const recordsProcessed = status.records_processed || 0;
-    const actualCarsInDb = (status as any).actual_cars_in_db || recordsProcessed;
     const estimatedTotal = 200000; // Conservative estimate based on API
+    const percentage = Math.round((recordsProcessed / estimatedTotal) * 100);
     
-    // Use the higher of current sync progress or actual database count for accurate progress
-    const displayProgress = Math.max(recordsProcessed, actualCarsInDb);
-    const percentage = Math.round((displayProgress / estimatedTotal) * 100);
-    
-    const formattedRecords = displayProgress.toLocaleString();
+    const formattedRecords = recordsProcessed.toLocaleString();
     const formattedTotal = estimatedTotal.toLocaleString();
-    
-    // Show additional info if there's a discrepancy
-    const progressNote = actualCarsInDb > recordsProcessed && status.status !== 'running' 
-      ? ` (${actualCarsInDb.toLocaleString()} in database)`
-      : '';
     
     // Calculate sync rate if we have timing info
     let rateText = '';
@@ -178,38 +167,21 @@ export const FullCarsSyncTrigger = () => {
       }
     }
     
-    // Determine specific rate limit type and guidance
-    let rateLimitDetails = '';
-    if (status.error_message) {
-      if (status.error_message.includes('API_RATE_LIMIT') || status.error_message.includes('HTTP 429')) {
-        rateLimitDetails = ' - External API rate limiting (will auto-resume with longer delays)';
-      } else if (status.error_message.includes('NETWORK_TIMEOUT')) {
-        rateLimitDetails = ' - Network timeout/connection issues (will auto-retry)';
-      } else if (status.error_message.includes('Database rate limit')) {
-        rateLimitDetails = ' - Database rate limiting (internal throttling)';
-      } else if (status.error_message.toLowerCase().includes('rate limit')) {
-        rateLimitDetails = ' - Rate limiting detected (will auto-resume)';
-      }
-    }
-    
     switch (status.status) {
       case 'running':
-        setProgress(`🔄 Syncing${rateText}... ${formattedRecords} / ${formattedTotal} cars (${percentage}%)${progressNote}`);
+        setProgress(`🔄 Syncing${rateText}... ${formattedRecords} / ${formattedTotal} cars (${percentage}%)`);
         break;
       case 'completed':
         setProgress(`✅ Sync complete! ${formattedRecords} cars synced`);
         break;
       case 'failed':
-        setProgress(`❌ Sync failed${progressNote}${rateLimitDetails}.`);
+        setProgress(`❌ Sync failed at ${formattedRecords} cars. Will auto-resume.`);
         break;
       case 'paused':
         setProgress(`⏸️ Sync paused at ${formattedRecords} cars. Click Resume to continue.`);
         break;
-      case 'idle':
-        setProgress(`💤 Ready to sync${progressNote}. ${formattedRecords} cars currently in database.`);
-        break;
       default:
-        setProgress(`Status: ${status.status} - ${formattedRecords} cars${progressNote}`);
+        setProgress(`Status: ${status.status} - ${formattedRecords} cars`);
     }
   };
 
@@ -297,7 +269,7 @@ export const FullCarsSyncTrigger = () => {
           smartSync: true,
           resume: true,
           fromPage: syncStatus.current_page,
-          reconcileProgress: true // Always reconcile to fix stuck syncs
+          reconcileProgress: true
         }
       });
 
@@ -353,47 +325,6 @@ export const FullCarsSyncTrigger = () => {
     }
   };
 
-  const forceResetSync = async () => {
-    try {
-      toast({
-        title: "Force Resetting Sync",
-        description: "Completely resetting sync progress to start fresh...",
-      });
-
-      // Force reset the sync to start from page 1
-      const { error } = await supabase
-        .from('sync_status')
-        .update({
-          status: 'failed',
-          current_page: 1,
-          records_processed: 0,
-          error_message: 'Manually reset - restarting from beginning',
-          completed_at: new Date().toISOString()
-        })
-        .eq('id', 'cars-sync-main');
-
-      if (error) throw error;
-
-      setIsLoading(false);
-      setIsStuckSyncDetected(false);
-      
-      toast({
-        title: "Sync Reset Complete",
-        description: "Sync has been reset. You can now start a fresh sync from the beginning.",
-      });
-      
-      // Re-check status
-      setTimeout(checkSyncStatus, 1000);
-    } catch (error) {
-      console.error('Failed to force reset sync:', error);
-      toast({
-        title: "Force Reset Failed",
-        description: error.message || "Failed to force reset sync.",
-        variant: "destructive",
-      });
-    }
-  };
-
   const getSyncStatusIcon = () => {
     if (!syncStatus) return <Clock className="h-4 w-4" />;
     
@@ -411,22 +342,14 @@ export const FullCarsSyncTrigger = () => {
     }
   };
 
-  // Computed state based on syncStatus
-  const isActive = syncStatus?.status === 'running';
-  const isCompleted = syncStatus?.status === 'completed';
-
   const canStartSync = !isLoading && (!syncStatus || ['completed', 'failed', 'idle'].includes(syncStatus.status));
   const canResumeSync = syncStatus?.status === 'paused';
-  const canForceStop = syncStatus?.status === 'running' && !isStuckSyncDetected && syncStatus.current_page > 0;
-  const canForceReset = syncStatus?.status === 'running' && isStuckSyncDetected;
+  const canForceStop = syncStatus?.status === 'running' && (isStuckSyncDetected || syncStatus.current_page > 0);
 
   const getProgressPercentage = () => {
-    if (!syncStatus) return 0;
-    const recordsProcessed = syncStatus.records_processed || 0;
-    const actualCarsInDb = (syncStatus as any).actual_cars_in_db || recordsProcessed;
-    const displayProgress = Math.max(recordsProcessed, actualCarsInDb);
+    if (!syncStatus || !syncStatus.records_processed) return 0;
     const estimatedTotal = 200000; // Conservative API estimate
-    return Math.min(100, (displayProgress / estimatedTotal) * 100);
+    return Math.min(100, (syncStatus.records_processed / estimatedTotal) * 100);
   };
 
   const getEstimatedTime = () => {
@@ -466,47 +389,8 @@ export const FullCarsSyncTrigger = () => {
     return `~${minutes}m remaining`;
   };
 
-  const getRateLimitInfo = () => {
-    if (!syncStatus?.error_message) return null;
-    
-    const message = syncStatus.error_message;
-    
-    if (message.includes('API_RATE_LIMIT') || message.includes('HTTP 429')) {
-      return {
-        type: 'API Rate Limit',
-        icon: '🌐',
-        description: 'External API is throttling requests',
-        action: 'System will automatically retry with exponential backoff delays',
-        severity: 'warning'
-      };
-    } else if (message.includes('NETWORK_TIMEOUT')) {
-      return {
-        type: 'Network Timeout',
-        icon: '📡',
-        description: 'Connection timeout or network issues',
-        action: 'System will automatically retry the failed requests',
-        severity: 'warning'
-      };
-    } else if (message.includes('Database rate limit')) {
-      return {
-        type: 'Database Rate Limit',
-        icon: '🗃️',
-        description: 'Internal database rate limiting active',
-        action: 'Wait for the rate limit window to reset',
-        severity: 'info'
-      };
-    } else if (message.toLowerCase().includes('rate limit')) {
-      return {
-        type: 'Rate Limit',
-        icon: '⏰',
-        description: 'Generic rate limiting detected',
-        action: 'System will automatically handle the rate limit',
-        severity: 'info'
-      };
-    }
-    
-    return null;
-  };
+  const isActive = syncStatus?.status === 'running';
+  const isCompleted = syncStatus?.status === 'completed';
 
   return (
     <div className="p-6 border rounded-lg bg-card space-y-4">
@@ -548,8 +432,34 @@ export const FullCarsSyncTrigger = () => {
         )}
       </div>
       
-      <div className="text-sm text-muted-foreground">
-        High-speed car sync system with automatic error recovery.
+      <div className="space-y-2">
+        <p className="text-muted-foreground">
+          🚀 <strong>MAXIMUM SPEED SYNC SYSTEM:</strong> Processes 3 pages simultaneously with 50-car database batches. 
+          Features bulletproof error handling with 20 retries per request and 100 rate-limit retries. 
+          NEVER STOPS until complete - handles any API issue automatically!
+        </p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+          <div className="space-y-1">
+            <p><strong>🔥 Speed Features:</strong></p>
+            <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
+              <li>3x parallel page processing</li>
+              <li>50-car batch database writes</li>
+              <li>Minimal 10ms delays</li>
+              <li>45-second request timeouts</li>
+            </ul>
+          </div>
+          
+          <div className="space-y-1">
+            <p><strong>🛡️ Bulletproof Features:</strong></p>
+            <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
+              <li>20 retries per failed request</li>
+              <li>100 rate-limit retry attempts</li>
+              <li>Smart adaptive delays</li>
+              <li>Never stops until 100% complete</li>
+            </ul>
+          </div>
+        </div>
       </div>
         
       {syncStatus && (
@@ -601,73 +511,66 @@ export const FullCarsSyncTrigger = () => {
               </div>
             </div>
             
-            {/* Simple Progress Stats */}
-            <div className="flex justify-between items-center text-sm bg-muted/50 p-3 rounded">
-              <div>
-                <span className="text-muted-foreground">Page:</span>
-                <span className="ml-2 font-medium">{syncStatus.current_page?.toLocaleString() || 0}</span>
+            {/* Detailed Progress Stats */}
+            <div className="grid grid-cols-2 gap-4 text-xs bg-muted/50 p-3 rounded">
+              <div className="space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Current Page:</span>
+                  <span className="font-medium">{syncStatus.current_page?.toLocaleString() || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Status:</span>
+                  <span className={`font-medium capitalize ${
+                    isCompleted ? 'text-green-600' : 
+                    isActive ? 'text-blue-600' : 
+                    syncStatus.status === 'failed' ? 'text-red-600' : 
+                    'text-yellow-600'
+                  }`}>
+                    {syncStatus.status}
+                    {isActive && <span className="ml-1 animate-pulse">●</span>}
+                  </span>
+                </div>
               </div>
-              <div>
-                <span className="text-muted-foreground">Status:</span>
-                <span className={`ml-2 font-medium capitalize ${
-                  isCompleted ? 'text-green-600' : 
-                  isActive ? 'text-blue-600' : 
-                  syncStatus.status === 'failed' ? 'text-red-600' : 
-                  'text-yellow-600'
-                }`}>
-                  {syncStatus.status}
-                  {isActive && <span className="ml-1 animate-pulse">●</span>}
-                </span>
+              
+              <div className="space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Target:</span>
+                  <span className="font-medium">200,000 cars</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">ETA:</span>
+                  <span className="font-medium">{getEstimatedTime()}</span>
+                </div>
               </div>
-              <div>
-                <span className="text-muted-foreground">ETA:</span>
-                <span className="ml-2 font-medium">{getEstimatedTime()}</span>
-              </div>
+              
+              {/* Performance metrics row */}
+              {syncStatus.error_message && syncStatus.error_message.includes('Rate:') && (
+                <div className="col-span-2 pt-2 border-t text-xs text-muted-foreground">
+                  <div className="font-medium text-primary">Performance Metrics:</div>
+                  <div className="mt-1">{syncStatus.error_message}</div>
+                </div>
+              )}
             </div>
           </div>
           
+          {/* Additional Status Info */}
+          <div className="text-sm space-y-1 border-t pt-3">
+            {syncStatus.started_at && (
+              <p><strong>Started:</strong> {new Date(syncStatus.started_at).toLocaleString()}</p>
+            )}
+            {syncStatus.completed_at && (
+              <p><strong>Completed:</strong> {new Date(syncStatus.completed_at).toLocaleString()}</p>
+            )}
+            {syncStatus.last_activity_at && isActive && (
+              <p><strong>Last Activity:</strong> {new Date(syncStatus.last_activity_at).toLocaleString()}</p>
+            )}
+          </div>
         </div>
       )}
       
       {progress && (
         <div className="p-3 bg-muted rounded text-sm">
           <p>{progress}</p>
-        </div>
-      )}
-      
-      {/* Rate Limit Information */}
-      {getRateLimitInfo() && (
-        <div className={`p-4 rounded-lg border ${
-          getRateLimitInfo()?.severity === 'warning' ? 'bg-yellow-50 border-yellow-200' :
-          getRateLimitInfo()?.severity === 'info' ? 'bg-blue-50 border-blue-200' :
-          'bg-gray-50 border-gray-200'
-        }`}>
-          <div className="flex items-start gap-3">
-            <span className="text-2xl">{getRateLimitInfo()?.icon}</span>
-            <div className="flex-1">
-              <h4 className={`font-semibold ${
-                getRateLimitInfo()?.severity === 'warning' ? 'text-yellow-800' :
-                getRateLimitInfo()?.severity === 'info' ? 'text-blue-800' :
-                'text-gray-800'
-              }`}>
-                {getRateLimitInfo()?.type} Detected
-              </h4>
-              <p className={`text-sm mt-1 ${
-                getRateLimitInfo()?.severity === 'warning' ? 'text-yellow-700' :
-                getRateLimitInfo()?.severity === 'info' ? 'text-blue-700' :
-                'text-gray-700'
-              }`}>
-                {getRateLimitInfo()?.description}
-              </p>
-              <p className={`text-sm mt-2 font-medium ${
-                getRateLimitInfo()?.severity === 'warning' ? 'text-yellow-800' :
-                getRateLimitInfo()?.severity === 'info' ? 'text-blue-800' :
-                'text-gray-800'
-              }`}>
-                ✓ {getRateLimitInfo()?.action}
-              </p>
-            </div>
-          </div>
         </div>
       )}
       
@@ -683,7 +586,7 @@ export const FullCarsSyncTrigger = () => {
               Syncing...
             </>
           ) : (
-            'Start Sync'
+            '🚀 Start Maximum Speed Sync'
           )}
         </Button>
         
@@ -703,17 +606,7 @@ export const FullCarsSyncTrigger = () => {
             variant="destructive"
             className="flex-1"
           >
-            Force Stop
-          </Button>
-        )}
-        
-        {canForceReset && (
-          <Button 
-            onClick={forceResetSync}
-            variant="destructive"
-            className="flex-1"
-          >
-            Reset Stuck Sync
+            {isStuckSyncDetected ? 'Fix Stuck Sync' : 'Force Stop'}
           </Button>
         )}
       </div>
@@ -721,12 +614,24 @@ export const FullCarsSyncTrigger = () => {
       {isStuckSyncDetected && (
         <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm">
           <p className="text-yellow-800">
-            ⚠️ <strong>Stuck Sync Detected:</strong> The sync has been inactive for more than 10 minutes. 
-            It may have timed out. Click "Reset Stuck Sync" to reset progress and start fresh.
+            ⚠️ <strong>Stuck Sync Detected:</strong> The sync has been inactive for more than 15 minutes. 
+            It may have timed out. Click "Fix Stuck Sync" to reset and try again.
           </p>
         </div>
       )}
       
+      <div className="mt-4 p-4 bg-muted rounded-lg">
+        <h4 className="font-semibold mb-2">🔄 Enhanced Smart Sync Features</h4>
+        <ul className="text-sm space-y-1 text-muted-foreground">
+          <li>• <strong>🚀 MAXIMUM SPEED:</strong> 3x parallel processing with 50-car batch writes</li>
+          <li>• <strong>🛡️ BULLETPROOF:</strong> 20 retries per request, 100 rate-limit retries</li>
+          <li>• <strong>⚡ NEVER STOPS:</strong> Handles ANY error automatically until 100% complete</li>
+          <li>• <strong>📊 REAL-TIME:</strong> Live progress with speed metrics every few seconds</li>
+          <li>• <strong>🎯 SMART RESUME:</strong> Auto-recovery from any interruption</li>
+          <li>• <strong>🔧 FORCE OVERRIDE:</strong> Manual controls for stuck syncs</li>
+          <li>• <strong>🤖 AUTO-SCHEDULER:</strong> Background recovery system active 24/7</li>
+        </ul>
+      </div>
     </div>
   );
 };
