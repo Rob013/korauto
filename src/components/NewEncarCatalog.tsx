@@ -149,15 +149,19 @@ const NewEncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               {filteredCars.map((car, index) => (
                 <LazyCarCard
                   key={car.id || index}
-                  {...car}
-                  make={typeof car.make === 'string' ? car.make : car.make?.name || 'Unknown'}
-                  model={typeof car.model === 'string' ? car.model : car.model?.name || 'Unknown'}
-                  transmission={typeof car.transmission === 'string' ? car.transmission : car.transmission?.name || 'Unknown'}
-                  fuel={typeof car.fuel === 'string' ? car.fuel : car.fuel?.name || 'Unknown'}
-                  color={typeof car.color === 'string' ? car.color : car.color?.name || 'Unknown'}
-                  mileage={car.mileage?.toString() || '0'}
-                  convertUSDtoEUR={convertUSDtoEUR}
-                  lazyLoading={true}
+                  id={String(car.id)}
+                  make={(car.make as any)?.name || String(car.make) || 'Unknown'}
+                  model={(car.model as any)?.name || String(car.model) || 'Unknown'}
+                  year={Number(car.year) || 2000}
+                  price={Number(car.price) || 0}
+                  image={String(car.image_url || '')}
+                  images={Array.isArray(car.images) ? car.images : []}
+                  mileage={String(car.mileage || '0')}
+                  transmission={(car.transmission as any)?.name || String(car.transmission) || 'Unknown'}
+                  fuel={(car.fuel as any)?.name || String(car.fuel) || 'Unknown'}
+                  color={(car.color as any)?.name || String(car.color) || 'Unknown'}
+                  title={String(car.title || '')}
+                  lot={String(car.id)}
                 />
               ))}
             </div>
