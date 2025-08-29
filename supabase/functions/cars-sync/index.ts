@@ -74,11 +74,18 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
   
   console.log('🚀 Starting reliable sync with proper error handling...');
   
-  // Update sync status
+  // Update sync status with current database count
+  const { data: currentCount } = await supabaseClient
+    .from('cars_cache')
+    .select('*', { count: 'exact', head: true })
+    .not('price_cents', 'is', null);
+  
+  const actualSyncedCount = currentCount || 0;
+  
   await updateSyncStatus(supabaseClient, {
     status: 'running',
     current_page: progress.currentPage,
-    records_processed: progress.totalSynced,
+    records_processed: actualSyncedCount,
     last_activity_at: new Date().toISOString()
   });
 
@@ -149,34 +156,51 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
     
     // Update progress every 10 pages for full sync
     if (progress.currentPage % 10 === 0) {
-      const syncRate = progress.totalSynced > 0 ? Math.round(progress.totalSynced / ((Date.now() - progress.startTime) / 60000)) : 0;
+      // Get actual database count for accurate progress
+      const { data: dbCount } = await supabaseClient
+        .from('cars_cache')
+        .select('*', { count: 'exact', head: true })
+        .not('price_cents', 'is', null);
+      
+      const actualCount = dbCount || progress.totalSynced;
+      const syncRate = actualCount > 0 ? Math.round(actualCount / ((Date.now() - progress.startTime) / 60000)) : 0;
       
       await updateSyncStatus(supabaseClient, {
         current_page: progress.currentPage,
-        records_processed: progress.totalSynced,
+        records_processed: actualCount,
         last_activity_at: new Date().toISOString(),
-        error_message: `Full sync: ${syncRate} cars/min, ${progress.totalSynced} total cars synced`
+        error_message: `Full sync: ${syncRate} cars/min, ${actualCount} total cars synced`
       });
       
-      console.log(`✅ Progress: Page ${progress.currentPage}, Synced: ${progress.totalSynced}, Rate: ${syncRate} cars/min`);
+      console.log(`✅ Progress: Page ${progress.currentPage}, Synced: ${actualCount}, Rate: ${syncRate} cars/min`);
     }
     
     // Reduced delay for faster processing of large dataset
     await new Promise(resolve => setTimeout(resolve, MIN_DELAY));
   }
   
-  // Final status update - completion based on full dataset
+  // Final status update - completion based on full dataset with actual count
+  const { data: finalCount } = await supabaseClient
+    .from('cars_cache')
+    .select('*', { count: 'exact', head: true })
+    .not('price_cents', 'is', null);
+  
+  const actualFinalCount = finalCount || progress.totalSynced;
   const finalStatus = (progress.currentPage > 10000 || progress.consecutiveEmptyPages >= 50) ? 'completed' : 'paused';
+  
   await updateSyncStatus(supabaseClient, {
     status: finalStatus,
     completed_at: finalStatus === 'completed' ? new Date().toISOString() : null,
     current_page: progress.currentPage,
-    records_processed: progress.totalSynced,
+    records_processed: actualFinalCount,
     last_activity_at: new Date().toISOString(),
-    error_message: `✅ Full sync ${finalStatus}: ${progress.totalSynced} cars synced from 190,000+ available`
+    error_message: `✅ Full sync ${finalStatus}: ${actualFinalCount} cars synced from 190,000+ available`
   });
   
-  console.log(`🏁 Full sync ${finalStatus}: ${progress.totalSynced} cars processed from 190,000+ available`);
+  console.log(`🏁 Full sync ${finalStatus}: ${actualFinalCount} cars processed from 190,000+ available`);
+  
+  // Update progress object with actual count
+  progress.totalSynced = actualFinalCount;
   return progress;
 }
 
@@ -241,7 +265,7 @@ async function runSyncWithAutoRestart(supabaseClient: any, initialProgress: Sync
   });
 }
 
-// Get current sync progress from database
+// Get current sync progress from database with actual car count
 async function getCurrentSyncProgress(supabaseClient: any): Promise<SyncProgress> {
   try {
     const { data: syncStatus } = await supabaseClient
@@ -250,9 +274,15 @@ async function getCurrentSyncProgress(supabaseClient: any): Promise<SyncProgress
       .eq('id', 'cars-sync-main')
       .single();
     
+    // Get actual count from database
+    const { data: actualCount } = await supabaseClient
+      .from('cars_cache')
+      .select('*', { count: 'exact', head: true })
+      .not('price_cents', 'is', null);
+    
     if (syncStatus) {
       return {
-        totalSynced: syncStatus.records_processed || 0,
+        totalSynced: actualCount || syncStatus.records_processed || 0,
         currentPage: syncStatus.current_page || 1,
         errorCount: 0,
         rateLimitRetries: 0,
@@ -267,9 +297,14 @@ async function getCurrentSyncProgress(supabaseClient: any): Promise<SyncProgress
     console.error('❌ Failed to get sync progress:', error.message);
   }
   
-  // Fallback to default progress
+  // Fallback to default progress with actual database count
+  const { data: fallbackCount } = await supabaseClient
+    .from('cars_cache')
+    .select('*', { count: 'exact', head: true })
+    .not('price_cents', 'is', null);
+  
   return {
-    totalSynced: 0,
+    totalSynced: fallbackCount || 0,
     currentPage: 1,
     errorCount: 0,
     rateLimitRetries: 0,
