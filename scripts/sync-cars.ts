@@ -72,13 +72,13 @@ async function makeApiRequest(url: string, retryCount = 0): Promise<unknown> {
 
     if (response.status === 429) {
       const delay = RATE_LIMIT_DELAY * Math.pow(BACKOFF_MULTIPLIER, retryCount)
-      console.log(`⏰ Rate limited. Waiting ${delay}ms before retry...`)
+      console.log(`⏰ API Rate Limit (HTTP 429): External API throttling. Waiting ${delay}ms before retry...`)
       
       if (retryCount < MAX_RETRIES) {
         await new Promise(resolve => setTimeout(resolve, delay))
         return makeApiRequest(url, retryCount + 1)
       } else {
-        throw new Error(`Rate limit exceeded after ${MAX_RETRIES} retries`)
+        throw new Error(`API_RATE_LIMIT: External API rate limit exceeded after ${MAX_RETRIES} retries (HTTP 429)`)
       }
     }
 
@@ -96,12 +96,19 @@ async function makeApiRequest(url: string, retryCount = 0): Promise<unknown> {
     
     if (retryCount < MAX_RETRIES && !errorMessage.includes('Rate limit exceeded')) {
       const delay = 250 * Math.pow(BACKOFF_MULTIPLIER, retryCount) // Faster retry delays
-      console.log(`⏰ Fast retry in ${delay}ms...`)
+      console.log(`⏰ Network retry in ${delay}ms...`)
       await new Promise(resolve => setTimeout(resolve, delay))
       return makeApiRequest(url, retryCount + 1)
     }
     
-    throw error
+    // Enhance error messages with specific types
+    if (errorMessage.includes('timeout') || errorMessage.includes('ECONNRESET')) {
+      throw new Error(`NETWORK_TIMEOUT: Connection timeout or reset - ${errorMessage}`)
+    } else if (errorMessage.includes('API_RATE_LIMIT')) {
+      throw error // Already has proper formatting
+    } else {
+      throw new Error(`API_ERROR: ${errorMessage}`)
+    }
   }
 }
 

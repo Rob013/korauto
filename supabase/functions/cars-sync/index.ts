@@ -145,7 +145,14 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
       if (error.message.includes('429') || error.message.includes('rate limit')) {
         progress.rateLimitRetries++;
         const delay = Math.min(MAX_DELAY, MIN_DELAY * Math.pow(2, progress.rateLimitRetries));
-        console.log(`🐌 Rate limit: waiting ${delay/1000}s`);
+        console.log(`🐌 API Rate limit (HTTP 429): waiting ${delay/1000}s`);
+        
+        // Update status with specific rate limit type
+        await updateSyncStatus(supabaseClient, {
+          error_message: `⏰ API Rate Limit (HTTP 429) - External API throttling requests. Auto-resuming in ${delay/1000}s. Page ${progress.currentPage}, ${progress.totalSynced} cars total.`,
+          last_activity_at: new Date().toISOString()
+        });
+        
         await new Promise(resolve => setTimeout(resolve, delay));
       } else {
         await new Promise(resolve => setTimeout(resolve, MIN_DELAY));
@@ -309,10 +316,18 @@ async function processPage(pageNum: number): Promise<number> {
     const result = await processCarsChunk(supabaseClient, cars);
     return result.success;
     
-  } catch (error) {
-    console.error(`❌ processPage ${pageNum} failed:`, error.message);
-    throw error;
-  }
+    } catch (error) {
+      console.error(`❌ processPage ${pageNum} failed:`, error.message);
+      
+      // Provide specific error context for rate limiting
+      if (error.message.includes('429')) {
+        throw new Error(`API_RATE_LIMIT: External API returned HTTP 429 - ${error.message}`);
+      } else if (error.message.includes('timeout') || error.message.includes('ECONNRESET')) {
+        throw new Error(`NETWORK_TIMEOUT: Network timeout or connection reset - ${error.message}`);
+      } else {
+        throw new Error(`PROCESSING_ERROR: ${error.message}`);
+      }
+    }
 }
 
 // Process cars chunk
