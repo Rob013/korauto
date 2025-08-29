@@ -178,6 +178,20 @@ export const FullCarsSyncTrigger = () => {
       }
     }
     
+    // Determine specific rate limit type and guidance
+    let rateLimitDetails = '';
+    if (status.error_message) {
+      if (status.error_message.includes('API_RATE_LIMIT') || status.error_message.includes('HTTP 429')) {
+        rateLimitDetails = ' - External API rate limiting (will auto-resume with longer delays)';
+      } else if (status.error_message.includes('NETWORK_TIMEOUT')) {
+        rateLimitDetails = ' - Network timeout/connection issues (will auto-retry)';
+      } else if (status.error_message.includes('Database rate limit')) {
+        rateLimitDetails = ' - Database rate limiting (internal throttling)';
+      } else if (status.error_message.toLowerCase().includes('rate limit')) {
+        rateLimitDetails = ' - Rate limiting detected (will auto-resume)';
+      }
+    }
+    
     switch (status.status) {
       case 'running':
         setProgress(`🔄 Syncing${rateText}... ${formattedRecords} / ${formattedTotal} cars (${percentage}%)${progressNote}`);
@@ -186,7 +200,7 @@ export const FullCarsSyncTrigger = () => {
         setProgress(`✅ Sync complete! ${formattedRecords} cars synced`);
         break;
       case 'failed':
-        setProgress(`❌ Sync failed${progressNote}. Rate limiting detected - will auto-resume with longer delays.`);
+        setProgress(`❌ Sync failed${progressNote}${rateLimitDetails}.`);
         break;
       case 'paused':
         setProgress(`⏸️ Sync paused at ${formattedRecords} cars. Click Resume to continue.`);
@@ -448,8 +462,47 @@ export const FullCarsSyncTrigger = () => {
     return `~${minutes}m remaining`;
   };
 
-  const isActive = syncStatus?.status === 'running';
-  const isCompleted = syncStatus?.status === 'completed';
+  const getRateLimitInfo = () => {
+    if (!syncStatus?.error_message) return null;
+    
+    const message = syncStatus.error_message;
+    
+    if (message.includes('API_RATE_LIMIT') || message.includes('HTTP 429')) {
+      return {
+        type: 'API Rate Limit',
+        icon: '🌐',
+        description: 'External API is throttling requests',
+        action: 'System will automatically retry with exponential backoff delays',
+        severity: 'warning'
+      };
+    } else if (message.includes('NETWORK_TIMEOUT')) {
+      return {
+        type: 'Network Timeout',
+        icon: '📡',
+        description: 'Connection timeout or network issues',
+        action: 'System will automatically retry the failed requests',
+        severity: 'warning'
+      };
+    } else if (message.includes('Database rate limit')) {
+      return {
+        type: 'Database Rate Limit',
+        icon: '🗃️',
+        description: 'Internal database rate limiting active',
+        action: 'Wait for the rate limit window to reset',
+        severity: 'info'
+      };
+    } else if (message.toLowerCase().includes('rate limit')) {
+      return {
+        type: 'Rate Limit',
+        icon: '⏰',
+        description: 'Generic rate limiting detected',
+        action: 'System will automatically handle the rate limit',
+        severity: 'info'
+      };
+    }
+    
+    return null;
+  };
 
   return (
     <div className="p-6 border rounded-lg bg-card space-y-4">
@@ -575,6 +628,42 @@ export const FullCarsSyncTrigger = () => {
       {progress && (
         <div className="p-3 bg-muted rounded text-sm">
           <p>{progress}</p>
+        </div>
+      )}
+      
+      {/* Rate Limit Information */}
+      {getRateLimitInfo() && (
+        <div className={`p-4 rounded-lg border ${
+          getRateLimitInfo()?.severity === 'warning' ? 'bg-yellow-50 border-yellow-200' :
+          getRateLimitInfo()?.severity === 'info' ? 'bg-blue-50 border-blue-200' :
+          'bg-gray-50 border-gray-200'
+        }`}>
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">{getRateLimitInfo()?.icon}</span>
+            <div className="flex-1">
+              <h4 className={`font-semibold ${
+                getRateLimitInfo()?.severity === 'warning' ? 'text-yellow-800' :
+                getRateLimitInfo()?.severity === 'info' ? 'text-blue-800' :
+                'text-gray-800'
+              }`}>
+                {getRateLimitInfo()?.type} Detected
+              </h4>
+              <p className={`text-sm mt-1 ${
+                getRateLimitInfo()?.severity === 'warning' ? 'text-yellow-700' :
+                getRateLimitInfo()?.severity === 'info' ? 'text-blue-700' :
+                'text-gray-700'
+              }`}>
+                {getRateLimitInfo()?.description}
+              </p>
+              <p className={`text-sm mt-2 font-medium ${
+                getRateLimitInfo()?.severity === 'warning' ? 'text-yellow-800' :
+                getRateLimitInfo()?.severity === 'info' ? 'text-blue-800' :
+                'text-gray-800'
+              }`}>
+                ✓ {getRateLimitInfo()?.action}
+              </p>
+            </div>
+          </div>
         </div>
       )}
       

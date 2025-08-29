@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Sync Rate Limit Detection Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes slide {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto space-y-8">
+        <h1 class="text-3xl font-bold text-center mb-8">Smart Sync Rate Limit Detection Enhancement</h1>
+        
+        <!-- Example 1: API Rate Limit -->
+        <div class="p-6 border rounded-lg bg-white space-y-4">
+            <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                    <svg class="h-4 w-4 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <h3 class="text-lg font-semibold">Smart Cars Sync System</h3>
+                </div>
+                <div class="flex items-center gap-4 text-sm">
+                    <div class="text-right">
+                        <div class="font-semibold text-blue-600">25,432</div>
+                        <div class="text-xs text-gray-500">cars synced</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-semibold text-blue-600">~45m remaining</div>
+                        <div class="text-xs text-gray-500">ETA</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-semibold text-emerald-600">12.7%</div>
+                        <div class="text-xs text-gray-500">complete</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-sm text-gray-600">
+                High-speed car sync system with automatic error recovery.
+            </div>
+            
+            <div class="p-3 bg-gray-100 rounded text-sm">
+                <p>❌ Sync failed - API Rate Limit (HTTP 429): External API throttling requests.</p>
+            </div>
+            
+            <!-- NEW: Rate Limit Information Display -->
+            <div class="p-4 rounded-lg border bg-yellow-50 border-yellow-200">
+                <div class="flex items-start gap-3">
+                    <span class="text-2xl">🌐</span>
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-yellow-800">API Rate Limit Detected</h4>
+                        <p class="text-sm mt-1 text-yellow-700">External API is throttling requests</p>
+                        <p class="text-sm mt-2 font-medium text-yellow-800">
+                            ✓ System will automatically retry with exponential backoff delays
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Example 2: Network Timeout -->
+        <div class="p-6 border rounded-lg bg-white space-y-4">
+            <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                    <svg class="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    <h3 class="text-lg font-semibold">Smart Cars Sync System</h3>
+                </div>
+            </div>
+            
+            <div class="text-sm text-gray-600">
+                High-speed car sync system with automatic error recovery.
+            </div>
+            
+            <div class="p-3 bg-gray-100 rounded text-sm">
+                <p>❌ Sync failed - Network Timeout: Connection timeout or network issues.</p>
+            </div>
+            
+            <!-- NEW: Network Timeout Information Display -->
+            <div class="p-4 rounded-lg border bg-yellow-50 border-yellow-200">
+                <div class="flex items-start gap-3">
+                    <span class="text-2xl">📡</span>
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-yellow-800">Network Timeout Detected</h4>
+                        <p class="text-sm mt-1 text-yellow-700">Connection timeout or network issues</p>
+                        <p class="text-sm mt-2 font-medium text-yellow-800">
+                            ✓ System will automatically retry the failed requests
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Example 3: Database Rate Limit -->
+        <div class="p-6 border rounded-lg bg-white space-y-4">
+            <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                    <svg class="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 class="text-lg font-semibold">Smart Cars Sync System</h3>
+                </div>
+            </div>
+            
+            <div class="text-sm text-gray-600">
+                High-speed car sync system with automatic error recovery.
+            </div>
+            
+            <div class="p-3 bg-gray-100 rounded text-sm">
+                <p>❌ Sync failed - Database rate limiting (internal throttling).</p>
+            </div>
+            
+            <!-- NEW: Database Rate Limit Information Display -->
+            <div class="p-4 rounded-lg border bg-blue-50 border-blue-200">
+                <div class="flex items-start gap-3">
+                    <span class="text-2xl">🗃️</span>
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-blue-800">Database Rate Limit Detected</h4>
+                        <p class="text-sm mt-1 text-blue-700">Internal database rate limiting active</p>
+                        <p class="text-sm mt-2 font-medium text-blue-800">
+                            ✓ Wait for the rate limit window to reset
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Before/After Comparison -->
+        <div class="bg-white p-6 rounded-lg border">
+            <h2 class="text-2xl font-bold mb-4">Enhancement Summary</h2>
+            
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-lg font-semibold mb-2 text-red-600">❌ Before</h3>
+                    <div class="p-3 bg-gray-100 rounded text-sm border">
+                        <p>❌ Sync failed. Rate limiting detected - will auto-resume with longer delays.</p>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">Generic message without specifics about what type of rate limit was encountered.</p>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-2 text-green-600">✅ After</h3>
+                    <div class="p-3 bg-gray-100 rounded text-sm border">
+                        <p>❌ Sync failed - API Rate Limit (HTTP 429): External API throttling requests.</p>
+                    </div>
+                    <div class="p-3 bg-yellow-50 border border-yellow-200 rounded mt-2">
+                        <div class="flex items-start gap-2">
+                            <span class="text-xl">🌐</span>
+                            <div>
+                                <h4 class="font-semibold text-yellow-800 text-sm">API Rate Limit Detected</h4>
+                                <p class="text-xs text-yellow-700">External API is throttling requests</p>
+                                <p class="text-xs font-medium text-yellow-800 mt-1">✓ System will automatically retry with exponential backoff delays</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">Specific rate limit type with detailed explanation and recommended action.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rate Limit Types Identified -->
+        <div class="bg-white p-6 rounded-lg border">
+            <h2 class="text-xl font-bold mb-4">Rate Limit Types Identified</h2>
+            
+            <div class="grid md:grid-cols-3 gap-4">
+                <div class="p-4 border rounded-lg">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-2xl">🌐</span>
+                        <h3 class="font-semibold">API Rate Limit</h3>
+                    </div>
+                    <p class="text-sm text-gray-600">External API (HTTP 429) throttling requests</p>
+                    <p class="text-xs text-blue-600 mt-1">Auto-retry with exponential backoff</p>
+                </div>
+                
+                <div class="p-4 border rounded-lg">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-2xl">📡</span>
+                        <h3 class="font-semibold">Network Timeout</h3>
+                    </div>
+                    <p class="text-sm text-gray-600">Connection timeout or network issues</p>
+                    <p class="text-xs text-blue-600 mt-1">Auto-retry failed requests</p>
+                </div>
+                
+                <div class="p-4 border rounded-lg">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-2xl">🗃️</span>
+                        <h3 class="font-semibold">Database Rate Limit</h3>
+                    </div>
+                    <p class="text-sm text-gray-600">Internal database throttling</p>
+                    <p class="text-xs text-blue-600 mt-1">Wait for window reset</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
