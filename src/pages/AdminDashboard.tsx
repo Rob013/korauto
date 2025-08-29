@@ -39,6 +39,7 @@ import AdminCarSearch from "@/components/AdminCarSearch";
 import { CookieManagementDashboard } from "@/components/CookieManagementDashboard";
 import PerformanceAuditWidget from "@/components/PerformanceAuditWidget";
 import { FullCarsSyncTrigger } from "@/components/FullCarsSyncTrigger";
+import { AutoResumeScheduler } from "@/components/AutoResumeScheduler";
 
 // Lazy load heavy admin components
 const AdminSyncDashboard = lazy(() => 
@@ -714,6 +715,8 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <AutoResumeScheduler enabled={true} checkIntervalMinutes={30} />
+      
       <div className="container max-w-7xl mx-auto p-3 sm:p-4 lg:p-6">
         {/* Compact Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">

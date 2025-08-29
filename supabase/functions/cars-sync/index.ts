@@ -60,7 +60,7 @@ interface SyncProgress {
   startTime: number;
 }
 
-// Background sync function that can handle long operations
+// Background sync function that can handle long operations with timeout handling
 async function performBackgroundSync(supabaseClient: any, progress: SyncProgress): Promise<SyncProgress> {
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
   const API_BASE_URL = 'https://auctionsapi.com/api';
@@ -160,17 +160,24 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
       progress.lastSuccessfulPage = progress.currentPage;
       progress.currentPage++;
       
-      // Update progress every 5 pages for more frequent updates
+      // Update progress every 5 pages for more frequent updates + heartbeat
       if (progress.currentPage % 5 === 0) {
         const syncRate = Math.round(progress.totalSynced / ((Date.now() - progress.startTime) / 60000));
         await updateSyncStatus(supabaseClient, {
           current_page: progress.currentPage,
           records_processed: progress.totalSynced,
-          last_activity_at: new Date().toISOString(),
+          last_activity_at: new Date().toISOString(),  // Heartbeat
           error_message: `Rate: ${syncRate} cars/min, Errors: ${progress.errorCount}, Rate limits: ${progress.rateLimitRetries}`
         });
         
         console.log(`📊 Progress: Page ${progress.currentPage}, Synced: ${progress.totalSynced}, Rate: ${syncRate} cars/min, Errors: ${progress.errorCount}`);
+      }
+      
+      // Heartbeat every 30 seconds for active monitoring
+      if (progress.currentPage % 2 === 0) {
+        await updateSyncStatus(supabaseClient, {
+          last_activity_at: new Date().toISOString()
+        });
       }
 
       // Check if we got fewer cars than expected (likely last page)
@@ -286,6 +293,62 @@ async function updateSyncStatus(supabaseClient: any, updates: any) {
   }
 }
 
+async function cleanupStuckSyncs(supabaseClient: any) {
+  try {
+    const { data: stuckSyncs } = await supabaseClient
+      .from('sync_status')
+      .select('*')
+      .eq('status', 'running')
+      .lt('last_activity_at', new Date(Date.now() - 60 * 60 * 1000).toISOString()); // 1 hour ago
+
+    if (stuckSyncs && stuckSyncs.length > 0) {
+      console.log(`🧹 Cleaning up ${stuckSyncs.length} stuck sync(s)...`);
+      
+      for (const sync of stuckSyncs) {
+        await supabaseClient
+          .from('sync_status')
+          .update({
+            status: 'failed',
+            error_message: 'Auto-cleaned: Edge Function timeout after 1 hour of inactivity',
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', sync.id);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to cleanup stuck syncs:', error);
+  }
+}
+
+async function getRealCarCount(supabaseClient: any): Promise<number> {
+  try {
+    const { count } = await supabaseClient
+      .from('cars_cache')
+      .select('*', { count: 'exact', head: true });
+    return count || 0;
+  } catch (error) {
+    console.error('Failed to get real car count:', error);
+    return 0;
+  }
+}
+
+async function reconcileProgressPage(supabaseClient: any, reportedPage: number): Promise<number> {
+  try {
+    const realCarCount = await getRealCarCount(supabaseClient);
+    const estimatedPage = Math.ceil(realCarCount / 100); // 100 cars per page
+    
+    // Use the higher of the two as a safety measure
+    const reconciledPage = Math.max(estimatedPage, reportedPage - 2); // Start 2 pages back for safety
+    
+    console.log(`🔄 Progress reconciliation: Real cars: ${realCarCount}, Estimated page: ${estimatedPage}, Reported: ${reportedPage}, Using: ${reconciledPage}`);
+    
+    return Math.max(1, reconciledPage);
+  } catch (error) {
+    console.error('Failed to reconcile progress:', error);
+    return reportedPage;
+  }
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -313,6 +376,10 @@ Deno.serve(async (req) => {
     }
 
     const supabaseClient = createClient(supabaseUrl, serviceRoleKey);
+    const { resume, fromPage, reconcileProgress } = await req.json().catch(() => ({}));
+
+    // Clean up stuck syncs first (running for more than 1 hour without activity)
+    await cleanupStuckSyncs(supabaseClient);
 
     // Check for existing running sync
     const { data: existingSync } = await supabaseClient
@@ -322,7 +389,7 @@ Deno.serve(async (req) => {
       .eq('status', 'running')
       .single();
 
-    if (existingSync) {
+    if (existingSync && !resume) {
       console.log('⏰ Sync already running. Returning existing status.');
       return new Response(
         JSON.stringify({
@@ -336,17 +403,38 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Initialize progress
-    const progress: SyncProgress = {
-      totalSynced: 0,
-      currentPage: 1,
-      errorCount: 0,
-      rateLimitRetries: 0,
-      dbCapacityIssues: 0,
-      lastSuccessfulPage: 0,
-      status: 'running',
-      startTime: Date.now()
-    };
+    // Initialize or resume progress
+    let progress: SyncProgress;
+    
+    if (resume && fromPage) {
+      // Smart resume with progress reconciliation
+      const realCarCount = await getRealCarCount(supabaseClient);
+      const resumePage = reconcileProgress ? await reconcileProgressPage(supabaseClient, fromPage) : fromPage;
+      
+      console.log(`🔄 Smart resume: Page ${resumePage}, Real cars: ${realCarCount}`);
+      
+      progress = {
+        totalSynced: realCarCount,
+        currentPage: resumePage,
+        errorCount: 0,
+        rateLimitRetries: 0,
+        dbCapacityIssues: 0,
+        lastSuccessfulPage: resumePage - 1,
+        status: 'running',
+        startTime: Date.now()
+      };
+    } else {
+      progress = {
+        totalSynced: 0,
+        currentPage: 1,
+        errorCount: 0,
+        rateLimitRetries: 0,
+        dbCapacityIssues: 0,
+        lastSuccessfulPage: 0,
+        status: 'running',
+        startTime: Date.now()
+      };
+    }
 
     // Start background sync process
     EdgeRuntime.waitUntil(

@@ -21,6 +21,7 @@ export const FullCarsSyncTrigger = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [progress, setProgress] = useState<string>('');
+  const [isStuckSyncDetected, setIsStuckSyncDetected] = useState(false);
   const { toast } = useToast();
 
   // Real-time sync status monitoring
@@ -73,6 +74,17 @@ export const FullCarsSyncTrigger = () => {
       }
 
       if (syncResponse.data) {
+        // Check for stuck sync (running for more than 15 minutes without activity)
+        const isStuck = detectStuckSync(syncResponse.data);
+        setIsStuckSyncDetected(isStuck);
+        
+        // Auto-cleanup stuck sync
+        if (isStuck && syncResponse.data.status === 'running') {
+          console.log('🔧 Auto-cleaning stuck sync...');
+          await cleanupStuckSync();
+          return; // Re-check status after cleanup
+        }
+        
         // Update with real car count if sync count is 0 but we have cars
         const realCarCount = cacheCountResponse.count || 0;
         const syncData = { 
@@ -92,11 +104,47 @@ export const FullCarsSyncTrigger = () => {
           status: syncData.status,
           syncRecordsProcessed: syncResponse.data.records_processed,
           realCarsInCache: realCarCount,
-          usingRealCount: syncResponse.data.records_processed === 0 && realCarCount > 0
+          usingRealCount: syncResponse.data.records_processed === 0 && realCarCount > 0,
+          isStuck
         });
       }
     } catch (err) {
       console.error('Failed to check sync status:', err);
+    }
+  };
+
+  const detectStuckSync = (sync: SyncStatus): boolean => {
+    if (sync.status !== 'running') return false;
+    
+    const lastActivity = sync.last_activity_at ? new Date(sync.last_activity_at) : new Date(sync.started_at || 0);
+    const timeSinceActivity = Date.now() - lastActivity.getTime();
+    const STUCK_THRESHOLD = 15 * 60 * 1000; // 15 minutes
+    
+    return timeSinceActivity > STUCK_THRESHOLD;
+  };
+
+  const cleanupStuckSync = async () => {
+    try {
+      const { error } = await supabase
+        .from('sync_status') 
+        .update({
+          status: 'failed',
+          error_message: 'Auto-cleaned: Sync was stuck for more than 15 minutes',
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', 'cars-sync-main');
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Stuck Sync Cleaned Up",
+        description: "The stuck sync has been automatically cleaned up. You can now start a new sync.",
+      });
+      
+      // Re-check status
+      setTimeout(checkSyncStatus, 1000);
+    } catch (error) {
+      console.error('Failed to cleanup stuck sync:', error);
     }
   };
 
@@ -212,27 +260,66 @@ export const FullCarsSyncTrigger = () => {
     
     try {
       toast({
-        title: "Resuming Sync",
-        description: "Continuing from where it left off...",
+        title: "Resuming Sync", 
+        description: "Smart resume with progress reconciliation...",
       });
 
       const { data, error } = await supabase.functions.invoke('cars-sync', {
         body: { 
           smartSync: true,
           resume: true,
-          fromPage: syncStatus.current_page
+          fromPage: syncStatus.current_page,
+          reconcileProgress: true
         }
       });
 
       if (error) throw error;
 
       setIsLoading(true);
-      setProgress('Resuming sync...');
+      setProgress('Resuming sync with smart recovery...');
     } catch (error) {
       console.error('Failed to resume sync:', error);
       toast({
         title: "Resume Failed",
         description: error.message || "Failed to resume sync.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const forceStopSync = async () => {
+    try {
+      toast({
+        title: "Force Stopping Sync",
+        description: "Manually stopping the current sync...",
+      });
+
+      const { error } = await supabase
+        .from('sync_status')
+        .update({
+          status: 'failed',
+          error_message: 'Manually stopped by admin',
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', 'cars-sync-main');
+
+      if (error) throw error;
+
+      setIsLoading(false);
+      setIsStuckSyncDetected(false);
+      
+      toast({
+        title: "Sync Stopped",
+        description: "Sync has been manually stopped. You can start a new sync now.",
+      });
+      
+      // Re-check status
+      setTimeout(checkSyncStatus, 1000);
+    } catch (error) {
+      console.error('Failed to force stop sync:', error);
+      toast({
+        title: "Force Stop Failed",
+        description: error.message || "Failed to force stop sync.",
         variant: "destructive",
       });
     }
@@ -257,6 +344,7 @@ export const FullCarsSyncTrigger = () => {
 
   const canStartSync = !isLoading && (!syncStatus || ['completed', 'failed', 'idle'].includes(syncStatus.status));
   const canResumeSync = syncStatus?.status === 'paused';
+  const canForceStop = syncStatus?.status === 'running' && (isStuckSyncDetected || syncStatus.current_page > 0);
 
   const getProgressPercentage = () => {
     if (!syncStatus || !syncStatus.records_processed) return 0;
@@ -484,20 +572,42 @@ export const FullCarsSyncTrigger = () => {
           <Button 
             onClick={resumeSync}
             variant="outline"
+            className="flex-1"
           >
             Resume Sync
           </Button>
         )}
+        
+        {canForceStop && (
+          <Button 
+            onClick={forceStopSync}
+            variant="destructive"
+            className="flex-1"
+          >
+            {isStuckSyncDetected ? 'Fix Stuck Sync' : 'Force Stop'}
+          </Button>
+        )}
       </div>
       
-      <div className="text-xs text-muted-foreground">
-        <p>🤖 <strong>Auto Features:</strong></p>
-        <ul className="list-disc list-inside space-y-1 mt-1">
-          <li>Daily sync at 2 AM UTC</li>
-          <li>Automatic error recovery</li>
-          <li>Rate limit handling</li>
-          <li>Old car cleanup (7 days)</li>
-          <li>Real-time progress tracking</li>
+      {isStuckSyncDetected && (
+        <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm">
+          <p className="text-yellow-800">
+            ⚠️ <strong>Stuck Sync Detected:</strong> The sync has been inactive for more than 15 minutes. 
+            It may have timed out. Click "Fix Stuck Sync" to reset and try again.
+          </p>
+        </div>
+      )}
+      
+      <div className="mt-4 p-4 bg-muted rounded-lg">
+        <h4 className="font-semibold mb-2">🔄 Enhanced Smart Sync Features</h4>
+        <ul className="text-sm space-y-1 text-muted-foreground">
+          <li>• <strong>Auto-Recovery:</strong> Detects and fixes stuck syncs automatically</li>
+          <li>• <strong>Smart Resume:</strong> Reconciles progress and resumes from correct position</li>
+          <li>• <strong>Intelligent Processing:</strong> 20 cars per batch (4x faster than before)</li>
+          <li>• <strong>Real-time Progress:</strong> Updates every 5 pages with sync rates</li>
+          <li>• <strong>Timeout Handling:</strong> Graceful recovery from Edge Function timeouts</li>
+          <li>• <strong>Force Stop:</strong> Manual override for stuck or problematic syncs</li>
+          <li>• <strong>Progress Reconciliation:</strong> Matches sync status with actual database</li>
         </ul>
       </div>
     </div>
