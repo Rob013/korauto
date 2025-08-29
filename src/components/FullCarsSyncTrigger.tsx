@@ -223,6 +223,34 @@ export const FullCarsSyncTrigger = () => {
   const canStartSync = !isLoading && (!syncStatus || ['completed', 'failed'].includes(syncStatus.status));
   const canResumeSync = syncStatus?.status === 'paused';
 
+  const getProgressPercentage = () => {
+    if (!syncStatus || !syncStatus.records_processed) return 0;
+    // Estimate based on typical API having ~200k cars
+    const estimatedTotal = 200000;
+    return Math.min(100, (syncStatus.records_processed / estimatedTotal) * 100);
+  };
+
+  const getEstimatedTime = () => {
+    if (!syncStatus || !syncStatus.started_at || syncStatus.status !== 'running') return 'N/A';
+    
+    const startTime = new Date(syncStatus.started_at).getTime();
+    const elapsed = Date.now() - startTime;
+    const processed = syncStatus.records_processed || 0;
+    
+    if (processed < 100) return 'Calculating...';
+    
+    const rate = processed / (elapsed / 1000 / 60); // cars per minute
+    const remaining = 200000 - processed;
+    const eta = remaining / rate; // minutes
+    
+    if (eta < 60) return `${Math.round(eta)}m`;
+    if (eta < 24 * 60) return `${Math.round(eta / 60)}h`;
+    return `${Math.round(eta / 60 / 24)}d`;
+  };
+
+  const isActive = syncStatus?.status === 'running';
+  const isCompleted = syncStatus?.status === 'completed';
+
   return (
     <div className="p-6 border rounded-lg bg-card space-y-4">
       <div className="flex items-center gap-2">
@@ -237,16 +265,100 @@ export const FullCarsSyncTrigger = () => {
         </p>
         
         {syncStatus && (
-          <div className="text-sm space-y-1">
-            <p><strong>Status:</strong> {syncStatus.status}</p>
-            <p><strong>Current Page:</strong> {syncStatus.current_page}</p>
-            <p><strong>Cars Processed:</strong> {syncStatus.records_processed?.toLocaleString() || 0}</p>
-            {syncStatus.started_at && (
-              <p><strong>Started:</strong> {new Date(syncStatus.started_at).toLocaleString()}</p>
-            )}
-            {syncStatus.completed_at && (
-              <p><strong>Completed:</strong> {new Date(syncStatus.completed_at).toLocaleString()}</p>
-            )}
+          <div className="space-y-4">
+            {/* Enhanced Progress Bar */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Sync Progress</span>
+                <div className="text-right">
+                  <div className="text-sm font-bold">
+                    {syncStatus.records_processed?.toLocaleString() || 0} cars
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {getProgressPercentage().toFixed(1)}% complete
+                  </div>
+                </div>
+              </div>
+              
+              {/* Main Progress Bar */}
+              <div className="relative">
+                <div className="w-full bg-muted rounded-full h-4 overflow-hidden shadow-inner">
+                  <div 
+                    className={`h-4 rounded-full transition-all duration-700 ease-out relative ${
+                      isActive ? 'bg-gradient-to-r from-blue-500 to-blue-600' :
+                      isCompleted ? 'bg-gradient-to-r from-green-500 to-green-600' :
+                      syncStatus.status === 'failed' ? 'bg-gradient-to-r from-red-500 to-red-600' :
+                      'bg-gradient-to-r from-yellow-500 to-yellow-600'
+                    }`}
+                    style={{ width: `${Math.max(2, getProgressPercentage())}%` }}
+                  >
+                    {/* Animated stripe overlay for active sync */}
+                    {isActive && (
+                      <div 
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                        style={{ 
+                          backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(255,255,255,0.2) 8px, rgba(255,255,255,0.2) 16px)',
+                          animation: 'slide 1.5s linear infinite'
+                        }}
+                      />
+                    )}
+                  </div>
+                  
+                  {/* Progress percentage overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-xs font-bold text-white drop-shadow-md">
+                      {getProgressPercentage() > 8 ? `${getProgressPercentage().toFixed(1)}%` : ''}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Detailed Progress Stats */}
+              <div className="grid grid-cols-2 gap-4 text-xs bg-muted/50 p-3 rounded">
+                <div className="space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Current Page:</span>
+                    <span className="font-medium">{syncStatus.current_page?.toLocaleString() || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Status:</span>
+                    <span className={`font-medium capitalize ${
+                      isCompleted ? 'text-green-600' : 
+                      isActive ? 'text-blue-600' : 
+                      syncStatus.status === 'failed' ? 'text-red-600' : 
+                      'text-yellow-600'
+                    }`}>
+                      {syncStatus.status}
+                      {isActive && <span className="ml-1 animate-pulse">●</span>}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Est. Total:</span>
+                    <span className="font-medium">~200k cars</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">ETA:</span>
+                    <span className="font-medium">{getEstimatedTime()}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Additional Status Info */}
+            <div className="text-sm space-y-1 border-t pt-3">
+              {syncStatus.started_at && (
+                <p><strong>Started:</strong> {new Date(syncStatus.started_at).toLocaleString()}</p>
+              )}
+              {syncStatus.completed_at && (
+                <p><strong>Completed:</strong> {new Date(syncStatus.completed_at).toLocaleString()}</p>
+              )}
+              {syncStatus.last_activity_at && isActive && (
+                <p><strong>Last Activity:</strong> {new Date(syncStatus.last_activity_at).toLocaleString()}</p>
+              )}
+            </div>
           </div>
         )}
       </div>

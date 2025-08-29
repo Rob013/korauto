@@ -1148,4 +1148,14 @@ All colors MUST be HSL.
   color: #000000 !important;
 }
 
+/* Progress bar animations */
+@keyframes slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 }
