@@ -69,11 +69,11 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
   // PRIORITY BRANDS SYNC FIRST
   const PRIORITY_BRANDS = ['Audi', 'Mercedes-Benz', 'Volkswagen', 'BMW'];
   
-  // OPTIMIZED FOR EDGE FUNCTION LIMITS - smaller batches to avoid timeout
-  const MAX_PARALLEL_PAGES = 3; // Reduce parallel processing to avoid CPU limits
-  const BATCH_SIZE = 20; // Smaller batches for faster processing
-  const MIN_DELAY = 200; // Slightly longer delay for stability
-  const API_TIMEOUT = 15000; // Reduced timeout to prevent hanging
+  // MAXIMUM SPEED OPTIMIZATION - tuned for ultra-fast processing
+  const MAX_PARALLEL_PAGES = 8; // Increased parallel processing for maximum speed
+  const BATCH_SIZE = 50; // Larger batches for maximum throughput
+  const MIN_DELAY = 50; // Minimal delay for maximum speed
+  const API_TIMEOUT = 20000; // Optimized timeout for high-speed requests
   const MAX_EXECUTION_TIME = 90000; // 90 seconds max execution to avoid timeout
   
   const executionStart = Date.now();
@@ -117,7 +117,7 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
       
       if (!response.ok) {
         if (response.status === 429) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 500));
           return 0;
         }
         return 0;
@@ -168,7 +168,7 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
       
       if (!response.ok) {
         if (response.status === 429) {
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Quick rate limit recovery
+          await new Promise(resolve => setTimeout(resolve, 500)); // Faster rate limit recovery
           return 0;
         }
         return 0;
@@ -238,8 +238,8 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
     let currentPriorityPage = 1;
     let consecutiveEmptyPriorityPages = 0;
     
-    // Sync this priority brand across limited pages to avoid timeout
-    while (currentPriorityPage <= 200 && consecutiveEmptyPriorityPages < 5 && !checkExecutionTime()) {
+    // Sync this priority brand across larger page ranges for maximum speed
+    while (currentPriorityPage <= 500 && consecutiveEmptyPriorityPages < 8 && !checkExecutionTime()) {
       const brandProcessed = await processPriorityBatch(currentPriorityPage, priorityBrand);
       
       if (brandProcessed === 0) {
@@ -252,8 +252,8 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
       
       currentPriorityPage += MAX_PARALLEL_PAGES;
       
-      // Update progress less frequently for speed
-      if (currentPriorityPage % 30 === 0) {
+      // Update progress less frequently for maximum speed
+      if (currentPriorityPage % 50 === 0) {
         await updateSyncStatus(supabaseClient, {
           error_message: `🎯 PRIORITY: ${priorityBrand} - ${priorityCarsCount} priority cars synced`,
           last_activity_at: new Date().toISOString()
@@ -410,7 +410,7 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
 async function runSyncWithAutoRestart(supabaseClient: any, initialProgress: SyncProgress): Promise<void> {
   let restartCount = 0;
   const MAX_RESTARTS = 3; // Limited restarts to avoid loops
-  const RESTART_DELAY = 30000; // 30 second delay between restarts
+  const RESTART_DELAY = 15000; // Reduced to 15 seconds for faster restarts
   
   while (restartCount < MAX_RESTARTS) {
     try {
@@ -427,7 +427,7 @@ async function runSyncWithAutoRestart(supabaseClient: any, initialProgress: Sync
       // If not completed and we have restarts left, try again
       restartCount++;
       if (restartCount < MAX_RESTARTS) {
-        console.log(`🔄 Restarting sync in 30 seconds (${restartCount + 1}/${MAX_RESTARTS})`);
+        console.log(`🔄 Restarting sync in 15 seconds (${restartCount + 1}/${MAX_RESTARTS})`);
         
         await updateSyncStatus(supabaseClient, {
           status: 'running',
@@ -763,21 +763,22 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: '🎯 PRIORITY SYNC STARTED! Audi, Mercedes, Volkswagen, BMW first, then ultra-fast sync for all others.',
+        message: '🚀 MAXIMUM SPEED SYNC STARTED! Priority brands first, then ultra-fast 8x parallel processing for all others.',
         status: 'running',
         totalSynced: progress.totalSynced,
         pagesProcessed: 0,
         startedAt: new Date().toISOString(),
         features: [
           '🎯 Priority sync: Audi, Mercedes, Volkswagen, BMW first',
-          '🚀 8x parallel page processing',
-          '📦 50-car batch writes', 
-          '⚡ 100ms delays for maximum speed',
-          '🎯 2-hour target for 190K cars',
+          '🚀 8x parallel page processing (MAXIMUM SPEED)',
+          '📦 50-car batch writes for ultra-fast throughput', 
+          '⚡ 50ms delays for maximum speed processing',
+          '🎯 Under 2-hour target for 190K cars',
           '📊 Real-time ETA tracking',
-          '🔥 Ultra-fast error recovery'
+          '🔥 Ultra-fast error recovery',
+          '💥 Maximum speed optimization active'
         ],
-        note: 'PRIORITY SYNC running! First syncing Audi, Mercedes, Volkswagen, BMW, then 8x parallel processing for all other brands. Targeting 190,000+ cars in 2 hours with real-time ETA.'
+        note: 'MAXIMUM SPEED SYNC running! First syncing Audi, Mercedes, Volkswagen, BMW, then 8x parallel processing for all other brands. Targeting 190,000+ cars in under 2 hours with ultra-fast processing.'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
