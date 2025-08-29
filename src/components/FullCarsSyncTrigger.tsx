@@ -253,9 +253,42 @@ export const FullCarsSyncTrigger = () => {
 
   return (
     <div className="p-6 border rounded-lg bg-card space-y-4">
-      <div className="flex items-center gap-2">
-        {getSyncStatusIcon()}
-        <h3 className="text-lg font-semibold">Smart Cars Sync System</h3>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          {getSyncStatusIcon()}
+          <h3 className="text-lg font-semibold">Smart Cars Sync System</h3>
+        </div>
+        
+        {/* Real-time progress and ETA beside title */}
+        {syncStatus && (
+          <div className="flex items-center gap-4 text-sm">
+            {/* Progress count */}
+            <div className="text-right">
+              <div className="font-semibold text-primary">
+                {syncStatus.records_processed?.toLocaleString() || 0}
+              </div>
+              <div className="text-xs text-muted-foreground">cars synced</div>
+            </div>
+            
+            {/* ETA */}
+            {isActive && (
+              <div className="text-right">
+                <div className="font-semibold text-blue-600">
+                  {getEstimatedTime()}
+                </div>
+                <div className="text-xs text-muted-foreground">ETA</div>
+              </div>
+            )}
+            
+            {/* Completion percentage */}
+            <div className="text-right">
+              <div className="font-semibold text-emerald-600">
+                {getProgressPercentage().toFixed(1)}%
+              </div>
+              <div className="text-xs text-muted-foreground">complete</div>
+            </div>
+          </div>
+        )}
       </div>
       
       <div className="space-y-2">
