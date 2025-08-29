@@ -66,13 +66,13 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
   const API_BASE_URL = 'https://auctionsapi.com/api';
   
-  // Ultra-aggressive settings for maximum speed
-  const MAX_PARALLEL_REQUESTS = 3; // Process multiple pages simultaneously
-  const BATCH_SIZE = 50; // Massive batch size for speed
-  const MIN_DELAY = 10; // Minimal delay between requests
-  const MAX_RETRIES = 20; // Never give up on a request
-  const RATE_LIMIT_MAX_RETRIES = 100; // Handle rate limits aggressively
-  const API_TIMEOUT = 45000; // 45 second timeout
+  // Bulletproof settings optimized for stability and speed
+  const MAX_PARALLEL_REQUESTS = 2; // Reduced parallel requests to avoid overwhelming API
+  const BATCH_SIZE = 30; // Smaller batches for better reliability
+  const MIN_DELAY = 500; // Increased delay to respect API limits
+  const MAX_RETRIES = 50; // Even more retries to never give up
+  const RATE_LIMIT_MAX_RETRIES = 200; // Extreme patience with rate limits
+  const API_TIMEOUT = 60000; // 60 second timeout for slow responses
   
   console.log('🚀 Starting MAXIMUM SPEED sync with bulletproof error handling...');
   
@@ -104,9 +104,15 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
       try {
         console.log(`🔥 SPEED Processing page ${pageNum} (attempt ${retryCount + 1})...`);
         
-        // Adaptive delay based on error rate
-        const adaptiveDelay = Math.max(MIN_DELAY, MIN_DELAY * Math.pow(1.2, Math.min(progress.errorCount, 10)));
-        if (retryCount > 0) await new Promise(resolve => setTimeout(resolve, adaptiveDelay));
+        // Smart adaptive delay - increase significantly with errors and retries
+        const baseDelay = MIN_DELAY + (retryCount * 200);
+        const errorDelay = progress.errorCount > 10 ? progress.errorCount * 100 : 0;
+        const adaptiveDelay = Math.min(10000, baseDelay + errorDelay);
+        
+        if (retryCount > 0) {
+          console.log(`⏸️ Retry delay: ${adaptiveDelay}ms (attempt ${retryCount}, errors: ${progress.errorCount})`);
+          await new Promise(resolve => setTimeout(resolve, adaptiveDelay));
+        }
         
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
@@ -131,8 +137,9 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
               return; // Skip this page to continue sync
             }
             
-            // Dynamic backoff based on rate limit severity
-            const backoffTime = Math.min(30000, 1000 * Math.pow(1.5, Math.min(rateLimitRetries, 8)));
+            // Progressive backoff - start small, get much bigger for persistent rate limits
+            const backoffTime = Math.min(120000, 2000 * Math.pow(2, Math.min(rateLimitRetries, 6)));
+            console.log(`🛡️ Rate limit backoff: ${backoffTime}ms (retry ${rateLimitRetries})`);
             await new Promise(resolve => setTimeout(resolve, backoffTime));
             continue;
           } else if (response.status >= 500) {
@@ -224,8 +231,8 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
     
     progress.currentPage += MAX_PARALLEL_REQUESTS;
     
-    // Rapid progress updates every few pages
-    if (progress.currentPage % 5 === 0) {
+    // More frequent progress updates for better monitoring
+    if (progress.currentPage % 3 === 0) {
       const syncRate = Math.round(progress.totalSynced / ((Date.now() - progress.startTime) / 60000));
       const currentRate = Math.round(MAX_PARALLEL_REQUESTS / ((Date.now() - startTime) / 60000));
       
@@ -239,8 +246,9 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
       console.log(`🚀 SPEED Progress: Page ${progress.currentPage}, Synced: ${progress.totalSynced}, Rate: ${syncRate} cars/min, Current: ${currentRate} pages/min`);
     }
     
-    // Minimal delay to prevent overwhelming the system
-    await new Promise(resolve => setTimeout(resolve, MIN_DELAY));
+    // Smart pacing to prevent API overload
+    const pacingDelay = Math.max(MIN_DELAY, MIN_DELAY * (progress.errorCount > 5 ? 3 : 1));
+    await new Promise(resolve => setTimeout(resolve, pacingDelay));
   }
   
   // Final status update - determine completion based on multiple factors
