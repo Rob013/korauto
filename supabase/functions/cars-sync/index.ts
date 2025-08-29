@@ -61,21 +61,18 @@ interface SyncProgress {
   startTime: number;
 }
 
-// Background sync function with maximum speed and bulletproof error handling
+// Reliable sync function with proper error handling
 async function performBackgroundSync(supabaseClient: any, progress: SyncProgress): Promise<SyncProgress> {
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
   const API_BASE_URL = 'https://auctionsapi.com/api';
   
-  // CONSERVATIVE MODE - Optimized to prevent database timeouts
-  const MAX_PARALLEL_REQUESTS = 1; // Single-threaded to avoid DB overload
-  const BATCH_SIZE = 25; // Small batch size to prevent timeouts
-  const MIN_DELAY = 1000; // 1 second delay between operations
-  const MAX_RETRIES = 10; // Quick failure detection
-  const RATE_LIMIT_MAX_RETRIES = 20; // Limited rate limit retries
-  const API_TIMEOUT = 15000; // 15 second timeout to prevent edge function timeouts
-  const CONSERVATIVE_MODE = true; // Enable conservative processing mode
+  // RELIABLE MODE - Balanced performance with stability
+  const BATCH_SIZE = 10; // Very small batches to prevent timeouts
+  const MIN_DELAY = 2000; // 2 second delay between operations
+  const MAX_RETRIES = 5; // Fewer retries to prevent loops
+  const API_TIMEOUT = 25000; // 25 second timeout
   
-  console.log('🛡️ Starting CONSERVATIVE sync to prevent database timeouts...');
+  console.log('🚀 Starting reliable sync with proper error handling...');
   
   // Update sync status
   await updateSyncStatus(supabaseClient, {
@@ -85,238 +82,161 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
     last_activity_at: new Date().toISOString()
   });
 
-  // Process multiple pages in parallel for maximum speed
-  const processPageBatch = async (startPage: number, batchCount: number): Promise<void> => {
-    const pagePromises = [];
-    
-    for (let i = 0; i < batchCount && (startPage + i) <= 20000; i++) {
-      const pageNum = startPage + i;
-      pagePromises.push(processSinglePage(pageNum));
-    }
-    
-    await Promise.allSettled(pagePromises);
-  };
-
-  const processSinglePage = async (pageNum: number): Promise<void> => {
-    let retryCount = 0;
-    let rateLimitRetries = 0;
-    
-    while (retryCount < MAX_RETRIES && progress.status === 'running') {
-      try {
-        // Removed verbose logging for speed
-        
-        // Conservative delays to prevent database overload
-        const adaptiveDelay = Math.max(MIN_DELAY, MIN_DELAY + (retryCount * 500));
-        
-        if (retryCount > 0) {
-          console.log(`⏸️ Conservative retry delay: ${adaptiveDelay}ms (attempt ${retryCount})`);
-          await new Promise(resolve => setTimeout(resolve, adaptiveDelay));
+  // Process pages sequentially to avoid database overload
+  const processPage = async (pageNum: number): Promise<number> => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
+      
+      const response = await fetch(
+        `${API_BASE_URL}/cars?per_page=100&page=${pageNum}`,
+        { 
+          headers: { 'accept': '*/*', 'x-api-key': API_KEY },
+          signal: controller.signal
         }
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
-        
-        const response = await fetch(
-          `${API_BASE_URL}/cars?per_page=100&page=${pageNum}`,
-          { 
-            headers: { 'accept': '*/*', 'x-api-key': API_KEY },
-            signal: controller.signal
-          }
-        );
-        
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) {
-          if (response.status === 429) {
-            rateLimitRetries++;
-            if (rateLimitRetries >= RATE_LIMIT_MAX_RETRIES) {
-              return; // Skip this page to continue sync
-            }
-            
-            // Fast backoff for rate limits
-            const backoffTime = Math.min(5000, 200 + (rateLimitRetries * 100));
-            await new Promise(resolve => setTimeout(resolve, backoffTime));
-            continue;
-          } else if (response.status >= 500) {
-            // Server errors - fast retry
-            retryCount++;
-            const serverErrorDelay = Math.min(3000, 100 * Math.pow(1.5, retryCount));
-            await new Promise(resolve => setTimeout(resolve, serverErrorDelay));
-            continue;
-          } else {
-            // Client errors - skip page
-            progress.errorCount++;
-            return;
-          }
+      );
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        if (response.status === 429) {
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          return 0; // Skip this page
         }
-
-        const data = await response.json();
-        const cars: Car[] = data.data || [];
-        
-        if (cars.length === 0) {
-          progress.consecutiveEmptyPages++;
-          return;
-        } else {
-          progress.consecutiveEmptyPages = 0;
-        }
-
-        // Conservative batch processing with single-chunk strategy
-        const chunks = [];
-        for (let i = 0; i < cars.length; i += BATCH_SIZE) {
-          chunks.push(cars.slice(i, i + BATCH_SIZE));
-        }
-
-        const chunkResults = await Promise.allSettled(
-          chunks.map(chunk => processCarsChunk(supabaseClient, chunk))
-        );
-
-        let successCount = 0;
-        chunkResults.forEach((result, index) => {
-          if (result.status === 'fulfilled') {
-            successCount += result.value.success;
-          } else {
-            progress.dbCapacityIssues += chunks[index].length;
-          }
-        });
-
-        progress.totalSynced += successCount;
-        progress.lastSuccessfulPage = Math.max(progress.lastSuccessfulPage, pageNum);
-        
-        return; // Success!
-        
-      } catch (error) {
-        retryCount++;
-        progress.errorCount++;
-        
-        if (retryCount >= MAX_RETRIES) {
-          return; // Continue sync even if this page fails
-        }
-        
-        // Fast backoff for network errors
-        const errorDelay = Math.min(2000, 100 * Math.pow(1.4, retryCount));
-        await new Promise(resolve => setTimeout(resolve, errorDelay));
+        return 0;
       }
+
+      const data = await response.json();
+      const cars: Car[] = data.data || [];
+      
+      if (cars.length === 0) {
+        return 0;
+      }
+
+      // Process cars in very small batches
+      let processedCount = 0;
+      for (let i = 0; i < cars.length; i += BATCH_SIZE) {
+        const chunk = cars.slice(i, i + BATCH_SIZE);
+        const result = await processCarsChunk(supabaseClient, chunk);
+        processedCount += result.success;
+        
+        // Small delay between chunks
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      return processedCount;
+      
+    } catch (error) {
+      console.error(`Error processing page ${pageNum}:`, error.message);
+      return 0;
     }
   };
 
-  // ULTRA-FAST parallel page processing - continue until we hit end or 50 consecutive empty pages
-  while (progress.currentPage <= 20000 && progress.status === 'running' && progress.consecutiveEmptyPages < 50) {
-    const startTime = Date.now();
+  // Sequential page processing to avoid database overload
+  while (progress.currentPage <= 5000 && progress.status === 'running' && progress.consecutiveEmptyPages < 10) {
+    console.log(`📄 Processing page ${progress.currentPage}...`);
     
-    // Process multiple pages in parallel for maximum speed
-    await processPageBatch(progress.currentPage, MAX_PARALLEL_REQUESTS);
+    const processedCars = await processPage(progress.currentPage);
     
-    progress.currentPage += MAX_PARALLEL_REQUESTS;
+    if (processedCars === 0) {
+      progress.consecutiveEmptyPages++;
+    } else {
+      progress.consecutiveEmptyPages = 0;
+      progress.totalSynced += processedCars;
+    }
     
-    // Progress updates every 3 pages for conservative monitoring
-    if (progress.currentPage % 3 === 0) {
-      const syncRate = Math.round(progress.totalSynced / ((Date.now() - progress.startTime) / 60000));
+    progress.currentPage++;
+    
+    // Update progress every 5 pages
+    if (progress.currentPage % 5 === 0) {
+      const syncRate = progress.totalSynced > 0 ? Math.round(progress.totalSynced / ((Date.now() - progress.startTime) / 60000)) : 0;
       
       await updateSyncStatus(supabaseClient, {
         current_page: progress.currentPage,
         records_processed: progress.totalSynced,
         last_activity_at: new Date().toISOString(),
-        error_message: `Conservative: ${syncRate} cars/min, DB Issues: ${progress.dbCapacityIssues}, Errors: ${progress.errorCount}`
+        error_message: `Reliable sync: ${syncRate} cars/min, ${progress.totalSynced} total`
       });
       
-      console.log(`🛡️ Conservative Progress: Page ${progress.currentPage}, Synced: ${progress.totalSynced}, Rate: ${syncRate} cars/min`);
+      console.log(`✅ Progress: Page ${progress.currentPage}, Synced: ${progress.totalSynced}, Rate: ${syncRate} cars/min`);
     }
     
-    // Conservative pacing with mandatory delays
-    await new Promise(resolve => setTimeout(resolve, Math.max(MIN_DELAY, 1500 + (progress.dbCapacityIssues * 200))));
+    // Mandatory delay between pages
+    await new Promise(resolve => setTimeout(resolve, MIN_DELAY));
   }
   
-  // Final status update - determine completion based on multiple factors
-  const finalStatus = (progress.currentPage > 20000 || progress.consecutiveEmptyPages >= 50) ? 'completed' : 'paused';
+  // Final status update
+  const finalStatus = (progress.currentPage > 5000 || progress.consecutiveEmptyPages >= 10) ? 'completed' : 'paused';
   await updateSyncStatus(supabaseClient, {
     status: finalStatus,
     completed_at: finalStatus === 'completed' ? new Date().toISOString() : null,
     current_page: progress.currentPage,
     records_processed: progress.totalSynced,
     last_activity_at: new Date().toISOString(),
-    error_message: `🛡️ CONSERVATIVE sync ${finalStatus.toUpperCase()}: ${progress.totalSynced} cars synced, ${progress.errorCount} errors, ${progress.dbCapacityIssues} DB timeouts resolved`
+    error_message: `✅ Reliable sync ${finalStatus}: ${progress.totalSynced} cars synced successfully`
   });
   
-  console.log(`🏁 ULTRA-FAST sync ${finalStatus}: ${progress.totalSynced} cars, ${progress.errorCount} errors handled, ${progress.rateLimitRetries} rate limits overcome`);
+  console.log(`🏁 Sync ${finalStatus}: ${progress.totalSynced} cars processed`);
   return progress;
 }
 
-// Auto-restart sync function that never gives up until ALL cars are synced
+// Simple sync runner with limited restarts
 async function runSyncWithAutoRestart(supabaseClient: any, initialProgress: SyncProgress): Promise<void> {
   let restartCount = 0;
-  const MAX_RESTARTS = 2000; // Even more restarts for ultra-persistence
-  const RESTART_DELAY_INITIAL = 15000; // Start with 15 second delay for faster recovery
-  const MAX_RESTART_DELAY = 180000; // Max 3 minute delay between restarts
+  const MAX_RESTARTS = 3; // Limited restarts to avoid loops
+  const RESTART_DELAY = 30000; // 30 second delay between restarts
   
   while (restartCount < MAX_RESTARTS) {
     try {
-      console.log(`🔄 ULTRA-FAST AUTO-RESTART: Attempt ${restartCount + 1}, resuming sync at maximum speed...`);
+      console.log(`🔄 Sync attempt ${restartCount + 1}/${MAX_RESTARTS}`);
       
       const result = await performBackgroundSync(supabaseClient, initialProgress);
       
-      // Check if we actually completed the sync
-      if (result.status === 'completed' && result.consecutiveEmptyPages >= 50) {
-        console.log('✅ SYNC COMPLETE: All cars successfully synced!');
-        return; // Successfully completed
+      // Check if completed
+      if (result.status === 'completed') {
+        console.log('✅ SYNC COMPLETE: Cars successfully synced!');
+        return;
       }
       
-      // If we're here, sync didn't complete - restart it
+      // If not completed and we have restarts left, try again
       restartCount++;
-      const restartDelay = Math.min(
-        MAX_RESTART_DELAY, 
-        RESTART_DELAY_INITIAL * Math.pow(1.5, Math.min(restartCount, 10))
-      );
-      
-      console.log(`🔄 SYNC INCOMPLETE: Restarting in ${restartDelay/1000} seconds (attempt ${restartCount + 1}/${MAX_RESTARTS})`);
-      
-      // Update status to show we're auto-restarting
-      await updateSyncStatus(supabaseClient, {
-        status: 'running',
-        error_message: `🔄 AUTO-RESTART: Attempt ${restartCount + 1}, restarting in ${restartDelay/1000}s to continue sync`,
-        last_activity_at: new Date().toISOString()
-      });
-      
-      // Wait before restarting
-      await new Promise(resolve => setTimeout(resolve, restartDelay));
-      
-      // Get fresh progress for restart
-      const currentProgress = await getCurrentSyncProgress(supabaseClient);
-      Object.assign(initialProgress, currentProgress);
+      if (restartCount < MAX_RESTARTS) {
+        console.log(`🔄 Restarting sync in 30 seconds (${restartCount + 1}/${MAX_RESTARTS})`);
+        
+        await updateSyncStatus(supabaseClient, {
+          status: 'running',
+          error_message: `🔄 Restarting sync (${restartCount + 1}/${MAX_RESTARTS})`,
+          last_activity_at: new Date().toISOString()
+        });
+        
+        await new Promise(resolve => setTimeout(resolve, RESTART_DELAY));
+        
+        // Get fresh progress
+        const currentProgress = await getCurrentSyncProgress(supabaseClient);
+        Object.assign(initialProgress, currentProgress);
+      }
       
     } catch (error) {
       restartCount++;
-      const restartDelay = Math.min(
-        MAX_RESTART_DELAY, 
-        RESTART_DELAY_INITIAL * Math.pow(1.5, Math.min(restartCount, 10))
-      );
+      console.error(`❌ Sync failed: ${error.message}`);
       
-      console.error(`❌ SYNC FAILED: ${error.message}. Auto-restarting in ${restartDelay/1000} seconds (attempt ${restartCount + 1}/${MAX_RESTARTS})`);
-      
-      // Update status to show failure and auto-restart
-      await updateSyncStatus(supabaseClient, {
-        status: 'running', // Keep as running to show auto-restart is happening
-        error_message: `🔄 AUTO-RESTART: Failed with "${error.message}". Restarting in ${restartDelay/1000}s (attempt ${restartCount + 1}/${MAX_RESTARTS})`,
-        last_activity_at: new Date().toISOString()
-      });
-      
-      // Wait before restarting
-      await new Promise(resolve => setTimeout(resolve, restartDelay));
-      
-      // Get fresh progress for restart
-      try {
-        const currentProgress = await getCurrentSyncProgress(supabaseClient);
-        Object.assign(initialProgress, currentProgress);
-      } catch (progressError) {
-        console.error('❌ Failed to get current progress, using existing:', progressError.message);
+      if (restartCount < MAX_RESTARTS) {
+        await updateSyncStatus(supabaseClient, {
+          status: 'running',
+          error_message: `❌ Error: ${error.message}. Restarting (${restartCount + 1}/${MAX_RESTARTS})`,
+          last_activity_at: new Date().toISOString()
+        });
+        
+        await new Promise(resolve => setTimeout(resolve, RESTART_DELAY));
       }
     }
   }
   
   // If we reach here, we've exceeded max restarts
-  console.error('💀 SYNC EXHAUSTED: Exceeded maximum restart attempts');
+  console.error('❌ Sync failed after all attempts');
   await updateSyncStatus(supabaseClient, {
     status: 'failed',
-    error_message: `💀 SYNC EXHAUSTED: Exceeded ${MAX_RESTARTS} restart attempts. Manual intervention required.`,
+    error_message: `❌ Sync failed after ${MAX_RESTARTS} attempts`,
     completed_at: new Date().toISOString()
   });
 }
@@ -380,12 +300,11 @@ async function fetchWithRetry(url: string, options: any, maxRetries: number): Pr
   throw lastError;
 }
 
-// Enhanced chunk processing with timeout protection and retry logic
+// Simple chunk processing with basic retry logic
 async function processCarsChunk(supabaseClient: any, cars: Car[]): Promise<{success: number, errors: number}> {
-  const MAX_CHUNK_RETRIES = 3;
-  const TIMEOUT_DELAY = 2000; // 2 second delay on timeout retry
+  const MAX_RETRIES = 2;
   
-  for (let attempt = 1; attempt <= MAX_CHUNK_RETRIES; attempt++) {
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
       const carCacheItems = cars.map(car => {
         const lot = car.lots?.[0];
@@ -416,7 +335,7 @@ async function processCarsChunk(supabaseClient: any, cars: Car[]): Promise<{succ
         };
       });
 
-      // Conservative upsert with timeout protection
+      // Simple upsert operation
       const { error, count } = await supabaseClient
         .from('cars_cache')
         .upsert(carCacheItems, { 
@@ -426,26 +345,21 @@ async function processCarsChunk(supabaseClient: any, cars: Car[]): Promise<{succ
         });
 
       if (error) {
-        // Check for specific timeout errors
-        if (error.code === '57014' || error.message?.includes('timeout')) {
-          console.log(`⏰ Database timeout on attempt ${attempt}/${MAX_CHUNK_RETRIES}, retrying with delay...`);
-          if (attempt < MAX_CHUNK_RETRIES) {
-            await new Promise(resolve => setTimeout(resolve, TIMEOUT_DELAY * attempt));
-            continue; // Retry
-          }
+        console.error(`❌ Upsert error (attempt ${attempt + 1}):`, error.message);
+        if (attempt < MAX_RETRIES - 1) {
+          await new Promise(resolve => setTimeout(resolve, 3000)); // 3 second delay
+          continue;
         }
-        
-        console.error(`❌ Batch upsert error (attempt ${attempt}):`, error);
         return { success: 0, errors: cars.length };
       }
 
       return { success: count || cars.length, errors: 0 };
       
     } catch (err) {
-      console.error(`💥 Chunk processing error (attempt ${attempt}):`, err);
-      if (attempt < MAX_CHUNK_RETRIES) {
-        await new Promise(resolve => setTimeout(resolve, TIMEOUT_DELAY * attempt));
-        continue; // Retry
+      console.error(`❌ Chunk error (attempt ${attempt + 1}):`, err.message);
+      if (attempt < MAX_RETRIES - 1) {
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        continue;
       }
     }
   }
@@ -623,26 +537,24 @@ Deno.serve(async (req) => {
     );
 
     // Return immediate response - MAXIMUM SPEED sync started
-        return new Response(
-          JSON.stringify({
-            success: true,
-            message: '🛡️ CONSERVATIVE SYNC STARTED! Database-friendly sync with timeout prevention.',
-            status: 'running',
-            totalSynced: progress.totalSynced,
-            pagesProcessed: 0,
-            startedAt: new Date().toISOString(),
-          features: [
-            '🛡️ Single-threaded processing (SAFE)',
-            '📦 25-car batch writes (CONSERVATIVE)', 
-            '⏱️ 1-second delays (DB-FRIENDLY)',
-            '🔄 Timeout retry logic (3x attempts)',
-            '💪 Enhanced error handling',
-            '📊 Conservative progress tracking',
-            '🛡️ Database protection mode',
-            '🚫 Prevents 57014 timeout errors'
-          ],
-            note: 'CONSERVATIVE MODE sync running in background. Single-threaded processing, timeout retry logic, 25-car batches. Optimized to prevent database timeouts (57014). Check sync_status table for progress.'
-          }),
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: '🚀 RELIABLE SYNC STARTED! Stable processing with proper error handling.',
+        status: 'running',
+        totalSynced: progress.totalSynced,
+        pagesProcessed: 0,
+        startedAt: new Date().toISOString(),
+        features: [
+          '📄 Sequential page processing',
+          '🔢 10-car batch writes', 
+          '⏱️ 2-second delays between pages',
+          '🔄 2x retry attempts',
+          '✅ Proper progress tracking',
+          '🛡️ Database timeout protection'
+        ],
+        note: 'Reliable sync running in background. Sequential processing prevents database overload.'
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
