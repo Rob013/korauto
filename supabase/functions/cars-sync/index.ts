@@ -137,6 +137,7 @@ Deno.serve(async (req) => {
       console.log(`📄 Fetching page ${page} of ${maxPages}...`);
       
       let cars: Car[] = [];
+      let data: any = null;
       let success = false;
       let retryCount = 0;
       const maxRetries = 3;
@@ -173,8 +174,9 @@ Deno.serve(async (req) => {
                 continue; // Try next endpoint
               }
 
-              const data = await response.json();
-              cars = data.data || [];
+              const responseData = await response.json();
+              cars = responseData.data || [];
+              data = responseData; // Store for pagination check
               
               if (cars.length > 0) {
                 console.log(`✅ Got ${cars.length} cars from page ${page}`);
