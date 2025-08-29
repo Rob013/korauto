@@ -70,19 +70,37 @@ Deno.serve(async (req) => {
     let hasMorePages = true;
     let maxPages = 1000; // Allow up to 1000 pages to get all cars
     
-    // First, get total count to determine how many pages we need
-    const initialResponse = await fetch(`${API_BASE_URL}/cars?per_page=1&page=1`, {
+    // Test API key and endpoint first
+    console.log(`🔍 Testing API connection...`);
+    const testResponse = await fetch(`${API_BASE_URL}/cars?per_page=1&page=1`, {
       headers: {
         'accept': '*/*',
         'x-api-key': API_KEY
       }
     });
     
-    if (initialResponse.ok) {
-      const initialData = await initialResponse.json();
-      const totalCars = initialData.meta?.total || 0;
+    console.log(`📡 API Test Response Status: ${testResponse.status}`);
+    
+    if (!testResponse.ok) {
+      throw new Error(`API test failed: ${testResponse.status} - ${testResponse.statusText}`);
+    }
+    
+    const testData = await testResponse.json();
+    console.log(`📊 API Test Response:`, JSON.stringify(testData, null, 2));
+    
+    const totalCars = testData.meta?.total || testData.total || 0;
+    const availableCars = testData.data?.length || 0;
+    
+    console.log(`📊 Total cars available: ${totalCars}, cars in response: ${availableCars}`);
+    
+    if (totalCars === 0 && availableCars === 0) {
+      console.log(`⚠️ No cars found in API response. This might be normal if the API has no data.`);
+      maxPages = 0;
+    } else {
       maxPages = Math.ceil(totalCars / 50); // 50 cars per page
-      console.log(`📊 Total cars available: ${totalCars}, estimated pages: ${maxPages}`);
+      if (maxPages === 0 && availableCars > 0) {
+        maxPages = 1; // At least try one page if we have cars but no total
+      }
     }
     
     while (hasMorePages && page <= maxPages) {
