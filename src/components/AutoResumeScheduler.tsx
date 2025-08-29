@@ -8,7 +8,7 @@ interface AutoResumeSchedulerProps {
 
 export const AutoResumeScheduler = ({ 
   enabled = true, 
-  checkIntervalMinutes = 30 
+  checkIntervalMinutes = 1 // Check every minute for fastest recovery
 }: AutoResumeSchedulerProps = {}) => {
   
   useEffect(() => {
@@ -18,19 +18,19 @@ export const AutoResumeScheduler = ({
       try {
         console.log('🔍 Auto-resume: Checking for failed syncs to resume...');
         
-        // Check for failed syncs that should be resumed
+        // Check for failed syncs that should be resumed (include paused syncs too)
         const { data: failedSyncs } = await supabase
           .from('sync_status')
           .select('*')
-          .eq('status', 'failed')
-          .gt('records_processed', 0) // Only resume syncs that had made progress
-          .order('completed_at', { ascending: false })
+          .in('status', ['failed', 'paused'])
+          .gte('records_processed', 0) // Resume any sync regardless of progress
+          .order('last_activity_at', { ascending: false })
           .limit(1);
 
         if (failedSyncs && failedSyncs.length > 0) {
           const lastFailedSync = failedSyncs[0];
-          const timeSinceFailure = Date.now() - new Date(lastFailedSync.completed_at).getTime();
-          const RESUME_DELAY = 10 * 60 * 1000; // Wait 10 minutes before resuming
+          const timeSinceFailure = Date.now() - new Date(lastFailedSync.completed_at || lastFailedSync.last_activity_at).getTime();
+          const RESUME_DELAY = 60 * 1000; // Wait only 1 minute before resuming for fastest recovery
           
           if (timeSinceFailure > RESUME_DELAY) {
             console.log(`🔄 Auto-resume: Attempting to resume sync from page ${lastFailedSync.current_page}...`);

@@ -266,6 +266,126 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
   return progress;
 }
 
+// Auto-restart sync function that never gives up until ALL cars are synced
+async function runSyncWithAutoRestart(supabaseClient: any, initialProgress: SyncProgress): Promise<void> {
+  let restartCount = 0;
+  const MAX_RESTARTS = 1000; // Practically unlimited restarts
+  const RESTART_DELAY_INITIAL = 30000; // Start with 30 second delay
+  const MAX_RESTART_DELAY = 300000; // Max 5 minute delay between restarts
+  
+  while (restartCount < MAX_RESTARTS) {
+    try {
+      console.log(`🔄 AUTO-RESTART: Attempt ${restartCount + 1}, starting sync...`);
+      
+      const result = await performBackgroundSync(supabaseClient, initialProgress);
+      
+      // Check if we actually completed the sync
+      if (result.status === 'completed' && result.consecutiveEmptyPages >= 50) {
+        console.log('✅ SYNC COMPLETE: All cars successfully synced!');
+        return; // Successfully completed
+      }
+      
+      // If we're here, sync didn't complete - restart it
+      restartCount++;
+      const restartDelay = Math.min(
+        MAX_RESTART_DELAY, 
+        RESTART_DELAY_INITIAL * Math.pow(1.5, Math.min(restartCount, 10))
+      );
+      
+      console.log(`🔄 SYNC INCOMPLETE: Restarting in ${restartDelay/1000} seconds (attempt ${restartCount + 1}/${MAX_RESTARTS})`);
+      
+      // Update status to show we're auto-restarting
+      await updateSyncStatus(supabaseClient, {
+        status: 'running',
+        error_message: `🔄 AUTO-RESTART: Attempt ${restartCount + 1}, restarting in ${restartDelay/1000}s to continue sync`,
+        last_activity_at: new Date().toISOString()
+      });
+      
+      // Wait before restarting
+      await new Promise(resolve => setTimeout(resolve, restartDelay));
+      
+      // Get fresh progress for restart
+      const currentProgress = await getCurrentSyncProgress(supabaseClient);
+      Object.assign(initialProgress, currentProgress);
+      
+    } catch (error) {
+      restartCount++;
+      const restartDelay = Math.min(
+        MAX_RESTART_DELAY, 
+        RESTART_DELAY_INITIAL * Math.pow(1.5, Math.min(restartCount, 10))
+      );
+      
+      console.error(`❌ SYNC FAILED: ${error.message}. Auto-restarting in ${restartDelay/1000} seconds (attempt ${restartCount + 1}/${MAX_RESTARTS})`);
+      
+      // Update status to show failure and auto-restart
+      await updateSyncStatus(supabaseClient, {
+        status: 'running', // Keep as running to show auto-restart is happening
+        error_message: `🔄 AUTO-RESTART: Failed with "${error.message}". Restarting in ${restartDelay/1000}s (attempt ${restartCount + 1}/${MAX_RESTARTS})`,
+        last_activity_at: new Date().toISOString()
+      });
+      
+      // Wait before restarting
+      await new Promise(resolve => setTimeout(resolve, restartDelay));
+      
+      // Get fresh progress for restart
+      try {
+        const currentProgress = await getCurrentSyncProgress(supabaseClient);
+        Object.assign(initialProgress, currentProgress);
+      } catch (progressError) {
+        console.error('❌ Failed to get current progress, using existing:', progressError.message);
+      }
+    }
+  }
+  
+  // If we reach here, we've exceeded max restarts
+  console.error('💀 SYNC EXHAUSTED: Exceeded maximum restart attempts');
+  await updateSyncStatus(supabaseClient, {
+    status: 'failed',
+    error_message: `💀 SYNC EXHAUSTED: Exceeded ${MAX_RESTARTS} restart attempts. Manual intervention required.`,
+    completed_at: new Date().toISOString()
+  });
+}
+
+// Get current sync progress from database
+async function getCurrentSyncProgress(supabaseClient: any): Promise<SyncProgress> {
+  try {
+    const { data: syncStatus } = await supabaseClient
+      .from('sync_status')
+      .select('*')
+      .eq('id', 'cars-sync-main')
+      .single();
+    
+    if (syncStatus) {
+      return {
+        totalSynced: syncStatus.records_processed || 0,
+        currentPage: syncStatus.current_page || 1,
+        errorCount: 0,
+        rateLimitRetries: 0,
+        dbCapacityIssues: 0,
+        lastSuccessfulPage: (syncStatus.current_page || 1) - 1,
+        consecutiveEmptyPages: 0,
+        status: 'running',
+        startTime: Date.now()
+      };
+    }
+  } catch (error) {
+    console.error('❌ Failed to get sync progress:', error.message);
+  }
+  
+  // Fallback to default progress
+  return {
+    totalSynced: 0,
+    currentPage: 1,
+    errorCount: 0,
+    rateLimitRetries: 0,
+    dbCapacityIssues: 0,
+    lastSuccessfulPage: 0,
+    consecutiveEmptyPages: 0,
+    status: 'running',
+    startTime: Date.now()
+  };
+}
+
 async function fetchWithRetry(url: string, options: any, maxRetries: number): Promise<Response> {
   let lastError;
   
@@ -501,17 +621,9 @@ Deno.serve(async (req) => {
       };
     }
 
-    // Start background sync process
+    // Start background sync process with auto-restart on failure
     EdgeRuntime.waitUntil(
-      performBackgroundSync(supabaseClient, progress)
-        .catch(error => {
-          console.error('❌ Background sync failed:', error);
-          return updateSyncStatus(supabaseClient, {
-            status: 'failed',
-            error_message: error.message,
-            completed_at: new Date().toISOString()
-          });
-        })
+      runSyncWithAutoRestart(supabaseClient, progress)
     );
 
     // Return immediate response - MAXIMUM SPEED sync started
