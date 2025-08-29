@@ -47,7 +47,7 @@ import {
 } from "@/hooks/useSortedCars";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { fetchCarsWithKeyset, mapFrontendSortToBackend, type FrontendSortOption } from "@/services/carsApi";
+import { fetchCarsWithKeyset, fetchCarsWithGlobalSort, mapFrontendSortToBackend, type FrontendSortOption } from "@/services/carsApi";
 import { filterOutTestCars } from "@/utils/testCarFilter";
 import { fallbackCars } from "@/data/fallbackData";
 
@@ -97,39 +97,51 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const fetchingSortRef = useRef(false);
   const lastSortParamsRef = useRef('');
 
-  // Backend car fetching with global sorting
+  // Backend car fetching with global sorting across all pages
   const fetchCarsFromBackend = useCallback(async (
     newSortBy?: SortOption, 
-    cursor?: string, 
+    page?: number,
     reset: boolean = true
   ) => {
     setLoading(true);
     setError(null);
     
+    const targetPage = page || currentPage;
+    const targetSort = newSortBy || sortBy;
+    
     try {
-      console.log(`🔄 Fetching cars with sort: ${newSortBy || sortBy}, cursor: ${cursor || 'none'}`);
+      console.log(`🔄 Fetching cars with global sort: ${targetSort}, page: ${targetPage}`);
       
-      const response = await fetchCarsWithKeyset({
+      // Use global sort with page-based pagination for proper ranking
+      const response = await fetchCarsWithGlobalSort({
         filters: {},
-        sort: newSortBy || sortBy,
+        sort: targetSort,
         limit: 50,
-        cursor
+        page: targetPage
       });
       
-      if (reset) {
-        setCars(response.items);
-        setCurrentCursor(undefined);
-      } else {
-        setCars(prev => [...prev, ...response.items]);
-      }
-      
-      setNextCursor(response.nextCursor);
+      setCars(response.items);
       setTotalCount(response.total);
       
       // Calculate total pages
-      setTotalPages(Math.ceil(response.total / 50));
+      const totalPages = Math.ceil(response.total / 50);
+      setTotalPages(totalPages);
       
-      console.log(`✅ Fetched ${response.items.length} cars, total: ${response.total}`);
+      // Validate current page is within bounds
+      if (targetPage > totalPages && totalPages > 0) {
+        console.warn(`⚠️ Page ${targetPage} exceeds total pages ${totalPages}, redirecting to page 1`);
+        setCurrentPage(1);
+        // Fetch page 1 instead
+        const page1Response = await fetchCarsWithGlobalSort({
+          filters: {},
+          sort: targetSort,
+          limit: 50,
+          page: 1
+        });
+        setCars(page1Response.items);
+      }
+      
+      console.log(`✅ Global sort complete: page ${targetPage}, ${response.items.length} cars, total: ${response.total}`);
       
     } catch (err) {
       console.error('❌ Error fetching cars:', err);
@@ -144,7 +156,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [sortBy]);
+  }, [sortBy, currentPage]);
 
   // Helper function to check if filters are in default "all brands" state
   const isDefaultState = useMemo(() => {
@@ -252,7 +264,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setModels([]);
     setGenerations([]);
     setHasUserSelectedSort(false); // Reset to allow daily rotating cars again
-    fetchCarsFromBackend('recently_added', undefined, true);
+    fetchCarsFromBackend('recently_added', 1, true);
     setSearchParams({});
   }, [fetchCarsFromBackend, setSearchParams]);
 
@@ -262,7 +274,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       search: searchTerm.trim() || undefined,
     };
     setFilters(newFilters);
-    fetchCarsFromBackend(sortBy, undefined, true);
+    fetchCarsFromBackend(sortBy, 1, true);
   }, [searchTerm, sortBy, fetchCarsFromBackend]);
 
   const handlePageChange = useCallback((page: number) => {
@@ -272,12 +284,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       return;
     }
     
+    console.log(`📄 Changing to page ${page} with global sorting by ${sortBy}`);
     setCurrentPage(page);
     
-    // For keyset pagination, we need to calculate the cursor for the target page
-    // For simplicity, we'll fetch from the beginning and use limit/offset approach
-    const offset = (page - 1) * 50;
-    fetchCarsFromBackend(sortBy, undefined, true);
+    // Fetch the specific page with global sorting
+    fetchCarsFromBackend(sortBy, page, true);
     
     // Update URL with new page
     const currentParams = Object.fromEntries(searchParams.entries());
@@ -287,26 +298,32 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     
     // Save scroll position before page change
     saveScrollPosition();
+    
+    // Scroll to top for better UX
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [totalPages, sortBy, fetchCarsFromBackend, searchParams, setSearchParams, saveScrollPosition]);
 
   // Load more cars (for infinite scroll or load more button)
   const handleLoadMore = useCallback(async () => {
-    if (nextCursor && !loading) {
-      await fetchCarsFromBackend(sortBy, nextCursor, false);
+    if (currentPage < totalPages && !loading) {
+      const nextPage = currentPage + 1;
+      console.log(`📄 Loading more cars: page ${nextPage}`);
+      await fetchCarsFromBackend(sortBy, nextPage, false);
+      setCurrentPage(nextPage);
     }
-  }, [nextCursor, loading, sortBy, fetchCarsFromBackend]);
+  }, [currentPage, totalPages, loading, sortBy, fetchCarsFromBackend]);
 
   // Handle sort option change with backend global sorting
   const handleSortChange = useCallback(async (newSortBy: SortOption) => {
-    console.log(`🔄 Sort changed to: ${newSortBy} - fetching globally sorted cars`);
+    console.log(`🎯 Sort changed to: ${newSortBy} - applying global sorting across all pages`);
     setSortBy(newSortBy);
     setHasUserSelectedSort(true);
     setCurrentPage(1);
     
-    // Fetch with new sort - this gives us global sorting across all cars
-    await fetchCarsFromBackend(newSortBy, undefined, true);
+    // Fetch page 1 with new global sort - this ranks ALL cars and shows the first 50
+    await fetchCarsFromBackend(newSortBy, 1, true);
     
-    // Update URL to reflect new sort
+    // Update URL to reflect new sort and reset to page 1
     const newParams = new URLSearchParams(searchParams);
     newParams.set('sortBy', newSortBy);
     newParams.set('page', '1');
@@ -336,8 +353,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           setHasUserSelectedSort(true);
         }
         
-        // Fetch cars with backend global sorting
-        await fetchCarsFromBackend(urlSortBy, undefined, true);
+        // Fetch cars with backend global sorting for the specified page
+        await fetchCarsFromBackend(urlSortBy, urlPage, true);
         
         // Restore scroll position after a short delay
         setTimeout(() => {
@@ -465,7 +482,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               <div className="text-center">
                 <h3 className="text-lg font-semibold text-destructive mb-2">Error Loading Cars</h3>
                 <p className="text-muted-foreground mb-4">{error}</p>
-                <Button onClick={() => fetchCarsFromBackend(sortBy, undefined, true)}>
+                <Button onClick={() => fetchCarsFromBackend(sortBy, 1, true)}>
                   Try Again
                 </Button>
               </div>
@@ -491,7 +508,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               </div>
 
               {/* Load More Button */}
-              {nextCursor && !loading && (
+              {currentPage < totalPages && !loading && (
                 <div className="flex justify-center mt-8">
                   <Button onClick={handleLoadMore} variant="outline">
                     Load More Cars
