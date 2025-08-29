@@ -68,11 +68,16 @@ Deno.serve(async (req) => {
     let page = 1;
     let totalSynced = 0;
     let hasMorePages = true;
+    let errorCount = 0;
+    let dbCapacityIssues = 0;
+    const maxErrors = 50; // Stop if too many errors
     
-    while (hasMorePages && page <= 10) { // Limit to 10 pages for safety
+    console.log('📊 Starting full sync of all available cars from API...');
+    
+    while (hasMorePages) { // Remove page limit to sync all cars
       console.log(`📄 Fetching page ${page}...`);
       
-      const response = await fetch(`${API_BASE_URL}/cars?per_page=50&page=${page}`, {
+      const response = await fetch(`${API_BASE_URL}/cars?per_page=100&page=${page}`, {
         headers: {
           'accept': '*/*',
           'x-api-key': API_KEY
@@ -81,7 +86,14 @@ Deno.serve(async (req) => {
 
       if (!response.ok) {
         console.error(`❌ API request failed: ${response.status} ${response.statusText}`);
-        break;
+        errorCount++;
+        if (errorCount >= maxErrors) {
+          console.error('❌ Too many API errors, stopping sync');
+          break;
+        }
+        // Wait and retry
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        continue;
       }
 
       const data = await response.json();
@@ -104,6 +116,8 @@ Deno.serve(async (req) => {
           try {
             const lot = car.lots?.[0];
             const price = lot?.buy_now ? Math.round(lot.buy_now + 2300) : null;
+            const priceInCents = price ? price * 100 : null; // For proper sorting
+            const mileageKm = lot?.odometer?.km || null;
             
             const carCache = {
               id: car.id.toString(),
@@ -112,13 +126,15 @@ Deno.serve(async (req) => {
               model: car.model?.name || 'Unknown',
               year: car.year || 2020,
               price: price,
+              price_cents: priceInCents, // Add for sorting
+              mileage: mileageKm, // Store as number for sorting
+              rank_score: price ? (1 / price) * 1000000 : 0, // Higher score for cheaper cars
               vin: car.vin,
               fuel: car.fuel?.name,
               transmission: car.transmission?.name,
               color: car.color?.name,
               condition: lot?.condition?.name?.replace('run_and_drives', 'Good'),
               lot_number: lot?.lot,
-              mileage: lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : null,
               images: JSON.stringify(lot?.images?.normal || lot?.images?.big || []),
               car_data: JSON.stringify(car),
               lot_data: JSON.stringify(lot || {}),
@@ -134,6 +150,15 @@ Deno.serve(async (req) => {
 
             if (error) {
               console.error(`❌ Error upserting car ${car.id}:`, error);
+              console.error('Error details:', error);
+              dbCapacityIssues++;
+              
+              // Check if it's a database capacity issue
+              if (error.message?.includes('insufficient_resources') || 
+                  error.message?.includes('storage_full') ||
+                  error.message?.includes('quota')) {
+                console.error('🚨 Database capacity issue detected!');
+              }
             } else {
               totalSynced++;
             }
@@ -148,17 +173,31 @@ Deno.serve(async (req) => {
       hasMorePages = hasNext;
       page++;
       
-      // Rate limiting delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Progress logging
+      if (page % 10 === 0) {
+        console.log(`📊 Progress: Page ${page}, Total synced: ${totalSynced}, DB errors: ${dbCapacityIssues}`);
+      }
+      
+      // Rate limiting delay (shorter for efficiency)
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
 
     console.log(`✅ Sync completed! Total cars synced: ${totalSynced}`);
+    console.log(`📊 Final stats: Pages processed: ${page-1}, DB errors: ${dbCapacityIssues}, API errors: ${errorCount}`);
+    
+    if (dbCapacityIssues > 0) {
+      console.warn(`⚠️ Database capacity issues detected: ${dbCapacityIssues} errors`);
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Successfully synced ${totalSynced} cars`,
-        totalSynced
+        message: `Successfully synced ${totalSynced} cars from ${page-1} pages`,
+        totalSynced,
+        pagesProcessed: page-1,
+        dbCapacityIssues,
+        apiErrors: errorCount,
+        warnings: dbCapacityIssues > 0 ? ['Database capacity issues detected'] : []
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
