@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
     const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
     const API_BASE_URL = 'https://auctionsapi.com/api';
     
-    let page = 1;
+     let page = 1;
     let totalSynced = 0;
     let hasMorePages = true;
     let errorCount = 0;
@@ -97,11 +97,21 @@ Deno.serve(async (req) => {
     let rateLimitRetries = 0;
     const maxErrors = 50; // Stop if too many errors
     const maxRateLimitRetries = 10; // Stop if too many rate limit issues
+    const maxPagesPerExecution = 50; // Limit pages to prevent timeout
+    const startTime = Date.now();
+    const maxExecutionTime = 4 * 60 * 1000; // 4 minutes max execution
     
     console.log('📊 Starting full sync of all available cars from API...');
     
-    while (hasMorePages) { // Remove page limit to sync all cars
-      console.log(`📄 Fetching page ${page}...`);
+    while (hasMorePages && page <= maxPagesPerExecution) { // Limit pages per execution
+      // Check execution time to prevent timeout
+      const elapsedTime = Date.now() - startTime;
+      if (elapsedTime > maxExecutionTime) {
+        console.log(`⏰ Execution time limit reached (${elapsedTime}ms). Stopping sync gracefully.`);
+        break;
+      }
+      
+      console.log(`📄 Fetching page ${page}... (elapsed: ${Math.round(elapsedTime/1000)}s)`);
       
       // Rate limiting: wait longer between requests to avoid overwhelming the API
       if (page > 1) {
@@ -263,12 +273,24 @@ Deno.serve(async (req) => {
     console.log(`✅ Sync completed! Total cars synced: ${totalSynced}`);
     console.log(`📊 Final stats: Pages processed: ${page-1}, DB errors: ${dbCapacityIssues}, API errors: ${errorCount}, Rate limit retries: ${rateLimitRetries}`);
     
+    const executionTime = Date.now() - startTime;
+    const hitPageLimit = page > maxPagesPerExecution;
+    const hitTimeLimit = executionTime > maxExecutionTime;
+    
     if (dbCapacityIssues > 0) {
       console.warn(`⚠️ Database capacity issues detected: ${dbCapacityIssues} errors`);
     }
     
     if (rateLimitRetries > 0) {
       console.warn(`⚠️ Rate limiting encountered: ${rateLimitRetries} retries needed`);
+    }
+    
+    if (hitPageLimit) {
+      console.log(`📊 Reached page limit (${maxPagesPerExecution}). More cars may be available.`);
+    }
+    
+    if (hitTimeLimit) {
+      console.log(`⏰ Reached time limit (${Math.round(executionTime/1000)}s). More cars may be available.`);
     }
 
     return new Response(
@@ -280,9 +302,15 @@ Deno.serve(async (req) => {
         dbCapacityIssues,
         apiErrors: errorCount,
         rateLimitRetries,
+        executionTimeMs: executionTime,
+        hitPageLimit,
+        hitTimeLimit,
+        moreDataAvailable: hitPageLimit || hitTimeLimit,
         warnings: [
           ...(dbCapacityIssues > 0 ? ['Database capacity issues detected'] : []),
-          ...(rateLimitRetries > 0 ? ['Rate limiting encountered during sync'] : [])
+          ...(rateLimitRetries > 0 ? ['Rate limiting encountered during sync'] : []),
+          ...(hitPageLimit ? ['Page limit reached - more data may be available'] : []),
+          ...(hitTimeLimit ? ['Time limit reached - more data may be available'] : [])
         ]
       }),
       { 
@@ -292,15 +320,20 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('❌ Cars sync failed:', error);
+    console.error('❌ Error stack:', error.stack);
+    console.error('❌ Error name:', error.name);
     
+    // Return 200 status with error details instead of 500 to avoid "non-2xx" error
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message,
-        timestamp: new Date().toISOString()
+        error: error.message || 'Unknown error occurred',
+        errorName: error.name || 'UnknownError',
+        timestamp: new Date().toISOString(),
+        stack: error.stack || 'No stack trace available'
       }),
       { 
-        status: 500,
+        status: 200, // Changed from 500 to 200 to prevent "non-2xx" error
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );

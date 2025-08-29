@@ -16,23 +16,58 @@ export const FullCarsSyncTrigger = () => {
     try {
       toast({
         title: "Starting Full Cars Sync",
-        description: "This will fetch all 190,000+ cars from the API. This may take several minutes...",
+        description: "Syncing cars in batches to avoid timeouts. This will take several minutes...",
       });
 
-      // Call the cars-sync edge function
-      const { data, error } = await supabase.functions.invoke('cars-sync', {
-        body: { fullSync: true }
-      });
+      let totalSynced = 0;
+      let batchNumber = 1;
+      let shouldContinue = true;
 
-      if (error) {
-        throw error;
+      // Run multiple batches to get all cars
+      while (shouldContinue && batchNumber <= 100) { // Max 100 batches for safety
+        setProgress(`Syncing batch ${batchNumber}... Total synced so far: ${totalSynced}`);
+        
+        // Call the cars-sync edge function
+        const { data, error } = await supabase.functions.invoke('cars-sync', {
+          body: { fullSync: true, batchNumber }
+        });
+
+        if (error) {
+          console.error('Batch sync error:', error);
+          // If error object has success: false, it might still contain data
+          if (error.success === false) {
+            setProgress(`Batch ${batchNumber} completed with issues. Total synced: ${totalSynced}`);
+            break;
+          } else {
+            throw error;
+          }
+        }
+
+        if (data) {
+          totalSynced += data.totalSynced || 0;
+          console.log(`Batch ${batchNumber}: synced ${data.totalSynced} cars, total: ${totalSynced}`);
+          
+          // Check if we should continue (if we got a full batch of 50 pages = ~2500 cars)
+          if (data.pagesProcessed < 50 || data.totalSynced < 1000) {
+            shouldContinue = false; // Likely reached the end
+          }
+        } else {
+          shouldContinue = false;
+        }
+        
+        batchNumber++;
+        
+        // Short delay between batches
+        if (shouldContinue) {
+          await new Promise(resolve => setTimeout(resolve, 3000));
+        }
       }
 
-      setProgress(`Sync completed! ${data.totalSynced} cars synchronized`);
+      setProgress(`Sync completed! ${totalSynced} cars synchronized in ${batchNumber - 1} batches`);
       
       toast({
         title: "Sync Completed Successfully!",
-        description: `${data.totalSynced} cars have been synchronized to the database.`,
+        description: `${totalSynced} cars have been synchronized to the database in ${batchNumber - 1} batches.`,
       });
 
       // Refresh the page to show updated data
