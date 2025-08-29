@@ -255,7 +255,7 @@ export const FullCarsSyncTrigger = () => {
     }
   };
 
-  const canStartSync = !isLoading && (!syncStatus || ['completed', 'failed'].includes(syncStatus.status));
+  const canStartSync = !isLoading && (!syncStatus || ['completed', 'failed', 'idle'].includes(syncStatus.status));
   const canResumeSync = syncStatus?.status === 'paused';
 
   const getProgressPercentage = () => {
