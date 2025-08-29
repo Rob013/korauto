@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import LoadingLogo from "@/components/LoadingLogo";
 import LazyCarCard from "@/components/LazyCarCard";
-import { MaintenanceBanner } from "@/components/MaintenanceBanner";
+
 import EncarStyleFilter from "@/components/EncarStyleFilter";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
@@ -379,9 +379,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Maintenance Banner */}
-      <MaintenanceBanner />
-      
       {/* Filter Panel - Mobile slide-out */}
       <div
         ref={filterPanelRef}
