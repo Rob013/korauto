@@ -411,6 +411,10 @@ export const FullCarsSyncTrigger = () => {
     }
   };
 
+  // Computed state based on syncStatus
+  const isActive = syncStatus?.status === 'running';
+  const isCompleted = syncStatus?.status === 'completed';
+
   const canStartSync = !isLoading && (!syncStatus || ['completed', 'failed', 'idle'].includes(syncStatus.status));
   const canResumeSync = syncStatus?.status === 'paused';
   const canForceStop = syncStatus?.status === 'running' && !isStuckSyncDetected && syncStatus.current_page > 0;
