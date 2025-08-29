@@ -50,15 +50,39 @@ interface Car {
 }
 
 Deno.serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseClient = createClient(
-      'https://qtyyiqimkysmjnaocswe.supabase.co',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    );
+    console.log('🚀 Starting cars sync function...');
+    console.log('📋 Request method:', req.method);
+    console.log('📋 Request headers:', Object.fromEntries(req.headers.entries()));
+    
+    // Check environment variables
+    const supabaseUrl = 'https://qtyyiqimkysmjnaocswe.supabase.co';
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!serviceRoleKey) {
+      console.error('❌ SUPABASE_SERVICE_ROLE_KEY not found');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Missing SUPABASE_SERVICE_ROLE_KEY environment variable',
+          timestamp: new Date().toISOString()
+        }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+    
+    console.log('✅ Environment variables check passed');
+
+    const supabaseClient = createClient(supabaseUrl, serviceRoleKey);
+    console.log('✅ Supabase client created successfully');
 
     console.log('🚀 Starting cars sync...');
     
