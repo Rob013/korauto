@@ -69,12 +69,12 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
   // PRIORITY BRANDS SYNC FIRST
   const PRIORITY_BRANDS = ['Audi', 'Mercedes-Benz', 'Volkswagen', 'BMW'];
   
-  // CONSERVATIVE OPTIMIZATION - prevent CPU timeouts
-  const MAX_PARALLEL_PAGES = 1; // Single page processing to avoid timeouts
-  const BATCH_SIZE = 5; // Small batches to prevent overwhelming CPU
-  const MIN_DELAY = 100; // Longer delays to prevent overwhelming system
-  const API_TIMEOUT = 15000; // Conservative timeout
-  const MAX_EXECUTION_TIME = 45000; // 45 seconds max execution to stay well under limits
+  // ULTRA-CONSERVATIVE OPTIMIZATION to handle rate limits properly
+  const MAX_PARALLEL_PAGES = 1; // Single page processing 
+  const BATCH_SIZE = 2; // Extremely small batches for reliability
+  const MIN_DELAY = 20000; // 20 second delay between requests (much longer)
+  const API_TIMEOUT = 30000; // 30 second timeout
+  const MAX_EXECUTION_TIME = 25000; // 25 seconds max execution to avoid any timeouts
   
   const executionStart = Date.now();
   console.log('🚀 Starting optimized sync to avoid timeouts...');
@@ -533,18 +533,35 @@ async function fetchWithRetry(url: string, options: any, maxRetries: number): Pr
   
   for (let i = 0; i < maxRetries; i++) {
     try {
+      console.log(`📡 API Request: ${url} (attempt ${i + 1}/${maxRetries})`);
+      
       const response = await fetch(url, options);
+      
+      // Handle rate limiting specifically
+      if (response.status === 429) {
+        const waitTime = Math.min(5000 * Math.pow(2, i), 90000); // Up to 90 seconds wait
+        console.log(`⏰ Rate limited. Waiting ${waitTime}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        continue; // Retry without counting as a failure
+      }
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
       return response;
     } catch (error) {
+      console.log(`❌ API Error for ${url}: ${error.message}`);
       lastError = error;
       if (i < maxRetries - 1) {
-        const waitTime = Math.min(10000, 1000 * Math.pow(2, i));
+        const waitTime = Math.min(15000 * Math.pow(2, i), 120000); // Much longer waits
+        console.log(`⏰ Waiting ${waitTime}ms before retry...`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
       }
     }
   }
   
-  throw lastError;
+  throw new Error(`Rate limit exceeded after ${maxRetries} retries`);
 }
 
 // Ultra-fast chunk processing optimized for maximum throughput

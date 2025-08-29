@@ -85,12 +85,14 @@ export const FullCarsSyncTrigger = () => {
           return; // Re-check status after cleanup
         }
         
-        // Update with real car count if sync count is 0 but we have cars
+        // Update with real car count for accurate progress display
         const realCarCount = cacheCountResponse.count || 0;
         const syncData = { 
           ...syncResponse.data,
-          // If sync shows 0 but we have cars, show the real count
-          records_processed: syncResponse.data.records_processed || realCarCount
+          // Always show the actual cars in database as baseline progress
+          records_processed: Math.max(syncResponse.data.records_processed || 0, realCarCount),
+          // Add the real count for reference
+          actual_cars_in_db: realCarCount
         };
         
         setSyncStatus(syncData);
@@ -152,11 +154,20 @@ export const FullCarsSyncTrigger = () => {
     if (!status) return;
     
     const recordsProcessed = status.records_processed || 0;
+    const actualCarsInDb = (status as any).actual_cars_in_db || recordsProcessed;
     const estimatedTotal = 200000; // Conservative estimate based on API
-    const percentage = Math.round((recordsProcessed / estimatedTotal) * 100);
     
-    const formattedRecords = recordsProcessed.toLocaleString();
+    // Use the higher of current sync progress or actual database count for accurate progress
+    const displayProgress = Math.max(recordsProcessed, actualCarsInDb);
+    const percentage = Math.round((displayProgress / estimatedTotal) * 100);
+    
+    const formattedRecords = displayProgress.toLocaleString();
     const formattedTotal = estimatedTotal.toLocaleString();
+    
+    // Show additional info if there's a discrepancy
+    const progressNote = actualCarsInDb > recordsProcessed && status.status !== 'running' 
+      ? ` (${actualCarsInDb.toLocaleString()} in database)`
+      : '';
     
     // Calculate sync rate if we have timing info
     let rateText = '';
@@ -169,19 +180,22 @@ export const FullCarsSyncTrigger = () => {
     
     switch (status.status) {
       case 'running':
-        setProgress(`🔄 Syncing${rateText}... ${formattedRecords} / ${formattedTotal} cars (${percentage}%)`);
+        setProgress(`🔄 Syncing${rateText}... ${formattedRecords} / ${formattedTotal} cars (${percentage}%)${progressNote}`);
         break;
       case 'completed':
         setProgress(`✅ Sync complete! ${formattedRecords} cars synced`);
         break;
       case 'failed':
-        setProgress(`❌ Sync failed at ${formattedRecords} cars. Will auto-resume.`);
+        setProgress(`❌ Sync failed${progressNote}. Rate limiting detected - will auto-resume with longer delays.`);
         break;
       case 'paused':
         setProgress(`⏸️ Sync paused at ${formattedRecords} cars. Click Resume to continue.`);
         break;
+      case 'idle':
+        setProgress(`💤 Ready to sync${progressNote}. ${formattedRecords} cars currently in database.`);
+        break;
       default:
-        setProgress(`Status: ${status.status} - ${formattedRecords} cars`);
+        setProgress(`Status: ${status.status} - ${formattedRecords} cars${progressNote}`);
     }
   };
 
@@ -389,9 +403,12 @@ export const FullCarsSyncTrigger = () => {
   const canForceReset = syncStatus?.status === 'running' && isStuckSyncDetected;
 
   const getProgressPercentage = () => {
-    if (!syncStatus || !syncStatus.records_processed) return 0;
+    if (!syncStatus) return 0;
+    const recordsProcessed = syncStatus.records_processed || 0;
+    const actualCarsInDb = (syncStatus as any).actual_cars_in_db || recordsProcessed;
+    const displayProgress = Math.max(recordsProcessed, actualCarsInDb);
     const estimatedTotal = 200000; // Conservative API estimate
-    return Math.min(100, (syncStatus.records_processed / estimatedTotal) * 100);
+    return Math.min(100, (displayProgress / estimatedTotal) * 100);
   };
 
   const getEstimatedTime = () => {
