@@ -70,30 +70,80 @@ Deno.serve(async (req) => {
     let hasMorePages = true;
     let errorCount = 0;
     let dbCapacityIssues = 0;
+    let rateLimitRetries = 0;
     const maxErrors = 50; // Stop if too many errors
+    const maxRateLimitRetries = 10; // Stop if too many rate limit issues
     
     console.log('📊 Starting full sync of all available cars from API...');
     
     while (hasMorePages) { // Remove page limit to sync all cars
       console.log(`📄 Fetching page ${page}...`);
       
-      const response = await fetch(`${API_BASE_URL}/cars?per_page=100&page=${page}`, {
-        headers: {
-          'accept': '*/*',
-          'x-api-key': API_KEY
-        }
-      });
+      // Rate limiting: wait longer between requests to avoid overwhelming the API
+      if (page > 1) {
+        console.log(`⏰ Waiting 2 seconds before next API request...`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+      
+      let retryCount = 0;
+      let success = false;
+      let response;
+      
+      // Retry logic with exponential backoff for rate limiting
+      while (retryCount < 5 && !success) {
+        try {
+          response = await fetch(`${API_BASE_URL}/cars?per_page=50&page=${page}`, {
+            headers: {
+              'accept': '*/*',
+              'x-api-key': API_KEY
+            }
+          });
 
-      if (!response.ok) {
-        console.error(`❌ API request failed: ${response.status} ${response.statusText}`);
-        errorCount++;
-        if (errorCount >= maxErrors) {
-          console.error('❌ Too many API errors, stopping sync');
-          break;
+          if (response.status === 429) {
+            // Rate limited - wait with exponential backoff
+            const waitTime = Math.min(30000, (2 ** retryCount) * 1000); // Max 30 seconds
+            console.log(`⏰ Rate limited (429). Waiting ${waitTime}ms before retry ${retryCount + 1}/5...`);
+            rateLimitRetries++;
+            
+            if (rateLimitRetries >= maxRateLimitRetries) {
+              console.error('❌ Too many rate limit retries, stopping sync');
+              hasMorePages = false;
+              break;
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            retryCount++;
+            continue;
+          }
+
+          if (!response.ok) {
+            console.error(`❌ API request failed: ${response.status} ${response.statusText}`);
+            errorCount++;
+            if (errorCount >= maxErrors) {
+              console.error('❌ Too many API errors, stopping sync');
+              hasMorePages = false;
+              break;
+            }
+            // Wait and retry for other errors
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            retryCount++;
+            continue;
+          }
+          
+          success = true;
+        } catch (fetchError) {
+          console.error(`❌ Fetch error on attempt ${retryCount + 1}:`, fetchError);
+          retryCount++;
+          if (retryCount < 5) {
+            const waitTime = Math.min(10000, (2 ** retryCount) * 1000); // Max 10 seconds
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+          }
         }
-        // Wait and retry
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        continue;
+      }
+      
+      if (!success || !response) {
+        console.error(`❌ Failed to fetch page ${page} after 5 retries, stopping sync`);
+        break;
       }
 
       const data = await response.json();
@@ -152,7 +202,6 @@ Deno.serve(async (req) => {
 
             if (error) {
               console.error(`❌ Error upserting car ${car.id}:`, error);
-              console.error('Error details:', error);
               dbCapacityIssues++;
               
               // Check if it's a database capacity issue
@@ -170,10 +219,10 @@ Deno.serve(async (req) => {
         }));
       }
 
-      // Continue to next page - the API seems to return data until no more cars
-      // Instead of relying on pagination metadata, check if we got fewer cars than requested
-      if (cars.length < 100) {
-        console.log(`📊 Got ${cars.length} cars (less than 100), assuming last page`);
+      // Continue to next page - reduced per_page from 100 to 50 to be less aggressive
+      // Check if we got fewer cars than requested (50)
+      if (cars.length < 50) {
+        console.log(`📊 Got ${cars.length} cars (less than 50), assuming last page`);
         hasMorePages = false;
       } else {
         hasMorePages = true;
@@ -182,19 +231,20 @@ Deno.serve(async (req) => {
       page++;
       
       // Progress logging
-      if (page % 10 === 0) {
-        console.log(`📊 Progress: Page ${page}, Total synced: ${totalSynced}, DB errors: ${dbCapacityIssues}`);
+      if (page % 20 === 0) {
+        console.log(`📊 Progress: Page ${page}, Total synced: ${totalSynced}, DB errors: ${dbCapacityIssues}, Rate limit retries: ${rateLimitRetries}`);
       }
-      
-      // Rate limiting delay (shorter for efficiency)
-      await new Promise(resolve => setTimeout(resolve, 500));
     }
 
     console.log(`✅ Sync completed! Total cars synced: ${totalSynced}`);
-    console.log(`📊 Final stats: Pages processed: ${page-1}, DB errors: ${dbCapacityIssues}, API errors: ${errorCount}`);
+    console.log(`📊 Final stats: Pages processed: ${page-1}, DB errors: ${dbCapacityIssues}, API errors: ${errorCount}, Rate limit retries: ${rateLimitRetries}`);
     
     if (dbCapacityIssues > 0) {
       console.warn(`⚠️ Database capacity issues detected: ${dbCapacityIssues} errors`);
+    }
+    
+    if (rateLimitRetries > 0) {
+      console.warn(`⚠️ Rate limiting encountered: ${rateLimitRetries} retries needed`);
     }
 
     return new Response(
@@ -205,7 +255,11 @@ Deno.serve(async (req) => {
         pagesProcessed: page-1,
         dbCapacityIssues,
         apiErrors: errorCount,
-        warnings: dbCapacityIssues > 0 ? ['Database capacity issues detected'] : []
+        rateLimitRetries,
+        warnings: [
+          ...(dbCapacityIssues > 0 ? ['Database capacity issues detected'] : []),
+          ...(rateLimitRetries > 0 ? ['Rate limiting encountered during sync'] : [])
+        ]
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
