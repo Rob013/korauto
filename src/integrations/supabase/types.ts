@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
@@ -16,22 +16,115 @@ export type Database = {
     Tables: {
       cars: {
         Row: {
+          buy_now_price: number | null
+          color: string | null
           "Column Name": string | null
+          condition: string | null
           Constraints: string | null
+          created_at: string | null
+          current_bid: number | null
           Description: string | null
+          domain_name: string | null
+          external_id: string | null
+          final_bid: number | null
+          fuel: string | null
+          id: string | null
+          image_url: string | null
+          images: Json | null
+          is_active: boolean | null
+          is_archived: boolean | null
+          is_live: boolean | null
+          keys_available: boolean | null
+          last_synced_at: string | null
+          location: string | null
+          lot_number: string | null
+          make: string | null
+          mileage: number | null
+          model: string | null
+          price: number | null
+          sale_date: string | null
+          source_api: string | null
+          status: string | null
+          title: string | null
+          transmission: string | null
           Type: string | null
+          updated_at: string | null
+          vin: string | null
+          year: number | null
         }
         Insert: {
+          buy_now_price?: number | null
+          color?: string | null
           "Column Name"?: string | null
+          condition?: string | null
           Constraints?: string | null
+          created_at?: string | null
+          current_bid?: number | null
           Description?: string | null
+          domain_name?: string | null
+          external_id?: string | null
+          final_bid?: number | null
+          fuel?: string | null
+          id?: string | null
+          image_url?: string | null
+          images?: Json | null
+          is_active?: boolean | null
+          is_archived?: boolean | null
+          is_live?: boolean | null
+          keys_available?: boolean | null
+          last_synced_at?: string | null
+          location?: string | null
+          lot_number?: string | null
+          make?: string | null
+          mileage?: number | null
+          model?: string | null
+          price?: number | null
+          sale_date?: string | null
+          source_api?: string | null
+          status?: string | null
+          title?: string | null
+          transmission?: string | null
           Type?: string | null
+          updated_at?: string | null
+          vin?: string | null
+          year?: number | null
         }
         Update: {
+          buy_now_price?: number | null
+          color?: string | null
           "Column Name"?: string | null
+          condition?: string | null
           Constraints?: string | null
+          created_at?: string | null
+          current_bid?: number | null
           Description?: string | null
+          domain_name?: string | null
+          external_id?: string | null
+          final_bid?: number | null
+          fuel?: string | null
+          id?: string | null
+          image_url?: string | null
+          images?: Json | null
+          is_active?: boolean | null
+          is_archived?: boolean | null
+          is_live?: boolean | null
+          keys_available?: boolean | null
+          last_synced_at?: string | null
+          location?: string | null
+          lot_number?: string | null
+          make?: string | null
+          mileage?: number | null
+          model?: string | null
+          price?: number | null
+          sale_date?: string | null
+          source_api?: string | null
+          status?: string | null
+          title?: string | null
+          transmission?: string | null
           Type?: string | null
+          updated_at?: string | null
+          vin?: string | null
+          year?: number | null
         }
         Relationships: []
       }
@@ -135,36 +228,60 @@ export type Database = {
       }
       inspection_requests: {
         Row: {
+          archived: boolean
+          archived_at: string | null
           car_id: string | null
           created_at: string
           customer_email: string
           customer_name: string
           customer_phone: string
+          data_processing_consent: boolean | null
+          expires_at: string | null
           id: string
+          ip_address: unknown | null
           notes: string | null
+          privacy_consent: boolean | null
+          session_id: string | null
           status: string | null
+          submitted_at: string | null
           updated_at: string
         }
         Insert: {
+          archived?: boolean
+          archived_at?: string | null
           car_id?: string | null
           created_at?: string
           customer_email: string
           customer_name: string
           customer_phone: string
+          data_processing_consent?: boolean | null
+          expires_at?: string | null
           id?: string
+          ip_address?: unknown | null
           notes?: string | null
+          privacy_consent?: boolean | null
+          session_id?: string | null
           status?: string | null
+          submitted_at?: string | null
           updated_at?: string
         }
         Update: {
+          archived?: boolean
+          archived_at?: string | null
           car_id?: string | null
           created_at?: string
           customer_email?: string
           customer_name?: string
           customer_phone?: string
+          data_processing_consent?: boolean | null
+          expires_at?: string | null
           id?: string
+          ip_address?: unknown | null
           notes?: string | null
+          privacy_consent?: boolean | null
+          session_id?: string | null
           status?: string | null
+          submitted_at?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -365,10 +482,41 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      anonymize_old_inspection_requests: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      cars_global_sort_page: {
+        Args: {
+          p_filters?: Json
+          p_limit?: number
+          p_offset?: number
+          p_sort_dir?: string
+          p_sort_field?: string
+        }
+        Returns: {
+          color: string
+          created_at: string
+          fuel: string
+          id: string
+          image_url: string
+          images: Json
+          location: string
+          make: string
+          mileage: number
+          model: string
+          price: number
+          price_cents: number
+          rank_score: number
+          title: string
+          transmission: string
+          year: number
+        }[]
+      }
       check_rate_limit: {
         Args: {
-          _identifier: string
           _action: string
+          _identifier: string
           _max_requests?: number
           _window_minutes?: number
         }
@@ -380,8 +528,8 @@ export type Database = {
       }
       has_role: {
         Args: {
-          _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
         }
         Returns: boolean
       }
