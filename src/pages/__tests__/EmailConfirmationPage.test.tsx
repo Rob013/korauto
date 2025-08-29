@@ -54,16 +54,16 @@ describe('EmailConfirmationPage', () => {
     
     renderEmailConfirmationPage();
     
-    expect(screen.getByText('Confirming Your Email...')).toBeInTheDocument();
-    expect(screen.getByText('Please wait while we verify your email address.')).toBeInTheDocument();
+    expect(screen.getByText('Confirming Your Email...')).toBeTruthy();
+    expect(screen.getByText('Please wait while we verify your email address.')).toBeTruthy();
   });
 
   it('shows error when no token is provided', async () => {
     renderEmailConfirmationPage();
     
     await waitFor(() => {
-      expect(screen.getByText('Confirmation Failed')).toBeInTheDocument();
-      expect(screen.getByText('Invalid confirmation link.')).toBeInTheDocument();
+      expect(screen.getByText('Confirmation Failed')).toBeTruthy();
+      expect(screen.getByText('Invalid confirmation link.')).toBeTruthy();
     });
   });
 
@@ -74,8 +74,8 @@ describe('EmailConfirmationPage', () => {
     renderEmailConfirmationPage();
     
     await waitFor(() => {
-      expect(screen.getByText('Confirmation Failed')).toBeInTheDocument();
-      expect(screen.getByText('Invalid confirmation link.')).toBeInTheDocument();
+      expect(screen.getByText('Confirmation Failed')).toBeTruthy();
+      expect(screen.getByText('Invalid confirmation link.')).toBeTruthy();
     });
   });
 
@@ -83,17 +83,24 @@ describe('EmailConfirmationPage', () => {
     mockSearchParams.set('token', 'test-token');
     mockSearchParams.set('type', 'signup');
     
-    const mockUser = { id: 'user-id', email: 'test@example.com' };
+    const mockUser = { 
+      id: 'user-id', 
+      email: 'test@example.com',
+      app_metadata: {},
+      user_metadata: {},
+      aud: 'authenticated',
+      created_at: '2023-01-01T00:00:00Z'
+    };
     vi.mocked(supabase.auth.verifyOtp).mockResolvedValue({
-      data: { user: mockUser },
+      data: { user: mockUser, session: null },
       error: null
     });
     
     renderEmailConfirmationPage();
     
     await waitFor(() => {
-      expect(screen.getByText('Email Confirmed!')).toBeInTheDocument();
-      expect(screen.getByText('Your email has been confirmed successfully!')).toBeInTheDocument();
+      expect(screen.getByText('Email Confirmed!')).toBeTruthy();
+      expect(screen.getByText('Your email has been confirmed successfully!')).toBeTruthy();
     });
     
     expect(mockToast).toHaveBeenCalledWith({
@@ -107,15 +114,15 @@ describe('EmailConfirmationPage', () => {
     mockSearchParams.set('type', 'signup');
     
     vi.mocked(supabase.auth.verifyOtp).mockResolvedValue({
-      data: { user: null },
-      error: { message: 'Invalid token' }
+      data: { user: null, session: null },
+      error: new Error('Invalid token') as any
     });
     
     renderEmailConfirmationPage();
     
     await waitFor(() => {
-      expect(screen.getByText('Confirmation Failed')).toBeInTheDocument();
-      expect(screen.getByText('Invalid token')).toBeInTheDocument();
+      expect(screen.getByText('Confirmation Failed')).toBeTruthy();
+      expect(screen.getByText('Invalid token')).toBeTruthy();
     });
   });
 
@@ -123,7 +130,7 @@ describe('EmailConfirmationPage', () => {
     renderEmailConfirmationPage();
     
     await waitFor(() => {
-      expect(screen.getByText('Confirmation Failed')).toBeInTheDocument();
+      expect(screen.getByText('Confirmation Failed')).toBeTruthy();
     });
     
     const backButton = screen.getByText('Back to Sign Up');
@@ -136,7 +143,7 @@ describe('EmailConfirmationPage', () => {
     renderEmailConfirmationPage();
     
     await waitFor(() => {
-      expect(screen.getByText('Confirmation Failed')).toBeInTheDocument();
+      expect(screen.getByText('Confirmation Failed')).toBeTruthy();
     });
     
     const homeButton = screen.getByText('Return to Homepage');
