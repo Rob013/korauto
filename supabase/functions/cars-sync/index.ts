@@ -68,8 +68,24 @@ Deno.serve(async (req) => {
     let page = 1;
     let totalSynced = 0;
     let hasMorePages = true;
+    let maxPages = 1000; // Allow up to 1000 pages to get all cars
     
-    while (hasMorePages && page <= 10) { // Limit to 10 pages for safety
+    // First, get total count to determine how many pages we need
+    const initialResponse = await fetch(`${API_BASE_URL}/cars?per_page=1&page=1`, {
+      headers: {
+        'accept': '*/*',
+        'x-api-key': API_KEY
+      }
+    });
+    
+    if (initialResponse.ok) {
+      const initialData = await initialResponse.json();
+      const totalCars = initialData.meta?.total || 0;
+      maxPages = Math.ceil(totalCars / 50); // 50 cars per page
+      console.log(`📊 Total cars available: ${totalCars}, estimated pages: ${maxPages}`);
+    }
+    
+    while (hasMorePages && page <= maxPages) {
       console.log(`📄 Fetching page ${page}...`);
       
       const response = await fetch(`${API_BASE_URL}/cars?per_page=50&page=${page}`, {
@@ -105,6 +121,12 @@ Deno.serve(async (req) => {
             const lot = car.lots?.[0];
             const price = lot?.buy_now ? Math.round(lot.buy_now + 2300) : null;
             
+            // Calculate price_cents and rank_score for global sorting
+            const price_cents = price ? price * 100 : null;
+            const rank_score = price && car.year ? 
+              ((2024 - car.year) * -10) + (price < 50000 ? 50 : 0) + Math.random() * 100 : 
+              Math.random() * 100;
+
             const carCache = {
               id: car.id.toString(),
               api_id: car.id.toString(),
@@ -112,6 +134,8 @@ Deno.serve(async (req) => {
               model: car.model?.name || 'Unknown',
               year: car.year || 2020,
               price: price,
+              price_cents: price_cents,
+              rank_score: rank_score,
               vin: car.vin,
               fuel: car.fuel?.name,
               transmission: car.transmission?.name,
@@ -122,7 +146,9 @@ Deno.serve(async (req) => {
               images: JSON.stringify(lot?.images?.normal || lot?.images?.big || []),
               car_data: JSON.stringify(car),
               lot_data: JSON.stringify(lot || {}),
-              last_api_sync: new Date().toISOString()
+              last_api_sync: new Date().toISOString(),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             };
 
             const { error } = await supabaseClient
@@ -148,8 +174,13 @@ Deno.serve(async (req) => {
       hasMorePages = hasNext;
       page++;
       
-      // Rate limiting delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Progress logging
+      if (page % 10 === 0) {
+        console.log(`📊 Progress: ${page}/${maxPages} pages processed, ${totalSynced} cars synced`);
+      }
+      
+      // Rate limiting delay - reduced for faster sync
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
 
     console.log(`✅ Sync completed! Total cars synced: ${totalSynced}`);
