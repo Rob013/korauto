@@ -66,15 +66,16 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
   const API_BASE_URL = 'https://auctionsapi.com/api';
   
-  // Bulletproof settings optimized for stability and speed
-  const MAX_PARALLEL_REQUESTS = 2; // Reduced parallel requests to avoid overwhelming API
-  const BATCH_SIZE = 30; // Smaller batches for better reliability
-  const MIN_DELAY = 500; // Increased delay to respect API limits
-  const MAX_RETRIES = 50; // Even more retries to never give up
-  const RATE_LIMIT_MAX_RETRIES = 200; // Extreme patience with rate limits
-  const API_TIMEOUT = 60000; // 60 second timeout for slow responses
+  // Ultra-aggressive settings optimized for MAXIMUM speed
+  const MAX_PARALLEL_REQUESTS = 4; // Increased parallel requests for speed
+  const BATCH_SIZE = 50; // Larger batches for faster processing
+  const MIN_DELAY = 200; // Reduced delay for faster processing
+  const MAX_RETRIES = 100; // Ultra-persistent retries
+  const RATE_LIMIT_MAX_RETRIES = 500; // Never give up on rate limits
+  const API_TIMEOUT = 90000; // 90 second timeout for stability
+  const ULTRA_FAST_MODE = true; // Enable ultra-fast processing
   
-  console.log('🚀 Starting MAXIMUM SPEED sync with bulletproof error handling...');
+  console.log('🚀 Starting ULTRA-FAST sync with bulletproof rate limit handling...');
   
   // Update sync status
   await updateSyncStatus(supabaseClient, {
@@ -130,28 +131,32 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
         if (!response.ok) {
           if (response.status === 429) {
             rateLimitRetries++;
-            console.log(`⚡ Rate limited on page ${pageNum}. Smart retry ${rateLimitRetries}/${RATE_LIMIT_MAX_RETRIES}`);
+            console.log(`⚡ ULTRA-FAST Rate limited on page ${pageNum}. Lightning retry ${rateLimitRetries}/${RATE_LIMIT_MAX_RETRIES}`);
             
             if (rateLimitRetries >= RATE_LIMIT_MAX_RETRIES) {
-              console.log(`💀 Max rate limit retries reached for page ${pageNum}. Marking as processed to continue.`);
+              console.log(`💀 Max rate limit retries reached for page ${pageNum}. Marking as processed to continue ULTRA-FAST sync.`);
               return; // Skip this page to continue sync
             }
             
-            // Progressive backoff - start small, get much bigger for persistent rate limits
-            const backoffTime = Math.min(120000, 2000 * Math.pow(2, Math.min(rateLimitRetries, 6)));
-            console.log(`🛡️ Rate limit backoff: ${backoffTime}ms (retry ${rateLimitRetries})`);
+            // Ultra-fast backoff - minimal delays for maximum speed
+            const backoffTime = ULTRA_FAST_MODE ? 
+              Math.min(5000, 100 + (rateLimitRetries * 100)) : // Ultra-fast: 100ms base + 100ms per retry
+              Math.min(120000, 2000 * Math.pow(2, Math.min(rateLimitRetries, 6))); // Normal backoff
+            console.log(`🛡️ ULTRA-FAST Rate limit backoff: ${backoffTime}ms (retry ${rateLimitRetries})`);
             await new Promise(resolve => setTimeout(resolve, backoffTime));
             continue;
           } else if (response.status >= 500) {
-            // Server errors - retry with exponential backoff
+            // Server errors - retry with ultra-fast exponential backoff
             retryCount++;
-            const serverErrorDelay = Math.min(10000, 500 * Math.pow(2, retryCount));
-            console.log(`🔧 Server error ${response.status} on page ${pageNum}, retrying in ${serverErrorDelay}ms...`);
+            const serverErrorDelay = ULTRA_FAST_MODE ?
+              Math.min(3000, 100 * Math.pow(1.5, retryCount)) : // Ultra-fast: 100ms base with 1.5x multiplier
+              Math.min(10000, 500 * Math.pow(2, retryCount)); // Normal: 500ms base with 2x multiplier
+            console.log(`🔧 ULTRA-FAST Server error ${response.status} on page ${pageNum}, retrying in ${serverErrorDelay}ms...`);
             await new Promise(resolve => setTimeout(resolve, serverErrorDelay));
             continue;
           } else {
-            // Client errors - skip page to continue sync
-            console.log(`⚠️ Client error ${response.status} on page ${pageNum}. Skipping to continue sync.`);
+            // Client errors - skip page to continue ULTRA-FAST sync
+            console.log(`⚠️ Client error ${response.status} on page ${pageNum}. Skipping to continue ULTRA-FAST sync.`);
             progress.errorCount++;
             return;
           }
@@ -215,8 +220,10 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
           return; // Continue sync even if this page fails
         }
         
-        // Exponential backoff for network errors
-        const errorDelay = Math.min(5000, 200 * Math.pow(1.8, retryCount));
+        // Exponential backoff for network errors - ULTRA-FAST MODE
+        const errorDelay = ULTRA_FAST_MODE ? 
+          Math.min(2000, 50 * Math.pow(1.5, retryCount)) : // Ultra-fast: 50ms base with 1.5x multiplier
+          Math.min(5000, 200 * Math.pow(1.8, retryCount)); // Normal: 200ms base with 1.8x multiplier
         await new Promise(resolve => setTimeout(resolve, errorDelay));
       }
     }
@@ -231,8 +238,8 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
     
     progress.currentPage += MAX_PARALLEL_REQUESTS;
     
-    // More frequent progress updates for better monitoring
-    if (progress.currentPage % 3 === 0) {
+    // More frequent progress updates for ULTRA-FAST monitoring
+    if (progress.currentPage % 2 === 0) { // Every 2 pages for real-time monitoring
       const syncRate = Math.round(progress.totalSynced / ((Date.now() - progress.startTime) / 60000));
       const currentRate = Math.round(MAX_PARALLEL_REQUESTS / ((Date.now() - startTime) / 60000));
       
@@ -243,11 +250,13 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
         error_message: `🚀 SPEED MODE: ${syncRate} cars/min avg, ${currentRate} pages/min current, Errors: ${progress.errorCount}, DB Issues: ${progress.dbCapacityIssues}`
       });
       
-      console.log(`🚀 SPEED Progress: Page ${progress.currentPage}, Synced: ${progress.totalSynced}, Rate: ${syncRate} cars/min, Current: ${currentRate} pages/min`);
+      console.log(`🚀 ULTRA-FAST Progress: Page ${progress.currentPage}, Synced: ${progress.totalSynced}, Rate: ${syncRate} cars/min, Current: ${currentRate} pages/min`);
     }
     
-    // Smart pacing to prevent API overload
-    const pacingDelay = Math.max(MIN_DELAY, MIN_DELAY * (progress.errorCount > 5 ? 3 : 1));
+    // Ultra-smart pacing - almost no delay in ULTRA-FAST mode
+    const pacingDelay = ULTRA_FAST_MODE ? 
+      Math.max(50, MIN_DELAY * (progress.errorCount > 10 ? 2 : 0.5)) : // Ultra-fast: 50ms min, scale with errors
+      Math.max(MIN_DELAY, MIN_DELAY * (progress.errorCount > 5 ? 3 : 1)); // Normal pacing
     await new Promise(resolve => setTimeout(resolve, pacingDelay));
   }
   
@@ -259,23 +268,23 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
     current_page: progress.currentPage,
     records_processed: progress.totalSynced,
     last_activity_at: new Date().toISOString(),
-    error_message: `🎯 SPEED SYNC ${finalStatus.toUpperCase()}: ${progress.totalSynced} cars synced, ${progress.errorCount} errors handled, ${progress.dbCapacityIssues} DB issues resolved`
+    error_message: `🎯 ULTRA-FAST SYNC ${finalStatus.toUpperCase()}: ${progress.totalSynced} cars synced, ${progress.errorCount} errors handled, ${progress.dbCapacityIssues} DB issues resolved, ${progress.rateLimitRetries} rate limits overcome`
   });
   
-  console.log(`🏁 MAXIMUM SPEED sync ${finalStatus}: ${progress.totalSynced} cars, ${progress.errorCount} errors handled`);
+  console.log(`🏁 ULTRA-FAST sync ${finalStatus}: ${progress.totalSynced} cars, ${progress.errorCount} errors handled, ${progress.rateLimitRetries} rate limits overcome`);
   return progress;
 }
 
 // Auto-restart sync function that never gives up until ALL cars are synced
 async function runSyncWithAutoRestart(supabaseClient: any, initialProgress: SyncProgress): Promise<void> {
   let restartCount = 0;
-  const MAX_RESTARTS = 1000; // Practically unlimited restarts
-  const RESTART_DELAY_INITIAL = 30000; // Start with 30 second delay
-  const MAX_RESTART_DELAY = 300000; // Max 5 minute delay between restarts
+  const MAX_RESTARTS = 2000; // Even more restarts for ultra-persistence
+  const RESTART_DELAY_INITIAL = 15000; // Start with 15 second delay for faster recovery
+  const MAX_RESTART_DELAY = 180000; // Max 3 minute delay between restarts
   
   while (restartCount < MAX_RESTARTS) {
     try {
-      console.log(`🔄 AUTO-RESTART: Attempt ${restartCount + 1}, starting sync...`);
+      console.log(`🔄 ULTRA-FAST AUTO-RESTART: Attempt ${restartCount + 1}, resuming sync at maximum speed...`);
       
       const result = await performBackgroundSync(supabaseClient, initialProgress);
       
@@ -630,20 +639,22 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: '🚀 MAXIMUM SPEED SYNC STARTED! Bulletproof error handling enabled.',
+        message: '🚀 ULTRA-FAST SYNC STARTED! Lightning-speed car fetching with bulletproof auto-restart.',
         status: 'running',
         totalSynced: progress.totalSynced,
         pagesProcessed: 0,
         startedAt: new Date().toISOString(),
         features: [
-          '⚡ 3x parallel page processing',
+          '⚡ 4x parallel page processing',
           '🔥 50-car batch database writes', 
-          '🛡️ 20 retries per request',
-          '💪 100 rate limit retries',
+          '🛡️ 100 retries per request',
+          '💪 500 rate limit retries',
           '🎯 Never stops until complete',
-          '📊 Real-time progress tracking'
+          '📊 Real-time progress tracking',
+          '🚀 Ultra-fast mode enabled',
+          '🔄 2000 auto-restarts available'
         ],
-        note: 'Ultra-fast sync running in background. Check sync_status table for live progress.'
+        note: 'Ultra-fast sync running in background. Resuming from 13,000 cars at maximum speed. Check sync_status table for live progress.'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

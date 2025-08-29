@@ -16,7 +16,7 @@ export const AutoResumeScheduler = ({
 
     const checkAndResumeStuckSyncs = async () => {
       try {
-        console.log('🔍 Auto-resume: Checking for failed syncs to resume...');
+        console.log('🔍 ULTRA-FAST Auto-resume: Checking for failed syncs to resume at lightning speed...');
         
         // Check for failed syncs that should be resumed (include paused syncs too)
         const { data: failedSyncs } = await supabase
@@ -33,7 +33,7 @@ export const AutoResumeScheduler = ({
           const RESUME_DELAY = 60 * 1000; // Wait only 1 minute before resuming for fastest recovery
           
           if (timeSinceFailure > RESUME_DELAY) {
-            console.log(`🔄 Auto-resume: Attempting to resume sync from page ${lastFailedSync.current_page}...`);
+            console.log(`🔄 ULTRA-FAST Auto-resume: Attempting to resume sync from page ${lastFailedSync.current_page} at maximum speed...`);
             
             // Attempt to resume the sync
             const { data, error } = await supabase.functions.invoke('cars-sync', {
@@ -42,14 +42,14 @@ export const AutoResumeScheduler = ({
                 resume: true,
                 fromPage: lastFailedSync.current_page,
                 reconcileProgress: true,
-                source: 'auto-resume'
+                source: 'ultra-fast-auto-resume'
               }
             });
 
             if (error) {
-              console.error('❌ Auto-resume failed:', error);
+              console.error('❌ ULTRA-FAST Auto-resume failed:', error);
             } else {
-              console.log('✅ Auto-resume: Successfully triggered sync resume');
+              console.log('✅ ULTRA-FAST Auto-resume: Successfully triggered sync resume at maximum speed');
             }
           }
         }
@@ -87,11 +87,11 @@ export const AutoResumeScheduler = ({
     // Set up interval
     const interval = setInterval(checkAndResumeStuckSyncs, checkIntervalMinutes * 60 * 1000);
     
-    console.log(`🤖 Auto-resume scheduler started (checking every ${checkIntervalMinutes} minutes)`);
+    console.log(`🤖 ULTRA-FAST Auto-resume scheduler started (checking every ${checkIntervalMinutes} minute for maximum recovery speed)`);
     
     return () => {
       clearInterval(interval);
-      console.log('🛑 Auto-resume scheduler stopped');
+      console.log('🛑 ULTRA-FAST Auto-resume scheduler stopped');
     };
   }, [enabled, checkIntervalMinutes]);
 
