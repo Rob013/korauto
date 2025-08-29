@@ -483,7 +483,7 @@ async function getCurrentSyncProgress(supabaseClient: any): Promise<SyncProgress
     const { data: syncStatus } = await supabaseClient
       .from('sync_status')
       .select('*')
-      .eq('id', 'cars-sync-main')
+      .eq('id', 'd2864188-e17a-41db-af76-71d7c2bdefe3')
       .single();
     
     // Get actual count from database
