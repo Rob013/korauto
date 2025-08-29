@@ -586,7 +586,7 @@ export const FullCarsSyncTrigger = () => {
               Syncing...
             </>
           ) : (
-            '🚀 Start Maximum Speed Sync'
+            '🚀 Start Stable Speed Sync'
           )}
         </Button>
         
@@ -621,14 +621,14 @@ export const FullCarsSyncTrigger = () => {
       )}
       
       <div className="mt-4 p-4 bg-muted rounded-lg">
-        <h4 className="font-semibold mb-2">🔄 Enhanced Smart Sync Features</h4>
+        <h4 className="font-semibold mb-2">🔄 Stable Smart Sync Features</h4>
         <ul className="text-sm space-y-1 text-muted-foreground">
-          <li>• <strong>🚀 MAXIMUM SPEED:</strong> 3x parallel processing with 50-car batch writes</li>
-          <li>• <strong>🛡️ BULLETPROOF:</strong> 20 retries per request, 100 rate-limit retries</li>
+          <li>• <strong>🚀 STABLE SPEED:</strong> 3x parallel processing with 50-car batch writes</li>
+          <li>• <strong>🛡️ BULLETPROOF:</strong> 50 retries per request, 100 rate-limit retries</li>
           <li>• <strong>⚡ NEVER STOPS:</strong> Handles ANY error automatically until 100% complete</li>
           <li>• <strong>📊 REAL-TIME:</strong> Live progress with speed metrics every few seconds</li>
           <li>• <strong>🎯 SMART RESUME:</strong> Auto-recovery from any interruption</li>
-          <li>• <strong>🔧 FORCE OVERRIDE:</strong> Manual controls for stuck syncs</li>
+          <li>• <strong>🔧 TIMEOUT PREVENTION:</strong> 30s timeouts prevent edge function failures</li>
           <li>• <strong>🤖 AUTO-SCHEDULER:</strong> Background recovery system active 24/7</li>
         </ul>
       </div>

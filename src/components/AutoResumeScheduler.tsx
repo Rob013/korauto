@@ -34,11 +34,12 @@ export const AutoResumeScheduler = ({
           // Check if this is a database timeout or rate limit issue
           const isDatabaseTimeout = lastFailedSync.error_message?.includes('canceling statement due to statement timeout') ||
                                    lastFailedSync.error_message?.includes('520:') ||
-                                   lastFailedSync.error_message?.includes('Sync timeout');
+                                   lastFailedSync.error_message?.includes('Sync timeout') ||
+                                   lastFailedSync.error_message?.includes('timeout loop');
           
           // Get retry count from error message or default to 0
-          const retryCount = (lastFailedSync.error_message?.match(/Retry (\d+)/) || [null, 0])[1];
-          const currentRetryCount = parseInt(retryCount as string) || 0;
+          const retryMatch = lastFailedSync.error_message?.match(/Retry (\d+)/);
+          const currentRetryCount = retryMatch ? parseInt(retryMatch[1]) : 0;
           
           // Progressive delay: 5min, 15min, 30min, 1hr, then stop
           let requiredDelay = 5 * 60 * 1000; // 5 minutes base
@@ -58,7 +59,7 @@ export const AutoResumeScheduler = ({
           if (timeSinceFailure > requiredDelay) {
             console.log(`🔄 Smart Auto-resume: Attempting to resume sync (retry ${currentRetryCount + 1}/4) after ${Math.round(timeSinceFailure / 60000)} minutes...`);
             
-            // Attempt to resume the sync with retry tracking
+            // Attempt to resume the sync with retry tracking and stable mode
             const { data, error } = await supabase.functions.invoke('cars-sync', {
               body: { 
                 smartSync: true,
@@ -66,14 +67,15 @@ export const AutoResumeScheduler = ({
                 fromPage: lastFailedSync.current_page,
                 reconcileProgress: true,
                 source: `smart-auto-resume-retry-${currentRetryCount + 1}`,
-                retryCount: currentRetryCount + 1
+                retryCount: currentRetryCount + 1,
+                stableMode: true // Force stable mode for auto-resumes
               }
             });
 
             if (error) {
               console.error('❌ Smart Auto-resume failed:', error);
             } else {
-              console.log('✅ Smart Auto-resume: Successfully triggered sync resume with intelligent retry logic');
+              console.log('✅ Smart Auto-resume: Successfully triggered stable sync resume');
             }
           } else {
             const waitMinutes = Math.round((requiredDelay - timeSinceFailure) / 60000);

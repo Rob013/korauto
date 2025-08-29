@@ -66,16 +66,16 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
   const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
   const API_BASE_URL = 'https://auctionsapi.com/api';
   
-  // SAFE FAST MODE - Optimized for speed without getting stuck
-  const MAX_PARALLEL_REQUESTS = 6; // Safe parallel requests for optimal speed
-  const BATCH_SIZE = 75; // Large but safe batch size for fast processing
-  const MIN_DELAY = 100; // Safe delay to avoid rate limiting
-  const MAX_RETRIES = 150; // High but reasonable retries
-  const RATE_LIMIT_MAX_RETRIES = 200; // Safe rate limit retries to avoid endless loops
-  const API_TIMEOUT = 75000; // 75 second timeout for balance of speed and stability
-  const ULTRA_FAST_MODE = true; // Enable fast but safe processing
+  // STABLE MODE - Optimized for reliability without timeouts
+  const MAX_PARALLEL_REQUESTS = 3; // Conservative parallel requests to avoid overwhelming DB
+  const BATCH_SIZE = 50; // Smaller batch size for stable processing
+  const MIN_DELAY = 200; // Longer delay to avoid rate limiting
+  const MAX_RETRIES = 50; // Conservative retries to avoid timeouts
+  const RATE_LIMIT_MAX_RETRIES = 100; // Conservative rate limit retries
+  const API_TIMEOUT = 30000; // 30 second timeout to prevent edge function timeouts
+  const STABLE_MODE = true; // Enable stable processing mode
   
-  console.log('🚀 Starting ULTRA-FAST sync with bulletproof rate limit handling...');
+  console.log('🚀 Starting STABLE sync with bulletproof timeout prevention...');
   
   // Update sync status
   await updateSyncStatus(supabaseClient, {
@@ -138,25 +138,25 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
               return; // Skip this page to continue sync
             }
             
-            // Ultra-fast backoff - minimal delays for maximum speed
-            const backoffTime = ULTRA_FAST_MODE ? 
-              Math.min(5000, 100 + (rateLimitRetries * 100)) : // Ultra-fast: 100ms base + 100ms per retry
+            // Stable backoff for rate limits
+            const backoffTime = STABLE_MODE ? 
+              Math.min(10000, 500 + (rateLimitRetries * 200)) : // Stable: 500ms base + 200ms per retry
               Math.min(120000, 2000 * Math.pow(2, Math.min(rateLimitRetries, 6))); // Normal backoff
-            console.log(`🛡️ ULTRA-FAST Rate limit backoff: ${backoffTime}ms (retry ${rateLimitRetries})`);
+            console.log(`🛡️ STABLE Rate limit backoff: ${backoffTime}ms (retry ${rateLimitRetries})`);
             await new Promise(resolve => setTimeout(resolve, backoffTime));
             continue;
           } else if (response.status >= 500) {
-            // Server errors - retry with ultra-fast exponential backoff
+            // Server errors - retry with stable exponential backoff
             retryCount++;
-            const serverErrorDelay = ULTRA_FAST_MODE ?
-              Math.min(3000, 100 * Math.pow(1.5, retryCount)) : // Ultra-fast: 100ms base with 1.5x multiplier
+            const serverErrorDelay = STABLE_MODE ?
+              Math.min(5000, 300 * Math.pow(1.8, retryCount)) : // Stable: 300ms base with 1.8x multiplier
               Math.min(10000, 500 * Math.pow(2, retryCount)); // Normal: 500ms base with 2x multiplier
-            console.log(`🔧 ULTRA-FAST Server error ${response.status} on page ${pageNum}, retrying in ${serverErrorDelay}ms...`);
+            console.log(`🔧 STABLE Server error ${response.status} on page ${pageNum}, retrying in ${serverErrorDelay}ms...`);
             await new Promise(resolve => setTimeout(resolve, serverErrorDelay));
             continue;
           } else {
-            // Client errors - skip page to continue ULTRA-FAST sync
-            console.log(`⚠️ Client error ${response.status} on page ${pageNum}. Skipping to continue ULTRA-FAST sync.`);
+            // Client errors - skip page to continue stable sync
+            console.log(`⚠️ Client error ${response.status} on page ${pageNum}. Skipping to continue stable sync.`);
             progress.errorCount++;
             return;
           }
@@ -220,9 +220,9 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
           return; // Continue sync even if this page fails
         }
         
-        // Exponential backoff for network errors - ULTRA-FAST MODE
-        const errorDelay = ULTRA_FAST_MODE ? 
-          Math.min(2000, 50 * Math.pow(1.5, retryCount)) : // Ultra-fast: 50ms base with 1.5x multiplier
+        // Exponential backoff for network errors - STABLE MODE
+        const errorDelay = STABLE_MODE ? 
+          Math.min(3000, 200 * Math.pow(1.6, retryCount)) : // Stable: 200ms base with 1.6x multiplier
           Math.min(5000, 200 * Math.pow(1.8, retryCount)); // Normal: 200ms base with 1.8x multiplier
         await new Promise(resolve => setTimeout(resolve, errorDelay));
       }
@@ -253,9 +253,9 @@ async function performBackgroundSync(supabaseClient: any, progress: SyncProgress
       console.log(`🚀 ULTRA-FAST Progress: Page ${progress.currentPage}, Synced: ${progress.totalSynced}, Rate: ${syncRate} cars/min, Current: ${currentRate} pages/min`);
     }
     
-    // Ultra-smart pacing - almost no delay in ULTRA-FAST mode
-    const pacingDelay = ULTRA_FAST_MODE ? 
-      Math.max(50, MIN_DELAY * (progress.errorCount > 10 ? 2 : 0.5)) : // Ultra-fast: 50ms min, scale with errors
+    // Smart pacing - moderate delay in stable mode
+    const pacingDelay = STABLE_MODE ? 
+      Math.max(200, MIN_DELAY * (progress.errorCount > 5 ? 2 : 1)) : // Stable: 200ms min, scale with errors
       Math.max(MIN_DELAY, MIN_DELAY * (progress.errorCount > 5 ? 3 : 1)); // Normal pacing
     await new Promise(resolve => setTimeout(resolve, pacingDelay));
   }
@@ -636,28 +636,28 @@ Deno.serve(async (req) => {
     );
 
     // Return immediate response - MAXIMUM SPEED sync started
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: '🚀 ULTRA-FAST SYNC STARTED! Lightning-speed car fetching with bulletproof auto-restart.',
-        status: 'running',
-        totalSynced: progress.totalSynced,
-        pagesProcessed: 0,
-        startedAt: new Date().toISOString(),
-        features: [
-          '⚡ 6x parallel page processing (SAFE FAST)',
-          '🔥 75-car batch database writes (OPTIMIZED)', 
-          '🛡️ 150 retries per request (PERSISTENT)',
-          '💪 200 rate limit retries (SAFE LIMIT)',
-          '🎯 Never stops until complete',
-          '📊 Real-time progress tracking',
-          '🚀 Safe fast mode enabled',
-          '🔄 2000 auto-restarts available',
-          '⚡ 100ms delays (SAFE SPEED)',
-          '🏃‍♂️ 75s timeout for stability'
-        ],
-        note: 'SAFE FAST MODE sync running in background. 6x parallel processing, 200 safe rate limit retries, 75-car batches. Optimized for maximum speed without getting stuck. Resuming from 13,000 cars. Check sync_status table for live progress.'
-      }),
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: '🚀 STABLE SYNC STARTED! Reliable car fetching with timeout prevention.',
+            status: 'running',
+            totalSynced: progress.totalSynced,
+            pagesProcessed: 0,
+            startedAt: new Date().toISOString(),
+            features: [
+              '⚡ 3x parallel page processing (STABLE)',
+              '🔥 50-car batch database writes (STABLE)', 
+              '🛡️ 50 retries per request (CONSERVATIVE)',
+              '💪 100 rate limit retries (STABLE)',
+              '🎯 Never stops until complete',
+              '📊 Real-time progress tracking',
+              '🚀 Stable mode enabled',
+              '🔄 Auto-restarts available',
+              '⚡ 200ms delays (STABLE)',
+              '🏃‍♂️ 30s timeout for reliability'
+            ],
+            note: 'STABLE MODE sync running in background. 3x parallel processing, 100 rate limit retries, 50-car batches. Optimized for reliability without timeouts. Check sync_status table for live progress.'
+          }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
