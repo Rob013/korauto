@@ -1,0 +1,331 @@
+/**
+ * Sync Verification Utilities
+ * 
+ * Provides comprehensive verification mechanisms to ensure the sync process
+ * is actually writing data to the database correctly.
+ */
+
+import { supabase } from '@/integrations/supabase/client';
+
+export interface SyncVerificationResult {
+  success: boolean;
+  message: string;
+  details: {
+    expectedCount?: number;
+    actualCount?: number;
+    lastSyncTime?: string;
+    sampleRecordsVerified?: boolean;
+    dataIntegrityPassed?: boolean;
+    stagingTableCleared?: boolean;
+  };
+  errors?: string[];
+}
+
+export interface SyncVerificationConfig {
+  verifyRecordCount?: boolean;
+  verifySampleRecords?: boolean;
+  verifyDataIntegrity?: boolean;
+  verifyTimestamps?: boolean;
+  sampleSize?: number;
+}
+
+/**
+ * Comprehensive verification of sync process
+ */
+export async function verifySyncToDatabase(
+  expectedRecordCount?: number,
+  config: SyncVerificationConfig = {}
+): Promise<SyncVerificationResult> {
+  const {
+    verifyRecordCount = true,
+    verifySampleRecords = true,
+    verifyDataIntegrity = true,
+    verifyTimestamps = true,
+    sampleSize = 10
+  } = config;
+
+  const errors: string[] = [];
+  const details: SyncVerificationResult['details'] = {};
+
+  try {
+    console.log('🔍 Starting comprehensive sync verification...');
+
+    // 1. Verify record count in main cars table
+    if (verifyRecordCount) {
+      const { count: actualCount, error: countError } = await supabase
+        .from('cars')
+        .select('*', { count: 'exact', head: true });
+
+      if (countError) {
+        errors.push(`Failed to count records in cars table: ${countError.message}`);
+      } else {
+        details.actualCount = actualCount || 0;
+        console.log(`📊 Found ${actualCount} records in cars table`);
+
+        if (expectedRecordCount && actualCount !== expectedRecordCount) {
+          errors.push(`Record count mismatch: expected ${expectedRecordCount}, found ${actualCount}`);
+        }
+      }
+    }
+
+    // 2. Verify staging table is cleared (should be empty after successful sync)
+    const { count: stagingCount, error: stagingError } = await supabase
+      .from('cars_staging')
+      .select('*', { count: 'exact', head: true });
+
+    if (stagingError) {
+      errors.push(`Failed to check staging table: ${stagingError.message}`);
+    } else {
+      details.stagingTableCleared = stagingCount === 0;
+      if (stagingCount > 0) {
+        console.log(`⚠️ Staging table still contains ${stagingCount} records`);
+        errors.push(`Staging table not cleared: ${stagingCount} records remaining`);
+      } else {
+        console.log('✅ Staging table properly cleared');
+      }
+    }
+
+    // 3. Verify recent sync timestamps
+    if (verifyTimestamps) {
+      const { data: recentSyncData, error: syncError } = await supabase
+        .from('cars')
+        .select('last_synced_at')
+        .order('last_synced_at', { ascending: false })
+        .limit(100);
+
+      if (syncError) {
+        errors.push(`Failed to check sync timestamps: ${syncError.message}`);
+      } else if (recentSyncData && recentSyncData.length > 0) {
+        const lastSyncTime = recentSyncData[0].last_synced_at;
+        details.lastSyncTime = lastSyncTime;
+        
+        // Check if sync is recent (within last 24 hours)
+        const lastSync = new Date(lastSyncTime);
+        const now = new Date();
+        const hoursSinceSync = (now.getTime() - lastSync.getTime()) / (1000 * 60 * 60);
+        
+        if (hoursSinceSync > 24) {
+          errors.push(`Last sync is too old: ${hoursSinceSync.toFixed(1)} hours ago`);
+        } else {
+          console.log(`✅ Recent sync detected: ${hoursSinceSync.toFixed(1)} hours ago`);
+        }
+      }
+    }
+
+    // 4. Verify sample records for data integrity
+    if (verifySampleRecords && details.actualCount && details.actualCount > 0) {
+      const { data: sampleRecords, error: sampleError } = await supabase
+        .from('cars')
+        .select('id, make, model, year, price, external_id, source_api, last_synced_at')
+        .limit(sampleSize);
+
+      if (sampleError) {
+        errors.push(`Failed to fetch sample records: ${sampleError.message}`);
+      } else if (sampleRecords) {
+        let validRecords = 0;
+        
+        for (const record of sampleRecords) {
+          // Check required fields are populated
+          if (record.id && record.make && record.model && record.external_id) {
+            validRecords++;
+          }
+        }
+        
+        details.sampleRecordsVerified = validRecords === sampleRecords.length;
+        
+        if (validRecords < sampleRecords.length) {
+          errors.push(`Sample verification failed: ${validRecords}/${sampleRecords.length} records valid`);
+        } else {
+          console.log(`✅ Sample verification passed: ${validRecords}/${sampleRecords.length} records valid`);
+        }
+      }
+    }
+
+    // 5. Verify data integrity across tables
+    if (verifyDataIntegrity) {
+      // Check for orphaned records or inconsistencies
+      const { data: cacheCount, error: cacheError } = await supabase
+        .from('cars_cache')
+        .select('*', { count: 'exact', head: true });
+
+      if (cacheError) {
+        errors.push(`Failed to check cars_cache: ${cacheError.message}`);
+      } else {
+        // Cars cache should have similar count to main table
+        const cacheCountValue = cacheCount || 0;
+        const mainCount = details.actualCount || 0;
+        const countDifference = Math.abs(mainCount - cacheCountValue);
+        const percentDifference = mainCount > 0 ? (countDifference / mainCount) * 100 : 0;
+        
+        details.dataIntegrityPassed = percentDifference < 10; // Allow 10% difference
+        
+        if (percentDifference >= 10) {
+          errors.push(`Data integrity issue: ${percentDifference.toFixed(1)}% difference between main (${mainCount}) and cache (${cacheCountValue}) tables`);
+        } else {
+          console.log(`✅ Data integrity check passed: ${percentDifference.toFixed(1)}% difference between tables`);
+        }
+      }
+    }
+
+    // 6. Check sync status for any errors
+    const { data: syncStatus, error: statusError } = await supabase
+      .from('sync_status')
+      .select('*')
+      .order('started_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (statusError && statusError.code !== 'PGRST116') {
+      errors.push(`Failed to check sync status: ${statusError.message}`);
+    } else if (syncStatus) {
+      if (syncStatus.status === 'failed') {
+        errors.push(`Last sync failed: ${syncStatus.error_message || 'Unknown error'}`);
+      } else if (syncStatus.status === 'completed') {
+        console.log('✅ Last sync completed successfully');
+      }
+    }
+
+    const success = errors.length === 0;
+    const message = success 
+      ? '✅ Sync verification completed successfully - database is properly synced'
+      : `❌ Sync verification failed with ${errors.length} issues`;
+
+    console.log(message);
+    if (errors.length > 0) {
+      console.log('🔍 Verification errors:', errors);
+    }
+
+    return {
+      success,
+      message,
+      details,
+      errors: errors.length > 0 ? errors : undefined
+    };
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('💥 Sync verification failed:', errorMessage);
+    
+    return {
+      success: false,
+      message: `Sync verification failed: ${errorMessage}`,
+      details,
+      errors: [errorMessage]
+    };
+  }
+}
+
+/**
+ * Quick verification - just checks if recent data exists
+ */
+export async function quickSyncCheck(): Promise<boolean> {
+  try {
+    const { count, error } = await supabase
+      .from('cars')
+      .select('*', { count: 'exact', head: true });
+
+    if (error) {
+      console.error('Quick sync check failed:', error);
+      return false;
+    }
+
+    return (count || 0) > 0;
+  } catch (error) {
+    console.error('Quick sync check error:', error);
+    return false;
+  }
+}
+
+/**
+ * Monitor real-time sync progress and verify writes
+ */
+export async function monitorSyncProgress(): Promise<void> {
+  console.log('🔄 Starting real-time sync monitoring...');
+  
+  // Subscribe to sync status changes
+  const statusSubscription = supabase
+    .channel('sync-verification-status')
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'sync_status'
+    }, (payload) => {
+      console.log('📊 Sync status update:', payload.new);
+      
+      if (payload.new && typeof payload.new === 'object') {
+        const status = payload.new as any;
+        if (status.status === 'completed') {
+          console.log('🎉 Sync completed, starting verification...');
+          verifySyncToDatabase();
+        } else if (status.status === 'failed') {
+          console.log('❌ Sync failed:', status.error_message);
+        }
+      }
+    })
+    .subscribe();
+
+  // Subscribe to cars table changes to count new records
+  let recordCount = 0;
+  const carsSubscription = supabase
+    .channel('sync-verification-cars')
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'cars'
+    }, (payload) => {
+      recordCount++;
+      if (recordCount % 100 === 0) {
+        console.log(`✅ Verified ${recordCount} new records written to database`);
+      }
+    })
+    .subscribe();
+
+  // Clean up subscriptions after 30 minutes
+  setTimeout(() => {
+    statusSubscription.unsubscribe();
+    carsSubscription.unsubscribe();
+    console.log('🔄 Stopped sync monitoring');
+  }, 30 * 60 * 1000);
+}
+
+/**
+ * Verify specific batch write operation
+ */
+export async function verifyBatchWrite(
+  batchData: any[], 
+  tableName: 'cars' | 'cars_staging' | 'cars_cache' = 'cars_staging'
+): Promise<boolean> {
+  if (batchData.length === 0) return true;
+
+  try {
+    // Check if records were actually written
+    const recordIds = batchData.map(record => record.id).filter(Boolean);
+    
+    if (recordIds.length === 0) return true;
+
+    const { data, error } = await supabase
+      .from(tableName)
+      .select('id')
+      .in('id', recordIds.slice(0, 10)); // Check first 10 records
+
+    if (error) {
+      console.error(`❌ Batch verification failed for ${tableName}:`, error);
+      return false;
+    }
+
+    const foundRecords = data?.length || 0;
+    const expectedRecords = Math.min(10, recordIds.length);
+    
+    if (foundRecords < expectedRecords) {
+      console.error(`❌ Batch verification failed: found ${foundRecords}/${expectedRecords} records in ${tableName}`);
+      return false;
+    }
+
+    console.log(`✅ Batch verification passed: ${foundRecords}/${expectedRecords} records confirmed in ${tableName}`);
+    return true;
+
+  } catch (error) {
+    console.error(`❌ Batch verification error for ${tableName}:`, error);
+    return false;
+  }
+}

@@ -16,7 +16,8 @@
     "test": "vitest",
     "test:run": "vitest run",
     "sync-cars": "tsx scripts/sync-cars.ts",
-    "sync-cars:demo": "tsx scripts/performance-demo.ts"
+    "sync-cars:demo": "tsx scripts/performance-demo.ts",
+    "verify-sync": "tsx scripts/verify-sync.ts"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.2",

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { Loader2, CheckCircle, AlertCircle, Clock, Shield } from 'lucide-react';
+import { verifySyncToDatabase, type SyncVerificationResult } from '@/utils/syncVerification';
 
 interface SyncStatus {
   id?: string;
@@ -22,6 +23,8 @@ export const FullCarsSyncTrigger = () => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [progress, setProgress] = useState<string>('');
   const [isStuckSyncDetected, setIsStuckSyncDetected] = useState(false);
+  const [verificationResult, setVerificationResult] = useState<SyncVerificationResult | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
   const { toast } = useToast();
 
   // Real-time sync status monitoring
@@ -173,12 +176,63 @@ export const FullCarsSyncTrigger = () => {
         break;
       case 'completed':
         setProgress(`✅ Sync complete! ${formattedRecords} cars synced`);
+        // Auto-verify when sync completes
+        setTimeout(() => verifySync(), 2000);
         break;
       case 'failed':
         setProgress(`❌ Sync failed at ${formattedRecords} cars. Will auto-resume.`);
         break;
       default:
         setProgress(`Status: ${status.status} - ${formattedRecords} cars`);
+    }
+  };
+
+  const verifySync = async () => {
+    setIsVerifying(true);
+    setVerificationResult(null);
+
+    try {
+      console.log('🔍 Starting sync verification...');
+      toast({
+        title: "Verifying Sync",
+        description: "Checking if data was properly synced to database...",
+      });
+
+      const result = await verifySyncToDatabase();
+      setVerificationResult(result);
+
+      if (result.success) {
+        toast({
+          title: "✅ Sync Verification Passed",
+          description: `Database sync confirmed! ${result.details.actualCount || 0} records verified.`,
+        });
+      } else {
+        toast({
+          title: "❌ Sync Verification Failed",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Sync verification error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      const failedResult: SyncVerificationResult = {
+        success: false,
+        message: `Verification failed: ${errorMessage}`,
+        details: {},
+        errors: [errorMessage]
+      };
+      
+      setVerificationResult(failedResult);
+      
+      toast({
+        title: "❌ Verification Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -632,7 +686,101 @@ export const FullCarsSyncTrigger = () => {
             {isStuckSyncDetected ? 'Fix Stuck Sync' : 'Force Stop'}
           </Button>
         )}
+        
+        {/* Sync Verification Button */}
+        <Button 
+          onClick={verifySync}
+          disabled={isVerifying}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          {isVerifying ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Verifying...
+            </>
+          ) : (
+            <>
+              <Shield className="h-4 w-4" />
+              Verify DB
+            </>
+          )}
+        </Button>
       </div>
+      
+      {/* Verification Results */}
+      {verificationResult && (
+        <div className={`mt-4 p-4 rounded-lg border ${
+          verificationResult.success 
+            ? 'bg-green-50 border-green-200' 
+            : 'bg-red-50 border-red-200'
+        }`}>
+          <div className="flex items-center gap-2 mb-2">
+            {verificationResult.success ? (
+              <CheckCircle className="h-5 w-5 text-green-600" />
+            ) : (
+              <AlertCircle className="h-5 w-5 text-red-600" />
+            )}
+            <h4 className={`font-semibold ${
+              verificationResult.success ? 'text-green-800' : 'text-red-800'
+            }`}>
+              Sync Verification {verificationResult.success ? 'Passed' : 'Failed'}
+            </h4>
+          </div>
+          
+          <p className={`text-sm mb-3 ${
+            verificationResult.success ? 'text-green-700' : 'text-red-700'
+          }`}>
+            {verificationResult.message}
+          </p>
+          
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <h5 className="font-medium mb-1">Database Status:</h5>
+              <ul className="space-y-1 text-muted-foreground">
+                {verificationResult.details.actualCount !== undefined && (
+                  <li>• Records in DB: {verificationResult.details.actualCount.toLocaleString()}</li>
+                )}
+                {verificationResult.details.stagingTableCleared !== undefined && (
+                  <li className={verificationResult.details.stagingTableCleared ? 'text-green-600' : 'text-red-600'}>
+                    • Staging cleanup: {verificationResult.details.stagingTableCleared ? 'Success' : 'Failed'}
+                  </li>
+                )}
+                {verificationResult.details.lastSyncTime && (
+                  <li>• Last sync: {new Date(verificationResult.details.lastSyncTime).toLocaleString()}</li>
+                )}
+              </ul>
+            </div>
+            
+            <div>
+              <h5 className="font-medium mb-1">Integrity Checks:</h5>
+              <ul className="space-y-1 text-muted-foreground">
+                {verificationResult.details.sampleRecordsVerified !== undefined && (
+                  <li className={verificationResult.details.sampleRecordsVerified ? 'text-green-600' : 'text-red-600'}>
+                    • Sample records: {verificationResult.details.sampleRecordsVerified ? 'Valid' : 'Issues found'}
+                  </li>
+                )}
+                {verificationResult.details.dataIntegrityPassed !== undefined && (
+                  <li className={verificationResult.details.dataIntegrityPassed ? 'text-green-600' : 'text-red-600'}>
+                    • Data integrity: {verificationResult.details.dataIntegrityPassed ? 'Passed' : 'Failed'}
+                  </li>
+                )}
+              </ul>
+            </div>
+          </div>
+          
+          {verificationResult.errors && verificationResult.errors.length > 0 && (
+            <div className="mt-3 p-2 bg-red-100 rounded border">
+              <h5 className="font-medium text-red-800 mb-1">Issues Found:</h5>
+              <ul className="text-sm text-red-700 space-y-1">
+                {verificationResult.errors.map((error, index) => (
+                  <li key={index}>• {error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
       
       {isStuckSyncDetected && (
         <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm">
