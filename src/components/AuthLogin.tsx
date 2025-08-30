@@ -47,8 +47,8 @@ const AuthLogin = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
         description: "Successfully logged in to admin dashboard",
       });
 
-      // Redirect admin users to dashboard
-      navigate('/admin');
+      // Notify parent component of successful login
+      onLoginSuccess();
     } catch (error: any) {
       toast({
         title: "Login Failed",
