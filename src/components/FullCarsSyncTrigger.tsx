@@ -96,11 +96,16 @@ export const FullCarsSyncTrigger = () => {
         const mainCarsCount = mainCarsCountResponse.count || 0;
         const totalRealCount = Math.max(cacheCount, mainCarsCount); // Use the higher count as authoritative
         
-        // Determine which count to display
+        // Determine which count to display - fix for stuck sync showing wrong count
         let displayCount = syncResponse.data.records_processed || 0;
         
-        // If sync shows 0 but we have actual cars in database, use the real count
-        if (displayCount === 0 && totalRealCount > 0) {
+        // Enhanced logic: Use real count if sync shows 0 OR if sync is stuck/failed OR if real count is significantly higher
+        const syncIsStuckOrFailed = isStuck || syncResponse.data.status === 'failed' || syncResponse.data.status === 'completed';
+        const realCountIsSignificantlyHigher = totalRealCount > 0 && totalRealCount > displayCount * 10; // Real count is 10x higher than sync count
+        
+        if ((displayCount === 0 && totalRealCount > 0) || 
+            (syncIsStuckOrFailed && totalRealCount > displayCount) ||
+            realCountIsSignificantlyHigher) {
           displayCount = totalRealCount;
         }
         
@@ -125,8 +130,12 @@ export const FullCarsSyncTrigger = () => {
           mainCarsCount: mainCarsCount,
           totalRealCount: totalRealCount,
           displayCount: displayCount,
-          usingRealCount: syncResponse.data.records_processed === 0 && totalRealCount > 0,
-          isStuck
+          isStuck,
+          usingRealCount: displayCount === totalRealCount && displayCount !== (syncResponse.data.records_processed || 0),
+          reason: displayCount === totalRealCount && displayCount !== (syncResponse.data.records_processed || 0) ? 
+            (syncResponse.data.records_processed === 0 ? 'sync_shows_zero' :
+             (isStuck || syncResponse.data.status === 'failed' || syncResponse.data.status === 'completed') ? 'sync_stuck_or_complete' :
+             totalRealCount > (syncResponse.data.records_processed || 0) * 10 ? 'real_count_significantly_higher' : 'unknown') : 'using_sync_count'
         });
       }
     } catch (err) {
@@ -142,10 +151,17 @@ export const FullCarsSyncTrigger = () => {
     const now = Date.now();
     const timeSinceActivity = now - lastActivity.getTime();
     
-    // Reduced threshold to 20 minutes for faster detection of stuck syncs
-    const STUCK_THRESHOLD = 20 * 60 * 1000; // 20 minutes
+    // Reduced threshold to 10 minutes for faster detection of stuck syncs
+    const STUCK_THRESHOLD = 10 * 60 * 1000; // 10 minutes
     
-    const isStuck = timeSinceActivity > STUCK_THRESHOLD;
+    // Also consider sync stuck if it's been running for more than 2 hours regardless of activity
+    const startTime = sync.started_at ? new Date(sync.started_at) : new Date(0);
+    const timeSinceStart = now - startTime.getTime();
+    const MAX_SYNC_TIME = 2 * 60 * 60 * 1000; // 2 hours max
+    
+    const isStuckByActivity = timeSinceActivity > STUCK_THRESHOLD;
+    const isStuckByDuration = timeSinceStart > MAX_SYNC_TIME;
+    const isStuck = isStuckByActivity || isStuckByDuration;
     
     if (isStuck) {
       console.log('🚨 Stuck sync detected:', {
@@ -154,6 +170,8 @@ export const FullCarsSyncTrigger = () => {
         started_at: sync.started_at,
         last_activity_at: sync.last_activity_at,
         timeSinceActivity: Math.round(timeSinceActivity / 60000) + ' minutes',
+        timeSinceStart: Math.round(timeSinceStart / 60000) + ' minutes',
+        stuckReason: isStuckByActivity ? 'no_activity' : 'too_long_running',
         threshold: Math.round(STUCK_THRESHOLD / 60000) + ' minutes',
         current_page: sync.current_page,
         records_processed: sync.records_processed
@@ -171,7 +189,7 @@ export const FullCarsSyncTrigger = () => {
         .from('sync_status') 
         .update({
           status: 'failed',
-          error_message: 'Auto-cleaned: Sync was stuck for more than 20 minutes without activity',
+          error_message: 'Auto-cleaned: Sync was stuck for more than 10 minutes without activity or running too long',
           completed_at: new Date().toISOString(),
           last_activity_at: new Date().toISOString()
         })
@@ -197,6 +215,44 @@ export const FullCarsSyncTrigger = () => {
       toast({
         title: "⚠️ Cleanup Failed",
         description: "Failed to clean up stuck sync. Please try manually stopping the sync.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const manualResetSync = async () => {
+    try {
+      console.log('🔄 Manually resetting sync status...');
+      
+      const { error } = await supabase
+        .from('sync_status')
+        .update({
+          status: 'failed',
+          error_message: 'Manually reset by user - sync was showing incorrect count',
+          completed_at: new Date().toISOString(),
+          last_activity_at: new Date().toISOString()
+        })
+        .eq('id', 'cars-sync-main');
+      
+      if (error) throw error;
+      
+      // Reset local state
+      setIsLoading(false);
+      setIsStuckSyncDetected(false);
+      
+      toast({
+        title: "🔄 Sync Reset",
+        description: "Sync status has been manually reset. The display will now show the correct car count.",
+      });
+      
+      // Re-check status
+      setTimeout(checkSyncStatus, 1000);
+      
+    } catch (error) {
+      console.error('Failed to reset sync:', error);
+      toast({
+        title: "⚠️ Reset Failed",
+        description: "Failed to reset sync status. Please try again.",
         variant: "destructive",
       });
     }
@@ -764,6 +820,18 @@ export const FullCarsSyncTrigger = () => {
             </>
           )}
         </Button>
+        
+        {/* Reset Sync Button - shown when sync shows suspicious count */}
+        {syncStatus && syncStatus.records_processed && syncStatus.records_processed < 1000 && (
+          <Button 
+            onClick={manualResetSync}
+            variant="outline"
+            className="flex items-center gap-2 text-orange-600 border-orange-200 hover:bg-orange-50"
+            title="Reset sync status if showing incorrect car count"
+          >
+            🔄 Reset Count
+          </Button>
+        )}
       </div>
       
       {/* Verification Results */}
