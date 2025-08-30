@@ -316,8 +316,8 @@ export const AISyncCoordinator = ({
       let diagnosticHelp = '';
       
       // Enhanced error message detection with comprehensive accessibility patterns
-      if (errorMessage.includes('timed out') || 
-          errorMessage.includes('function may not be deployed') ||
+      // Fixed operator precedence: group 'timed out' AND 'function may not be deployed' together
+      if ((errorMessage.includes('timed out') && errorMessage.includes('function may not be deployed')) || 
           errorMessage.includes('not accessible') ||
           errorMessage.includes('Edge Function not accessible') ||
           errorMessage.includes('Connection test timed out')) {
