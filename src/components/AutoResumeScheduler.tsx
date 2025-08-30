@@ -8,7 +8,7 @@ interface AutoResumeSchedulerProps {
 
 export const AutoResumeScheduler = ({ 
   enabled = true, 
-  checkIntervalMinutes = 1 // Check every minute for fastest recovery
+  checkIntervalMinutes = 0.5 // Check every 30 seconds for MAXIMUM SPEED recovery
 }: AutoResumeSchedulerProps = {}) => {
   
   useEffect(() => {
@@ -30,7 +30,7 @@ export const AutoResumeScheduler = ({
         if (failedSyncs && failedSyncs.length > 0) {
           const lastFailedSync = failedSyncs[0];
           const timeSinceFailure = Date.now() - new Date(lastFailedSync.completed_at || lastFailedSync.last_activity_at).getTime();
-          const RESUME_DELAY = 10 * 1000; // Wait only 10 seconds before resuming for immediate continuity
+          const RESUME_DELAY = 5 * 1000; // Wait only 5 seconds for MAXIMUM SPEED continuity
           
           if (timeSinceFailure > RESUME_DELAY) {
             console.log(`🔄 Enhanced Auto-resume: Attempting immediate resume of sync from page ${lastFailedSync.current_page} with AI coordination...`);
@@ -67,7 +67,7 @@ export const AutoResumeScheduler = ({
           .from('sync_status')
           .select('*')
           .eq('status', 'running')
-          .lt('last_activity_at', new Date(Date.now() - 5 * 60 * 1000).toISOString()); // Reduced from 10 to 5 minutes
+          .lt('last_activity_at', new Date(Date.now() - 3 * 60 * 1000).toISOString()); // Reduced from 5 to 3 minutes for max speed detection
 
         if (runningSyncs && runningSyncs.length > 0) {
           for (const stuckSync of runningSyncs) {

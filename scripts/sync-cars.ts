@@ -27,12 +27,12 @@ import { createHash } from 'crypto'
 import { writeFileSync, readFileSync, existsSync } from 'fs'
 import { Agent } from 'https'
 
-// High-performance configuration optimized for 20-30 minute sync target
-const CONCURRENCY = parseInt(process.env.CONCURRENCY || '20') // Increased for faster throughput
-const RPS = parseInt(process.env.RPS || '35') // Aggressive but safe rate limiting
-const PAGE_SIZE = parseInt(process.env.PAGE_SIZE || '200') // Larger pages for fewer requests
-const BATCH_SIZE = parseInt(process.env.BATCH_SIZE || '500') // Larger batches for efficiency
-const PARALLEL_BATCHES = parseInt(process.env.PARALLEL_BATCHES || '8') // More parallel processing
+// MAXIMUM SPEED configuration optimized for fastest possible sync
+const CONCURRENCY = parseInt(process.env.CONCURRENCY || '30') // Increased from 20 for max speed
+const RPS = parseInt(process.env.RPS || '50') // Increased from 35 for max throughput
+const PAGE_SIZE = parseInt(process.env.PAGE_SIZE || '250') // Increased from 200 for fewer requests
+const BATCH_SIZE = parseInt(process.env.BATCH_SIZE || '750') // Increased from 500 for larger batches
+const PARALLEL_BATCHES = parseInt(process.env.PARALLEL_BATCHES || '12') // Increased from 8 for more parallelism
 const MAX_RETRIES = 5 // More retries for reliability
 const REQUEST_TIMEOUT = 45000 // Longer timeout for larger requests
 const CHECKPOINT_FILE = '/tmp/sync-checkpoint.json'

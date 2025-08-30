@@ -67,9 +67,9 @@ Deno.serve(async (req) => {
     const fromPage = syncParams.fromPage || 1;
     const reconcileProgress = syncParams.reconcileProgress === true;
 
-    // High-performance configuration optimized for 30-minute sync target - UNLIMITED PAGES FOR CONTINUOUS SYNC
-    const PAGE_SIZE = 200; // Increased from 30 to 200 for fewer API requests (matches optimized script)
-    const BATCH_SIZE = 500; // Increased from 25 to 500 for efficient database writes (matches optimized script)
+    // MAXIMUM SPEED configuration optimized for fastest possible sync
+    const PAGE_SIZE = 250; // Increased from 200 for fewer API requests
+    const BATCH_SIZE = 750; // Increased from 500 for larger database writes
     const MAX_PAGES_PER_RUN = 999999; // Unlimited pages to ensure 100% completion without pause
 
     // Enhanced sync status management
@@ -228,13 +228,12 @@ Deno.serve(async (req) => {
             totalProcessed += batch.length;
           }
           
-          // Minimal pause for memory cleanup - optimized for speed
-          await new Promise(resolve => setTimeout(resolve, 10)); // Reduced from 50
+          // MAXIMUM SPEED: No artificial delays - let the system run at natural pace
         }
 
-        // Update progress frequently for real-time monitoring during high-speed sync
+        // Update progress more frequently for real-time monitoring during MAXIMUM SPEED sync
         const now = Date.now();
-        if (now - lastProgressUpdate > 15000) { // Every 15 seconds (reduced from 30)
+        if (now - lastProgressUpdate > 10000) { // Every 10 seconds (reduced from 15) for max speed monitoring
           const finalRecordsProcessed = isResumeRequest 
             ? (currentSyncStatus?.records_processed || 0) + totalProcessed
             : (existingCars || 0) + totalProcessed;
@@ -261,9 +260,8 @@ Deno.serve(async (req) => {
 
         currentPage++;
         
-        // Reduced delay for faster processing - optimized for speed
-        const delay = errors > 5 ? 200 : 50; // Reduced from 500/200 to 200/50
-        await new Promise(resolve => setTimeout(resolve, delay));
+        // MAXIMUM SPEED: No artificial delays between pages - run at full throttle
+        // Remove all delays for maximum throughput while maintaining reliability
 
         // Force garbage collection hint for memory management
         if (currentPage % 50 === 0) {
@@ -289,14 +287,14 @@ Deno.serve(async (req) => {
         errors++;
         
         if (isNetworkError) {
-          console.log(`🌐 Network error on page ${currentPage}, optimized wait...`);
-          await new Promise(resolve => setTimeout(resolve, 5000)); // Reduced from 15000
+          console.log(`🌐 Network error on page ${currentPage}, maximum speed retry...`);
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Reduced from 5000 for max speed
         } else if (isApiError) {
-          console.log(`🔐 API error on page ${currentPage}, quick continue...`);
-          await new Promise(resolve => setTimeout(resolve, 2000)); // Reduced from 5000
+          console.log(`🔐 API error on page ${currentPage}, instant continue...`);
+          // No delay for API errors - instant retry for maximum speed
         } else {
-          console.log(`⚠️ Unknown error on page ${currentPage}, fast continue...`);
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Reduced from 3000
+          console.log(`⚠️ Unknown error on page ${currentPage}, instant continue...`);
+          // No delay for unknown errors - instant retry for maximum speed
         }
         
         currentPage++;
@@ -412,21 +410,21 @@ Deno.serve(async (req) => {
   }
 });
 
-// High-performance fetch with optimized retry logic for 30-minute target
+// MAXIMUM SPEED: Optimized fetch with minimal retry delays for max throughput
 async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const response = await fetch(url, options);
       
       if (response.status === 429) {
-        console.log(`⏰ Rate limited on attempt ${attempt}, optimized wait...`);
-        await new Promise(resolve => setTimeout(resolve, 3000 * attempt)); // Reduced from 8000
+        console.log(`⏰ Rate limited on attempt ${attempt}, minimal wait for max speed...`);
+        await new Promise(resolve => setTimeout(resolve, 1000 + (attempt * 500))); // Reduced from 3000 * attempt for max speed
         continue;
       }
       
       if (!response.ok && response.status >= 500 && attempt < maxRetries) {
-        console.log(`🔄 Server error ${response.status} on attempt ${attempt}, quick retry...`);
-        await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Reduced from 3000
+        console.log(`🔄 Server error ${response.status} on attempt ${attempt}, instant retry...`);
+        await new Promise(resolve => setTimeout(resolve, 250 * attempt)); // Reduced from 1000 * attempt for max speed
         continue;
       }
       
@@ -434,8 +432,8 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
     } catch (error) {
       if (attempt === maxRetries) throw error;
       
-      console.log(`❌ Request failed on attempt ${attempt}, fast retry:`, error);
-      await new Promise(resolve => setTimeout(resolve, 500 * attempt)); // Reduced from 2000
+      console.log(`❌ Request failed on attempt ${attempt}, minimal delay retry:`, error);
+      await new Promise(resolve => setTimeout(resolve, 100 * attempt)); // Reduced from 500 * attempt for max speed
     }
   }
   

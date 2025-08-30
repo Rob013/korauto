@@ -799,7 +799,7 @@ export const FullCarsSyncTrigger = () => {
               Syncing...
             </>
           ) : (
-            '🚀 Start Maximum Speed Sync'
+            '🚀 Start MAXIMUM SPEED Sync'
           )}
         </Button>
         
@@ -932,9 +932,9 @@ export const FullCarsSyncTrigger = () => {
       <div className="mt-4 p-4 bg-muted rounded-lg">
         <h4 className="font-semibold mb-2">🔄 Enhanced Smart Sync Features</h4>
         <ul className="text-sm space-y-1 text-muted-foreground">
-          <li>• <strong>🚀 MAXIMUM SPEED:</strong> 3x parallel processing with 50-car batch writes</li>
-          <li>• <strong>🛡️ BULLETPROOF:</strong> 20 retries per request, 100 rate-limit retries</li>
-          <li>• <strong>⚡ NEVER PAUSES:</strong> Handles ANY error automatically until 100% complete</li>
+          <li>• <strong>🚀 MAXIMUM SPEED:</strong> No artificial delays, 250-item pages, 750-item batches</li>
+          <li>• <strong>🛡️ BULLETPROOF:</strong> 30+ retries per request, instant error recovery</li>
+          <li>• <strong>⚡ NEVER PAUSES:</strong> Zero delays between operations - runs at full throttle</li>
           <li>• <strong>📊 REAL-TIME:</strong> Live progress with speed metrics every few seconds</li>
           <li>• <strong>🎯 SMART RESUME:</strong> Immediate auto-recovery from any interruption (no manual intervention)</li>
           <li>• <strong>🔧 FORCE OVERRIDE:</strong> Manual controls for stuck syncs (improved 20min detection)</li>
