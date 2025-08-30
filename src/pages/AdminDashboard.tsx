@@ -303,10 +303,17 @@ const AdminDashboard = () => {
         .select("*", { count: "exact", head: true })
         .gte("created_at", oneWeekAgo.toISOString());
 
-      // Fetch real cars cache data for analytics
-      const { count: totalCachedCars } = await supabase
+      // Fetch real cars data from both tables for accurate total count
+      const { count: carsInCacheTable } = await supabase
         .from("cars_cache")
         .select("*", { count: "exact", head: true });
+
+      const { count: carsInMainTable } = await supabase
+        .from("cars")
+        .select("*", { count: "exact", head: true });
+
+      // Total cars from both sources
+      const totalCachedCars = (carsInCacheTable || 0) + (carsInMainTable || 0);
 
       const { count: recentCarSyncs } = await supabase
         .from("cars_cache")
