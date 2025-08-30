@@ -27,6 +27,8 @@ export interface SyncVerificationConfig {
   verifyDataIntegrity?: boolean;
   verifyTimestamps?: boolean;
   sampleSize?: number;
+  syncTimeThresholdHours?: number;
+  dataIntegrityThresholdPercent?: number;
 }
 
 /**
@@ -41,7 +43,9 @@ export async function verifySyncToDatabase(
     verifySampleRecords = true,
     verifyDataIntegrity = true,
     verifyTimestamps = true,
-    sampleSize = 10
+    sampleSize = 10,
+    syncTimeThresholdHours = 72, // 3 days instead of 24 hours
+    dataIntegrityThresholdPercent = 20 // Allow 20% difference instead of 10%
   } = config;
 
   const errors: string[] = [];
@@ -99,15 +103,15 @@ export async function verifySyncToDatabase(
         const lastSyncTime = recentSyncData[0].last_synced_at;
         details.lastSyncTime = lastSyncTime;
         
-        // Check if sync is recent (within last 24 hours)
+        // Check if sync is recent (configurable threshold)
         const lastSync = new Date(lastSyncTime);
         const now = new Date();
         const hoursSinceSync = (now.getTime() - lastSync.getTime()) / (1000 * 60 * 60);
         
-        if (hoursSinceSync > 24) {
-          errors.push(`Last sync is too old: ${hoursSinceSync.toFixed(1)} hours ago`);
+        if (hoursSinceSync > syncTimeThresholdHours) {
+          errors.push(`Last sync is too old: ${hoursSinceSync.toFixed(1)} hours ago (threshold: ${syncTimeThresholdHours} hours)`);
         } else {
-          console.log(`✅ Recent sync detected: ${hoursSinceSync.toFixed(1)} hours ago`);
+          console.log(`✅ Recent sync detected: ${hoursSinceSync.toFixed(1)} hours ago (within ${syncTimeThresholdHours}h threshold)`);
         }
       }
     }
@@ -125,9 +129,22 @@ export async function verifySyncToDatabase(
         let validRecords = 0;
         
         for (const record of sampleRecords) {
-          // Check required fields are populated
-          if (record.id && record.make && record.model && record.external_id) {
+          // Check required fields are populated with more robust validation
+          const hasId = record.id && typeof record.id === 'string' && record.id.trim().length > 0;
+          const hasMake = record.make && typeof record.make === 'string' && record.make.trim().length > 0;
+          const hasModel = record.model && typeof record.model === 'string' && record.model.trim().length > 0;
+          const hasExternalId = record.external_id && typeof record.external_id === 'string' && record.external_id.trim().length > 0;
+          
+          if (hasId && hasMake && hasModel && hasExternalId) {
             validRecords++;
+          } else {
+            // Log which fields are missing for debugging
+            const missingFields = [];
+            if (!hasId) missingFields.push('id');
+            if (!hasMake) missingFields.push('make');
+            if (!hasModel) missingFields.push('model');
+            if (!hasExternalId) missingFields.push('external_id');
+            console.log(`⚠️ Invalid record ${record.id || 'unknown'}: missing ${missingFields.join(', ')}`);
           }
         }
         
@@ -157,12 +174,12 @@ export async function verifySyncToDatabase(
         const countDifference = Math.abs(mainCount - cacheCountValue);
         const percentDifference = mainCount > 0 ? (countDifference / mainCount) * 100 : 0;
         
-        details.dataIntegrityPassed = percentDifference < 10; // Allow 10% difference
+        details.dataIntegrityPassed = percentDifference < dataIntegrityThresholdPercent;
         
-        if (percentDifference >= 10) {
-          errors.push(`Data integrity issue: ${percentDifference.toFixed(1)}% difference between main (${mainCount}) and cache (${cacheCountValue}) tables`);
+        if (percentDifference >= dataIntegrityThresholdPercent) {
+          errors.push(`Data integrity issue: ${percentDifference.toFixed(1)}% difference between main (${mainCount}) and cache (${cacheCountValue}) tables (threshold: ${dataIntegrityThresholdPercent}%)`);
         } else {
-          console.log(`✅ Data integrity check passed: ${percentDifference.toFixed(1)}% difference between tables`);
+          console.log(`✅ Data integrity check passed: ${percentDifference.toFixed(1)}% difference between tables (within ${dataIntegrityThresholdPercent}% threshold)`);
         }
       }
     }

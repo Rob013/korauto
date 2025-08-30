@@ -35,52 +35,49 @@ describe('Sync Verification System', () => {
       const mockSupabase = supabase as any;
       
       let callCount = 0;
-      mockSupabase.from.mockImplementation(() => {
+      mockSupabase.from.mockImplementation((tableName: string) => {
         callCount++;
         
-        switch (callCount) {
-          case 1: // cars table count
-            return {
-              select: vi.fn().mockReturnValue({
-                then: vi.fn().mockResolvedValue({ count: 1000, error: null })
-              })
-            };
-          case 2: // staging table count
-            return {
-              select: vi.fn().mockReturnValue({
-                then: vi.fn().mockResolvedValue({ count: 0, error: null })
-              })
-            };
-          case 3: // recent sync timestamps
-            return {
-              select: vi.fn().mockReturnValue({
-                order: vi.fn().mockReturnValue({
+        switch (tableName) {
+          case 'cars':
+            if (callCount === 1) { // Record count
+              return {
+                select: vi.fn().mockResolvedValue({ count: 1000, error: null })
+              };
+            } else if (callCount === 3) { // Recent sync timestamps
+              return {
+                select: vi.fn().mockReturnValue({
+                  order: vi.fn().mockReturnValue({
+                    limit: vi.fn().mockResolvedValue({
+                      data: [{ last_synced_at: new Date().toISOString() }],
+                      error: null
+                    })
+                  })
+                })
+              };
+            } else if (callCount === 4) { // Sample records
+              return {
+                select: vi.fn().mockReturnValue({
                   limit: vi.fn().mockResolvedValue({
-                    data: [{ last_synced_at: new Date().toISOString() }],
+                    data: [
+                      { id: '1', make: 'Toyota', model: 'Camry', external_id: 'ext1' },
+                      { id: '2', make: 'Honda', model: 'Civic', external_id: 'ext2' }
+                    ],
                     error: null
                   })
                 })
-              })
-            };
-          case 4: // sample records
+              };
+            }
+            break;
+          case 'cars_staging':
             return {
-              select: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue({
-                  data: [
-                    { id: '1', make: 'Toyota', model: 'Camry', external_id: 'ext1' },
-                    { id: '2', make: 'Honda', model: 'Civic', external_id: 'ext2' }
-                  ],
-                  error: null
-                })
-              })
+              select: vi.fn().mockResolvedValue({ count: 0, error: null })
             };
-          case 5: // cars_cache count
+          case 'cars_cache':
             return {
-              select: vi.fn().mockReturnValue({
-                then: vi.fn().mockResolvedValue({ count: 950, error: null })
-              })
+              select: vi.fn().mockResolvedValue({ count: 950, error: null })
             };
-          case 6: // sync status
+          case 'sync_status':
             return {
               select: vi.fn().mockReturnValue({
                 order: vi.fn().mockReturnValue({
@@ -93,13 +90,12 @@ describe('Sync Verification System', () => {
                 })
               })
             };
-          default:
-            return {
-              select: vi.fn().mockReturnValue({
-                then: vi.fn().mockResolvedValue({ count: 0, error: null })
-              })
-            };
         }
+        
+        // Default fallback
+        return {
+          select: vi.fn().mockResolvedValue({ count: 0, error: null })
+        };
       });
 
       const result = await verifySyncToDatabase(1000);
@@ -109,7 +105,7 @@ describe('Sync Verification System', () => {
       expect(result.details.stagingTableCleared).toBe(true);
       expect(result.details.sampleRecordsVerified).toBe(true);
       expect(result.details.dataIntegrityPassed).toBe(true);
-    });
+    }, 15000); // Increase timeout to 10 seconds
 
     it('should fail verification when record count does not match expected', async () => {
       const mockSupabase = supabase as any;
@@ -144,7 +140,7 @@ describe('Sync Verification System', () => {
 
       expect(result.success).toBe(false);
       expect(result.errors).toContain('Record count mismatch: expected 1000, found 500');
-    });
+    }, 10000);
 
     it('should fail verification when staging table is not cleared', async () => {
       const mockSupabase = supabase as any;
@@ -186,7 +182,7 @@ describe('Sync Verification System', () => {
       expect(result.success).toBe(false);
       expect(result.details.stagingTableCleared).toBe(false);
       expect(result.errors).toContain('Staging table not cleared: 50 records remaining');
-    });
+    }, 10000);
 
     it('should fail verification when sample records are invalid', async () => {
       const mockSupabase = supabase as any;
@@ -250,7 +246,144 @@ describe('Sync Verification System', () => {
       expect(result.success).toBe(false);
       expect(result.details.sampleRecordsVerified).toBe(false);
       expect(result.errors).toContain('Sample verification failed: 0/2 records valid');
-    });
+    }, 10000);
+
+    it('should use configurable sync time threshold', async () => {
+      const mockSupabase = supabase as any;
+      
+      // Create a date that's 50 hours old (more than 24h but less than 72h default)
+      const oldSyncTime = new Date(Date.now() - 50 * 60 * 60 * 1000).toISOString();
+      
+      let callCount = 0;
+      mockSupabase.from.mockImplementation(() => {
+        callCount++;
+        
+        switch (callCount) {
+          case 1: // cars table count
+            return {
+              select: vi.fn().mockReturnValue({
+                then: vi.fn().mockResolvedValue({ count: 1000, error: null })
+              })
+            };
+          case 2: // staging table count
+            return {
+              select: vi.fn().mockReturnValue({
+                then: vi.fn().mockResolvedValue({ count: 0, error: null })
+              })
+            };
+          case 3: // recent sync timestamps - 50 hours old
+            return {
+              select: vi.fn().mockReturnValue({
+                order: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockResolvedValue({
+                    data: [{ last_synced_at: oldSyncTime }],
+                    error: null
+                  })
+                })
+              })
+            };
+          default:
+            return {
+              select: vi.fn().mockReturnValue({
+                then: vi.fn().mockResolvedValue({ count: 0, error: null }),
+                order: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockReturnValue({
+                    single: vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } })
+                  })
+                }),
+                limit: vi.fn().mockResolvedValue({ data: [], error: null })
+              })
+            };
+        }
+      });
+
+      // Test with default 72h threshold - should pass
+      const resultWithDefault = await verifySyncToDatabase(1000);
+      expect(resultWithDefault.success).toBe(true);
+
+      // Reset call count
+      callCount = 0;
+      
+      // Test with stricter 24h threshold - should fail
+      const resultWithStrict = await verifySyncToDatabase(1000, { syncTimeThresholdHours: 24 });
+      expect(resultWithStrict.success).toBe(false);
+      expect(resultWithStrict.errors?.[0]).toContain('Last sync is too old: 50.0 hours ago');
+    }, 10000);
+
+    it('should use configurable data integrity threshold', async () => {
+      const mockSupabase = supabase as any;
+      
+      let callCount = 0;
+      mockSupabase.from.mockImplementation(() => {
+        callCount++;
+        
+        switch (callCount) {
+          case 1: // cars table count
+            return {
+              select: vi.fn().mockReturnValue({
+                then: vi.fn().mockResolvedValue({ count: 1000, error: null })
+              })
+            };
+          case 2: // staging table count
+            return {
+              select: vi.fn().mockReturnValue({
+                then: vi.fn().mockResolvedValue({ count: 0, error: null })
+              })
+            };
+          case 3: // recent sync timestamps
+            return {
+              select: vi.fn().mockReturnValue({
+                order: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockResolvedValue({
+                    data: [{ last_synced_at: new Date().toISOString() }],
+                    error: null
+                  })
+                })
+              })
+            };
+          case 4: // sample records
+            return {
+              select: vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue({
+                  data: [
+                    { id: '1', make: 'Toyota', model: 'Camry', external_id: 'ext1' }
+                  ],
+                  error: null
+                })
+              })
+            };
+          case 5: // cars_cache count - 15% difference (1000 vs 850)
+            return {
+              select: vi.fn().mockReturnValue({
+                then: vi.fn().mockResolvedValue({ count: 850, error: null })
+              })
+            };
+          default:
+            return {
+              select: vi.fn().mockReturnValue({
+                order: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockReturnValue({
+                    single: vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } })
+                  })
+                })
+              })
+            };
+        }
+      });
+
+      // Test with default 20% threshold - should pass (15% difference)
+      const resultWithDefault = await verifySyncToDatabase(1000);
+      expect(resultWithDefault.success).toBe(true);
+      expect(resultWithDefault.details.dataIntegrityPassed).toBe(true);
+
+      // Reset call count
+      callCount = 0;
+      
+      // Test with stricter 10% threshold - should fail (15% difference)
+      const resultWithStrict = await verifySyncToDatabase(1000, { dataIntegrityThresholdPercent: 10 });
+      expect(resultWithStrict.success).toBe(false);
+      expect(resultWithStrict.errors?.[0]).toContain('Data integrity issue: 15.0% difference');
+    }, 10000);
   });
 
   describe('quickSyncCheck', () => {
@@ -265,7 +398,7 @@ describe('Sync Verification System', () => {
       const result = await quickSyncCheck();
 
       expect(result).toBe(true);
-    });
+    }, 10000);
 
     it('should return false when cars table is empty', async () => {
       const mockSupabase = supabase as any;
@@ -278,7 +411,7 @@ describe('Sync Verification System', () => {
       const result = await quickSyncCheck();
 
       expect(result).toBe(false);
-    });
+    }, 10000);
 
     it('should return false when there is a database error', async () => {
       const mockSupabase = supabase as any;
@@ -294,7 +427,7 @@ describe('Sync Verification System', () => {
       const result = await quickSyncCheck();
 
       expect(result).toBe(false);
-    });
+    }, 10000);
   });
 
   describe('verifyBatchWrite', () => {

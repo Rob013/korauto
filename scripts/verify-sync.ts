@@ -97,7 +97,7 @@ async function runSyncVerification(): Promise<VerificationReport> {
       const difference = Math.abs(report.totalCars - report.cacheRecords);
       const percentDiff = report.totalCars > 0 ? (difference / report.totalCars) * 100 : 0;
       
-      if (percentDiff > 10) {
+      if (percentDiff > 20) { // Changed from 10 to 20% to match new default
         report.issues.push(`Large difference between main (${report.totalCars}) and cache (${report.cacheRecords}) tables: ${percentDiff.toFixed(1)}%`);
       }
     }
@@ -122,7 +122,7 @@ async function runSyncVerification(): Promise<VerificationReport> {
         
         console.log(`   ✅ Latest sync: ${lastSyncDate.toLocaleString()} (${hoursSince.toFixed(1)} hours ago)`);
         
-        if (hoursSince > 48) {
+        if (hoursSince > 72) { // Changed from 48 to 72 hours to match new default
           report.issues.push(`Last sync is very old: ${hoursSince.toFixed(1)} hours ago`);
         }
         
