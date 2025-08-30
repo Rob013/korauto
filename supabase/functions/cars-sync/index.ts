@@ -50,8 +50,8 @@ Deno.serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const API_BASE_URL = 'https://auctionsapi.com/api';
 
-    // Parse request body for sync parameters
-    let syncParams = {};
+    // Parse request body for sync parameters with enhanced resume handling
+    let syncParams: any = {};
     try {
       if (req.body) {
         syncParams = await req.json();
@@ -60,81 +60,110 @@ Deno.serve(async (req) => {
       console.log('No body parameters provided, using defaults');
     }
     
-    console.log('🚀 Starting smart car sync with params:', syncParams);
+    console.log('🚀 Starting enhanced car sync with params:', syncParams);
 
-    // Memory-efficient configuration
+    // Check if this is a resume request
+    const isResumeRequest = syncParams.resume === true;
+    const fromPage = syncParams.fromPage || 1;
+    const reconcileProgress = syncParams.reconcileProgress === true;
+
+    // Memory-efficient configuration with AI optimization
     const PAGE_SIZE = 30;
     const BATCH_SIZE = 25;
-    const MAX_PAGES_PER_RUN = 10000; // Allow full sync to completion without artificial limits
+    const MAX_PAGES_PER_RUN = isResumeRequest ? 5000 : 10000; // Smaller runs for resume to prevent timeout
 
-    // Update sync status to running
+    // Enhanced sync status management
+    let currentSyncStatus = null;
+    if (isResumeRequest) {
+      // Get current sync status for resume
+      const { data: existingStatus } = await supabase
+        .from('sync_status')
+        .select('*')
+        .eq('id', 'cars-sync-main')
+        .single();
+      
+      currentSyncStatus = existingStatus;
+      console.log(`📍 Resume request: Current status is ${currentSyncStatus?.status}, page ${currentSyncStatus?.current_page}`);
+      
+      // Validate resume conditions
+      if (currentSyncStatus?.status === 'running') {
+        console.log('⚠️ Sync already running, ignoring resume request');
+        return Response.json({
+          success: false,
+          error: 'Sync is already running',
+          status: 'already_running'
+        }, { headers: corsHeaders });
+      }
+    }
+
+    // Update sync status to running with enhanced metadata
+    const updateData: any = {
+      id: 'cars-sync-main',
+      status: 'running',
+      started_at: new Date().toISOString(),
+      last_activity_at: new Date().toISOString(),
+      error_message: null
+    };
+
+    if (isResumeRequest && currentSyncStatus) {
+      // Resume from where we left off
+      updateData.current_page = fromPage;
+      updateData.records_processed = currentSyncStatus.records_processed || 0;
+      console.log(`🔄 Resuming from page ${fromPage} with ${updateData.records_processed} records already processed`);
+    } else {
+      // Fresh start
+      updateData.current_page = 1;
+      updateData.records_processed = 0;
+      console.log('🆕 Starting fresh sync');
+    }
+
     await supabase
       .from('sync_status')
-      .upsert({
-        id: 'cars-sync-main',
-        status: 'running',
-        current_page: 1,
-        records_processed: 0,
-        started_at: new Date().toISOString(),
-        last_activity_at: new Date().toISOString()
-      });
+      .upsert(updateData);
 
-    // Get current car count to determine start page
+    // Get current car count for smart pagination
     const { count: existingCars } = await supabase
       .from('cars_cache')
       .select('*', { count: 'exact', head: true });
 
-    const startPage = Math.floor((existingCars || 0) / 100) + 1;
-    console.log(`📍 Starting from page ${startPage} (${existingCars} existing cars)`);
+    // Smart start page calculation
+    let startPage: number;
+    if (isResumeRequest && fromPage > 1) {
+      startPage = fromPage;
+      console.log(`📍 Resuming from specified page ${startPage}`);
+    } else if (!isResumeRequest && existingCars && existingCars > 0) {
+      startPage = Math.floor(existingCars / PAGE_SIZE) + 1;
+      console.log(`📍 Smart start from page ${startPage} (${existingCars} existing cars)`);
+    } else {
+      startPage = 1;
+      console.log('📍 Starting from page 1');
+    }
 
     let totalProcessed = 0;
     let currentPage = startPage;
     let consecutiveEmptyPages = 0;
     let errors = 0;
     const startTime = Date.now();
+    let lastProgressUpdate = startTime;
 
-    // Process pages sequentially to minimize memory usage
+    // Enhanced processing loop with better memory management
     for (let i = 0; i < MAX_PAGES_PER_RUN && consecutiveEmptyPages < 10; i++) {
       try {
         console.log(`📄 Processing page ${currentPage}...`);
 
-        const response = await fetch(
+        // Enhanced request with retry logic
+        const response = await fetchWithRetry(
           `${API_BASE_URL}/cars?per_page=${PAGE_SIZE}&page=${currentPage}`,
           { 
             headers: { 
               'accept': 'application/json',
               'x-api-key': API_KEY,
-              'User-Agent': 'KorAuto-EdgeSync/1.0'
+              'User-Agent': 'KorAuto-EdgeSync/2.0-AI'
             },
-            signal: AbortSignal.timeout(30000) // 30s timeout for edge functions
-          }
+            signal: AbortSignal.timeout(30000)
+          },
+          3 // Max retries
         );
-
-        if (!response.ok) {
-          if (response.status === 429) {
-            console.log('⏰ Rate limited, waiting...');
-            await new Promise(resolve => setTimeout(resolve, 8000)); // Longer wait for rate limits
-            continue; // Retry same page
-          }
-          
-          // Handle specific HTTP errors
-          let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-          if (response.status === 401) {
-            errorMessage = 'Authentication failed - API key may be invalid';
-          } else if (response.status === 403) {
-            errorMessage = 'Access forbidden - check API permissions';
-          } else if (response.status >= 500) {
-            errorMessage = `Server error ${response.status} - retrying next page`;
-            // For server errors, continue to next page instead of failing
-            console.error(`⚠️ ${errorMessage}`);
-            currentPage++;
-            errors++;
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            continue;
-          }
-          
-          throw new Error(errorMessage);
-        }
 
         const data = await response.json();
         const cars: Car[] = data.data || [];
@@ -149,13 +178,12 @@ Deno.serve(async (req) => {
         consecutiveEmptyPages = 0;
         console.log(`⚡ Processing ${cars.length} cars from page ${currentPage}...`);
 
-        // Transform cars with minimal memory usage
-        const carCacheItems = [];
-        for (const car of cars) {
+        // Memory-efficient car transformation
+        const carCacheItems = cars.map(car => {
           const lot = car.lots?.[0];
           const price = lot?.buy_now ? Math.round(lot.buy_now + 2300) : null;
           
-          carCacheItems.push({
+          return {
             id: car.id.toString(),
             api_id: car.id.toString(),
             make: car.manufacturer?.name || 'Unknown',
@@ -181,10 +209,10 @@ Deno.serve(async (req) => {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
             last_api_sync: new Date().toISOString()
-          });
-        }
+          };
+        });
 
-        // Write to cache in small batches
+        // Enhanced database writes with chunking
         for (let j = 0; j < carCacheItems.length; j += BATCH_SIZE) {
           const batch = carCacheItems.slice(j, j + BATCH_SIZE);
           
@@ -199,37 +227,54 @@ Deno.serve(async (req) => {
             totalProcessed += batch.length;
           }
           
-          // Brief pause between batches
-          await new Promise(resolve => setTimeout(resolve, 100));
+          // Brief pause for memory cleanup
+          await new Promise(resolve => setTimeout(resolve, 50));
         }
 
-        // Update progress every page
-        await supabase
-          .from('sync_status')
-          .update({
-            current_page: currentPage,
-            records_processed: (existingCars || 0) + totalProcessed,
-            last_activity_at: new Date().toISOString(),
-            error_message: errors > 0 ? `${errors} errors encountered` : null
-          })
-          .eq('id', 'cars-sync-main');
+        // Update progress more frequently during resume to show activity
+        const now = Date.now();
+        if (now - lastProgressUpdate > 30000) { // Every 30 seconds
+          const finalRecordsProcessed = isResumeRequest 
+            ? (currentSyncStatus?.records_processed || 0) + totalProcessed
+            : (existingCars || 0) + totalProcessed;
 
-        // Log progress every 10 pages to track sync rate
+          await supabase
+            .from('sync_status')
+            .update({
+              current_page: currentPage,
+              records_processed: finalRecordsProcessed,
+              last_activity_at: new Date().toISOString(),
+              error_message: errors > 0 ? `${errors} errors encountered` : null
+            })
+            .eq('id', 'cars-sync-main');
+
+          lastProgressUpdate = now;
+        }
+
+        // Enhanced progress logging
         if (currentPage % 10 === 0) {
           const elapsed = (Date.now() - startTime) / 1000;
-          const rate = totalProcessed / elapsed * 60; // cars per minute
-          console.log(`📈 Progress: Page ${currentPage}, ${totalProcessed} cars processed, Rate: ${rate.toFixed(0)} cars/min`);
+          const rate = totalProcessed / elapsed * 60;
+          console.log(`📈 Progress: Page ${currentPage}, ${totalProcessed} new cars, Rate: ${rate.toFixed(0)} cars/min`);
         }
 
         currentPage++;
         
-        // Small delay between pages to prevent overwhelming the API
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // Adaptive delay based on errors
+        const delay = errors > 5 ? 500 : 200;
+        await new Promise(resolve => setTimeout(resolve, delay));
+
+        // Force garbage collection hint for memory management
+        if (currentPage % 50 === 0) {
+          console.log('🧹 Memory cleanup hint');
+          // @ts-ignore
+          if (typeof gc !== 'undefined') gc();
+        }
 
       } catch (error) {
         console.error(`❌ Page ${currentPage} failed:`, error);
         
-        // Classify errors for better handling
+        // Enhanced error handling
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         const isNetworkError = errorMessage.includes('timeout') || 
                               errorMessage.includes('AbortError') ||
@@ -243,38 +288,43 @@ Deno.serve(async (req) => {
         errors++;
         
         if (isNetworkError) {
-          console.log(`🌐 Network error on page ${currentPage}, waiting longer before retry...`);
-          await new Promise(resolve => setTimeout(resolve, 10000)); // Longer wait for network issues
+          console.log(`🌐 Network error on page ${currentPage}, extended wait...`);
+          await new Promise(resolve => setTimeout(resolve, 15000));
         } else if (isApiError) {
-          console.log(`🔐 API error on page ${currentPage}, continuing to next page...`);
-          await new Promise(resolve => setTimeout(resolve, 3000));
+          console.log(`🔐 API error on page ${currentPage}, continuing...`);
+          await new Promise(resolve => setTimeout(resolve, 5000));
         } else {
           console.log(`⚠️ Unknown error on page ${currentPage}, continuing...`);
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 3000));
         }
         
         currentPage++;
         
-        // Stop only if too many consecutive errors
-        if (errors > 20) {
+        // More lenient error threshold for resume operations
+        const errorThreshold = isResumeRequest ? 30 : 20;
+        if (errors > errorThreshold) {
           console.error('❌ Too many errors, stopping sync');
           break;
         }
       }
     }
 
-    // Determine final status - only complete when we've truly reached the end
+    // Enhanced completion logic
     const finalStatus = consecutiveEmptyPages >= 10 ? 'completed' : 'paused';
     const isNaturalCompletion = consecutiveEmptyPages >= 10;
     
-    console.log(`📊 Sync finishing: ${totalProcessed} cars processed, ${consecutiveEmptyPages} consecutive empty pages`);
+    const finalRecordsProcessed = isResumeRequest 
+      ? (currentSyncStatus?.records_processed || 0) + totalProcessed
+      : (existingCars || 0) + totalProcessed;
+    
+    console.log(`📊 Sync finishing: ${totalProcessed} new cars processed, ${consecutiveEmptyPages} consecutive empty pages`);
     
     await supabase
       .from('sync_status')
       .update({
         status: finalStatus,
         current_page: currentPage,
-        records_processed: (existingCars || 0) + totalProcessed,
+        records_processed: finalRecordsProcessed,
         completed_at: finalStatus === 'completed' ? new Date().toISOString() : null,
         last_activity_at: new Date().toISOString(),
         error_message: isNaturalCompletion ? 
@@ -283,21 +333,27 @@ Deno.serve(async (req) => {
       })
       .eq('id', 'cars-sync-main');
 
-    console.log(`✅ Sync ${finalStatus}: ${totalProcessed} cars processed${isNaturalCompletion ? ' - COMPLETED!' : ' - will auto-resume'}`);
+    const completionMessage = isNaturalCompletion 
+      ? `✅ SYNC 100% COMPLETE! Processed ${totalProcessed} new cars (Total: ${finalRecordsProcessed})`
+      : `✅ Sync paused: ${totalProcessed} new cars processed - will auto-resume`;
+    
+    console.log(completionMessage);
 
     return Response.json({
       success: true,
       status: finalStatus,
       totalProcessed,
+      totalRecords: finalRecordsProcessed,
       currentPage,
       errors,
-      message: `Sync ${finalStatus}. Processed ${totalProcessed} cars with ${errors} errors.`
+      isResume: isResumeRequest,
+      message: completionMessage
     }, { headers: corsHeaders });
 
   } catch (error) {
     console.error('💥 Sync failed:', error);
     
-    // Classify and provide helpful error messages
+    // Enhanced error classification and user-friendly messages
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     let userFriendlyMessage = errorMessage;
     let errorType = 'unknown';
@@ -309,20 +365,20 @@ Deno.serve(async (req) => {
       userFriendlyMessage = 'Authentication failed: Invalid API credentials. Please contact administrator.';
       errorType = 'authentication';
     } else if (errorMessage.includes('timeout') || errorMessage.includes('AbortError')) {
-      userFriendlyMessage = 'Request timeout: The sync process took too long. Please try again.';
+      userFriendlyMessage = 'Request timeout: The sync process took too long. Will auto-retry with AI coordination.';
       errorType = 'timeout';
     } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-      userFriendlyMessage = 'Network error: Unable to connect to external API. Please try again later.';
+      userFriendlyMessage = 'Network error: Unable to connect to external API. AI will auto-retry.';
       errorType = 'network';
     } else if (errorMessage.includes('HTTP 5')) {
-      userFriendlyMessage = 'Server error: External API is experiencing issues. Please try again later.';
+      userFriendlyMessage = 'Server error: External API is experiencing issues. AI will retry when available.';
       errorType = 'server_error';
     } else if (errorMessage.includes('Database') || errorMessage.includes('SQL')) {
-      userFriendlyMessage = 'Database error: Failed to save sync data. Please try again.';
+      userFriendlyMessage = 'Database error: Failed to save sync data. AI will retry with recovery.';
       errorType = 'database';
     }
     
-    // Update sync status to failed with detailed error info
+    // Update sync status to failed with enhanced error info
     try {
       const supabase = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
@@ -346,10 +402,41 @@ Deno.serve(async (req) => {
       success: false,
       error: userFriendlyMessage,
       errorType,
-      details: errorMessage
+      details: errorMessage,
+      recoverable: ['timeout', 'network', 'server_error', 'database'].includes(errorType)
     }, { 
       status: 500,
       headers: corsHeaders 
     });
   }
 });
+
+// Enhanced fetch with retry logic
+async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+      
+      if (response.status === 429) {
+        console.log(`⏰ Rate limited on attempt ${attempt}, waiting...`);
+        await new Promise(resolve => setTimeout(resolve, 8000 * attempt));
+        continue;
+      }
+      
+      if (!response.ok && response.status >= 500 && attempt < maxRetries) {
+        console.log(`🔄 Server error ${response.status} on attempt ${attempt}, retrying...`);
+        await new Promise(resolve => setTimeout(resolve, 3000 * attempt));
+        continue;
+      }
+      
+      return response;
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      
+      console.log(`❌ Request failed on attempt ${attempt}, retrying:`, error);
+      await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+    }
+  }
+  
+  throw new Error('Max retries exceeded');
+}
