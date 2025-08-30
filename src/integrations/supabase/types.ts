@@ -23,6 +23,7 @@ export type Database = {
           Constraints: string | null
           created_at: string | null
           current_bid: number | null
+          data_hash: string | null
           Description: string | null
           domain_name: string | null
           external_id: string | null
@@ -60,6 +61,7 @@ export type Database = {
           Constraints?: string | null
           created_at?: string | null
           current_bid?: number | null
+          data_hash?: string | null
           Description?: string | null
           domain_name?: string | null
           external_id?: string | null
@@ -97,6 +99,7 @@ export type Database = {
           Constraints?: string | null
           created_at?: string | null
           current_bid?: number | null
+          data_hash?: string | null
           Description?: string | null
           domain_name?: string | null
           external_id?: string | null
@@ -197,6 +200,102 @@ export type Database = {
           updated_at?: string | null
           vin?: string | null
           year?: number
+        }
+        Relationships: []
+      }
+      cars_staging: {
+        Row: {
+          buy_now_price: number | null
+          color: string | null
+          condition: string | null
+          created_at: string | null
+          current_bid: number | null
+          data_hash: string | null
+          domain_name: string | null
+          external_id: string | null
+          fuel: string | null
+          id: string
+          image_url: string | null
+          images: Json | null
+          is_active: boolean | null
+          is_archived: boolean | null
+          is_live: boolean | null
+          keys_available: boolean | null
+          last_synced_at: string | null
+          location: string | null
+          lot_number: string | null
+          make: string | null
+          mileage: number | null
+          model: string | null
+          price: number | null
+          source_api: string | null
+          status: string | null
+          title: string | null
+          transmission: string | null
+          vin: string | null
+          year: number | null
+        }
+        Insert: {
+          buy_now_price?: number | null
+          color?: string | null
+          condition?: string | null
+          created_at?: string | null
+          current_bid?: number | null
+          data_hash?: string | null
+          domain_name?: string | null
+          external_id?: string | null
+          fuel?: string | null
+          id: string
+          image_url?: string | null
+          images?: Json | null
+          is_active?: boolean | null
+          is_archived?: boolean | null
+          is_live?: boolean | null
+          keys_available?: boolean | null
+          last_synced_at?: string | null
+          location?: string | null
+          lot_number?: string | null
+          make?: string | null
+          mileage?: number | null
+          model?: string | null
+          price?: number | null
+          source_api?: string | null
+          status?: string | null
+          title?: string | null
+          transmission?: string | null
+          vin?: string | null
+          year?: number | null
+        }
+        Update: {
+          buy_now_price?: number | null
+          color?: string | null
+          condition?: string | null
+          created_at?: string | null
+          current_bid?: number | null
+          data_hash?: string | null
+          domain_name?: string | null
+          external_id?: string | null
+          fuel?: string | null
+          id?: string
+          image_url?: string | null
+          images?: Json | null
+          is_active?: boolean | null
+          is_archived?: boolean | null
+          is_live?: boolean | null
+          keys_available?: boolean | null
+          last_synced_at?: string | null
+          location?: string | null
+          lot_number?: string | null
+          make?: string | null
+          mileage?: number | null
+          model?: string | null
+          price?: number | null
+          source_api?: string | null
+          status?: string | null
+          title?: string | null
+          transmission?: string | null
+          vin?: string | null
+          year?: number | null
         }
         Relationships: []
       }
@@ -501,6 +600,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      bulk_merge_from_staging: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       cars_filtered_count: {
         Args: { p_filters?: Json }
         Returns: number
@@ -583,6 +686,10 @@ export type Database = {
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      mark_missing_inactive: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
     }
     Enums: {
