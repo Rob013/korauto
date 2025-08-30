@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, memo, useMemo, Suspense, lazy } from "react";
+import { useEffect, useState, useCallback, memo, useMemo, Suspense, lazy, startTransition } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { trackPageView, trackFavorite } from "@/utils/analytics";
@@ -324,7 +324,6 @@ const CarDetails = memo(() => {
   const [showInspectionReport, setShowInspectionReport] = useState(false);
   const [hasAutoExpanded, setHasAutoExpanded] = useState(false);
   const [showEngineSection, setShowEngineSection] = useState(false);
-  const [isPlaceholderImage, setIsPlaceholderImage] = useState(false);
 
   // Extract features from car data - using function declarations to avoid temporal dead zone
   function getCarFeatures(carData: any, lot: any): string[] {
@@ -389,11 +388,6 @@ const CarDetails = memo(() => {
     preloadThumbnails: true,
     enableCaching: true,
   });
-
-  // Reset placeholder state when image selection changes
-  useEffect(() => {
-    setIsPlaceholderImage(false);
-  }, [selectedImageIndex]);
 
   // Auto-expand detailed info if car has rich data (only once)
   useEffect(() => {
@@ -562,14 +556,18 @@ const CarDetails = memo(() => {
       // Validate lot parameter
       if (!lot || typeof lot !== 'string' || lot.trim() === '') {
         console.error("Invalid lot parameter:", lot);
-        setError("Invalid car identifier provided");
-        setLoading(false);
+        startTransition(() => {
+          setError("Invalid car identifier provided");
+          setLoading(false);
+        });
         return;
       }
       
-      // Reset states at the beginning
-      setError(null);
-      setLoading(true);
+      // Reset states at the beginning - batch updates to prevent flickering
+      startTransition(() => {
+        setError(null);
+        setLoading(true);
+      });
       
       const startTime = performance.now();
       
@@ -689,7 +687,9 @@ const CarDetails = memo(() => {
             details: lotData.details,
           };
           setCar(transformedCar);
-          setLoading(false);
+          startTransition(() => {
+            setLoading(false);
+          });
 
           // Track performance
           const endTime = performance.now();
@@ -770,7 +770,9 @@ const CarDetails = memo(() => {
                 details: lotData.details,
               };
               setCar(transformedCar);
-              setLoading(false);
+              startTransition(() => {
+                setLoading(false);
+              });
 
               // Track performance
               const endTime = performance.now();
@@ -787,10 +789,12 @@ const CarDetails = memo(() => {
               secureResponse.status === 404 ||
               errorData.error?.includes("404")
             ) {
-              setError(
-                `Car with ID ${lot} is not available in our database. This car may have been sold or removed from the auction.`
-              );
-              setLoading(false);
+              startTransition(() => {
+                setError(
+                  `Car with ID ${lot} is not available in our database. This car may have been sold or removed from the auction.`
+                );
+                setLoading(false);
+              });
               return;
             }
           }
@@ -887,7 +891,9 @@ const CarDetails = memo(() => {
           details: lotData.details,
         };
         setCar(transformedCar);
-        setLoading(false);
+        startTransition(() => {
+          setLoading(false);
+        });
 
         // Track car view analytics
         trackCarView(lot, transformedCar);
@@ -936,7 +942,9 @@ const CarDetails = memo(() => {
             };
             
             setCar(transformedCar);
-            setLoading(false);
+            startTransition(() => {
+              setLoading(false);
+            });
             
             // Track performance for fallback data
             const endTime = performance.now();
@@ -964,8 +972,10 @@ const CarDetails = memo(() => {
               : `Failed to load car details: ${apiError.message}`
             : "Car not found";
             
-          setError(errorMessage);
-          setLoading(false);
+          startTransition(() => {
+            setError(errorMessage);
+            setLoading(false);
+          });
         }
       }
     };
@@ -1137,20 +1147,12 @@ const CarDetails = memo(() => {
                     <img
                       src={images[selectedImageIndex]}
                       alt={`${car.year} ${car.make} ${car.model}`}
-                      className={`w-full h-full transition-transform duration-300 hover:scale-105 ${
-                        isPlaceholderImage 
-                          ? "object-cover" // Use object-cover for placeholder to fill container properly on mobile
-                          : "object-contain" // Use object-contain for real images to show full image
-                      }`}
+                      className="w-full h-full transition-transform duration-300 hover:scale-105 object-contain"
                       onError={(e) => {
                         e.currentTarget.src = "/placeholder.svg";
-                        setIsPlaceholderImage(true);
                       }}
-                      onLoad={(e) => {
-                        // Reset placeholder state when a real image loads successfully
-                        if (!e.currentTarget.src.includes("/placeholder.svg")) {
-                          setIsPlaceholderImage(false);
-                        }
+                      onLoad={() => {
+                        // Image loaded successfully - no state change needed
                       }}
                     />
                   ) : (
