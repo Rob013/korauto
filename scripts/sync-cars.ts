@@ -27,14 +27,14 @@ import { createHash } from 'crypto'
 import { writeFileSync, readFileSync, existsSync } from 'fs'
 import { Agent } from 'https'
 
-// Performance-optimized configuration with environment overrides
-const CONCURRENCY = parseInt(process.env.CONCURRENCY || '16') // Parallel requests for maximum throughput
-const RPS = parseInt(process.env.RPS || '20') // Rate limit to respect API constraints  
-const PAGE_SIZE = parseInt(process.env.PAGE_SIZE || '100') // Larger pages for efficiency
-const BATCH_SIZE = parseInt(process.env.BATCH_SIZE || '500') // Batch database writes for speed
-const PARALLEL_BATCHES = parseInt(process.env.PARALLEL_BATCHES || '6') // Concurrent batch uploads
-const MAX_RETRIES = 5 // Increased retries for resilience
-const REQUEST_TIMEOUT = 45000 // Longer timeout for stability
+// Memory-optimized configuration for edge function environment
+const CONCURRENCY = parseInt(process.env.CONCURRENCY || '8') // Reduced for memory efficiency  
+const RPS = parseInt(process.env.RPS || '15') // Conservative rate limiting
+const PAGE_SIZE = parseInt(process.env.PAGE_SIZE || '50') // Smaller pages to reduce memory usage
+const BATCH_SIZE = parseInt(process.env.BATCH_SIZE || '100') // Smaller batches for memory efficiency
+const PARALLEL_BATCHES = parseInt(process.env.PARALLEL_BATCHES || '3') // Reduced parallel batches
+const MAX_RETRIES = 3 // Reasonable retry count
+const REQUEST_TIMEOUT = 30000 // Shorter timeout for faster recovery
 const CHECKPOINT_FILE = '/tmp/sync-checkpoint.json'
 
 // Environment variables validation
@@ -52,11 +52,11 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !API_BASE_URL || !API_KEY) {
 // Initialize Supabase client
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-// HTTP Agent with keep-alive for connection reuse (performance optimization)
+// Lightweight HTTP configuration for edge functions
 const httpAgent = new Agent({
   keepAlive: true,
-  keepAliveMsecs: 30000,
-  maxSockets: CONCURRENCY * 2, // Allow connection pooling for parallel requests
+  keepAliveMsecs: 15000, // Shorter keep-alive for memory efficiency
+  maxSockets: CONCURRENCY, // Conservative socket count
   timeout: REQUEST_TIMEOUT
 })
 
@@ -318,9 +318,9 @@ async function makeApiRequest(url: string, retryCount = 0): Promise<unknown> {
     const latency = Date.now() - requestStart
     apiLatencies.push(latency)
     
-    // Keep only recent latencies for performance calculation (sliding window)
-    if (apiLatencies.length > 1000) {
-      apiLatencies.shift()
+    // Keep only recent latencies for performance calculation (memory-efficient sliding window)
+    if (apiLatencies.length > 100) {
+      apiLatencies.splice(0, 50) // Remove oldest half when limit reached
     }
     
     // Classify errors for targeted handling
@@ -469,51 +469,45 @@ async function batchInsertToStaging(cars: Record<string, unknown>[]): Promise<nu
   let successCount = 0
   
   try {
-    // Split into chunks respecting the 10MB payload limit and batch size
-    const chunks: Record<string, unknown>[][] = []
-    for (let i = 0; i < cars.length; i += BATCH_SIZE) {
-      chunks.push(cars.slice(i, i + BATCH_SIZE))
+    // Memory-efficient sequential processing instead of parallel chunks
+    const chunkSize = Math.min(BATCH_SIZE, 50) // Smaller chunks for memory efficiency
+    
+    for (let i = 0; i < cars.length; i += chunkSize) {
+      const chunk = cars.slice(i, i + chunkSize)
+      
+      try {
+        const { error, count } = await supabase
+          .from('cars_staging')
+          .upsert(chunk, { 
+            onConflict: 'id',
+            ignoreDuplicates: false,
+            count: 'exact'
+          })
+
+        if (error) {
+          metrics.dbErrors++
+          console.error(`❌ Batch upsert error:`, error)
+          continue // Skip this chunk but continue with others
+        }
+
+        metrics.dbWrites++
+        successCount += count || chunk.length
+        
+        // Brief pause between chunks to prevent overwhelming the database
+        await new Promise(resolve => setTimeout(resolve, 10))
+        
+      } catch (err) {
+        metrics.dbErrors++
+        console.error(`💥 Chunk processing error:`, err)
+        continue // Skip this chunk but continue with others
+      }
     }
     
-    // Process chunks in parallel for maximum throughput
-    const chunkPromises = chunks.map(chunk => 
-      concurrencyLimiter.run(async () => {
-        try {
-          const { error, count } = await supabase
-            .from('cars_staging')
-            .upsert(chunk, { 
-              onConflict: 'id',
-              ignoreDuplicates: false,
-              count: 'exact'
-            })
-
-          if (error) {
-            metrics.dbErrors++
-            console.error(`❌ Batch upsert error:`, error)
-            return 0
-          }
-
-          metrics.dbWrites++
-          return count || chunk.length
-        } catch (err) {
-          metrics.dbErrors++
-          console.error(`💥 Chunk processing error:`, err)
-          return 0
-        }
-      })
-    )
-    
-    // Wait for all chunks to complete with parallel execution
-    const results = await Promise.allSettled(chunkPromises)
-    successCount = results.reduce((sum, result) => {
-      return sum + (result.status === 'fulfilled' ? result.value : 0)
-    }, 0)
-    
     const batchTime = Date.now() - batchStart
-    const throughput = successCount / (batchTime / 1000)
+    const throughput = successCount / Math.max(1, batchTime / 1000)
     
-    if (results.some(r => r.status === 'rejected')) {
-      console.warn(`⚠️ Some batch operations failed. ${successCount}/${cars.length} succeeded. Throughput: ${throughput.toFixed(0)} rows/s`)
+    if (successCount < cars.length) {
+      console.warn(`⚠️ Some records failed. ${successCount}/${cars.length} succeeded. Throughput: ${throughput.toFixed(0)} rows/s`)
     }
     
     return successCount
@@ -578,90 +572,97 @@ async function syncCars() {
     while (hasMorePages && currentPage <= maxPages && consecutiveEmptyPages < maxConsecutiveEmpty) {
       const pageStart = Date.now()
       
-      // Create batch of page requests for parallel processing
-      const pageBatch: Promise<void>[] = []
-      const batchSize = Math.min(CONCURRENCY, maxPages - currentPage + 1)
+      // Memory-efficient sequential processing with minimal parallelism
+      const batchSize = Math.min(3, CONCURRENCY, maxPages - currentPage + 1) // Very small batches
       
       for (let i = 0; i < batchSize; i++) {
         const pageNum = currentPage + i
         if (pageNum > maxPages) break
         
-        // Each page request runs with concurrency control and circuit breaker
-        const pagePromise = concurrencyLimiter.run(async () => {
-          return circuitBreaker.execute(async () => {
-            const apiUrl = `${API_BASE_URL}/cars?page=${pageNum}&per_page=${PAGE_SIZE}`
-            
-            try {
-              const apiResponse = await makeApiRequest(apiUrl)
+        // Process each page with memory cleanup
+        try {
+          await concurrencyLimiter.run(async () => {
+            return circuitBreaker.execute(async () => {
+              const apiUrl = `${API_BASE_URL}/cars?page=${pageNum}&per_page=${PAGE_SIZE}`
               
-              if (!apiResponse || !Array.isArray((apiResponse as Record<string, unknown>).data)) {
-                consecutiveEmptyPages++
-                return
-              }
+              try {
+                const apiResponse = await makeApiRequest(apiUrl)
+                
+                if (!apiResponse || !Array.isArray((apiResponse as Record<string, unknown>).data)) {
+                  consecutiveEmptyPages++
+                  return
+                }
 
-              const cars = (apiResponse as Record<string, unknown>).data as Record<string, unknown>[]
-              
-              if (cars.length === 0) {
-                consecutiveEmptyPages++
-                return
-              }
+                const cars = (apiResponse as Record<string, unknown>).data as Record<string, unknown>[]
+                
+                if (cars.length === 0) {
+                  consecutiveEmptyPages++
+                  return
+                }
 
-              // Reset empty page counter on successful page
-              consecutiveEmptyPages = 0
-              metrics.totalPages++
-              metrics.totalRows += cars.length
+                // Reset empty page counter on successful page
+                consecutiveEmptyPages = 0
+                metrics.totalPages++
+                metrics.totalRows += cars.length
 
-              // Stream-process this page immediately (no giant in-memory arrays)
-              const stagingCars: Record<string, unknown>[] = []
-              
-              for (const apiCar of cars) {
-                try {
-                  const carId = apiCar.id?.toString()
-                  const make = (apiCar.manufacturer as Record<string, unknown>)?.name?.toString()?.trim()
-                  const model = (apiCar.model as Record<string, unknown>)?.name?.toString()?.trim()
+                // Process cars in small chunks to avoid memory buildup
+                const CHUNK_SIZE = 20 // Very small chunks for memory efficiency
+                for (let j = 0; j < cars.length; j += CHUNK_SIZE) {
+                  const chunk = cars.slice(j, j + CHUNK_SIZE)
+                  const stagingCars: Record<string, unknown>[] = []
                   
-                  if (!carId || !make || !model) {
-                    continue // Skip invalid data
+                  for (const apiCar of chunk) {
+                    try {
+                      const carId = apiCar.id?.toString()
+                      const make = (apiCar.manufacturer as Record<string, unknown>)?.name?.toString()?.trim()
+                      const model = (apiCar.model as Record<string, unknown>)?.name?.toString()?.trim()
+                      
+                      if (!carId || !make || !model) {
+                        continue // Skip invalid data
+                      }
+
+                      const transformedCar = transformCarData(apiCar)
+                      stagingCars.push(transformedCar)
+                    } catch (carError) {
+                      errors.push(`Car transformation error on page ${pageNum}: ${carError}`)
+                    }
                   }
 
-                  const transformedCar = transformCarData(apiCar)
-                  stagingCars.push(transformedCar)
-                } catch (carError) {
-                  errors.push(`Car transformation error on page ${pageNum}: ${carError}`)
+                  // Immediate write and cleanup for each chunk
+                  if (stagingCars.length > 0) {
+                    const insertedCount = await batchInsertToStaging(stagingCars)
+                    
+                    if (insertedCount !== stagingCars.length) {
+                      console.warn(`⚠️ Page ${pageNum} chunk: ${insertedCount}/${stagingCars.length} cars inserted`)
+                    }
+                  }
+                  
+                  // Force garbage collection hint (memory cleanup)
+                  if (global.gc) {
+                    global.gc()
+                  }
                 }
-              }
-
-              // Immediate batch write for this page (streaming approach)
-              if (stagingCars.length > 0) {
-                const insertedCount = await batchInsertToStaging(stagingCars)
                 
-                if (insertedCount !== stagingCars.length) {
-                  console.warn(`⚠️ Page ${pageNum}: ${insertedCount}/${stagingCars.length} cars inserted`)
+              } catch (pageError) {
+                const errorMessage = pageError instanceof Error ? pageError.message : 'Unknown error'
+                errors.push(`Page ${pageNum}: ${errorMessage}`)
+                console.error(`❌ Error processing page ${pageNum}:`, errorMessage)
+                
+                // Don't fail entire sync for individual page errors
+                if (errors.length > 30) { // Reduced error threshold
+                  console.error(`❌ Too many errors (${errors.length}), stopping sync`)
+                  hasMorePages = false
                 }
               }
-              
-            } catch (pageError) {
-              const errorMessage = pageError instanceof Error ? pageError.message : 'Unknown error'
-              errors.push(`Page ${pageNum}: ${errorMessage}`)
-              console.error(`❌ Error processing page ${pageNum}:`, errorMessage)
-              
-              // Don't fail entire sync for individual page errors
-              if (errors.length > 50) {
-                console.error(`❌ Too many errors (${errors.length}), stopping sync`)
-                hasMorePages = false
-              }
-            }
+            })
           })
-        })
-        
-        pageBatch.push(pagePromise)
+        } catch (batchError) {
+          console.error(`❌ Batch error at page ${pageNum}:`, batchError)
+        }
       }
       
-      // Wait for current batch to complete
-      await Promise.allSettled(pageBatch)
-      
-      // Update checkpoint periodically for resumability
-      if (currentPage % 20 === 0) { // Every 20 pages
+      // Update checkpoint more frequently for better recovery
+      if (currentPage % 10 === 0) { // Every 10 pages
         const newCheckpoint: Checkpoint = {
           runId,
           lastPage: currentPage + batchSize - 1,
@@ -670,6 +671,11 @@ async function syncCars() {
           lastUpdateTime: Date.now()
         }
         saveCheckpoint(newCheckpoint)
+        
+        // Memory cleanup hint
+        if (global.gc) {
+          global.gc()
+        }
       }
       
       // Move to next batch

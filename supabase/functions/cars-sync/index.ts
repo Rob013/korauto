@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.52.1'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,538 +7,21 @@ const corsHeaders = {
 
 interface Car {
   id: string;
-  manufacturer?: { id: number; name: string };
-  model?: { id: number; name: string };
-  generation?: { id: number; name: string; manufacturer_id: number; model_id: number };
+  manufacturer?: { name: string };
+  model?: { name: string };
   year: number;
   vin?: string;
-  fuel?: { id: number; name: string };
-  transmission?: { id: number; name: string };
-  color?: { id: number; name: string };
-  body_type?: { id: number; name: string };
-  engine?: { id: number; name: string };
-  drive_wheel?: string;
-  vehicle_type?: { id: number; name: string };
-  cylinders?: string;
+  fuel?: { name: string };
+  transmission?: { name: string };
+  color?: { name: string };
   lots?: {
-    id: number;
     lot?: string;
     buy_now?: number;
-    status?: number;
-    sale_status?: string;
-    final_price?: number;
     bid?: number;
-    damage?: {
-      main?: string;
-      second?: string;
-    };
     keys_available?: boolean;
-    airbags?: string;
-    grade_iaai?: string;
-    seller?: string;
-    seller_type?: string;
-    sale_date?: string;
-    odometer?: {
-      km?: number;
-      mi?: number;
-    };
-    images?: {
-      normal?: string[];
-      big?: string[];
-    };
+    odometer?: { km?: number };
+    images?: { normal?: string[] };
   }[];
-}
-
-interface SyncProgress {
-  totalSynced: number;
-  currentPage: number;
-  errorCount: number;
-  rateLimitRetries: number;
-  dbCapacityIssues: number;
-  lastSuccessfulPage: number;
-  consecutiveEmptyPages: number;
-  status: 'running' | 'completed' | 'failed' | 'paused';
-  startTime: number;
-}
-
-// Background sync function with maximum speed and bulletproof error handling
-async function performBackgroundSync(supabaseClient: any, progress: SyncProgress): Promise<SyncProgress> {
-  const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
-  const API_BASE_URL = 'https://auctionsapi.com/api';
-  
-  // MAXIMUM SPEED settings - ULTRA FAST MODE
-  const MAX_PARALLEL_REQUESTS = 12; // Maximum parallel requests for ultra speed
-  const BATCH_SIZE = 100; // Maximum batch size for blazing fast processing
-  const MIN_DELAY = 50; // Minimum safe delay for maximum throughput
-  const MAX_RETRIES = 250; // Ultra-persistent retries - never give up
-  const RATE_LIMIT_MAX_RETRIES = 1000; // Maximum rate limit retries for persistence
-  const API_TIMEOUT = 60000; // 60 second timeout for faster failures and recovery
-  const ULTRA_FAST_MODE = true; // Enable maximum ultra-fast processing
-  
-  console.log('🚀 Starting ULTRA-FAST sync with bulletproof rate limit handling...');
-  
-  // Update sync status
-  await updateSyncStatus(supabaseClient, {
-    status: 'running',
-    current_page: progress.currentPage,
-    records_processed: progress.totalSynced,
-    last_activity_at: new Date().toISOString()
-  });
-
-  // Process multiple pages in parallel for maximum speed
-  const processPageBatch = async (startPage: number, batchCount: number): Promise<void> => {
-    const pagePromises = [];
-    
-    for (let i = 0; i < batchCount && (startPage + i) <= 20000; i++) {
-      const pageNum = startPage + i;
-      pagePromises.push(processSinglePage(pageNum));
-    }
-    
-    await Promise.allSettled(pagePromises);
-  };
-
-  const processSinglePage = async (pageNum: number): Promise<void> => {
-    let retryCount = 0;
-    let rateLimitRetries = 0;
-    
-    while (retryCount < MAX_RETRIES && progress.status === 'running') {
-      try {
-        console.log(`🔥 SPEED Processing page ${pageNum} (attempt ${retryCount + 1})...`);
-        
-        // Smart adaptive delay - increase significantly with errors and retries
-        const baseDelay = MIN_DELAY + (retryCount * 200);
-        const errorDelay = progress.errorCount > 10 ? progress.errorCount * 100 : 0;
-        const adaptiveDelay = Math.min(10000, baseDelay + errorDelay);
-        
-        if (retryCount > 0) {
-          console.log(`⏸️ Retry delay: ${adaptiveDelay}ms (attempt ${retryCount}, errors: ${progress.errorCount})`);
-          await new Promise(resolve => setTimeout(resolve, adaptiveDelay));
-        }
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
-        
-        const response = await fetch(
-          `${API_BASE_URL}/cars?per_page=100&page=${pageNum}`,
-          { 
-            headers: { 'accept': '*/*', 'x-api-key': API_KEY },
-            signal: controller.signal
-          }
-        );
-        
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) {
-          if (response.status === 429) {
-            rateLimitRetries++;
-            console.log(`⚡ ULTRA-FAST Rate limited on page ${pageNum}. Lightning retry ${rateLimitRetries}/${RATE_LIMIT_MAX_RETRIES}`);
-            
-            if (rateLimitRetries >= RATE_LIMIT_MAX_RETRIES) {
-              console.log(`💀 Max rate limit retries reached for page ${pageNum}. Marking as processed to continue ULTRA-FAST sync.`);
-              return; // Skip this page to continue sync
-            }
-            
-            // Ultra-fast backoff - minimal delays for maximum speed
-            const backoffTime = ULTRA_FAST_MODE ? 
-              Math.min(5000, 100 + (rateLimitRetries * 100)) : // Ultra-fast: 100ms base + 100ms per retry
-              Math.min(120000, 2000 * Math.pow(2, Math.min(rateLimitRetries, 6))); // Normal backoff
-            console.log(`🛡️ ULTRA-FAST Rate limit backoff: ${backoffTime}ms (retry ${rateLimitRetries})`);
-            await new Promise(resolve => setTimeout(resolve, backoffTime));
-            continue;
-          } else if (response.status >= 500) {
-            // Server errors - retry with ultra-fast exponential backoff
-            retryCount++;
-            const serverErrorDelay = ULTRA_FAST_MODE ?
-              Math.min(3000, 100 * Math.pow(1.5, retryCount)) : // Ultra-fast: 100ms base with 1.5x multiplier
-              Math.min(10000, 500 * Math.pow(2, retryCount)); // Normal: 500ms base with 2x multiplier
-            console.log(`🔧 ULTRA-FAST Server error ${response.status} on page ${pageNum}, retrying in ${serverErrorDelay}ms...`);
-            await new Promise(resolve => setTimeout(resolve, serverErrorDelay));
-            continue;
-          } else {
-            // Client errors - skip page to continue ULTRA-FAST sync
-            console.log(`⚠️ Client error ${response.status} on page ${pageNum}. Skipping to continue ULTRA-FAST sync.`);
-            progress.errorCount++;
-            return;
-          }
-        }
-
-        const data = await response.json();
-        const cars: Car[] = data.data || [];
-        
-        if (cars.length === 0) {
-          progress.consecutiveEmptyPages++;
-          console.log(`✅ Page ${pageNum} empty (${progress.consecutiveEmptyPages} consecutive). Continuing...`);
-          return;
-        } else {
-          progress.consecutiveEmptyPages = 0; // Reset counter on successful page
-        }
-
-        console.log(`⚡ SPEED Processing ${cars.length} cars from page ${pageNum}...`);
-
-        // Ultra-fast batch processing with massive parallel writes
-        const chunks = [];
-        for (let i = 0; i < cars.length; i += BATCH_SIZE) {
-          chunks.push(cars.slice(i, i + BATCH_SIZE));
-        }
-
-        const chunkResults = await Promise.allSettled(
-          chunks.map(chunk => processCarsChunk(supabaseClient, chunk))
-        );
-
-        let successCount = 0;
-        chunkResults.forEach((result, index) => {
-          if (result.status === 'fulfilled') {
-            successCount += result.value.success;
-          } else {
-            console.error(`❌ Chunk ${index} failed for page ${pageNum}:`, result.reason);
-            progress.dbCapacityIssues += chunks[index].length;
-          }
-        });
-
-        progress.totalSynced += successCount;
-        progress.lastSuccessfulPage = Math.max(progress.lastSuccessfulPage, pageNum);
-        
-        console.log(`🚀 Page ${pageNum} complete: ${successCount}/${cars.length} cars processed`);
-        
-        // Log page completion but don't assume it's the end
-        console.log(`🎯 Page ${pageNum} completed with ${cars.length} cars. Continuing sync...`);
-        
-        return; // Success!
-        
-      } catch (error) {
-        retryCount++;
-        progress.errorCount++;
-        
-        if (error.name === 'AbortError') {
-          console.error(`⏰ Timeout on page ${pageNum} (attempt ${retryCount}). Retrying...`);
-        } else {
-          console.error(`💥 Error processing page ${pageNum} (attempt ${retryCount}):`, error.message);
-        }
-        
-        if (retryCount >= MAX_RETRIES) {
-          console.log(`💀 Max retries reached for page ${pageNum}. Continuing to next page to maintain momentum.`);
-          return; // Continue sync even if this page fails
-        }
-        
-        // Exponential backoff for network errors - ULTRA-FAST MODE
-        const errorDelay = ULTRA_FAST_MODE ? 
-          Math.min(2000, 50 * Math.pow(1.5, retryCount)) : // Ultra-fast: 50ms base with 1.5x multiplier
-          Math.min(5000, 200 * Math.pow(1.8, retryCount)); // Normal: 200ms base with 1.8x multiplier
-        await new Promise(resolve => setTimeout(resolve, errorDelay));
-      }
-    }
-  };
-
-  // ULTRA-FAST parallel page processing - continue until we hit end or 50 consecutive empty pages
-  while (progress.currentPage <= 20000 && progress.status === 'running' && progress.consecutiveEmptyPages < 50) {
-    const startTime = Date.now();
-    
-    // Process multiple pages in parallel for maximum speed
-    await processPageBatch(progress.currentPage, MAX_PARALLEL_REQUESTS);
-    
-    progress.currentPage += MAX_PARALLEL_REQUESTS;
-    
-    // More frequent progress updates for ULTRA-FAST monitoring
-    if (progress.currentPage % 2 === 0) { // Every 2 pages for real-time monitoring
-      const syncRate = Math.round(progress.totalSynced / ((Date.now() - progress.startTime) / 60000));
-      const currentRate = Math.round(MAX_PARALLEL_REQUESTS / ((Date.now() - startTime) / 60000));
-      
-      await updateSyncStatus(supabaseClient, {
-        current_page: progress.currentPage,
-        records_processed: progress.totalSynced,
-        last_activity_at: new Date().toISOString(),
-        error_message: `🚀 SPEED MODE: ${syncRate} cars/min avg, ${currentRate} pages/min current, Errors: ${progress.errorCount}, DB Issues: ${progress.dbCapacityIssues}`
-      });
-      
-      console.log(`🚀 ULTRA-FAST Progress: Page ${progress.currentPage}, Synced: ${progress.totalSynced}, Rate: ${syncRate} cars/min, Current: ${currentRate} pages/min`);
-    }
-    
-    // Ultra-smart pacing - almost no delay in ULTRA-FAST mode
-    const pacingDelay = ULTRA_FAST_MODE ? 
-      Math.max(50, MIN_DELAY * (progress.errorCount > 10 ? 2 : 0.5)) : // Ultra-fast: 50ms min, scale with errors
-      Math.max(MIN_DELAY, MIN_DELAY * (progress.errorCount > 5 ? 3 : 1)); // Normal pacing
-    await new Promise(resolve => setTimeout(resolve, pacingDelay));
-  }
-  
-  // Final status update - determine completion based on multiple factors
-  const finalStatus = (progress.currentPage > 20000 || progress.consecutiveEmptyPages >= 50) ? 'completed' : 'paused';
-  await updateSyncStatus(supabaseClient, {
-    status: finalStatus,
-    completed_at: finalStatus === 'completed' ? new Date().toISOString() : null,
-    current_page: progress.currentPage,
-    records_processed: progress.totalSynced,
-    last_activity_at: new Date().toISOString(),
-    error_message: `🎯 ULTRA-FAST SYNC ${finalStatus.toUpperCase()}: ${progress.totalSynced} cars synced, ${progress.errorCount} errors handled, ${progress.dbCapacityIssues} DB issues resolved, ${progress.rateLimitRetries} rate limits overcome`
-  });
-  
-  console.log(`🏁 ULTRA-FAST sync ${finalStatus}: ${progress.totalSynced} cars, ${progress.errorCount} errors handled, ${progress.rateLimitRetries} rate limits overcome`);
-  return progress;
-}
-
-// Auto-restart sync function that never gives up until ALL cars are synced
-async function runSyncWithAutoRestart(supabaseClient: any, initialProgress: SyncProgress): Promise<void> {
-  let restartCount = 0;
-  const MAX_RESTARTS = 2000; // Even more restarts for ultra-persistence
-  const RESTART_DELAY_INITIAL = 15000; // Start with 15 second delay for faster recovery
-  const MAX_RESTART_DELAY = 180000; // Max 3 minute delay between restarts
-  
-  while (restartCount < MAX_RESTARTS) {
-    try {
-      console.log(`🔄 ULTRA-FAST AUTO-RESTART: Attempt ${restartCount + 1}, resuming sync at maximum speed...`);
-      
-      const result = await performBackgroundSync(supabaseClient, initialProgress);
-      
-      // Check if we actually completed the sync
-      if (result.status === 'completed' && result.consecutiveEmptyPages >= 50) {
-        console.log('✅ SYNC COMPLETE: All cars successfully synced!');
-        return; // Successfully completed
-      }
-      
-      // If we're here, sync didn't complete - restart it
-      restartCount++;
-      const restartDelay = Math.min(
-        MAX_RESTART_DELAY, 
-        RESTART_DELAY_INITIAL * Math.pow(1.5, Math.min(restartCount, 10))
-      );
-      
-      console.log(`🔄 SYNC INCOMPLETE: Restarting in ${restartDelay/1000} seconds (attempt ${restartCount + 1}/${MAX_RESTARTS})`);
-      
-      // Update status to show we're auto-restarting
-      await updateSyncStatus(supabaseClient, {
-        status: 'running',
-        error_message: `🔄 AUTO-RESTART: Attempt ${restartCount + 1}, restarting in ${restartDelay/1000}s to continue sync`,
-        last_activity_at: new Date().toISOString()
-      });
-      
-      // Wait before restarting
-      await new Promise(resolve => setTimeout(resolve, restartDelay));
-      
-      // Get fresh progress for restart
-      const currentProgress = await getCurrentSyncProgress(supabaseClient);
-      Object.assign(initialProgress, currentProgress);
-      
-    } catch (error) {
-      restartCount++;
-      const restartDelay = Math.min(
-        MAX_RESTART_DELAY, 
-        RESTART_DELAY_INITIAL * Math.pow(1.5, Math.min(restartCount, 10))
-      );
-      
-      console.error(`❌ SYNC FAILED: ${error.message}. Auto-restarting in ${restartDelay/1000} seconds (attempt ${restartCount + 1}/${MAX_RESTARTS})`);
-      
-      // Update status to show failure and auto-restart
-      await updateSyncStatus(supabaseClient, {
-        status: 'running', // Keep as running to show auto-restart is happening
-        error_message: `🔄 AUTO-RESTART: Failed with "${error.message}". Restarting in ${restartDelay/1000}s (attempt ${restartCount + 1}/${MAX_RESTARTS})`,
-        last_activity_at: new Date().toISOString()
-      });
-      
-      // Wait before restarting
-      await new Promise(resolve => setTimeout(resolve, restartDelay));
-      
-      // Get fresh progress for restart
-      try {
-        const currentProgress = await getCurrentSyncProgress(supabaseClient);
-        Object.assign(initialProgress, currentProgress);
-      } catch (progressError) {
-        console.error('❌ Failed to get current progress, using existing:', progressError.message);
-      }
-    }
-  }
-  
-  // If we reach here, we've exceeded max restarts
-  console.error('💀 SYNC EXHAUSTED: Exceeded maximum restart attempts');
-  await updateSyncStatus(supabaseClient, {
-    status: 'failed',
-    error_message: `💀 SYNC EXHAUSTED: Exceeded ${MAX_RESTARTS} restart attempts. Manual intervention required.`,
-    completed_at: new Date().toISOString()
-  });
-}
-
-// Get current sync progress from database
-async function getCurrentSyncProgress(supabaseClient: any): Promise<SyncProgress> {
-  try {
-    const { data: syncStatus } = await supabaseClient
-      .from('sync_status')
-      .select('*')
-      .eq('id', 'cars-sync-main')
-      .single();
-    
-    if (syncStatus) {
-      return {
-        totalSynced: syncStatus.records_processed || 0,
-        currentPage: syncStatus.current_page || 1,
-        errorCount: 0,
-        rateLimitRetries: 0,
-        dbCapacityIssues: 0,
-        lastSuccessfulPage: (syncStatus.current_page || 1) - 1,
-        consecutiveEmptyPages: 0,
-        status: 'running',
-        startTime: Date.now()
-      };
-    }
-  } catch (error) {
-    console.error('❌ Failed to get sync progress:', error.message);
-  }
-  
-  // Fallback to default progress
-  return {
-    totalSynced: 0,
-    currentPage: 1,
-    errorCount: 0,
-    rateLimitRetries: 0,
-    dbCapacityIssues: 0,
-    lastSuccessfulPage: 0,
-    consecutiveEmptyPages: 0,
-    status: 'running',
-    startTime: Date.now()
-  };
-}
-
-async function fetchWithRetry(url: string, options: any, maxRetries: number): Promise<Response> {
-  let lastError;
-  
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      const response = await fetch(url, options);
-      return response;
-    } catch (error) {
-      lastError = error;
-      if (i < maxRetries - 1) {
-        const waitTime = Math.min(10000, 1000 * Math.pow(2, i));
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-      }
-    }
-  }
-  
-  throw lastError;
-}
-
-// Ultra-fast chunk processing with massive parallel database writes
-async function processCarsChunk(supabaseClient: any, cars: Car[]): Promise<{success: number, errors: number}> {
-  try {
-    const carCacheItems = cars.map(car => {
-      const lot = car.lots?.[0];
-      const price = lot?.buy_now ? Math.round(lot.buy_now + 2300) : null;
-      const priceInCents = price ? price * 100 : null;
-      const mileageKm = lot?.odometer?.km || null;
-      
-      return {
-        id: car.id.toString(),
-        api_id: car.id.toString(),
-        make: car.manufacturer?.name || 'Unknown',
-        model: car.model?.name || 'Unknown',
-        year: car.year || 2020,
-        price: price,
-        price_cents: priceInCents,
-        mileage: mileageKm?.toString() || null,
-        rank_score: price ? (1 / price) * 1000000 : 0,
-        vin: car.vin,
-        fuel: car.fuel?.name,
-        transmission: car.transmission?.name,
-        color: car.color?.name,
-        condition: lot?.condition?.name?.replace('run_and_drives', 'Good'),
-        lot_number: lot?.lot,
-        images: JSON.stringify(lot?.images?.normal || lot?.images?.big || []),
-        car_data: JSON.stringify(car),
-        lot_data: JSON.stringify(lot || {}),
-        last_api_sync: new Date().toISOString()
-      };
-    });
-
-    // Massive batch upsert for maximum speed
-    const { error, count } = await supabaseClient
-      .from('cars_cache')
-      .upsert(carCacheItems, { 
-        onConflict: 'id',
-        ignoreDuplicates: false,
-        count: 'exact'
-      });
-
-    if (error) {
-      console.error('❌ Batch upsert error:', error);
-      return { success: 0, errors: cars.length };
-    }
-
-    return { success: count || cars.length, errors: 0 };
-  } catch (err) {
-    console.error('💥 Chunk processing error:', err);
-    return { success: 0, errors: cars.length };
-  }
-}
-
-async function updateSyncStatus(supabaseClient: any, updates: any) {
-  try {
-    const { error } = await supabaseClient
-      .from('sync_status')
-      .upsert({
-        id: 'cars-sync-main',
-        sync_type: 'full',
-        ...updates
-      }, { onConflict: 'id' });
-      
-    if (error) {
-      console.error('Failed to update sync status:', error);
-    }
-  } catch (err) {
-    console.error('Error updating sync status:', err);
-  }
-}
-
-async function cleanupStuckSyncs(supabaseClient: any) {
-  try {
-    const { data: stuckSyncs } = await supabaseClient
-      .from('sync_status')
-      .select('*')
-      .eq('status', 'running')
-      .lt('last_activity_at', new Date(Date.now() - 60 * 60 * 1000).toISOString()); // 1 hour ago
-
-    if (stuckSyncs && stuckSyncs.length > 0) {
-      console.log(`🧹 Cleaning up ${stuckSyncs.length} stuck sync(s)...`);
-      
-      for (const sync of stuckSyncs) {
-        await supabaseClient
-          .from('sync_status')
-          .update({
-            status: 'failed',
-            error_message: 'Auto-cleaned: Edge Function timeout after 1 hour of inactivity',
-            completed_at: new Date().toISOString()
-          })
-          .eq('id', sync.id);
-      }
-    }
-  } catch (error) {
-    console.error('Failed to cleanup stuck syncs:', error);
-  }
-}
-
-async function getRealCarCount(supabaseClient: any): Promise<number> {
-  try {
-    const { count } = await supabaseClient
-      .from('cars_cache')
-      .select('*', { count: 'exact', head: true });
-    return count || 0;
-  } catch (error) {
-    console.error('Failed to get real car count:', error);
-    return 0;
-  }
-}
-
-async function reconcileProgressPage(supabaseClient: any, reportedPage: number): Promise<number> {
-  try {
-    const realCarCount = await getRealCarCount(supabaseClient);
-    const estimatedPage = Math.ceil(realCarCount / 100); // 100 cars per page
-    
-    // Use the higher of the two as a safety measure
-    const reconciledPage = Math.max(estimatedPage, reportedPage - 2); // Start 2 pages back for safety
-    
-    console.log(`🔄 Progress reconciliation: Real cars: ${realCarCount}, Estimated page: ${estimatedPage}, Reported: ${reportedPage}, Using: ${reconciledPage}`);
-    
-    return Math.max(1, reconciledPage);
-  } catch (error) {
-    console.error('Failed to reconcile progress:', error);
-    return reportedPage;
-  }
 }
 
 Deno.serve(async (req) => {
@@ -548,132 +31,204 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('🚀 Starting smart cars sync function...');
-    
-    const supabaseUrl = 'https://qtyyiqimkysmjnaocswe.supabase.co';
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    
-    if (!serviceRoleKey) {
-      console.error('❌ SUPABASE_SERVICE_ROLE_KEY not found');
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Missing SUPABASE_SERVICE_ROLE_KEY environment variable'
-        }),
-        { 
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-    const supabaseClient = createClient(supabaseUrl, serviceRoleKey);
-    const { resume, fromPage, reconcileProgress } = await req.json().catch(() => ({}));
+    const API_KEY = Deno.env.get('AUCTIONS_API_KEY') ?? '';
+    const API_BASE_URL = 'https://auctionsapi.com/api';
 
-    // Clean up stuck syncs first (running for more than 1 hour without activity)
-    await cleanupStuckSyncs(supabaseClient);
+    // Memory-efficient configuration
+    const PAGE_SIZE = 30;
+    const BATCH_SIZE = 25;
+    const MAX_PAGES_PER_RUN = 50; // Process in small chunks to avoid memory limits
 
-    // Check for existing running sync
-    const { data: existingSync } = await supabaseClient
+    console.log('🚀 Starting memory-efficient car sync...');
+
+    // Update sync status to running
+    await supabase
       .from('sync_status')
-      .select('*')
-      .eq('id', 'cars-sync-main')
-      .eq('status', 'running')
-      .single();
+      .upsert({
+        id: 'cars-sync-main',
+        status: 'running',
+        current_page: 1,
+        records_processed: 0,
+        started_at: new Date().toISOString(),
+        last_activity_at: new Date().toISOString()
+      });
 
-    if (existingSync && !resume) {
-      console.log('⏰ Sync already running. Returning existing status.');
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: 'Sync already in progress',
-          status: 'running',
-          currentPage: existingSync.current_page,
-          totalSynced: existingSync.records_processed
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Get current car count to determine start page
+    const { count: existingCars } = await supabase
+      .from('cars_cache')
+      .select('*', { count: 'exact', head: true });
+
+    const startPage = Math.floor((existingCars || 0) / 100) + 1;
+    console.log(`📍 Starting from page ${startPage} (${existingCars} existing cars)`);
+
+    let totalProcessed = 0;
+    let currentPage = startPage;
+    let consecutiveEmptyPages = 0;
+    let errors = 0;
+
+    // Process pages sequentially to minimize memory usage
+    for (let i = 0; i < MAX_PAGES_PER_RUN && consecutiveEmptyPages < 10; i++) {
+      try {
+        console.log(`📄 Processing page ${currentPage}...`);
+
+        const response = await fetch(
+          `${API_BASE_URL}/cars?per_page=${PAGE_SIZE}&page=${currentPage}`,
+          { 
+            headers: { 
+              'accept': 'application/json',
+              'x-api-key': API_KEY 
+            },
+            signal: AbortSignal.timeout(15000) // 15s timeout
+          }
+        );
+
+        if (!response.ok) {
+          if (response.status === 429) {
+            console.log('⏰ Rate limited, waiting...');
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            continue; // Retry same page
+          }
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        const cars: Car[] = data.data || [];
+
+        if (cars.length === 0) {
+          consecutiveEmptyPages++;
+          console.log(`📄 Page ${currentPage} empty (${consecutiveEmptyPages}/10)`);
+          currentPage++;
+          continue;
+        }
+
+        consecutiveEmptyPages = 0;
+        console.log(`⚡ Processing ${cars.length} cars from page ${currentPage}...`);
+
+        // Transform cars with minimal memory usage
+        const carCacheItems = [];
+        for (const car of cars) {
+          const lot = car.lots?.[0];
+          const price = lot?.buy_now ? Math.round(lot.buy_now + 2300) : null;
+          
+          carCacheItems.push({
+            id: car.id.toString(),
+            api_id: car.id.toString(),
+            make: car.manufacturer?.name || 'Unknown',
+            model: car.model?.name || 'Unknown',
+            year: car.year || 2020,
+            price: price,
+            price_cents: price ? price * 100 : null,
+            mileage: lot?.odometer?.km?.toString() || null,
+            rank_score: price ? (1 / price) * 1000000 : 0,
+            vin: car.vin,
+            fuel: car.fuel?.name,
+            transmission: car.transmission?.name,
+            color: car.color?.name,
+            lot_number: lot?.lot,
+            condition: 'good',
+            images: JSON.stringify(lot?.images?.normal || []),
+            car_data: {
+              buy_now: lot?.buy_now,
+              current_bid: lot?.bid,
+              keys_available: lot?.keys_available !== false
+            },
+            lot_data: lot,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            last_api_sync: new Date().toISOString()
+          });
+        }
+
+        // Write to cache in small batches
+        for (let j = 0; j < carCacheItems.length; j += BATCH_SIZE) {
+          const batch = carCacheItems.slice(j, j + BATCH_SIZE);
+          
+          const { error } = await supabase
+            .from('cars_cache')
+            .upsert(batch, { onConflict: 'id' });
+
+          if (error) {
+            console.error('❌ Database error:', error);
+            errors++;
+          } else {
+            totalProcessed += batch.length;
+          }
+          
+          // Brief pause between batches
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        // Update progress every page
+        await supabase
+          .from('sync_status')
+          .update({
+            current_page: currentPage,
+            records_processed: (existingCars || 0) + totalProcessed,
+            last_activity_at: new Date().toISOString(),
+            error_message: errors > 0 ? `${errors} errors encountered` : null
+          })
+          .eq('id', 'cars-sync-main');
+
+        currentPage++;
+        
+        // Small delay between pages to prevent overwhelming the API
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+      } catch (error) {
+        console.error(`❌ Page ${currentPage} failed:`, error);
+        errors++;
+        currentPage++;
+        
+        if (errors > 10) {
+          console.error('❌ Too many errors, stopping');
+          break;
+        }
+        
+        // Wait longer after errors
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
     }
 
-    // Initialize or resume progress with MAXIMUM SPEED settings
-    let progress: SyncProgress;
+    // Determine final status
+    const finalStatus = consecutiveEmptyPages >= 10 ? 'completed' : 'paused';
     
-    if (resume && fromPage) {
-      // Smart resume with progress reconciliation
-      const realCarCount = await getRealCarCount(supabaseClient);
-      const resumePage = reconcileProgress ? await reconcileProgressPage(supabaseClient, fromPage) : fromPage;
-      
-      console.log(`🚀 SPEED RESUME: Page ${resumePage}, Real cars: ${realCarCount}`);
-      
-      progress = {
-        totalSynced: realCarCount,
-        currentPage: resumePage,
-        errorCount: 0,
-        rateLimitRetries: 0,
-        dbCapacityIssues: 0,
-        lastSuccessfulPage: resumePage - 1,
-        consecutiveEmptyPages: 0,
-        status: 'running',
-        startTime: Date.now()
-      };
-    } else {
-      progress = {
-        totalSynced: 0,
-        currentPage: 1,
-        errorCount: 0,
-        rateLimitRetries: 0,
-        dbCapacityIssues: 0,
-        lastSuccessfulPage: 0,
-        consecutiveEmptyPages: 0,
-        status: 'running',
-        startTime: Date.now()
-      };
-    }
+    await supabase
+      .from('sync_status')
+      .update({
+        status: finalStatus,
+        current_page: currentPage,
+        records_processed: (existingCars || 0) + totalProcessed,
+        completed_at: finalStatus === 'completed' ? new Date().toISOString() : null,
+        last_activity_at: new Date().toISOString(),
+        error_message: `Processed ${totalProcessed} new cars, ${errors} errors`
+      })
+      .eq('id', 'cars-sync-main');
 
-    // Start background sync process with auto-restart on failure
-    EdgeRuntime.waitUntil(
-      runSyncWithAutoRestart(supabaseClient, progress)
-    );
+    console.log(`✅ Sync ${finalStatus}: ${totalProcessed} cars processed`);
 
-    // Return immediate response - MAXIMUM SPEED sync started
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: '🚀 ULTRA-FAST SYNC STARTED! Lightning-speed car fetching with bulletproof auto-restart.',
-        status: 'running',
-        totalSynced: progress.totalSynced,
-        pagesProcessed: 0,
-        startedAt: new Date().toISOString(),
-        features: [
-          '⚡ 12x parallel page processing (MAXIMUM)',
-          '🔥 100-car batch database writes (DOUBLED)', 
-          '🛡️ 250 retries per request (ULTRA)',
-          '💪 1000 rate limit retries (NEVER GIVE UP)',
-          '🎯 Never stops until complete',
-          '📊 Real-time progress tracking',
-          '🚀 Ultra-fast mode enabled',
-          '🔄 2000 auto-restarts available',
-          '⚡ 50ms minimum delays (MAXIMUM SPEED)',
-          '🏃‍♂️ 60s timeout for faster recovery'
-        ],
-        note: 'ULTRA-MAX SPEED sync running in background. 12x parallel processing, 1000 rate limit retries, 100-car batches. Resuming from 13,000 cars at MAXIMUM possible speed. Check sync_status table for live progress.'
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return Response.json({
+      success: true,
+      status: finalStatus,
+      totalProcessed,
+      currentPage,
+      errors,
+      message: `Sync ${finalStatus}. Processed ${totalProcessed} cars with ${errors} errors.`
+    }, { headers: corsHeaders });
 
   } catch (error) {
-    console.error('❌ Cars sync initialization failed:', error);
+    console.error('💥 Sync failed:', error);
     
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message || 'Unknown error occurred',
-        timestamp: new Date().toISOString()
-      }),
-      { 
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
+    return Response.json({
+      success: false,
+      error: error.message
+    }, { 
+      status: 500,
+      headers: corsHeaders 
+    });
   }
 });
