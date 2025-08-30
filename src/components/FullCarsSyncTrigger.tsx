@@ -59,8 +59,8 @@ export const FullCarsSyncTrigger = () => {
 
   const checkSyncStatus = async () => {
     try {
-      // Also get actual car counts from database
-      const [syncResponse, cacheCountResponse] = await Promise.all([
+      // Get actual car counts from all relevant tables for accurate count
+      const [syncResponse, cacheCountResponse, mainCarsCountResponse] = await Promise.all([
         supabase
           .from('sync_status')
           .select('*')
@@ -68,6 +68,9 @@ export const FullCarsSyncTrigger = () => {
           .single(),
         supabase
           .from('cars_cache')
+          .select('*', { count: 'exact', head: true }),
+        supabase
+          .from('cars')
           .select('*', { count: 'exact', head: true })
       ]);
 
@@ -77,7 +80,7 @@ export const FullCarsSyncTrigger = () => {
       }
 
       if (syncResponse.data) {
-        // Check for stuck sync (running for more than 35 minutes without activity)
+        // Check for stuck sync with improved detection
         const isStuck = detectStuckSync(syncResponse.data);
         setIsStuckSyncDetected(isStuck);
         
@@ -88,12 +91,22 @@ export const FullCarsSyncTrigger = () => {
           return; // Re-check status after cleanup
         }
         
-        // Update with real car count if sync count is 0 but we have cars
-        const realCarCount = cacheCountResponse.count || 0;
+        // Calculate real car count from both main and cache tables
+        const cacheCount = cacheCountResponse.count || 0;
+        const mainCarsCount = mainCarsCountResponse.count || 0;
+        const totalRealCount = Math.max(cacheCount, mainCarsCount); // Use the higher count as authoritative
+        
+        // Determine which count to display
+        let displayCount = syncResponse.data.records_processed || 0;
+        
+        // If sync shows 0 but we have actual cars in database, use the real count
+        if (displayCount === 0 && totalRealCount > 0) {
+          displayCount = totalRealCount;
+        }
+        
         const syncData = { 
           ...syncResponse.data,
-          // If sync shows 0 but we have cars, show the real count
-          records_processed: syncResponse.data.records_processed || realCarCount
+          records_processed: displayCount
         };
         
         setSyncStatus(syncData);
@@ -101,13 +114,18 @@ export const FullCarsSyncTrigger = () => {
         
         if (syncData.status === 'running') {
           setIsLoading(true);
+        } else {
+          setIsLoading(false);
         }
         
-        console.log('📊 Sync Status Check:', {
+        console.log('📊 Enhanced Sync Status Check:', {
           status: syncData.status,
           syncRecordsProcessed: syncResponse.data.records_processed,
-          realCarsInCache: realCarCount,
-          usingRealCount: syncResponse.data.records_processed === 0 && realCarCount > 0,
+          cacheCount: cacheCount,
+          mainCarsCount: mainCarsCount,
+          totalRealCount: totalRealCount,
+          displayCount: displayCount,
+          usingRealCount: syncResponse.data.records_processed === 0 && totalRealCount > 0,
           isStuck
         });
       }
@@ -119,35 +137,68 @@ export const FullCarsSyncTrigger = () => {
   const detectStuckSync = (sync: SyncStatus): boolean => {
     if (sync.status !== 'running') return false;
     
+    // Get the most recent activity timestamp
     const lastActivity = sync.last_activity_at ? new Date(sync.last_activity_at) : new Date(sync.started_at || 0);
-    const timeSinceActivity = Date.now() - lastActivity.getTime();
-    const STUCK_THRESHOLD = 35 * 60 * 1000; // 35 minutes - allows for 30min target + buffer
+    const now = Date.now();
+    const timeSinceActivity = now - lastActivity.getTime();
     
-    return timeSinceActivity > STUCK_THRESHOLD;
+    // Reduced threshold to 20 minutes for faster detection of stuck syncs
+    const STUCK_THRESHOLD = 20 * 60 * 1000; // 20 minutes
+    
+    const isStuck = timeSinceActivity > STUCK_THRESHOLD;
+    
+    if (isStuck) {
+      console.log('🚨 Stuck sync detected:', {
+        syncId: sync.id,
+        status: sync.status,
+        started_at: sync.started_at,
+        last_activity_at: sync.last_activity_at,
+        timeSinceActivity: Math.round(timeSinceActivity / 60000) + ' minutes',
+        threshold: Math.round(STUCK_THRESHOLD / 60000) + ' minutes',
+        current_page: sync.current_page,
+        records_processed: sync.records_processed
+      });
+    }
+    
+    return isStuck;
   };
 
   const cleanupStuckSync = async () => {
     try {
+      console.log('🛠️ Cleaning up stuck sync...');
+      
       const { error } = await supabase
         .from('sync_status') 
         .update({
           status: 'failed',
-          error_message: 'Auto-cleaned: Sync was stuck for more than 35 minutes',
-          completed_at: new Date().toISOString()
+          error_message: 'Auto-cleaned: Sync was stuck for more than 20 minutes without activity',
+          completed_at: new Date().toISOString(),
+          last_activity_at: new Date().toISOString()
         })
         .eq('id', 'cars-sync-main');
       
       if (error) throw error;
       
+      // Reset local state
+      setIsLoading(false);
+      setIsStuckSyncDetected(false);
+      
       toast({
-        title: "Stuck Sync Cleaned Up",
+        title: "🔧 Stuck Sync Cleaned Up",
         description: "The stuck sync has been automatically cleaned up. You can now start a new sync.",
       });
       
-      // Re-check status
-      setTimeout(checkSyncStatus, 1000);
+      // Re-check status after a short delay
+      setTimeout(checkSyncStatus, 2000);
+      
+      console.log('✅ Stuck sync cleanup completed');
     } catch (error) {
-      console.error('Failed to cleanup stuck sync:', error);
+      console.error('❌ Failed to cleanup stuck sync:', error);
+      toast({
+        title: "⚠️ Cleanup Failed",
+        description: "Failed to clean up stuck sync. Please try manually stopping the sync.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -170,20 +221,27 @@ export const FullCarsSyncTrigger = () => {
       }
     }
     
+    // Enhanced status messages with more context
     switch (status.status) {
       case 'running':
-        setProgress(`🔄 Syncing${rateText}... ${formattedRecords} / ${formattedTotal} cars (${percentage}%)`);
+        const timeRunning = status.started_at ? 
+          Math.round((Date.now() - new Date(status.started_at).getTime()) / 60000) : 0;
+        setProgress(`🔄 Syncing${rateText}... ${formattedRecords} / ${formattedTotal} cars (${percentage}%) - Running for ${timeRunning}min`);
         break;
       case 'completed':
-        setProgress(`✅ Sync complete! ${formattedRecords} cars synced`);
+        setProgress(`✅ Sync complete! ${formattedRecords} cars synced successfully`);
         // Auto-verify when sync completes
         setTimeout(() => verifySync(), 2000);
         break;
       case 'failed':
-        setProgress(`❌ Sync failed at ${formattedRecords} cars. Will auto-resume.`);
+        const errorMsg = status.error_message ? ` (${status.error_message.substring(0, 50)}...)` : '';
+        setProgress(`❌ Sync failed at ${formattedRecords} cars${errorMsg}. Will auto-resume.`);
+        break;
+      case 'paused':
+        setProgress(`⏸️ Sync paused at ${formattedRecords} cars. Ready to resume.`);
         break;
       default:
-        setProgress(`Status: ${status.status} - ${formattedRecords} cars`);
+        setProgress(`📊 Status: ${status.status} - ${formattedRecords} cars processed`);
     }
   };
 
@@ -785,8 +843,8 @@ export const FullCarsSyncTrigger = () => {
       {isStuckSyncDetected && (
         <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm">
           <p className="text-yellow-800">
-            ⚠️ <strong>Stuck Sync Detected:</strong> The sync has been inactive for more than 35 minutes. 
-            It may have timed out. Click "Fix Stuck Sync" to reset and try again.
+            ⚠️ <strong>Stuck Sync Detected:</strong> The sync has been inactive for more than 20 minutes. 
+            It may have timed out or encountered an issue. Click "Fix Stuck Sync" to reset and try again.
           </p>
         </div>
       )}
@@ -799,10 +857,42 @@ export const FullCarsSyncTrigger = () => {
           <li>• <strong>⚡ NEVER PAUSES:</strong> Handles ANY error automatically until 100% complete</li>
           <li>• <strong>📊 REAL-TIME:</strong> Live progress with speed metrics every few seconds</li>
           <li>• <strong>🎯 SMART RESUME:</strong> Immediate auto-recovery from any interruption (no manual intervention)</li>
-          <li>• <strong>🔧 FORCE OVERRIDE:</strong> Manual controls for stuck syncs</li>
+          <li>• <strong>🔧 FORCE OVERRIDE:</strong> Manual controls for stuck syncs (improved 20min detection)</li>
           <li>• <strong>🤖 AUTO-SCHEDULER:</strong> Background recovery system active 24/7</li>
+          <li>• <strong>📈 ACCURATE COUNTS:</strong> Real-time counting from multiple data sources</li>
         </ul>
       </div>
+      
+      {/* Debug Information Panel */}
+      {syncStatus && (
+        <div className="mt-4 p-4 bg-slate-50 rounded-lg border">
+          <h4 className="font-semibold mb-2 text-slate-700">🔍 Debug Information</h4>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <h5 className="font-medium mb-1 text-slate-600">Sync Status:</h5>
+              <ul className="space-y-1 text-slate-600">
+                <li>• Status: <span className="font-mono">{syncStatus.status}</span></li>
+                <li>• Current Page: <span className="font-mono">{syncStatus.current_page || 0}</span></li>
+                <li>• Records: <span className="font-mono">{syncStatus.records_processed || 0}</span></li>
+                {syncStatus.last_activity_at && (
+                  <li>• Last Activity: <span className="font-mono">{new Date(syncStatus.last_activity_at).toLocaleTimeString()}</span></li>
+                )}
+              </ul>
+            </div>
+            <div>
+              <h5 className="font-medium mb-1 text-slate-600">System Health:</h5>
+              <ul className="space-y-1 text-slate-600">
+                <li>• Stuck Detection: <span className={`font-mono ${isStuckSyncDetected ? 'text-red-600' : 'text-green-600'}`}>
+                  {isStuckSyncDetected ? 'STUCK' : 'OK'}
+                </span></li>
+                <li>• Auto-Cleanup: <span className="font-mono text-green-600">ENABLED</span></li>
+                <li>• Threshold: <span className="font-mono">20 minutes</span></li>
+                <li>• Real-time Updates: <span className="font-mono text-green-600">ACTIVE</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
