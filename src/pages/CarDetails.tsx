@@ -326,6 +326,55 @@ const CarDetails = memo(() => {
   const [showEngineSection, setShowEngineSection] = useState(false);
   const [isPlaceholderImage, setIsPlaceholderImage] = useState(false);
 
+  // Extract features from car data - defined before useCarDetails to avoid temporal dead zone
+  const getCarFeatures = (carData: any, lot: any): string[] => {
+    const features = [];
+    if (carData.transmission?.name)
+      features.push(`Transmisioni: ${carData.transmission.name}`);
+    if (carData.fuel?.name) features.push(`Karburanti: ${carData.fuel.name}`);
+    if (carData.color?.name) features.push(`Ngjyra: ${carData.color.name}`);
+    if (carData.engine?.name) features.push(`Motori: ${carData.engine.name}`);
+    if (carData.cylinders) features.push(`${carData.cylinders} Cilindra`);
+    if (carData.drive_wheel?.name)
+      features.push(`Tërheqje: ${carData.drive_wheel.name}`);
+    if (lot?.keys_available) features.push("Çelësat të Disponueshëm");
+
+    // Add basic features if list is empty
+    if (features.length === 0) {
+      return [
+        "Klimatizimi",
+        "Dritaret Elektrike",
+        "Mbyllja Qendrore",
+        "Frena ABS",
+      ];
+    }
+    return features;
+  };
+
+  const getSafetyFeatures = (carData: any, lot: any): string[] => {
+    const safety = [];
+    if (lot?.airbags) safety.push(`Sistemi i Airbag-ëve: ${lot.airbags}`);
+    if (carData.transmission?.name === "automatic")
+      safety.push("ABS Sistemi i Frënimit");
+    safety.push("Sistemi i Stabilitetit Elektronik");
+    if (lot?.keys_available) safety.push("Sistemi i Sigurisë");
+
+    // Add default safety features
+    return safety.length > 0
+      ? safety
+      : ["ABS Sistemi i Frënimit", "Airbag Sistemi", "Mbyllja Qendrore"];
+  };
+
+  const getComfortFeatures = (carData: any, lot: any): string[] => {
+    const comfort = [];
+    if (carData.transmission?.name === "automatic")
+      comfort.push("Transmisioni Automatik");
+    comfort.push("Klimatizimi");
+    comfort.push("Dritaret Elektrike");
+    comfort.push("Pasqyrat Elektrike");
+    return comfort;
+  };
+
   // Use the optimized car details hook
   const { car, loading, error, refetch } = useCarDetails(lot, {
     convertUSDtoEUR,
@@ -486,53 +535,6 @@ const CarDetails = memo(() => {
     }
 
     return result;
-  };
-
-  // Extract features from car data
-  const getCarFeatures = (carData: any, lot: any): string[] => {
-    const features = [];
-    if (carData.transmission?.name)
-      features.push(`Transmisioni: ${carData.transmission.name}`);
-    if (carData.fuel?.name) features.push(`Karburanti: ${carData.fuel.name}`);
-    if (carData.color?.name) features.push(`Ngjyra: ${carData.color.name}`);
-    if (carData.engine?.name) features.push(`Motori: ${carData.engine.name}`);
-    if (carData.cylinders) features.push(`${carData.cylinders} Cilindra`);
-    if (carData.drive_wheel?.name)
-      features.push(`Tërheqje: ${carData.drive_wheel.name}`);
-    if (lot?.keys_available) features.push("Çelësat të Disponueshëm");
-
-    // Add basic features if list is empty
-    if (features.length === 0) {
-      return [
-        "Klimatizimi",
-        "Dritaret Elektrike",
-        "Mbyllja Qendrore",
-        "Frena ABS",
-      ];
-    }
-    return features;
-  };
-  const getSafetyFeatures = (carData: any, lot: any): string[] => {
-    const safety = [];
-    if (lot?.airbags) safety.push(`Sistemi i Airbag-ëve: ${lot.airbags}`);
-    if (carData.transmission?.name === "automatic")
-      safety.push("ABS Sistemi i Frënimit");
-    safety.push("Sistemi i Stabilitetit Elektronik");
-    if (lot?.keys_available) safety.push("Sistemi i Sigurisë");
-
-    // Add default safety features
-    return safety.length > 0
-      ? safety
-      : ["ABS Sistemi i Frënimit", "Airbag Sistemi", "Mbyllja Qendrore"];
-  };
-  const getComfortFeatures = (carData: any, lot: any): string[] => {
-    const comfort = [];
-    if (carData.transmission?.name === "automatic")
-      comfort.push("Transmisioni Automatik");
-    comfort.push("Klimatizimi");
-    comfort.push("Dritaret Elektrike");
-    comfort.push("Pasqyrat Elektrike");
-    return comfort;
   };
 
   // Check admin status
