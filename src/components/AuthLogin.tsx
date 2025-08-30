@@ -4,16 +4,28 @@ import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Lock, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useRememberLogin } from "@/hooks/useRememberLogin";
 
 const AuthLogin = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { rememberedEmail, isRemembered, rememberLogin, forgetLogin, loading: rememberLoading } = useRememberLogin();
+
+  // Initialize email field with remembered email if available
+  useEffect(() => {
+    if (!rememberLoading && isRemembered && rememberedEmail) {
+      setEmail(rememberedEmail);
+      setRememberMe(true);
+    }
+  }, [rememberedEmail, isRemembered, rememberLoading]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,12 +59,20 @@ const AuthLogin = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
         description: "Successfully logged in to admin dashboard",
       });
 
+      // Save login info if user wants to be remembered
+      if (rememberMe) {
+        rememberLogin(email, true);
+      } else {
+        forgetLogin();
+      }
+
       // Redirect admin users to dashboard
       navigate('/admin');
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
       toast({
         title: "Login Failed",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -93,6 +113,19 @@ const AuthLogin = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="remember-me" 
+                checked={rememberMe}
+                onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+              />
+              <label 
+                htmlFor="remember-me" 
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+              >
+                Remember me on this device
+              </label>
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Logging in..." : "Login"}

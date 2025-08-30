@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { UserPlus, LogIn, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useRememberLogin } from "@/hooks/useRememberLogin";
 
 const AuthPage = () => {
   const [email, setEmail] = useState("");
@@ -16,8 +18,10 @@ const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [showResendConfirmation, setShowResendConfirmation] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { rememberedEmail, isRemembered, rememberLogin, forgetLogin, loading: rememberLoading } = useRememberLogin();
 
   useEffect(() => {
     // Check if user is already logged in
@@ -34,6 +38,14 @@ const AuthPage = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Initialize email field with remembered email if available
+  useEffect(() => {
+    if (!rememberLoading && isRemembered && rememberedEmail) {
+      setEmail(rememberedEmail);
+      setRememberMe(true);
+    }
+  }, [rememberedEmail, isRemembered, rememberLoading]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,6 +126,13 @@ const AuthPage = () => {
         title: "Mirë se erdhët përsëri!",
         description: "Hyrja u krye me sukses.",
       });
+      
+      // Save login info if user wants to be remembered
+      if (rememberMe) {
+        rememberLogin(email, true);
+      } else {
+        forgetLogin();
+      }
       
       // Check if user is admin or specific email and redirect accordingly
       try {
@@ -254,6 +273,19 @@ const AuthPage = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="remember-me-signin" 
+                    checked={rememberMe}
+                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                  />
+                  <label 
+                    htmlFor="remember-me-signin" 
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  >
+                    Më mbaj mend në këtë pajisje
+                  </label>
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   <LogIn className="h-4 w-4 mr-2" />
