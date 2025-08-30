@@ -177,9 +177,6 @@ export const FullCarsSyncTrigger = () => {
       case 'failed':
         setProgress(`❌ Sync failed at ${formattedRecords} cars. Will auto-resume.`);
         break;
-      case 'paused':
-        setProgress(`⏸️ Sync paused at ${formattedRecords} cars. Click Resume to continue.`);
-        break;
       default:
         setProgress(`Status: ${status.status} - ${formattedRecords} cars`);
     }
@@ -326,114 +323,6 @@ export const FullCarsSyncTrigger = () => {
     }
   };
 
-  const resumeSync = async () => {
-    if (!syncStatus || syncStatus.status !== 'paused') return;
-    
-    setIsLoading(true);
-    
-    try {
-      toast({
-        title: "🤖 AI-Powered Resume", 
-        description: "Intelligent resume with bulletproof error handling and progress reconciliation...",
-      });
-
-      // Use AI coordinator if available, fallback to direct invocation
-      const aiCoordinator = (window as unknown as { aiSyncCoordinator?: { startIntelligentSync: (params: Record<string, unknown>) => Promise<void> } }).aiSyncCoordinator;
-      
-      if (aiCoordinator) {
-        console.log('🤖 Using AI Coordinator for resume');
-        await aiCoordinator.startIntelligentSync({
-          resume: true,
-          fromPage: syncStatus.current_page,
-          reconcileProgress: true,
-          source: 'manual-resume'
-        });
-      } else {
-        console.log('🔄 Using direct edge function call for resume');
-        await resumeWithRetry();
-      }
-
-      setProgress('Resuming sync with AI-powered recovery...');
-      
-      // Start monitoring progress
-      const progressMonitor = setInterval(async () => {
-        await checkSyncStatus();
-        if (syncStatus?.status !== 'running') {
-          clearInterval(progressMonitor);
-          setIsLoading(false);
-        }
-      }, 3000);
-
-    } catch (error: unknown) {
-      console.error('Failed to resume sync:', error);
-      setIsLoading(false);
-      
-      // Enhanced error handling with classification
-      let errorMessage = 'Failed to resume sync.';
-      let shouldRetry = false;
-      
-      if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
-        errorMessage = error.message;
-        
-        // Classify error for intelligent response
-        if (error.message.includes('timeout') || error.message.includes('AbortError')) {
-          errorMessage = 'Resume request timed out. The edge function may be overloaded. Will auto-retry shortly.';
-          shouldRetry = true;
-        } else if (error.message.includes('network') || error.message.includes('fetch')) {
-          errorMessage = 'Network error during resume. Will auto-retry with exponential backoff.';
-          shouldRetry = true;
-        } else if (error.message.includes('HTTP 5')) {
-          errorMessage = 'Server error during resume. Will auto-retry when server recovers.';
-          shouldRetry = true;
-        }
-      }
-      
-      toast({
-        title: "Resume Failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      
-      // Auto-retry for recoverable errors
-      if (shouldRetry) {
-        console.log('🔄 Scheduling auto-retry for resume...');
-        setTimeout(() => resumeSync(), 5000);
-      }
-    }
-  };
-
-  // Enhanced resume with retry logic
-  const resumeWithRetry = async (attempt = 1, maxAttempts = 3): Promise<void> => {
-    try {
-      const { data, error } = await supabase.functions.invoke('cars-sync', {
-        body: { 
-          smartSync: true,
-          resume: true,
-          fromPage: syncStatus?.current_page || 1,
-          reconcileProgress: true,
-          attempt: attempt,
-          source: 'enhanced-resume'
-        }
-      });
-
-      if (error) throw error;
-      
-      console.log('✅ Resume successful on attempt', attempt);
-
-    } catch (error: unknown) {
-      console.error(`❌ Resume failed on attempt ${attempt}:`, error);
-      
-      if (attempt < maxAttempts) {
-        const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
-        console.log(`🔄 Retrying resume in ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        return resumeWithRetry(attempt + 1, maxAttempts);
-      }
-      
-      throw error;
-    }
-  };
-
   const forceStopSync = async () => {
     try {
       toast({
@@ -482,15 +371,12 @@ export const FullCarsSyncTrigger = () => {
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'failed':
         return <AlertCircle className="h-4 w-4 text-red-500" />;
-      case 'paused':
-        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
       default:
         return <Clock className="h-4 w-4" />;
     }
   };
 
   const canStartSync = !isLoading && (!syncStatus || ['completed', 'failed', 'idle'].includes(syncStatus.status));
-  const canResumeSync = syncStatus?.status === 'paused';
   const canForceStop = syncStatus?.status === 'running' && (isStuckSyncDetected || syncStatus.current_page > 0);
 
   const getProgressPercentage = () => {
@@ -581,9 +467,9 @@ export const FullCarsSyncTrigger = () => {
       
       <div className="space-y-2">
         <p className="text-muted-foreground">
-          🚀 <strong>MAXIMUM SPEED SYNC SYSTEM:</strong> Processes 3 pages simultaneously with 50-car database batches. 
+          🚀 <strong>CONTINUOUS SYNC SYSTEM:</strong> Processes 3 pages simultaneously with 50-car database batches. 
           Features bulletproof error handling with 20 retries per request and 100 rate-limit retries. 
-          NEVER STOPS until complete - handles any API issue automatically!
+          NEVER PAUSES OR STOPS until 100% complete - handles any API issue automatically and continues indefinitely!
         </p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
@@ -603,7 +489,7 @@ export const FullCarsSyncTrigger = () => {
               <li>20 retries per failed request</li>
               <li>100 rate-limit retry attempts</li>
               <li>Smart adaptive delays</li>
-              <li>Never stops until 100% complete</li>
+              <li>Never pauses or stops until 100% complete</li>
             </ul>
           </div>
         </div>
@@ -737,16 +623,6 @@ export const FullCarsSyncTrigger = () => {
           )}
         </Button>
         
-        {canResumeSync && (
-          <Button 
-            onClick={resumeSync}
-            variant="outline"
-            className="flex-1"
-          >
-            Resume Sync
-          </Button>
-        )}
-        
         {canForceStop && (
           <Button 
             onClick={forceStopSync}
@@ -772,9 +648,9 @@ export const FullCarsSyncTrigger = () => {
         <ul className="text-sm space-y-1 text-muted-foreground">
           <li>• <strong>🚀 MAXIMUM SPEED:</strong> 3x parallel processing with 50-car batch writes</li>
           <li>• <strong>🛡️ BULLETPROOF:</strong> 20 retries per request, 100 rate-limit retries</li>
-          <li>• <strong>⚡ NEVER STOPS:</strong> Handles ANY error automatically until 100% complete</li>
+          <li>• <strong>⚡ NEVER PAUSES:</strong> Handles ANY error automatically until 100% complete</li>
           <li>• <strong>📊 REAL-TIME:</strong> Live progress with speed metrics every few seconds</li>
-          <li>• <strong>🎯 SMART RESUME:</strong> Auto-recovery from any interruption</li>
+          <li>• <strong>🎯 SMART RESUME:</strong> Immediate auto-recovery from any interruption (no manual intervention)</li>
           <li>• <strong>🔧 FORCE OVERRIDE:</strong> Manual controls for stuck syncs</li>
           <li>• <strong>🤖 AUTO-SCHEDULER:</strong> Background recovery system active 24/7</li>
         </ul>

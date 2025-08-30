@@ -16,13 +16,13 @@ export const AutoResumeScheduler = ({
 
     const checkAndResumeStuckSyncs = async () => {
       try {
-        console.log('🔍 Enhanced Auto-resume: Checking for failed syncs with AI coordination...');
+        console.log('🔍 Enhanced Auto-resume: Checking for failed syncs with immediate AI coordination...');
         
-        // Check for failed syncs that should be resumed (include paused syncs too)
+        // Check for failed syncs that should be resumed immediately (no delays)
         const { data: failedSyncs } = await supabase
           .from('sync_status')
           .select('*')
-          .in('status', ['failed', 'paused'])
+          .in('status', ['failed']) // Remove 'paused' since we no longer pause
           .gte('records_processed', 0) // Resume any sync regardless of progress
           .order('last_activity_at', { ascending: false })
           .limit(1);
@@ -30,10 +30,10 @@ export const AutoResumeScheduler = ({
         if (failedSyncs && failedSyncs.length > 0) {
           const lastFailedSync = failedSyncs[0];
           const timeSinceFailure = Date.now() - new Date(lastFailedSync.completed_at || lastFailedSync.last_activity_at).getTime();
-          const RESUME_DELAY = 60 * 1000; // Wait only 1 minute before resuming for fastest recovery
+          const RESUME_DELAY = 10 * 1000; // Wait only 10 seconds before resuming for immediate continuity
           
           if (timeSinceFailure > RESUME_DELAY) {
-            console.log(`🔄 Enhanced Auto-resume: Attempting to resume sync from page ${lastFailedSync.current_page} with AI coordination...`);
+            console.log(`🔄 Enhanced Auto-resume: Attempting immediate resume of sync from page ${lastFailedSync.current_page} with AI coordination...`);
             
             // Use AI coordinator if available, fallback to direct call
             const aiCoordinator = (window as unknown as { aiSyncCoordinator?: { startIntelligentSync: (params: Record<string, unknown>) => Promise<void> } }).aiSyncCoordinator;
@@ -45,58 +45,39 @@ export const AutoResumeScheduler = ({
                   resume: true,
                   fromPage: lastFailedSync.current_page,
                   reconcileProgress: true,
-                  source: 'enhanced-auto-resume'
+                  source: 'immediate-auto-resume'
                 });
-                console.log('✅ Enhanced Auto-resume: Successfully triggered AI-coordinated sync resume');
+                console.log('✅ Enhanced Auto-resume: Successfully triggered immediate AI-coordinated sync resume');
               } catch (error) {
                 console.error('❌ Enhanced Auto-resume: AI coordinator failed, falling back to direct call:', error);
                 await fallbackResumeAttempt(lastFailedSync);
               }
             } else {
-              console.log('🔄 AI Coordinator not available, using enhanced direct resume');
+              console.log('🔄 AI Coordinator not available, using immediate direct resume');
               await fallbackResumeAttempt(lastFailedSync);
             }
           }
         }
         
-        // Enhanced cleanup: check for paused syncs older than 30 minutes and mark them as failed
-        const { data: pausedSyncs } = await supabase
-          .from('sync_status')
-          .select('*')
-          .eq('status', 'paused')
-          .lt('last_activity_at', new Date(Date.now() - 30 * 60 * 1000).toISOString()); // Reduced from 1 hour to 30 minutes
-
-        if (pausedSyncs && pausedSyncs.length > 0) {
-          for (const pausedSync of pausedSyncs) {
-            console.log(`🧹 Enhanced Auto-resume: Cleaning up old paused sync ${pausedSync.id}...`);
-            
-            await supabase
-              .from('sync_status')
-              .update({
-                status: 'failed',
-                error_message: 'Auto-cleaned: Paused sync was inactive for more than 30 minutes - will auto-resume',
-                completed_at: new Date().toISOString()
-              })
-              .eq('id', pausedSync.id);
-          }
-        }
-
-        // Check for running syncs that might be stuck (no activity for 10 minutes)
+        // Remove legacy pause cleanup since we no longer pause
+        // All syncs now run continuously until completion
+        
+        // Check for running syncs that might be stuck (no activity for 5 minutes)
         const { data: runningSyncs } = await supabase
           .from('sync_status')
           .select('*')
           .eq('status', 'running')
-          .lt('last_activity_at', new Date(Date.now() - 10 * 60 * 1000).toISOString());
+          .lt('last_activity_at', new Date(Date.now() - 5 * 60 * 1000).toISOString()); // Reduced from 10 to 5 minutes
 
         if (runningSyncs && runningSyncs.length > 0) {
           for (const stuckSync of runningSyncs) {
-            console.log(`🚨 Enhanced Auto-resume: Detected stuck running sync ${stuckSync.id}, marking as failed for auto-resume...`);
+            console.log(`🚨 Enhanced Auto-resume: Detected stuck running sync ${stuckSync.id}, marking as failed for immediate auto-resume...`);
             
             await supabase
               .from('sync_status')
               .update({
                 status: 'failed',
-                error_message: 'Auto-detected: Sync was stuck with no activity for 10+ minutes - will auto-resume',
+                error_message: 'Auto-detected: Sync was stuck with no activity for 5+ minutes - will auto-resume immediately',
                 completed_at: new Date().toISOString()
               })
               .eq('id', stuckSync.id);
@@ -119,7 +100,7 @@ export const AutoResumeScheduler = ({
             resume: true,
             fromPage: failedSync.current_page,
             reconcileProgress: true,
-            source: 'enhanced-auto-resume-fallback',
+            source: 'immediate-auto-resume-fallback',
             attempt: attempt
           }
         });
@@ -128,16 +109,16 @@ export const AutoResumeScheduler = ({
           throw error;
         }
 
-        console.log('✅ Enhanced Auto-resume: Successfully triggered fallback sync resume');
+        console.log('✅ Enhanced Auto-resume: Successfully triggered immediate fallback sync resume');
       } catch (error: unknown) {
         console.error(`❌ Enhanced Auto-resume: Fallback attempt ${attempt} failed:`, error);
         
         if (attempt < maxAttempts) {
-          const delay = Math.pow(2, attempt) * 2000; // Exponential backoff
-          console.log(`🔄 Retrying fallback resume in ${delay}ms...`);
+          const delay = Math.pow(2, attempt) * 1000; // Reduced delay for faster resumption
+          console.log(`🔄 Retrying immediate resume in ${delay}ms...`);
           setTimeout(() => fallbackResumeAttempt(failedSync, attempt + 1, maxAttempts), delay);
         } else {
-          console.error('💥 Enhanced Auto-resume: All fallback attempts failed');
+          console.error('💥 Enhanced Auto-resume: All immediate resume attempts failed');
         }
       }
     };
@@ -148,7 +129,7 @@ export const AutoResumeScheduler = ({
     // Set up interval with more frequent checks
     const interval = setInterval(checkAndResumeStuckSyncs, checkIntervalMinutes * 60 * 1000);
     
-    console.log(`🤖 Enhanced Auto-resume scheduler started (checking every ${checkIntervalMinutes} minute with AI coordination)`);
+    console.log(`🤖 Enhanced Auto-resume scheduler started (checking every ${checkIntervalMinutes} minute with immediate AI coordination)`);
     
     return () => {
       clearInterval(interval);
