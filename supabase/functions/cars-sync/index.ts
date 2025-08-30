@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
     // Memory-efficient configuration
     const PAGE_SIZE = 30;
     const BATCH_SIZE = 25;
-    const MAX_PAGES_PER_RUN = 50; // Process in small chunks to avoid memory limits
+    const MAX_PAGES_PER_RUN = 10000; // Allow full sync to completion without artificial limits
 
     console.log('🚀 Starting memory-efficient car sync...');
 
@@ -70,6 +70,7 @@ Deno.serve(async (req) => {
     let currentPage = startPage;
     let consecutiveEmptyPages = 0;
     let errors = 0;
+    const startTime = Date.now();
 
     // Process pages sequentially to minimize memory usage
     for (let i = 0; i < MAX_PAGES_PER_RUN && consecutiveEmptyPages < 10; i++) {
@@ -174,6 +175,13 @@ Deno.serve(async (req) => {
           })
           .eq('id', 'cars-sync-main');
 
+        // Log progress every 10 pages to track sync rate
+        if (currentPage % 10 === 0) {
+          const elapsed = (Date.now() - startTime) / 1000;
+          const rate = totalProcessed / elapsed * 60; // cars per minute
+          console.log(`📈 Progress: Page ${currentPage}, ${totalProcessed} cars processed, Rate: ${rate.toFixed(0)} cars/min`);
+        }
+
         currentPage++;
         
         // Small delay between pages to prevent overwhelming the API
@@ -194,8 +202,11 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Determine final status
+    // Determine final status - only complete when we've truly reached the end
     const finalStatus = consecutiveEmptyPages >= 10 ? 'completed' : 'paused';
+    const isNaturalCompletion = consecutiveEmptyPages >= 10;
+    
+    console.log(`📊 Sync finishing: ${totalProcessed} cars processed, ${consecutiveEmptyPages} consecutive empty pages`);
     
     await supabase
       .from('sync_status')
@@ -205,11 +216,13 @@ Deno.serve(async (req) => {
         records_processed: (existingCars || 0) + totalProcessed,
         completed_at: finalStatus === 'completed' ? new Date().toISOString() : null,
         last_activity_at: new Date().toISOString(),
-        error_message: `Processed ${totalProcessed} new cars, ${errors} errors`
+        error_message: isNaturalCompletion ? 
+          `Sync completed naturally - processed ${totalProcessed} new cars, ${errors} errors` :
+          `Processed ${totalProcessed} new cars, ${errors} errors - will auto-resume to continue`
       })
       .eq('id', 'cars-sync-main');
 
-    console.log(`✅ Sync ${finalStatus}: ${totalProcessed} cars processed`);
+    console.log(`✅ Sync ${finalStatus}: ${totalProcessed} cars processed${isNaturalCompletion ? ' - COMPLETED!' : ' - will auto-resume'}`);
 
     return Response.json({
       success: true,
