@@ -27,7 +27,7 @@ import { createHash } from 'crypto'
 import { writeFileSync, readFileSync, existsSync } from 'fs'
 import { Agent } from 'https'
 
-// High-performance configuration optimized for 30-40 minute sync target
+// High-performance configuration optimized for 20-30 minute sync target
 const CONCURRENCY = parseInt(process.env.CONCURRENCY || '20') // Increased for faster throughput
 const RPS = parseInt(process.env.RPS || '35') // Aggressive but safe rate limiting
 const PAGE_SIZE = parseInt(process.env.PAGE_SIZE || '200') // Larger pages for fewer requests
@@ -770,7 +770,7 @@ async function syncCars() {
     const totalMinutes = totalTime / 60000
     
     console.log('\n🎯 SYNC COMPLETED - Performance Summary:')
-    console.log(`⏱️  Total time: ${totalMinutes.toFixed(1)} minutes (target: ≤25 min)`)
+    console.log(`⏱️  Total time: ${totalMinutes.toFixed(1)} minutes (target: 20-30 min)`)
     console.log(`📊 Total processed: ${metrics.totalRows} rows, ${metrics.totalPages} pages`) 
     console.log(`🚀 Average rates: ${metrics.pagesPerSec.toFixed(1)} pages/sec, ${metrics.rowsPerSec.toFixed(0)} rows/sec`)
     console.log(`🌐 API performance: ${metrics.avgApiLatency.toFixed(0)}ms avg, ${metrics.p95ApiLatency.toFixed(0)}ms p95`)

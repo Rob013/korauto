@@ -17,6 +17,8 @@
     "test:run": "vitest run",
     "sync-cars": "tsx scripts/sync-cars.ts",
     "sync-cars:demo": "tsx scripts/performance-demo.ts",
+    "sync-cars:monitor": "tsx scripts/performance-monitor.ts",
+    "sync-cars:validate": "tsx scripts/validate-sync-performance.ts",
     "verify-sync": "tsx scripts/verify-sync.ts"
   },
   "dependencies": {
