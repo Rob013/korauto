@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useEncarAPI } from '@/hooks/useEncarAPI';
 import { useToast } from '@/hooks/use-toast';
-import { Activity, CheckCircle, AlertCircle, Clock, Pause, Database, TrendingUp, RefreshCw, Zap, AlertTriangle, StopCircle, Shield } from 'lucide-react';
+import { Activity, CheckCircle, AlertCircle, Clock, Database, TrendingUp, RefreshCw, Zap, AlertTriangle, StopCircle, Shield } from 'lucide-react';
 export default function AdminSyncDashboard() {
   const {
     syncStatus,
@@ -142,8 +142,6 @@ export default function AdminSyncDashboard() {
         return <Activity className="h-4 w-4 text-blue-500 animate-spin" />;
       case 'failed':
         return <AlertCircle className="h-4 w-4 text-red-500" />;
-      case 'paused':
-        return <Pause className="h-4 w-4 text-yellow-500" />;
       default:
         return <Clock className="h-4 w-4 text-gray-500" />;
     }

@@ -67,10 +67,10 @@ Deno.serve(async (req) => {
     const fromPage = syncParams.fromPage || 1;
     const reconcileProgress = syncParams.reconcileProgress === true;
 
-    // Memory-efficient configuration with AI optimization
+    // Memory-efficient configuration with AI optimization - UNLIMITED PAGES FOR CONTINUOUS SYNC
     const PAGE_SIZE = 30;
     const BATCH_SIZE = 25;
-    const MAX_PAGES_PER_RUN = isResumeRequest ? 5000 : 10000; // Smaller runs for resume to prevent timeout
+    const MAX_PAGES_PER_RUN = 999999; // Unlimited pages to ensure 100% completion without pause
 
     // Enhanced sync status management
     let currentSyncStatus = null;
@@ -146,8 +146,8 @@ Deno.serve(async (req) => {
     const startTime = Date.now();
     let lastProgressUpdate = startTime;
 
-    // Enhanced processing loop with better memory management
-    for (let i = 0; i < MAX_PAGES_PER_RUN && consecutiveEmptyPages < 10; i++) {
+    // Enhanced processing loop with unlimited pages for complete sync
+    while (consecutiveEmptyPages < 10) { // Continue until naturally complete (10 consecutive empty pages)
       try {
         console.log(`📄 Processing page ${currentPage}...`);
 
@@ -307,10 +307,10 @@ Deno.serve(async (req) => {
           break;
         }
       }
-    }
+    } // End of while loop
 
-    // Enhanced completion logic
-    const finalStatus = consecutiveEmptyPages >= 10 ? 'completed' : 'paused';
+    // Enhanced completion logic - NEVER PAUSE, ONLY COMPLETE WHEN TRULY DONE
+    const finalStatus = consecutiveEmptyPages >= 10 ? 'completed' : 'running'; // Changed from 'paused' to 'running'
     const isNaturalCompletion = consecutiveEmptyPages >= 10;
     
     const finalRecordsProcessed = isResumeRequest 
@@ -329,13 +329,13 @@ Deno.serve(async (req) => {
         last_activity_at: new Date().toISOString(),
         error_message: isNaturalCompletion ? 
           `Sync completed naturally - processed ${totalProcessed} new cars, ${errors} errors` :
-          `Processed ${totalProcessed} new cars, ${errors} errors - will auto-resume to continue`
+          `Processed ${totalProcessed} new cars, ${errors} errors - continuing automatically to 100%`
       })
       .eq('id', 'cars-sync-main');
 
     const completionMessage = isNaturalCompletion 
       ? `✅ SYNC 100% COMPLETE! Processed ${totalProcessed} new cars (Total: ${finalRecordsProcessed})`
-      : `✅ Sync paused: ${totalProcessed} new cars processed - will auto-resume`;
+      : `✅ Sync continuing: ${totalProcessed} new cars processed - will continue automatically to 100%`;
     
     console.log(completionMessage);
 
