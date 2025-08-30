@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, memo, useMemo } from "react";
+import { useEffect, useState, useCallback, memo, useMemo, Suspense, lazy } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { trackPageView, trackFavorite } from "@/utils/analytics";
@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { QuickLoadingState, CarDetailsErrorBoundary } from "@/components/CarDetailsLoadingStates";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
 import {
   ArrowLeft,
@@ -46,9 +47,12 @@ import { ImageZoom } from "@/components/ImageZoom";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useCarDetails } from "@/hooks/useCarDetails";
-import CarInspectionDiagram from "@/components/CarInspectionDiagram";
+import { useCarDetailsPerformance } from "@/hooks/useCarDetailsPerformance";
 import { useImagePreload } from "@/hooks/useImagePreload";
 import { useImageSwipe } from "@/hooks/useImageSwipe";
+
+// Lazy load heavy components for better performance
+const CarInspectionDiagram = lazy(() => import("@/components/CarInspectionDiagram"));
 
 // Equipment Options Section Component with Show More functionality
 interface EquipmentOptionsProps {
@@ -323,11 +327,18 @@ const CarDetails = memo(() => {
   const [isPlaceholderImage, setIsPlaceholderImage] = useState(false);
 
   // Use the optimized car details hook
-  const { car, loading, error } = useCarDetails(lot, {
+  const { car, loading, error, refetch } = useCarDetails(lot, {
     convertUSDtoEUR,
     getCarFeatures,
     getSafetyFeatures,
     getComfortFeatures,
+  });
+
+  // Add performance optimizations
+  useCarDetailsPerformance(car, {
+    enableImagePreloading: true,
+    preloadThumbnails: true,
+    enableCaching: true,
   });
 
   // Reset placeholder state when image selection changes
@@ -1029,71 +1040,15 @@ const CarDetails = memo(() => {
   // Preload important images
   useImagePreload(car?.image);
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container-responsive py-8">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-muted rounded w-32"></div>
-            <div className="h-64 bg-muted rounded"></div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="h-6 bg-muted rounded w-3/4"></div>
-                <div className="h-4 bg-muted rounded w-1/2"></div>
-                <div className="h-32 bg-muted rounded"></div>
-              </div>
-              <div className="space-y-4">
-                <div className="h-6 bg-muted rounded w-1/2"></div>
-                <div className="h-24 bg-muted rounded"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <QuickLoadingState />;
   }
+  
   if (error || !car) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="container-responsive py-8">
-          <Button
-            variant="outline"
-            onClick={() => navigate("/")}
-            className="mb-6"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Kryefaqja
-          </Button>
-          <div className="text-center py-12">
-            <AlertTriangle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-foreground mb-2">
-              {error ? "Problemi me Ngarkimin e Makinës" : "Makina Nuk u Gjet"}
-            </h1>
-            <p className="text-muted-foreground mb-4">
-              {error || "Makina që po kërkoni nuk mund të gjindet në bazën tonë të të dhënave."}
-            </p>
-            {error && (
-              <div className="flex gap-2 justify-center mt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => window.location.reload()}
-                  className="flex items-center gap-2"
-                >
-                  <Search className="h-4 w-4" />
-                  Provo Përsëri
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => navigate("/catalog")}
-                  className="flex items-center gap-2"
-                >
-                  <Car className="h-4 w-4" />
-                  Shiko Makinat e Tjera
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <CarDetailsErrorBoundary 
+        error={error || "Makina që po kërkoni nuk mund të gjindet në bazën tonë të të dhënave."} 
+        onRetry={refetch}
+      />
     );
   }
   
@@ -1924,10 +1879,16 @@ const CarDetails = memo(() => {
                                     <p className="text-muted-foreground text-xs inspection-subtext-black">Gjendja vizuale e pjesëve të jashtme</p>
                                   </div>
                                 </div>
-                                <CarInspectionDiagram
-                                  inspectionData={car.details.inspect_outer}
-                                  className="mt-3"
-                                />
+                                <Suspense fallback={
+                                  <div className="h-48 bg-muted/20 rounded-lg animate-pulse flex items-center justify-center">
+                                    <div className="text-muted-foreground">Loading inspection diagram...</div>
+                                  </div>
+                                }>
+                                  <CarInspectionDiagram
+                                    inspectionData={car.details.inspect_outer}
+                                    className="mt-3"
+                                  />
+                                </Suspense>
                               </div>
                             )}
 
