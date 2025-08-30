@@ -242,14 +242,35 @@ export const FullCarsSyncTrigger = () => {
         throw new Error(data?.error || 'Unknown error occurred');
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Smart sync failed:', error);
       setProgress('Smart sync failed. Please try again.');
       setIsLoading(false);
       
+      // Extract meaningful error message from the enhanced error response
+      let errorMessage = 'Failed to start smart sync. Please try again.';
+      let errorTitle = 'Sync Failed';
+      
+      if (error?.message) {
+        errorMessage = error.message;
+        
+        // Customize error title based on error type
+        if (error.message.includes('Configuration error')) {
+          errorTitle = 'Configuration Error';
+        } else if (error.message.includes('Authentication failed')) {
+          errorTitle = 'Authentication Error';
+        } else if (error.message.includes('Network error')) {
+          errorTitle = 'Network Error';
+        } else if (error.message.includes('timeout')) {
+          errorTitle = 'Timeout Error';
+        } else if (error.message.includes('Server error')) {
+          errorTitle = 'Server Error';
+        }
+      }
+      
       toast({
-        title: "Sync Failed",
-        description: error.message || "Failed to start smart sync. Please try again.",
+        title: errorTitle,
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -277,11 +298,18 @@ export const FullCarsSyncTrigger = () => {
 
       setIsLoading(true);
       setProgress('Resuming sync with smart recovery...');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to resume sync:', error);
+      
+      // Extract meaningful error message
+      let errorMessage = 'Failed to resume sync.';
+      if (error?.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Resume Failed",
-        description: error.message || "Failed to resume sync.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
