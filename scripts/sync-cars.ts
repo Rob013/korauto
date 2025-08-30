@@ -493,6 +493,29 @@ async function batchInsertToStaging(cars: Record<string, unknown>[]): Promise<nu
         metrics.dbWrites++
         successCount += count || chunk.length
         
+        // Verify batch write was successful
+        if (count && count > 0) {
+          // Quick verification: check if a sample of records exists in the database
+          const sampleSize = Math.min(3, chunk.length);
+          const sampleIds = chunk.slice(0, sampleSize).map(record => record.id).filter(Boolean);
+          
+          if (sampleIds.length > 0) {
+            const { data: verificationData, error: verifyError } = await supabase
+              .from('cars_staging')
+              .select('id')
+              .in('id', sampleIds);
+              
+            if (verifyError) {
+              console.warn(`⚠️ Verification check failed for batch:`, verifyError);
+            } else if (verificationData && verificationData.length === sampleIds.length) {
+              console.log(`✅ Batch write verified: ${verificationData.length}/${sampleIds.length} sample records confirmed in database`);
+            } else {
+              console.warn(`⚠️ Batch verification issue: found ${verificationData?.length || 0}/${sampleIds.length} sample records`);
+              metrics.dbErrors++;
+            }
+          }
+        }
+        
         // Brief pause between chunks to prevent overwhelming the database
         await new Promise(resolve => setTimeout(resolve, 10))
         
@@ -776,6 +799,99 @@ async function syncCars() {
     if (errors.length > 0) {
       console.log(`⚠️ ${errors.length} errors encountered (first 10):`)
       errors.slice(0, 10).forEach(err => console.log(`  • ${err}`))
+    }
+
+    // Step 6: Comprehensive sync verification
+    console.log('\n🔍 SYNC VERIFICATION - Confirming database writes...')
+    const verificationStart = Date.now()
+    
+    try {
+      // Verify final record count
+      const { count: finalCarCount, error: countError } = await supabase
+        .from('cars')
+        .select('*', { count: 'exact', head: true })
+        
+      if (countError) {
+        console.error('❌ Failed to verify final record count:', countError)
+      } else {
+        console.log(`📊 Final verification: ${finalCarCount} records in cars table`)
+        
+        // Compare with merge result
+        if (mergeResult && typeof mergeResult === 'object') {
+          const mergeData = mergeResult as any
+          const expectedMinimum = mergeData.total_processed || 0
+          
+          if (finalCarCount >= expectedMinimum) {
+            console.log(`✅ Record count verification passed: ${finalCarCount} >= ${expectedMinimum} expected`)
+          } else {
+            console.error(`❌ Record count verification failed: ${finalCarCount} < ${expectedMinimum} expected`)
+          }
+        }
+      }
+      
+      // Verify staging table is empty
+      const { count: stagingCount, error: stagingError } = await supabase
+        .from('cars_staging')
+        .select('*', { count: 'exact', head: true })
+        
+      if (stagingError) {
+        console.error('❌ Failed to verify staging cleanup:', stagingError)
+      } else if (stagingCount === 0) {
+        console.log('✅ Staging table properly cleaned up')
+      } else {
+        console.error(`❌ Staging cleanup failed: ${stagingCount} records remaining`)
+      }
+      
+      // Verify recent sync timestamps
+      const { data: recentRecords, error: timestampError } = await supabase
+        .from('cars')
+        .select('last_synced_at')
+        .order('last_synced_at', { ascending: false })
+        .limit(100)
+        
+      if (timestampError) {
+        console.error('❌ Failed to verify sync timestamps:', timestampError)
+      } else if (recentRecords && recentRecords.length > 0) {
+        const recentSyncTime = new Date(recentRecords[0].last_synced_at)
+        const timeSinceSync = Date.now() - recentSyncTime.getTime()
+        const minutesSinceSync = timeSinceSync / (1000 * 60)
+        
+        if (minutesSinceSync < 60) { // Within last hour
+          console.log(`✅ Sync timestamp verification passed: latest sync ${minutesSinceSync.toFixed(1)} minutes ago`)
+        } else {
+          console.error(`❌ Sync timestamp verification failed: latest sync ${minutesSinceSync.toFixed(1)} minutes ago`)
+        }
+      }
+      
+      // Sample data integrity check
+      const { data: sampleRecords, error: sampleError } = await supabase
+        .from('cars')
+        .select('id, make, model, year, external_id, source_api')
+        .limit(20)
+        
+      if (sampleError) {
+        console.error('❌ Failed to verify sample records:', sampleError)
+      } else if (sampleRecords) {
+        let validSamples = 0
+        for (const record of sampleRecords) {
+          if (record.id && record.make && record.model && record.external_id) {
+            validSamples++
+          }
+        }
+        
+        const validPercentage = (validSamples / sampleRecords.length) * 100
+        if (validPercentage >= 90) {
+          console.log(`✅ Data integrity check passed: ${validSamples}/${sampleRecords.length} (${validPercentage.toFixed(1)}%) valid samples`)
+        } else {
+          console.error(`❌ Data integrity check failed: ${validSamples}/${sampleRecords.length} (${validPercentage.toFixed(1)}%) valid samples`)
+        }
+      }
+      
+      const verificationTime = Date.now() - verificationStart
+      console.log(`🔍 Verification completed in ${verificationTime}ms`)
+      
+    } catch (verifyError) {
+      console.error('❌ Sync verification failed:', verifyError)
     }
 
   } catch (error: unknown) {
