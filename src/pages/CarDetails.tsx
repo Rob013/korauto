@@ -614,9 +614,9 @@ const CarDetails = memo(() => {
         // Try to fetch from cache using proper parameter binding for OR condition
         console.log("Searching for car with lot:", lot);
         const { data: cachedCar, error: cacheError } = await supabase
-          .from("cars_cache")
+          .from("cars")
           .select("*")
-          .or(`id.eq."${lot}",api_id.eq."${lot}",lot_number.eq."${lot}"`)
+          .or(`id.eq."${lot}",external_id.eq."${lot}",lot_number.eq."${lot}"`)
           .maybeSingle();
         console.log("Cache query result:", {
           cachedCar,
@@ -632,79 +632,64 @@ const CarDetails = memo(() => {
           console.log("Found car in cache:", cachedCar);
 
           try {
-            // Transform cached car data to CarDetails format with proper error handling
-            const carData =
-              typeof cachedCar.car_data === "string"
-                ? JSON.parse(cachedCar.car_data || "{}")
-                : cachedCar.car_data || {};
-            const lotData =
-              typeof cachedCar.lot_data === "string"
-                ? JSON.parse(cachedCar.lot_data || "{}")
-                : cachedCar.lot_data || {};
+            // Transform car data to CarDetails format with proper error handling
             const images =
               typeof cachedCar.images === "string"
                 ? JSON.parse(cachedCar.images || "[]")
                 : cachedCar.images || [];
-          const basePrice =
-            cachedCar.price || lotData.buy_now || lotData.final_bid || 25000;
-          const price = convertUSDtoEUR(Math.round(basePrice + 2200));
-          const transformedCar: CarDetails = {
-            id: cachedCar.id,
-            make: cachedCar.make || "Unknown",
-            model: cachedCar.model || "Unknown",
-            year: cachedCar.year || 2020,
-            price,
-            image: images[0] || "/placeholder.svg",
-            images: images || [],
-            vin: cachedCar.vin || carData.vin,
-            mileage:
-              cachedCar.mileage ||
-              (lotData.odometer?.km
-                ? `${lotData.odometer.km.toLocaleString()} km`
-                : undefined),
-            transmission: cachedCar.transmission || carData.transmission?.name,
-            fuel: cachedCar.fuel || carData.fuel?.name,
-            color: cachedCar.color || carData.color?.name,
-            condition:
-              cachedCar.condition ||
-              lotData.condition?.name?.replace(
-                "run_and_drives",
-                "Good Condition"
-              ),
-            lot: cachedCar.lot_number || lotData.lot,
+            const basePrice =
+              cachedCar.price || cachedCar.buy_now_price || 25000;
+            const price = convertUSDtoEUR(Math.round(basePrice + 2200));
+            const transformedCar: CarDetails = {
+              id: cachedCar.id,
+              make: cachedCar.make || "Unknown",
+              model: cachedCar.model || "Unknown",
+              year: cachedCar.year || 2020,
+              price,
+              image: cachedCar.image_url || images[0] || "/placeholder.svg",
+              images: images || [],
+              vin: cachedCar.vin,
+              mileage: cachedCar.mileage
+                ? `${cachedCar.mileage.toLocaleString()} km`
+                : undefined,
+              transmission: cachedCar.transmission,
+            fuel: cachedCar.fuel,
+            color: cachedCar.color,
+            condition: cachedCar.condition || "Good Condition",
+            lot: cachedCar.lot_number,
             title: `${cachedCar.year} ${cachedCar.make} ${cachedCar.model}`,
-            odometer: lotData.odometer,
-            engine: carData.engine,
-            cylinders: carData.cylinders,
-            drive_wheel: carData.drive_wheel,
-            body_type: carData.body_type,
-            damage: lotData.damage,
-            keys_available: lotData.keys_available,
-            airbags: lotData.airbags,
-            grade_iaai: lotData.grade_iaai,
-            seller: lotData.seller,
-            seller_type: lotData.seller_type,
-            sale_date: lotData.sale_date,
-            bid: lotData.bid,
-            buy_now: lotData.buy_now,
-            final_bid: lotData.final_bid,
-            features: getCarFeatures(carData, lotData),
-            safety_features: getSafetyFeatures(carData, lotData),
-            comfort_features: getComfortFeatures(carData, lotData),
+            odometer: cachedCar.mileage ? { km: cachedCar.mileage } : undefined,
+            engine: undefined,
+            cylinders: undefined,
+            drive_wheel: undefined,
+            body_type: undefined,
+            damage: undefined,
+            keys_available: cachedCar.keys_available,
+            airbags: undefined,
+            grade_iaai: undefined,
+            seller: undefined,
+            seller_type: undefined,
+            sale_date: undefined,
+            bid: cachedCar.current_bid,
+            buy_now: cachedCar.buy_now_price,
+            final_bid: cachedCar.final_bid,
+            features: [],
+            safety_features: [],
+            comfort_features: [],
             performance_rating: 4.5,
             popularity_score: 85,
             // Enhanced API data
-            insurance: lotData.insurance,
-            insurance_v2: lotData.insurance_v2,
-            location: lotData.location,
-            inspect: lotData.inspect,
-            details: lotData.details,
+            insurance: undefined,
+            insurance_v2: undefined,
+            location: "South Korea",
+            inspect: undefined,
+            details: undefined,
           };
           setCar(transformedCar);
           setLoading(false);
 
           // Track car view analytics
-          trackCarView(cachedCar.id || cachedCar.api_id, transformedCar);
+          trackCarView(cachedCar.id || cachedCar.external_id, transformedCar);
           return;
           } catch (parseError) {
             console.error("Error parsing cached car data:", parseError);

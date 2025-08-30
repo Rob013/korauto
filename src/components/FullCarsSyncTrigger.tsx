@@ -67,7 +67,7 @@ export const FullCarsSyncTrigger = () => {
           .eq('id', 'cars-sync-main')
           .single(),
         supabase
-          .from('cars_cache')
+          .from('cars')
           .select('*', { count: 'exact', head: true }),
         supabase
           .from('cars')

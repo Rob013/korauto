@@ -84,7 +84,7 @@ async function runSyncVerification(): Promise<VerificationReport> {
     // 3. Check cache table
     console.log('💾 Checking cache table...');
     const { count: cacheCount, error: cacheError } = await supabase
-      .from('cars_cache')
+      .from('cars')
       .select('*', { count: 'exact', head: true });
 
     if (cacheError) {

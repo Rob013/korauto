@@ -221,9 +221,9 @@ const AdminDashboard = () => {
 
     try {
       const { data: carsData, error } = await supabase
-        .from("cars_cache")
+        .from("cars")
         .select("*")
-        .in("api_id", uniqueCarIds);
+        .in("external_id", uniqueCarIds);
 
       if (error) {
         console.error("Error fetching car details:", error);
@@ -300,8 +300,8 @@ const AdminDashboard = () => {
         { count: totalUsers },
         { count: totalFavorites },
         { count: recentSignups },
-        { count: carsInCacheTable },
         { count: carsInMainTable },
+        { count: carsInMainTableDuplicate },
         { count: recentCarSyncs },
         { data: syncStatusData }
       ] = await Promise.all([
@@ -316,15 +316,15 @@ const AdminDashboard = () => {
           .select("*", { count: "exact", head: true })
           .gte("created_at", oneWeekAgo.toISOString()),
         supabase
-          .from("cars_cache")
+          .from("cars")
           .select("*", { count: "exact", head: true }),
         supabase
           .from("cars")
           .select("*", { count: "exact", head: true }),
         supabase
-          .from("cars_cache")
+          .from("cars")
           .select("*", { count: "exact", head: true })
-          .gte("last_api_sync", oneWeekAgo.toISOString()),
+          .gte("last_synced_at", oneWeekAgo.toISOString()),
         supabase
           .from("sync_status")
           .select("*")
@@ -332,14 +332,13 @@ const AdminDashboard = () => {
           .limit(1)
       ]);
 
-      // Use the maximum count from both sources as authoritative (prevents double counting)
-      const totalCachedCars = Math.max((carsInCacheTable || 0), (carsInMainTable || 0));
+      // Use the car count from main table
+      const totalCachedCars = carsInMainTable || 0;
       
       console.log('📊 Car count calculation:', {
-        carsInCacheTable: carsInCacheTable || 0,
         carsInMainTable: carsInMainTable || 0,
         totalCachedCars: totalCachedCars,
-        method: 'max_count'
+        method: 'main_table_count'
       });
 
       // Fetch limited analytics data with date range for better performance

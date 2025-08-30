@@ -4,7 +4,7 @@ import { useSecureAuctionAPI } from './useSecureAuctionAPI';
 
 interface CachedCar {
   id: string;
-  api_id: string;
+  external_id: string;
   make: string;
   model: string;
   year: number;
@@ -15,13 +15,15 @@ interface CachedCar {
   color: string | null;
   condition: string | null;
   lot_number: string | null;
-  mileage: string | null;
+  mileage: number | null;
   images: any;
-  car_data: any;
-  lot_data: any;
+  image_url: string | null;
+  current_bid: number | null;
+  buy_now_price: number | null;
+  keys_available: boolean;
   created_at: string;
   updated_at: string;
-  last_api_sync: string;
+  last_synced_at: string;
 }
 
 export const useCachedCars = () => {
@@ -33,19 +35,19 @@ export const useCachedCars = () => {
   const fetchCachedCars = async () => {
     try {
       const { data, error } = await supabase
-        .from('cars_cache')
+        .from('cars')
         .select('*')
         .order('updated_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching cached cars:', error);
+        console.error('Error fetching cars:', error);
         setError(error.message);
       } else {
         setCachedCars(data || []);
       }
     } catch (err) {
-      console.error('Failed to fetch cached cars:', err);
-      setError('Failed to fetch cached cars');
+      console.error('Failed to fetch cars:', err);
+      setError('Failed to fetch cars');
     }
   };
 
@@ -63,7 +65,7 @@ export const useCachedCars = () => {
       // Only fetch from API if cache is empty or very outdated
       if (cachedCars.length === 0) {
         const hasRecentData = cachedCars.some(car => 
-          new Date(car.last_api_sync) > fourHoursAgo
+          new Date(car.last_synced_at) > fourHoursAgo
         );
         
         if (!hasRecentData) {
@@ -81,12 +83,10 @@ export const useCachedCars = () => {
   // Memoize transformed cars to prevent unnecessary recalculations
   const transformedCars = useMemo(() => {
     return cachedCars.map(cached => {
-      const carData = typeof cached.car_data === 'string' ? JSON.parse(cached.car_data) : cached.car_data;
-      const lotData = typeof cached.lot_data === 'string' ? JSON.parse(cached.lot_data || '{}') : (cached.lot_data || {});
       const images = typeof cached.images === 'string' ? JSON.parse(cached.images || '[]') : (cached.images || []);
 
       return {
-        id: cached.api_id,
+        id: cached.external_id || cached.id,
         manufacturer: { id: 0, name: cached.make },
         model: { id: 0, name: cached.model },
         year: cached.year,
@@ -96,11 +96,12 @@ export const useCachedCars = () => {
         color: cached.color ? { id: 0, name: cached.color } : undefined,
         condition: cached.condition,
         lots: [{
-          buy_now: cached.price,
+          buy_now: cached.buy_now_price || cached.price,
           lot: cached.lot_number,
-          odometer: lotData.odometer,
-          images: { normal: images, big: images },
-          ...lotData
+          bid: cached.current_bid,
+          keys_available: cached.keys_available,
+          odometer: cached.mileage ? { km: cached.mileage } : undefined,
+          images: { normal: images, big: images }
         }]
       };
     });

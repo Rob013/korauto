@@ -100,13 +100,13 @@ if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
       const [carsResult, stagingResult, cacheResult] = await Promise.all([
         supabase.from('cars').select('*', { count: 'exact', head: true }),
         supabase.from('cars_staging').select('*', { count: 'exact', head: true }),
-        supabase.from('cars_cache').select('*', { count: 'exact', head: true })
+        supabase.from('cars').select('*', { count: 'exact', head: true })
       ]);
       
       console.log('\n📊 Table Status:');
       console.log(`   • cars: ${carsResult.count || 0} records ${carsResult.error ? `(error: ${carsResult.error.message})` : ''}`);
       console.log(`   • cars_staging: ${stagingResult.count || 0} records ${stagingResult.error ? `(error: ${stagingResult.error.message})` : ''}`);
-      console.log(`   • cars_cache: ${cacheResult.count || 0} records ${cacheResult.error ? `(error: ${cacheResult.error.message})` : ''}`);
+      console.log(`   • cars_main: ${cacheResult.count || 0} records ${cacheResult.error ? `(error: ${cacheResult.error.message})` : ''}`);
       
     } catch (error) {
       console.log(`   ❌ Database check failed: ${error}`);

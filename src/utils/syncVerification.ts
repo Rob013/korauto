@@ -162,7 +162,7 @@ export async function verifySyncToDatabase(
     if (verifyDataIntegrity) {
       // Check for orphaned records or inconsistencies
       const { data: cacheCount, error: cacheError } = await supabase
-        .from('cars_cache')
+        .from('cars')
         .select('*', { count: 'exact', head: true });
 
       if (cacheError) {
@@ -320,7 +320,7 @@ export async function monitorSyncProgress(): Promise<void> {
  */
 export async function verifyBatchWrite(
   batchData: any[], 
-  tableName: 'cars' | 'cars_staging' | 'cars_cache' = 'cars_staging'
+  tableName: 'cars' | 'cars_staging' = 'cars_staging'
 ): Promise<boolean> {
   if (batchData.length === 0) return true;
 

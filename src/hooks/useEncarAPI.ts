@@ -355,19 +355,16 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     // Auto-refresh every 30 seconds to get latest counts
     const refreshInterval = setInterval(async () => {
       getSyncStatus();
-      // Get fresh car count from both tables for consistency
+      // Get fresh car count from main table
       try {
-        const [cacheResult, mainResult] = await Promise.all([
-          supabase.from('cars_cache').select('id', { count: 'exact', head: true }),
+        const [mainResult] = await Promise.all([
           supabase.from('cars').select('id', { count: 'exact', head: true })
         ]);
         
-        const cacheCount = cacheResult.count || 0;
         const mainCount = mainResult.count || 0;
-        const totalCount = Math.max(cacheCount, mainCount);
+        const totalCount = mainCount;
         
         console.log('🔄 Auto-refresh car count:', {
-          cacheCount,
           mainCount,
           totalCount,
           timestamp: new Date().toLocaleTimeString()

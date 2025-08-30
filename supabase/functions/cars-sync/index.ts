@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
 
     // Get current car count for smart pagination
     const { count: existingCars } = await supabase
-      .from('cars_cache')
+      .from('cars')
       .select('*', { count: 'exact', head: true });
 
     // Smart start page calculation
@@ -179,46 +179,49 @@ Deno.serve(async (req) => {
         consecutiveEmptyPages = 0;
         console.log(`⚡ Processing ${cars.length} cars from page ${currentPage}...`);
 
-        // Memory-efficient car transformation
-        const carCacheItems = cars.map(car => {
+        // Memory-efficient car transformation for main cars table
+        const carItems = cars.map(car => {
           const lot = car.lots?.[0];
           const price = lot?.buy_now ? Math.round(lot.buy_now + 2300) : null;
           
           return {
             id: car.id.toString(),
-            api_id: car.id.toString(),
+            external_id: car.id.toString(),
             make: car.manufacturer?.name || 'Unknown',
             model: car.model?.name || 'Unknown',
             year: car.year || 2020,
-            price: price,
-            price_cents: price ? price * 100 : null,
-            mileage: lot?.odometer?.km?.toString() || null,
-            rank_score: price ? (1 / price) * 1000000 : 0,
+            price: price || 0,
+            mileage: lot?.odometer?.km || 0,
             vin: car.vin,
             fuel: car.fuel?.name,
             transmission: car.transmission?.name,
             color: car.color?.name,
             lot_number: lot?.lot,
             condition: 'good',
+            current_bid: lot?.bid || 0,
+            buy_now_price: lot?.buy_now || 0,
+            final_bid: 0,
+            image_url: lot?.images?.normal?.[0] || null,
             images: JSON.stringify(lot?.images?.normal || []),
-            car_data: {
-              buy_now: lot?.buy_now,
-              current_bid: lot?.bid,
-              keys_available: lot?.keys_available !== false
-            },
-            lot_data: lot,
+            source_api: 'auctionapis',
+            domain_name: 'encar_com',
+            status: 'active',
+            is_active: true,
+            is_live: false,
+            is_archived: false,
+            keys_available: lot?.keys_available !== false,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-            last_api_sync: new Date().toISOString()
+            last_synced_at: new Date().toISOString()
           };
         });
 
         // Enhanced database writes with chunking
-        for (let j = 0; j < carCacheItems.length; j += BATCH_SIZE) {
-          const batch = carCacheItems.slice(j, j + BATCH_SIZE);
+        for (let j = 0; j < carItems.length; j += BATCH_SIZE) {
+          const batch = carItems.slice(j, j + BATCH_SIZE);
           
           const { error } = await supabase
-            .from('cars_cache')
+            .from('cars')
             .upsert(batch, { onConflict: 'id' });
 
           if (error) {
