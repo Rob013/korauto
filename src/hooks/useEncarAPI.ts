@@ -36,7 +36,7 @@ interface Car {
 interface SyncStatus {
   id: string;
   sync_type: string;
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'paused';
+  status: 'pending' | 'running' | 'completed' | 'failed'; // Removed 'paused' as it's deprecated
   current_page?: number;
   total_pages?: number;
   records_processed?: number;
@@ -184,8 +184,8 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
       // Immediate status refresh
       await getSyncStatus();
       
-      // Schedule periodic refreshes for ongoing syncs
-      if (data.status === 'paused' || data.status === 'running') {
+      // Schedule periodic refreshes for ongoing syncs (removed paused status since it's deprecated)
+      if (data.status === 'running') {
         const refreshInterval = setInterval(async () => {
           await getSyncStatus();
           
