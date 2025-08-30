@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, memo, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
-import { trackPageView, trackCarView, trackFavorite } from "@/utils/analytics";
+import { trackPageView, trackFavorite } from "@/utils/analytics";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -45,69 +45,10 @@ import {
 import { ImageZoom } from "@/components/ImageZoom";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
+import { useCarDetails } from "@/hooks/useCarDetails";
 import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
 import { useImageSwipe } from "@/hooks/useImageSwipe";
-import { fallbackCars } from "@/data/fallbackData";
-interface CarDetails {
-  id: string;
-  make: string;
-  model: string;
-  year: number;
-  price: number;
-  image?: string;
-  vin?: string;
-  mileage?: string;
-  transmission?: string;
-  fuel?: string;
-  color?: string;
-  condition?: string;
-  lot?: string;
-  title?: string;
-  images?: string[];
-  odometer?: {
-    km: number;
-    mi: number;
-    status: {
-      name: string;
-    };
-  };
-  engine?: {
-    name: string;
-  };
-  cylinders?: number;
-  drive_wheel?: {
-    name: string;
-  };
-  body_type?: {
-    name: string;
-  };
-  damage?: {
-    main: string | null;
-    second: string | null;
-  };
-  keys_available?: boolean;
-  airbags?: string;
-  grade_iaai?: string;
-  seller?: string;
-  seller_type?: string;
-  sale_date?: string;
-  bid?: number;
-  buy_now?: number;
-  final_bid?: number;
-  features?: string[];
-  safety_features?: string[];
-  comfort_features?: string[];
-  performance_rating?: number;
-  popularity_score?: number;
-  // Enhanced API data
-  insurance?: any;
-  insurance_v2?: any;
-  location?: any;
-  inspect?: any;
-  details?: any;
-  lots?: any[];
-}
 
 // Equipment Options Section Component with Show More functionality
 interface EquipmentOptionsProps {
@@ -372,9 +313,6 @@ const CarDetails = memo(() => {
   const { toast } = useToast();
   const { goBack, restorePageState, pageState } = useNavigation();
   const { convertUSDtoEUR, processFloodDamageText } = useCurrencyAPI();
-  const [car, setCar] = useState<CarDetails | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -383,6 +321,14 @@ const CarDetails = memo(() => {
   const [hasAutoExpanded, setHasAutoExpanded] = useState(false);
   const [showEngineSection, setShowEngineSection] = useState(false);
   const [isPlaceholderImage, setIsPlaceholderImage] = useState(false);
+
+  // Use the optimized car details hook
+  const { car, loading, error } = useCarDetails(lot, {
+    convertUSDtoEUR,
+    getCarFeatures,
+    getSafetyFeatures,
+    getComfortFeatures,
+  });
 
   // Reset placeholder state when image selection changes
   useEffect(() => {
@@ -597,6 +543,8 @@ const CarDetails = memo(() => {
   }, []);
   useEffect(() => {
     let isMounted = true;
+    const abortController = new AbortController();
+    
     const fetchCarDetails = async () => {
       // Validate lot parameter
       if (!lot || typeof lot !== 'string' || lot.trim() === '') {
@@ -610,24 +558,51 @@ const CarDetails = memo(() => {
       setError(null);
       setLoading(true);
       
+      const startTime = performance.now();
+      
       try {
-        // Try to fetch from cache using proper parameter binding for OR condition
+        // Optimized cache query - try exact matches first for better performance
         console.log("Searching for car with lot:", lot);
-        const { data: cachedCar, error: cacheError } = await supabase
+        const cachePromise = supabase
           .from("cars_cache")
           .select("*")
           .or(`id.eq."${lot}",api_id.eq."${lot}",lot_number.eq."${lot}"`)
           .maybeSingle();
+        
+        // Start cache lookup and prepare edge function call concurrently
+        const edgeFunctionPromise = fetch(
+          `https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/secure-cars-api`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0eXlpcWlta3lzbWpuYW9jc3dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0MzkxMzQsImV4cCI6MjA2OTAxNTEzNH0.lyRCHiShhW4wrGHL3G7pK5JBUHNAtgSUQACVOBGRpL8`,
+            },
+            body: JSON.stringify({
+              endpoint: "search-lot",
+              lotNumber: lot,
+            }),
+            signal: abortController.signal,
+          }
+        );
+
+        // Try cache first with timeout
+        const { data: cachedCar, error: cacheError } = await Promise.race([
+          cachePromise,
+          new Promise<{data: null, error: Error}>((_, reject) => 
+            setTimeout(() => reject(new Error('Cache timeout')), 3000)
+          )
+        ]).catch(err => {
+          console.warn("Cache query timeout or error:", err);
+          return { data: null, error: err };
+        });
+        
         console.log("Cache query result:", {
           cachedCar,
           cacheError,
         });
         
-        // Log cache error if it exists but continue with other methods
-        if (cacheError) {
-          console.warn("Cache query error:", cacheError);
-        }
-        
+        // If cache hit, process immediately
         if (!cacheError && cachedCar && isMounted) {
           console.log("Found car in cache:", cachedCar);
 
@@ -703,31 +678,28 @@ const CarDetails = memo(() => {
           setCar(transformedCar);
           setLoading(false);
 
+          // Track performance
+          const endTime = performance.now();
+          const duration = endTime - startTime;
+          console.log(`⚡ Cache hit - loaded in ${duration.toFixed(2)}ms`);
+
           // Track car view analytics
           trackCarView(cachedCar.id || cachedCar.api_id, transformedCar);
           return;
           } catch (parseError) {
             console.error("Error parsing cached car data:", parseError);
-            // Continue to other fetch methods if parsing fails
+            // Continue to edge function if parsing fails
           }
         }
 
-        // If not found in cache, try Supabase edge function with lot number search
+        // If cache miss or error, try edge function with timeout
         try {
-          const secureResponse = await fetch(
-            `https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/secure-cars-api`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0eXlpcWlta3lzbWpuYW9jc3dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0MzkxMzQsImV4cCI6MjA2OTAxNTEzNH0.lyRCHiShhW4wrGHL3G7pK5JBUHNAtgSUQACVOBGRpL8`,
-              },
-              body: JSON.stringify({
-                endpoint: "search-lot",
-                lotNumber: lot,
-              }),
-            }
-          );
+          const secureResponse = await Promise.race([
+            edgeFunctionPromise,
+            new Promise<Response>((_, reject) => 
+              setTimeout(() => reject(new Error('Edge function timeout')), 8000)
+            )
+          ]);
 
           if (secureResponse.ok) {
             const carData = await secureResponse.json();
@@ -787,6 +759,11 @@ const CarDetails = memo(() => {
               setCar(transformedCar);
               setLoading(false);
 
+              // Track performance
+              const endTime = performance.now();
+              const duration = endTime - startTime;
+              console.log(`⚡ Edge function - loaded in ${duration.toFixed(2)}ms`);
+
               trackCarView(carData.id || lot, transformedCar);
               return;
             }
@@ -805,7 +782,8 @@ const CarDetails = memo(() => {
             }
           }
         } catch (edgeFunctionError) {
-          console.log("Edge function failed:", edgeFunctionError);
+          console.log("Edge function failed or timed out:", edgeFunctionError);
+          // Continue to external API fallback
         }
 
         // If edge function fails, try external API with both lot ID and as lot number
@@ -946,11 +924,23 @@ const CarDetails = memo(() => {
             
             setCar(transformedCar);
             setLoading(false);
+            
+            // Track performance for fallback data
+            const endTime = performance.now();
+            const duration = endTime - startTime;
+            console.log(`⚡ Fallback data - loaded in ${duration.toFixed(2)}ms`);
+            
             return;
           }
           
           // If no fallback data found, show appropriate error message
           console.error("All fetch methods failed for lot:", lot, apiError);
+          
+          // Track performance for failed loads
+          const endTime = performance.now();
+          const duration = endTime - startTime;
+          console.warn(`❌ Failed to load car details in ${duration.toFixed(2)}ms for lot ${lot}`);
+          
           const errorMessage = apiError instanceof Error 
             ? (apiError.message.includes("Failed to fetch") || apiError.message.includes("fetch")) 
               ? "Unable to connect to the server. Please check your internet connection and try again."
@@ -969,6 +959,7 @@ const CarDetails = memo(() => {
     fetchCarDetails();
     return () => {
       isMounted = false;
+      abortController.abort(); // Cancel pending requests
     };
   }, [lot, convertUSDtoEUR]);
   const handleContactWhatsApp = useCallback(() => {
