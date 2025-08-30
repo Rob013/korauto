@@ -115,6 +115,9 @@ export const FullCarsSyncTrigger = () => {
           records_processed: displayCount
         };
         
+        // IMPORTANT: The corrected records_processed is ONLY for UI display
+        // The actual sync process continues based on the original database state
+        // This ensures sync continues until all API cars are processed
         setSyncStatus(syncData);
         updateProgressMessage(syncData);
         
