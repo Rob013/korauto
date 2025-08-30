@@ -155,11 +155,17 @@ const AdminDashboard = () => {
         try {
           const { data: adminCheck, error } = await supabase.rpc("is_admin");
 
-          if (error) throw error;
-          setIsAdmin(adminCheck || false);
+          if (error) {
+            console.error("Admin check RPC error:", error);
+            // Fall back to email-based admin check
+            setIsAdmin(user.email === '0013rob@gmail.com');
+          } else {
+            setIsAdmin(adminCheck || user.email === '0013rob@gmail.com');
+          }
         } catch (error) {
           console.error("Admin check failed:", error);
-          setIsAdmin(false);
+          // Fall back to email-based admin check
+          setIsAdmin(user.email === '0013rob@gmail.com');
         }
       }
 
@@ -201,11 +207,17 @@ const AdminDashboard = () => {
       if (user) {
         try {
           const { data: adminCheck, error } = await supabase.rpc("is_admin");
-          if (error) throw error;
-          setIsAdmin(adminCheck || false);
+          if (error) {
+            console.error("Admin check RPC error:", error);
+            // Fall back to email-based admin check
+            setIsAdmin(user.email === '0013rob@gmail.com');
+          } else {
+            setIsAdmin(adminCheck || user.email === '0013rob@gmail.com');
+          }
         } catch (error) {
           console.error("Admin recheck failed:", error);
-          setIsAdmin(false);
+          // Fall back to email-based admin check
+          setIsAdmin(user.email === '0013rob@gmail.com');
         }
       }
 
