@@ -41,6 +41,7 @@ export const AISyncCoordinator = ({
   const { toast } = useToast();
 
   // AI-powered error classification and recovery strategy
+  // Enhanced detection for edge function deployment issues with improved operator precedence
   const classifyErrorAndGetStrategy = useCallback((error: unknown): {
     category: 'network' | 'auth' | 'timeout' | 'server' | 'config' | 'critical' | 'edge_function' | 'deployment';
     recoverable: boolean;
@@ -52,9 +53,11 @@ export const AISyncCoordinator = ({
       : String(error) || 'Unknown error';
     
     // Edge function deployment/accessibility issues - enhanced detection
-    if (errorMessage.includes('timed out') && errorMessage.includes('function may not be deployed') || 
+    if ((errorMessage.includes('timed out') && errorMessage.includes('function may not be deployed')) || 
         errorMessage.includes('not accessible') ||
-        errorMessage.includes('edge function may not be deployed')) {
+        errorMessage.includes('edge function may not be deployed') ||
+        errorMessage.includes('Edge Function not accessible') ||
+        errorMessage.includes('Connection test timed out')) {
       return { category: 'deployment', recoverable: false, delayMs: 0, action: 'abort' };
     }
     
@@ -112,7 +115,7 @@ export const AISyncCoordinator = ({
         headers: { 'x-test': 'connectivity' }
       });
 
-      const { data, error } = await Promise.race([testPromise, timeoutPromise]) as { data: any; error: any };
+      const { data, error } = await Promise.race([testPromise, timeoutPromise]) as { data: unknown; error: unknown };
 
       if (error) {
         // Distinguish between different types of errors
@@ -185,7 +188,7 @@ export const AISyncCoordinator = ({
         }
       });
 
-      const { data, error } = await Promise.race([invokePromise, timeoutPromise]) as { data: any; error: any };
+      const { data, error } = await Promise.race([invokePromise, timeoutPromise]) as { data: unknown; error: unknown };
 
       if (error) {
         console.error('🚨 AI Coordinator: Edge function returned error:', error);
@@ -312,7 +315,12 @@ export const AISyncCoordinator = ({
       let userFriendlyMessage = errorMessage;
       let diagnosticHelp = '';
       
-      if (errorMessage.includes('timed out') || errorMessage.includes('function may not be deployed')) {
+      // Enhanced error message detection with comprehensive accessibility patterns
+      if (errorMessage.includes('timed out') || 
+          errorMessage.includes('function may not be deployed') ||
+          errorMessage.includes('not accessible') ||
+          errorMessage.includes('Edge Function not accessible') ||
+          errorMessage.includes('Connection test timed out')) {
         userFriendlyMessage = 'Edge Function not accessible - the cars-sync function may not be deployed to Supabase';
         diagnosticHelp = 'Check the Supabase dashboard to ensure the cars-sync edge function is deployed and running.';
       } else if (errorMessage.includes('Failed to send')) {
