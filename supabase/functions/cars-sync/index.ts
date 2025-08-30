@@ -31,20 +31,41 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    // Validate required environment variables
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const API_KEY = Deno.env.get('AUCTIONS_API_KEY');
+    
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !API_KEY) {
+      console.error('❌ Missing required environment variables');
+      return Response.json({
+        success: false,
+        error: 'Configuration error: Missing required environment variables'
+      }, { 
+        status: 500,
+        headers: corsHeaders 
+      });
+    }
 
-    const API_KEY = Deno.env.get('AUCTIONS_API_KEY') ?? '';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const API_BASE_URL = 'https://auctionsapi.com/api';
+
+    // Parse request body for sync parameters
+    let syncParams = {};
+    try {
+      if (req.body) {
+        syncParams = await req.json();
+      }
+    } catch (e) {
+      console.log('No body parameters provided, using defaults');
+    }
+    
+    console.log('🚀 Starting smart car sync with params:', syncParams);
 
     // Memory-efficient configuration
     const PAGE_SIZE = 30;
     const BATCH_SIZE = 25;
     const MAX_PAGES_PER_RUN = 10000; // Allow full sync to completion without artificial limits
-
-    console.log('🚀 Starting memory-efficient car sync...');
 
     // Update sync status to running
     await supabase
@@ -82,19 +103,37 @@ Deno.serve(async (req) => {
           { 
             headers: { 
               'accept': 'application/json',
-              'x-api-key': API_KEY 
+              'x-api-key': API_KEY,
+              'User-Agent': 'KorAuto-EdgeSync/1.0'
             },
-            signal: AbortSignal.timeout(15000) // 15s timeout
+            signal: AbortSignal.timeout(30000) // 30s timeout for edge functions
           }
         );
 
         if (!response.ok) {
           if (response.status === 429) {
             console.log('⏰ Rate limited, waiting...');
-            await new Promise(resolve => setTimeout(resolve, 5000));
+            await new Promise(resolve => setTimeout(resolve, 8000)); // Longer wait for rate limits
             continue; // Retry same page
           }
-          throw new Error(`HTTP ${response.status}`);
+          
+          // Handle specific HTTP errors
+          let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+          if (response.status === 401) {
+            errorMessage = 'Authentication failed - API key may be invalid';
+          } else if (response.status === 403) {
+            errorMessage = 'Access forbidden - check API permissions';
+          } else if (response.status >= 500) {
+            errorMessage = `Server error ${response.status} - retrying next page`;
+            // For server errors, continue to next page instead of failing
+            console.error(`⚠️ ${errorMessage}`);
+            currentPage++;
+            errors++;
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            continue;
+          }
+          
+          throw new Error(errorMessage);
         }
 
         const data = await response.json();
@@ -189,16 +228,38 @@ Deno.serve(async (req) => {
 
       } catch (error) {
         console.error(`❌ Page ${currentPage} failed:`, error);
-        errors++;
-        currentPage++;
         
-        if (errors > 10) {
-          console.error('❌ Too many errors, stopping');
-          break;
+        // Classify errors for better handling
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const isNetworkError = errorMessage.includes('timeout') || 
+                              errorMessage.includes('AbortError') ||
+                              errorMessage.includes('network') ||
+                              errorMessage.includes('ENOTFOUND');
+        
+        const isApiError = errorMessage.includes('HTTP') || 
+                          errorMessage.includes('Authentication') ||
+                          errorMessage.includes('forbidden');
+        
+        errors++;
+        
+        if (isNetworkError) {
+          console.log(`🌐 Network error on page ${currentPage}, waiting longer before retry...`);
+          await new Promise(resolve => setTimeout(resolve, 10000)); // Longer wait for network issues
+        } else if (isApiError) {
+          console.log(`🔐 API error on page ${currentPage}, continuing to next page...`);
+          await new Promise(resolve => setTimeout(resolve, 3000));
+        } else {
+          console.log(`⚠️ Unknown error on page ${currentPage}, continuing...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
         
-        // Wait longer after errors
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        currentPage++;
+        
+        // Stop only if too many consecutive errors
+        if (errors > 20) {
+          console.error('❌ Too many errors, stopping sync');
+          break;
+        }
       }
     }
 
@@ -236,9 +297,56 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('💥 Sync failed:', error);
     
+    // Classify and provide helpful error messages
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    let userFriendlyMessage = errorMessage;
+    let errorType = 'unknown';
+    
+    if (errorMessage.includes('environment variables')) {
+      userFriendlyMessage = 'Configuration error: Missing API credentials. Please contact administrator.';
+      errorType = 'configuration';
+    } else if (errorMessage.includes('Authentication') || errorMessage.includes('API key')) {
+      userFriendlyMessage = 'Authentication failed: Invalid API credentials. Please contact administrator.';
+      errorType = 'authentication';
+    } else if (errorMessage.includes('timeout') || errorMessage.includes('AbortError')) {
+      userFriendlyMessage = 'Request timeout: The sync process took too long. Please try again.';
+      errorType = 'timeout';
+    } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+      userFriendlyMessage = 'Network error: Unable to connect to external API. Please try again later.';
+      errorType = 'network';
+    } else if (errorMessage.includes('HTTP 5')) {
+      userFriendlyMessage = 'Server error: External API is experiencing issues. Please try again later.';
+      errorType = 'server_error';
+    } else if (errorMessage.includes('Database') || errorMessage.includes('SQL')) {
+      userFriendlyMessage = 'Database error: Failed to save sync data. Please try again.';
+      errorType = 'database';
+    }
+    
+    // Update sync status to failed with detailed error info
+    try {
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+      
+      await supabase
+        .from('sync_status')
+        .update({
+          status: 'failed',
+          error_message: `${errorType.toUpperCase()}: ${userFriendlyMessage}`,
+          completed_at: new Date().toISOString(),
+          last_activity_at: new Date().toISOString()
+        })
+        .eq('id', 'cars-sync-main');
+    } catch (dbError) {
+      console.error('Failed to update sync status:', dbError);
+    }
+    
     return Response.json({
       success: false,
-      error: error.message
+      error: userFriendlyMessage,
+      errorType,
+      details: errorMessage
     }, { 
       status: 500,
       headers: corsHeaders 
