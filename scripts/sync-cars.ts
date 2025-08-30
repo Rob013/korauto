@@ -27,14 +27,14 @@ import { createHash } from 'crypto'
 import { writeFileSync, readFileSync, existsSync } from 'fs'
 import { Agent } from 'https'
 
-// Memory-optimized configuration for edge function environment
-const CONCURRENCY = parseInt(process.env.CONCURRENCY || '8') // Reduced for memory efficiency  
-const RPS = parseInt(process.env.RPS || '15') // Conservative rate limiting
-const PAGE_SIZE = parseInt(process.env.PAGE_SIZE || '50') // Smaller pages to reduce memory usage
-const BATCH_SIZE = parseInt(process.env.BATCH_SIZE || '100') // Smaller batches for memory efficiency
-const PARALLEL_BATCHES = parseInt(process.env.PARALLEL_BATCHES || '3') // Reduced parallel batches
-const MAX_RETRIES = 3 // Reasonable retry count
-const REQUEST_TIMEOUT = 30000 // Shorter timeout for faster recovery
+// High-performance configuration optimized for 30-40 minute sync target
+const CONCURRENCY = parseInt(process.env.CONCURRENCY || '20') // Increased for faster throughput
+const RPS = parseInt(process.env.RPS || '35') // Aggressive but safe rate limiting
+const PAGE_SIZE = parseInt(process.env.PAGE_SIZE || '200') // Larger pages for fewer requests
+const BATCH_SIZE = parseInt(process.env.BATCH_SIZE || '500') // Larger batches for efficiency
+const PARALLEL_BATCHES = parseInt(process.env.PARALLEL_BATCHES || '8') // More parallel processing
+const MAX_RETRIES = 5 // More retries for reliability
+const REQUEST_TIMEOUT = 45000 // Longer timeout for larger requests
 const CHECKPOINT_FILE = '/tmp/sync-checkpoint.json'
 
 // Environment variables validation
@@ -469,8 +469,8 @@ async function batchInsertToStaging(cars: Record<string, unknown>[]): Promise<nu
   let successCount = 0
   
   try {
-    // Memory-efficient sequential processing instead of parallel chunks
-    const chunkSize = Math.min(BATCH_SIZE, 50) // Smaller chunks for memory efficiency
+    // High-performance parallel processing with optimized batch sizes
+    const chunkSize = Math.min(BATCH_SIZE, 200) // Larger chunks for better performance
     
     for (let i = 0; i < cars.length; i += chunkSize) {
       const chunk = cars.slice(i, i + chunkSize)
@@ -545,8 +545,8 @@ async function batchInsertToStaging(cars: Record<string, unknown>[]): Promise<nu
 // High-performance main sync function with comprehensive optimizations
 async function syncCars() {
   const syncStart = Date.now()
-  console.log('🚀 Starting optimized car sync with performance targets: ≥10 p/s, ≥2k r/s')
-  console.log(`⚙️  Config: CONCURRENCY=${CONCURRENCY}, RPS=${RPS}, PAGE_SIZE=${PAGE_SIZE}, BATCH_SIZE=${BATCH_SIZE}`)
+  console.log('🚀 Starting high-performance car sync with optimized targets: ≥15 p/s, ≥3k r/s')
+  console.log(`⚙️  Optimized Config: CONCURRENCY=${CONCURRENCY}, RPS=${RPS}, PAGE_SIZE=${PAGE_SIZE}, BATCH_SIZE=${BATCH_SIZE}`)
   
   // Generate unique run ID for this sync session
   const runId = `sync-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
@@ -589,14 +589,14 @@ async function syncCars() {
     
     console.log('📊 Starting parallel page processing...')
     
-    // Progress logging interval (every 5 seconds as requested)
-    const progressInterval = setInterval(logProgress, 5000)
+    // Progress logging interval (every 3 seconds for real-time updates)
+    const progressInterval = setInterval(logProgress, 3000)
     
     while (hasMorePages && currentPage <= maxPages && consecutiveEmptyPages < maxConsecutiveEmpty) {
       const pageStart = Date.now()
       
-      // Memory-efficient sequential processing with minimal parallelism
-      const batchSize = Math.min(3, CONCURRENCY, maxPages - currentPage + 1) // Very small batches
+      // Memory-efficient parallel processing with optimized batch size
+      const batchSize = Math.min(6, CONCURRENCY, maxPages - currentPage + 1) // Optimized batch size
       
       for (let i = 0; i < batchSize; i++) {
         const pageNum = currentPage + i
@@ -628,8 +628,8 @@ async function syncCars() {
                 metrics.totalPages++
                 metrics.totalRows += cars.length
 
-                // Process cars in small chunks to avoid memory buildup
-                const CHUNK_SIZE = 20 // Very small chunks for memory efficiency
+                // Process cars in optimized chunks for better throughput
+                const CHUNK_SIZE = 50 // Optimized chunks for better performance
                 for (let j = 0; j < cars.length; j += CHUNK_SIZE) {
                   const chunk = cars.slice(j, j + CHUNK_SIZE)
                   const stagingCars: Record<string, unknown>[] = []
