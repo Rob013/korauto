@@ -115,7 +115,7 @@ export const AISyncCoordinator = ({
         headers: { 'x-test': 'connectivity' }
       });
 
-      const { data, error } = await Promise.race([testPromise, timeoutPromise]) as { data: any; error: any };
+      const { data, error } = await Promise.race([testPromise, timeoutPromise]) as { data: unknown; error: unknown };
 
       if (error) {
         // Distinguish between different types of errors
@@ -188,7 +188,7 @@ export const AISyncCoordinator = ({
         }
       });
 
-      const { data, error } = await Promise.race([invokePromise, timeoutPromise]) as { data: any; error: any };
+      const { data, error } = await Promise.race([invokePromise, timeoutPromise]) as { data: unknown; error: unknown };
 
       if (error) {
         console.error('🚨 AI Coordinator: Edge function returned error:', error);
