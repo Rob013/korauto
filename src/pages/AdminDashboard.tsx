@@ -312,8 +312,15 @@ const AdminDashboard = () => {
         .from("cars")
         .select("*", { count: "exact", head: true });
 
-      // Total cars from both sources
-      const totalCachedCars = (carsInCacheTable || 0) + (carsInMainTable || 0);
+      // Use the maximum count from both sources as authoritative (prevents double counting)
+      const totalCachedCars = Math.max((carsInCacheTable || 0), (carsInMainTable || 0));
+      
+      console.log('📊 Car count calculation:', {
+        carsInCacheTable: carsInCacheTable || 0,
+        carsInMainTable: carsInMainTable || 0,
+        totalCachedCars: totalCachedCars,
+        method: 'max_count'
+      });
 
       const { count: recentCarSyncs } = await supabase
         .from("cars_cache")

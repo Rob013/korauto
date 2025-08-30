@@ -353,15 +353,30 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
       .subscribe();
 
     // Auto-refresh every 30 seconds to get latest counts
-    const refreshInterval = setInterval(() => {
+    const refreshInterval = setInterval(async () => {
       getSyncStatus();
-      // Get fresh active car count (excludes sold cars > 24h)
-      supabase.from('cars_cache').select('id', { count: 'exact', head: true })
-        .then(({ count }) => {
-          if (count !== null) {
-            setTotalCount(count);
-          }
+      // Get fresh car count from both tables for consistency
+      try {
+        const [cacheResult, mainResult] = await Promise.all([
+          supabase.from('cars_cache').select('id', { count: 'exact', head: true }),
+          supabase.from('cars').select('id', { count: 'exact', head: true })
+        ]);
+        
+        const cacheCount = cacheResult.count || 0;
+        const mainCount = mainResult.count || 0;
+        const totalCount = Math.max(cacheCount, mainCount);
+        
+        console.log('🔄 Auto-refresh car count:', {
+          cacheCount,
+          mainCount,
+          totalCount,
+          timestamp: new Date().toLocaleTimeString()
         });
+        
+        setTotalCount(totalCount);
+      } catch (error) {
+        console.error('❌ Error refreshing car count:', error);
+      }
     }, 30000);
 
     return () => {
