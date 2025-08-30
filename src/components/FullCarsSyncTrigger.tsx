@@ -126,17 +126,20 @@ export const FullCarsSyncTrigger = () => {
         
         console.log('📊 Enhanced Sync Status Check:', {
           status: syncData.status,
-          syncRecordsProcessed: syncResponse.data.records_processed,
+          originalSyncRecordsProcessed: syncResponse.data.records_processed,
+          correctedSyncRecordsProcessed: syncData.records_processed,
           cacheCount: cacheCount,
           mainCarsCount: mainCarsCount,
           totalRealCount: totalRealCount,
           displayCount: displayCount,
           isStuck,
-          usingRealCount: displayCount === totalRealCount && displayCount !== (syncResponse.data.records_processed || 0),
-          reason: displayCount === totalRealCount && displayCount !== (syncResponse.data.records_processed || 0) ? 
-            (syncResponse.data.records_processed === 0 ? 'sync_shows_zero' :
-             (isStuck || syncResponse.data.status === 'failed' || syncResponse.data.status === 'completed') ? 'sync_stuck_or_complete' :
-             totalRealCount > (syncResponse.data.records_processed || 0) * 10 ? 'real_count_significantly_higher' : 'unknown') : 'using_sync_count'
+          syncIsStuckOrFailed,
+          realCountIsSignificantlyHigher,
+          correctionApplied: displayCount !== (syncResponse.data.records_processed || 0),
+          correctionReason: displayCount !== (syncResponse.data.records_processed || 0) ? 
+            (displayCount === 0 && totalRealCount > 0 ? 'sync_shows_zero' :
+             syncIsStuckOrFailed && totalRealCount > displayCount ? 'sync_stuck_or_failed' :
+             realCountIsSignificantlyHigher ? 'real_count_significantly_higher' : 'unknown') : 'no_correction_needed'
         });
       }
     } catch (err) {
@@ -551,7 +554,12 @@ export const FullCarsSyncTrigger = () => {
   const getProgressPercentage = () => {
     if (!syncStatus || !syncStatus.records_processed) return 0;
     const estimatedTotal = 200000; // Conservative API estimate
-    return Math.min(100, (syncStatus.records_processed / estimatedTotal) * 100);
+    
+    // Use the corrected records_processed count which includes the fix for stuck syncs
+    // This ensures percentage calculation uses the real count (105,505) not stuck count (16)
+    const correctedCount = syncStatus.records_processed;
+    
+    return Math.min(100, (correctedCount / estimatedTotal) * 100);
   };
 
   const getEstimatedTime = () => {
