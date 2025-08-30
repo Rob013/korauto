@@ -54,6 +54,33 @@ import { useImageSwipe } from "@/hooks/useImageSwipe";
 // Lazy load heavy components for better performance
 const CarInspectionDiagram = lazy(() => import("@/components/CarInspectionDiagram"));
 
+// Type definitions for car and lot data
+interface CarDataType {
+  transmission?: { name: string };
+  fuel?: { name: string };
+  color?: { name: string };
+  engine?: { name: string };
+  cylinders?: number;
+  drive_wheel?: { name: string };
+}
+
+interface LotDataType {
+  keys_available?: boolean;
+  airbags?: string;
+}
+
+interface CarOptions {
+  standard?: (string | number)[];
+  choice?: (string | number)[];
+  tuning?: (string | number)[];
+}
+
+interface ConvertedOptions {
+  standard: string[];
+  choice: string[];
+  tuning: string[];
+}
+
 // Equipment Options Section Component with Show More functionality
 interface EquipmentOptionsProps {
   options: {
@@ -326,7 +353,7 @@ const CarDetails = memo(() => {
   const [showEngineSection, setShowEngineSection] = useState(false);
 
   // Extract features from car data - using function declarations to avoid temporal dead zone
-  function getCarFeatures(carData: any, lot: any): string[] {
+  function getCarFeatures(carData: CarDataType, lot: LotDataType): string[] {
     const features = [];
     if (carData.transmission?.name)
       features.push(`Transmisioni: ${carData.transmission.name}`);
@@ -350,7 +377,7 @@ const CarDetails = memo(() => {
     return features;
   }
 
-  function getSafetyFeatures(carData: any, lot: any): string[] {
+  function getSafetyFeatures(carData: CarDataType, lot: LotDataType): string[] {
     const safety = [];
     if (lot?.airbags) safety.push(`Sistemi i Airbag-ëve: ${lot.airbags}`);
     if (carData.transmission?.name === "automatic")
@@ -364,7 +391,7 @@ const CarDetails = memo(() => {
       : ["ABS Sistemi i Frënimit", "Airbag Sistemi", "Mbyllja Qendrore"];
   }
 
-  function getComfortFeatures(carData: any, lot: any): string[] {
+  function getComfortFeatures(carData: CarDataType, lot: LotDataType): string[] {
     const comfort = [];
     if (carData.transmission?.name === "automatic")
       comfort.push("Transmisioni Automatik");
@@ -486,7 +513,7 @@ const CarDetails = memo(() => {
   };
 
   // Convert option numbers to feature names
-  const convertOptionsToNames = (options: any): any => {
+  const convertOptionsToNames = (options: CarOptions | null | undefined): ConvertedOptions => {
     console.log("🔧 Converting options:", options);
     if (!options)
       return {
@@ -494,7 +521,7 @@ const CarDetails = memo(() => {
         choice: [],
         tuning: [],
       };
-    const result: any = {
+    const result: ConvertedOptions = {
       standard: [],
       choice: [],
       tuning: [],
@@ -502,7 +529,7 @@ const CarDetails = memo(() => {
 
     // Process standard equipment
     if (options.standard && Array.isArray(options.standard)) {
-      result.standard = options.standard.map((option: any) => {
+      result.standard = options.standard.map((option: string | number) => {
         const optionStr = option.toString().trim();
         const mapped = FEATURE_MAPPING[optionStr] || `Pajisje ${optionStr}`;
         console.log(`📝 Mapping: ${optionStr} → ${mapped}`);
@@ -512,7 +539,7 @@ const CarDetails = memo(() => {
 
     // Process optional equipment
     if (options.choice && Array.isArray(options.choice)) {
-      result.choice = options.choice.map((option: any) => {
+      result.choice = options.choice.map((option: string | number) => {
         const optionStr = option.toString().trim();
         const mapped = FEATURE_MAPPING[optionStr] || `Opsion ${optionStr}`;
         return mapped;
@@ -521,7 +548,7 @@ const CarDetails = memo(() => {
 
     // Process tuning/modifications
     if (options.tuning && Array.isArray(options.tuning)) {
-      result.tuning = options.tuning.map((option: any) => {
+      result.tuning = options.tuning.map((option: string | number) => {
         const optionStr = option.toString().trim();
         const mapped = FEATURE_MAPPING[optionStr] || `Modifikim ${optionStr}`;
         return mapped;
@@ -1668,7 +1695,7 @@ const CarDetails = memo(() => {
                                 <div className="px-3 pb-3 space-y-2 animate-fade-in">
                                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                                     {Object.entries(car.details.inspect.inner).map(
-                                      ([key, value]: [string, any]) => {
+                                      ([key, value]: [string, string | number]) => {
                                         const isGood =
                                           value === "goodness" ||
                                           value === "proper" ||
