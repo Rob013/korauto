@@ -51,21 +51,34 @@ export const AISyncCoordinator = ({
       ? String(error.message) 
       : String(error) || 'Unknown error';
     
-    // Edge function deployment/accessibility issues
-    if (errorMessage.includes('timed out') || errorMessage.includes('function may not be deployed') || errorMessage.includes('not accessible')) {
+    // Edge function deployment/accessibility issues - enhanced detection
+    if (errorMessage.includes('timed out') && errorMessage.includes('function may not be deployed') || 
+        errorMessage.includes('not accessible') ||
+        errorMessage.includes('edge function may not be deployed')) {
       return { category: 'deployment', recoverable: false, delayMs: 0, action: 'abort' };
     }
     
-    // Edge function specific errors
-    if (errorMessage.includes('Edge Function') || errorMessage.includes('Deno') || errorMessage.includes('Function Error')) {
+    // Network-level failures (can't send request at all) - prioritize over edge function checks
+    if (errorMessage.includes('Failed to send') || 
+        errorMessage.includes('fetch failed') ||
+        errorMessage.includes('ENOTFOUND') ||
+        errorMessage.includes('AbortError')) {
+      return { category: 'network', recoverable: true, delayMs: 3000, action: 'retry' };
+    }
+    
+    // Edge function specific errors (function responded but with error)
+    if (errorMessage.includes('Edge Function') && !errorMessage.includes('Failed to send') || 
+        errorMessage.includes('Deno') || 
+        errorMessage.includes('Function Error')) {
       return { category: 'edge_function', recoverable: true, delayMs: 5000, action: 'retry' };
     }
     
-    if (errorMessage.includes('timeout') || errorMessage.includes('AbortError')) {
+    // General timeout errors (different from deployment timeouts)
+    if (errorMessage.includes('timeout') && !errorMessage.includes('deployed')) {
       return { category: 'timeout', recoverable: true, delayMs: 5000, action: 'retry' };
     }
     
-    if (errorMessage.includes('network') || errorMessage.includes('fetch failed') || errorMessage.includes('ENOTFOUND')) {
+    if (errorMessage.includes('network') && !errorMessage.includes('Failed to send')) {
       return { category: 'network', recoverable: true, delayMs: 3000, action: 'retry' };
     }
     
@@ -91,7 +104,7 @@ export const AISyncCoordinator = ({
     
     try {
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Connection test timed out after 10 seconds')), 10000);
+        setTimeout(() => reject(new Error('Connection test timed out after 10 seconds - edge function may not be deployed')), 10000);
       });
 
       const testPromise = supabase.functions.invoke('cars-sync', {
@@ -102,9 +115,21 @@ export const AISyncCoordinator = ({
       const { data, error } = await Promise.race([testPromise, timeoutPromise]) as { data: any; error: any };
 
       if (error) {
+        // Distinguish between different types of errors
+        const errorMsg = error.message || 'Unknown edge function error';
+        let enhancedError = errorMsg;
+        
+        if (errorMsg.includes('fetch') && errorMsg.includes('failed')) {
+          enhancedError = 'Failed to send request to edge function - network or deployment issue';
+        } else if (errorMsg.includes('404') || errorMsg.includes('not found')) {
+          enhancedError = 'Edge function not found - cars-sync function is not deployed';
+        } else if (errorMsg.includes('401') || errorMsg.includes('403')) {
+          enhancedError = 'Authentication error - check API key configuration';
+        }
+        
         return {
           connected: false,
-          error: error.message || 'Unknown edge function error',
+          error: enhancedError,
           details: `Edge function returned error: ${JSON.stringify(error)}`
         };
       }
@@ -116,10 +141,26 @@ export const AISyncCoordinator = ({
 
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      // Enhanced error detection for better user guidance
+      let enhancedError = errorMessage;
+      let details = `Failed to connect to edge function: ${errorMessage}`;
+      
+      if (errorMessage.includes('timed out')) {
+        enhancedError = 'Connection timed out - edge function may not be deployed or is unresponsive';
+        details = 'The cars-sync edge function is either not deployed to Supabase or is not responding. Check the Supabase dashboard to ensure the function is deployed and configured correctly.';
+      } else if (errorMessage.includes('fetch') || errorMessage.includes('network')) {
+        enhancedError = 'Network error - unable to reach edge function endpoint';
+        details = 'Could not establish connection to the edge function. This may be due to network issues or the function endpoint being unavailable.';
+      } else if (errorMessage.includes('AbortError')) {
+        enhancedError = 'Request aborted - edge function call was cancelled';
+        details = 'The edge function request was aborted, possibly due to network issues or browser restrictions.';
+      }
+      
       return {
         connected: false,
-        error: errorMessage,
-        details: `Failed to connect to edge function: ${errorMessage}`
+        error: enhancedError,
+        details
       };
     }
   }, []);
@@ -269,23 +310,41 @@ export const AISyncCoordinator = ({
       
       // Enhance error message based on error type
       let userFriendlyMessage = errorMessage;
+      let diagnosticHelp = '';
+      
       if (errorMessage.includes('timed out') || errorMessage.includes('function may not be deployed')) {
         userFriendlyMessage = 'Edge Function not accessible - the cars-sync function may not be deployed to Supabase';
+        diagnosticHelp = 'Check the Supabase dashboard to ensure the cars-sync edge function is deployed and running.';
+      } else if (errorMessage.includes('Failed to send')) {
+        userFriendlyMessage = 'Unable to connect to Edge Function - network or deployment issue';
+        diagnosticHelp = 'This could be a network connectivity issue or the edge function may not be deployed. Check your internet connection and Supabase function deployment.';
       } else if (errorMessage.includes('timeout') || errorMessage.includes('Test timed out')) {
         userFriendlyMessage = 'Edge Function call timed out - the function may not be properly deployed or configured';
+        diagnosticHelp = 'The function exists but is not responding within the expected time frame.';
       } else if (errorMessage.includes('Authentication') || errorMessage.includes('JWT')) {
         userFriendlyMessage = 'Authentication error - Edge Function may require JWT verification configuration';
-      } else if (errorMessage.includes('Function not found')) {
+        diagnosticHelp = 'Check your Supabase API keys and authentication settings.';
+      } else if (errorMessage.includes('Function not found') || errorMessage.includes('404')) {
         userFriendlyMessage = 'Edge Function not found - cars-sync function may not be deployed';
+        diagnosticHelp = 'Deploy the cars-sync function to your Supabase project.';
       } else if (errorMessage.includes('network') || errorMessage.includes('fetch failed')) {
         userFriendlyMessage = 'Network error - unable to connect to Edge Function. Please check your internet connection';
+        diagnosticHelp = 'Verify your network connection and try again.';
       } else if (errorMessage.includes('CORS')) {
         userFriendlyMessage = 'CORS error - Edge Function may have incorrect CORS configuration';
+        diagnosticHelp = 'Check the CORS settings in your edge function code.';
+      } else if (errorMessage.includes('AbortError')) {
+        userFriendlyMessage = 'Request cancelled - Edge Function call was aborted';
+        diagnosticHelp = 'The request was cancelled, possibly due to browser restrictions or network issues.';
       }
+      
+      const fullErrorMessage = diagnosticHelp 
+        ? `${userFriendlyMessage}. ${diagnosticHelp}`
+        : userFriendlyMessage;
       
       toast({
         title: "AI Coordinator Failed",
-        description: `Failed to start intelligent sync: ${userFriendlyMessage}`,
+        description: `Failed to start intelligent sync: ${fullErrorMessage}`,
         variant: "destructive"
       });
     } finally {
