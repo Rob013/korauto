@@ -40,6 +40,7 @@ import { CookieManagementDashboard } from "@/components/CookieManagementDashboar
 import PerformanceAuditWidget from "@/components/PerformanceAuditWidget";
 import { FullCarsSyncTrigger } from "@/components/FullCarsSyncTrigger";
 import { AutoResumeScheduler } from "@/components/AutoResumeScheduler";
+import { AISyncCoordinator } from "@/components/AISyncCoordinator";
 
 // Lazy load heavy admin components
 const AdminSyncDashboard = lazy(() => 
@@ -715,7 +716,9 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <AutoResumeScheduler enabled={true} checkIntervalMinutes={30} />
+      {/* Enhanced Auto-Resume and AI Coordination Background Services */}
+      <AutoResumeScheduler enabled={true} checkIntervalMinutes={1} />
+      <AISyncCoordinator enabled={true} maxRetries={5} retryDelayMs={2000} />
       
       <div className="container max-w-7xl mx-auto p-3 sm:p-4 lg:p-6">
         {/* Compact Header */}
