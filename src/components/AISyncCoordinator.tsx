@@ -156,13 +156,18 @@ export const AISyncCoordinator = ({
 
     try {
       console.log('🤖 AI Coordinator: Starting intelligent sync with AI-powered error handling');
+      console.log('🤖 AI Coordinator: Sync parameters:', JSON.stringify(syncParams, null, 2));
       
       // Check current sync status for intelligent resumption
-      const { data: currentStatus } = await supabase
+      const { data: currentStatus, error: statusError } = await supabase
         .from('sync_status')
         .select('*')
         .eq('id', 'cars-sync-main')
         .single();
+
+      if (statusError) {
+        console.warn('🤖 AI Coordinator: Could not fetch sync status:', statusError);
+      }
 
       let enhancedParams = {
         smartSync: true,
@@ -183,6 +188,7 @@ export const AISyncCoordinator = ({
         };
       }
 
+      console.log('🤖 AI Coordinator: Enhanced parameters:', JSON.stringify(enhancedParams, null, 2));
       const result = await invokeEdgeFunctionWithRetry(enhancedParams);
       
       toast({
@@ -199,9 +205,19 @@ export const AISyncCoordinator = ({
         
       console.error('💥 AI Coordinator: Failed to start sync:', error);
       
+      // Enhance error message based on error type
+      let userFriendlyMessage = errorMessage;
+      if (errorMessage.includes('timeout') || errorMessage.includes('Test timed out')) {
+        userFriendlyMessage = 'Edge Function call timed out - the function may not be properly deployed or configured';
+      } else if (errorMessage.includes('Authentication') || errorMessage.includes('JWT')) {
+        userFriendlyMessage = 'Authentication error - Edge Function may require JWT verification configuration';
+      } else if (errorMessage.includes('Function not found')) {
+        userFriendlyMessage = 'Edge Function not found - cars-sync function may not be deployed';
+      }
+      
       toast({
         title: "AI Coordinator Failed",
-        description: `Failed to start intelligent sync: ${errorMessage}`,
+        description: `Failed to start intelligent sync: ${userFriendlyMessage}`,
         variant: "destructive"
       });
     } finally {
