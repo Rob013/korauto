@@ -290,8 +290,8 @@ export const AISyncCoordinator = ({
         ...syncParams
       };
 
-      // Intelligent resume detection
-      if (currentStatus?.status === 'paused' || currentStatus?.status === 'failed') {
+      // Intelligent resume detection (removed paused status since it's deprecated)
+      if (currentStatus?.status === 'failed') {
         console.log(`🧠 AI Coordinator: Detected resumable sync at page ${currentStatus.current_page}`);
         enhancedParams = {
           ...enhancedParams,

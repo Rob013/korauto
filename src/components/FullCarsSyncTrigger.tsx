@@ -301,7 +301,8 @@ export const FullCarsSyncTrigger = () => {
         setProgress(`❌ Sync failed at ${formattedRecords} cars${errorMsg}. Will auto-resume.`);
         break;
       case 'paused':
-        setProgress(`⏸️ Sync paused at ${formattedRecords} cars. Ready to resume.`);
+        // Paused status is deprecated - treat as running since backend no longer pauses
+        setProgress(`🔄 Syncing${rateText}... ${formattedRecords} / ${formattedTotal} cars (${percentage}%) - Resuming automatically`);
         break;
       default:
         setProgress(`📊 Status: ${status.status} - ${formattedRecords} cars processed`);
