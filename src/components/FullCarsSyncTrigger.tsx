@@ -77,7 +77,7 @@ export const FullCarsSyncTrigger = () => {
       }
 
       if (syncResponse.data) {
-        // Check for stuck sync (running for more than 15 minutes without activity)
+        // Check for stuck sync (running for more than 35 minutes without activity)
         const isStuck = detectStuckSync(syncResponse.data);
         setIsStuckSyncDetected(isStuck);
         
@@ -121,7 +121,7 @@ export const FullCarsSyncTrigger = () => {
     
     const lastActivity = sync.last_activity_at ? new Date(sync.last_activity_at) : new Date(sync.started_at || 0);
     const timeSinceActivity = Date.now() - lastActivity.getTime();
-    const STUCK_THRESHOLD = 15 * 60 * 1000; // 15 minutes
+    const STUCK_THRESHOLD = 35 * 60 * 1000; // 35 minutes - allows for 30min target + buffer
     
     return timeSinceActivity > STUCK_THRESHOLD;
   };
@@ -132,7 +132,7 @@ export const FullCarsSyncTrigger = () => {
         .from('sync_status') 
         .update({
           status: 'failed',
-          error_message: 'Auto-cleaned: Sync was stuck for more than 15 minutes',
+          error_message: 'Auto-cleaned: Sync was stuck for more than 35 minutes',
           completed_at: new Date().toISOString()
         })
         .eq('id', 'cars-sync-main');
@@ -785,7 +785,7 @@ export const FullCarsSyncTrigger = () => {
       {isStuckSyncDetected && (
         <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm">
           <p className="text-yellow-800">
-            ⚠️ <strong>Stuck Sync Detected:</strong> The sync has been inactive for more than 15 minutes. 
+            ⚠️ <strong>Stuck Sync Detected:</strong> The sync has been inactive for more than 35 minutes. 
             It may have timed out. Click "Fix Stuck Sync" to reset and try again.
           </p>
         </div>
