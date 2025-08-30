@@ -10,11 +10,16 @@ describe('Problem Statement Integration Test', () => {
     let userFriendlyMessage = errorMessage;
     let diagnosticHelp = '';
     
-    // Fixed error detection logic with proper operator precedence
+    // Fixed error detection logic with proper operator precedence and more specific pattern matching
     if ((errorMessage.includes('timed out') && errorMessage.includes('function may not be deployed')) || 
-        errorMessage.includes('not accessible') ||
-        errorMessage.includes('Edge Function not accessible') ||
-        errorMessage.includes('Connection test timed out')) {
+        errorMessage.includes('Connection test timed out') ||
+        (errorMessage.includes('Edge Function not accessible') && (
+          errorMessage.includes('Connection') || 
+          errorMessage.includes('timed out') || 
+          errorMessage.includes('Unknown connectivity') ||
+          errorMessage.includes('Network error') ||
+          errorMessage.includes('Request aborted')
+        ))) {
       userFriendlyMessage = 'Edge Function not accessible - the cars-sync function may not be deployed to Supabase';
       diagnosticHelp = 'Check the Supabase dashboard to ensure the cars-sync edge function is deployed and running.';
     }
@@ -48,25 +53,38 @@ describe('Problem Statement Integration Test', () => {
   });
 
   it('should handle multiple error scenarios that all generate the same user-friendly message', () => {
-    const errorScenarios = [
+    const deploymentErrorScenarios = [
       'Edge Function not accessible: Connection test timed out after 10 seconds - edge function may not be deployed',
       'Connection timed out - edge function may not be deployed or is unresponsive',
       'Edge Function request timed out - function may not be deployed or accessible',
       'Edge Function not accessible: Unknown connectivity issue',
-      'Edge Function not accessible',
       'Connection test timed out after 5 seconds'
     ];
 
     const expectedTitle = "AI Coordinator Failed";
     const expectedDescription = "Failed to start intelligent sync: Edge Function not accessible - the cars-sync function may not be deployed to Supabase. Check the Supabase dashboard to ensure the cars-sync edge function is deployed and running.";
 
-    errorScenarios.forEach((errorMessage, index) => {
+    deploymentErrorScenarios.forEach((errorMessage, index) => {
       const result = generateCompleteErrorMessage(errorMessage);
       
       expect(result.title).toBe(expectedTitle);
       expect(result.description).toBe(expectedDescription);
       
       console.log(`✅ Scenario ${index + 1} generates correct message: "${errorMessage}"`);
+    });
+    
+    // Test scenarios that should NOT trigger deployment message
+    const nonDeploymentScenarios = [
+      'Edge Function not accessible' // Too generic, no specific deployment indicators
+    ];
+    
+    nonDeploymentScenarios.forEach((errorMessage, index) => {
+      const result = generateCompleteErrorMessage(errorMessage);
+      
+      expect(result.title).toBe(expectedTitle);
+      expect(result.description).toBe(`Failed to start intelligent sync: ${errorMessage}`);
+      
+      console.log(`✅ Non-deployment scenario ${index + 1} preserves original error: "${errorMessage}"`);
     });
   });
 
