@@ -98,6 +98,39 @@ export const fallbackCars = [
     accidents_count: 1,
     inspection_available: true,
     status: "1"
+  },
+  {
+    id: "40359239",
+    title: "2019 BMW X5 xDrive40i",
+    manufacturer: { name: "BMW" },
+    model: { name: "X5" },
+    year: 2019,
+    price: 45000,
+    currency: "USD",
+    odometer: 52000,
+    fuel: { name: "Gasoline" },
+    transmission: { name: "Automatic" },
+    color: { name: "Black" },
+    grade: "4.6",
+    vin: "5UXKR0C56K0H12345",
+    lot_number: "40359239",
+    lots: [{
+      buy_now: 45000,
+      odometer: { km: 52000 },
+      images: {
+        normal: ["/images/placeholder-car.jpg"],
+        big: ["/images/placeholder-car.jpg"]
+      },
+      lot: "40359239",
+      status: 1
+    }],
+    location: "Prishtinë, Kosovo",
+    features: ["AWD", "Leather Seats", "Navigation System", "Panoramic Sunroof"],
+    is_premium: true,
+    seats_count: 7,
+    accidents_count: 0,
+    inspection_available: true,
+    status: "1"
   }
 ];
 

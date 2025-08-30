@@ -352,8 +352,8 @@ const CarDetails = memo(() => {
   const [hasAutoExpanded, setHasAutoExpanded] = useState(false);
   const [showEngineSection, setShowEngineSection] = useState(false);
 
-  // Extract features from car data - using function declarations to avoid temporal dead zone
-  function getCarFeatures(carData: CarDataType, lot: LotDataType): string[] {
+  // Extract features from car data - using useCallback to prevent infinite loops
+  const getCarFeatures = useCallback((carData: CarDataType, lot: LotDataType): string[] => {
     const features = [];
     if (carData.transmission?.name)
       features.push(`Transmisioni: ${carData.transmission.name}`);
@@ -375,9 +375,9 @@ const CarDetails = memo(() => {
       ];
     }
     return features;
-  }
+  }, []);
 
-  function getSafetyFeatures(carData: CarDataType, lot: LotDataType): string[] {
+  const getSafetyFeatures = useCallback((carData: CarDataType, lot: LotDataType): string[] => {
     const safety = [];
     if (lot?.airbags) safety.push(`Sistemi i Airbag-ëve: ${lot.airbags}`);
     if (carData.transmission?.name === "automatic")
@@ -389,9 +389,9 @@ const CarDetails = memo(() => {
     return safety.length > 0
       ? safety
       : ["ABS Sistemi i Frënimit", "Airbag Sistemi", "Mbyllja Qendrore"];
-  }
+  }, []);
 
-  function getComfortFeatures(carData: CarDataType, lot: LotDataType): string[] {
+  const getComfortFeatures = useCallback((carData: CarDataType, lot: LotDataType): string[] => {
     const comfort = [];
     if (carData.transmission?.name === "automatic")
       comfort.push("Transmisioni Automatik");
@@ -399,7 +399,7 @@ const CarDetails = memo(() => {
     comfort.push("Dritaret Elektrike");
     comfort.push("Pasqyrat Elektrike");
     return comfort;
-  }
+  }, []);
 
   // Use the optimized car details hook
   const { car, loading, error, refetch } = useCarDetails(lot, {
