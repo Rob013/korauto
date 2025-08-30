@@ -14,7 +14,7 @@ interface SyncStatus {
   completed_at?: string;
   last_activity_at?: string;
   sync_type: string;
-  [key: string]: any; // Allow other database fields
+  [key: string]: unknown; // Allow other database fields
 }
 
 export const FullCarsSyncTrigger = () => {
@@ -242,7 +242,7 @@ export const FullCarsSyncTrigger = () => {
         throw new Error(data?.error || 'Unknown error occurred');
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Smart sync failed:', error);
       setProgress('Smart sync failed. Please try again.');
       setIsLoading(false);
@@ -251,7 +251,7 @@ export const FullCarsSyncTrigger = () => {
       let errorMessage = 'Failed to start smart sync. Please try again.';
       let errorTitle = 'Sync Failed';
       
-      if (error?.message) {
+      if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
         errorMessage = error.message;
         
         // Customize error title based on error type
@@ -298,12 +298,12 @@ export const FullCarsSyncTrigger = () => {
 
       setIsLoading(true);
       setProgress('Resuming sync with smart recovery...');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to resume sync:', error);
       
       // Extract meaningful error message
       let errorMessage = 'Failed to resume sync.';
-      if (error?.message) {
+      if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
         errorMessage = error.message;
       }
       
