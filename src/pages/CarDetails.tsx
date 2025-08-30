@@ -598,35 +598,53 @@ const CarDetails = memo(() => {
   useEffect(() => {
     let isMounted = true;
     const fetchCarDetails = async () => {
-      if (!lot) return;
+      // Validate lot parameter
+      if (!lot || typeof lot !== 'string' || lot.trim() === '') {
+        console.error("Invalid lot parameter:", lot);
+        setError("Invalid car identifier provided");
+        setLoading(false);
+        return;
+      }
+      
+      // Reset states at the beginning
+      setError(null);
+      setLoading(true);
+      
       try {
-        // Try to fetch from cache using OR condition for all possible matches
+        // Try to fetch from cache using proper parameter binding for OR condition
         console.log("Searching for car with lot:", lot);
         const { data: cachedCar, error: cacheError } = await supabase
           .from("cars_cache")
           .select("*")
-          .or(`id.eq.${lot},api_id.eq.${lot},lot_number.eq.${lot}`)
+          .or(`id.eq."${lot}",api_id.eq."${lot}",lot_number.eq."${lot}"`)
           .maybeSingle();
         console.log("Cache query result:", {
           cachedCar,
           cacheError,
         });
+        
+        // Log cache error if it exists but continue with other methods
+        if (cacheError) {
+          console.warn("Cache query error:", cacheError);
+        }
+        
         if (!cacheError && cachedCar && isMounted) {
           console.log("Found car in cache:", cachedCar);
 
-          // Transform cached car data to CarDetails format
-          const carData =
-            typeof cachedCar.car_data === "string"
-              ? JSON.parse(cachedCar.car_data)
-              : cachedCar.car_data;
-          const lotData =
-            typeof cachedCar.lot_data === "string"
-              ? JSON.parse(cachedCar.lot_data || "{}")
-              : cachedCar.lot_data || {};
-          const images =
-            typeof cachedCar.images === "string"
-              ? JSON.parse(cachedCar.images || "[]")
-              : cachedCar.images || [];
+          try {
+            // Transform cached car data to CarDetails format with proper error handling
+            const carData =
+              typeof cachedCar.car_data === "string"
+                ? JSON.parse(cachedCar.car_data || "{}")
+                : cachedCar.car_data || {};
+            const lotData =
+              typeof cachedCar.lot_data === "string"
+                ? JSON.parse(cachedCar.lot_data || "{}")
+                : cachedCar.lot_data || {};
+            const images =
+              typeof cachedCar.images === "string"
+                ? JSON.parse(cachedCar.images || "[]")
+                : cachedCar.images || [];
           const basePrice =
             cachedCar.price || lotData.buy_now || lotData.final_bid || 25000;
           const price = convertUSDtoEUR(Math.round(basePrice + 2200));
@@ -688,6 +706,10 @@ const CarDetails = memo(() => {
           // Track car view analytics
           trackCarView(cachedCar.id || cachedCar.api_id, transformedCar);
           return;
+          } catch (parseError) {
+            console.error("Error parsing cached car data:", parseError);
+            // Continue to other fetch methods if parsing fails
+          }
         }
 
         // If not found in cache, try Supabase edge function with lot number search
@@ -928,12 +950,15 @@ const CarDetails = memo(() => {
           }
           
           // If no fallback data found, show appropriate error message
+          console.error("All fetch methods failed for lot:", lot, apiError);
           const errorMessage = apiError instanceof Error 
-            ? (apiError.message.includes("Failed to fetch") 
+            ? (apiError.message.includes("Failed to fetch") || apiError.message.includes("fetch")) 
               ? "Unable to connect to the server. Please check your internet connection and try again."
               : apiError.message.includes("404") 
               ? `Car with ID ${lot} is not available. This car may have been sold or removed.`
-              : "Car not found")
+              : apiError.message.includes("timeout") || apiError.message.includes("aborted")
+              ? "Request timed out. Please try again."
+              : `Failed to load car details: ${apiError.message}`
             : "Car not found";
             
           setError(errorMessage);
@@ -1050,12 +1075,31 @@ const CarDetails = memo(() => {
           <div className="text-center py-12">
             <AlertTriangle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-foreground mb-2">
-              Makina Nuk u Gjet
+              {error ? "Problemi me Ngarkimin e Makinës" : "Makina Nuk u Gjet"}
             </h1>
-            <p className="text-muted-foreground">
-              Makina që po kërkoni nuk mund të gjindet në bazën tonë të të
-              dhënave.
+            <p className="text-muted-foreground mb-4">
+              {error || "Makina që po kërkoni nuk mund të gjindet në bazën tonë të të dhënave."}
             </p>
+            {error && (
+              <div className="flex gap-2 justify-center mt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.reload()}
+                  className="flex items-center gap-2"
+                >
+                  <Search className="h-4 w-4" />
+                  Provo Përsëri
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/catalog")}
+                  className="flex items-center gap-2"
+                >
+                  <Car className="h-4 w-4" />
+                  Shiko Makinat e Tjera
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
