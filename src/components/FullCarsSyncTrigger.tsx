@@ -94,7 +94,8 @@ export const FullCarsSyncTrigger = () => {
         // Calculate real car count from both main and cache tables
         const cacheCount = cacheCountResponse.count || 0;
         const mainCarsCount = mainCarsCountResponse.count || 0;
-        const totalRealCount = Math.max(cacheCount, mainCarsCount); // Use the higher count as authoritative
+        // Prioritize cars_cache count since sync now goes to cars_cache
+        const totalRealCount = cacheCount > 0 ? cacheCount : mainCarsCount;
         
         // Determine which count to display - fix for stuck sync showing wrong count
         let displayCount = syncResponse.data.records_processed || 0;

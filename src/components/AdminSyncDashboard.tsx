@@ -58,7 +58,7 @@ export default function AdminSyncDashboard() {
   
   const handleSeedData = async () => {
     try {
-      const response = await fetch(`https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/encar-sync?seed=true`, {
+      const response = await fetch(`https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/cars-sync?seed=true`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -87,7 +87,7 @@ export default function AdminSyncDashboard() {
   const handleEmergencyMassData = async () => {
     setEmergencyInProgress(true);
     try {
-      const response = await fetch(`https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/encar-sync?emergency=true&count=50000`, {
+      const response = await fetch(`https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/cars-sync?emergency=true&count=50000`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

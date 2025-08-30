@@ -138,7 +138,7 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     try {
       console.log(`🚀 Triggering ${type} sync...`);
       
-      const { data, error: syncError } = await supabase.functions.invoke('encar-sync', {
+      const { data, error: syncError } = await supabase.functions.invoke('cars-sync', {
         body: { type }
       });
 
@@ -364,7 +364,8 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
         
         const cacheCount = cacheResult.count || 0;
         const mainCount = mainResult.count || 0;
-        const totalCount = Math.max(cacheCount, mainCount);
+        // Prioritize cars_cache count since sync now goes to cars_cache
+        const totalCount = cacheCount > 0 ? cacheCount : mainCount;
         
         console.log('🔄 Auto-refresh car count:', {
           cacheCount,
