@@ -164,9 +164,38 @@ export default function AdminSyncDashboard() {
 
       {/* System Status Cards */}
       <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Sync Status</CardTitle>
+            {getStatusIcon(syncStatus?.status)}
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {syncStatus?.status ? syncStatus.status.charAt(0).toUpperCase() + syncStatus.status.slice(1) : 'Unknown'}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {syncStatus?.sync_type ? `${syncStatus.sync_type} sync` : 'No active sync'}
+            </p>
+          </CardContent>
+        </Card>
 
-        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Progress</CardTitle>
+            <Database className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {getSyncProgress().toFixed(1)}%
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {syncStatus?.records_processed || 0} / {syncStatus?.total_records || 0} records
+            </p>
+            {syncStatus?.status === 'running' && (
+              <Progress value={getSyncProgress()} className="mt-2" />
+            )}
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
