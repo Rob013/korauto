@@ -322,7 +322,7 @@ export const AISyncCoordinator = ({
           errorMessage.includes('Edge Function not accessible') ||
           errorMessage.includes('Connection test timed out')) {
         userFriendlyMessage = 'Edge Function not accessible - the cars-sync function may not be deployed to Supabase';
-        diagnosticHelp = 'Check the Supabase dashboard to ensure the cars-sync edge function is deployed and running. See EDGE_FUNCTION_DEPLOYMENT.md for detailed deployment instructions.';
+        diagnosticHelp = 'Check the Supabase dashboard to ensure the cars-sync edge function is deployed and running.';
       } else if (errorMessage.includes('Failed to send')) {
         userFriendlyMessage = 'Unable to connect to Edge Function - network or deployment issue';
         diagnosticHelp = 'This could be a network connectivity issue or the edge function may not be deployed. Check your internet connection and Supabase function deployment.';
@@ -334,7 +334,7 @@ export const AISyncCoordinator = ({
         diagnosticHelp = 'Check your Supabase API keys and authentication settings.';
       } else if (errorMessage.includes('Function not found') || errorMessage.includes('404')) {
         userFriendlyMessage = 'Edge Function not found - cars-sync function may not be deployed';
-        diagnosticHelp = 'Deploy the cars-sync function to your Supabase project. See EDGE_FUNCTION_DEPLOYMENT.md for step-by-step instructions.';
+        diagnosticHelp = 'Deploy the cars-sync function to your Supabase project.';
       } else if (errorMessage.includes('network') || errorMessage.includes('fetch failed')) {
         userFriendlyMessage = 'Network error - unable to connect to Edge Function. Please check your internet connection';
         diagnosticHelp = 'Verify your network connection and try again.';
