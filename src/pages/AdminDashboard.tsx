@@ -191,7 +191,7 @@ const AdminDashboard = () => {
 
   const handleLoginSuccess = () => {
     setAuthLoading(true);
-    // Re-check auth status after login
+    // Re-check auth status after login (simplified to avoid redundant checks)
     const recheckAuth = async () => {
       const {
         data: { user },
@@ -199,8 +199,14 @@ const AdminDashboard = () => {
       setUser(user);
 
       if (user) {
-        const { data: adminCheck } = await supabase.rpc("is_admin");
-        setIsAdmin(adminCheck || false);
+        try {
+          const { data: adminCheck, error } = await supabase.rpc("is_admin");
+          if (error) throw error;
+          setIsAdmin(adminCheck || false);
+        } catch (error) {
+          console.error("Admin recheck failed:", error);
+          setIsAdmin(false);
+        }
       }
 
       setAuthLoading(false);
@@ -289,28 +295,42 @@ const AdminDashboard = () => {
         requestsData?.filter((r) => new Date(r.created_at) > oneMonthAgo)
           .length || 0;
 
-      // Fetch real user stats
-      const { count: totalUsers } = await supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true });
-
-      const { count: totalFavorites } = await supabase
-        .from("favorite_cars")
-        .select("*", { count: "exact", head: true });
-
-      const { count: recentSignups } = await supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true })
-        .gte("created_at", oneWeekAgo.toISOString());
-
-      // Fetch real cars data from both tables for accurate total count
-      const { count: carsInCacheTable } = await supabase
-        .from("cars_cache")
-        .select("*", { count: "exact", head: true });
-
-      const { count: carsInMainTable } = await supabase
-        .from("cars")
-        .select("*", { count: "exact", head: true });
+      // Fetch real user stats in parallel for better performance
+      const [
+        { count: totalUsers },
+        { count: totalFavorites },
+        { count: recentSignups },
+        { count: carsInCacheTable },
+        { count: carsInMainTable },
+        { count: recentCarSyncs },
+        { data: syncStatusData }
+      ] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true }),
+        supabase
+          .from("favorite_cars")
+          .select("*", { count: "exact", head: true }),
+        supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true })
+          .gte("created_at", oneWeekAgo.toISOString()),
+        supabase
+          .from("cars_cache")
+          .select("*", { count: "exact", head: true }),
+        supabase
+          .from("cars")
+          .select("*", { count: "exact", head: true }),
+        supabase
+          .from("cars_cache")
+          .select("*", { count: "exact", head: true })
+          .gte("last_api_sync", oneWeekAgo.toISOString()),
+        supabase
+          .from("sync_status")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(1)
+      ]);
 
       // Use the maximum count from both sources as authoritative (prevents double counting)
       const totalCachedCars = Math.max((carsInCacheTable || 0), (carsInMainTable || 0));
@@ -322,28 +342,19 @@ const AdminDashboard = () => {
         method: 'max_count'
       });
 
-      const { count: recentCarSyncs } = await supabase
-        .from("cars_cache")
-        .select("*", { count: "exact", head: true })
-        .gte("last_api_sync", oneWeekAgo.toISOString());
-
-      // Get latest sync status for real-time data
-      const { data: syncStatusData } = await supabase
-        .from("sync_status")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(1);
-
-      // Fetch ALL real analytics data from website_analytics table
+      // Fetch limited analytics data with date range for better performance
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       const { data: analyticsData } = await supabase
         .from("website_analytics")
         .select("*")
-        .order("created_at", { ascending: false });
+        .gte("created_at", thirtyDaysAgo.toISOString())
+        .order("created_at", { ascending: false })
+        .limit(10000); // Limit to prevent excessive data fetching
 
       console.log(
         "📊 Analytics data found:",
         analyticsData?.length || 0,
-        "records"
+        "records (last 30 days)"
       );
 
       // Process real analytics data
