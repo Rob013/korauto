@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -41,8 +41,8 @@ export const AISyncCoordinator = ({
   const { toast } = useToast();
 
   // AI-powered error classification and recovery strategy
-  const classifyErrorAndGetStrategy = (error: unknown): {
-    category: 'network' | 'auth' | 'timeout' | 'server' | 'config' | 'critical';
+  const classifyErrorAndGetStrategy = useCallback((error: unknown): {
+    category: 'network' | 'auth' | 'timeout' | 'server' | 'config' | 'critical' | 'edge_function';
     recoverable: boolean;
     delayMs: number;
     action: 'retry' | 'reset' | 'abort';
@@ -51,33 +51,40 @@ export const AISyncCoordinator = ({
       ? String(error.message) 
       : String(error) || 'Unknown error';
     
+    // Edge function specific errors
+    if (errorMessage.includes('Edge Function') || errorMessage.includes('Deno') || errorMessage.includes('Function Error')) {
+      return { category: 'edge_function', recoverable: true, delayMs: 5000, action: 'retry' };
+    }
+    
     if (errorMessage.includes('timeout') || errorMessage.includes('AbortError')) {
       return { category: 'timeout', recoverable: true, delayMs: 5000, action: 'retry' };
     }
     
-    if (errorMessage.includes('network') || errorMessage.includes('fetch failed')) {
+    if (errorMessage.includes('network') || errorMessage.includes('fetch failed') || errorMessage.includes('ENOTFOUND')) {
       return { category: 'network', recoverable: true, delayMs: 3000, action: 'retry' };
     }
     
-    if (errorMessage.includes('Authentication') || errorMessage.includes('401')) {
+    if (errorMessage.includes('Authentication') || errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
       return { category: 'auth', recoverable: false, delayMs: 0, action: 'abort' };
     }
     
-    if (errorMessage.includes('HTTP 5') || errorMessage.includes('Server error')) {
+    if (errorMessage.includes('HTTP 5') || errorMessage.includes('Server error') || errorMessage.includes('Internal Server Error')) {
       return { category: 'server', recoverable: true, delayMs: 8000, action: 'retry' };
     }
     
-    if (errorMessage.includes('Configuration') || errorMessage.includes('environment variables')) {
+    if (errorMessage.includes('Configuration') || errorMessage.includes('environment variables') || errorMessage.includes('Missing required')) {
       return { category: 'config', recoverable: false, delayMs: 0, action: 'abort' };
     }
     
     // Default to network issue - most common and recoverable
     return { category: 'network', recoverable: true, delayMs: retryDelayMs, action: 'retry' };
-  };
+  }, [retryDelayMs]);
 
   // Enhanced edge function invocation with bulletproof retry logic
-  const invokeEdgeFunctionWithRetry = async (params: Record<string, unknown>, attempt = 1): Promise<unknown> => {
+  const invokeEdgeFunctionWithRetry = useCallback(async (params: Record<string, unknown>, attempt = 1): Promise<unknown> => {
     console.log(`🤖 AI Coordinator: Invoking edge function (attempt ${attempt}/${maxRetries})...`);
+    console.log(`🤖 AI Coordinator: Params:`, JSON.stringify(params, null, 2));
+    console.log(`🤖 AI Coordinator: Supabase URL:`, supabase.supabaseUrl);
     
     try {
       const { data, error } = await supabase.functions.invoke('cars-sync', {
@@ -89,16 +96,31 @@ export const AISyncCoordinator = ({
       });
 
       if (error) {
+        console.error('🚨 AI Coordinator: Edge function returned error:', error);
+        console.error('🚨 AI Coordinator: Error details:', {
+          message: error.message,
+          name: error.name,
+          stack: error.stack,
+          details: error
+        });
         throw error;
       }
 
       console.log('✅ AI Coordinator: Edge function successful');
+      console.log('✅ AI Coordinator: Response data:', data);
       return data;
 
     } catch (error: unknown) {
       console.error(`❌ AI Coordinator: Edge function failed (attempt ${attempt}):`, error);
+      console.error(`❌ AI Coordinator: Full error details:`, {
+        error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        type: typeof error
+      });
       
       const strategy = classifyErrorAndGetStrategy(error);
+      console.log(`🤖 AI Coordinator: Error strategy:`, strategy);
       
       if (!strategy.recoverable || attempt >= maxRetries) {
         console.error(`💥 AI Coordinator: Giving up after ${attempt} attempts`);
@@ -120,10 +142,10 @@ export const AISyncCoordinator = ({
       
       return invokeEdgeFunctionWithRetry(params, attempt + 1);
     }
-  };
+  }, [maxRetries, classifyErrorAndGetStrategy]);
 
   // Intelligent sync initiation with progress reconciliation
-  const startIntelligentSync = async (syncParams: Record<string, unknown> = {}) => {
+  const startIntelligentSync = useCallback(async (syncParams: Record<string, unknown> = {}) => {
     if (isActive) {
       console.log('🤖 AI Coordinator: Sync already active, skipping');
       return;
@@ -134,13 +156,18 @@ export const AISyncCoordinator = ({
 
     try {
       console.log('🤖 AI Coordinator: Starting intelligent sync with AI-powered error handling');
+      console.log('🤖 AI Coordinator: Sync parameters:', JSON.stringify(syncParams, null, 2));
       
       // Check current sync status for intelligent resumption
-      const { data: currentStatus } = await supabase
+      const { data: currentStatus, error: statusError } = await supabase
         .from('sync_status')
         .select('*')
         .eq('id', 'cars-sync-main')
         .single();
+
+      if (statusError) {
+        console.warn('🤖 AI Coordinator: Could not fetch sync status:', statusError);
+      }
 
       let enhancedParams = {
         smartSync: true,
@@ -161,6 +188,7 @@ export const AISyncCoordinator = ({
         };
       }
 
+      console.log('🤖 AI Coordinator: Enhanced parameters:', JSON.stringify(enhancedParams, null, 2));
       const result = await invokeEdgeFunctionWithRetry(enhancedParams);
       
       toast({
@@ -177,15 +205,25 @@ export const AISyncCoordinator = ({
         
       console.error('💥 AI Coordinator: Failed to start sync:', error);
       
+      // Enhance error message based on error type
+      let userFriendlyMessage = errorMessage;
+      if (errorMessage.includes('timeout') || errorMessage.includes('Test timed out')) {
+        userFriendlyMessage = 'Edge Function call timed out - the function may not be properly deployed or configured';
+      } else if (errorMessage.includes('Authentication') || errorMessage.includes('JWT')) {
+        userFriendlyMessage = 'Authentication error - Edge Function may require JWT verification configuration';
+      } else if (errorMessage.includes('Function not found')) {
+        userFriendlyMessage = 'Edge Function not found - cars-sync function may not be deployed';
+      }
+      
       toast({
         title: "AI Coordinator Failed",
-        description: `Failed to start intelligent sync: ${errorMessage}`,
+        description: `Failed to start intelligent sync: ${userFriendlyMessage}`,
         variant: "destructive"
       });
     } finally {
       setIsActive(false);
     }
-  };
+  }, [isActive, invokeEdgeFunctionWithRetry, toast]);
 
   // Monitor sync status and auto-heal when needed
   useEffect(() => {
