@@ -33,8 +33,8 @@ interface AISyncCoordinatorProps {
  */
 export const AISyncCoordinator = ({ 
   enabled = true, 
-  maxRetries = 5,
-  retryDelayMs = 2000
+  maxRetries = 8, // Increased from 5 for maximum persistence
+  retryDelayMs = 1000 // Reduced from 2000 for faster retries at max speed
 }: AISyncCoordinatorProps = {}) => {
   const [isActive, setIsActive] = useState(false);
   const [currentAttempt, setCurrentAttempt] = useState(0);
