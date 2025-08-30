@@ -19,7 +19,10 @@
     "sync-cars:demo": "tsx scripts/performance-demo.ts",
     "sync-cars:monitor": "tsx scripts/performance-monitor.ts",
     "sync-cars:validate": "tsx scripts/validate-sync-performance.ts",
-    "verify-sync": "tsx scripts/verify-sync.ts"
+    "verify-sync": "tsx scripts/verify-sync.ts",
+    "sync-recovery": "tsx scripts/sync-recovery.ts",
+    "test-checkpoint": "tsx scripts/test-checkpoint-resume.ts",
+    "test-sync-logic": "tsx scripts/test-sync-logic.ts"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.2",

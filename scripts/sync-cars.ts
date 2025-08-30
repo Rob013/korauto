@@ -585,7 +585,8 @@ async function syncCars() {
     let hasMorePages = true
     const errors: string[] = []
     const maxConsecutiveEmpty = 10 // Stop after 10 consecutive empty pages
-    const maxPages = 5000 // Safety limit
+    // Dynamic safety limit - allow for large resume pages but prevent infinite loops
+    const maxPages = Math.max(200000, startPage + 50000) // Allow large resumes + safety buffer
     
     console.log('📊 Starting parallel page processing...')
     
