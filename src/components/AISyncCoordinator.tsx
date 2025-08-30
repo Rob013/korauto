@@ -42,7 +42,7 @@ export const AISyncCoordinator = ({
 
   // AI-powered error classification and recovery strategy
   const classifyErrorAndGetStrategy = useCallback((error: unknown): {
-    category: 'network' | 'auth' | 'timeout' | 'server' | 'config' | 'critical' | 'edge_function';
+    category: 'network' | 'auth' | 'timeout' | 'server' | 'config' | 'critical' | 'edge_function' | 'deployment';
     recoverable: boolean;
     delayMs: number;
     action: 'retry' | 'reset' | 'abort';
@@ -50,6 +50,11 @@ export const AISyncCoordinator = ({
     const errorMessage = error && typeof error === 'object' && 'message' in error 
       ? String(error.message) 
       : String(error) || 'Unknown error';
+    
+    // Edge function deployment/accessibility issues
+    if (errorMessage.includes('timed out') || errorMessage.includes('function may not be deployed') || errorMessage.includes('not accessible')) {
+      return { category: 'deployment', recoverable: false, delayMs: 0, action: 'abort' };
+    }
     
     // Edge function specific errors
     if (errorMessage.includes('Edge Function') || errorMessage.includes('Deno') || errorMessage.includes('Function Error')) {
@@ -80,6 +85,45 @@ export const AISyncCoordinator = ({
     return { category: 'network', recoverable: true, delayMs: retryDelayMs, action: 'retry' };
   }, [retryDelayMs]);
 
+  // Add edge function connectivity test
+  const testEdgeFunctionConnectivity = useCallback(async (): Promise<{ connected: boolean; error?: string; details?: string }> => {
+    console.log('🔍 AI Coordinator: Testing edge function connectivity...');
+    
+    try {
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Connection test timed out after 10 seconds')), 10000);
+      });
+
+      const testPromise = supabase.functions.invoke('cars-sync', {
+        body: { test: true, source: 'connectivity-test' },
+        headers: { 'x-test': 'connectivity' }
+      });
+
+      const { data, error } = await Promise.race([testPromise, timeoutPromise]) as { data: any; error: any };
+
+      if (error) {
+        return {
+          connected: false,
+          error: error.message || 'Unknown edge function error',
+          details: `Edge function returned error: ${JSON.stringify(error)}`
+        };
+      }
+
+      return {
+        connected: true,
+        details: `Edge function responded successfully: ${JSON.stringify(data)}`
+      };
+
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return {
+        connected: false,
+        error: errorMessage,
+        details: `Failed to connect to edge function: ${errorMessage}`
+      };
+    }
+  }, []);
+
   // Enhanced edge function invocation with bulletproof retry logic
   const invokeEdgeFunctionWithRetry = useCallback(async (params: Record<string, unknown>, attempt = 1): Promise<unknown> => {
     console.log(`🤖 AI Coordinator: Invoking edge function (attempt ${attempt}/${maxRetries})...`);
@@ -87,13 +131,20 @@ export const AISyncCoordinator = ({
     console.log(`🤖 AI Coordinator: Supabase URL:`, supabase.supabaseUrl);
     
     try {
-      const { data, error } = await supabase.functions.invoke('cars-sync', {
+      // Add timeout to detect edge function deployment issues
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Edge Function request timed out - function may not be deployed or accessible')), 15000);
+      });
+
+      const invokePromise = supabase.functions.invoke('cars-sync', {
         body: params,
         headers: {
           'x-sync-attempt': attempt.toString(),
           'x-coordinator': 'ai-powered'
         }
       });
+
+      const { data, error } = await Promise.race([invokePromise, timeoutPromise]) as { data: any; error: any };
 
       if (error) {
         console.error('🚨 AI Coordinator: Edge function returned error:', error);
@@ -158,6 +209,17 @@ export const AISyncCoordinator = ({
       console.log('🤖 AI Coordinator: Starting intelligent sync with AI-powered error handling');
       console.log('🤖 AI Coordinator: Sync parameters:', JSON.stringify(syncParams, null, 2));
       
+      // First, test edge function connectivity
+      console.log('🔍 AI Coordinator: Testing edge function connectivity before sync...');
+      const connectivityTest = await testEdgeFunctionConnectivity();
+      
+      if (!connectivityTest.connected) {
+        console.error('💥 AI Coordinator: Edge function connectivity test failed:', connectivityTest.error);
+        throw new Error(`Edge Function not accessible: ${connectivityTest.error || 'Unknown connectivity issue'}`);
+      }
+      
+      console.log('✅ AI Coordinator: Edge function connectivity confirmed');
+      
       // Check current sync status for intelligent resumption
       const { data: currentStatus, error: statusError } = await supabase
         .from('sync_status')
@@ -207,12 +269,18 @@ export const AISyncCoordinator = ({
       
       // Enhance error message based on error type
       let userFriendlyMessage = errorMessage;
-      if (errorMessage.includes('timeout') || errorMessage.includes('Test timed out')) {
+      if (errorMessage.includes('timed out') || errorMessage.includes('function may not be deployed')) {
+        userFriendlyMessage = 'Edge Function not accessible - the cars-sync function may not be deployed to Supabase';
+      } else if (errorMessage.includes('timeout') || errorMessage.includes('Test timed out')) {
         userFriendlyMessage = 'Edge Function call timed out - the function may not be properly deployed or configured';
       } else if (errorMessage.includes('Authentication') || errorMessage.includes('JWT')) {
         userFriendlyMessage = 'Authentication error - Edge Function may require JWT verification configuration';
       } else if (errorMessage.includes('Function not found')) {
         userFriendlyMessage = 'Edge Function not found - cars-sync function may not be deployed';
+      } else if (errorMessage.includes('network') || errorMessage.includes('fetch failed')) {
+        userFriendlyMessage = 'Network error - unable to connect to Edge Function. Please check your internet connection';
+      } else if (errorMessage.includes('CORS')) {
+        userFriendlyMessage = 'CORS error - Edge Function may have incorrect CORS configuration';
       }
       
       toast({
@@ -223,7 +291,7 @@ export const AISyncCoordinator = ({
     } finally {
       setIsActive(false);
     }
-  }, [isActive, invokeEdgeFunctionWithRetry, toast]);
+  }, [isActive, invokeEdgeFunctionWithRetry, testEdgeFunctionConnectivity, toast]);
 
   // Monitor sync status and auto-heal when needed
   useEffect(() => {
@@ -292,7 +360,8 @@ export const AISyncCoordinator = ({
       (window as unknown as { aiSyncCoordinator: Record<string, unknown> }).aiSyncCoordinator = {
         startIntelligentSync,
         invokeEdgeFunctionWithRetry,
-        classifyErrorAndGetStrategy
+        classifyErrorAndGetStrategy,
+        testEdgeFunctionConnectivity
       };
     }
 
@@ -302,7 +371,7 @@ export const AISyncCoordinator = ({
         delete windowObj.aiSyncCoordinator;
       }
     };
-  }, [enabled, startIntelligentSync, invokeEdgeFunctionWithRetry, classifyErrorAndGetStrategy]);
+  }, [enabled, startIntelligentSync, invokeEdgeFunctionWithRetry, classifyErrorAndGetStrategy, testEdgeFunctionConnectivity]);
 
   return null; // This component doesn't render anything
 };
