@@ -9,18 +9,18 @@ const corsHeaders = {
 
 // Enhanced sync configuration for MAXIMUM SPEED with upgraded compute
 const CONFIG = {
-  MAX_CONCURRENT_REQUESTS: 50,          // Greatly increased for upgraded compute
-  BATCH_SIZE: 2000,                     // Much larger batches (2x increase)
-  REQUEST_DELAY_MS: 25,                 // Even faster delay (was 50ms)
-  MAX_RETRIES: 20,                      // More retries for reliability
-  RETRY_DELAY_MS: 500,                  // Faster retry (was 1000ms)
-  HEARTBEAT_INTERVAL_MS: 10000,         // More frequent heartbeats (10s)
-  CHECKPOINT_FREQUENCY: 3,              // More frequent checkpoints (was 5)
-  IMAGE_DOWNLOAD_CONCURRENCY: 50,       // Maximum image concurrency
+  MAX_CONCURRENT_REQUESTS: 75,          // Greatly increased for upgraded compute
+  BATCH_SIZE: 3000,                     // Much larger batches (3x increase for new compute)
+  REQUEST_DELAY_MS: 10,                 // Even faster delay (was 25ms)
+  MAX_RETRIES: 25,                      // More retries for reliability
+  RETRY_DELAY_MS: 250,                  // Faster retry (was 500ms)
+  HEARTBEAT_INTERVAL_MS: 8000,          // More frequent heartbeats (8s)
+  CHECKPOINT_FREQUENCY: 2,              // More frequent checkpoints (was 3)
+  IMAGE_DOWNLOAD_CONCURRENCY: 75,       // Maximum image concurrency for new compute
   RESUME_FROM_116K: true,               // Special flag for resuming from 116k
-  EXECUTION_TIME_LIMIT: 900000,         // 15 minutes with upgraded compute
-  DB_CHUNK_SIZE: 50,                    // Optimized DB chunks for speed
-  TARGET_RECORDS: 200000                // Target all available API data (190k+)
+  EXECUTION_TIME_LIMIT: 1200000,        // 20 minutes with upgraded compute
+  DB_CHUNK_SIZE: 75,                    // Optimized DB chunks for speed
+  TARGET_RECORDS: 250000                // Target all available API data (250k+)
 };
 
 interface APICarRecord {
@@ -350,7 +350,7 @@ async function fetchAPIPage(page: number, cursor?: string): Promise<{ data: APIC
     },
     method: 'GET',
     // Add timeout to prevent hanging
-    signal: AbortSignal.timeout(15000) // 15 second timeout
+    signal: AbortSignal.timeout(30000) // Increased for new compute upgrades
   });
 
   if (!response.ok) {
@@ -709,7 +709,7 @@ async function runEnhancedSync(): Promise<{ success: boolean; message: string; s
     let batchNumber = 0;
     let totalApiRecordsProcessed = 0;
 
-    while (hasMore && consecutiveErrors < 20 && totalApiRecordsProcessed < CONFIG.TARGET_RECORDS) {
+    while (hasMore && consecutiveErrors < 30 && totalApiRecordsProcessed < CONFIG.TARGET_RECORDS) { // Increased error tolerance for new compute
       try {
         batchNumber++;
         
@@ -769,12 +769,12 @@ async function runEnhancedSync(): Promise<{ success: boolean; message: string; s
 
       } catch (error) {
         consecutiveErrors++;
-        console.error(`❌ Error in sync loop (attempt ${consecutiveErrors}/20):`, error);
+        console.error(`❌ Error in sync loop (attempt ${consecutiveErrors}/30):`, error); // Updated for new compute
         syncState.errors.push(`Page ${syncState.currentPage}: ${error.message}`);
         
-        if (consecutiveErrors < 20) {
-          // Progressive backoff delay
-          const delay = Math.min(CONFIG.RETRY_DELAY_MS * Math.pow(1.5, consecutiveErrors - 1), 10000);
+        if (consecutiveErrors < 30) { // Updated for new compute
+          // Progressive backoff delay optimized for new compute
+          const delay = Math.min(CONFIG.RETRY_DELAY_MS * Math.pow(1.3, consecutiveErrors - 1), 5000); // Reduced max delay
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
@@ -787,11 +787,11 @@ async function runEnhancedSync(): Promise<{ success: boolean; message: string; s
     await saveCheckpoint(syncState.currentPage, syncState.cursor, syncState.lastRecordId);
 
     // Final status determination
-    const finalStatus = consecutiveErrors >= 20 ? 'failed' : 
+    const finalStatus = consecutiveErrors >= 30 ? 'failed' : // Updated for new compute 
                        totalApiRecordsProcessed >= CONFIG.TARGET_RECORDS ? 'completed' :
                        !hasMore ? 'completed' : 'paused';
                        
-    const completionReason = consecutiveErrors >= 20 ? `Failed after ${consecutiveErrors} consecutive errors` :
+    const completionReason = consecutiveErrors >= 30 ? `Failed after ${consecutiveErrors} consecutive errors` : // Updated for new compute
                            totalApiRecordsProcessed >= CONFIG.TARGET_RECORDS ? `Target reached: ${totalApiRecordsProcessed.toLocaleString()} records` :
                            !hasMore ? 'All available API data processed' : 'Execution time limit reached';
 

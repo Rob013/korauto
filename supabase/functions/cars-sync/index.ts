@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
           'accept': 'application/json',
           'x-api-key': API_KEY 
         },
-        signal: AbortSignal.timeout(10000)
+        signal: AbortSignal.timeout(20000) // Increased for new compute upgrades
       });
       
       if (!testResponse.ok) {
@@ -142,12 +142,12 @@ Deno.serve(async (req) => {
 
     // MAXIMUM SPEED configuration optimized for upgraded compute
     const PAGE_SIZE = 100;
-    const BATCH_SIZE = 200;  // Increased for upgraded compute (was 50)
-    const MAX_EXECUTION_TIME = 900000; // 15 minutes with upgraded compute (was 240s)
-    const MAX_PAGES_PER_RUN = 500; // Much larger chunks for upgraded compute (was 200)
-    const MAX_CONCURRENT_REQUESTS = 50; // Greatly increased (was 15)
-    const REQUEST_DELAY_MS = 25; // Minimal delay for speed
-    const RETRY_DELAY_MS = 500; // Faster retries
+    const BATCH_SIZE = 300;  // Increased for upgraded compute (was 200)
+    const MAX_EXECUTION_TIME = 1200000; // 20 minutes with upgraded compute (was 15min)
+    const MAX_PAGES_PER_RUN = 750; // Much larger chunks for upgraded compute (was 500)
+    const MAX_CONCURRENT_REQUESTS = 75; // Greatly increased (was 50)
+    const REQUEST_DELAY_MS = 10; // Even faster delay for upgraded compute
+    const RETRY_DELAY_MS = 250; // Faster retries for upgraded compute
 
     // Update sync status to running with enhanced metadata
     const updateData: any = {
@@ -228,7 +228,7 @@ Deno.serve(async (req) => {
               'User-Agent': 'KorAuto-EdgeSync/2.0-AI-Optimized',
               'Accept-Encoding': 'gzip, deflate' // Enable compression for bandwidth efficiency
             },
-            signal: AbortSignal.timeout(30000)
+            signal: AbortSignal.timeout(45000) // Increased for new compute upgrades and larger batches
           },
           3 // Max retries
         );
@@ -351,20 +351,20 @@ Deno.serve(async (req) => {
         errors++;
         
         if (isNetworkError) {
-          console.log(`🌐 Network error on page ${currentPage}, brief wait for stability...`);
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Small delay for network stability
+          console.log(`🌐 Network error on page ${currentPage}, minimal delay for new compute...`);
+          await new Promise(resolve => setTimeout(resolve, 500)); // Reduced delay for new compute
         } else if (isApiError) {
-          console.log(`🔐 API error on page ${currentPage}, brief wait for rate limit...`);
-          await new Promise(resolve => setTimeout(resolve, 2000)); // Slightly longer for API issues
+          console.log(`🔐 API error on page ${currentPage}, brief wait optimized for new compute...`);
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Reduced delay for new compute
         } else {
-          console.log(`⚠️ Unknown error on page ${currentPage}, brief continue...`);
-          await new Promise(resolve => setTimeout(resolve, 500)); // Small delay for unknown errors
+          console.log(`⚠️ Unknown error on page ${currentPage}, continue with minimal delay...`);
+          await new Promise(resolve => setTimeout(resolve, 250)); // Very brief delay for new compute
         }
         
         currentPage++;
         
-        // More lenient error threshold for resume operations
-        const errorThreshold = isResumeRequest ? 30 : 20;
+        // More lenient error threshold for upgraded compute performance
+        const errorThreshold = isResumeRequest ? 50 : 35; // Increased thresholds for new compute
         if (errors > errorThreshold) {
           console.error('❌ Too many errors, stopping sync');
           break;
@@ -535,7 +535,7 @@ function isTimeoutError(error: any): boolean {
 
 // Retry with progressively smaller batches when timeout occurs
 async function retryWithSmallerBatches(supabase: any, records: any[], originalBatchNumber: number): Promise<{ success: number; errors: number }> {
-  const chunkSizes = [50, 25, 10, 5]; // Progressive size reduction
+  const chunkSizes = [100, 50, 25, 10]; // Larger initial chunks for new compute
   let totalSuccess = 0;
   let totalErrors = 0;
 
@@ -621,13 +621,13 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
       
       if (response.status === 429) {
         console.log(`⏰ Rate limited on attempt ${attempt}, minimal wait for max speed...`);
-        await new Promise(resolve => setTimeout(resolve, 1000 + (attempt * 500))); // Reduced from 3000 * attempt for max speed
+        await new Promise(resolve => setTimeout(resolve, 500 + (attempt * 250))); // Reduced for new compute
         continue;
       }
       
       if (!response.ok && response.status >= 500 && attempt < maxRetries) {
         console.log(`🔄 Server error ${response.status} on attempt ${attempt}, instant retry...`);
-        await new Promise(resolve => setTimeout(resolve, 250 * attempt)); // Reduced from 1000 * attempt for max speed
+        await new Promise(resolve => setTimeout(resolve, 100 * attempt)); // Reduced for new compute
         continue;
       }
       
@@ -636,7 +636,7 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
       if (attempt === maxRetries) throw error;
       
       console.log(`❌ Request failed on attempt ${attempt}, minimal delay retry:`, error);
-      await new Promise(resolve => setTimeout(resolve, 100 * attempt)); // Reduced from 500 * attempt for max speed
+      await new Promise(resolve => setTimeout(resolve, 50 * attempt)); // Reduced for new compute
     }
   }
   
