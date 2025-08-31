@@ -98,8 +98,8 @@ Deno.serve(async (req) => {
 
     console.log(`📋 Sync Details: ${syncType} sync for last ${minutes} minutes`)
 
-    // Clean up stuck syncs older than 1 hour
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+    // Clean up stuck syncs older than 5 minutes (consistent with other sync functions)
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
     const { error: cleanupError } = await supabase
       .from('sync_status')
       .update({ 
@@ -108,32 +108,54 @@ Deno.serve(async (req) => {
         completed_at: new Date().toISOString()
       })
       .eq('status', 'running')
-      .lt('started_at', oneHourAgo)
+      .or(`started_at.lt.${fiveMinutesAgo},and(last_activity_at.lt.${fiveMinutesAgo})`)
 
     if (cleanupError) {
       console.warn('⚠️ Error cleaning up stuck syncs:', cleanupError)
     }
 
-    // Check for existing running sync
+    // Check for existing running sync with activity check
     const { data: existingSync } = await supabase
       .from('sync_status')
-      .select('id')
+      .select('id, last_activity_at, last_heartbeat, started_at')
       .eq('status', 'running')
       .single()
 
     if (existingSync) {
-      console.log(`⚠️ Sync already running: ${existingSync.id}`)
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: 'Sync already in progress',
-          existing_sync_id: existingSync.id 
-        }),
-        { 
-          status: 409, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
+      const now = new Date();
+      const lastActivity = existingSync.last_activity_at ? new Date(existingSync.last_activity_at) : null;
+      const lastHeartbeat = existingSync.last_heartbeat ? new Date(existingSync.last_heartbeat) : null;
+      
+      // Consider sync stuck if no activity for 5 minutes (300 seconds) OR if activity data is missing
+      const isStuckSync = !lastActivity || (now.getTime() - lastActivity.getTime()) > 300000;
+      const isStuckHeartbeat = !lastHeartbeat || (now.getTime() - lastHeartbeat.getTime()) > 300000;
+      
+      // Only block if sync is truly running (has recent activity AND heartbeat)
+      if (!isStuckSync && !isStuckHeartbeat) {
+        console.log(`⚠️ Sync already running: ${existingSync.id}`)
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: 'Sync already in progress',
+            existing_sync_id: existingSync.id 
+          }),
+          { 
+            status: 409, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      } else {
+        // Sync appears stuck, clean it up
+        console.log('🔄 Detected stuck sync, cleaning up...');
+        await supabase
+          .from('sync_status')
+          .update({
+            status: 'failed',
+            error_message: 'Previous sync was stuck/timed out',
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', existingSync.id);
+      }
     }
 
     // Create new sync record with estimated totals

@@ -116,14 +116,43 @@ Deno.serve(async (req) => {
 
     let currentSyncStatus = existingSyncStatus;
     
-    // Check if sync is already running
+    // Check if sync is already running with stuck sync detection
     if (currentSyncStatus?.status === 'running') {
-      console.log('⚠️ Sync already running, ignoring request');
-      return Response.json({
-        success: false,
-        error: 'Sync is already running',
-        status: 'already_running'
-      }, { headers: corsHeaders });
+      const now = new Date();
+      const lastActivity = currentSyncStatus.last_activity_at ? new Date(currentSyncStatus.last_activity_at) : null;
+      const lastHeartbeat = currentSyncStatus.last_heartbeat ? new Date(currentSyncStatus.last_heartbeat) : null;
+      
+      // Consider sync stuck if no activity for 5 minutes (300 seconds) OR if activity data is missing
+      const isStuckSync = !lastActivity || (now.getTime() - lastActivity.getTime()) > 300000;
+      const isStuckHeartbeat = !lastHeartbeat || (now.getTime() - lastHeartbeat.getTime()) > 300000;
+      
+      // Determine if sync is truly running or stuck (both activity AND heartbeat must be recent)
+      const isTrulyRunning = !isStuckSync && !isStuckHeartbeat;
+      
+      if (isTrulyRunning) {
+        console.log('⚠️ Sync already running, ignoring request');
+        return Response.json({
+          success: false,
+          error: 'Sync is already running',
+          status: 'already_running'
+        }, { headers: corsHeaders });
+      }
+
+      // If sync appears stuck, clear the stuck state and allow new sync
+      if (isStuckSync || isStuckHeartbeat) {
+        console.log('🔄 Detected stuck sync, clearing and allowing new sync to start...');
+        await supabase
+          .from('sync_status')
+          .update({
+            status: 'failed',
+            error_message: 'Previous sync was stuck/timed out',
+            completed_at: now.toISOString()
+          })
+          .eq('id', 'cars-sync-main');
+        
+        // Clear the current status so we can proceed with new sync
+        currentSyncStatus = null;
+      }
     }
 
     // Smart resume logic: Auto-detect if we should resume from current progress
