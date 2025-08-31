@@ -23,9 +23,6 @@ enable_confirmations = true
 [functions]
 verify_jwt = true
 
-[functions.enhanced-cars-sync]
-verify_jwt = false
-
 [functions.secure-cars-api]
 verify_jwt = false
 

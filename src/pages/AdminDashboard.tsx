@@ -35,7 +35,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import AuthLogin from "@/components/AuthLogin";
 import { CarsSyncButton } from "@/components/CarsSyncButton";
-import { SimpleSyncTrigger } from "@/components/SimpleSyncTrigger";
 import AdminCarSearch from "@/components/AdminCarSearch";
 import { CookieManagementDashboard } from "@/components/CookieManagementDashboard";
 import PerformanceAuditWidget from "@/components/PerformanceAuditWidget";
@@ -141,54 +140,8 @@ const AdminDashboard = () => {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
-  const [syncTriggered, setSyncTriggered] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  // Auto-trigger optimized sync when component loads
-  useEffect(() => {
-    const triggerOptimizedSync = async () => {
-      if (!syncTriggered && user && isAdmin) {
-        setSyncTriggered(true);
-        try {
-          console.log('🚀 Starting optimized maximum speed sync...');
-          
-          toast({
-            title: "🚀 MAXIMUM SPEED SYNC STARTING!",
-            description: "Optimized sync initiated! Zero delays, 1000 record batches, unlimited pages until completion.",
-          });
-
-          const { data, error } = await supabase.functions.invoke('cars-sync', {
-            method: 'POST'
-          });
-
-          if (error) {
-            console.error('Sync invocation error:', error);
-            toast({
-              title: "⚡ Sync Running in Background",
-              description: "Optimized sync is running! Check sync dashboard for real-time progress.",
-            });
-          } else {
-            console.log('✅ Sync response:', data);
-            toast({
-              title: "⚡ Maximum Speed Sync Active",
-              description: "Sync running at full throttle with optimized settings!",
-            });
-          }
-        } catch (error) {
-          console.error('Failed to trigger sync:', error);
-          toast({
-            title: "🔄 Sync Auto-Starting",
-            description: "Optimized sync is activating in background...",
-          });
-        }
-      }
-    };
-
-    if (!authLoading) {
-      triggerOptimizedSync();
-    }
-  }, [user, isAdmin, authLoading, syncTriggered, toast]);
 
   // Check authentication and admin status
   useEffect(() => {
@@ -1187,9 +1140,6 @@ const AdminDashboard = () => {
 
               {/* Full Cars Sync Component */}
               <FullCarsSyncTrigger />
-              
-              {/* Simple Manual Sync Controls */}
-              <SimpleSyncTrigger />
             </div>
           </TabsContent>
 

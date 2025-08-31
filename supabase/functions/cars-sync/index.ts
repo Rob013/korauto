@@ -31,9 +31,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('🚀 Cars-sync function started');
-    
-    // Validate required environment variables FIRST
+    // Validate required environment variables
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const API_KEY = Deno.env.get('AUCTIONS_API_KEY');
@@ -49,51 +47,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log('✅ Environment variables validated');
-
-    // Initialize Supabase client with error handling
-    let supabase;
-    try {
-      supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-      console.log('✅ Supabase client initialized');
-    } catch (error) {
-      console.error('❌ Failed to initialize Supabase client:', error);
-      return Response.json({
-        success: false,
-        error: 'Database connection failed'
-      }, { 
-        status: 500,
-        headers: corsHeaders 
-      });
-    }
-
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const API_BASE_URL = 'https://auctionsapi.com/api';
-
-    // Test API connectivity BEFORE starting sync
-    try {
-      console.log('🔍 Testing API connectivity...');
-      const testResponse = await fetch(`${API_BASE_URL}/cars?per_page=1&page=1`, {
-        headers: { 
-          'accept': 'application/json',
-          'x-api-key': API_KEY 
-        },
-        signal: AbortSignal.timeout(20000) // Increased for new compute upgrades
-      });
-      
-      if (!testResponse.ok) {
-        throw new Error(`API test failed: ${testResponse.status} ${testResponse.statusText}`);
-      }
-      console.log('✅ API connectivity confirmed');
-    } catch (error) {
-      console.error('❌ API connectivity test failed:', error);
-      return Response.json({
-        success: false,
-        error: `API connectivity test failed: ${error.message}`
-      }, { 
-        status: 500,
-        headers: corsHeaders 
-      });
-    }
 
     // Parse request body for sync parameters with enhanced resume handling
     let syncParams: any = {};
@@ -107,47 +62,39 @@ Deno.serve(async (req) => {
     
     console.log('🚀 Starting enhanced car sync with params:', syncParams);
 
-    // Always check for existing sync status to auto-resume intelligently
-    const { data: existingSyncStatus } = await supabase
-      .from('sync_status')
-      .select('*')
-      .eq('id', 'cars-sync-main')
-      .single();
+    // Check if this is a resume request
+    const isResumeRequest = syncParams.resume === true;
+    const fromPage = syncParams.fromPage || 1;
+    const reconcileProgress = syncParams.reconcileProgress === true;
 
-    let currentSyncStatus = existingSyncStatus;
-    
-    // Check if sync is already running
-    if (currentSyncStatus?.status === 'running') {
-      console.log('⚠️ Sync already running, ignoring request');
-      return Response.json({
-        success: false,
-        error: 'Sync is already running',
-        status: 'already_running'
-      }, { headers: corsHeaders });
+    // MAXIMUM SPEED configuration optimized for fastest possible sync
+    const PAGE_SIZE = 250; // Increased from 200 for fewer API requests
+    const BATCH_SIZE = 750; // Increased from 500 for larger database writes
+    const MAX_PAGES_PER_RUN = 999999; // Unlimited pages to ensure 100% completion without pause
+
+    // Enhanced sync status management
+    let currentSyncStatus = null;
+    if (isResumeRequest) {
+      // Get current sync status for resume
+      const { data: existingStatus } = await supabase
+        .from('sync_status')
+        .select('*')
+        .eq('id', 'cars-sync-main')
+        .single();
+      
+      currentSyncStatus = existingStatus;
+      console.log(`📍 Resume request: Current status is ${currentSyncStatus?.status}, page ${currentSyncStatus?.current_page}`);
+      
+      // Validate resume conditions
+      if (currentSyncStatus?.status === 'running') {
+        console.log('⚠️ Sync already running, ignoring resume request');
+        return Response.json({
+          success: false,
+          error: 'Sync is already running',
+          status: 'already_running'
+        }, { headers: corsHeaders });
+      }
     }
-
-    // Smart resume logic: Auto-detect if we should resume from current progress
-    const shouldAutoResume = currentSyncStatus && currentSyncStatus.current_page > 1;
-    
-    const isResumeRequest = syncParams.resume === true || shouldAutoResume;
-    
-    // CRITICAL: Always use the current page from database if it exists, regardless of sync status
-    const fromPage = currentSyncStatus && currentSyncStatus.current_page > 1 
-      ? currentSyncStatus.current_page 
-      : (syncParams.fromPage || 1);
-    
-    if (shouldAutoResume) {
-      console.log(`🎯 AUTO-RESUMING: Detected paused sync at page ${currentSyncStatus.current_page} with ${currentSyncStatus.records_processed} cars processed`);
-    }
-
-    // MAXIMUM SPEED configuration optimized for upgraded compute
-    const PAGE_SIZE = 100;
-    const BATCH_SIZE = 300;  // Increased for upgraded compute (was 200)
-    const MAX_EXECUTION_TIME = 1200000; // 20 minutes with upgraded compute (was 15min)
-    const MAX_PAGES_PER_RUN = 750; // Much larger chunks for upgraded compute (was 500)
-    const MAX_CONCURRENT_REQUESTS = 75; // Greatly increased (was 50)
-    const REQUEST_DELAY_MS = 10; // Even faster delay for upgraded compute
-    const RETRY_DELAY_MS = 250; // Faster retries for upgraded compute
 
     // Update sync status to running with enhanced metadata
     const updateData: any = {
@@ -162,12 +109,12 @@ Deno.serve(async (req) => {
       // Resume from where we left off
       updateData.current_page = fromPage;
       updateData.records_processed = currentSyncStatus.records_processed || 0;
-      console.log(`🚀 RESUMING MAXIMUM SPEED SYNC from page ${fromPage} with ${updateData.records_processed} cars already processed`);
+      console.log(`🔄 Resuming from page ${fromPage} with ${updateData.records_processed} records already processed`);
     } else {
       // Fresh start
       updateData.current_page = 1;
       updateData.records_processed = 0;
-      console.log('🆕 Starting fresh maximum speed sync');
+      console.log('🆕 Starting fresh sync');
     }
 
     await supabase
@@ -179,24 +126,17 @@ Deno.serve(async (req) => {
       .from('cars_cache')
       .select('*', { count: 'exact', head: true });
 
-    // CRITICAL: Calculate exact resume position from database
+    // Smart start page calculation
     let startPage: number;
-    
-    if (existingCars && existingCars > 0) {
-      // Resume from where we actually left off based on car count
-      startPage = Math.floor(existingCars / PAGE_SIZE) + 1;
-      console.log(`🎯 RESUMING HIGH-SPEED SYNC from calculated page ${startPage} (${existingCars} cars in database)`);
-      
-      // Update the sync status to reflect the correct position
-      updateData.current_page = startPage;
-      updateData.records_processed = existingCars;
-      
-    } else if (isResumeRequest && fromPage > 1) {
+    if (isResumeRequest && fromPage > 1) {
       startPage = fromPage;
-      console.log(`⚡ RESUMING from specified page ${startPage}`);
+      console.log(`📍 Resuming from specified page ${startPage}`);
+    } else if (!isResumeRequest && existingCars && existingCars > 0) {
+      startPage = Math.floor(existingCars / PAGE_SIZE) + 1;
+      console.log(`📍 Smart start from page ${startPage} (${existingCars} existing cars)`);
     } else {
       startPage = 1;
-      console.log('📍 Starting fresh sync from page 1');
+      console.log('📍 Starting from page 1');
     }
 
     let totalProcessed = 0;
@@ -206,16 +146,9 @@ Deno.serve(async (req) => {
     const startTime = Date.now();
     let lastProgressUpdate = startTime;
 
-    // STABLE processing loop with proper execution time management
-    while (consecutiveEmptyPages < 10 && (currentPage - startPage) < MAX_PAGES_PER_RUN) {
+    // Enhanced processing loop with unlimited pages for complete sync
+    while (consecutiveEmptyPages < 10) { // Continue until naturally complete (10 consecutive empty pages)
       try {
-        // Check execution time to prevent EarlyDrop timeout
-        const elapsed = Date.now() - startTime;
-        if (elapsed > MAX_EXECUTION_TIME) {
-          console.log(`⏰ Approaching execution limit (${elapsed}ms), pausing for auto-resume...`);
-          break;
-        }
-
         console.log(`📄 Processing page ${currentPage}...`);
 
         // Enhanced request with retry logic and performance optimization
@@ -228,7 +161,7 @@ Deno.serve(async (req) => {
               'User-Agent': 'KorAuto-EdgeSync/2.0-AI-Optimized',
               'Accept-Encoding': 'gzip, deflate' // Enable compression for bandwidth efficiency
             },
-            signal: AbortSignal.timeout(45000) // Increased for new compute upgrades and larger batches
+            signal: AbortSignal.timeout(30000)
           },
           3 // Max retries
         );
@@ -280,16 +213,19 @@ Deno.serve(async (req) => {
           };
         });
 
-        // Enhanced database writes with timeout handling
+        // Enhanced database writes with chunking
         for (let j = 0; j < carCacheItems.length; j += BATCH_SIZE) {
           const batch = carCacheItems.slice(j, j + BATCH_SIZE);
           
-          const result = await processWithTimeoutHandling(supabase, batch, j / BATCH_SIZE + 1);
-          if (result.success > 0) {
-            totalProcessed += result.success;
-          }
-          if (result.errors > 0) {
-            errors += result.errors;
+          const { error } = await supabase
+            .from('cars_cache')
+            .upsert(batch, { onConflict: 'id' });
+
+          if (error) {
+            console.error('❌ Database error:', error);
+            errors++;
+          } else {
+            totalProcessed += batch.length;
           }
           
           // MAXIMUM SPEED: No artificial delays - let the system run at natural pace
@@ -351,20 +287,20 @@ Deno.serve(async (req) => {
         errors++;
         
         if (isNetworkError) {
-          console.log(`🌐 Network error on page ${currentPage}, minimal delay for new compute...`);
-          await new Promise(resolve => setTimeout(resolve, 500)); // Reduced delay for new compute
+          console.log(`🌐 Network error on page ${currentPage}, maximum speed retry...`);
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Reduced from 5000 for max speed
         } else if (isApiError) {
-          console.log(`🔐 API error on page ${currentPage}, brief wait optimized for new compute...`);
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Reduced delay for new compute
+          console.log(`🔐 API error on page ${currentPage}, instant continue...`);
+          // No delay for API errors - instant retry for maximum speed
         } else {
-          console.log(`⚠️ Unknown error on page ${currentPage}, continue with minimal delay...`);
-          await new Promise(resolve => setTimeout(resolve, 250)); // Very brief delay for new compute
+          console.log(`⚠️ Unknown error on page ${currentPage}, instant continue...`);
+          // No delay for unknown errors - instant retry for maximum speed
         }
         
         currentPage++;
         
-        // More lenient error threshold for upgraded compute performance
-        const errorThreshold = isResumeRequest ? 50 : 35; // Increased thresholds for new compute
+        // More lenient error threshold for resume operations
+        const errorThreshold = isResumeRequest ? 30 : 20;
         if (errors > errorThreshold) {
           console.error('❌ Too many errors, stopping sync');
           break;
@@ -372,28 +308,15 @@ Deno.serve(async (req) => {
       }
     } // End of while loop
 
-    // STABLE completion logic with proper pause/resume handling
-    const hitExecutionLimit = (Date.now() - startTime) > MAX_EXECUTION_TIME;
-    const hitPageLimit = (currentPage - startPage) >= MAX_PAGES_PER_RUN;
-    const finalStatus = consecutiveEmptyPages >= 10 ? 'completed' : 'paused'; // Pause for auto-resume
+    // Enhanced completion logic - NEVER PAUSE, ONLY COMPLETE WHEN TRULY DONE
+    const finalStatus = consecutiveEmptyPages >= 10 ? 'completed' : 'running'; // Changed from 'paused' to 'running'
     const isNaturalCompletion = consecutiveEmptyPages >= 10;
     
     const finalRecordsProcessed = isResumeRequest 
       ? (currentSyncStatus?.records_processed || 0) + totalProcessed
       : (existingCars || 0) + totalProcessed;
     
-    let completionMessage: string;
-    if (isNaturalCompletion) {
-      completionMessage = `✅ SYNC 100% COMPLETE! Processed ${totalProcessed} new cars (Total: ${finalRecordsProcessed})`;
-    } else if (hitExecutionLimit) {
-      completionMessage = `⏰ Time limit reached. Processed ${totalProcessed} new cars - will auto-resume`;
-    } else if (hitPageLimit) {
-      completionMessage = `📊 Page limit reached. Processed ${totalProcessed} new cars - will auto-resume for completion`;
-    } else {
-      completionMessage = `✅ Chunk complete: ${totalProcessed} new cars processed - continuing automatically`;
-    }
-    
-    console.log(`📊 Stable Sync Result: ${completionMessage}`);
+    console.log(`📊 Sync finishing: ${totalProcessed} new cars processed, ${consecutiveEmptyPages} consecutive empty pages`);
     
     await supabase
       .from('sync_status')
@@ -404,10 +327,14 @@ Deno.serve(async (req) => {
         completed_at: finalStatus === 'completed' ? new Date().toISOString() : null,
         last_activity_at: new Date().toISOString(),
         error_message: isNaturalCompletion ? 
-          `Sync completed - processed ${totalProcessed} new cars, ${errors} errors` :
-          `Processed ${totalProcessed} new cars, ${errors} errors - ready for auto-resume from page ${currentPage}`
+          `Sync completed naturally - processed ${totalProcessed} new cars, ${errors} errors` :
+          `Processed ${totalProcessed} new cars, ${errors} errors - continuing automatically to 100%`
       })
       .eq('id', 'cars-sync-main');
+
+    const completionMessage = isNaturalCompletion 
+      ? `✅ SYNC 100% COMPLETE! Processed ${totalProcessed} new cars (Total: ${finalRecordsProcessed})`
+      : `✅ Sync continuing: ${totalProcessed} new cars processed - will continue automatically to 100%`;
     
     console.log(completionMessage);
 
@@ -483,136 +410,6 @@ Deno.serve(async (req) => {
   }
 });
 
-// Process with timeout handling and automatic retry with smaller batches
-async function processWithTimeoutHandling(supabase: any, records: any[], batchNumber: number): Promise<{ success: number; errors: number }> {
-  let success = 0;
-  let errors = 0;
-
-  try {
-    // Try full batch first
-    const { error } = await supabase
-      .from('cars_cache')
-      .upsert(records, { onConflict: 'id' });
-
-    if (error) {
-      // Check if it's a timeout error
-      if (isTimeoutError(error)) {
-        console.log(`⏱️ Timeout detected for batch ${batchNumber}, retrying with smaller chunks...`);
-        return await retryWithSmallerBatches(supabase, records, batchNumber);
-      } else {
-        console.error(`❌ Database error for batch ${batchNumber}:`, error);
-        return { success: 0, errors: records.length };
-      }
-    } else {
-      success = records.length;
-      console.log(`✅ Successfully processed ${success} records in batch ${batchNumber}`);
-      return { success, errors: 0 };
-    }
-
-  } catch (error) {
-    // Handle timeout at the client level
-    if (isTimeoutError(error)) {
-      console.log(`⏱️ Client timeout for batch ${batchNumber}, retrying with smaller chunks...`);
-      return await retryWithSmallerBatches(supabase, records, batchNumber);
-    } else {
-      console.error(`❌ Unexpected error in batch ${batchNumber}:`, error);
-      return { success: 0, errors: records.length };
-    }
-  }
-}
-
-// Check if error is a timeout error
-function isTimeoutError(error: any): boolean {
-  if (!error) return false;
-  
-  const errorMessage = error.message || '';
-  const errorCode = error.code || '';
-  
-  return errorCode === '57014' || 
-         errorMessage.includes('timeout') || 
-         errorMessage.includes('canceling statement');
-}
-
-// Retry with progressively smaller batches when timeout occurs
-async function retryWithSmallerBatches(supabase: any, records: any[], originalBatchNumber: number): Promise<{ success: number; errors: number }> {
-  const chunkSizes = [100, 50, 25, 10]; // Larger initial chunks for new compute
-  let totalSuccess = 0;
-  let totalErrors = 0;
-
-  for (const chunkSize of chunkSizes) {
-    console.log(`🔄 Trying batch ${originalBatchNumber} with chunk size ${chunkSize}...`);
-    
-    try {
-      // Split into smaller chunks
-      const chunks = [];
-      for (let i = 0; i < records.length; i += chunkSize) {
-        chunks.push(records.slice(i, i + chunkSize));
-      }
-
-      let chunkSuccess = 0;
-      let chunkErrors = 0;
-
-      for (let j = 0; j < chunks.length; j++) {
-        const chunk = chunks[j];
-        
-        try {
-          // MAXIMUM SPEED: No delays between chunks for max throughput
-          const { error } = await supabase
-            .from('cars_cache')
-            .upsert(chunk, { onConflict: 'id' });
-
-          if (error) {
-            if (isTimeoutError(error)) {
-              console.log(`⏱️ Still timing out with chunk size ${chunkSize}, trying smaller...`);
-              chunkErrors += chunk.length;
-              break; // Try next smaller size
-            } else {
-              console.error(`❌ Non-timeout error in chunk:`, error);
-              chunkErrors += chunk.length;
-            }
-          } else {
-            chunkSuccess += chunk.length;
-          }
-
-        } catch (chunkError) {
-          if (isTimeoutError(chunkError)) {
-            console.log(`⏱️ Chunk timeout with size ${chunkSize}, trying smaller...`);
-            chunkErrors += chunk.length;
-            break; // Try next smaller size
-          } else {
-            console.error(`❌ Chunk processing error:`, chunkError);
-            chunkErrors += chunk.length;
-          }
-        }
-      }
-
-      // If we successfully processed everything with this chunk size, return
-      if (chunkSuccess > 0 && chunkErrors === 0) {
-        console.log(`✅ Successfully processed ${chunkSuccess} records with chunk size ${chunkSize}`);
-        return { success: chunkSuccess, errors: 0 };
-      } else if (chunkSuccess > 0) {
-        // Partial success
-        console.log(`⚠️ Partial success: ${chunkSuccess} processed, ${chunkErrors} failed with chunk size ${chunkSize}`);
-        totalSuccess = chunkSuccess;
-        totalErrors = chunkErrors;
-      }
-
-    } catch (error) {
-      console.error(`❌ Error with chunk size ${chunkSize}:`, error);
-      continue; // Try next smaller size
-    }
-  }
-
-  // If we get here, we've tried all chunk sizes
-  if (totalSuccess > 0) {
-    console.log(`⚠️ Best effort result: ${totalSuccess} processed, ${totalErrors} failed`);
-    return { success: totalSuccess, errors: totalErrors };
-  } else {
-    console.error(`💥 All retry attempts failed for batch ${originalBatchNumber}`);
-    return { success: 0, errors: records.length };
-  }
-}
-
 // MAXIMUM SPEED: Optimized fetch with minimal retry delays for max throughput
 async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -621,13 +418,13 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
       
       if (response.status === 429) {
         console.log(`⏰ Rate limited on attempt ${attempt}, minimal wait for max speed...`);
-        await new Promise(resolve => setTimeout(resolve, 500 + (attempt * 250))); // Reduced for new compute
+        await new Promise(resolve => setTimeout(resolve, 1000 + (attempt * 500))); // Reduced from 3000 * attempt for max speed
         continue;
       }
       
       if (!response.ok && response.status >= 500 && attempt < maxRetries) {
         console.log(`🔄 Server error ${response.status} on attempt ${attempt}, instant retry...`);
-        await new Promise(resolve => setTimeout(resolve, 100 * attempt)); // Reduced for new compute
+        await new Promise(resolve => setTimeout(resolve, 250 * attempt)); // Reduced from 1000 * attempt for max speed
         continue;
       }
       
@@ -636,7 +433,7 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
       if (attempt === maxRetries) throw error;
       
       console.log(`❌ Request failed on attempt ${attempt}, minimal delay retry:`, error);
-      await new Promise(resolve => setTimeout(resolve, 50 * attempt)); // Reduced for new compute
+      await new Promise(resolve => setTimeout(resolve, 100 * attempt)); // Reduced from 500 * attempt for max speed
     }
   }
   

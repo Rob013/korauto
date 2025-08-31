@@ -930,7 +930,7 @@ const CarDetails = memo(() => {
                     </div>
                   )}
 
-                   {car.color && (
+                  {car.color && (
                     <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-2">
                         <Palette className="h-4 w-4 text-primary flex-shrink-0" />
@@ -938,18 +938,6 @@ const CarDetails = memo(() => {
                       </div>
                       <span className="text-muted-foreground font-medium capitalize">
                         {car.color}
-                      </span>
-                    </div>
-                  )}
-
-                  {car.vin && (
-                    <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-2">
-                        <Hash className="h-4 w-4 text-primary flex-shrink-0" />
-                        <span className="font-medium text-foreground">VIN</span>
-                      </div>
-                      <span className="text-muted-foreground font-medium font-mono text-xs">
-                        {car.vin}
                       </span>
                     </div>
                   )}

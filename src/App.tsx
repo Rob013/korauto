@@ -1,4 +1,3 @@
-import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,7 +10,7 @@ import { useResourcePreloader } from "./hooks/useResourcePreloader";
 import { AccessibilityEnhancer } from "./utils/accessibilityEnhancer";
 
 // Lazy load all pages for better code splitting
-const Index = React.lazy(() => import("./pages/Index"));
+const Index = lazy(() => import("./pages/Index"));
 const Catalog = lazy(() => import("./pages/Catalog"));
 const NewCatalog = lazy(() => import("./pages/NewCatalog"));
 const CarDetails = lazy(() => import("./pages/CarDetails"));
@@ -34,7 +33,6 @@ const SyncDemo = lazy(() => import("./pages/SyncDemo"));
 // Lazy load admin components for better code splitting
 const AdminSyncDashboard = lazy(() => import("./components/AdminSyncDashboard"));
 const CookieManagementDashboard = lazy(() => import("./components/CookieManagementDashboard"));
-const ContinueSyncTrigger = lazy(() => import("./components/ContinueSyncTrigger"));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-background">
@@ -107,15 +105,12 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = React.memo(() => {
-  console.log('App component mounting...');
-  
+const App = () => {
   // Initialize resource preloading for better performance
   const { preloadRouteResources } = useResourcePreloader();
 
   // Initialize accessibility enhancements
   useEffect(() => {
-    console.log('App useEffect running...');
     const enhancer = AccessibilityEnhancer.getInstance();
     enhancer.init();
     enhancer.addSkipLinks();
@@ -228,11 +223,6 @@ const App = React.memo(() => {
                 <SyncDemo />
               </Suspense>
             } />
-            <Route path="/continue-sync" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <ContinueSyncTrigger />
-              </Suspense>
-            } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={
               <Suspense fallback={<PageSkeleton />}>
@@ -245,8 +235,6 @@ const App = React.memo(() => {
       </TooltipProvider>
     </QueryClientProvider>
   );
-});
-
-App.displayName = 'App';
+};
 
 export default App;

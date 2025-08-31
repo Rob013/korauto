@@ -1,4 +1,5 @@
-import React, { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense } from "react";
+import { useEffect } from "react";
 import { initializeAnalytics, trackPageView } from "@/utils/analytics";
 import Header from "@/components/Header";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -60,11 +61,8 @@ const SectionSkeleton = () => (
   </div>
 );
 
-const Index = React.memo(() => {
-  console.log('Index component mounting...');
-  
+const Index = () => {
   useEffect(() => {
-    console.log('Index useEffect running...');
     // Initialize analytics tracking for homepage
     initializeAnalytics();
     trackPageView(undefined, { page_type: 'homepage' });
@@ -93,8 +91,6 @@ const Index = React.memo(() => {
       </Suspense>
     </div>
   );
-});
-
-Index.displayName = 'Index';
+};
 
 export default Index;

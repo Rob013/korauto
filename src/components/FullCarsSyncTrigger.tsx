@@ -368,18 +368,16 @@ export const FullCarsSyncTrigger = () => {
         description: "Advanced AI coordination with infinite retry capabilities and intelligent error recovery!",
       });
 
-      // Use enhanced sync if available, fallback to direct invocation
-      const enhancedSyncAvailable = (window as unknown as { enhancedSyncCoordinator?: { startIntelligentSync: (params: Record<string, unknown>) => Promise<void> } }).enhancedSyncCoordinator;
+      // Use AI coordinator if available, fallback to direct invocation
+      const aiCoordinator = (window as unknown as { aiSyncCoordinator?: { startIntelligentSync: (params: Record<string, unknown>) => Promise<void> } }).aiSyncCoordinator;
       
-      if (enhancedSyncAvailable) {
-        console.log('🚀 Using Enhanced Maximum Speed Sync');
-        await enhancedSyncAvailable.startIntelligentSync({
-          source: 'manual-enhanced-sync',
-          resumeFrom116k: true,
-          completeAPIMapping: true
+      if (aiCoordinator) {
+        console.log('🤖 Using AI Coordinator for sync');
+        await aiCoordinator.startIntelligentSync({
+          source: 'manual-smart-sync'
         });
       } else {
-        console.log('🔄 Using enhanced cars-sync edge function');
+        console.log('🔄 Using enhanced direct edge function call');
         await startSyncWithRetry();
       }
 
@@ -458,14 +456,12 @@ export const FullCarsSyncTrigger = () => {
     }
   };
 
-  // Enhanced sync start with retry logic for complete API mapping
+  // Enhanced sync start with retry logic
   const startSyncWithRetry = async (attempt = 1, maxAttempts = 3): Promise<void> => {
     try {
-      const { data, error } = await supabase.functions.invoke('enhanced-cars-sync', {
+      const { data, error } = await supabase.functions.invoke('cars-sync', {
         body: { 
-          action: 'start',
-          resumeFrom116k: true,
-          completeAPIMapping: true,
+          smartSync: true,
           source: 'enhanced-manual',
           attempt: attempt
         }
@@ -487,14 +483,14 @@ export const FullCarsSyncTrigger = () => {
         throw new Error(data?.error || 'Unknown error occurred');
       }
 
-      console.log('✅ Enhanced sync start successful on attempt', attempt);
+      console.log('✅ Sync start successful on attempt', attempt);
 
     } catch (error: unknown) {
-      console.error(`❌ Enhanced sync start failed on attempt ${attempt}:`, error);
+      console.error(`❌ Sync start failed on attempt ${attempt}:`, error);
       
       if (attempt < maxAttempts) {
         const delay = Math.pow(2, attempt) * 2000; // Exponential backoff
-        console.log(`🔄 Retrying enhanced sync start in ${delay}ms...`);
+        console.log(`🔄 Retrying sync start in ${delay}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));
         return startSyncWithRetry(attempt + 1, maxAttempts);
       }

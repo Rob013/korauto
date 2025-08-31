@@ -33,13 +33,11 @@ interface AISyncCoordinatorProps {
  */
 export const AISyncCoordinator = ({ 
   enabled = true, 
-  maxRetries = 12, // Increased from 8 for new compute reliability
-  retryDelayMs = 500 // Reduced from 1000 for faster retries with upgraded compute
+  maxRetries = 8, // Increased from 5 for maximum persistence
+  retryDelayMs = 1000 // Reduced from 2000 for faster retries at max speed
 }: AISyncCoordinatorProps = {}) => {
   const [isActive, setIsActive] = useState(false);
   const [currentAttempt, setCurrentAttempt] = useState(0);
-  const [lastFailureTime, setLastFailureTime] = useState(0);
-  const [consecutiveFailures, setConsecutiveFailures] = useState(0);
   const { toast } = useToast();
 
   // AI-powered error classification and recovery strategy
@@ -76,23 +74,23 @@ export const AISyncCoordinator = ({
         errorMessage.includes('fetch failed') ||
         errorMessage.includes('ENOTFOUND') ||
         errorMessage.includes('AbortError')) {
-      return { category: 'network', recoverable: true, delayMs: 1500, action: 'retry' }; // Reduced for new compute
+      return { category: 'network', recoverable: true, delayMs: 3000, action: 'retry' };
     }
     
     // Edge function specific errors (function responded but with error)
     if (errorMessage.includes('Edge Function') && !errorMessage.includes('Failed to send') || 
         errorMessage.includes('Deno') || 
         errorMessage.includes('Function Error')) {
-      return { category: 'edge_function', recoverable: true, delayMs: 2500, action: 'retry' }; // Reduced for new compute
+      return { category: 'edge_function', recoverable: true, delayMs: 5000, action: 'retry' };
     }
     
     // General timeout errors (different from deployment timeouts)
     if (errorMessage.includes('timeout') && !errorMessage.includes('deployed')) {
-      return { category: 'timeout', recoverable: true, delayMs: 2000, action: 'retry' }; // Reduced for new compute
+      return { category: 'timeout', recoverable: true, delayMs: 5000, action: 'retry' };
     }
     
     if (errorMessage.includes('network') && !errorMessage.includes('Failed to send')) {
-      return { category: 'network', recoverable: true, delayMs: 1500, action: 'retry' }; // Reduced for new compute
+      return { category: 'network', recoverable: true, delayMs: 3000, action: 'retry' };
     }
     
     if (errorMessage.includes('Authentication') || errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
@@ -100,7 +98,7 @@ export const AISyncCoordinator = ({
     }
     
     if (errorMessage.includes('HTTP 5') || errorMessage.includes('Server error') || errorMessage.includes('Internal Server Error')) {
-      return { category: 'server', recoverable: true, delayMs: 4000, action: 'retry' }; // Reduced for new compute
+      return { category: 'server', recoverable: true, delayMs: 8000, action: 'retry' };
     }
     
     if (errorMessage.includes('Configuration') || errorMessage.includes('environment variables') || errorMessage.includes('Missing required')) {
@@ -117,11 +115,11 @@ export const AISyncCoordinator = ({
     
     try {
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Connection test timed out after 15 seconds - edge function may not be deployed')), 15000); // Increased for new compute
+        setTimeout(() => reject(new Error('Connection test timed out after 10 seconds - edge function may not be deployed')), 10000);
       });
 
-      const testPromise = supabase.functions.invoke('enhanced-cars-sync', {
-        body: { action: 'status', test: true, source: 'connectivity-test' },
+      const testPromise = supabase.functions.invoke('cars-sync', {
+        body: { test: true, source: 'connectivity-test' },
         headers: { 'x-test': 'connectivity' }
       });
 
@@ -190,7 +188,7 @@ export const AISyncCoordinator = ({
         setTimeout(() => reject(new Error('Edge Function request timed out - function may not be deployed or accessible')), 15000);
       });
 
-      const invokePromise = supabase.functions.invoke('enhanced-cars-sync', {
+      const invokePromise = supabase.functions.invoke('cars-sync', {
         body: params,
         headers: {
           'x-sync-attempt': attempt.toString(),
@@ -319,14 +317,13 @@ export const AISyncCoordinator = ({
         : 'Unknown error occurred';
         
       console.error('💥 AI Coordinator: Failed to start sync:', error);
-      setConsecutiveFailures(prev => prev + 1);
-      setLastFailureTime(Date.now());
       
       // Enhance error message based on error type
       let userFriendlyMessage = errorMessage;
       let diagnosticHelp = '';
       
-      // Enhanced error message detection - updated for enhanced-cars-sync
+      // Enhanced error message detection with comprehensive accessibility patterns
+      // Fixed operator precedence and more specific pattern matching to avoid false positives
       if ((errorMessage.includes('timed out') && errorMessage.includes('function may not be deployed')) || 
           errorMessage.includes('Connection test timed out') ||
           (errorMessage.includes('Edge Function not accessible') && (
@@ -335,11 +332,12 @@ export const AISyncCoordinator = ({
             errorMessage.includes('Unknown connectivity') ||
             errorMessage.includes('Network error') ||
             errorMessage.includes('Request aborted') ||
+            // Handle generic accessibility issues (empty error or generic error)
             errorMessage.match(/Edge Function not accessible:\s*$/) ||
             errorMessage.includes('Unknown connectivity issue')
           ))) {
-        userFriendlyMessage = 'Edge Function not accessible - the enhanced-cars-sync function may not be deployed to Supabase';
-        diagnosticHelp = 'Check the Supabase dashboard to ensure the enhanced-cars-sync edge function is deployed and running.';
+        userFriendlyMessage = 'Edge Function not accessible - the cars-sync function may not be deployed to Supabase';
+        diagnosticHelp = 'Check the Supabase dashboard to ensure the cars-sync edge function is deployed and running. See EDGE_FUNCTION_DEPLOYMENT.md for detailed deployment instructions.';
       } else if (errorMessage.includes('Failed to send')) {
         userFriendlyMessage = 'Unable to connect to Edge Function - network or deployment issue';
         diagnosticHelp = 'This could be a network connectivity issue or the edge function may not be deployed. Check your internet connection and Supabase function deployment.';
@@ -350,8 +348,8 @@ export const AISyncCoordinator = ({
         userFriendlyMessage = 'Authentication error - Edge Function may require JWT verification configuration';
         diagnosticHelp = 'Check your Supabase API keys and authentication settings.';
       } else if (errorMessage.includes('Function not found') || errorMessage.includes('404')) {
-        userFriendlyMessage = 'Edge Function not found - enhanced-cars-sync function may not be deployed';
-        diagnosticHelp = 'Deploy the enhanced-cars-sync function to your Supabase project.';
+        userFriendlyMessage = 'Edge Function not found - cars-sync function may not be deployed';
+        diagnosticHelp = 'Deploy the cars-sync function to your Supabase project. See EDGE_FUNCTION_DEPLOYMENT.md for step-by-step instructions.';
       } else if (errorMessage.includes('network') || errorMessage.includes('fetch failed')) {
         userFriendlyMessage = 'Network error - unable to connect to Edge Function. Please check your internet connection';
         diagnosticHelp = 'Verify your network connection and try again.';
@@ -363,41 +361,26 @@ export const AISyncCoordinator = ({
         diagnosticHelp = 'The request was cancelled, possibly due to browser restrictions or network issues.';
       }
       
-      // Only show toast for first few failures to avoid spam
-      if (consecutiveFailures < 3) {
-        const fullErrorMessage = diagnosticHelp 
-          ? `${userFriendlyMessage}. ${diagnosticHelp}`
-          : userFriendlyMessage;
-        
-        toast({
-          title: "AI Coordinator Failed",
-          description: `Failed to start intelligent sync: ${fullErrorMessage}`,
-          variant: "destructive"
-        });
-      }
+      const fullErrorMessage = diagnosticHelp 
+        ? `${userFriendlyMessage}. ${diagnosticHelp}`
+        : userFriendlyMessage;
+      
+      toast({
+        title: "AI Coordinator Failed",
+        description: `Failed to start intelligent sync: ${fullErrorMessage}`,
+        variant: "destructive"
+      });
     } finally {
       setIsActive(false);
     }
   }, [isActive, invokeEdgeFunctionWithRetry, testEdgeFunctionConnectivity, toast]);
 
-  // Monitor sync status with circuit breaker pattern
+  // Monitor sync status and auto-heal when needed
   useEffect(() => {
     if (!enabled) return;
 
     const monitorAndHeal = async () => {
       try {
-        // Circuit breaker: Stop monitoring after 5 consecutive failures
-        if (consecutiveFailures >= 5) {
-          console.log('🔒 AI Coordinator: Circuit breaker active, stopping auto-healing');
-          return;
-        }
-
-        // Debounce: Don't retry if failed less than 5 minutes ago
-        const now = Date.now();
-        if (lastFailureTime && (now - lastFailureTime) < 5 * 60 * 1000) {
-          return;
-        }
-
         const { data: syncStatus } = await supabase
           .from('sync_status')
           .select('*')
@@ -406,31 +389,44 @@ export const AISyncCoordinator = ({
 
         if (!syncStatus) return;
 
+        const now = Date.now();
         const lastActivity = new Date(syncStatus.last_activity_at || syncStatus.started_at).getTime();
         const timeSinceActivity = now - lastActivity;
         
-        // Only auto-heal stuck syncs after 10 minutes (more conservative)
-        if (syncStatus.status === 'running' && timeSinceActivity > 10 * 60 * 1000 && !isActive) {
+        // Auto-heal stuck syncs (inactive for more than 5 minutes)
+        if (syncStatus.status === 'running' && timeSinceActivity > 5 * 60 * 1000) {
           console.log('🚨 AI Coordinator: Detected stuck sync, initiating auto-heal...');
           
           await startIntelligentSync({
-            action: 'resume',
             resume: true,
             fromPage: syncStatus.current_page,
             reconcileProgress: true,
             autoHeal: true
           });
         }
+        
+        // Auto-resume failed syncs (after 2 minutes)
+        if (syncStatus.status === 'failed' && timeSinceActivity > 2 * 60 * 1000) {
+          console.log('🔄 AI Coordinator: Auto-resuming failed sync...');
+          
+          await startIntelligentSync({
+            resume: true,
+            fromPage: syncStatus.current_page,
+            reconcileProgress: true,
+            autoResume: true
+          });
+        }
 
       } catch (error) {
         console.error('❌ AI Coordinator: Monitor error:', error);
-        setConsecutiveFailures(prev => prev + 1);
-        setLastFailureTime(Date.now());
       }
     };
 
-    // Monitor every 2 minutes (less aggressive)
-    const interval = setInterval(monitorAndHeal, 2 * 60 * 1000);
+    // Monitor every 30 seconds
+    const interval = setInterval(monitorAndHeal, 30000);
+    
+    // Also run immediately
+    monitorAndHeal();
     
     console.log('🤖 AI Sync Coordinator: Intelligent monitoring started');
 
@@ -438,7 +434,7 @@ export const AISyncCoordinator = ({
       clearInterval(interval);
       console.log('🛑 AI Sync Coordinator: Stopped');
     };
-  }, [enabled, startIntelligentSync, isActive, consecutiveFailures, lastFailureTime]);
+  }, [enabled, startIntelligentSync]);
 
   // Expose intelligent sync function globally for other components
   useEffect(() => {
