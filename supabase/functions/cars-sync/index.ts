@@ -126,13 +126,15 @@ Deno.serve(async (req) => {
       }, { headers: corsHeaders });
     }
 
-    // Smart resume logic: Auto-detect if we should resume
-    const shouldAutoResume = currentSyncStatus && 
-      (currentSyncStatus.status === 'paused' || currentSyncStatus.status === 'failed') &&
-      currentSyncStatus.current_page > 1;
+    // Smart resume logic: Auto-detect if we should resume from current progress
+    const shouldAutoResume = currentSyncStatus && currentSyncStatus.current_page > 1;
     
     const isResumeRequest = syncParams.resume === true || shouldAutoResume;
-    const fromPage = syncParams.fromPage || (shouldAutoResume ? currentSyncStatus.current_page : 1);
+    
+    // CRITICAL: Always use the current page from database if it exists, regardless of sync status
+    const fromPage = currentSyncStatus && currentSyncStatus.current_page > 1 
+      ? currentSyncStatus.current_page 
+      : (syncParams.fromPage || 1);
     
     if (shouldAutoResume) {
       console.log(`🎯 AUTO-RESUMING: Detected paused sync at page ${currentSyncStatus.current_page} with ${currentSyncStatus.records_processed} cars processed`);
