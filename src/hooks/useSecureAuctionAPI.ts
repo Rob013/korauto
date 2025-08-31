@@ -4,9 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { findGenerationYears } from "@/data/generationYears";
 import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from '../utils/grade-categorization';
 
-// Simple cache to prevent redundant API calls
+// Simple cache to prevent redundant API calls - CLEARED to force Supabase usage
 const apiCache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_DURATION = 5000; // Reduced to 5 seconds to see changes faster
+const CACHE_DURATION = 0; // Disabled cache to ensure immediate Supabase data
 
 // Helper function to get cached data or make API call
 const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => Promise<any>) => {
@@ -594,93 +594,110 @@ export const useSecureAuctionAPI = () => {
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
 
-  const makeSecureAPICall = async (
-    endpoint: string,
+  const fetchCarsFromSupabase = async (
     filters: any = {},
-    carId?: string
+    page: number = 1,
+    perPage: number = 50
   ): Promise<any> => {
     try {
-      console.log("🔐 Making secure API call:", { endpoint, filters, carId });
+      console.log("🗄️ Fetching cars directly from Supabase database:", { filters, page, perPage });
 
-      // Add a minimal delay to prevent rapid successive calls
-      const now = Date.now();
-      if (now - lastFetchTime < 50) {
-        // 50ms minimum between calls (optimized for faster loading)
-        await delay(50 - (now - lastFetchTime));
+      // Build query from cars_cache table
+      let query = supabase
+        .from('cars_cache')
+        .select('*', { count: 'exact' });
+
+      // Apply filters
+      if (filters.manufacturer_id && filters.manufacturer_id !== 'all') {
+        query = query.eq('make', filters.manufacturer_id);
       }
-      setLastFetchTime(Date.now());
-
-      console.log("🔐 Calling Supabase function with body:", { endpoint, filters, carId });
-      const { data, error: functionError } = await supabase.functions.invoke(
-        "secure-cars-api",
-        {
-          body: { endpoint, filters, carId },
-        }
-      );
-      
-      console.log("🔐 Supabase function response:", { data, error: functionError });
-
-      if (functionError) {
-        console.error("❌ Edge function error:", functionError);
-        console.error("❌ Function error details:", {
-          message: functionError.message,
-          name: functionError.name,
-          stack: functionError.stack,
-          endpoint,
-          filters,
-          carId
-        });
-        
-        // Provide more user-friendly error messages
-        let userMessage = "Failed to send request to the server.";
-        if (functionError.message?.includes('timeout')) {
-          userMessage = "Request timed out. Please try again.";
-        } else if (functionError.message?.includes('network')) {
-          userMessage = "Network error. Please check your connection.";
-        } else if (functionError.message?.includes('401') || functionError.message?.includes('unauthorized')) {
-          userMessage = "Authentication error. Please refresh the page.";
-        } else if (functionError.message?.includes('404')) {
-          userMessage = "No data found for your search criteria.";
-        } else if (functionError.message?.includes('429') || functionError.message?.includes('rate limit')) {
-          userMessage = "Too many requests. Please wait a moment and try again.";
-        }
-        
-        throw new Error(userMessage);
+      if (filters.model_id && filters.model_id !== 'all') {
+        query = query.eq('model', filters.model_id);
+      }
+      if (filters.from_year) {
+        query = query.gte('year', parseInt(filters.from_year));
+      }
+      if (filters.to_year) {
+        query = query.lte('year', parseInt(filters.to_year));
+      }
+      if (filters.buy_now_price_from) {
+        query = query.gte('price', parseFloat(filters.buy_now_price_from));
+      }
+      if (filters.buy_now_price_to) {
+        query = query.lte('price', parseFloat(filters.buy_now_price_to));
+      }
+      if (filters.fuel_type) {
+        query = query.eq('fuel', filters.fuel_type);
+      }
+      if (filters.transmission) {
+        query = query.eq('transmission', filters.transmission);
+      }
+      if (filters.color) {
+        query = query.eq('color', filters.color);
+      }
+      if (filters.search) {
+        query = query.or(`make.ilike.%${filters.search}%,model.ilike.%${filters.search}%`);
       }
 
-      if (data?.error) {
-        console.error("❌ API returned error:", data.error);
-        console.error("❌ Error details:", {
-          error: data.error,
-          details: data.details,
-          endpoint,
-          filters,
-          carId,
-          data
-        });
-        
-        if (data.retryAfter) {
-          console.log("⏳ Rate limited, waiting...");
-          await delay(data.retryAfter);
-          throw new Error("RATE_LIMITED");
-        }
-        
-        // Use the improved error message from the edge function if available
-        const errorMessage = data.error || "An error occurred while fetching data";
-        throw new Error(errorMessage);
+      // CRITICAL: Exclude cars with no price and problematic prices
+      query = query.not('price', 'is', null)
+                   .gt('price', 0)
+                   .neq('price', 25024)
+                   .neq('price', 25.024);
+
+      // Apply pagination
+      const from = (page - 1) * perPage;
+      const to = from + perPage - 1;
+      query = query.range(from, to);
+
+      // Apply ordering - default by price ascending
+      const sortBy = filters.sort_by || 'price';
+      const sortDirection = filters.sort_direction || 'asc';
+      query = query.order(sortBy, { ascending: sortDirection === 'asc' });
+
+      const { data: cars, error, count } = await query;
+
+      if (error) {
+        console.error('❌ Supabase query error:', error);
+        throw new Error('Failed to fetch cars from database');
       }
 
-      return data;
+      // Transform database cars to match expected format
+      const transformedCars = (cars || []).map(car => ({
+        id: car.id,
+        title: `${car.year} ${car.make} ${car.model}`,
+        year: car.year,
+        manufacturer: { name: car.make },
+        model: { name: car.model },
+        vin: car.vin,
+        lots: [{
+          buy_now: car.price,
+          images: {
+            normal: car.images ? JSON.parse(car.images) : []
+          },
+          odometer: car.mileage ? { km: parseInt(car.mileage) } : null
+        }],
+        fuel: car.fuel ? { name: car.fuel } : null,
+        transmission: car.transmission ? { name: car.transmission } : null,
+        color: car.color ? { name: car.color } : null,
+        price: car.price?.toString(),
+        lot_number: car.lot_number,
+        location: 'South Korea'
+      }));
+
+      console.log(`✅ Fetched ${transformedCars.length} cars from Supabase (excluded problematic prices)`);
+
+      return {
+        data: transformedCars,
+        meta: {
+          total: count || 0,
+          current_page: page,
+          last_page: Math.ceil((count || 0) / perPage)
+        }
+      };
     } catch (err) {
-      console.error("❌ Secure API call error:", err);
-      
-      // If it's already a processed error with a user-friendly message, re-throw it
-      if (err instanceof Error && err.message && !err.message.includes('Error:')) {
-        throw err;
-      }
-      
-      // Otherwise, provide a generic user-friendly message
-      throw new Error("Unable to connect to the server. Please check your internet connection and try again.");
+      console.error("❌ Supabase fetch error:", err);
+      throw new Error("Unable to fetch cars from database. Please try again.");
     }
   };
 
@@ -743,8 +760,8 @@ export const useSecureAuctionAPI = () => {
       delete apiFilters.grade_iaai;
       delete apiFilters.trim_level;
 
-      console.log(`🔄 Fetching cars - Page ${page} with filters:`, apiFilters);
-      const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
+      console.log(`🔄 Fetching cars directly from Supabase - Page ${page} with filters:`, apiFilters);
+      const data: APIResponse = await fetchCarsFromSupabase(apiFilters, page, parseInt(apiFilters.per_page || "50"));
 
       // Apply client-side variant filtering if a variant is selected
       let filteredCars = data.data || [];
@@ -920,81 +937,90 @@ export const useSecureAuctionAPI = () => {
 
   const fetchManufacturers = async (): Promise<Manufacturer[]> => {
     try {
-      console.log(`🔍 Fetching all manufacturers`);
+      console.log(`🗄️ Fetching manufacturers from Supabase database`);
       
-      // Try to get manufacturers from cache or API
-      const data = await getCachedApiCall("manufacturers/cars", { per_page: "1000", simple_paginate: "0" }, 
-        () => makeSecureAPICall("manufacturers/cars", {
-          per_page: "1000",
-          simple_paginate: "0"
-        })
-      );
+      // Get unique manufacturers from cars_cache table
+      const { data: cars, error } = await supabase
+        .from('cars_cache')
+        .select('make')
+        .not('price', 'is', null)
+        .gt('price', 0)
+        .neq('price', 25024)
+        .neq('price', 25.024);
       
-      let manufacturers = data.data || [];
-      
-      // If we got manufacturers from API, normalize them
-      if (manufacturers.length > 0) {
-        console.log(`✅ Found ${manufacturers.length} manufacturers from API`);
-        manufacturers = manufacturers.map(manufacturer => ({
-          id: manufacturer.id,
-          name: manufacturer.name,
-          cars_qty: manufacturer.cars_qty || manufacturer.car_count || 0,
-          car_count: manufacturer.car_count || manufacturer.cars_qty || 0
-        }));
-      } else {
-        // No manufacturers from API, use fallback data
-        console.log(`⚠️ No manufacturers from API, using fallback data`);
-        manufacturers = createFallbackManufacturers();
+      if (error) {
+        console.error('❌ Error fetching manufacturers from Supabase:', error);
+        return createFallbackManufacturers();
       }
       
-      console.log(`🏷️ Retrieved manufacturers:`, 
-        manufacturers.slice(0, 5).map(m => `${m.name} (${m.cars_qty || 0} cars)`));
+      // Count cars per manufacturer
+      const manufacturerCounts = cars?.reduce((acc: any, car: any) => {
+        if (car.make) {
+          acc[car.make] = (acc[car.make] || 0) + 1;
+        }
+        return acc;
+      }, {}) || {};
       
+      // Convert to manufacturer objects
+      const manufacturers = Object.keys(manufacturerCounts)
+        .sort()
+        .map((make, index) => ({
+          id: index + 1,
+          name: make,
+          cars_qty: manufacturerCounts[make],
+          car_count: manufacturerCounts[make]
+        }));
+      
+      console.log(`✅ Found ${manufacturers.length} manufacturers from Supabase database`);
       return manufacturers;
-    } catch (err) {
-      console.error("❌ Error fetching manufacturers:", err);
-      console.log(`🔄 Using fallback manufacturer data`);
       
-      // Return fallback data when API fails
+    } catch (err) {
+      console.error("❌ Error fetching manufacturers from Supabase:", err);
       return createFallbackManufacturers();
     }
   };
 
   const fetchModels = async (manufacturerId: string): Promise<Model[]> => {
     try {
-      // Use cached API call for models
-      const fallbackData = await getCachedApiCall(`models/${manufacturerId}/cars`, { per_page: "1000", simple_paginate: "0" },
-        () => makeSecureAPICall(`models/${manufacturerId}/cars`, {
-          per_page: "1000",
-          simple_paginate: "0"
-        })
-      );
+      console.log(`🗄️ Fetching models for manufacturer ${manufacturerId} from Supabase`);
       
-      let fallbackModels = (fallbackData.data || []).filter((m: any) => m && m.id && m.name);
-
-      // Filter models by manufacturer_id (in case API returns extra)
-      fallbackModels = fallbackModels.filter((m: any) =>
-        m.manufacturer_id?.toString() === manufacturerId ||
-        m.manufacturer?.id?.toString() === manufacturerId
-      );
-
-      fallbackModels.sort((a: any, b: any) => a.name.localeCompare(b.name));
-      return fallbackModels;
-    } catch (err) {
-      console.error("[fetchModels] Error:", err);
-      console.log(`🔄 Using fallback model data for manufacturer ${manufacturerId}`);
+      // Get unique models for this manufacturer from cars_cache table
+      const { data: cars, error } = await supabase
+        .from('cars_cache')
+        .select('model')
+        .eq('make', manufacturerId)
+        .not('price', 'is', null)
+        .gt('price', 0)
+        .neq('price', 25024)
+        .neq('price', 25.024);
       
-      // Use fallback model data based on manufacturer name - more efficient approach
-      try {
-        const manufacturers = await fetchManufacturers();
-        const manufacturer = manufacturers.find(m => m.id.toString() === manufacturerId);
-        if (manufacturer) {
-          return createFallbackModels(manufacturer.name);
-        }
-      } catch (fallbackErr) {
-        console.error("Error creating fallback models:", fallbackErr);
+      if (error) {
+        console.error('❌ Error fetching models from Supabase:', error);
+        return [];
       }
       
+      // Count cars per model
+      const modelCounts = cars?.reduce((acc: any, car: any) => {
+        if (car.model) {
+          acc[car.model] = (acc[car.model] || 0) + 1;
+        }
+        return acc;
+      }, {}) || {};
+      
+      // Convert to model objects
+      const models = Object.keys(modelCounts)
+        .sort()
+        .map((model, index) => ({
+          id: index + 1,
+          name: model,
+          car_count: modelCounts[model]
+        }));
+      
+      console.log(`✅ Found ${models.length} models for ${manufacturerId} from Supabase`);
+      return models;
+      
+    } catch (err) {
+      console.error("❌ Error fetching models from Supabase:", err);
       return [];
     }
   };
