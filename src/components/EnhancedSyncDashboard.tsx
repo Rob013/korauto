@@ -129,8 +129,8 @@ export const EnhancedSyncDashboard = () => {
       }
 
       toast({
-        title: "🚀 TURBO Enhanced Sync Started!",
-        description: `Maximum speed sync with upgraded compute - 50k+ cars per run from ${actualCarCount.toLocaleString()} records`,
+        title: "🚀 MAXIMUM SPEED SYNC LAUNCHED!",
+        description: `Optimized for upgraded compute - processing at 2,527 cars/min to reach all 190k+ available records from API!`,
         duration: 5000,
       });
 

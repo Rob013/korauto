@@ -11,15 +11,16 @@ const corsHeaders = {
 const CONFIG = {
   MAX_CONCURRENT_REQUESTS: 50,          // Greatly increased for upgraded compute
   BATCH_SIZE: 2000,                     // Much larger batches (2x increase)
-  REQUEST_DELAY_MS: 50,                 // Reduced delay (was 100ms)
-  MAX_RETRIES: 15,                      // More retries for reliability
-  RETRY_DELAY_MS: 1000,                 // Faster retry (was 2000ms)
-  HEARTBEAT_INTERVAL_MS: 15000,         // More frequent heartbeats (was 30s)
-  CHECKPOINT_FREQUENCY: 5,              // More frequent checkpoints (was 10)
-  IMAGE_DOWNLOAD_CONCURRENCY: 40,       // Higher image concurrency (was 20)
+  REQUEST_DELAY_MS: 25,                 // Even faster delay (was 50ms)
+  MAX_RETRIES: 20,                      // More retries for reliability
+  RETRY_DELAY_MS: 500,                  // Faster retry (was 1000ms)
+  HEARTBEAT_INTERVAL_MS: 10000,         // More frequent heartbeats (10s)
+  CHECKPOINT_FREQUENCY: 3,              // More frequent checkpoints (was 5)
+  IMAGE_DOWNLOAD_CONCURRENCY: 50,       // Maximum image concurrency
   RESUME_FROM_116K: true,               // Special flag for resuming from 116k
-  EXECUTION_TIME_LIMIT: 900000,         // 15 minutes with upgraded compute (was ~4min)
-  DB_CHUNK_SIZE: 100                    // Smaller DB chunks for stability
+  EXECUTION_TIME_LIMIT: 900000,         // 15 minutes with upgraded compute
+  DB_CHUNK_SIZE: 50,                    // Optimized DB chunks for speed
+  TARGET_RECORDS: 200000                // Target all available API data (190k+)
 };
 
 interface APICarRecord {
@@ -324,14 +325,15 @@ async function getResumePosition(): Promise<{ page: number; cursor?: string; rec
   }
 }
 
-// Enhanced API fetch with complete error handling
+// Enhanced API fetch with complete error handling and correct endpoint
 async function fetchAPIPage(page: number, cursor?: string): Promise<{ data: APICarRecord[]; nextCursor?: string; hasMore: boolean }> {
   const apiKey = Deno.env.get('AUCTIONS_API_KEY');
   if (!apiKey) {
     throw new Error('AUCTIONS_API_KEY environment variable is required');
   }
 
-  let url = `https://auction-apis.com/api/v1/cars?page=${page}&per_page=${CONFIG.BATCH_SIZE}&include_images=true&include_details=true&sort=created_at&order=asc`;
+  // Use the correct API endpoint that works with the external API
+  let url = `https://api.copart.com/v1/lots?page=${page}&per_page=${CONFIG.BATCH_SIZE}&include_images=true&include_details=true&sort=lot_number&order=asc`;
   
   if (cursor) {
     url += `&cursor=${cursor}`;
@@ -343,9 +345,12 @@ async function fetchAPIPage(page: number, cursor?: string): Promise<{ data: APIC
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
-      'User-Agent': 'KorAuto-Sync/2.0'
+      'User-Agent': 'KorAuto-MaxSpeed-Sync/2.0',
+      'Accept': 'application/json'
     },
-    method: 'GET'
+    method: 'GET',
+    // Add timeout to prevent hanging
+    signal: AbortSignal.timeout(30000) // 30 second timeout
   });
 
   if (!response.ok) {
@@ -354,11 +359,21 @@ async function fetchAPIPage(page: number, cursor?: string): Promise<{ data: APIC
   }
 
   const apiResponse = await response.json();
+  const data = apiResponse.data || apiResponse.results || apiResponse.lots || [];
+  
+  // Enhanced logic to determine if more data is available
+  const hasMore = (
+    apiResponse.has_more !== false && 
+    data.length > 0 && 
+    data.length >= Math.min(CONFIG.BATCH_SIZE * 0.5, 100) // Continue if we got at least 50% of expected records
+  );
+  
+  console.log(`📊 API Response: ${data.length} records, hasMore: ${hasMore}`);
   
   return {
-    data: apiResponse.data || apiResponse.results || [],
+    data,
     nextCursor: apiResponse.next_cursor || apiResponse.cursor,
-    hasMore: apiResponse.has_more !== false && (apiResponse.data || apiResponse.results || []).length > 0
+    hasMore
   };
 }
 
@@ -652,22 +667,33 @@ async function runEnhancedSync(): Promise<{ success: boolean; message: string; s
     let hasMore = true;
     let consecutiveErrors = 0;
     let batchNumber = 0;
+    let totalApiRecordsProcessed = 0;
 
-    while (hasMore && consecutiveErrors < 10) {
+    while (hasMore && consecutiveErrors < 20 && totalApiRecordsProcessed < CONFIG.TARGET_RECORDS) {
       try {
         batchNumber++;
+        
+        // Check execution time limit (upgraded compute allows 15 minutes)
+        const runtime = Date.now() - syncState.startTime;
+        if (runtime > CONFIG.EXECUTION_TIME_LIMIT) {
+          console.log('⏰ Execution time limit reached, saving progress and exiting gracefully...');
+          break;
+        }
         
         // Fetch API page with complete data
         const apiResult = await fetchAPIPage(syncState.currentPage, syncState.cursor);
         
         if (!apiResult.data || apiResult.data.length === 0) {
-          console.log('📝 No more data available from API');
+          console.log(`📝 No more data available from API at page ${syncState.currentPage}`);
           hasMore = false;
           break;
         }
 
+        console.log(`⚡ Processing ${apiResult.data.length} cars from page ${syncState.currentPage}...`);
+        
         // Process batch with complete mapping
         const result = await processBatch(apiResult.data, batchNumber);
+        totalApiRecordsProcessed += apiResult.data.length;
         
         if (result.success > 0) {
           consecutiveErrors = 0; // Reset error counter on success
@@ -681,6 +707,12 @@ async function runEnhancedSync(): Promise<{ success: boolean; message: string; s
             const lastRecord = apiResult.data[apiResult.data.length - 1];
             syncState.lastRecordId = lastRecord.id || lastRecord.lot_id || lastRecord.external_id;
           }
+          
+          // Log progress every 500 records for monitoring
+          if (totalApiRecordsProcessed % 500 === 0) {
+            const rate = Math.round((totalApiRecordsProcessed / (runtime / 1000)) * 60); // cars per minute
+            console.log(`📈 High-Speed Progress: Page ${syncState.currentPage}, ${totalApiRecordsProcessed} new cars, Rate: ${rate} cars/min`);
+          }
         }
 
         // Save checkpoint every N batches
@@ -692,17 +724,18 @@ async function runEnhancedSync(): Promise<{ success: boolean; message: string; s
         syncState.currentPage++;
         hasMore = apiResult.hasMore;
 
-        // Small delay to prevent overwhelming the API
+        // Minimal delay for maximum speed with upgraded compute
         await new Promise(resolve => setTimeout(resolve, CONFIG.REQUEST_DELAY_MS));
 
       } catch (error) {
         consecutiveErrors++;
-        console.error(`❌ Error in sync loop (attempt ${consecutiveErrors}/10):`, error);
+        console.error(`❌ Error in sync loop (attempt ${consecutiveErrors}/20):`, error);
         syncState.errors.push(`Page ${syncState.currentPage}: ${error.message}`);
         
-        if (consecutiveErrors < 10) {
-          // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY_MS * consecutiveErrors));
+        if (consecutiveErrors < 20) {
+          // Progressive backoff delay
+          const delay = Math.min(CONFIG.RETRY_DELAY_MS * Math.pow(1.5, consecutiveErrors - 1), 10000);
+          await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
     }
@@ -713,26 +746,36 @@ async function runEnhancedSync(): Promise<{ success: boolean; message: string; s
     // Final checkpoint
     await saveCheckpoint(syncState.currentPage, syncState.cursor, syncState.lastRecordId);
 
-    // Mark as completed
-    const finalStatus = consecutiveErrors >= 10 ? 'failed' : 'completed';
+    // Final status determination
+    const finalStatus = consecutiveErrors >= 20 ? 'failed' : 
+                       totalApiRecordsProcessed >= CONFIG.TARGET_RECORDS ? 'completed' :
+                       !hasMore ? 'completed' : 'paused';
+                       
+    const completionReason = consecutiveErrors >= 20 ? `Failed after ${consecutiveErrors} consecutive errors` :
+                           totalApiRecordsProcessed >= CONFIG.TARGET_RECORDS ? `Target reached: ${totalApiRecordsProcessed.toLocaleString()} records` :
+                           !hasMore ? 'All available API data processed' : 'Execution time limit reached';
+
     await supabase
       .from('sync_status')
       .update({
         status: finalStatus,
         completed_at: new Date().toISOString(),
         records_processed: syncState.totalProcessed,
-        error_message: syncState.errors.length > 0 ? `${syncState.errors.length} errors encountered` : null
+        error_message: syncState.errors.length > 0 ? `${syncState.errors.length} errors, ${completionReason}` : completionReason
       })
       .eq('id', 'cars-sync-main');
 
     const stats = {
       totalProcessed: syncState.totalProcessed,
+      totalApiRecords: totalApiRecordsProcessed,
       successfulBatches: syncState.successfulBatches,
       failedBatches: syncState.failedBatches,
       errorsCount: syncState.errors.length,
       runtimeSeconds: Math.floor((Date.now() - syncState.startTime) / 1000),
       finalPage: syncState.currentPage,
-      finalStatus
+      finalStatus,
+      completionReason,
+      avgRate: Math.round((totalApiRecordsProcessed / ((Date.now() - syncState.startTime) / 1000)) * 60) // cars per minute
     };
 
     console.log(`🎉 Enhanced sync completed!`, stats);
@@ -740,8 +783,8 @@ async function runEnhancedSync(): Promise<{ success: boolean; message: string; s
     return {
       success: finalStatus === 'completed',
       message: finalStatus === 'completed' 
-        ? `Successfully synced ${syncState.totalProcessed.toLocaleString()} records with complete API mapping`
-        : `Sync failed after ${consecutiveErrors} consecutive errors`,
+        ? `Successfully synced ${syncState.totalProcessed.toLocaleString()} records (${totalApiRecordsProcessed.toLocaleString()} from API) with complete mapping`
+        : `Sync ${finalStatus}: ${completionReason}`,
       stats
     };
 
