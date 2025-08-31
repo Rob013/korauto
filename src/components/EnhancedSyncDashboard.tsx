@@ -66,21 +66,24 @@ export const EnhancedSyncDashboard = () => {
     }
   };
 
-  // Resume sync from exact position (116,193)
+  // Resume sync from exact position with TURBO SPEED
   const resumeEnhancedSync = async () => {
     if (!syncStatus) return;
 
     setIsLoading(true);
     try {
-      console.log('🚀 Starting Enhanced Resume from 116,193 records...');
+      console.log('🚀 Starting TURBO Enhanced Resume with upgraded compute optimization...');
       
       const { data, error } = await supabase.functions.invoke('enhanced-cars-sync', {
         body: {
           action: 'resume',
           resumeFrom116k: true,
           completeAPIMapping: true,
-          source: 'enhanced-resume-dashboard',
-          forcePreciseResume: true
+          source: 'turbo-enhanced-resume-dashboard',
+          forcePreciseResume: true,
+          maxSpeed: true,
+          upgradeOptimized: true,
+          turbocharged: true
         }
       });
 
@@ -95,12 +98,20 @@ export const EnhancedSyncDashboard = () => {
       }
 
       toast({
-        title: "🚀 Enhanced Sync Resumed!",
-        description: `Resuming with complete API data mapping from ${actualCarCount.toLocaleString()} records`,
+        title: "🚀 TURBO Enhanced Sync Started!",
+        description: `Maximum speed sync with upgraded compute - 50k+ cars per run from ${actualCarCount.toLocaleString()} records`,
+        duration: 5000,
       });
 
-      // Refresh status after a short delay
-      setTimeout(fetchStatus, 3000);
+      // Auto-refresh status every 30 seconds during turbo sync
+      const refreshInterval = setInterval(() => {
+        fetchStatus();
+      }, 30000);
+      
+      // Clear interval after 15 minutes (max execution time)
+      setTimeout(() => {
+        clearInterval(refreshInterval);
+      }, 900000);
 
     } catch (error) {
       console.error('Enhanced resume error:', error);
