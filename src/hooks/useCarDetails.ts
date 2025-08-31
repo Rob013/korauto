@@ -98,7 +98,7 @@ export const useCarDetails = (
       const cachePromise = supabase
         .from("cars_cache")
         .select("*")
-        .or(`id.eq."${lot}",api_id.eq."${lot}",lot_number.eq."${lot}"`)
+        .or(`id.eq."${lot}",api_id.eq."${lot}",lot_number.eq."${lot}",id.ilike."${lot}%",api_id.ilike."${lot}%"`)
         .maybeSingle();
 
       // Start cache lookup and prepare edge function call concurrently
