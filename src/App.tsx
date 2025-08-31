@@ -34,6 +34,7 @@ const SyncDemo = lazy(() => import("./pages/SyncDemo"));
 // Lazy load admin components for better code splitting
 const AdminSyncDashboard = lazy(() => import("./components/AdminSyncDashboard"));
 const CookieManagementDashboard = lazy(() => import("./components/CookieManagementDashboard"));
+const ContinueSyncTrigger = lazy(() => import("./components/ContinueSyncTrigger"));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-background">
@@ -225,6 +226,11 @@ const App = React.memo(() => {
             <Route path="/sync-demo" element={
               <Suspense fallback={<PageSkeleton />}>
                 <SyncDemo />
+              </Suspense>
+            } />
+            <Route path="/continue-sync" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <ContinueSyncTrigger />
               </Suspense>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
