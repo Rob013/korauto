@@ -80,18 +80,18 @@ describe('Sync Count Issue - 16 cars instead of 105,505', () => {
     
     // Original problematic state
     const originalSyncProgress = 16;
-    const originalPercentage = (originalSyncProgress / 200000) * 100; // 0.008% ≈ 0.0%
+    const originalPercentage = (originalSyncProgress / 192800) * 100; // 0.008% ≈ 0.0%
     
     // After fix
     const correctedCount = 105505;
-    const correctedPercentage = (correctedCount / 200000) * 100; // 52.75%
+    const correctedPercentage = (correctedCount / 192800) * 100; // 54.7%
     
     // Verify the problem exists
     expect(originalPercentage).toBeLessThan(0.01); // Rounds to 0.0%
     
     // Verify the fix
     expect(correctedCount).toBe(105505);
-    expect(correctedPercentage).toBeCloseTo(52.75, 1);
+    expect(correctedPercentage).toBeCloseTo(54.7, 1);
     expect(correctedPercentage).toBeGreaterThan(50);
     
     console.log('Problem statement verification:');
@@ -129,7 +129,7 @@ describe('Sync Count Issue - 16 cars instead of 105,505', () => {
     
     const syncRecordsProcessed = 16; // Current sync progress  
     const databaseCount = 105505; // Existing cars in database
-    const totalApiCars = 200000; // Total cars available in API
+    const totalApiCars = 192800; // Total cars available in API
     
     // The sync should continue running until it processes all API cars
     const remainingToSync = totalApiCars - databaseCount;
