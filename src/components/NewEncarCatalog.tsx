@@ -51,10 +51,23 @@ export const NewEncarCatalog = ({ highlightCarId }: NewEncarCatalogProps) => {
       filters.model = [selectedModel];
     }
 
-    // Parse sort
-    const [field, direction] = sortBy.split('_').slice(0, 2);
-    const sortField = field as 'listed_at' | 'price_eur' | 'mileage_km' | 'year';
-    const sortDir = direction as 'asc' | 'desc';
+    // Parse sort - handle compound field names like 'listed_at'
+    let sortField: 'listed_at' | 'price_eur' | 'mileage_km' | 'year';
+    let sortDir: 'asc' | 'desc';
+    
+    if (sortBy.includes('listed_at')) {
+      sortField = 'listed_at';
+      sortDir = sortBy.endsWith('_desc') ? 'desc' : 'asc';
+    } else if (sortBy.includes('price_eur')) {
+      sortField = 'price_eur';
+      sortDir = sortBy.endsWith('_desc') ? 'desc' : 'asc';
+    } else if (sortBy.includes('mileage_km')) {
+      sortField = 'mileage_km';
+      sortDir = sortBy.endsWith('_desc') ? 'desc' : 'asc';
+    } else {
+      sortField = 'year';
+      sortDir = sortBy.endsWith('_desc') ? 'desc' : 'asc';
+    }
 
     return {
       q: searchTerm || undefined,
@@ -149,14 +162,16 @@ export const NewEncarCatalog = ({ highlightCarId }: NewEncarCatalogProps) => {
     setCurrentPage(1);
   };
 
-  // Show error message
-  if (error) {
-    toast({
-      title: "Error loading cars",
-      description: error.message,
-      variant: "destructive",
-    });
-  }
+  // Show error message in useEffect to avoid re-render loops
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error loading cars",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
 
   return (
     <div className="container-responsive py-6">
