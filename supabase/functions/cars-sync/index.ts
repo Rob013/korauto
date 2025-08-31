@@ -213,19 +213,16 @@ Deno.serve(async (req) => {
           };
         });
 
-        // Enhanced database writes with chunking
+        // Enhanced database writes with timeout handling
         for (let j = 0; j < carCacheItems.length; j += BATCH_SIZE) {
           const batch = carCacheItems.slice(j, j + BATCH_SIZE);
           
-          const { error } = await supabase
-            .from('cars_cache')
-            .upsert(batch, { onConflict: 'id' });
-
-          if (error) {
-            console.error('❌ Database error:', error);
-            errors++;
-          } else {
-            totalProcessed += batch.length;
+          const result = await processWithTimeoutHandling(supabase, batch, j / BATCH_SIZE + 1);
+          if (result.success > 0) {
+            totalProcessed += result.success;
+          }
+          if (result.errors > 0) {
+            errors += result.errors;
           }
           
           // MAXIMUM SPEED: No artificial delays - let the system run at natural pace
@@ -409,6 +406,140 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+// Process with timeout handling and automatic retry with smaller batches
+async function processWithTimeoutHandling(supabase: any, records: any[], batchNumber: number): Promise<{ success: number; errors: number }> {
+  let success = 0;
+  let errors = 0;
+
+  try {
+    // Try full batch first
+    const { error } = await supabase
+      .from('cars_cache')
+      .upsert(records, { onConflict: 'id' });
+
+    if (error) {
+      // Check if it's a timeout error
+      if (isTimeoutError(error)) {
+        console.log(`⏱️ Timeout detected for batch ${batchNumber}, retrying with smaller chunks...`);
+        return await retryWithSmallerBatches(supabase, records, batchNumber);
+      } else {
+        console.error(`❌ Database error for batch ${batchNumber}:`, error);
+        return { success: 0, errors: records.length };
+      }
+    } else {
+      success = records.length;
+      console.log(`✅ Successfully processed ${success} records in batch ${batchNumber}`);
+      return { success, errors: 0 };
+    }
+
+  } catch (error) {
+    // Handle timeout at the client level
+    if (isTimeoutError(error)) {
+      console.log(`⏱️ Client timeout for batch ${batchNumber}, retrying with smaller chunks...`);
+      return await retryWithSmallerBatches(supabase, records, batchNumber);
+    } else {
+      console.error(`❌ Unexpected error in batch ${batchNumber}:`, error);
+      return { success: 0, errors: records.length };
+    }
+  }
+}
+
+// Check if error is a timeout error
+function isTimeoutError(error: any): boolean {
+  if (!error) return false;
+  
+  const errorMessage = error.message || '';
+  const errorCode = error.code || '';
+  
+  return errorCode === '57014' || 
+         errorMessage.includes('timeout') || 
+         errorMessage.includes('canceling statement');
+}
+
+// Retry with progressively smaller batches when timeout occurs
+async function retryWithSmallerBatches(supabase: any, records: any[], originalBatchNumber: number): Promise<{ success: number; errors: number }> {
+  const chunkSizes = [50, 25, 10, 5]; // Progressive size reduction
+  let totalSuccess = 0;
+  let totalErrors = 0;
+
+  for (const chunkSize of chunkSizes) {
+    console.log(`🔄 Trying batch ${originalBatchNumber} with chunk size ${chunkSize}...`);
+    
+    try {
+      // Split into smaller chunks
+      const chunks = [];
+      for (let i = 0; i < records.length; i += chunkSize) {
+        chunks.push(records.slice(i, i + chunkSize));
+      }
+
+      let chunkSuccess = 0;
+      let chunkErrors = 0;
+
+      for (let j = 0; j < chunks.length; j++) {
+        const chunk = chunks[j];
+        
+        try {
+          // Add small delay between chunks to prevent overwhelming the database
+          if (j > 0) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+
+          const { error } = await supabase
+            .from('cars_cache')
+            .upsert(chunk, { onConflict: 'id' });
+
+          if (error) {
+            if (isTimeoutError(error)) {
+              console.log(`⏱️ Still timing out with chunk size ${chunkSize}, trying smaller...`);
+              chunkErrors += chunk.length;
+              break; // Try next smaller size
+            } else {
+              console.error(`❌ Non-timeout error in chunk:`, error);
+              chunkErrors += chunk.length;
+            }
+          } else {
+            chunkSuccess += chunk.length;
+          }
+
+        } catch (chunkError) {
+          if (isTimeoutError(chunkError)) {
+            console.log(`⏱️ Chunk timeout with size ${chunkSize}, trying smaller...`);
+            chunkErrors += chunk.length;
+            break; // Try next smaller size
+          } else {
+            console.error(`❌ Chunk processing error:`, chunkError);
+            chunkErrors += chunk.length;
+          }
+        }
+      }
+
+      // If we successfully processed everything with this chunk size, return
+      if (chunkSuccess > 0 && chunkErrors === 0) {
+        console.log(`✅ Successfully processed ${chunkSuccess} records with chunk size ${chunkSize}`);
+        return { success: chunkSuccess, errors: 0 };
+      } else if (chunkSuccess > 0) {
+        // Partial success
+        console.log(`⚠️ Partial success: ${chunkSuccess} processed, ${chunkErrors} failed with chunk size ${chunkSize}`);
+        totalSuccess = chunkSuccess;
+        totalErrors = chunkErrors;
+      }
+
+    } catch (error) {
+      console.error(`❌ Error with chunk size ${chunkSize}:`, error);
+      continue; // Try next smaller size
+    }
+  }
+
+  // If we get here, we've tried all chunk sizes
+  if (totalSuccess > 0) {
+    console.log(`⚠️ Best effort result: ${totalSuccess} processed, ${totalErrors} failed`);
+    return { success: totalSuccess, errors: totalErrors };
+  } else {
+    console.error(`💥 All retry attempts failed for batch ${originalBatchNumber}`);
+    return { success: 0, errors: records.length };
+  }
+}
 
 // MAXIMUM SPEED: Optimized fetch with minimal retry delays for max throughput
 async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
