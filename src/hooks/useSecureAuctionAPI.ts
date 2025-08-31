@@ -600,7 +600,7 @@ export const useSecureAuctionAPI = () => {
     carId?: string
   ): Promise<any> => {
     try {
-      console.log("🔐 Making secure API call:", { endpoint, filters, carId });
+      console.log("🔐 Making secure API call with auto-save:", { endpoint, filters, carId });
 
       // Add a minimal delay to prevent rapid successive calls
       const now = Date.now();
@@ -610,15 +610,36 @@ export const useSecureAuctionAPI = () => {
       }
       setLastFetchTime(Date.now());
 
-      console.log("🔐 Calling Supabase function with body:", { endpoint, filters, carId });
+      // Build endpoint path for external API
+      let apiPath = `/${endpoint}`;
+      if (carId) {
+        apiPath += `/${carId}`;
+      }
+
+      const requestBody = {
+        endpoint: apiPath,
+        params: filters,
+        method: 'GET'
+      };
+
+      console.log("🔐 Calling auto-save proxy with body:", requestBody);
       const { data, error: functionError } = await supabase.functions.invoke(
-        "secure-cars-api",
+        "api-auto-save",
         {
-          body: { endpoint, filters, carId },
+          body: requestBody,
         }
       );
       
-      console.log("🔐 Supabase function response:", { data, error: functionError });
+      console.log("🔐 API call response:", { data, error: functionError });
+
+      // Log auto-save information if available
+      if (data?._autoSave) {
+        console.log("💾 Auto-save completed:", {
+          saved: data._autoSave.saved,
+          errors: data._autoSave.errors,
+          timestamp: data._autoSave.timestamp
+        });
+      }
 
       if (functionError) {
         console.error("❌ Edge function error:", functionError);
