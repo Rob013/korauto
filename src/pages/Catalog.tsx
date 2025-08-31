@@ -2,7 +2,7 @@ import { useEffect, lazy, Suspense } from "react";
 import { useSearchParams } from "react-router-dom";
 import { trackPageView } from "@/utils/analytics";
 import Header from "@/components/Header";
-import { DatabaseCatalog } from "@/components/DatabaseCatalog";
+import { HybridCatalog } from "@/components/HybridCatalog";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const Footer = lazy(() => import("@/components/Footer"));
@@ -41,7 +41,7 @@ const Catalog = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <DatabaseCatalog highlightCarId={highlightCarId} />
+      <HybridCatalog highlightCarId={highlightCarId} />
       <Suspense fallback={<FooterSkeleton />}>
         <Footer />
       </Suspense>

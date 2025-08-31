@@ -338,11 +338,43 @@ const EquipmentOptionsSection = memo(
 );
 EquipmentOptionsSection.displayName = "EquipmentOptionsSection";
 const CarDetails = memo(() => {
-  const { id: lot } = useParams<{
+  const { id: lotParam } = useParams<{
     id: string;
   }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Fix undefined car ID issue - validate and redirect if invalid
+  const lot = lotParam && lotParam !== 'undefined' && lotParam !== 'null' ? lotParam : null;
+  
+  useEffect(() => {
+    if (!lot) {
+      console.error('❌ Invalid or missing car ID:', lotParam);
+      toast({
+        title: "Invalid car link",
+        description: "The car you're looking for cannot be found. Redirecting to catalog...",
+        variant: "destructive",
+      });
+      navigate('/catalog', { replace: true });
+      return;
+    }
+  }, [lot, lotParam, navigate, toast]);
+  // Return early if no valid car ID
+  if (!lot) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Car className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Invalid car link</h2>
+          <p className="text-muted-foreground mb-4">The car you're looking for cannot be found.</p>
+          <Button onClick={() => navigate('/catalog')}>
+            Go to Catalog
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const { goBack, restorePageState, pageState } = useNavigation();
   const { convertUSDtoEUR, processFloodDamageText } = useCurrencyAPI();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
