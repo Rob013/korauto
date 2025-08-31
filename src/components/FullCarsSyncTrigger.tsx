@@ -269,7 +269,7 @@ export const FullCarsSyncTrigger = () => {
     if (!status) return;
     
     const recordsProcessed = status.records_processed || 0;
-    const estimatedTotal = 192800; // Real API total based on problem statement
+    const estimatedTotal = 200000; // Conservative estimate based on API
     const percentage = Math.round((recordsProcessed / estimatedTotal) * 100);
     
     const formattedRecords = recordsProcessed.toLocaleString();
@@ -289,13 +289,7 @@ export const FullCarsSyncTrigger = () => {
       case 'running':
         const timeRunning = status.started_at ? 
           Math.round((Date.now() - new Date(status.started_at).getTime()) / 60000) : 0;
-        
-        // Check if we've reached near completion (98% or more of 192,800)
-        if (recordsProcessed >= Math.floor(estimatedTotal * 0.98)) {
-          setProgress(`🎯 Nearly complete! ${formattedRecords} / ${formattedTotal} cars (${percentage}%) - Final processing...`);
-        } else {
-          setProgress(`🔄 Syncing${rateText}... ${formattedRecords} / ${formattedTotal} cars (${percentage}%) - Running for ${timeRunning}min`);
-        }
+        setProgress(`🔄 Syncing${rateText}... ${formattedRecords} / ${formattedTotal} cars (${percentage}%) - Running for ${timeRunning}min`);
         break;
       case 'completed':
         setProgress(`✅ Sync complete! ${formattedRecords} cars synced successfully`);
@@ -563,7 +557,7 @@ export const FullCarsSyncTrigger = () => {
 
   const getProgressPercentage = () => {
     if (!syncStatus || !syncStatus.records_processed) return 0;
-    const estimatedTotal = 192800; // Real API total based on problem statement
+    const estimatedTotal = 200000; // Conservative API estimate
     
     // Use the corrected records_processed count which includes the fix for stuck syncs
     // This ensures percentage calculation uses the real count (105,505) not stuck count (16)
@@ -595,7 +589,7 @@ export const FullCarsSyncTrigger = () => {
     
     if (carsPerMinute <= 0) return 'Calculating...';
     
-    const remaining = 192800 - syncStatus.records_processed;
+    const remaining = 200000 - syncStatus.records_processed;
     const minutesRemaining = Math.ceil(remaining / carsPerMinute);
     
     if (minutesRemaining <= 0) return 'Almost done...';
@@ -755,7 +749,7 @@ export const FullCarsSyncTrigger = () => {
               <div className="space-y-1">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Target:</span>
-                  <span className="font-medium">192,800 cars</span>
+                  <span className="font-medium">200,000 cars</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">ETA:</span>

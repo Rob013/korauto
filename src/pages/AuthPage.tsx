@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Session } from "@supabase/supabase-js";
+import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { UserPlus, LogIn, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -16,47 +15,25 @@ const AuthPage = () => {
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [showResendConfirmation, setShowResendConfirmation] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Load saved email if remember me was checked
-    const savedEmail = localStorage.getItem('rememberedEmail');
-    const savedRememberMe = localStorage.getItem('rememberMe') === 'true';
-    if (savedEmail && savedRememberMe) {
-      setEmail(savedEmail);
-      setRememberMe(true);
-    }
+    // Check if user is already logged in
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getUser();
 
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        // Auto redirect if user is authenticated
-        if (session?.user) {
-          navigate('/');
-        }
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
-      
-      // Auto redirect if user is authenticated
-      if (session?.user) {
-        navigate('/');
-      }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, []);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,21 +110,27 @@ const AuthPage = () => {
         throw new Error('Ju lutemi konfirmoni emailin tuaj përpara se të hyni.');
       }
 
-      // Handle remember me functionality
-      if (rememberMe) {
-        localStorage.setItem('rememberedEmail', email);
-        localStorage.setItem('rememberMe', 'true');
-      } else {
-        localStorage.removeItem('rememberedEmail');
-        localStorage.removeItem('rememberMe');
-      }
-
       toast({
-        title: "Mirë se erdhe! 🎉",
-        description: "U loguat me sukses",
+        title: "Mirë se erdhët përsëri!",
+        description: "Hyrja u krye me sukses.",
       });
-
-      // Navigation will be handled by the auth state change listener
+      
+      // Check if user is admin or specific email and redirect accordingly
+      try {
+        const { data: adminCheck } = await supabase.rpc('is_admin');
+        if (adminCheck || email === '0013rob@gmail.com') {
+          navigate('/admin');
+        } else {
+          navigate('/');
+        }
+      } catch (error) {
+        // If role check fails, check email directly
+        if (email === '0013rob@gmail.com') {
+          navigate('/admin');
+        } else {
+          navigate('/');
+        }
+      }
     } catch (error: any) {
       toast({
         title: "Hyrja Dështoi",
@@ -272,21 +255,6 @@ const AuthPage = () => {
                     required
                   />
                 </div>
-                
-                <div className="flex items-center space-x-2 mb-4">
-                  <Checkbox 
-                    id="rememberMe" 
-                    checked={rememberMe}
-                    onCheckedChange={(checked) => setRememberMe(checked === true)}
-                  />
-                  <label 
-                    htmlFor="rememberMe" 
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Remember me
-                  </label>
-                </div>
-                
                 <Button type="submit" className="w-full" disabled={loading}>
                   <LogIn className="h-4 w-4 mr-2" />
                   {loading ? "Po hyni..." : "Hyni"}
