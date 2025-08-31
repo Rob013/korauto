@@ -176,14 +176,21 @@ Deno.serve(async (req) => {
       .from('cars_cache')
       .select('*', { count: 'exact', head: true });
 
-    // Enhanced smart start page calculation with proper resume handling
+    // CRITICAL: Calculate exact resume position from database
     let startPage: number;
-    if (isResumeRequest && fromPage > 1) {
-      startPage = fromPage;
-      console.log(`⚡ RESUMING HIGH-SPEED SYNC from page ${startPage} (${currentSyncStatus?.records_processed || 0} cars already processed)`);
-    } else if (!isResumeRequest && existingCars && existingCars > 0) {
+    
+    if (existingCars && existingCars > 0) {
+      // Resume from where we actually left off based on car count
       startPage = Math.floor(existingCars / PAGE_SIZE) + 1;
-      console.log(`📍 Smart start from page ${startPage} (${existingCars} existing cars)`);
+      console.log(`🎯 RESUMING HIGH-SPEED SYNC from calculated page ${startPage} (${existingCars} cars in database)`);
+      
+      // Update the sync status to reflect the correct position
+      updateData.current_page = startPage;
+      updateData.records_processed = existingCars;
+      
+    } else if (isResumeRequest && fromPage > 1) {
+      startPage = fromPage;
+      console.log(`⚡ RESUMING from specified page ${startPage}`);
     } else {
       startPage = 1;
       console.log('📍 Starting fresh sync from page 1');
