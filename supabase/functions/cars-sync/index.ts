@@ -25,7 +25,7 @@ interface Car {
 }
 
 // Enhanced retry function for reliable API calls
-async function fetchWithRetry(url: string, options: any, maxRetries: number = 3): Promise<Response> {
+async function fetchWithRetry(url: string, options: RequestInit, maxRetries: number = 3): Promise<Response> {
   let lastError: Error | null = null;
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     
     // Parse request body for sync parameters with enhanced resume handling
-    let syncParams: any = {};
+    let syncParams: Record<string, unknown> = {};
     try {
       if (req.body) {
         syncParams = await req.json();
@@ -95,16 +95,6 @@ Deno.serve(async (req) => {
       }, { headers: corsHeaders });
     }
     const API_BASE_URL = 'https://auctionsapi.com/api';
-
-    // Parse request body for sync parameters with enhanced resume handling
-    let syncParams: any = {};
-    try {
-      if (req.body) {
-        syncParams = await req.json();
-      }
-    } catch (e) {
-      console.log('No body parameters provided, using defaults');
-    }
     
     console.log('🚀 Starting enhanced car sync with params:', syncParams);
 
@@ -178,7 +168,7 @@ Deno.serve(async (req) => {
     }
 
     // Update sync status to running with enhanced metadata
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       id: 'cars-sync-main',
       status: 'running',
       started_at: new Date().toISOString(),
@@ -385,7 +375,7 @@ Deno.serve(async (req) => {
         // Force garbage collection hint for memory management
         if (currentPage % 50 === 0) {
           console.log('🧹 Memory cleanup hint');
-          // @ts-ignore
+          // @ts-expect-error gc is not in type definitions but available in Deno
           if (typeof gc !== 'undefined') gc();
         }
 
