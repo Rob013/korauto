@@ -53,6 +53,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { mapFrontendSortToBackend, getSortParams, fetchCarsWithKeyset, type CarFilters } from "@/services/carsApi";
 import { filterOutTestCars } from "@/utils/testCarFilter";
 import { fallbackCars } from "@/data/fallbackData";
+import { GlobalSortingIndicator } from '@/components/GlobalSortingIndicator';
 
 interface EncarCatalogProps {
   highlightCarId?: string | null;
@@ -180,42 +181,39 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Note: Removed client-side sorting to ensure consistency with backend sorting
   // When users select a sort option, backend sorting is used for all modes
   
-  // Memoized cars to display - ensuring consistent sorting across all modes
+  // Memoized cars to display - prioritize globally sorted cars when sorting is active
   const carsToDisplay = useMemo(() => {
-    // Priority 1: When user has explicitly selected a sort option, ALWAYS use backend-sorted results
-    // This ensures consistency between "Show All" and paginated modes
-    if (hasUserSelectedSort) {
-      if (showAllCars && allCarsData.length > 0) {
-        // Use all data but maintain backend sorting consistency
-        // Note: For truly consistent sorting, we should fetch all cars with backend sorting
-        // For now, we'll use the available data but this should be improved to call backend
-        console.log(`🌟 Showing all ${allCarsData.length} cars with user-selected sort (${sortBy})`);
-        return allCarsData; // Use raw data to avoid client-side sorting inconsistencies
-      } else {
-        // Use backend-sorted paginated results
-        console.log(`🎯 Using backend-sorted cars for page ${currentPage}: ${filteredCars.length} cars (${sortBy} sort applied on server)`);
-        return filteredCars;
-      }
+    // Priority 1: When user has selected sorting and global sorting is active, use the current cars state
+    if (hasUserSelectedSort && cars.length > 0) {
+      console.log(`🌟 Using globally sorted cars: ${cars.length} cars (${sortBy} sort applied globally)`);
+      return cars; // These are already globally sorted from the backend
     }
     
-    // Priority 2: Default state without user sort selection - use daily rotating cars
+    // Priority 2: Show all mode with sorted data
+    if (showAllCars && allCarsData.length > 0) {
+      console.log(`🎯 Showing all cars: ${allCarsData.length} cars`);
+      return allCarsData;
+    }
+    
+    // Priority 3: Default state without user sort selection - use daily rotating cars
     if (isDefaultState && !hasUserSelectedSort) {
-      console.log(`🎲 Using daily rotating cars for page ${currentPage}: ${dailyRotatingCars.length} cars (default state, no explicit sort)`);
+      console.log(`🎲 Using daily rotating cars for page ${currentPage}: ${dailyRotatingCars.length} cars (default state)`);
       return dailyRotatingCars;
     }
     
-    // Priority 3: Fallback to backend-sorted cars
-    console.log(`🎯 Using backend-sorted cars for page ${currentPage}: ${filteredCars.length} cars`);
+    // Priority 4: Fallback to filtered cars
+    console.log(`🎯 Using filtered cars: ${filteredCars.length} cars`);
     return filteredCars;
   }, [
     hasUserSelectedSort,
+    cars,
+    sortBy,
     showAllCars,
     allCarsData,
     isDefaultState,
     currentPage,
     dailyRotatingCars,
-    filteredCars,
-    sortBy
+    filteredCars
   ]);
 
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
@@ -1333,13 +1331,31 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               </div>
             </div>
             
+            {/* Global Sorting Indicator */}
+            {hasUserSelectedSort && (
+              <GlobalSortingIndicator
+                isActive={true}
+                sortBy={sortBy}
+                totalCount={totalCount}
+                currentCount={carsToDisplay.length}
+              />
+            )}
+
             {/* Title and stats - separate row for better mobile layout */}
             <div className="space-y-1">
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 Car Catalog
               </h1>
               <p className="text-muted-foreground text-xs sm:text-sm">
-                {totalCount.toLocaleString()} cars across {totalPages.toLocaleString()} pages • Page {currentPage} of {totalPages.toLocaleString()} • Showing {carsToDisplay.length} cars per page
+                {hasUserSelectedSort ? (
+                  <span className="text-primary font-medium">
+                    🌍 Globally sorted by {sortBy.replace('_', ' ')} • Page {currentPage} of {totalPages.toLocaleString()} • {carsToDisplay.length} cars shown of {totalCount.toLocaleString()} total
+                  </span>
+                ) : (
+                  <span>
+                    {totalCount.toLocaleString()} cars across {totalPages.toLocaleString()} pages • Page {currentPage} of {totalPages.toLocaleString()} • Showing {carsToDisplay.length} cars per page
+                  </span>
+                )}
 
                 {yearFilterProgress === 'instant' && (
                   <span className="ml-2 text-primary text-xs">⚡ Instant results</span>

@@ -421,13 +421,13 @@ Deno.serve(async (req) => {
     const isNaturalCompletion = consecutiveEmptyPages >= 10;
     
     // Check if we've reached the API total (if available)
-    const { data: apiSyncStatus } = await supabase
+    const { data: finalSyncStatus } = await supabase
       .from('sync_status')
       .select('api_total_records')
       .eq('id', 'cars-sync-main')
       .single();
     
-    const apiTotal = apiSyncStatus?.api_total_records;
+    const apiTotal = finalSyncStatus?.api_total_records;
     const finalRecordsProcessed = isResumeRequest 
       ? (currentSyncStatus?.records_processed || 0) + totalProcessed
       : (existingCars || 0) + totalProcessed;
