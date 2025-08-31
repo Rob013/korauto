@@ -1092,6 +1092,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_real_time_sync_progress: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_resume_position: {
         Args: Record<PropertyKey, never>
         Returns: Json
