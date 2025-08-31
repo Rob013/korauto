@@ -23,7 +23,96 @@ const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => P
   return data;
 };
 
-// Create fallback car data for testing when API is not available
+  // Function to get manufacturers from Supabase database
+  const fetchManufacturersFromSupabase = async (): Promise<any> => {
+    try {
+      console.log("🗄️ Fetching manufacturers from Supabase database");
+      
+      // Get unique manufacturers from cars_cache table
+      const { data, error } = await supabase
+        .from('cars_cache')
+        .select('make')
+        .not('make', 'is', null)
+        .not('price', 'is', null)
+        .gt('price', 0);
+      
+      if (error) {
+        console.error('❌ Supabase manufacturers query error:', error);
+        throw error;
+      }
+      
+      // Count cars by manufacturer
+      const manufacturerCounts: { [key: string]: number } = {};
+      data?.forEach(car => {
+        const make = car.make;
+        if (make) {
+          manufacturerCounts[make] = (manufacturerCounts[make] || 0) + 1;
+        }
+      });
+      
+      // Convert to API format and sort by count
+      const manufacturers = Object.entries(manufacturerCounts)
+        .map(([name, count], index) => ({
+          id: index + 1,
+          name,
+          cars_qty: count,
+          car_count: count
+        }))
+        .sort((a, b) => b.cars_qty - a.cars_qty);
+      
+      console.log(`✅ Found ${manufacturers.length} manufacturers from database`);
+      return { data: manufacturers };
+    } catch (err) {
+      console.error("❌ Supabase manufacturers fetch error:", err);
+      throw new Error("Unable to fetch manufacturers from database");
+    }
+  };
+
+  // Function to get models from Supabase database by manufacturer
+  const fetchModelsFromSupabase = async (manufacturerId: string): Promise<any> => {
+    try {
+      console.log(`🗄️ Fetching models for manufacturer: ${manufacturerId} from Supabase database`);
+      
+      // Get unique models for the manufacturer from cars_cache table
+      const { data, error } = await supabase
+        .from('cars_cache')
+        .select('model')
+        .eq('make', manufacturerId)
+        .not('model', 'is', null)
+        .not('price', 'is', null)
+        .gt('price', 0);
+      
+      if (error) {
+        console.error('❌ Supabase models query error:', error);
+        throw error;
+      }
+      
+      // Count cars by model
+      const modelCounts: { [key: string]: number } = {};
+      data?.forEach(car => {
+        const model = car.model;
+        if (model) {
+          modelCounts[model] = (modelCounts[model] || 0) + 1;
+        }
+      });
+      
+      // Convert to API format and sort by count
+      const models = Object.entries(modelCounts)
+        .map(([name, count], index) => ({
+          id: index + 1,
+          name,
+          cars_qty: count,
+          car_count: count
+        }))
+        .sort((a, b) => b.cars_qty - a.cars_qty);
+      
+      console.log(`✅ Found ${models.length} models for manufacturer: ${manufacturerId}`);
+      return { data: models };
+    } catch (err) {
+      console.error("❌ Supabase models fetch error:", err);
+      throw new Error("Unable to fetch models from database");
+    }
+  };
 export const createFallbackCars = (filters: any = {}): any[] => {
   console.log(`🔄 Creating fallback cars for development/testing`);
   

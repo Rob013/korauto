@@ -7,6 +7,7 @@ const corsHeaders = {
 
 interface Car {
   id: string;
+  title?: string;
   manufacturer?: { name: string };
   model?: { name: string };
   year: number;
@@ -18,14 +19,37 @@ interface Car {
     lot?: string;
     buy_now?: number;
     bid?: number;
+    final_price?: number;
+    estimate_repair_price?: number;
+    pre_accident_price?: number;
+    clean_wholesale_price?: number;
+    actual_cash_value?: number;
+    sale_date?: string;
+    sale_status?: string;
+    seller?: string;
+    seller_type?: string;
+    status?: string;
     keys_available?: boolean;
+    airbags?: string;
+    grade_iaai?: string;
+    detailed_title?: string;
     odometer?: { km?: number };
-    images?: { normal?: string[] };
+    images?: { 
+      normal?: string[];
+      big?: string[];
+    };
+    damage?: {
+      main?: string;
+      second?: string;
+    };
+    domain?: { name: string };
+    insurance?: any;
+    popularity_score?: number;
   }[];
 }
 
-// Enhanced retry function for reliable API calls
-async function fetchWithRetry(url: string, options: RequestInit, maxRetries: number = 3): Promise<Response> {
+// Enhanced retry function for reliable API calls - Fixed duplicate declaration
+async function fetchWithRetryFixed(url: string, options: RequestInit, maxRetries: number = 3): Promise<Response> {
   let lastError: Error | null = null;
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -101,7 +125,7 @@ Deno.serve(async (req) => {
     // Enhanced API total data detection for 100% completion
     console.log('📊 Checking API total data availability...');
     try {
-      const metaResponse = await fetchWithRetry(
+      const metaResponse = await fetchWithRetryFixed(
         `${API_BASE_URL}/cars?per_page=1&page=1`,
         { 
           headers: { 
@@ -223,7 +247,7 @@ Deno.serve(async (req) => {
         console.log(`📄 Processing page ${currentPage}...`);
 
         // Enhanced request with retry logic and performance optimization
-        const response = await fetchWithRetry(
+        const response = await fetchWithRetryFixed(
           `${API_BASE_URL}/cars?per_page=${PAGE_SIZE}&page=${currentPage}`,
           { 
             headers: { 
@@ -250,14 +274,69 @@ Deno.serve(async (req) => {
         consecutiveEmptyPages = 0;
         console.log(`⚡ Processing ${cars.length} cars from page ${currentPage}...`);
 
-        // Memory-efficient car transformation with enhanced image handling
+        // Enhanced car transformation capturing ALL available API data
         const carCacheItems = cars.map(car => {
           const lot = car.lots?.[0];
           const price = lot?.buy_now ? Math.round(lot.buy_now + 2300) : null;
           
-          // Enhanced image processing to ensure all pictures are captured
-          const images = lot?.images?.normal || [];
-          const primaryImage = images.length > 0 ? images[0] : null;
+          // Capture ALL images from all sources
+          const normalImages = lot?.images?.normal || [];
+          const bigImages = lot?.images?.big || [];
+          const allImages = [...normalImages, ...bigImages].filter((img, index, self) => 
+            img && self.indexOf(img) === index // Remove duplicates
+          );
+          const primaryImage = allImages.length > 0 ? allImages[0] : null;
+          
+          // Build comprehensive car_data with ALL API information
+          const comprehensiveCarData = {
+            // Basic car info
+            external_id: car.id?.toString(),
+            title: car.title,
+            vin: car.vin,
+            
+            // Pricing and bidding
+            buy_now_price: lot?.buy_now,
+            current_bid: lot?.bid,
+            final_price: lot?.final_price,
+            estimate_repair_price: lot?.estimate_repair_price,
+            pre_accident_price: lot?.pre_accident_price,
+            clean_wholesale_price: lot?.clean_wholesale_price,
+            actual_cash_value: lot?.actual_cash_value,
+            
+            // Lot and auction info
+            lot_number: lot?.lot,
+            sale_date: lot?.sale_date,
+            sale_status: lot?.sale_status,
+            seller: lot?.seller,
+            seller_type: lot?.seller_type,
+            domain: lot?.domain?.name,
+            status: lot?.status,
+            
+            // Vehicle details
+            keys_available: lot?.keys_available !== false,
+            airbags: lot?.airbags,
+            grade_iaai: lot?.grade_iaai,
+            detailed_title: lot?.detailed_title,
+            
+            // Damage information
+            damage_main: lot?.damage?.main,
+            damage_second: lot?.damage?.second,
+            
+            // Images
+            has_images: allImages.length > 0,
+            image_count: allImages.length,
+            normal_images: normalImages,
+            big_images: bigImages,
+            
+            // Insurance data (if available)
+            insurance: lot?.insurance || null,
+            
+            // Popularity and ranking
+            popularity_score: lot?.popularity_score || 0,
+            
+            // Complete lot data for reference
+            full_lot_data: lot
+          };
           
           return {
             id: car.id.toString(),
@@ -274,17 +353,11 @@ Deno.serve(async (req) => {
             transmission: car.transmission?.name,
             color: car.color?.name,
             lot_number: lot?.lot,
-            condition: 'good',
+            condition: lot?.grade_iaai || 'unknown',
             image_url: primaryImage, // Primary image for display
-            images: JSON.stringify(images), // All images as JSON array
-            car_data: {
-              buy_now: lot?.buy_now,
-              current_bid: lot?.bid,
-              keys_available: lot?.keys_available !== false,
-              has_images: images.length > 0,
-              image_count: images.length
-            },
-            lot_data: lot,
+            images: JSON.stringify(allImages), // ALL images as JSON array
+            car_data: comprehensiveCarData, // Complete data object
+            lot_data: lot, // Raw lot data for reference
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
             last_api_sync: new Date().toISOString()
@@ -307,7 +380,7 @@ Deno.serve(async (req) => {
             totalProcessed += batch.length;
           }
           
-          // Also write to main cars table for global sorting
+          // Also write to main cars table with enhanced data
           const mainTableBatch = batch.map(car => ({
             id: car.id,
             make: car.make,
@@ -324,8 +397,17 @@ Deno.serve(async (req) => {
             rank_score: car.rank_score,
             created_at: car.created_at,
             updated_at: car.updated_at,
+            last_synced_at: car.last_api_sync,
             external_id: car.api_id,
-            source_api: 'auctions'
+            source_api: 'auctions',
+            title: car.car_data?.title || `${car.year} ${car.make} ${car.model}`,
+            vin: car.vin,
+            lot_number: car.lot_number,
+            condition: car.condition,
+            current_bid: car.car_data?.current_bid,
+            buy_now_price: car.car_data?.buy_now_price,
+            is_active: true,
+            status: car.car_data?.status || 'active'
           }));
           
           const { error: mainError } = await supabase
