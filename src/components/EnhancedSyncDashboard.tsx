@@ -34,6 +34,7 @@ interface EnhancedSyncStatus {
   images_processed?: number;
   images_failed?: number;
   checkpoint_data?: any;
+  display_note?: string;
 }
 
 export const EnhancedSyncDashboard = () => {
@@ -45,7 +46,7 @@ export const EnhancedSyncDashboard = () => {
   // Fetch current sync status and actual car count
   const fetchStatus = async () => {
     try {
-      const [syncResponse, countResponse] = await Promise.all([
+      const [syncResponse, cacheCountResponse, mainCountResponse] = await Promise.all([
         supabase
           .from('sync_status')
           .select('*')
@@ -53,14 +54,44 @@ export const EnhancedSyncDashboard = () => {
           .single(),
         supabase
           .from('cars_cache')
+          .select('*', { count: 'exact', head: true }),
+        supabase
+          .from('cars')
           .select('*', { count: 'exact', head: true })
       ]);
 
       if (!syncResponse.error) {
-        setSyncStatus(syncResponse.data);
+        // Calculate real car count prioritizing cars_cache
+        const cacheCount = cacheCountResponse.count || 0;
+        const mainCount = mainCountResponse.count || 0;
+        const totalRealCount = cacheCount > 0 ? cacheCount : mainCount;
+        
+        // Fix misleading sync progress by using real database count
+        const syncProgress = syncResponse.data.records_processed || 0;
+        const realCountIsSignificantlyHigher = totalRealCount > syncProgress * 2;
+        const shouldUseRealCount = syncProgress === 0 || realCountIsSignificantlyHigher;
+        
+        // Create corrected sync status for display
+        const correctedStatus = {
+          ...syncResponse.data,
+          records_processed: shouldUseRealCount ? totalRealCount : syncProgress,
+          display_note: shouldUseRealCount ? 'showing_real_database_count' : 'showing_sync_progress'
+        };
+        
+        setSyncStatus(correctedStatus);
+        setActualCarCount(totalRealCount);
+        
+        console.log('📊 Enhanced sync status with real counts:', {
+          originalSyncProgress: syncProgress,
+          cacheCount,
+          mainCount, 
+          totalRealCount,
+          displayCount: correctedStatus.records_processed,
+          correctionApplied: shouldUseRealCount,
+          status: syncResponse.data.status
+        });
       }
       
-      setActualCarCount(countResponse.count || 0);
     } catch (error) {
       console.error('Error fetching status:', error);
     }
@@ -284,22 +315,24 @@ export const EnhancedSyncDashboard = () => {
           <Progress value={progress} className="h-3" />
         </div>
 
-        {/* Resume from 116k Section */}
-        {actualCarCount >= 116000 && syncStatus?.status !== 'running' && (
-          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        {/* Real Status Alert */}
+        {actualCarCount >= 116000 && (
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+              <Database className="h-5 w-5 text-blue-600 mt-0.5" />
               <div className="flex-1">
-                <h3 className="font-medium text-yellow-800">Ready to Resume from 116,193 Records</h3>
-                <p className="text-sm text-yellow-700 mt-1">
-                  Your sync is stuck at 116,193 records. The enhanced sync system can resume exactly where it left off 
-                  and complete the remaining ~84,000 records with full API data mapping.
+                <h3 className="font-medium text-blue-800">Database Status: {actualCarCount.toLocaleString()} Cars Synced</h3>
+                <p className="text-sm text-blue-700 mt-1">
+                  {syncStatus?.status === 'running' 
+                    ? `Turbo sync is active and processing at maximum speed. Database shows real progress: ${actualCarCount.toLocaleString()} cars.`
+                    : `Database contains ${actualCarCount.toLocaleString()} cars. Ready to resume turbo sync for remaining ~${(200000 - actualCarCount).toLocaleString()} cars.`
+                  }
                 </p>
-                <div className="mt-3 space-y-2 text-xs text-yellow-600">
-                  <div>• Resume from page ~464 (calculated from existing records)</div>
-                  <div>• Map ALL API fields 1:1 to database (30+ new fields)</div>
-                  <div>• Download and process ALL images from API</div>
-                  <div>• Never stall again with enhanced error handling</div>
+                <div className="mt-3 space-y-2 text-xs text-blue-600">
+                  <div>• Real database count: {actualCarCount.toLocaleString()} cars</div>
+                  <div>• Target: 200,000 cars (~{((actualCarCount / 200000) * 100).toFixed(1)}% complete)</div>
+                  <div>• Turbo sync: 50k+ cars per 15-minute run</div>
+                  <div>• Remaining: ~{Math.ceil((200000 - actualCarCount) / 50000)} turbo runs</div>
                 </div>
               </div>
             </div>
@@ -326,7 +359,7 @@ export const EnhancedSyncDashboard = () => {
               className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
             >
               <RotateCcw className="h-4 w-4 mr-2" />
-              🚀 Resume from {actualCarCount.toLocaleString()} records
+              🚀 Continue from {actualCarCount.toLocaleString()} cars
             </Button>
           )}
           
@@ -397,8 +430,11 @@ export const EnhancedSyncDashboard = () => {
                 <div className="font-mono text-lg">{syncStatus.current_page?.toLocaleString() || 0}</div>
               </div>
               <div>
-                <div className="text-muted-foreground">Sync Progress</div>
-                <div className="font-mono text-lg">{syncStatus.records_processed?.toLocaleString() || 0}</div>
+                <div className="text-muted-foreground">Real Database Count</div>
+                <div className="font-mono text-lg text-green-600">{actualCarCount.toLocaleString()}</div>
+                <div className="text-xs text-muted-foreground">
+                  {syncStatus?.display_note === 'showing_real_database_count' ? 'Real DB count' : 'Sync progress'}
+                </div>
               </div>
               <div>
                 <div className="text-muted-foreground">Images Processed</div>
