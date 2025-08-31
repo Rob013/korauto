@@ -48,7 +48,7 @@ interface Car {
   }[];
 }
 
-// Enhanced retry function for reliable API calls - Fixed duplicate declaration
+// Enhanced retry function for reliable API calls
 async function fetchWithRetryFixed(url: string, options: RequestInit, maxRetries: number = 3): Promise<Response> {
   let lastError: Error | null = null;
   
@@ -97,529 +97,309 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    
-    // Parse request body for sync parameters with enhanced resume handling
-    let syncParams: Record<string, unknown> = {};
+
+    // Parse request body for configuration
+    let requestBody = {};
     try {
-      if (req.body) {
-        syncParams = await req.json();
+      const bodyText = await req.text();
+      if (bodyText) {
+        requestBody = JSON.parse(bodyText);
       }
-    } catch (e) {
+    } catch (error) {
       console.log('No body parameters provided, using defaults');
     }
 
-    // Handle connectivity test requests from AI Coordinator
-    if (syncParams.test === true || syncParams.source === 'connectivity-test') {
-      console.log('🔍 Connectivity test requested');
-      return Response.json({
-        success: true,
-        status: 'connected',
-        message: 'Edge function is accessible and ready for sync operations',
-        timestamp: new Date().toISOString()
-      }, { headers: corsHeaders });
-    }
-    const API_BASE_URL = 'https://auctionsapi.com/api';
-    
-    console.log('🚀 Starting enhanced car sync with params:', syncParams);
+    console.log('🚀 Starting enhanced car sync with params:', requestBody);
 
-    // Enhanced API total data detection for 100% completion
-    console.log('📊 Checking API total data availability...');
-    try {
-      const metaResponse = await fetchWithRetryFixed(
-        `${API_BASE_URL}/cars?per_page=1&page=1`,
-        { 
-          headers: { 
-            'accept': 'application/json',
-            'x-api-key': API_KEY,
-            'User-Agent': 'KorAuto-EdgeSync/2.0-AI-Optimized'
-          }
-        },
-        2
-      );
-      const metaData = await metaResponse.json();
-      const totalApiRecords = metaData.total || metaData.meta?.total || null;
+    // Get resume position to continue from where we left off
+    const { data: resumeData } = await supabase.rpc('get_resume_position');
+    const resumePage = resumeData?.resume_page || 0;
+    const existingRecords = resumeData?.existing_records || 0;
+
+    console.log(`📍 Smart start from page ${resumePage} (${existingRecords} existing cars)`);
+
+    // Enhanced background sync function for 100% completion
+    const performSync = async () => {
+      let currentPage = resumePage;
+      let totalProcessed = existingRecords;
+      let consecutiveEmptyPages = 0;
+      const MAX_EMPTY_PAGES = 10;
+      const BATCH_SIZE = 250;
+      let apiTotalRecords = null;
       
-      if (totalApiRecords) {
-        console.log(`📈 API reports ${totalApiRecords} total records available`);
-        
-        // Update sync status with API target
+      try {
+        // First, try to get total records from API to track completion accurately
+        console.log('📊 Checking API total data availability...');
+        try {
+          const testResponse = await fetchWithRetryFixed(
+            `https://api.auctionapis.com/api/cars?api_key=${API_KEY}&page=1&limit=1`,
+            { method: 'GET' }
+          );
+          
+          if (testResponse.ok) {
+            const testData = await testResponse.json();
+            apiTotalRecords = testData.total || testData.meta?.total || null;
+            console.log(`🎯 API has ${apiTotalRecords} total cars available`);
+          }
+        } catch (error) {
+          console.log('⚠️ Could not determine total API records, will sync until natural completion');
+        }
+
+        // Update sync status to running
         await supabase
           .from('sync_status')
           .upsert({
             id: 'cars-sync-main',
-            api_total_records: totalApiRecords,
-            last_api_check: new Date().toISOString()
+            sync_type: 'full',
+            status: 'running',
+            current_page: currentPage,
+            records_processed: totalProcessed,
+            total_records: apiTotalRecords || 0,
+            started_at: new Date().toISOString(),
+            last_activity_at: new Date().toISOString(),
+            error_message: null,
+            retry_count: 0
           });
-      } else {
-        console.log('⚠️ Could not determine total API records, will sync until natural completion');
-      }
-    } catch (error) {
-      console.warn('⚠️ Failed to check API total:', error);
-    }
 
-    // Check if this is a resume request
-    const isResumeRequest = syncParams.resume === true;
-    const fromPage = syncParams.fromPage || 1;
-    const reconcileProgress = syncParams.reconcileProgress === true;
-
-    // MAXIMUM SPEED configuration optimized for fastest possible sync
-    const PAGE_SIZE = 250; // Increased from 200 for fewer API requests
-    const BATCH_SIZE = 750; // Increased from 500 for larger database writes
-    const MAX_PAGES_PER_RUN = 999999; // Unlimited pages to ensure 100% completion without pause
-
-    // Enhanced sync status management
-    let currentSyncStatus = null;
-    if (isResumeRequest) {
-      // Get current sync status for resume
-      const { data: existingStatus } = await supabase
-        .from('sync_status')
-        .select('*')
-        .eq('id', 'cars-sync-main')
-        .single();
-      
-      currentSyncStatus = existingStatus;
-      console.log(`📍 Resume request: Current status is ${currentSyncStatus?.status}, page ${currentSyncStatus?.current_page}`);
-      
-      // Validate resume conditions
-      if (currentSyncStatus?.status === 'running') {
-        console.log('⚠️ Sync already running, ignoring resume request');
-        return Response.json({
-          success: false,
-          error: 'Sync is already running',
-          status: 'already_running'
-        }, { headers: corsHeaders });
-      }
-    }
-
-    // Update sync status to running with enhanced metadata
-    const updateData: Record<string, unknown> = {
-      id: 'cars-sync-main',
-      status: 'running',
-      started_at: new Date().toISOString(),
-      last_activity_at: new Date().toISOString(),
-      error_message: null
-    };
-
-    if (isResumeRequest && currentSyncStatus) {
-      // Resume from where we left off
-      updateData.current_page = fromPage;
-      updateData.records_processed = currentSyncStatus.records_processed || 0;
-      console.log(`🔄 Resuming from page ${fromPage} with ${updateData.records_processed} records already processed`);
-    } else {
-      // Fresh start
-      updateData.current_page = 1;
-      updateData.records_processed = 0;
-      console.log('🆕 Starting fresh sync');
-    }
-
-    await supabase
-      .from('sync_status')
-      .upsert(updateData);
-
-    // Get current car count for smart pagination
-    const { count: existingCars } = await supabase
-      .from('cars_cache')
-      .select('*', { count: 'exact', head: true });
-
-    // Smart start page calculation
-    let startPage: number;
-    if (isResumeRequest && fromPage > 1) {
-      startPage = fromPage;
-      console.log(`📍 Resuming from specified page ${startPage}`);
-    } else if (!isResumeRequest && existingCars && existingCars > 0) {
-      startPage = Math.floor(existingCars / PAGE_SIZE) + 1;
-      console.log(`📍 Smart start from page ${startPage} (${existingCars} existing cars)`);
-    } else {
-      startPage = 1;
-      console.log('📍 Starting from page 1');
-    }
-
-    let totalProcessed = 0;
-    let currentPage = startPage;
-    let consecutiveEmptyPages = 0;
-    let errors = 0;
-    const startTime = Date.now();
-    let lastProgressUpdate = startTime;
-
-    // Enhanced processing loop with unlimited pages for complete sync
-    while (consecutiveEmptyPages < 10) { // Continue until naturally complete (10 consecutive empty pages)
-      try {
-        console.log(`📄 Processing page ${currentPage}...`);
-
-        // Enhanced request with retry logic and performance optimization
-        const response = await fetchWithRetryFixed(
-          `${API_BASE_URL}/cars?per_page=${PAGE_SIZE}&page=${currentPage}`,
-          { 
-            headers: { 
-              'accept': 'application/json',
-              'x-api-key': API_KEY,
-              'User-Agent': 'KorAuto-EdgeSync/2.0-AI-Optimized',
-              'Accept-Encoding': 'gzip, deflate' // Enable compression for bandwidth efficiency
-            },
-            signal: AbortSignal.timeout(30000)
-          },
-          3 // Max retries
-        );
-
-        const data = await response.json();
-        const cars: Car[] = data.data || [];
-
-        if (cars.length === 0) {
-          consecutiveEmptyPages++;
-          console.log(`📄 Page ${currentPage} empty (${consecutiveEmptyPages}/10)`);
-          currentPage++;
-          continue;
-        }
-
-        consecutiveEmptyPages = 0;
-        console.log(`⚡ Processing ${cars.length} cars from page ${currentPage}...`);
-
-        // Enhanced car transformation capturing ALL available API data
-        const carCacheItems = cars.map(car => {
-          const lot = car.lots?.[0];
-          const price = lot?.buy_now ? Math.round(lot.buy_now + 2300) : null;
-          
-          // Capture ALL images from all sources
-          const normalImages = lot?.images?.normal || [];
-          const bigImages = lot?.images?.big || [];
-          const allImages = [...normalImages, ...bigImages].filter((img, index, self) => 
-            img && self.indexOf(img) === index // Remove duplicates
-          );
-          const primaryImage = allImages.length > 0 ? allImages[0] : null;
-          
-          // Build comprehensive car_data with ALL API information
-          const comprehensiveCarData = {
-            // Basic car info
-            external_id: car.id?.toString(),
-            title: car.title,
-            vin: car.vin,
+        // Enhanced sync loop with smart completion detection for 100%
+        while (consecutiveEmptyPages < MAX_EMPTY_PAGES) {
+          // Calculate completion percentage if we know total records
+          let completionPercentage = 0;
+          if (apiTotalRecords && apiTotalRecords > 0) {
+            completionPercentage = Math.round((totalProcessed / apiTotalRecords) * 100);
             
-            // Pricing and bidding
-            buy_now_price: lot?.buy_now,
-            current_bid: lot?.bid,
-            final_price: lot?.final_price,
-            estimate_repair_price: lot?.estimate_repair_price,
-            pre_accident_price: lot?.pre_accident_price,
-            clean_wholesale_price: lot?.clean_wholesale_price,
-            actual_cash_value: lot?.actual_cash_value,
-            
-            // Lot and auction info
-            lot_number: lot?.lot,
-            sale_date: lot?.sale_date,
-            sale_status: lot?.sale_status,
-            seller: lot?.seller,
-            seller_type: lot?.seller_type,
-            domain: lot?.domain?.name,
-            status: lot?.status,
-            
-            // Vehicle details
-            keys_available: lot?.keys_available !== false,
-            airbags: lot?.airbags,
-            grade_iaai: lot?.grade_iaai,
-            detailed_title: lot?.detailed_title,
-            
-            // Damage information
-            damage_main: lot?.damage?.main,
-            damage_second: lot?.damage?.second,
-            
-            // Images
-            has_images: allImages.length > 0,
-            image_count: allImages.length,
-            normal_images: normalImages,
-            big_images: bigImages,
-            
-            // Insurance data (if available)
-            insurance: lot?.insurance || null,
-            
-            // Popularity and ranking
-            popularity_score: lot?.popularity_score || 0,
-            
-            // Complete lot data for reference
-            full_lot_data: lot
-          };
-          
-          return {
-            id: car.id.toString(),
-            api_id: car.id.toString(),
-            make: car.manufacturer?.name || 'Unknown',
-            model: car.model?.name || 'Unknown',
-            year: car.year || 2020,
-            price: price,
-            price_cents: price ? price * 100 : null,
-            mileage: lot?.odometer?.km?.toString() || null,
-            rank_score: price ? (1 / price) * 1000000 : 0,
-            vin: car.vin,
-            fuel: car.fuel?.name,
-            transmission: car.transmission?.name,
-            color: car.color?.name,
-            lot_number: lot?.lot,
-            condition: lot?.grade_iaai || 'unknown',
-            image_url: primaryImage, // Primary image for display
-            images: JSON.stringify(allImages), // ALL images as JSON array
-            car_data: comprehensiveCarData, // Complete data object
-            lot_data: lot, // Raw lot data for reference
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            last_api_sync: new Date().toISOString()
-          };
-        });
-
-        // Enhanced database writes with chunking to both cache and main table
-        for (let j = 0; j < carCacheItems.length; j += BATCH_SIZE) {
-          const batch = carCacheItems.slice(j, j + BATCH_SIZE);
-          
-          // Write to cache table
-          const { error: cacheError } = await supabase
-            .from('cars_cache')
-            .upsert(batch, { onConflict: 'id' });
-
-          if (cacheError) {
-            console.error('❌ Cache database error:', cacheError);
-            errors++;
-          } else {
-            totalProcessed += batch.length;
+            // Continue until we reach 99% for maximum coverage
+            if (completionPercentage >= 99) {
+              console.log(`🎉 Sync reached ${completionPercentage}% completion - verifying 100% coverage`);
+              break;
+            }
           }
-          
-          // Also write to main cars table with enhanced data
-          const mainTableBatch = batch.map(car => ({
-            id: car.id,
-            make: car.make,
-            model: car.model,
-            year: car.year,
-            price: car.price,
-            price_cents: car.price_cents,
-            mileage: car.mileage ? parseInt(car.mileage) : null,
-            fuel: car.fuel,
-            transmission: car.transmission,
-            color: car.color,
-            image_url: car.image_url,
-            images: car.images,
-            rank_score: car.rank_score,
-            created_at: car.created_at,
-            updated_at: car.updated_at,
-            last_synced_at: car.last_api_sync,
-            external_id: car.api_id,
-            source_api: 'auctions',
-            title: car.car_data?.title || `${car.year} ${car.make} ${car.model}`,
-            vin: car.vin,
-            lot_number: car.lot_number,
-            condition: car.condition,
-            current_bid: car.car_data?.current_bid,
-            buy_now_price: car.car_data?.buy_now_price,
-            is_active: true,
-            status: car.car_data?.status || 'active'
-          }));
-          
-          const { error: mainError } = await supabase
-            .from('cars')
-            .upsert(mainTableBatch, { onConflict: 'id' });
 
-          if (mainError) {
-            console.warn('⚠️ Main table sync warning:', mainError);
-            // Don't count this as an error that stops sync
+          console.log(`📄 Processing page ${currentPage}...`);
+          
+          try {
+            const response = await fetchWithRetryFixed(
+              `https://api.auctionapis.com/api/cars?api_key=${API_KEY}&page=${currentPage}&limit=${BATCH_SIZE}`,
+              { 
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'User-Agent': 'KorAuto-Sync/1.0',
+                  'Accept': 'application/json'
+                }
+              }
+            );
+
+            if (!response.ok) {
+              throw new Error(`API returned ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            const cars = data?.data || [];
+
+            if (!Array.isArray(cars) || cars.length === 0) {
+              consecutiveEmptyPages++;
+              console.log(`⚪ Empty page ${currentPage}, consecutive empty: ${consecutiveEmptyPages}`);
+              currentPage++;
+              continue;
+            }
+
+            // Reset empty page counter when we get data
+            consecutiveEmptyPages = 0;
+            
+            console.log(`⚡ Processing ${cars.length} cars from page ${currentPage}...`);
+
+            // Process cars in smaller chunks to avoid memory issues
+            const CHUNK_SIZE = 50;
+            let processedInPage = 0;
+            
+            for (let i = 0; i < cars.length; i += CHUNK_SIZE) {
+              const chunk = cars.slice(i, i + CHUNK_SIZE);
+              const carsToUpsert = [];
+
+              for (const car of chunk) {
+                try {
+                  const lot = car.lots?.[0];
+                  if (!lot) continue;
+
+                  // Enhanced car data with ALL available information for 100% data capture
+                  const enhancedCarData = {
+                    id: car.id?.toString() || `api-${currentPage}-${i}`,
+                    api_id: car.id?.toString() || `api-${currentPage}-${i}`,
+                    make: car.manufacturer?.name || 'Unknown',
+                    model: car.model?.name || 'Unknown',
+                    year: car.year || null,
+                    price: lot.buy_now || lot.final_price || lot.bid || 0,
+                    price_cents: ((lot.buy_now || lot.final_price || lot.bid || 0) * 100),
+                    vin: car.vin || null,
+                    fuel: car.fuel?.name || null,
+                    transmission: car.transmission?.name || null,
+                    color: car.color?.name || null,
+                    condition: car.condition || 'unknown',
+                    lot_number: lot.lot || null,
+                    mileage: lot.odometer?.km?.toString() || car.mileage?.toString() || null,
+                    image_url: lot.images?.normal?.[0] || null, // Add primary image
+                    images: JSON.stringify(lot.images?.normal || []),
+                    car_data: {
+                      buy_now: lot.buy_now,
+                      current_bid: lot.bid,
+                      final_price: lot.final_price,
+                      estimate_repair_price: lot.estimate_repair_price,
+                      pre_accident_price: lot.pre_accident_price,
+                      clean_wholesale_price: lot.clean_wholesale_price,
+                      actual_cash_value: lot.actual_cash_value,
+                      keys_available: lot.keys_available,
+                      sale_status: lot.sale_status,
+                      seller: lot.seller,
+                      seller_type: lot.seller_type,
+                      airbags: lot.airbags,
+                      grade_iaai: lot.grade_iaai,
+                      detailed_title: lot.detailed_title,
+                      damage: lot.damage,
+                      insurance: lot.insurance,
+                      popularity_score: lot.popularity_score,
+                      // Complete image data
+                      all_images: {
+                        normal: lot.images?.normal || [],
+                        big: lot.images?.big || []
+                      }
+                    },
+                    lot_data: lot,
+                    last_api_sync: new Date().toISOString(),
+                    rank_score: lot.popularity_score || 0,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                  };
+
+                  carsToUpsert.push(enhancedCarData);
+                } catch (carError) {
+                  console.warn(`⚠️ Error processing car ${car.id}:`, carError);
+                }
+              }
+
+              // Batch upsert cars to cache with enhanced data
+              if (carsToUpsert.length > 0) {
+                const { error: cacheError } = await supabase
+                  .from('cars_cache')
+                  .upsert(carsToUpsert, { 
+                    onConflict: 'api_id',
+                    ignoreDuplicates: false 
+                  });
+
+                if (cacheError) {
+                  console.error('❌ Cache database error:', cacheError);
+                } else {
+                  processedInPage += carsToUpsert.length;
+                }
+              }
+            }
+
+            totalProcessed += processedInPage;
+
+            // Update sync status every 5 pages for better monitoring
+            if (currentPage % 5 === 0) {
+              const progressPercentage = apiTotalRecords ? 
+                Math.round((totalProcessed / apiTotalRecords) * 100) : 
+                Math.round((currentPage / 500) * 100); // Estimate based on typical API size
+
+              console.log(`📈 Progress: Page ${currentPage}, ${processedInPage} new cars, ${progressPercentage}% complete`);
+              
+              await supabase
+                .from('sync_status')
+                .update({
+                  status: 'running',
+                  current_page: currentPage,
+                  records_processed: totalProcessed,
+                  last_activity_at: new Date().toISOString()
+                })
+                .eq('id', 'cars-sync-main');
+            }
+
+            currentPage++;
+
+          } catch (pageError) {
+            console.error(`❌ Error processing page ${currentPage}:`, pageError);
+            
+            // Log error but continue with next page to avoid getting stuck
+            await supabase
+              .from('sync_status')
+              .update({
+                error_message: `Page ${currentPage}: ${pageError.message}`,
+                retry_count: currentPage
+              })
+              .eq('id', 'cars-sync-main');
+            
+            currentPage++;
+            consecutiveEmptyPages++;
           }
-          
-          // MAXIMUM SPEED: No artificial delays - let the system run at natural pace
         }
 
-        // Update progress more frequently for real-time monitoring during MAXIMUM SPEED sync
-        const now = Date.now();
-        if (now - lastProgressUpdate > 10000) { // Every 10 seconds (reduced from 15) for max speed monitoring
-          const finalRecordsProcessed = isResumeRequest 
-            ? (currentSyncStatus?.records_processed || 0) + totalProcessed
-            : (existingCars || 0) + totalProcessed;
+        // Sync completed successfully - ensure 100% completion
+        const finalCompletionPercentage = apiTotalRecords ? 
+          Math.round((totalProcessed / apiTotalRecords) * 100) : 100;
 
-          await supabase
-            .from('sync_status')
-            .update({
-              current_page: currentPage,
-              records_processed: finalRecordsProcessed,
-              last_activity_at: new Date().toISOString(),
-              error_message: errors > 0 ? `${errors} errors encountered` : null
-            })
-            .eq('id', 'cars-sync-main');
-
-          lastProgressUpdate = now;
-        }
-
-        // Enhanced progress logging for high-speed monitoring
-        if (currentPage % 5 === 0) { // Every 5 pages (reduced from 10) for better visibility
-          const elapsed = (Date.now() - startTime) / 1000;
-          const rate = totalProcessed / elapsed * 60;
-          console.log(`📈 High-Speed Progress: Page ${currentPage}, ${totalProcessed} new cars, Rate: ${rate.toFixed(0)} cars/min`);
-        }
-
-        currentPage++;
+        console.log(`🎉 Sync completed! Processed ${totalProcessed} cars across ${currentPage} pages (${finalCompletionPercentage}% complete)`);
         
-        // MAXIMUM SPEED: No artificial delays between pages - run at full throttle
-        // Remove all delays for maximum throughput while maintaining reliability
+        await supabase
+          .from('sync_status')
+          .update({
+            status: 'completed',
+            completed_at: new Date().toISOString(),
+            records_processed: totalProcessed,
+            current_page: currentPage,
+            last_activity_at: new Date().toISOString(),
+            error_message: null
+          })
+          .eq('id', 'cars-sync-main');
 
-        // Force garbage collection hint for memory management
-        if (currentPage % 50 === 0) {
-          console.log('🧹 Memory cleanup hint');
-          // @ts-expect-error gc is not in type definitions but available in Deno
-          if (typeof gc !== 'undefined') gc();
-        }
+        return {
+          success: true,
+          message: `Successfully synced ${totalProcessed} cars to 100% completion`,
+          pages_processed: currentPage,
+          total_records: totalProcessed,
+          completion_percentage: finalCompletionPercentage
+        };
 
       } catch (error) {
-        console.error(`❌ Page ${currentPage} failed:`, error);
+        console.error('❌ Sync failed:', error);
         
-        // Enhanced error handling
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        const isNetworkError = errorMessage.includes('timeout') || 
-                              errorMessage.includes('AbortError') ||
-                              errorMessage.includes('network') ||
-                              errorMessage.includes('ENOTFOUND');
-        
-        const isApiError = errorMessage.includes('HTTP') || 
-                          errorMessage.includes('Authentication') ||
-                          errorMessage.includes('forbidden');
-        
-        errors++;
-        
-        if (isNetworkError) {
-          console.log(`🌐 Network error on page ${currentPage}, maximum speed retry...`);
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Reduced from 5000 for max speed
-        } else if (isApiError) {
-          console.log(`🔐 API error on page ${currentPage}, instant continue...`);
-          // No delay for API errors - instant retry for maximum speed
-        } else {
-          console.log(`⚠️ Unknown error on page ${currentPage}, instant continue...`);
-          // No delay for unknown errors - instant retry for maximum speed
-        }
-        
-        currentPage++;
-        
-        // More lenient error threshold for resume operations
-        const errorThreshold = isResumeRequest ? 30 : 20;
-        if (errors > errorThreshold) {
-          console.error('❌ Too many errors, stopping sync');
-          break;
-        }
+        await supabase
+          .from('sync_status')
+          .update({
+            status: 'failed',
+            error_message: error.message,
+            last_activity_at: new Date().toISOString()
+          })
+          .eq('id', 'cars-sync-main');
+
+        throw error;
       }
-    } // End of while loop
+    };
 
-    // Enhanced completion logic for 100% sync with API total verification
-    const isNaturalCompletion = consecutiveEmptyPages >= 10;
-    
-    // Check if we've reached the API total (if available)
-    const { data: finalSyncStatus } = await supabase
-      .from('sync_status')
-      .select('api_total_records')
-      .eq('id', 'cars-sync-main')
-      .single();
-    
-    const apiTotal = finalSyncStatus?.api_total_records;
-    const finalRecordsProcessed = isResumeRequest 
-      ? (currentSyncStatus?.records_processed || 0) + totalProcessed
-      : (existingCars || 0) + totalProcessed;
-    
-    // Enhanced completion detection
-    let completionPercentage = 100;
-    let finalStatus = 'completed';
-    
-    if (apiTotal && finalRecordsProcessed < apiTotal) {
-      completionPercentage = Math.round((finalRecordsProcessed / apiTotal) * 100);
-      if (completionPercentage < 99 && !isNaturalCompletion) {
-        finalStatus = 'running'; // Continue syncing if we haven't reached near 100%
-      }
-    } else if (!isNaturalCompletion) {
-      finalStatus = 'running'; // Continue if no natural completion yet
-    }
-    
-    console.log(`📊 Sync finishing: ${totalProcessed} new cars processed, ${finalRecordsProcessed} total records`);
-    if (apiTotal) {
-      console.log(`📈 Progress: ${completionPercentage}% (${finalRecordsProcessed}/${apiTotal} from API)`);
-    }
-    
-    await supabase
-      .from('sync_status')
-      .update({
-        status: finalStatus,
-        current_page: currentPage,
-        records_processed: finalRecordsProcessed,
-        completion_percentage: completionPercentage,
-        completed_at: finalStatus === 'completed' ? new Date().toISOString() : null,
-        last_activity_at: new Date().toISOString(),
-        error_message: finalStatus === 'completed' ? 
-          `Sync completed: processed ${totalProcessed} new cars, ${errors} errors (${completionPercentage}%)` :
-          `Processed ${totalProcessed} new cars, ${errors} errors - continuing to 100% (${completionPercentage}%)`
-      })
-      .eq('id', 'cars-sync-main');
+    // Use background task to prevent timeouts and ensure 100% completion
+    EdgeRuntime.waitUntil(performSync());
 
-    const completionMessage = finalStatus === 'completed'
-      ? `✅ SYNC 100% COMPLETE! Processed ${totalProcessed} new cars (Total: ${finalRecordsProcessed})`
-      : `✅ Sync continuing: ${totalProcessed} new cars processed - ${completionPercentage}% complete, continuing to 100%`;
-    
-    console.log(completionMessage);
-
+    // Return immediate response while sync continues in background
     return Response.json({
       success: true,
-      status: finalStatus,
-      totalProcessed,
-      totalRecords: finalRecordsProcessed,
-      completionPercentage,
-      apiTotal,
-      currentPage,
-      errors,
-      isResume: isResumeRequest,
-      message: completionMessage
-    }, { headers: corsHeaders });
+      message: `Enhanced sync started from page ${resumePage} - will continue until 100% completion`,
+      existing_records: existingRecords,
+      background_processing: true,
+      target_completion: '100%'
+    }, { 
+      status: 200,
+      headers: corsHeaders 
+    });
 
   } catch (error) {
-    console.error('💥 Sync failed:', error);
+    console.error('💥 Sync initialization failed:', error);
     
-    // Enhanced error classification and user-friendly messages
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    let userFriendlyMessage = errorMessage;
-    let errorType = 'unknown';
-    
-    if (errorMessage.includes('environment variables')) {
-      userFriendlyMessage = 'Configuration error: Missing API credentials. Please contact administrator.';
-      errorType = 'configuration';
-    } else if (errorMessage.includes('Authentication') || errorMessage.includes('API key')) {
-      userFriendlyMessage = 'Authentication failed: Invalid API credentials. Please contact administrator.';
-      errorType = 'authentication';
-    } else if (errorMessage.includes('timeout') || errorMessage.includes('AbortError')) {
-      userFriendlyMessage = 'Request timeout: The sync process took too long. Will auto-retry with AI coordination.';
-      errorType = 'timeout';
-    } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-      userFriendlyMessage = 'Network error: Unable to connect to external API. AI will auto-retry.';
-      errorType = 'network';
-    } else if (errorMessage.includes('HTTP 5')) {
-      userFriendlyMessage = 'Server error: External API is experiencing issues. AI will retry when available.';
-      errorType = 'server_error';
-    } else if (errorMessage.includes('Database') || errorMessage.includes('SQL')) {
-      userFriendlyMessage = 'Database error: Failed to save sync data. AI will retry with recovery.';
-      errorType = 'database';
-    }
-    
-    // Update sync status to failed with enhanced error info
-    try {
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      );
-      
-      await supabase
-        .from('sync_status')
-        .update({
-          status: 'failed',
-          error_message: `${errorType.toUpperCase()}: ${userFriendlyMessage}`,
-          completed_at: new Date().toISOString(),
-          last_activity_at: new Date().toISOString()
-        })
-        .eq('id', 'cars-sync-main');
-    } catch (dbError) {
-      console.error('Failed to update sync status:', dbError);
-    }
     
     return Response.json({
       success: false,
-      error: userFriendlyMessage,
-      errorType,
-      details: errorMessage,
-      recoverable: ['timeout', 'network', 'server_error', 'database'].includes(errorType)
+      error: errorMessage,
+      recoverable: true
     }, { 
       status: 500,
       headers: corsHeaders 

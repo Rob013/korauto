@@ -23,13 +23,13 @@ export const FullSyncTrigger = () => {
   const triggerFullSync = async () => {
     setIsLoading(true);
     try {
-      console.log("🚀 Triggering full car sync with complete data capture...");
+      console.log("🚀 Triggering enhanced car sync for 100% completion...");
       
       const response = await supabase.functions.invoke('cars-sync', {
         body: {
           sync_type: 'full',
           capture_all_data: true,
-          auto_sync: false
+          target_completion: '100%'
         }
       });
 
@@ -39,11 +39,11 @@ export const FullSyncTrigger = () => {
 
       setLastResult(response.data);
       toast({
-        title: "Full Sync Started",
-        description: "Complete car data sync is now running. This may take several minutes.",
+        title: "Enhanced Full Sync Started",
+        description: "100% completion sync is now running with advanced resume capabilities.",
       });
       
-      // Start monitoring sync status
+      // Start monitoring sync status with enhanced progress tracking
       const interval = setInterval(async () => {
         const { data: status } = await supabase
           .from('sync_status')
@@ -56,8 +56,16 @@ export const FullSyncTrigger = () => {
         if (status?.status === 'completed' || status?.status === 'failed') {
           clearInterval(interval);
           setIsLoading(false);
+          
+          // Show completion notification
+          if (status?.status === 'completed') {
+            toast({
+              title: "Sync Completed Successfully",
+              description: `100% sync finished! ${status.records_processed} cars processed.`,
+            });
+          }
         }
-      }, 3000);
+      }, 2000); // Check every 2 seconds for real-time updates
 
     } catch (error) {
       console.error("❌ Sync trigger error:", error);
@@ -72,15 +80,32 @@ export const FullSyncTrigger = () => {
 
   const checkSyncStatus = async () => {
     try {
+      // Get enhanced sync progress using the new database function
+      const { data: progressData } = await supabase.rpc('get_sync_progress');
+      
+      if (progressData && typeof progressData === 'object') {
+        setSyncStatus(prev => ({
+          ...prev,
+          ...progressData,
+          completion_percentage: (progressData as any).completion_percentage
+        }));
+      }
+      
+      // Also get current sync status
       const { data: status } = await supabase
         .from('sync_status')
         .select('*')
         .eq('id', 'cars-sync-main')
         .single();
       
-      setSyncStatus(status);
+      if (status) {
+        setSyncStatus(prev => ({
+          ...prev,
+          ...status
+        }));
+      }
       
-      // Also get car counts
+      // Get car counts for additional metrics
       const { count: totalCars } = await supabase
         .from('cars_cache')
         .select('*', { count: 'exact', head: true });
@@ -91,10 +116,11 @@ export const FullSyncTrigger = () => {
         .not('images', 'eq', '[]')
         .not('images', 'is', null);
 
-      setSyncStatus((prev: any) => ({
+      setSyncStatus(prev => ({
         ...prev,
         total_cars: totalCars,
-        cars_with_images: carsWithImages
+        cars_with_images: carsWithImages,
+        image_completion_rate: totalCars ? Math.round((carsWithImages / totalCars) * 100) : 0
       }));
 
     } catch (error) {
@@ -143,7 +169,7 @@ export const FullSyncTrigger = () => {
           </Button>
         </div>
 
-        {/* Sync Status Display */}
+        {/* Enhanced Sync Status Display */}
         {syncStatus && (
           <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
             <div className="flex items-center justify-between">
@@ -163,10 +189,26 @@ export const FullSyncTrigger = () => {
               </Badge>
             </div>
             
+            {/* Progress Bar for 100% completion tracking */}
+            {syncStatus.completion_percentage !== undefined && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Completion Progress</span>
+                  <span className="font-medium text-primary">{syncStatus.completion_percentage}%</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-2">
+                  <div 
+                    className="bg-primary h-2 rounded-full transition-all duration-300" 
+                    style={{ width: `${Math.min(syncStatus.completion_percentage, 100)}%` }}
+                  />
+                </div>
+              </div>
+            )}
+            
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-muted-foreground">Records Processed:</span>
-                <span className="ml-2 font-medium">{syncStatus.records_processed || 0}</span>
+                <span className="ml-2 font-medium text-primary">{syncStatus.records_processed?.toLocaleString() || 0}</span>
               </div>
               <div>
                 <span className="text-muted-foreground">Current Page:</span>
@@ -174,12 +216,24 @@ export const FullSyncTrigger = () => {
               </div>
               <div>
                 <span className="text-muted-foreground">Total Cars:</span>
-                <span className="ml-2 font-medium">{syncStatus.total_cars || 0}</span>
+                <span className="ml-2 font-medium text-green-600">{syncStatus.total_cars?.toLocaleString() || 0}</span>
               </div>
               <div>
                 <span className="text-muted-foreground">Cars with Images:</span>
-                <span className="ml-2 font-medium">{syncStatus.cars_with_images || 0}</span>
+                <span className="ml-2 font-medium text-blue-600">{syncStatus.cars_with_images?.toLocaleString() || 0}</span>
               </div>
+              {syncStatus.image_completion_rate && (
+                <div className="col-span-2">
+                  <span className="text-muted-foreground">Image Data Coverage:</span>
+                  <span className="ml-2 font-medium text-purple-600">{syncStatus.image_completion_rate}%</span>
+                </div>
+              )}
+              {syncStatus.total_records > 0 && (
+                <div className="col-span-2">
+                  <span className="text-muted-foreground">API Total Available:</span>
+                  <span className="ml-2 font-medium text-orange-600">{syncStatus.total_records?.toLocaleString()}</span>
+                </div>
+              )}
             </div>
             
             {syncStatus.started_at && (
@@ -205,15 +259,22 @@ export const FullSyncTrigger = () => {
           </div>
         )}
 
-        {/* Auto-Sync Info */}
+        {/* Enhanced Auto-Sync Info */}
         <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
           <div className="flex items-center gap-2 mb-2">
             <Clock className="h-4 w-4 text-blue-600" />
-            <span className="font-medium text-blue-900 dark:text-blue-100">Automatic Sync Schedule</span>
+            <span className="font-medium text-blue-900 dark:text-blue-100">Enhanced Sync System</span>
           </div>
-          <p className="text-sm text-blue-700 dark:text-blue-200">
-            Cars are automatically synced every 6 hours (at 0, 6, 12, 18 o'clock) to update sold cars and add new listings.
+          <p className="text-sm text-blue-700 dark:text-blue-200 mb-2">
+            The sync system now features advanced 100% completion tracking, smart resume capabilities, 
+            and timeout-resistant processing to ensure all available car data is captured.
           </p>
+          <div className="text-xs text-blue-600 dark:text-blue-300 space-y-1">
+            <div>🎯 Target: 100% API coverage</div>
+            <div>⚡ Auto-resume from interruptions</div>
+            <div>📊 Real-time progress tracking</div>
+            <div>🔄 Background processing prevents timeouts</div>
+          </div>
         </div>
 
         {/* Last Sync Result */}

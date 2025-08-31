@@ -140,6 +140,7 @@ export type Database = {
           created_at: string | null
           fuel: string | null
           id: string
+          image_url: string | null
           images: Json | null
           last_api_sync: string | null
           lot_data: Json | null
@@ -163,6 +164,7 @@ export type Database = {
           created_at?: string | null
           fuel?: string | null
           id: string
+          image_url?: string | null
           images?: Json | null
           last_api_sync?: string | null
           lot_data?: Json | null
@@ -186,6 +188,7 @@ export type Database = {
           created_at?: string | null
           fuel?: string | null
           id?: string
+          image_url?: string | null
           images?: Json | null
           last_api_sync?: string | null
           lot_data?: Json | null
@@ -779,6 +782,14 @@ export type Database = {
       generate_sample_cars: {
         Args: { car_count?: number }
         Returns: number
+      }
+      get_resume_position: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      get_sync_progress: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       has_role: {
         Args: {
