@@ -373,11 +373,20 @@ export const FullCarsSyncTrigger = () => {
       
       if (aiCoordinator) {
         console.log('🤖 Using AI Coordinator for sync');
-        await aiCoordinator.startIntelligentSync({
-          source: 'manual-smart-sync'
-        });
+        try {
+          await aiCoordinator.startIntelligentSync({
+            source: 'manual-smart-sync'
+          });
+        } catch (aiError: unknown) {
+          console.error('❌ AI Coordinator failed, falling back to direct call:', aiError);
+          
+          // If AI coordinator fails, fall back to direct call
+          // The AI coordinator will have already shown its own error toast
+          console.log('🔄 Falling back to enhanced direct edge function call');
+          await startSyncWithRetry();
+        }
       } else {
-        console.log('🔄 Using enhanced direct edge function call');
+        console.log('🔄 AI Coordinator not available, using enhanced direct edge function call');
         await startSyncWithRetry();
       }
 
