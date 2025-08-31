@@ -147,7 +147,7 @@ Deno.serve(async (req) => {
     let lastProgressUpdate = startTime;
 
     // Enhanced processing loop with unlimited pages for complete sync
-    while (consecutiveEmptyPages < 10) { // Continue until naturally complete (10 consecutive empty pages)
+    while (consecutiveEmptyPages < 20) { // Continue until truly complete (20 consecutive empty pages for better certainty)
       try {
         console.log(`📄 Processing page ${currentPage}...`);
 
@@ -171,7 +171,7 @@ Deno.serve(async (req) => {
 
         if (cars.length === 0) {
           consecutiveEmptyPages++;
-          console.log(`📄 Page ${currentPage} empty (${consecutiveEmptyPages}/10)`);
+          console.log(`📄 Page ${currentPage} empty (${consecutiveEmptyPages}/20)`);
           currentPage++;
           continue;
         }
@@ -309,44 +309,68 @@ Deno.serve(async (req) => {
     } // End of while loop
 
     // Enhanced completion logic - NEVER PAUSE, ONLY COMPLETE WHEN TRULY DONE
-    const finalStatus = consecutiveEmptyPages >= 10 ? 'completed' : 'running'; // Changed from 'paused' to 'running'
-    const isNaturalCompletion = consecutiveEmptyPages >= 10;
+    const finalStatus = consecutiveEmptyPages >= 20 ? 'completed' : 'running'; // Changed from 'paused' to 'running'
+    const isNaturalCompletion = consecutiveEmptyPages >= 20;
     
     const finalRecordsProcessed = isResumeRequest 
       ? (currentSyncStatus?.records_processed || 0) + totalProcessed
       : (existingCars || 0) + totalProcessed;
     
-    console.log(`📊 Sync finishing: ${totalProcessed} new cars processed, ${consecutiveEmptyPages} consecutive empty pages`);
+    console.log(`📊 Sync status: ${totalProcessed} new cars processed, ${consecutiveEmptyPages} consecutive empty pages`);
+    
+    // If we haven't reached natural completion, set status to running and let auto-resume take over
+    if (!isNaturalCompletion) {
+      await supabase
+        .from('sync_status')
+        .update({
+          status: 'running',
+          current_page: currentPage,
+          records_processed: finalRecordsProcessed,
+          last_activity_at: new Date().toISOString(),
+          error_message: `Processed ${totalProcessed} new cars, ${errors} errors - will continue automatically`
+        })
+        .eq('id', 'cars-sync-main');
+        
+      console.log(`✅ Sync batch complete: ${totalProcessed} new cars processed - marked as running for auto-continuation`);
+      
+      return Response.json({
+        success: true,
+        status: 'running',
+        totalProcessed,
+        totalRecords: finalRecordsProcessed,
+        currentPage,
+        errors,
+        isResume: isResumeRequest,
+        message: `Batch complete: ${totalProcessed} new cars processed - continuing automatically`,
+        shouldContinue: true
+      }, { headers: corsHeaders });
+    }
+    
+    // Only mark as completed if we've truly reached the end
     
     await supabase
       .from('sync_status')
       .update({
-        status: finalStatus,
+        status: 'completed',
         current_page: currentPage,
         records_processed: finalRecordsProcessed,
-        completed_at: finalStatus === 'completed' ? new Date().toISOString() : null,
+        completed_at: new Date().toISOString(),
         last_activity_at: new Date().toISOString(),
-        error_message: isNaturalCompletion ? 
-          `Sync completed naturally - processed ${totalProcessed} new cars, ${errors} errors` :
-          `Processed ${totalProcessed} new cars, ${errors} errors - continuing automatically to 100%`
+        error_message: `Sync completed naturally - processed ${totalProcessed} new cars, ${errors} errors`
       })
       .eq('id', 'cars-sync-main');
 
-    const completionMessage = isNaturalCompletion 
-      ? `✅ SYNC 100% COMPLETE! Processed ${totalProcessed} new cars (Total: ${finalRecordsProcessed})`
-      : `✅ Sync continuing: ${totalProcessed} new cars processed - will continue automatically to 100%`;
-    
-    console.log(completionMessage);
+    console.log(`✅ SYNC 100% COMPLETE! Processed ${totalProcessed} new cars (Total: ${finalRecordsProcessed})`);
 
     return Response.json({
       success: true,
-      status: finalStatus,
+      status: 'completed',
       totalProcessed,
       totalRecords: finalRecordsProcessed,
       currentPage,
       errors,
       isResume: isResumeRequest,
-      message: completionMessage
+      message: `✅ SYNC 100% COMPLETE! Processed ${totalProcessed} new cars (Total: ${finalRecordsProcessed})`
     }, { headers: corsHeaders });
 
   } catch (error) {

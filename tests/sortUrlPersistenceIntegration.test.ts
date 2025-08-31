@@ -5,7 +5,7 @@ describe('Sort URL Persistence Integration', () => {
     console.log('🧪 Testing complete integration flow for sort URL persistence...');
     
     // Step 1: User is on catalog page
-    let componentState = {
+    const componentState = {
       sortBy: 'recently_added',
       currentPage: 1,
       hasUserSelectedSort: false

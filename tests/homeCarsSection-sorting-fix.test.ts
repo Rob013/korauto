@@ -6,7 +6,7 @@ describe('HomeCarsSection Sorting Fix', () => {
   it('should handle sort state changes correctly', () => {
     // Mock the scenario: User starts with default sort state
     let hasUserSelectedSort = false;
-    let hasFilters = false;
+    const hasFilters = false;
     let sortBy = 'popular';
     
     // Simulate initial state - should use daily rotating cars

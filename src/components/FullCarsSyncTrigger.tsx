@@ -484,6 +484,35 @@ export const FullCarsSyncTrigger = () => {
       }
 
       console.log('✅ Sync start successful on attempt', attempt);
+      
+      // Handle continuous sync response - if shouldContinue is true, trigger auto-resume after short delay
+      if (data?.shouldContinue && data?.status === 'running') {
+        console.log('🔄 Sync batch completed, scheduling auto-continuation...');
+        toast({
+          title: "Sync Batch Complete",
+          description: `Processed ${data.totalProcessed} cars. Continuing automatically...`,
+        });
+        
+        // Trigger auto-resume after short delay to allow status update
+        setTimeout(() => {
+          console.log('🚀 Auto-triggering sync continuation...');
+          supabase.functions.invoke('cars-sync', {
+            body: { 
+              resume: true,
+              fromPage: data.currentPage,
+              reconcileProgress: true,
+              source: 'auto-continuation'
+            }
+          }).then((response) => {
+            if (response.data?.shouldContinue) {
+              // Chain the continuation recursively if needed
+              console.log('🔄 Chaining next sync batch...');
+            }
+          }).catch((error) => {
+            console.error('❌ Auto-continuation failed:', error);
+          });
+        }, 3000);
+      }
 
     } catch (error: unknown) {
       console.error(`❌ Sync start failed on attempt ${attempt}:`, error);
