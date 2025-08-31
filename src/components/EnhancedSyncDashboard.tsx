@@ -47,8 +47,8 @@ export const EnhancedSyncDashboard = () => {
   const fetchStatus = async () => {
     try {
       // Use the new database function for accurate progress tracking
-      const [accurateProgressResponse, syncResponse] = await Promise.all([
-        supabase.rpc('get_accurate_sync_progress'),
+      const [realtimeProgressResponse, syncResponse] = await Promise.all([
+        supabase.rpc('get_real_time_sync_progress'),
         supabase
           .from('sync_status')
           .select('*')
@@ -56,33 +56,33 @@ export const EnhancedSyncDashboard = () => {
           .single()
       ]);
 
-      if (accurateProgressResponse.data && accurateProgressResponse.data.length > 0) {
-        const progress = accurateProgressResponse.data[0];
+      if (realtimeProgressResponse.data) {
+        const progress = realtimeProgressResponse.data as any;
         
-        console.log('📊 ACCURATE Progress Data:', {
-          sync_status_records: progress.sync_status_records,
-          cache_count: progress.cache_count,
-          main_count: progress.main_count,
-          display_count: progress.display_count,
-          correction_applied: progress.correction_applied,
-          sync_status: progress.sync_status
+        console.log('📊 REAL-TIME Progress Data:', {
+          total_cars: progress.total_cars,
+          new_cars_today: progress.new_cars_today,
+          sync_status: progress.sync_status,
+          current_page: progress.current_page,
+          is_syncing: progress.is_syncing
         });
 
         // Set the real car count from database
-        setActualCarCount(Number(progress.cache_count));
+        setActualCarCount(Number(progress.total_cars || 0));
         
         // Create corrected sync status that shows REAL database count
         if (syncResponse.data) {
           const correctedStatus = {
             ...syncResponse.data,
-            records_processed: Number(progress.display_count),
-            correction_applied: progress.correction_applied,
-            real_database_count: Number(progress.cache_count)
+            records_processed: Number(progress.total_cars || 0),
+            new_cars_today: Number(progress.new_cars_today || 0),
+            real_database_count: Number(progress.total_cars || 0),
+            is_actively_syncing: progress.is_syncing || false
           };
           setSyncStatus(correctedStatus);
         }
       } else {
-        console.warn('⚠️ No progress data returned from accurate function');
+        console.warn('⚠️ No progress data returned from real-time function');
       }
       
     } catch (error) {
