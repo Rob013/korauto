@@ -107,40 +107,42 @@ Deno.serve(async (req) => {
     
     console.log('🚀 Starting enhanced car sync with params:', syncParams);
 
-    // Check if this is a resume request
-    const isResumeRequest = syncParams.resume === true;
-    const fromPage = syncParams.fromPage || 1;
-    const reconcileProgress = syncParams.reconcileProgress === true;
+    // Always check for existing sync status to auto-resume intelligently
+    const { data: existingSyncStatus } = await supabase
+      .from('sync_status')
+      .select('*')
+      .eq('id', 'cars-sync-main')
+      .single();
+
+    let currentSyncStatus = existingSyncStatus;
+    
+    // Check if sync is already running
+    if (currentSyncStatus?.status === 'running') {
+      console.log('⚠️ Sync already running, ignoring request');
+      return Response.json({
+        success: false,
+        error: 'Sync is already running',
+        status: 'already_running'
+      }, { headers: corsHeaders });
+    }
+
+    // Smart resume logic: Auto-detect if we should resume
+    const shouldAutoResume = currentSyncStatus && 
+      (currentSyncStatus.status === 'paused' || currentSyncStatus.status === 'failed') &&
+      currentSyncStatus.current_page > 1;
+    
+    const isResumeRequest = syncParams.resume === true || shouldAutoResume;
+    const fromPage = syncParams.fromPage || (shouldAutoResume ? currentSyncStatus.current_page : 1);
+    
+    if (shouldAutoResume) {
+      console.log(`🎯 AUTO-RESUMING: Detected paused sync at page ${currentSyncStatus.current_page} with ${currentSyncStatus.records_processed} cars processed`);
+    }
 
     // STABLE HIGH-SPEED configuration with proper error handling
     const PAGE_SIZE = 100; // Balanced for API efficiency and stability  
     const BATCH_SIZE = 50;  // Reduced from 1000 to prevent memory issues
     const MAX_EXECUTION_TIME = 240000; // 4 minutes for stable processing
     const MAX_PAGES_PER_RUN = 200; // Process in manageable chunks
-
-    // Enhanced sync status management
-    let currentSyncStatus = null;
-    if (isResumeRequest) {
-      // Get current sync status for resume
-      const { data: existingStatus } = await supabase
-        .from('sync_status')
-        .select('*')
-        .eq('id', 'cars-sync-main')
-        .single();
-      
-      currentSyncStatus = existingStatus;
-      console.log(`📍 Resume request: Current status is ${currentSyncStatus?.status}, page ${currentSyncStatus?.current_page}`);
-      
-      // Validate resume conditions
-      if (currentSyncStatus?.status === 'running') {
-        console.log('⚠️ Sync already running, ignoring resume request');
-        return Response.json({
-          success: false,
-          error: 'Sync is already running',
-          status: 'already_running'
-        }, { headers: corsHeaders });
-      }
-    }
 
     // Update sync status to running with enhanced metadata
     const updateData: any = {
@@ -155,12 +157,12 @@ Deno.serve(async (req) => {
       // Resume from where we left off
       updateData.current_page = fromPage;
       updateData.records_processed = currentSyncStatus.records_processed || 0;
-      console.log(`🔄 Resuming from page ${fromPage} with ${updateData.records_processed} records already processed`);
+      console.log(`🚀 RESUMING MAXIMUM SPEED SYNC from page ${fromPage} with ${updateData.records_processed} cars already processed`);
     } else {
       // Fresh start
       updateData.current_page = 1;
       updateData.records_processed = 0;
-      console.log('🆕 Starting fresh sync');
+      console.log('🆕 Starting fresh maximum speed sync');
     }
 
     await supabase
@@ -172,17 +174,17 @@ Deno.serve(async (req) => {
       .from('cars_cache')
       .select('*', { count: 'exact', head: true });
 
-    // Smart start page calculation
+    // Enhanced smart start page calculation with proper resume handling
     let startPage: number;
     if (isResumeRequest && fromPage > 1) {
       startPage = fromPage;
-      console.log(`📍 Resuming from specified page ${startPage}`);
+      console.log(`⚡ RESUMING HIGH-SPEED SYNC from page ${startPage} (${currentSyncStatus?.records_processed || 0} cars already processed)`);
     } else if (!isResumeRequest && existingCars && existingCars > 0) {
       startPage = Math.floor(existingCars / PAGE_SIZE) + 1;
       console.log(`📍 Smart start from page ${startPage} (${existingCars} existing cars)`);
     } else {
       startPage = 1;
-      console.log('📍 Starting from page 1');
+      console.log('📍 Starting fresh sync from page 1');
     }
 
     let totalProcessed = 0;
