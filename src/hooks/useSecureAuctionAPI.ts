@@ -6,7 +6,7 @@ import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from '../utils/
 
 // Simple cache to prevent redundant API calls
 const apiCache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_DURATION = 60000; // 60 seconds
+const CACHE_DURATION = 5000; // Reduced to 5 seconds to see changes faster
 
 // Helper function to get cached data or make API call
 const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => Promise<any>) => {

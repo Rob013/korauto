@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -38,6 +39,11 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
     // Get API key from Supabase secrets
     const apiKey = Deno.env.get('AUCTIONS_API_KEY');
     if (!apiKey) {
@@ -49,6 +55,112 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const { endpoint, filters = {}, carId, lotNumber } = await req.json();
+    
+    // For cars endpoint, use database instead of external API to exclude deleted cars
+    if (endpoint === 'cars' && !carId) {
+      console.log('🗄️ Using database for cars endpoint to exclude filtered cars');
+      
+      // Build query from cars_cache table (which has deleted the problematic cars)
+      let query = supabase
+        .from('cars_cache')
+        .select('*');
+      
+      // Apply filters
+      if (filters.manufacturer_id && filters.manufacturer_id !== 'all') {
+        query = query.eq('make', filters.manufacturer_id);
+      }
+      if (filters.model_id && filters.model_id !== 'all') {
+        query = query.eq('model', filters.model_id);
+      }
+      if (filters.from_year) {
+        query = query.gte('year', parseInt(filters.from_year));
+      }
+      if (filters.to_year) {
+        query = query.lte('year', parseInt(filters.to_year));
+      }
+      if (filters.buy_now_price_from) {
+        query = query.gte('price', parseFloat(filters.buy_now_price_from));
+      }
+      if (filters.buy_now_price_to) {
+        query = query.lte('price', parseFloat(filters.buy_now_price_to));
+      }
+      if (filters.fuel_type) {
+        query = query.eq('fuel', filters.fuel_type);
+      }
+      if (filters.transmission) {
+        query = query.eq('transmission', filters.transmission);
+      }
+      if (filters.color) {
+        query = query.eq('color', filters.color);
+      }
+      if (filters.search) {
+        query = query.or(`make.ilike.%${filters.search}%,model.ilike.%${filters.search}%`);
+      }
+      
+      // Apply pagination
+      const page = parseInt(filters.page || '1');
+      const perPage = parseInt(filters.per_page || '50');
+      const from = (page - 1) * perPage;
+      const to = from + perPage - 1;
+      
+      // Exclude cars with no price (NULL) and ensure price > 0
+      query = query.not('price', 'is', null).gt('price', 0);
+      
+      // Apply ordering - default by price ascending
+      const sortBy = filters.sort_by || 'price';
+      const sortDirection = filters.sort_direction || 'asc';
+      query = query.order(sortBy, { ascending: sortDirection === 'asc' });
+      
+      // Apply range for pagination
+      query = query.range(from, to);
+      
+      const { data: cars, error, count } = await query;
+      
+      if (error) {
+        console.error('❌ Database query error:', error);
+        return new Response(
+          JSON.stringify({ error: 'Database query failed' }),
+          { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        );
+      }
+      
+      // Transform database cars to match API format
+      const transformedCars = (cars || []).map(car => ({
+        id: car.id,
+        title: `${car.year} ${car.make} ${car.model}`,
+        year: car.year,
+        manufacturer: { name: car.make },
+        model: { name: car.model },
+        vin: car.vin,
+        lots: [{
+          buy_now: car.price,
+          images: {
+            normal: car.images ? JSON.parse(car.images) : []
+          },
+          odometer: car.mileage ? { km: parseInt(car.mileage) } : null
+        }],
+        fuel: car.fuel ? { name: car.fuel } : null,
+        transmission: car.transmission ? { name: car.transmission } : null,
+        color: car.color ? { name: car.color } : null,
+        price: car.price?.toString(),
+        lot_number: car.lot_number
+      }));
+      
+      const response = {
+        data: transformedCars,
+        meta: {
+          total: count || 0,
+          current_page: page,
+          last_page: Math.ceil((count || 0) / perPage)
+        }
+      };
+      
+      console.log(`✅ Database response: ${transformedCars.length} cars (filtered out problematic cars)`);
+      
+      return new Response(JSON.stringify(response), {
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
     if (!endpoint) {
       return new Response(
         JSON.stringify({ error: 'Missing endpoint parameter' }),
