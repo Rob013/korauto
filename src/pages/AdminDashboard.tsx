@@ -35,6 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import AuthLogin from "@/components/AuthLogin";
 import { CarsSyncButton } from "@/components/CarsSyncButton";
+import { SimpleSyncTrigger } from "@/components/SimpleSyncTrigger";
 import AdminCarSearch from "@/components/AdminCarSearch";
 import { CookieManagementDashboard } from "@/components/CookieManagementDashboard";
 import PerformanceAuditWidget from "@/components/PerformanceAuditWidget";
@@ -1186,6 +1187,9 @@ const AdminDashboard = () => {
 
               {/* Full Cars Sync Component */}
               <FullCarsSyncTrigger />
+              
+              {/* Simple Manual Sync Controls */}
+              <SimpleSyncTrigger />
             </div>
           </TabsContent>
 
