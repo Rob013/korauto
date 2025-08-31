@@ -1,3 +1,4 @@
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,7 +11,7 @@ import { useResourcePreloader } from "./hooks/useResourcePreloader";
 import { AccessibilityEnhancer } from "./utils/accessibilityEnhancer";
 
 // Lazy load all pages for better code splitting
-const Index = lazy(() => import("./pages/Index"));
+const Index = React.lazy(() => import("./pages/Index"));
 const Catalog = lazy(() => import("./pages/Catalog"));
 const NewCatalog = lazy(() => import("./pages/NewCatalog"));
 const CarDetails = lazy(() => import("./pages/CarDetails"));
@@ -105,12 +106,15 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => {
+const App = React.memo(() => {
+  console.log('App component mounting...');
+  
   // Initialize resource preloading for better performance
   const { preloadRouteResources } = useResourcePreloader();
 
   // Initialize accessibility enhancements
   useEffect(() => {
+    console.log('App useEffect running...');
     const enhancer = AccessibilityEnhancer.getInstance();
     enhancer.init();
     enhancer.addSkipLinks();
@@ -235,6 +239,8 @@ const App = () => {
       </TooltipProvider>
     </QueryClientProvider>
   );
-};
+});
+
+App.displayName = 'App';
 
 export default App;
