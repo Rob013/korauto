@@ -23,12 +23,28 @@ export const FullSyncTrigger = () => {
   const triggerFullSync = async () => {
     setIsLoading(true);
     try {
-      console.log("🚀 Triggering enhanced car sync for 100% completion...");
+      console.log("🚀 Triggering full sync with error reset...");
       
+      // First reset any stuck sync status
+      const { error: resetError } = await supabase
+        .from('sync_status')
+        .update({ 
+          status: 'pending',
+          error_message: null,
+          retry_count: 0,
+          current_page: 1
+        })
+        .eq('id', 'cars-sync-main');
+
+      if (resetError) {
+        console.warn("⚠️ Could not reset sync status:", resetError);
+      }
+
       const response = await supabase.functions.invoke('cars-sync', {
         body: {
           sync_type: 'full',
           capture_all_data: true,
+          reset_errors: true,
           target_completion: '100%'
         }
       });
@@ -39,8 +55,8 @@ export const FullSyncTrigger = () => {
 
       setLastResult(response.data);
       toast({
-        title: "Enhanced Full Sync Started",
-        description: "100% completion sync is now running with advanced resume capabilities.",
+        title: "Full Sync Restarted",
+        description: "Sync has been reset and restarted. Errors cleared.",
       });
       
       // Start monitoring sync status with enhanced progress tracking
