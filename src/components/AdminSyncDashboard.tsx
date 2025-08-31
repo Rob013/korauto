@@ -23,15 +23,38 @@ export default function AdminSyncDashboard() {
   
   const handleFullSync = async () => {
     try {
-      await triggerSync('full');
-      toast({
-        title: "🚀 Real API Full Sync Started!",
-        description: "Fetching ALL real car data from live API - auto-syncing every minute!"
+      // Use the enhanced edge function for full sync
+      const response = await fetch('https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/cars-sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0eXlpcWlta3lzbWpuYW9jc3dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0MzkxMzQsImV4cCI6MjA2OTAxNTEzNH0.lyRCHiShhW4wrGHL3G7pK5JBUHNAtgSUQACVOBGRpL8`,
+        },
+        body: JSON.stringify({
+          syncType: 'full',
+          smartSync: true,
+          aiCoordinated: true,
+          source: 'admin-dashboard'
+        }),
       });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: "🚀 Full Sync Started Successfully!",
+          description: "Smart AI-coordinated full sync is now running. Check the status for progress updates."
+        });
+        // Refresh status after a short delay
+        setTimeout(() => getSyncStatus(), 2000);
+      } else {
+        throw new Error(result.message || 'Failed to start full sync');
+      }
     } catch (error) {
+      console.error('Full sync error:', error);
       toast({
         title: "Sync Failed",
-        description: error instanceof Error ? error.message : "Failed to start sync",
+        description: error instanceof Error ? error.message : "Failed to start full sync",
         variant: "destructive"
       });
     }
