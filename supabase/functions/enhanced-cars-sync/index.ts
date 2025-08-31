@@ -620,9 +620,49 @@ async function sendHeartbeat(): Promise<void> {
 
 // Main sync function
 async function runEnhancedSync(): Promise<{ success: boolean; message: string; stats: any }> {
+  // Check both in-memory state and database status for accurate sync detection
   if (syncState.isRunning) {
+    console.log('⚠️ In-memory sync state shows running, checking database status...');
+  }
+
+  // Check database sync status for comprehensive detection
+  const { data: dbSyncStatus } = await supabase
+    .from('sync_status')
+    .select('status, last_activity_at, last_heartbeat')
+    .eq('id', 'cars-sync-main')
+    .single();
+
+  const now = new Date();
+  const lastActivity = dbSyncStatus?.last_activity_at ? new Date(dbSyncStatus.last_activity_at) : null;
+  const lastHeartbeat = dbSyncStatus?.last_heartbeat ? new Date(dbSyncStatus.last_heartbeat) : null;
+  
+  // Consider sync stuck if no activity for 5 minutes (300 seconds)
+  const isStuckSync = lastActivity && (now.getTime() - lastActivity.getTime()) > 300000;
+  const isStuckHeartbeat = lastHeartbeat && (now.getTime() - lastHeartbeat.getTime()) > 300000;
+  
+  // Determine if sync is truly running or stuck
+  const isTrulyRunning = dbSyncStatus?.status === 'running' && !isStuckSync && !isStuckHeartbeat;
+  
+  if (syncState.isRunning && isTrulyRunning) {
+    console.log('⚠️ Sync already running, ignoring request');
     return { success: false, message: 'Sync already running', stats: null };
   }
+
+  // If sync appears stuck, clear the stuck state and allow new sync
+  if (dbSyncStatus?.status === 'running' && (isStuckSync || isStuckHeartbeat)) {
+    console.log('🔄 Detected stuck sync, clearing and allowing new sync to start...');
+    await supabase
+      .from('sync_status')
+      .update({
+        status: 'failed',
+        error_message: 'Previous sync was stuck/timed out',
+        completed_at: now.toISOString()
+      })
+      .eq('id', 'cars-sync-main');
+  }
+
+  // Reset in-memory state to ensure clean start
+  syncState.isRunning = false;
 
   console.log('🚀 Starting Enhanced Maximum Speed Sync with Complete API Mapping...');
   
