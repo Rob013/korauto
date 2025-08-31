@@ -1,352 +1,363 @@
-import { useEffect, useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  Search, 
-  Filter, 
-  X, 
-  ArrowUpDown,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  PanelLeftOpen,
-  PanelLeftClose,
-} from 'lucide-react';
-import LazyCarCard from '@/components/LazyCarCard';
-import { fetchCarsWithKeyset, SortOption as CarsApiSortOption } from '@/services/carsApi';
-import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Loader2, Search, ArrowUpDown, Car, Filter, X } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useCarsSearch, useCarsFacets } from "@/hooks/useCarsSearch";
+import { SearchReq, DEFAULT_SORT, DEFAULT_PAGE_SIZE } from "@/lib/search/types";
+import { useIsMobile } from "@/hooks/use-mobile";
+import LoadingLogo from "@/components/LoadingLogo";
+import LazyCarCard from "@/components/LazyCarCard";
+import { AdaptiveSelect } from "@/components/ui/adaptive-select";
 
 interface NewEncarCatalogProps {
   highlightCarId?: string | null;
-  className?: string;
 }
 
-const SORT_OPTIONS: Array<{value: CarsApiSortOption, label: string}> = [
-  { value: 'price_asc', label: 'Price: Low to High' },
-  { value: 'price_desc', label: 'Price: High to Low' },
-  { value: 'year_desc', label: 'Year: Newest First' },
-  { value: 'year_asc', label: 'Year: Oldest First' },
-  { value: 'mileage_asc', label: 'Mileage: Low to High' },
-  { value: 'mileage_desc', label: 'Mileage: High to Low' },
-  { value: 'make_asc', label: 'Make: A to Z' },
-  { value: 'make_desc', label: 'Make: Z to A' },
+const sortOptions = [
+  { value: 'listed_at_desc', label: 'Recently Added' },
+  { value: 'price_eur_asc', label: 'Price: Low to High' },
+  { value: 'price_eur_desc', label: 'Price: High to Low' },
+  { value: 'year_asc', label: 'Year: Old to New' },
+  { value: 'year_desc', label: 'Year: New to Old' },
+  { value: 'mileage_km_asc', label: 'Mileage: Low to High' },
+  { value: 'mileage_km_desc', label: 'Mileage: High to Low' },
 ];
 
-export const NewEncarCatalog = ({ highlightCarId, className = '' }: NewEncarCatalogProps) => {
+export const NewEncarCatalog = ({ highlightCarId }: NewEncarCatalogProps) => {
   const { toast } = useToast();
-  const { convertUSDtoEUR } = useCurrencyAPI();
+  const isMobile = useIsMobile();
+  const [searchParams, setSearchParams] = useSearchParams();
   
-  // State for cars and pagination
-  const [cars, setCars] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [totalCount, setTotalCount] = useState(0);
-  const [sortBy, setSortBy] = useState<CarsApiSortOption>('price_asc');
+  // Extract filters from URL
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
+  const [selectedMake, setSelectedMake] = useState(searchParams.get('make') || '');
+  const [selectedModel, setSelectedModel] = useState(searchParams.get('model') || '');
+  const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'listed_at_desc');
+  const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1);
   const [showFilters, setShowFilters] = useState(false);
-  const [nextCursor, setNextCursor] = useState<string | undefined>();
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  
-  // Filters state
-  const [filters, setFilters] = useState<Record<string, any>>({});
-  const [searchTerm, setSearchTerm] = useState('');
-  
-  const ITEMS_PER_PAGE = 24;
 
-  // Fetch cars with global sorting
-  const fetchCars = useCallback(async (loadMore = false, cursor?: string) => {
-    try {
-      if (!loadMore) {
-        setLoading(true);
-        setError(null);
-      } else {
-        setIsLoadingMore(true);
-      }
-
-      const result = await fetchCarsWithKeyset({
-        filters: {
-          ...filters,
-          ...(searchTerm ? { search: searchTerm } : {})
-        },
-        sort: sortBy,
-        limit: ITEMS_PER_PAGE,
-        cursor: cursor
-      });
-
-      if (loadMore) {
-        setCars(prev => [...prev, ...result.items]);
-      } else {
-        setCars(result.items);
-        setTotalCount(result.total);
-      }
-      
-      setNextCursor(result.nextCursor);
-
-    } catch (err) {
-      console.error('Error fetching cars:', err);
-      setError('Failed to load cars. Please try again.');
-      toast({
-        title: "Error",
-        description: "Failed to load cars. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-      setIsLoadingMore(false);
+  // Build search request
+  const searchRequest: SearchReq = useMemo(() => {
+    const filters: any = {};
+    
+    if (selectedMake && selectedMake !== 'all') {
+      filters.make = [selectedMake];
     }
-  }, [filters, searchTerm, sortBy, toast]);
+    
+    if (selectedModel && selectedModel !== 'all') {
+      filters.model = [selectedModel];
+    }
 
-  // Initial load and refresh when sort/filters change
-  useEffect(() => {
-    fetchCars();
-  }, [sortBy, filters, searchTerm]);
+    // Parse sort
+    const [field, direction] = sortBy.split('_').slice(0, 2);
+    const sortField = field as 'listed_at' | 'price_eur' | 'mileage_km' | 'year';
+    const sortDir = direction as 'asc' | 'desc';
 
-  // Handle sort change
-  const handleSortChange = useCallback((newSort: CarsApiSortOption) => {
-    setSortBy(newSort);
-    setNextCursor(undefined); // Reset pagination
-  }, []);
+    return {
+      q: searchTerm || undefined,
+      filters,
+      sort: { field: sortField, dir: sortDir },
+      page: currentPage,
+      pageSize: DEFAULT_PAGE_SIZE,
+      mode: 'full' as const,
+    };
+  }, [searchTerm, selectedMake, selectedModel, sortBy, currentPage]);
 
-  // Handle search
-  const handleSearchChange = useCallback((value: string) => {
-    setSearchTerm(value);
-    setNextCursor(undefined); // Reset pagination
-  }, []);
+  // Fetch cars data
+  const { data: searchResults, isLoading, error } = useCarsSearch(searchRequest);
 
-  // Handle filter changes
-  const handleFilterChange = useCallback((field: string, value: any) => {
-    setFilters(prev => ({
-      ...prev,
-      [field]: value || undefined
+  // Fetch facets for filters
+  const { data: facetsData } = useCarsFacets({
+    q: searchTerm || undefined,
+    filters: searchRequest.filters,
+  });
+
+  // Extract data
+  const cars = searchResults?.hits || [];
+  const totalCount = searchResults?.total || 0;
+  const totalPages = Math.ceil(totalCount / DEFAULT_PAGE_SIZE);
+
+  // Get available makes and models from facets
+  const availableMakes = useMemo(() => {
+    if (!facetsData?.facets?.make) return [];
+    return Object.entries(facetsData.facets.make).map(([make, count]) => ({
+      value: make,
+      label: `${make} (${count})`,
     }));
-    setNextCursor(undefined); // Reset pagination
-  }, []);
+  }, [facetsData]);
 
-  // Clear filters
-  const handleClearFilters = useCallback(() => {
-    setFilters({});
+  const availableModels = useMemo(() => {
+    if (!facetsData?.facets?.model || !selectedMake) return [];
+    return Object.entries(facetsData.facets.model).map(([model, count]) => ({
+      value: model,
+      label: `${model} (${count})`,
+    }));
+  }, [facetsData, selectedMake]);
+
+  // Update URL when filters change
+  const updateURL = useCallback(() => {
+    const newParams = new URLSearchParams();
+    
+    if (searchTerm) newParams.set('q', searchTerm);
+    if (selectedMake && selectedMake !== 'all') newParams.set('make', selectedMake);
+    if (selectedModel && selectedModel !== 'all') newParams.set('model', selectedModel);
+    if (sortBy !== 'listed_at_desc') newParams.set('sort', sortBy);
+    if (currentPage > 1) newParams.set('page', currentPage.toString());
+
+    setSearchParams(newParams);
+  }, [searchTerm, selectedMake, selectedModel, sortBy, currentPage, setSearchParams]);
+
+  // Update URL when filters change
+  useEffect(() => {
+    updateURL();
+  }, [updateURL]);
+
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
+
+  const handleMakeChange = (make: string) => {
+    setSelectedMake(make);
+    setSelectedModel(''); // Reset model when make changes
+    setCurrentPage(1);
+  };
+
+  const handleModelChange = (model: string) => {
+    setSelectedModel(model);
+    setCurrentPage(1);
+  };
+
+  const handleSortChange = (sort: string) => {
+    setSortBy(sort);
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const clearFilters = () => {
     setSearchTerm('');
-    setNextCursor(undefined);
-  }, []);
+    setSelectedMake('');
+    setSelectedModel('');
+    setSortBy('listed_at_desc');
+    setCurrentPage(1);
+  };
 
-  // Load more cars
-  const handleLoadMore = useCallback(() => {
-    if (nextCursor && !isLoadingMore) {
-      fetchCars(true, nextCursor);
-    }
-  }, [nextCursor, isLoadingMore, fetchCars]);
-
-  const hasActiveFilters = Object.keys(filters).some(key => filters[key] !== undefined) || searchTerm;
+  // Show error message
+  if (error) {
+    toast({
+      title: "Error loading cars",
+      description: error.message,
+      variant: "destructive",
+    });
+  }
 
   return (
-    <div className={`min-h-screen bg-background ${className}`}>
-      <div className="container mx-auto px-4 py-6">
-        {/* Header with Search and Controls */}
-        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center mb-6">
+    <div className="container-responsive py-6">
+      {/* Header with search and filters toggle */}
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold">Cars Catalog</h1>
+          <Badge variant="secondary">
+            {totalCount.toLocaleString()} cars
+          </Badge>
+        </div>
+
+        {/* Mobile filter toggle */}
+        {isMobile && (
+          <Button
+            variant="outline"
+            onClick={() => setShowFilters(!showFilters)}
+            className="w-full"
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            {showFilters ? 'Hide Filters' : 'Show Filters'}
+          </Button>
+        )}
+
+        {/* Search and filters */}
+        <div className={`grid gap-4 ${isMobile ? (showFilters ? 'grid-cols-1' : 'hidden') : 'grid-cols-1 md:grid-cols-4'}`}>
           {/* Search */}
-          <div className="flex-1 max-w-md">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search cars..."
-                value={searchTerm}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search cars..."
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="pl-10"
+            />
           </div>
 
-          {/* Controls */}
-          <div className="flex items-center gap-2">
-            {/* Filters toggle */}
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2"
-            >
-              {showFilters ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
-              Filters
-              {hasActiveFilters && (
-                <Badge variant="secondary" className="ml-1">
-                  Active
+          {/* Make filter */}
+          <AdaptiveSelect
+            value={selectedMake}
+            onValueChange={handleMakeChange}
+            placeholder="All Makes"
+            options={[
+              { value: 'all', label: 'All Makes' },
+              ...availableMakes,
+            ]}
+          />
+
+          {/* Model filter */}
+          <AdaptiveSelect
+            value={selectedModel}
+            onValueChange={handleModelChange}
+            placeholder="All Models"
+            disabled={!selectedMake || selectedMake === 'all'}
+            options={[
+              { value: 'all', label: 'All Models' },
+              ...availableModels,
+            ]}
+          />
+
+          {/* Sort */}
+          <AdaptiveSelect
+            value={sortBy}
+            onValueChange={handleSortChange}
+            placeholder="Sort by"
+            options={sortOptions}
+          />
+        </div>
+
+        {/* Active filters and clear button */}
+        {(selectedMake || selectedModel || searchTerm) && (
+          <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-2">
+              {searchTerm && (
+                <Badge variant="secondary">
+                  Search: {searchTerm}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 w-4 p-0 ml-1"
+                    onClick={() => handleSearch('')}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
                 </Badge>
               )}
+              {selectedMake && selectedMake !== 'all' && (
+                <Badge variant="secondary">
+                  Make: {selectedMake}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 w-4 p-0 ml-1"
+                    onClick={() => handleMakeChange('')}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              )}
+              {selectedModel && selectedModel !== 'all' && (
+                <Badge variant="secondary">
+                  Model: {selectedModel}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 w-4 p-0 ml-1"
+                    onClick={() => handleModelChange('')}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              )}
+            </div>
+            <Button variant="outline" size="sm" onClick={clearFilters}>
+              Clear All Filters
             </Button>
+          </div>
+        )}
+      </div>
 
-            {/* Sort */}
-            <Select value={sortBy} onValueChange={handleSortChange}>
-              <SelectTrigger className="w-48">
-                <ArrowUpDown className="h-4 w-4 mr-2" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {SORT_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      {/* Loading state */}
+      {isLoading && (
+        <div className="flex flex-col items-center justify-center py-12">
+          <LoadingLogo />
+          <p className="text-muted-foreground mt-4">Loading cars...</p>
+        </div>
+      )}
 
-            {/* Clear filters */}
-            {hasActiveFilters && (
+      {/* Cars grid */}
+      {!isLoading && cars.length > 0 && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {cars.map((car) => (
+              <LazyCarCard
+                key={car.id}
+                id={car.id}
+                make={car.make}
+                model={car.model}
+                year={car.year}
+                price={car.price_eur}
+                image={car.thumbnail ? String(car.thumbnail) : undefined}
+                mileage={car.mileage_km?.toString()}
+                title={`${car.year} ${car.make} ${car.model}`}
+              />
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-8">
               <Button
                 variant="outline"
-                onClick={handleClearFilters}
-                className="flex items-center gap-2"
+                size="sm"
+                disabled={currentPage === 1}
+                onClick={() => handlePageChange(currentPage - 1)}
               >
-                <X className="h-4 w-4" />
-                Clear
+                Previous
               </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Status */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="text-sm text-muted-foreground">
-            {loading ? (
-              'Loading...'
-            ) : (
-              `${totalCount.toLocaleString()} cars found • Globally sorted by ${SORT_OPTIONS.find(opt => opt.value === sortBy)?.label}`
-            )}
-          </div>
-        </div>
-
-        <div className="flex gap-6">
-          {/* Filters Sidebar */}
-          {showFilters && (
-            <div className="w-80 space-y-4">
-              <div className="glass-card p-4 rounded-lg">
-                <h3 className="font-semibold mb-4">Quick Filters</h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-sm font-medium">Make</label>
-                    <Input
-                      placeholder="e.g. BMW, Audi"
-                      value={filters.make || ''}
-                      onChange={(e) => handleFilterChange('make', e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Model</label>
-                    <Input
-                      placeholder="e.g. A4, X3"
-                      value={filters.model || ''}
-                      onChange={(e) => handleFilterChange('model', e.target.value)}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-sm font-medium">Min Year</label>
-                      <Input
-                        type="number"
-                        placeholder="2010"
-                        value={filters.yearMin || ''}
-                        onChange={(e) => handleFilterChange('yearMin', e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Max Year</label>
-                      <Input
-                        type="number"
-                        placeholder="2024"
-                        value={filters.yearMax || ''}
-                        onChange={(e) => handleFilterChange('yearMax', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-sm font-medium">Min Price (€)</label>
-                      <Input
-                        type="number"
-                        placeholder="5000"
-                        value={filters.priceMin || ''}
-                        onChange={(e) => handleFilterChange('priceMin', e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Max Price (€)</label>
-                      <Input
-                        type="number"
-                        placeholder="50000"
-                        value={filters.priceMax || ''}
-                        onChange={(e) => handleFilterChange('priceMax', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
+              
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  const page = Math.max(1, currentPage - 2) + i;
+                  if (page > totalPages) return null;
+                  
+                  return (
+                    <Button
+                      key={page}
+                      variant={page === currentPage ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handlePageChange(page)}
+                    >
+                      {page}
+                    </Button>
+                  );
+                })}
               </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === totalPages}
+                onClick={() => handlePageChange(currentPage + 1)}
+              >
+                Next
+              </Button>
             </div>
           )}
+        </>
+      )}
 
-          {/* Cars Grid */}
-          <div className="flex-1">
-            {loading && cars.length === 0 ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin" />
-              </div>
-            ) : error ? (
-              <div className="text-center py-12">
-                <p className="text-destructive">{error}</p>
-                <Button onClick={() => fetchCars()} className="mt-4">
-                  Try Again
-                </Button>
-              </div>
-            ) : cars.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">No cars found matching your criteria.</p>
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {cars.map((car) => (
-                    <LazyCarCard
-                      key={car.id}
-                      id={car.id}
-                      make={car.make}
-                      model={car.model}
-                      year={car.year}
-                      price={convertUSDtoEUR(car.price_cents ? Math.round(car.price_cents / 100) : car.price || 25000)}
-                      image={car.images?.[0]}
-                      images={car.images}
-                      mileage={car.mileage}
-                      transmission={car.transmission}
-                      fuel={car.fuel}
-                      color={car.color}
-                      lot={car.id}
-                      title={car.title || `${car.make} ${car.model} ${car.year}`}
-                    />
-                  ))}
-                </div>
-
-                {/* Load More Button */}
-                {nextCursor && (
-                  <div className="flex justify-center mt-8">
-                    <Button 
-                      onClick={handleLoadMore}
-                      disabled={isLoadingMore}
-                      className="flex items-center gap-2"
-                    >
-                      {isLoadingMore ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Loading More...
-                        </>
-                      ) : (
-                        'Load More Cars'
-                      )}
-                    </Button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+      {/* No results */}
+      {!isLoading && cars.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-12">
+          <Car className="h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No cars found</h3>
+          <p className="text-muted-foreground text-center mb-4">
+            Try adjusting your filters or search terms to find more results.
+          </p>
+          <Button onClick={clearFilters}>Clear All Filters</Button>
         </div>
-      </div>
+      )}
     </div>
   );
 };

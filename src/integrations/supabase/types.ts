@@ -770,6 +770,10 @@ export type Database = {
           year: number
         }[]
       }
+      cars_search_sorted: {
+        Args: { req: Json }
+        Returns: Json
+      }
       check_rate_limit: {
         Args: {
           _action: string
