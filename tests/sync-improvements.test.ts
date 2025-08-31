@@ -141,7 +141,7 @@ describe('Sync System Improvements', () => {
     // Simulate the enhanced updateProgressMessage function
     const updateProgressMessage = (status: any): string => {
       const recordsProcessed = status.records_processed || 0;
-      const estimatedTotal = 200000;
+      const estimatedTotal = 192800;
       const percentage = Math.round((recordsProcessed / estimatedTotal) * 100);
       
       const formattedRecords = recordsProcessed.toLocaleString();

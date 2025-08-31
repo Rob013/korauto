@@ -66,11 +66,11 @@ describe('Sync Count Issue - 16 cars instead of 105,505', () => {
   it('should calculate correct percentage with corrected count', () => {
     // Test that percentage calculation uses corrected count
     const correctedCount = 105505; // After correction is applied
-    const estimatedTotal = 200000; // From getProgressPercentage()
+    const estimatedTotal = 192800; // From getProgressPercentage()
     
     const percentage = Math.min(100, (correctedCount / estimatedTotal) * 100);
     
-    expect(percentage).toBeCloseTo(52.75, 1); // 105505/200000 * 100 = 52.75%
+    expect(percentage).toBeCloseTo(54.72, 1); // 105505/192800 * 100 = 54.72%
     expect(percentage).not.toBe(0.0); // Should not be 0.0%
     expect(percentage).toBeGreaterThan(50); // Should show significant progress
   });
