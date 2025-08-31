@@ -50,7 +50,7 @@ import {
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
-import { mapFrontendSortToBackend, SortOption as BackendSortOption, FrontendSortOption } from "@/services/carsApi";
+import { mapFrontendSortToBackend, getSortParams, fetchCarsWithKeyset, type CarFilters } from "@/services/carsApi";
 import { filterOutTestCars } from "@/utils/testCarFilter";
 import { fallbackCars } from "@/data/fallbackData";
 
@@ -476,62 +476,79 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
     
     setCurrentPage(page);
+    setIsLoading(true);
     
-    // Fetch cars for the specific page with proper API pagination and backend sorting
-    const filtersWithPagination = addPaginationToFilters(filters, 50, page);
+    // Use backend global sorting for pagination
+    const carFilters = {
+      make: filters.manufacturer_id || undefined,
+      model: filters.model_id || undefined,
+      yearMin: filters.from_year || undefined,
+      yearMax: filters.to_year || undefined,
+      priceMin: filters.buy_now_price_from || undefined,
+      priceMax: filters.buy_now_price_to || undefined,
+      fuel: filters.fuel_type || undefined,
+      search: filters.search || undefined,
+    };
+
+    const { field: sortField, direction: sortDir } = getSortParams(sortBy);
     
-    // Add current sort option for backend sorting using secure auction API format
-    switch (sortBy) {
-      case 'price_low':
-        filtersWithPagination.sort_by = 'price';
-        filtersWithPagination.sort_direction = 'asc';
-        break;
-      case 'price_high':
-        filtersWithPagination.sort_by = 'price';
-        filtersWithPagination.sort_direction = 'desc';
-        break;
-      case 'year_new':
-        filtersWithPagination.sort_by = 'year';
-        filtersWithPagination.sort_direction = 'desc';
-        break;
-      case 'year_old':
-        filtersWithPagination.sort_by = 'year';
-        filtersWithPagination.sort_direction = 'asc';
-        break;
-      case 'mileage_low':
-        filtersWithPagination.sort_by = 'mileage';
-        filtersWithPagination.sort_direction = 'asc';
-        break;
-      case 'mileage_high':
-        filtersWithPagination.sort_by = 'mileage';
-        filtersWithPagination.sort_direction = 'desc';
-        break;
-      case 'recently_added':
-        filtersWithPagination.sort_by = 'created_at';
-        filtersWithPagination.sort_direction = 'desc';
-        break;
-      case 'oldest_first':
-        filtersWithPagination.sort_by = 'created_at';
-        filtersWithPagination.sort_direction = 'asc';
-        break;
-    }
     
-    fetchCars(page, filtersWithPagination, true); // Reset list for new page
+    const handlePageRequest = async () => {
+      try {
+        const { data: cars, error } = await supabase
+          .rpc('cars_global_sort_page', {
+            p_filters: carFilters,
+            p_sort_field: sortField,
+            p_sort_dir: sortDir,
+            p_offset: (page - 1) * 50,
+            p_limit: 50
+          });
+
+        if (error) {
+          console.error("❌ Error changing page with global sorting:", error);
+          toast({
+            title: "Page Load Error",
+            description: "Failed to load page. Please try again.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Map the RPC result to the expected format
+        const mappedCars = (cars || []).map((car: any) => ({
+          ...car,
+          manufacturer: { name: car.make }
+        }));
+
+        setCars(mappedCars);
+        console.log(`✅ Successfully loaded page ${page}: ${cars?.length || 0} cars with global sorting`);
+        
+        // Update URL with new page while preserving sort and other parameters
+        const currentParams = Object.fromEntries(searchParams.entries());
+        currentParams.page = page.toString();
+        if (hasUserSelectedSort && sortBy !== 'recently_added') {
+          currentParams.sort = sortBy;
+        }
+        setSearchParams(currentParams);
+        
+        // Scroll to top when changing pages
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (error) {
+        console.error("❌ Error in page change:", error);
+        toast({
+          title: "Page Load Error",
+          description: "Failed to load page. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    handlePageRequest();
     
-    // Update URL with new page while preserving sort and other parameters
-    const currentParams = Object.fromEntries(searchParams.entries());
-    currentParams.page = page.toString();
-    // Ensure sort parameter is preserved if user has selected a sort option
-    if (hasUserSelectedSort && sortBy !== 'recently_added') {
-      currentParams.sort = sortBy;
-    }
-    setSearchParams(currentParams);
-    
-    // Scroll to top when changing pages
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    
-    console.log(`📄 Navigated to page ${page} of ${totalPages} with filters:`, filtersWithPagination);
-  }, [filters, fetchCars, setSearchParams, addPaginationToFilters, totalPages, sortBy, hasUserSelectedSort]);
+    console.log(`📄 Navigated to page ${page} of ${totalPages} with global backend sorting`);
+  }, [filters, totalPages, sortBy, hasUserSelectedSort, searchParams, setSearchParams, toast, setCars]);
 
   // Function to fetch and display all cars
   const handleShowAllCars = useCallback(async () => {
@@ -901,61 +918,83 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
   }, [totalCount]); // Update when totalCount changes
 
-  // Trigger backend sorting when sort option changes
+  // Handle sorting with backend global sorting
   useEffect(() => {
     if (totalCount > 0 && hasUserSelectedSort) {
-      console.log(`🔄 Applying backend sorting: totalCount=${totalCount}, sortBy=${sortBy}`);
+      console.log(`🔄 Applying global backend sorting: totalCount=${totalCount}, sortBy=${sortBy}`);
       
-      // Apply current filters with new sort option using secure auction API format
-      const filtersWithPagination = addPaginationToFilters(filters, 50, 1);
+      setIsLoading(true);
       
-      // Add sort parameters in secure auction API format
-      switch (sortBy) {
-        case 'price_low':
-          filtersWithPagination.sort_by = 'price';
-          filtersWithPagination.sort_direction = 'asc';
-          break;
-        case 'price_high':
-          filtersWithPagination.sort_by = 'price';
-          filtersWithPagination.sort_direction = 'desc';
-          break;
-        case 'year_new':
-          filtersWithPagination.sort_by = 'year';
-          filtersWithPagination.sort_direction = 'desc';
-          break;
-        case 'year_old':
-          filtersWithPagination.sort_by = 'year';
-          filtersWithPagination.sort_direction = 'asc';
-          break;
-        case 'mileage_low':
-          filtersWithPagination.sort_by = 'mileage';
-          filtersWithPagination.sort_direction = 'asc';
-          break;
-        case 'mileage_high':
-          filtersWithPagination.sort_by = 'mileage';
-          filtersWithPagination.sort_direction = 'desc';
-          break;
-        case 'recently_added':
-          filtersWithPagination.sort_by = 'created_at';
-          filtersWithPagination.sort_direction = 'desc';
-          break;
-        case 'oldest_first':
-          filtersWithPagination.sort_by = 'created_at';
-          filtersWithPagination.sort_direction = 'asc';
-          break;
-      }
+      // Use backend global sorting
+      const carFilters = {
+        make: filters.manufacturer_id || undefined,
+        model: filters.model_id || undefined,
+        yearMin: filters.from_year || undefined,
+        yearMax: filters.to_year || undefined,
+        priceMin: filters.buy_now_price_from || undefined,
+        priceMax: filters.buy_now_price_to || undefined,
+        fuel: filters.fuel_type || undefined,
+        search: filters.search || undefined,
+      };
+
+      const { field: sortField, direction: sortDir } = getSortParams(sortBy);
       
-      // Reset to page 1 and fetch with new sort
-      setCurrentPage(1);
-      fetchCars(1, filtersWithPagination, true);
-      
-      // Update URL with sort option
-      const currentParams = Object.fromEntries(searchParams.entries());
-      currentParams.page = '1';
-      currentParams.sort = sortBy;
-      setSearchParams(currentParams);
+      const handleSortRequest = async () => {
+        try {
+          const { data: cars, error } = await supabase
+            .rpc('cars_global_sort_page', {
+              p_filters: carFilters,
+              p_sort_field: sortField,
+              p_sort_dir: sortDir,
+              p_offset: 0,
+              p_limit: 50
+            });
+
+          if (error) {
+            console.error("❌ Error applying global sort:", error);
+            toast({
+              title: "Sorting Error",
+              description: "Failed to apply global sorting. Please try again.",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          // Map the RPC result to the expected format
+          const mappedCars = (cars || []).map((car: any) => ({
+            ...car,
+            manufacturer: { name: car.make }
+          }));
+
+          setCars(mappedCars);
+          setCurrentPage(1); // Reset to page 1 after sorting
+          console.log(`✅ Successfully applied global ${sortBy} sorting: ${cars?.length || 0} cars shown of ${totalCount} total`);
+          
+          toast({
+            title: "Global Sorting Applied",
+            description: `All ${totalCount.toLocaleString()} cars sorted by ${sortBy.replace('_', ' ')}`,
+          });
+          
+          // Update URL parameters
+          const currentParams = Object.fromEntries(searchParams.entries());
+          currentParams.page = '1';
+          currentParams.sort = sortBy;
+          setSearchParams(currentParams);
+        } catch (error) {
+          console.error("❌ Error in global sorting:", error);
+          toast({
+            title: "Sorting Error",
+            description: "Failed to apply global sorting. Please try again.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      handleSortRequest();
     }
-  }, [sortBy, hasUserSelectedSort, totalCount]);
+  }, [sortBy, hasUserSelectedSort, totalCount, filters, toast, setCars, setSearchParams]);
 
   // Show cars without requiring brand and model selection
   const shouldShowCars = true;
