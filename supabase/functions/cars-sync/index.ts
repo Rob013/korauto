@@ -67,10 +67,11 @@ Deno.serve(async (req) => {
     const fromPage = syncParams.fromPage || 1;
     const reconcileProgress = syncParams.reconcileProgress === true;
 
-    // MAXIMUM SPEED configuration optimized for fastest possible sync
+    // SMART EXECUTION configuration to prevent EarlyDrop timeouts
     const PAGE_SIZE = 250; // Increased from 200 for fewer API requests
     const BATCH_SIZE = 750; // Increased from 500 for larger database writes
-    const MAX_PAGES_PER_RUN = 999999; // Unlimited pages to ensure 100% completion without pause
+    const MAX_EXECUTION_TIME = 120000; // 2 minutes max execution to prevent EarlyDrop
+    const MAX_PAGES_PER_RUN = 50; // Process 50 pages then auto-resume to avoid timeouts
 
     // Enhanced sync status management
     let currentSyncStatus = null;
@@ -146,9 +147,16 @@ Deno.serve(async (req) => {
     const startTime = Date.now();
     let lastProgressUpdate = startTime;
 
-    // Enhanced processing loop with unlimited pages for complete sync
-    while (consecutiveEmptyPages < 10) { // Continue until naturally complete (10 consecutive empty pages)
+    // Enhanced processing loop with smart execution time management to prevent EarlyDrop
+    while (consecutiveEmptyPages < 10 && (currentPage - startPage) < MAX_PAGES_PER_RUN) {
       try {
+        // Check execution time to prevent EarlyDrop timeout
+        const elapsed = Date.now() - startTime;
+        if (elapsed > MAX_EXECUTION_TIME) {
+          console.log(`⏰ Approaching execution limit (${elapsed}ms), pausing for auto-resume...`);
+          break;
+        }
+
         console.log(`📄 Processing page ${currentPage}...`);
 
         // Enhanced request with retry logic and performance optimization
@@ -305,15 +313,28 @@ Deno.serve(async (req) => {
       }
     } // End of while loop
 
-    // Enhanced completion logic - NEVER PAUSE, ONLY COMPLETE WHEN TRULY DONE
-    const finalStatus = consecutiveEmptyPages >= 10 ? 'completed' : 'running'; // Changed from 'paused' to 'running'
+    // Enhanced completion logic with auto-resume support to prevent EarlyDrop
+    const hitExecutionLimit = (Date.now() - startTime) > MAX_EXECUTION_TIME;
+    const hitPageLimit = (currentPage - startPage) >= MAX_PAGES_PER_RUN;
+    const finalStatus = consecutiveEmptyPages >= 10 ? 'completed' : 'paused'; // Pause to allow auto-resume
     const isNaturalCompletion = consecutiveEmptyPages >= 10;
     
     const finalRecordsProcessed = isResumeRequest 
       ? (currentSyncStatus?.records_processed || 0) + totalProcessed
       : (existingCars || 0) + totalProcessed;
     
-    console.log(`📊 Sync finishing: ${totalProcessed} new cars processed, ${consecutiveEmptyPages} consecutive empty pages`);
+    let completionMessage: string;
+    if (isNaturalCompletion) {
+      completionMessage = `✅ SYNC 100% COMPLETE! Processed ${totalProcessed} new cars (Total: ${finalRecordsProcessed})`;
+    } else if (hitExecutionLimit) {
+      completionMessage = `⏰ Execution time limit reached. Processed ${totalProcessed} new cars - will auto-resume to prevent EarlyDrop`;
+    } else if (hitPageLimit) {
+      completionMessage = `📊 Page limit reached. Processed ${totalProcessed} new cars - will auto-resume for completion`;
+    } else {
+      completionMessage = `✅ Sync batch complete: ${totalProcessed} new cars processed - continuing automatically to 100%`;
+    }
+    
+    console.log(`📊 Sync finishing: ${completionMessage}`);
     
     await supabase
       .from('sync_status')
@@ -325,13 +346,9 @@ Deno.serve(async (req) => {
         last_activity_at: new Date().toISOString(),
         error_message: isNaturalCompletion ? 
           `Sync completed naturally - processed ${totalProcessed} new cars, ${errors} errors` :
-          `Processed ${totalProcessed} new cars, ${errors} errors - continuing automatically to 100%`
+          `Processed ${totalProcessed} new cars, ${errors} errors - auto-resume ready from page ${currentPage}`
       })
       .eq('id', 'cars-sync-main');
-
-    const completionMessage = isNaturalCompletion 
-      ? `✅ SYNC 100% COMPLETE! Processed ${totalProcessed} new cars (Total: ${finalRecordsProcessed})`
-      : `✅ Sync continuing: ${totalProcessed} new cars processed - will continue automatically to 100%`;
     
     console.log(completionMessage);
 
