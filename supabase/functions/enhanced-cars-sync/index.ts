@@ -7,17 +7,19 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Enhanced sync configuration for maximum speed and completeness
+// Enhanced sync configuration for MAXIMUM SPEED with upgraded compute
 const CONFIG = {
-  MAX_CONCURRENT_REQUESTS: 15,          // Increased for speed
-  BATCH_SIZE: 1000,                     // Larger batches
-  REQUEST_DELAY_MS: 100,                // Minimal delay
-  MAX_RETRIES: 10,                      // More retries for reliability
-  RETRY_DELAY_MS: 2000,                 // Quick retry
-  HEARTBEAT_INTERVAL_MS: 30000,         // 30 second heartbeats
-  CHECKPOINT_FREQUENCY: 10,             // Checkpoint every 10 batches
-  IMAGE_DOWNLOAD_CONCURRENCY: 20,      // High image download concurrency
-  RESUME_FROM_116K: true                // Special flag for resuming from 116k
+  MAX_CONCURRENT_REQUESTS: 50,          // Greatly increased for upgraded compute
+  BATCH_SIZE: 2000,                     // Much larger batches (2x increase)
+  REQUEST_DELAY_MS: 50,                 // Reduced delay (was 100ms)
+  MAX_RETRIES: 15,                      // More retries for reliability
+  RETRY_DELAY_MS: 1000,                 // Faster retry (was 2000ms)
+  HEARTBEAT_INTERVAL_MS: 15000,         // More frequent heartbeats (was 30s)
+  CHECKPOINT_FREQUENCY: 5,              // More frequent checkpoints (was 10)
+  IMAGE_DOWNLOAD_CONCURRENCY: 40,       // Higher image concurrency (was 20)
+  RESUME_FROM_116K: true,               // Special flag for resuming from 116k
+  EXECUTION_TIME_LIMIT: 900000,         // 15 minutes with upgraded compute (was ~4min)
+  DB_CHUNK_SIZE: 100                    // Smaller DB chunks for stability
 };
 
 interface APICarRecord {
@@ -329,7 +331,7 @@ async function fetchAPIPage(page: number, cursor?: string): Promise<{ data: APIC
     throw new Error('AUCTIONS_API_KEY environment variable is required');
   }
 
-  let url = `https://api.auctionapis.com/cars?page=${page}&per_page=${CONFIG.BATCH_SIZE}&include_images=true&include_details=true&sort=created_at&order=asc`;
+  let url = `https://auction-apis.com/api/v1/cars?page=${page}&per_page=${CONFIG.BATCH_SIZE}&include_images=true&include_details=true&sort=created_at&order=asc`;
   
   if (cursor) {
     url += `&cursor=${cursor}`;

@@ -140,11 +140,14 @@ Deno.serve(async (req) => {
       console.log(`🎯 AUTO-RESUMING: Detected paused sync at page ${currentSyncStatus.current_page} with ${currentSyncStatus.records_processed} cars processed`);
     }
 
-    // STABLE HIGH-SPEED configuration with proper error handling
-    const PAGE_SIZE = 100; // Balanced for API efficiency and stability  
-    const BATCH_SIZE = 50;  // Reduced from 1000 to prevent memory issues
-    const MAX_EXECUTION_TIME = 240000; // 4 minutes for stable processing
-    const MAX_PAGES_PER_RUN = 200; // Process in manageable chunks
+    // MAXIMUM SPEED configuration optimized for upgraded compute
+    const PAGE_SIZE = 100;
+    const BATCH_SIZE = 200;  // Increased for upgraded compute (was 50)
+    const MAX_EXECUTION_TIME = 900000; // 15 minutes with upgraded compute (was 240s)
+    const MAX_PAGES_PER_RUN = 500; // Much larger chunks for upgraded compute (was 200)
+    const MAX_CONCURRENT_REQUESTS = 50; // Greatly increased (was 15)
+    const REQUEST_DELAY_MS = 25; // Minimal delay for speed
+    const RETRY_DELAY_MS = 500; // Faster retries
 
     // Update sync status to running with enhanced metadata
     const updateData: any = {
