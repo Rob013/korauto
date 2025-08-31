@@ -44,6 +44,7 @@ import {
   Cog,
 } from "lucide-react";
 import { ImageZoom } from "@/components/ImageZoom";
+import { EnhancedCarDetails } from "@/components/EnhancedCarDetails";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useCarDetails } from "@/hooks/useCarDetails";
@@ -1544,8 +1545,12 @@ const CarDetails = memo(() => {
                       </div>
                     )}
 
-                    {/* Equipment & Options */}
+                    {/* Enhanced Car Details Section with All Synced Data */}
+                    <div className="space-y-6">
+                      <EnhancedCarDetails car={car} />
+                    </div>
 
+                    {/* Equipment & Options */}
                     {car.details?.options && (
                       <EquipmentOptionsSection
                         options={convertOptionsToNames(car.details?.options)}

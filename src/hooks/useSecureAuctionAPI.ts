@@ -751,28 +751,95 @@ export const useSecureAuctionAPI = () => {
         throw new Error('Failed to fetch cars from database');
       }
 
-      // Transform database cars to match expected format
-      const transformedCars = (cars || []).map(car => ({
-        id: car.id,
-        title: `${car.year} ${car.make} ${car.model}`,
-        year: car.year,
-        manufacturer: { name: car.make },
-        model: { name: car.model },
-        vin: car.vin,
-        lots: [{
-          buy_now: car.price,
-          images: {
-            normal: car.images ? JSON.parse(car.images) : []
-          },
-          odometer: car.mileage ? { km: parseInt(car.mileage) } : null
-        }],
-        fuel: car.fuel ? { name: car.fuel } : null,
-        transmission: car.transmission ? { name: car.transmission } : null,
-        color: car.color ? { name: car.color } : null,
-        price: car.price?.toString(),
-        lot_number: car.lot_number,
-        location: 'South Korea'
-      }));
+          // Transform database cars to match expected format with ALL available data
+          const transformedCars = (cars || []).map(car => {
+            // Parse comprehensive car data
+            const carData = typeof car.car_data === 'string' ? 
+              JSON.parse(car.car_data || '{}') : car.car_data || {};
+            const lotData = typeof car.lot_data === 'string' ? 
+              JSON.parse(car.lot_data || '{}') : car.lot_data || {};
+            const allImages = typeof car.images === 'string' ? 
+              JSON.parse(car.images || '[]') : car.images || [];
+
+            return {
+              id: car.id,
+              title: carData.title || `${car.year} ${car.make} ${car.model}`,
+              year: car.year,
+              manufacturer: { name: car.make },
+              model: { name: car.model },
+              vin: car.vin || carData.vin,
+              
+              // Complete lot information with all pricing
+              lots: [{
+                buy_now: car.price,
+                bid: carData.current_bid || lotData.bid,
+                final_price: carData.final_price || lotData.final_price,
+                estimate_repair_price: carData.estimate_repair_price,
+                pre_accident_price: carData.pre_accident_price,
+                clean_wholesale_price: carData.clean_wholesale_price,
+                actual_cash_value: carData.actual_cash_value,
+                sale_date: carData.sale_date || lotData.sale_date,
+                seller: carData.seller || lotData.seller,
+                seller_type: carData.seller_type || lotData.seller_type,
+                status: carData.status || lotData.status,
+                
+                // Enhanced images with all captured photos
+                images: {
+                  normal: carData.normal_images || allImages,
+                  big: carData.big_images || []
+                },
+                
+                // Vehicle condition and damage
+                grade_iaai: carData.grade_iaai || lotData.grade_iaai,
+                damage: {
+                  main: carData.damage_main || lotData.damage?.main,
+                  second: carData.damage_second || lotData.damage?.second
+                },
+                keys_available: carData.keys_available !== false,
+                airbags: carData.airbags || lotData.airbags,
+                
+                // Complete odometer info
+                odometer: {
+                  km: car.mileage ? parseInt(car.mileage) : lotData.odometer?.km,
+                  mi: lotData.odometer?.mi
+                },
+                
+                // Insurance and inspection data
+                insurance: carData.insurance || lotData.insurance,
+                insurance_v2: carData.insurance_v2 || lotData.insurance_v2,
+                inspect: carData.inspect || lotData.inspect,
+                
+                // Additional details
+                lot: car.lot_number || lotData.lot,
+                detailed_title: carData.detailed_title || lotData.detailed_title,
+                domain: carData.domain || lotData.domain,
+                popularity_score: carData.popularity_score || 0
+              }],
+              
+              // Vehicle specifications
+              fuel: car.fuel ? { name: car.fuel } : null,
+              transmission: car.transmission ? { name: car.transmission } : null,
+              color: car.color ? { name: car.color } : null,
+              engine: carData.engine || { name: "Unknown Engine" },
+              body_type: carData.body_type || { name: "Sedan" },
+              drive_wheel: carData.drive_wheel || { name: "Unknown" },
+              cylinders: carData.cylinders,
+              
+              // Display fields
+              price: car.price?.toString(),
+              lot_number: car.lot_number,
+              location: carData.location || 'South Korea',
+              
+              // Enhanced details object with all data
+              details: {
+                ...carData,
+                ...lotData.details,
+                options: lotData.details?.options,
+                inspect_outer: lotData.details?.inspect_outer,
+                insurance: carData.insurance || lotData.insurance
+              }
+            };
+          });
 
       console.log(`✅ Fetched ${transformedCars.length} cars from Supabase (excluded problematic prices)`);
 
