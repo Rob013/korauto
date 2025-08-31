@@ -167,7 +167,7 @@ describe('Sync System Improvements', () => {
     const progressMessage = updateProgressMessage(syncStatus);
     
     expect(progressMessage).toContain('🔄 Syncing (250 cars/min)');
-    expect(progressMessage).toContain('5,000 / 200,000 cars');
+    expect(progressMessage).toContain('5,000 / 192,800 cars');
     expect(progressMessage).toContain('(3%)');
     expect(progressMessage).toContain('Running for 30min');
   });

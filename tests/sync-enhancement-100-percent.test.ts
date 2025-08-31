@@ -5,23 +5,23 @@ describe('Sync Enhancement for 100% Completion', () => {
     // Mock API response with total count
     const mockApiResponse = {
       data: [/* cars */],
-      total: 200000,
-      meta: { total: 200000 }
+      total: 192800,
+      meta: { total: 192800 }
     };
 
     const totalApiRecords = mockApiResponse.total || mockApiResponse.meta?.total;
-    expect(totalApiRecords).toBe(200000);
+    expect(totalApiRecords).toBe(192800);
     
     console.log('✅ API total records detection works');
   });
 
   it('should calculate accurate completion percentage', () => {
-    const apiTotal = 200000;
+    const apiTotal = 192800;
     const testCases = [
-      { processed: 123200, expected: 62 }, // ~61.6% mentioned in problem statement
-      { processed: 160000, expected: 80 },
-      { processed: 190000, expected: 95 },
-      { processed: 200000, expected: 100 }
+      { processed: 123200, expected: 64 }, // ~64% with corrected total
+      { processed: 160000, expected: 83 },
+      { processed: 190000, expected: 99 },
+      { processed: 192800, expected: 100 }
     ];
 
     testCases.forEach(({ processed, expected }) => {
@@ -73,10 +73,10 @@ describe('Sync Enhancement for 100% Completion', () => {
 
   it('should continue sync until 100% completion', () => {
     const testScenarios = [
-      { apiTotal: 200000, processed: 123200, expectedStatus: 'running' }, // 61.6% - should continue
-      { apiTotal: 200000, processed: 160000, expectedStatus: 'running' }, // 80% - should continue  
-      { apiTotal: 200000, processed: 198000, expectedStatus: 'completed' }, // 99% - complete (threshold reached)
-      { apiTotal: 200000, processed: 200000, expectedStatus: 'completed' }, // 100% - complete
+      { apiTotal: 192800, processed: 123200, expectedStatus: 'running' }, // 64% - should continue
+      { apiTotal: 192800, processed: 160000, expectedStatus: 'running' }, // 83% - should continue  
+      { apiTotal: 192800, processed: 190800, expectedStatus: 'completed' }, // 99% - complete (threshold reached)
+      { apiTotal: 192800, processed: 192800, expectedStatus: 'completed' }, // 100% - complete
     ];
 
     testScenarios.forEach(({ apiTotal, processed, expectedStatus }) => {

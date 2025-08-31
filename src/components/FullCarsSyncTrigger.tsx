@@ -755,7 +755,7 @@ export const FullCarsSyncTrigger = () => {
               <div className="space-y-1">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Target:</span>
-                  <span className="font-medium">200,000 cars</span>
+                  <span className="font-medium">192,800 cars</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">ETA:</span>
