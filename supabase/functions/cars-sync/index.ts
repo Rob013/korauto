@@ -31,7 +31,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Validate required environment variables
+    console.log('🚀 Cars-sync function started');
+    
+    // Validate required environment variables FIRST
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const API_KEY = Deno.env.get('AUCTIONS_API_KEY');
@@ -47,8 +49,51 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    console.log('✅ Environment variables validated');
+
+    // Initialize Supabase client with error handling
+    let supabase;
+    try {
+      supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+      console.log('✅ Supabase client initialized');
+    } catch (error) {
+      console.error('❌ Failed to initialize Supabase client:', error);
+      return Response.json({
+        success: false,
+        error: 'Database connection failed'
+      }, { 
+        status: 500,
+        headers: corsHeaders 
+      });
+    }
+
     const API_BASE_URL = 'https://auctionsapi.com/api';
+
+    // Test API connectivity BEFORE starting sync
+    try {
+      console.log('🔍 Testing API connectivity...');
+      const testResponse = await fetch(`${API_BASE_URL}/cars?per_page=1&page=1`, {
+        headers: { 
+          'accept': 'application/json',
+          'x-api-key': API_KEY 
+        },
+        signal: AbortSignal.timeout(10000)
+      });
+      
+      if (!testResponse.ok) {
+        throw new Error(`API test failed: ${testResponse.status} ${testResponse.statusText}`);
+      }
+      console.log('✅ API connectivity confirmed');
+    } catch (error) {
+      console.error('❌ API connectivity test failed:', error);
+      return Response.json({
+        success: false,
+        error: `API connectivity test failed: ${error.message}`
+      }, { 
+        status: 500,
+        headers: corsHeaders 
+      });
+    }
 
     // Parse request body for sync parameters with enhanced resume handling
     let syncParams: any = {};
@@ -67,11 +112,11 @@ Deno.serve(async (req) => {
     const fromPage = syncParams.fromPage || 1;
     const reconcileProgress = syncParams.reconcileProgress === true;
 
-    // MAXIMUM SPEED configuration - no limits, full throttle
-    const PAGE_SIZE = 250; // Maximum API efficiency
-    const BATCH_SIZE = 1000; // Maximum database write efficiency
-    const MAX_EXECUTION_TIME = 540000; // 9 minutes - maximum edge function limit
-    const MAX_PAGES_PER_RUN = 999999; // No artificial page limits
+    // STABLE HIGH-SPEED configuration with proper error handling
+    const PAGE_SIZE = 100; // Balanced for API efficiency and stability  
+    const BATCH_SIZE = 50;  // Reduced from 1000 to prevent memory issues
+    const MAX_EXECUTION_TIME = 240000; // 4 minutes for stable processing
+    const MAX_PAGES_PER_RUN = 200; // Process in manageable chunks
 
     // Enhanced sync status management
     let currentSyncStatus = null;
@@ -147,9 +192,16 @@ Deno.serve(async (req) => {
     const startTime = Date.now();
     let lastProgressUpdate = startTime;
 
-    // MAXIMUM SPEED processing loop - run until natural completion (no artificial limits)
-    while (consecutiveEmptyPages < 10) { // Only stop when naturally complete (10 consecutive empty pages)
+    // STABLE processing loop with proper execution time management
+    while (consecutiveEmptyPages < 10 && (currentPage - startPage) < MAX_PAGES_PER_RUN) {
       try {
+        // Check execution time to prevent EarlyDrop timeout
+        const elapsed = Date.now() - startTime;
+        if (elapsed > MAX_EXECUTION_TIME) {
+          console.log(`⏰ Approaching execution limit (${elapsed}ms), pausing for auto-resume...`);
+          break;
+        }
+
         console.log(`📄 Processing page ${currentPage}...`);
 
         // Enhanced request with retry logic and performance optimization
@@ -285,14 +337,14 @@ Deno.serve(async (req) => {
         errors++;
         
         if (isNetworkError) {
-          console.log(`🌐 Network error on page ${currentPage}, instant retry for max speed...`);
-          // NO DELAY for network errors - instant retry for maximum speed
+          console.log(`🌐 Network error on page ${currentPage}, brief wait for stability...`);
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Small delay for network stability
         } else if (isApiError) {
-          console.log(`🔐 API error on page ${currentPage}, instant continue...`);
-          // No delay for API errors - instant retry for maximum speed
+          console.log(`🔐 API error on page ${currentPage}, brief wait for rate limit...`);
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Slightly longer for API issues
         } else {
-          console.log(`⚠️ Unknown error on page ${currentPage}, instant continue...`);
-          // No delay for unknown errors - instant retry for maximum speed
+          console.log(`⚠️ Unknown error on page ${currentPage}, brief continue...`);
+          await new Promise(resolve => setTimeout(resolve, 500)); // Small delay for unknown errors
         }
         
         currentPage++;
@@ -306,19 +358,28 @@ Deno.serve(async (req) => {
       }
     } // End of while loop
 
-    // MAXIMUM SPEED completion logic - run until natural completion only
-    const finalStatus = consecutiveEmptyPages >= 10 ? 'completed' : 'running'; // Keep running until 100% complete
+    // STABLE completion logic with proper pause/resume handling
+    const hitExecutionLimit = (Date.now() - startTime) > MAX_EXECUTION_TIME;
+    const hitPageLimit = (currentPage - startPage) >= MAX_PAGES_PER_RUN;
+    const finalStatus = consecutiveEmptyPages >= 10 ? 'completed' : 'paused'; // Pause for auto-resume
     const isNaturalCompletion = consecutiveEmptyPages >= 10;
     
     const finalRecordsProcessed = isResumeRequest 
       ? (currentSyncStatus?.records_processed || 0) + totalProcessed
       : (existingCars || 0) + totalProcessed;
     
-    const completionMessage = isNaturalCompletion 
-      ? `🚀 MAXIMUM SPEED SYNC 100% COMPLETE! Processed ${totalProcessed} new cars (Total: ${finalRecordsProcessed})`
-      : `🚀 Maximum speed sync continuing: ${totalProcessed} new cars processed - running at full throttle to 100%`;
+    let completionMessage: string;
+    if (isNaturalCompletion) {
+      completionMessage = `✅ SYNC 100% COMPLETE! Processed ${totalProcessed} new cars (Total: ${finalRecordsProcessed})`;
+    } else if (hitExecutionLimit) {
+      completionMessage = `⏰ Time limit reached. Processed ${totalProcessed} new cars - will auto-resume`;
+    } else if (hitPageLimit) {
+      completionMessage = `📊 Page limit reached. Processed ${totalProcessed} new cars - will auto-resume for completion`;
+    } else {
+      completionMessage = `✅ Chunk complete: ${totalProcessed} new cars processed - continuing automatically`;
+    }
     
-    console.log(`📊 Maximum Speed Sync Result: ${completionMessage}`);
+    console.log(`📊 Stable Sync Result: ${completionMessage}`);
     
     await supabase
       .from('sync_status')
@@ -329,8 +390,8 @@ Deno.serve(async (req) => {
         completed_at: finalStatus === 'completed' ? new Date().toISOString() : null,
         last_activity_at: new Date().toISOString(),
         error_message: isNaturalCompletion ? 
-          `Maximum speed sync completed - processed ${totalProcessed} new cars, ${errors} errors` :
-          `Maximum speed sync active - processed ${totalProcessed} new cars, ${errors} errors`
+          `Sync completed - processed ${totalProcessed} new cars, ${errors} errors` :
+          `Processed ${totalProcessed} new cars, ${errors} errors - ready for auto-resume from page ${currentPage}`
       })
       .eq('id', 'cars-sync-main');
     
