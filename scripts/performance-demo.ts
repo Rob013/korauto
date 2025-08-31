@@ -37,7 +37,7 @@ const NEW_IMPLEMENTATION = {
 function calculatePerformance(config: any, scenario: string) {
   console.log(`📊 ${scenario} Performance Analysis:`)
   
-  const totalRecords = 200000
+  const totalRecords = 192800
   const recordsPerPage = config.pageSize
   const totalPages = Math.ceil(totalRecords / recordsPerPage)
   

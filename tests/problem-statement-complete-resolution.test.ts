@@ -5,12 +5,12 @@ describe('Problem Statement Integration Test - All Issues Resolved', () => {
   describe('Issue 1: Sync Enhancement (61.6% → 100%)', () => {
     it('should demonstrate enhanced sync completion tracking', () => {
       // Test API total detection
-      const mockApiResponse = { total: 200000 };
+      const mockApiResponse = { total: 192800 };
       const apiTotal = mockApiResponse.total;
-      expect(apiTotal).toBe(200000);
+      expect(apiTotal).toBe(192800);
       
       // Test progress calculation from 61.6% to 100%
-      const currentRecords = Math.round(200000 * 0.616); // 123,200 records (61.6%)
+      const currentRecords = Math.round(192800 * 0.616); // ~118,805 records (61.6%)
       const progressPercentage = Math.round((currentRecords / apiTotal) * 100);
       expect(progressPercentage).toBe(62); // Rounded from 61.6%
       
