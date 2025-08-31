@@ -140,7 +140,6 @@ export type Database = {
           created_at: string | null
           fuel: string | null
           id: string
-          image_url: string | null
           images: Json | null
           last_api_sync: string | null
           lot_data: Json | null
@@ -164,7 +163,6 @@ export type Database = {
           created_at?: string | null
           fuel?: string | null
           id: string
-          image_url?: string | null
           images?: Json | null
           last_api_sync?: string | null
           lot_data?: Json | null
@@ -188,7 +186,6 @@ export type Database = {
           created_at?: string | null
           fuel?: string | null
           id?: string
-          image_url?: string | null
           images?: Json | null
           last_api_sync?: string | null
           lot_data?: Json | null
@@ -445,110 +442,6 @@ export type Database = {
         }
         Relationships: []
       }
-      sync_errors: {
-        Row: {
-          created_at: string
-          error_message: string
-          error_type: string
-          id: string
-          payload: Json | null
-          resolved: boolean | null
-          retry_count: number | null
-          source_record_id: string | null
-          sync_run_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          error_message: string
-          error_type: string
-          id?: string
-          payload?: Json | null
-          resolved?: boolean | null
-          retry_count?: number | null
-          source_record_id?: string | null
-          sync_run_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          error_message?: string
-          error_type?: string
-          id?: string
-          payload?: Json | null
-          resolved?: boolean | null
-          retry_count?: number | null
-          source_record_id?: string | null
-          sync_run_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sync_errors_sync_run_id_fkey"
-            columns: ["sync_run_id"]
-            isOneToOne: false
-            referencedRelation: "sync_runs"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sync_runs: {
-        Row: {
-          completed_at: string | null
-          completion_percentage: number | null
-          current_page: number | null
-          error_message: string | null
-          estimated_total: number | null
-          id: string
-          last_checkpoint: Json | null
-          last_processed_id: string | null
-          last_source_updated_at: string | null
-          source_api: string | null
-          started_at: string
-          status: string
-          sync_type: string | null
-          total_fetched: number | null
-          total_skipped: number | null
-          total_upserted: number | null
-          updated_at: string
-        }
-        Insert: {
-          completed_at?: string | null
-          completion_percentage?: number | null
-          current_page?: number | null
-          error_message?: string | null
-          estimated_total?: number | null
-          id?: string
-          last_checkpoint?: Json | null
-          last_processed_id?: string | null
-          last_source_updated_at?: string | null
-          source_api?: string | null
-          started_at?: string
-          status?: string
-          sync_type?: string | null
-          total_fetched?: number | null
-          total_skipped?: number | null
-          total_upserted?: number | null
-          updated_at?: string
-        }
-        Update: {
-          completed_at?: string | null
-          completion_percentage?: number | null
-          current_page?: number | null
-          error_message?: string | null
-          estimated_total?: number | null
-          id?: string
-          last_checkpoint?: Json | null
-          last_processed_id?: string | null
-          last_source_updated_at?: string | null
-          source_api?: string | null
-          started_at?: string
-          status?: string
-          sync_type?: string | null
-          total_fetched?: number | null
-          total_skipped?: number | null
-          total_upserted?: number | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       sync_status: {
         Row: {
           archived_lots_processed: number | null
@@ -770,10 +663,6 @@ export type Database = {
           year: number
         }[]
       }
-      cars_search_sorted: {
-        Args: { req: Json }
-        Returns: Json
-      }
       check_rate_limit: {
         Args: {
           _action: string
@@ -786,14 +675,6 @@ export type Database = {
       generate_sample_cars: {
         Args: { car_count?: number }
         Returns: number
-      }
-      get_resume_position: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      get_sync_progress: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
       }
       has_role: {
         Args: {
@@ -809,10 +690,6 @@ export type Database = {
       mark_missing_inactive: {
         Args: Record<PropertyKey, never>
         Returns: Json
-      }
-      update_sold_car_status: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
       }
     }
     Enums: {

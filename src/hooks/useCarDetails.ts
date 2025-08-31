@@ -129,7 +129,7 @@ export const useCarDetails = (
         return { data: null, error: err };
       });
 
-      // If cache hit, process immediately with ALL synced data
+      // If cache hit, process immediately
       if (!cacheError && cachedCar) {
         try {
           const carData = typeof cachedCar.car_data === "string"
@@ -142,102 +142,52 @@ export const useCarDetails = (
             ? JSON.parse(cachedCar.images || "[]")
             : cachedCar.images || [];
 
-          // Enhanced price handling from comprehensive sync data
-          const basePrice = cachedCar.price || 
-                           carData.buy_now_price || 
-                           carData.current_bid || 
-                           lotData.buy_now || 
-                           lotData.final_bid || 
-                           25000;
+          const basePrice = cachedCar.price || lotData.buy_now || lotData.final_bid || 25000;
           const price = convertUSDtoEUR(Math.round(basePrice + 2200));
 
           const transformedCar: CarDetails = {
             id: cachedCar.id,
             make: cachedCar.make || "Unknown",
-            model: cachedCar.model || "Unknown", 
+            model: cachedCar.model || "Unknown",
             year: cachedCar.year || 2020,
             price,
             image: images[0] || "/placeholder.svg",
             images: images || [],
             vin: cachedCar.vin || carData.vin,
             mileage: cachedCar.mileage || 
-              (lotData.odometer?.km ? `${lotData.odometer.km.toLocaleString()} km` : 
-               carData.odometer ? `${carData.odometer.toLocaleString()} km` : undefined),
+              (lotData.odometer?.km ? `${lotData.odometer.km.toLocaleString()} km` : undefined),
             transmission: cachedCar.transmission || carData.transmission?.name,
             fuel: cachedCar.fuel || carData.fuel?.name,
             color: cachedCar.color || carData.color?.name,
-            condition: cachedCar.condition || carData.grade_iaai ||
-              lotData.condition?.name?.replace("run_and_drives", "Good Condition") || "Good",
-            lot: cachedCar.lot_number || carData.lot_number || lotData.lot,
-            title: carData.title || `${cachedCar.year} ${cachedCar.make} ${cachedCar.model}`,
-            
-            // Enhanced data from comprehensive sync
-            odometer: {
-              km: lotData.odometer?.km || parseInt(cachedCar.mileage) || 0,
-              mi: lotData.odometer?.mi || Math.round((parseInt(cachedCar.mileage) || 0) * 0.621371),
-              status: lotData.odometer?.status || { name: "actual" }
-            },
-            engine: { name: carData.engine || "Unknown Engine" },
+            condition: cachedCar.condition || 
+              lotData.condition?.name?.replace("run_and_drives", "Good Condition"),
+            lot: cachedCar.lot_number || lotData.lot,
+            title: `${cachedCar.year} ${cachedCar.make} ${cachedCar.model}`,
+            odometer: lotData.odometer,
+            engine: carData.engine,
             cylinders: carData.cylinders,
-            drive_wheel: carData.drive_wheel || { name: "Unknown" },
-            body_type: carData.body_type || { name: "Sedan" },
-            
-            // Damage and condition info
-            damage: {
-              main: carData.damage_main || lotData.damage?.main,
-              second: carData.damage_second || lotData.damage?.second
-            },
-            
-            // Auction and sale info
-            keys_available: carData.keys_available !== false,
-            airbags: carData.airbags || lotData.airbags,
-            grade_iaai: carData.grade_iaai || lotData.grade_iaai,
-            seller: carData.seller || lotData.seller,
-            seller_type: carData.seller_type || lotData.seller_type,
-            sale_date: carData.sale_date || lotData.sale_date,
-            
-            // Enhanced pricing info
-            bid: carData.current_bid || lotData.bid,
-            buy_now: carData.buy_now_price || lotData.buy_now,
-            final_bid: carData.final_price || lotData.final_bid,
-            
-            // Features from sync data
+            drive_wheel: carData.drive_wheel,
+            body_type: carData.body_type,
+            damage: lotData.damage,
+            keys_available: lotData.keys_available,
+            airbags: lotData.airbags,
+            grade_iaai: lotData.grade_iaai,
+            seller: lotData.seller,
+            seller_type: lotData.seller_type,
+            sale_date: lotData.sale_date,
+            bid: lotData.bid,
+            buy_now: lotData.buy_now,
+            final_bid: lotData.final_bid,
             features: getCarFeatures(carData, lotData),
             safety_features: getSafetyFeatures(carData, lotData),
             comfort_features: getComfortFeatures(carData, lotData),
-            performance_rating: carData.popularity_score || 4.5,
-            popularity_score: carData.popularity_score || 85,
-            
-            // Complete insurance and inspection data
-            insurance: carData.insurance || lotData.insurance,
-            insurance_v2: carData.insurance_v2 || lotData.insurance_v2,
-            location: carData.location || lotData.location || { 
-              country: { name: "South Korea", iso: "KR" },
-              city: { name: "Seoul" }
-            },
-            inspect: carData.inspect || lotData.inspect,
-            details: {
-              ...carData,
-              ...lotData.details,
-              // Add pricing details
-              estimate_repair_price: carData.estimate_repair_price,
-              pre_accident_price: carData.pre_accident_price,
-              clean_wholesale_price: carData.clean_wholesale_price,
-              actual_cash_value: carData.actual_cash_value,
-              // Add complete images
-              has_images: carData.has_images,
-              image_count: carData.image_count,
-              normal_images: carData.normal_images,
-              big_images: carData.big_images
-            },
-            lots: [{
-              ...lotData,
-              ...carData,
-              images: { 
-                normal: carData.normal_images || images,
-                big: carData.big_images || []
-              }
-            }]
+            performance_rating: 4.5,
+            popularity_score: 85,
+            insurance: lotData.insurance,
+            insurance_v2: lotData.insurance_v2,
+            location: lotData.location,
+            inspect: lotData.inspect,
+            details: lotData.details,
           };
 
           setCar(transformedCar);

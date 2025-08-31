@@ -493,46 +493,11 @@ const CarCard = ({
         </div>
 
         {/* Compact Pricing and Action - Push to bottom */}
-        {/* Enhanced Status and Pricing Section */}
         <div className="space-y-2 mt-auto">
-          {/* Show special badges for enhanced data */}
-          <div className="flex flex-wrap gap-1 mb-2">
-            {keys_available && (
-              <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
-                <Key className="h-3 w-3 mr-1" />
-                Keys Available
-              </Badge>
-            )}
-            {grade_iaai && (
-              <Badge variant="outline" className="text-xs">
-                Grade: {grade_iaai}
-              </Badge>
-            )}
-            {damage_main && (
-              <Badge variant="destructive" className="text-xs">
-                <AlertTriangle className="h-3 w-3 mr-1" />
-                {damage_main}
-              </Badge>
-            )}
-          </div>
-          
           <div className="flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-lg font-bold text-primary">
-                €{price.toLocaleString()}
-              </span>
-              {/* Show additional pricing if available */}
-              {bid && bid !== price && (
-                <span className="text-xs text-muted-foreground">
-                  Current Bid: €{bid.toLocaleString()}
-                </span>
-              )}
-              {final_price && final_price !== price && (
-                <span className="text-xs text-green-600 font-medium">
-                  Final: €{final_price.toLocaleString()}
-                </span>
-              )}
-            </div>
+            <span className="text-lg font-bold text-primary">
+              €{price.toLocaleString()}
+            </span>
             <Button
               size="sm"
               variant="ghost"

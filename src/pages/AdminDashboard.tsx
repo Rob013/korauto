@@ -41,7 +41,6 @@ import PerformanceAuditWidget from "@/components/PerformanceAuditWidget";
 import { FullCarsSyncTrigger } from "@/components/FullCarsSyncTrigger";
 import { AutoResumeScheduler } from "@/components/AutoResumeScheduler";
 import { AISyncCoordinator } from "@/components/AISyncCoordinator";
-import { FullSyncTrigger } from "@/components/FullSyncTrigger";
 
 // Lazy load heavy admin components
 const AdminSyncDashboard = lazy(() => 
@@ -1681,18 +1680,6 @@ const AdminDashboard = () => {
 
               {/* System Management - 1/3 width */}
               <div className="space-y-4">
-                <Card className="p-3">
-                  <CardHeader className="p-0 pb-3">
-                    <CardTitle className="text-sm sm:text-base flex items-center gap-2">
-                      <Database className="h-4 w-4" />
-                      Full Data Sync
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <FullSyncTrigger />
-                  </CardContent>
-                </Card>
-
                 <Card className="p-3">
                   <CardHeader className="p-0 pb-3">
                     <CardTitle className="text-sm sm:text-base flex items-center gap-2">
