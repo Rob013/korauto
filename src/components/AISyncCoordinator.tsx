@@ -33,8 +33,8 @@ interface AISyncCoordinatorProps {
  */
 export const AISyncCoordinator = ({ 
   enabled = true, 
-  maxRetries = 8, // Increased from 5 for maximum persistence
-  retryDelayMs = 1000 // Reduced from 2000 for faster retries at max speed
+  maxRetries = 12, // Increased from 8 for new compute reliability
+  retryDelayMs = 500 // Reduced from 1000 for faster retries with upgraded compute
 }: AISyncCoordinatorProps = {}) => {
   const [isActive, setIsActive] = useState(false);
   const [currentAttempt, setCurrentAttempt] = useState(0);
@@ -76,23 +76,23 @@ export const AISyncCoordinator = ({
         errorMessage.includes('fetch failed') ||
         errorMessage.includes('ENOTFOUND') ||
         errorMessage.includes('AbortError')) {
-      return { category: 'network', recoverable: true, delayMs: 3000, action: 'retry' };
+      return { category: 'network', recoverable: true, delayMs: 1500, action: 'retry' }; // Reduced for new compute
     }
     
     // Edge function specific errors (function responded but with error)
     if (errorMessage.includes('Edge Function') && !errorMessage.includes('Failed to send') || 
         errorMessage.includes('Deno') || 
         errorMessage.includes('Function Error')) {
-      return { category: 'edge_function', recoverable: true, delayMs: 5000, action: 'retry' };
+      return { category: 'edge_function', recoverable: true, delayMs: 2500, action: 'retry' }; // Reduced for new compute
     }
     
     // General timeout errors (different from deployment timeouts)
     if (errorMessage.includes('timeout') && !errorMessage.includes('deployed')) {
-      return { category: 'timeout', recoverable: true, delayMs: 5000, action: 'retry' };
+      return { category: 'timeout', recoverable: true, delayMs: 2000, action: 'retry' }; // Reduced for new compute
     }
     
     if (errorMessage.includes('network') && !errorMessage.includes('Failed to send')) {
-      return { category: 'network', recoverable: true, delayMs: 3000, action: 'retry' };
+      return { category: 'network', recoverable: true, delayMs: 1500, action: 'retry' }; // Reduced for new compute
     }
     
     if (errorMessage.includes('Authentication') || errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
@@ -100,7 +100,7 @@ export const AISyncCoordinator = ({
     }
     
     if (errorMessage.includes('HTTP 5') || errorMessage.includes('Server error') || errorMessage.includes('Internal Server Error')) {
-      return { category: 'server', recoverable: true, delayMs: 8000, action: 'retry' };
+      return { category: 'server', recoverable: true, delayMs: 4000, action: 'retry' }; // Reduced for new compute
     }
     
     if (errorMessage.includes('Configuration') || errorMessage.includes('environment variables') || errorMessage.includes('Missing required')) {
@@ -117,7 +117,7 @@ export const AISyncCoordinator = ({
     
     try {
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Connection test timed out after 10 seconds - edge function may not be deployed')), 10000);
+        setTimeout(() => reject(new Error('Connection test timed out after 15 seconds - edge function may not be deployed')), 15000); // Increased for new compute
       });
 
       const testPromise = supabase.functions.invoke('enhanced-cars-sync', {
