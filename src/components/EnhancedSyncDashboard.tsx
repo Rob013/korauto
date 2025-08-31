@@ -43,57 +43,71 @@ export const EnhancedSyncDashboard = () => {
   const [actualCarCount, setActualCarCount] = useState(0);
   const { toast } = useToast();
 
-  // Fetch current sync status and actual car count
+  // Fetch current sync status and REAL car count verification
   const fetchStatus = async () => {
     try {
-      const [syncResponse, cacheCountResponse, mainCountResponse] = await Promise.all([
+      // Use the new database function for accurate progress tracking
+      const [accurateProgressResponse, syncResponse] = await Promise.all([
+        supabase.rpc('get_accurate_sync_progress'),
         supabase
           .from('sync_status')
           .select('*')
           .eq('id', 'cars-sync-main')
-          .single(),
-        supabase
-          .from('cars_cache')
-          .select('*', { count: 'exact', head: true }),
-        supabase
-          .from('cars')
-          .select('*', { count: 'exact', head: true })
+          .single()
       ]);
 
-      if (!syncResponse.error) {
-        // Calculate real car count prioritizing cars_cache
-        const cacheCount = cacheCountResponse.count || 0;
-        const mainCount = mainCountResponse.count || 0;
-        const totalRealCount = cacheCount > 0 ? cacheCount : mainCount;
+      if (accurateProgressResponse.data && accurateProgressResponse.data.length > 0) {
+        const progress = accurateProgressResponse.data[0];
         
-        // Fix misleading sync progress by using real database count
-        const syncProgress = syncResponse.data.records_processed || 0;
-        const realCountIsSignificantlyHigher = totalRealCount > syncProgress * 2;
-        const shouldUseRealCount = syncProgress === 0 || realCountIsSignificantlyHigher;
-        
-        // Create corrected sync status for display
-        const correctedStatus = {
-          ...syncResponse.data,
-          records_processed: shouldUseRealCount ? totalRealCount : syncProgress,
-          display_note: shouldUseRealCount ? 'showing_real_database_count' : 'showing_sync_progress'
-        };
-        
-        setSyncStatus(correctedStatus);
-        setActualCarCount(totalRealCount);
-        
-        console.log('📊 Enhanced sync status with real counts:', {
-          originalSyncProgress: syncProgress,
-          cacheCount,
-          mainCount, 
-          totalRealCount,
-          displayCount: correctedStatus.records_processed,
-          correctionApplied: shouldUseRealCount,
-          status: syncResponse.data.status
+        console.log('📊 ACCURATE Progress Data:', {
+          sync_status_records: progress.sync_status_records,
+          cache_count: progress.cache_count,
+          main_count: progress.main_count,
+          display_count: progress.display_count,
+          correction_applied: progress.correction_applied,
+          sync_status: progress.sync_status
         });
+
+        // Set the real car count from database
+        setActualCarCount(Number(progress.cache_count));
+        
+        // Create corrected sync status that shows REAL database count
+        if (syncResponse.data) {
+          const correctedStatus = {
+            ...syncResponse.data,
+            records_processed: Number(progress.display_count),
+            correction_applied: progress.correction_applied,
+            real_database_count: Number(progress.cache_count)
+          };
+          setSyncStatus(correctedStatus);
+        }
+      } else {
+        console.warn('⚠️ No progress data returned from accurate function');
       }
       
     } catch (error) {
-      console.error('Error fetching status:', error);
+      console.error('❌ Error fetching accurate status:', error);
+      // Fallback to direct queries
+      try {
+        const [syncResponse, cacheCountResponse] = await Promise.all([
+          supabase
+            .from('sync_status')
+            .select('*')
+            .eq('id', 'cars-sync-main')
+            .single(),
+          supabase
+            .from('cars_cache')
+            .select('*', { count: 'exact', head: true })
+        ]);
+
+        if (!syncResponse.error) {
+          setSyncStatus(syncResponse.data);
+        }
+        
+        setActualCarCount(cacheCountResponse.count || 0);
+      } catch (fallbackError) {
+        console.error('❌ Fallback error:', fallbackError);
+      }
     }
   };
 
@@ -398,11 +412,11 @@ export const EnhancedSyncDashboard = () => {
               Maximum Speed Features
             </h3>
             <ul className="text-sm text-blue-700 space-y-1">
-              <li>• 15 concurrent API requests</li>
-              <li>• 1,000 record batches</li>
-              <li>• 100ms minimal delays</li>
-              <li>• Precise resume from 116k</li>
-              <li>• Never stalls or stops</li>
+              <li>• 50 concurrent API requests</li>
+              <li>• 2,000 record batches</li>
+              <li>• 25ms minimal delays</li>
+              <li>• Resume from {actualCarCount.toLocaleString()}</li>
+              <li>• Target: 190k+ records</li>
             </ul>
           </div>
           

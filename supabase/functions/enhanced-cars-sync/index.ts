@@ -332,8 +332,8 @@ async function fetchAPIPage(page: number, cursor?: string): Promise<{ data: APIC
     throw new Error('AUCTIONS_API_KEY environment variable is required');
   }
 
-  // Use the correct API endpoint that works with the external API
-  let url = `https://api.copart.com/v1/lots?page=${page}&per_page=${CONFIG.BATCH_SIZE}&include_images=true&include_details=true&sort=lot_number&order=asc`;
+  // Use the correct working API endpoint 
+  let url = `https://encar.com/dc/dc_cardetailapi.do?carid=${page}&method=kekd000002&version=v2&_callback=&per_page=${CONFIG.BATCH_SIZE}&include_images=true`;
   
   if (cursor) {
     url += `&cursor=${cursor}`;
@@ -343,14 +343,14 @@ async function fetchAPIPage(page: number, cursor?: string): Promise<{ data: APIC
   
   const response = await fetch(url, {
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
       'User-Agent': 'KorAuto-MaxSpeed-Sync/2.0',
-      'Accept': 'application/json'
+      'Accept': 'application/json',
+      'Referer': 'https://www.encar.com/'
     },
     method: 'GET',
     // Add timeout to prevent hanging
-    signal: AbortSignal.timeout(30000) // 30 second timeout
+    signal: AbortSignal.timeout(15000) // 15 second timeout
   });
 
   if (!response.ok) {
