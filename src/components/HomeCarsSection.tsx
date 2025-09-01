@@ -8,6 +8,7 @@ import { useSecureAuctionAPI } from "@/hooks/useSecureAuctionAPI";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useInView } from "@/hooks/useInView";
 import {
+  useSortedCars,
   getSortOptions,
   SortOption,
 } from "@/hooks/useSortedCars";
