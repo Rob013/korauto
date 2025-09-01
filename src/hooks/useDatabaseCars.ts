@@ -8,6 +8,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { fetchCarsWithKeyset, CarFilters, SortOption, FrontendSortOption, mapFrontendSortToBackend } from '@/services/carsApi';
 import { supabase } from '@/integrations/supabase/client';
+import { useAutoRefreshOnSync } from '@/hooks/useCarSync';
 
 interface Car {
   id: string;
@@ -326,11 +327,19 @@ export const useDatabaseCars = (options: UseDatabaseCarsOptions = {}) => {
    * Refresh car data (useful after sync operations)
    */
   const refreshCars = useCallback(async (
-    filters: CarFilters = {},
-    sortBy: SortOption | FrontendSortOption = 'recently_added'
+    filtersToUse: any = filters
   ) => {
     setState(prev => ({ ...prev, nextCursor: undefined }));
-    await fetchCars(1, filters, sortBy, true);
+    await fetchCars(1, filtersToUse, true);
+  }, [fetchCars, filters]);
+
+  /**
+   * Force refresh with newest cars (useful to see newly synced cars)
+   */
+  const refreshWithNewestCars = useCallback(async () => {
+    console.log('🔄 Refreshing to show newest cars...');
+    setState(prev => ({ ...prev, nextCursor: undefined }));
+    await fetchCars(1, {}, true); // No filters, will show newest cars by default
   }, [fetchCars]);
 
   /**
@@ -382,6 +391,9 @@ export const useDatabaseCars = (options: UseDatabaseCarsOptions = {}) => {
     setModelsCache(new Map());
   }, []);
 
+  // Auto-refresh when new cars are synced
+  useAutoRefreshOnSync(refreshWithNewestCars);
+
   return {
     // State
     cars: state.cars,
@@ -403,6 +415,7 @@ export const useDatabaseCars = (options: UseDatabaseCarsOptions = {}) => {
     fetchGrades,
     fetchTrimLevels,
     refreshCars,
+    refreshWithNewestCars,
     clearCache,
     
     // Utilities and compatibility
