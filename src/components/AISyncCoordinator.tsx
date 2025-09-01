@@ -293,9 +293,16 @@ export const AISyncCoordinator = ({
         
       console.error('💥 AI Coordinator: Failed to start sync:', error);
       
-      // Enhanced error message detection - but don't be too specific to avoid false matches
+      // Enhanced error message detection - check for deployment/edge function issues
+      const strategy = classifyErrorAndGetStrategy(error);
       let userFriendlyMessage = 'AI Coordinator temporarily unavailable - sync system will use direct method';
       let diagnosticHelp = 'The sync will continue using the backup direct method for maximum reliability.';
+      
+      // Show specific edge function deployment error if detected
+      if (strategy.category === 'deployment') {
+        userFriendlyMessage = 'Failed to start intelligent sync: Unable to connect to Edge Function - network or deployment issue';
+        diagnosticHelp = 'This could be a network connectivity issue or the edge function may not be deployed. Check your internet connection and Supabase function deployment.';
+      }
       
       const fullErrorMessage = `${userFriendlyMessage}. ${diagnosticHelp}`;
       
