@@ -200,39 +200,85 @@ Deno.serve(async (req) => {
         consecutiveEmptyPages = 0;
         console.log(`⚡ Processing ${cars.length} cars from page ${currentPage}...`);
 
-        // Memory-efficient car transformation
-        const carCacheItems = cars.map(car => {
-          const lot = car.lots?.[0];
-          const price = lot?.buy_now ? Math.round(lot.buy_now + 2200) : null;
-          
-          return {
-            id: car.id.toString(),
-            api_id: car.id.toString(),
-            make: car.manufacturer?.name || 'Unknown',
-            model: car.model?.name || 'Unknown',
-            year: car.year || 2020,
-            price: price,
-            price_cents: price ? price * 100 : null,
-            mileage: lot?.odometer?.km?.toString() || null,
-            rank_score: price ? (1 / price) * 1000000 : 0,
-            vin: car.vin,
-            fuel: car.fuel?.name,
-            transmission: car.transmission?.name,
-            color: car.color?.name,
-            lot_number: lot?.lot,
-            condition: 'good',
-            images: JSON.stringify(lot?.images?.normal || []),
-            car_data: {
-              buy_now: lot?.buy_now,
-              current_bid: lot?.bid,
-              keys_available: lot?.keys_available !== false
-            },
-            lot_data: lot,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            last_api_sync: new Date().toISOString()
-          };
-        });
+        // Complete API data transformation using the mapping function
+        const carCacheItems = [];
+        
+        for (const car of cars) {
+          try {
+            // Use the complete API mapping function to ensure all fields are captured
+            const { data: mappedData, error: mappingError } = await supabase
+              .rpc('map_complete_api_data', { api_record: car });
+
+            if (mappingError) {
+              console.error('❌ Mapping error for car', car.id, ':', mappingError);
+              // Fallback to basic mapping
+              const lot = car.lots?.[0];
+              const price = lot?.buy_now ? Math.round(lot.buy_now + 2200) : null;
+              
+              carCacheItems.push({
+                id: car.id.toString(),
+                api_id: car.id.toString(),
+                make: car.manufacturer?.name || 'Unknown',
+                model: car.model?.name || 'Unknown',
+                year: car.year || 2020,
+                price: price,
+                price_cents: price ? price * 100 : null,
+                mileage: lot?.odometer?.km?.toString() || null,
+                rank_score: price ? (1 / price) * 1000000 : 0,
+                vin: car.vin,
+                fuel: car.fuel?.name,
+                transmission: car.transmission?.name,
+                color: car.color?.name,
+                lot_number: lot?.lot,
+                condition: 'good',
+                images: JSON.stringify(lot?.images?.normal || []),
+                car_data: {
+                  buy_now: lot?.buy_now,
+                  current_bid: lot?.bid,
+                  keys_available: lot?.keys_available !== false
+                },
+                lot_data: lot,
+                // IMPORTANT: Store complete original API data for full API parity
+                original_api_data: car,
+                sync_metadata: {
+                  mapped_at: new Date().toISOString(),
+                  mapping_version: '2.0',
+                  sync_method: 'fallback_basic',
+                  api_fields_count: Object.keys(car).length
+                },
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                last_api_sync: new Date().toISOString()
+              });
+            } else if (mappedData) {
+              // Use the complete mapping with original API data preserved
+              carCacheItems.push({
+                ...mappedData,
+                // Ensure essential fields for compatibility
+                id: car.id.toString(),
+                api_id: car.id.toString(),
+                // CRITICAL: Always preserve complete original API data
+                original_api_data: car,
+                // Enhanced sync metadata with complete mapping info
+                sync_metadata: {
+                  mapped_at: new Date().toISOString(),
+                  mapping_version: '2.0',
+                  sync_method: 'complete_mapping_function',
+                  api_fields_count: Object.keys(car).length,
+                  mapped_fields_count: Object.keys(mappedData).length,
+                  has_lot_data: !!(car.lots && car.lots.length > 0),
+                  has_images: !!(car.lots?.[0]?.images?.normal?.length > 0)
+                },
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                last_api_sync: new Date().toISOString()
+              });
+            }
+          } catch (mappingError) {
+            console.error('❌ Exception during mapping for car', car.id, ':', mappingError);
+            // Continue with next car to avoid stopping the entire sync
+          }
+        }
 
         // Enhanced database writes with chunking
         for (let j = 0; j < carCacheItems.length; j += BATCH_SIZE) {
