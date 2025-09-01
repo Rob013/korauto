@@ -66,10 +66,18 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const { toast } = useToast();
   const { restorePageState } = useNavigation();
   
-  // Use either the new database hook or the old external API hook
-  const apiHook = USE_DATABASE_BACKEND 
-    ? useDatabaseCars({ pageSize: 50 })
-    : useSecureAuctionAPI();
+  // Always call both hooks to comply with React rules of hooks
+  const databaseHook = useDatabaseCars({ pageSize: 50 });
+  const externalApiHook = useSecureAuctionAPI();
+  
+  // Choose which hook data to use based on feature flag and error state
+  // If database backend is enabled but has errors, fallback to external API
+  const apiHook = useMemo(() => {
+    if (USE_DATABASE_BACKEND && !databaseHook.error) {
+      return databaseHook;
+    }
+    return externalApiHook;
+  }, [databaseHook, externalApiHook]);
     
   const {
     cars,
@@ -164,11 +172,26 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
   // Memoized client-side grade filtering for better performance - now using utility with fallback data
   const filteredCars = useMemo(() => {
-    // Use fallback data when there's an error and no cars loaded
-    const sourceCars = (error && cars.length === 0) ? fallbackCars : cars;
+    let sourceCars = cars;
+    
+    // If no real cars loaded, use fallback cars
+    if (cars.length === 0) {
+      sourceCars = fallbackCars;
+    }
+    
     const cleanedCars = filterOutTestCars(sourceCars || []);
-    return applyGradeFilter(cleanedCars, filters?.grade_iaai) || [];
-  }, [cars, filters?.grade_iaai, error]);
+    const gradeFilteredCars = applyGradeFilter(cleanedCars, filters?.grade_iaai) || [];
+    
+    // If filtering results in no cars and we were using real cars, try fallback cars
+    if (gradeFilteredCars.length === 0 && cars.length > 0) {
+      console.log('🔄 No cars match filters, showing fallback cars');
+      const fallbackFiltered = applyGradeFilter(filterOutTestCars(fallbackCars), filters?.grade_iaai) || [];
+      // If fallback cars also don't match the grade filter, show them anyway (without grade filter)
+      return fallbackFiltered.length > 0 ? fallbackFiltered : filterOutTestCars(fallbackCars);
+    }
+    
+    return gradeFilteredCars;
+  }, [cars, filters?.grade_iaai]);
   
   // console.log(`📊 Filter Results: ${filteredCars.length} cars match (total loaded: ${cars.length}, total count from API: ${totalCount}, grade filter: ${filters.grade_iaai || 'none'})`);
 
