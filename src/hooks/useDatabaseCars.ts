@@ -10,6 +10,26 @@ import { fetchCarsWithKeyset, CarFilters, SortOption, FrontendSortOption, mapFro
 import { supabase } from '@/integrations/supabase/client';
 import { useAutoRefreshOnSync } from '@/hooks/useCarSync';
 
+/**
+ * Generate generation name from year, make and model
+ * Groups cars into logical generations based on year ranges
+ */
+const generateGenerationNameFromYear = (year: number, make?: string, model?: string): string | null => {
+  if (!year || year < 1980 || year > new Date().getFullYear() + 1) return null;
+  
+  // Group into 7-year generations (common car generation cycle)
+  const generationStart = Math.floor((year - 1980) / 7) * 7 + 1980;
+  const generationEnd = generationStart + 6;
+  
+  // Create generation name
+  const currentYear = new Date().getFullYear();
+  if (generationEnd > currentYear) {
+    return `${generationStart}-${currentYear}`;
+  }
+  
+  return `${generationStart}-${generationEnd}`;
+};
+
 interface Car {
   id: string;
   make: string;
@@ -504,13 +524,19 @@ export const useDatabaseCars = (options: UseDatabaseCarsOptions = {}) => {
 
   /**
    * Fetch filter counts for various categories
+   * Compatible with external API interface
    */
-  const fetchFilterCounts = useCallback(async (currentFilters: any = {}) => {
+  const fetchFilterCounts = useCallback(async (
+    currentFilters: any = {},
+    manufacturersList: any[] = []
+  ) => {
     try {
+      console.log('📊 Fetching filter counts from database with filters:', currentFilters);
+      
       // Get base query with current filters
       let query = supabase
         .from('cars')
-        .select('make, model, fuel, transmission, year, color')
+        .select('make, model, fuel, transmission, year, color, body_style, drive_type, doors, seats')
         .eq('is_active', true);
 
       // Apply current filters (excluding the one we're counting)
@@ -541,6 +567,11 @@ export const useDatabaseCars = (options: UseDatabaseCarsOptions = {}) => {
         transmissions: new Map<string, number>(),
         years: new Map<number, number>(),
         colors: new Map<string, number>(),
+        generations: new Map<string, number>(),
+        bodyTypes: new Map<string, number>(),
+        driveTypes: new Map<string, number>(),
+        doors: new Map<number, number>(),
+        seats: new Map<number, number>(),
       };
 
       data?.forEach(car => {
@@ -548,7 +579,18 @@ export const useDatabaseCars = (options: UseDatabaseCarsOptions = {}) => {
         if (car.model) counts.models.set(car.model, (counts.models.get(car.model) || 0) + 1);
         if (car.fuel) counts.fuelTypes.set(car.fuel, (counts.fuelTypes.get(car.fuel) || 0) + 1);
         if (car.transmission) counts.transmissions.set(car.transmission, (counts.transmissions.get(car.transmission) || 0) + 1);
-        if (car.year) counts.years.set(car.year, (counts.years.get(car.year) || 0) + 1);
+        if (car.body_style) counts.bodyTypes.set(car.body_style, (counts.bodyTypes.get(car.body_style) || 0) + 1);
+        if (car.drive_type) counts.driveTypes.set(car.drive_type, (counts.driveTypes.get(car.drive_type) || 0) + 1);
+        if (car.doors) counts.doors.set(car.doors, (counts.doors.get(car.doors) || 0) + 1);
+        if (car.seats) counts.seats.set(car.seats, (counts.seats.get(car.seats) || 0) + 1);
+        if (car.year) {
+          counts.years.set(car.year, (counts.years.get(car.year) || 0) + 1);
+          // Generate generation data from years (group into generations based on year ranges)
+          const generationName = generateGenerationNameFromYear(car.year, car.make, car.model);
+          if (generationName) {
+            counts.generations.set(generationName, (counts.generations.get(generationName) || 0) + 1);
+          }
+        }
         if (car.color) counts.colors.set(car.color, (counts.colors.get(car.color) || 0) + 1);
       });
 
@@ -560,9 +602,27 @@ export const useDatabaseCars = (options: UseDatabaseCarsOptions = {}) => {
         transmissions: Object.fromEntries(counts.transmissions),
         years: Object.fromEntries(counts.years),
         colors: Object.fromEntries(counts.colors),
+        generations: Object.fromEntries(counts.generations),
+        bodyTypes: Object.fromEntries(counts.bodyTypes),
+        driveTypes: Object.fromEntries(counts.driveTypes),
+        doors: Object.fromEntries(counts.doors),
+        seats: Object.fromEntries(counts.seats),
       };
 
-      console.log('✅ Fetched filter counts from database');
+      console.log('✅ Fetched filter counts from database:', {
+        manufacturers: Object.keys(filterCounts.manufacturers).length,
+        models: Object.keys(filterCounts.models).length,
+        fuelTypes: Object.keys(filterCounts.fuelTypes).length,
+        transmissions: Object.keys(filterCounts.transmissions).length,
+        years: Object.keys(filterCounts.years).length,
+        colors: Object.keys(filterCounts.colors).length,
+        generations: Object.keys(filterCounts.generations).length,
+        bodyTypes: Object.keys(filterCounts.bodyTypes).length,
+        driveTypes: Object.keys(filterCounts.driveTypes).length,
+        doors: Object.keys(filterCounts.doors).length,
+        seats: Object.keys(filterCounts.seats).length,
+      });
+      
       return filterCounts;
     } catch (error) {
       console.error('❌ Error fetching filter counts:', error);
@@ -573,6 +633,11 @@ export const useDatabaseCars = (options: UseDatabaseCarsOptions = {}) => {
         transmissions: {},
         years: {},
         colors: {},
+        generations: {},
+        bodyTypes: {},
+        driveTypes: {},
+        doors: {},
+        seats: {},
       };
     }
   }, [fetchManufacturers, fetchModels]);
