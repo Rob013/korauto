@@ -7,6 +7,7 @@ interface BackendSortingState {
   isLoading: boolean;
   error: string | null;
   total: number;
+  isBackendAvailable: boolean;
 }
 
 interface BackendSortingOptions {
@@ -19,10 +20,18 @@ export const useBackendSorting = ({ filters, onSortChange }: BackendSortingOptio
     sortBy: 'price_low',
     isLoading: false,
     error: null,
-    total: 0
+    total: 0,
+    isBackendAvailable: true
   });
 
   const applySorting = useCallback(async (sortBy: SortOption | FrontendSortOption) => {
+    // If backend is known to be unavailable, skip backend sorting
+    if (!state.isBackendAvailable) {
+      console.log(`⚠️ Backend unavailable, skipping backend sorting: ${sortBy}`);
+      setState(prev => ({ ...prev, sortBy, isLoading: false }));
+      return { cars: [], total: 0 };
+    }
+
     setState(prev => ({ ...prev, isLoading: true, error: null, sortBy }));
     
     try {
@@ -76,28 +85,30 @@ export const useBackendSorting = ({ filters, onSortChange }: BackendSortingOptio
       const errorMessage = error instanceof Error ? error.message : 'Backend sorting failed';
       console.error('Backend sorting failed:', error);
       
+      // Mark backend as unavailable to prevent future attempts
       setState(prev => ({
         ...prev,
         isLoading: false,
-        error: errorMessage
+        error: errorMessage,
+        isBackendAvailable: false
       }));
 
-      // If backend sorting fails, return empty results
+      // Don't retry, just return empty results and let fallback handle it
       return { cars: [], total: 0 };
     }
-  }, [filters, onSortChange]);
+  }, [filters, state.isBackendAvailable]);
 
-  // Auto-apply default sorting when filters change
+  // Auto-apply default sorting when filters change, but only if backend is available
   useEffect(() => {
-    if (Object.keys(filters).length > 0) {
+    if (Object.keys(filters).length > 0 && state.isBackendAvailable) {
       applySorting(state.sortBy as SortOption | FrontendSortOption);
     }
-  }, [filters, applySorting]);
+  }, [filters, applySorting, state.isBackendAvailable]);
 
   return {
     ...state,
     applySorting,
-    isBackendSortingEnabled: true,
+    isBackendSortingEnabled: state.isBackendAvailable,
     supportedSorts: [
       'price_low',
       'price_high', 
