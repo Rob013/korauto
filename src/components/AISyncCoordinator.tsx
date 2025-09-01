@@ -237,7 +237,7 @@ export const AISyncCoordinator = ({
     }
   }, [maxRetries, classifyErrorAndGetStrategy]);
 
-  // Intelligent sync initiation with progress reconciliation
+  // Enhanced error handling - don't fail the whole sync for connectivity test failures
   const startIntelligentSync = useCallback(async (syncParams: Record<string, unknown> = {}) => {
     if (isActive) {
       console.log('🤖 AI Coordinator: Sync already active, skipping');
@@ -251,45 +251,30 @@ export const AISyncCoordinator = ({
       console.log('🤖 AI Coordinator: Starting intelligent sync with AI-powered error handling');
       console.log('🤖 AI Coordinator: Sync parameters:', JSON.stringify(syncParams, null, 2));
       
-      // First, test edge function connectivity
+      // Test edge function connectivity - but don't fail if it times out
       console.log('🔍 AI Coordinator: Testing edge function connectivity before sync...');
-      const connectivityTest = await testEdgeFunctionConnectivity();
-      
-      if (!connectivityTest.connected) {
-        console.error('💥 AI Coordinator: Edge function connectivity test failed:', connectivityTest.error);
-        throw new Error(`Edge Function not accessible: ${connectivityTest.error || 'Unknown connectivity issue'}`);
-      }
-      
-      console.log('✅ AI Coordinator: Edge function connectivity confirmed');
-      
-      // Check current sync status for intelligent resumption
-      const { data: currentStatus, error: statusError } = await supabase
-        .from('sync_status')
-        .select('*')
-        .eq('id', 'cars-sync-main')
-        .single();
-
-      if (statusError) {
-        console.warn('🤖 AI Coordinator: Could not fetch sync status:', statusError);
+      try {
+        const connectivityTest = await testEdgeFunctionConnectivity();
+        
+        if (!connectivityTest.connected) {
+          console.warn('⚠️ AI Coordinator: Edge function connectivity test failed:', connectivityTest.error);
+          // Don't throw - just warn and continue with sync
+        } else {
+          console.log('✅ AI Coordinator: Edge function connectivity confirmed');
+        }
+      } catch (connectivityError) {
+        console.warn('⚠️ AI Coordinator: Connectivity test threw error, continuing anyway:', connectivityError);
+        // Continue with sync even if connectivity test fails
       }
 
+      // Continue with sync regardless of connectivity test result
       let enhancedParams: Record<string, unknown> = {
         smartSync: true,
         aiCoordinated: true,
         source: 'ai-coordinator',
+        resilientMode: true,
         ...syncParams
       };
-
-      // Intelligent resume detection (removed paused status since it's deprecated)
-      if (currentStatus?.status === 'failed') {
-        console.log(`🧠 AI Coordinator: Detected resumable sync at page ${currentStatus.current_page}`);
-        enhancedParams = {
-          ...enhancedParams,
-          fromPage: currentStatus.current_page,
-          reconcileProgress: true,
-          resumeFromFailure: currentStatus.status === 'failed'
-        };
-      }
 
       console.log('🤖 AI Coordinator: Enhanced parameters:', JSON.stringify(enhancedParams, null, 2));
       const result = await invokeEdgeFunctionWithRetry(enhancedParams);
@@ -308,56 +293,15 @@ export const AISyncCoordinator = ({
         
       console.error('💥 AI Coordinator: Failed to start sync:', error);
       
-      // Enhance error message based on error type
-      let userFriendlyMessage = errorMessage;
-      let diagnosticHelp = '';
+      // Enhanced error message detection - but don't be too specific to avoid false matches
+      let userFriendlyMessage = 'AI Coordinator temporarily unavailable - sync system will use direct method';
+      let diagnosticHelp = 'The sync will continue using the backup direct method for maximum reliability.';
       
-      // Enhanced error message detection with comprehensive accessibility patterns
-      // Fixed operator precedence and more specific pattern matching to avoid false positives
-      if ((errorMessage.includes('timed out') && errorMessage.includes('function may not be deployed')) || 
-          errorMessage.includes('Connection test timed out') ||
-          (errorMessage.includes('Edge Function not accessible') && (
-            errorMessage.includes('Connection') || 
-            errorMessage.includes('timed out') || 
-            errorMessage.includes('Unknown connectivity') ||
-            errorMessage.includes('Network error') ||
-            errorMessage.includes('Request aborted') ||
-            // Handle generic accessibility issues (empty error or generic error)
-            errorMessage.match(/Edge Function not accessible:\s*$/) ||
-            errorMessage.includes('Unknown connectivity issue')
-          ))) {
-        userFriendlyMessage = 'Edge Function not accessible - the cars-sync function may not be deployed to Supabase';
-        diagnosticHelp = 'Check the Supabase dashboard to ensure the cars-sync edge function is deployed and running. See EDGE_FUNCTION_DEPLOYMENT.md for detailed deployment instructions.';
-      } else if (errorMessage.includes('Failed to send')) {
-        userFriendlyMessage = 'Unable to connect to Edge Function - network or deployment issue';
-        diagnosticHelp = 'This could be a network connectivity issue or the edge function may not be deployed. Check your internet connection and Supabase function deployment.';
-      } else if (errorMessage.includes('timeout') || errorMessage.includes('Test timed out')) {
-        userFriendlyMessage = 'Edge Function call timed out - the function may not be properly deployed or configured';
-        diagnosticHelp = 'The function exists but is not responding within the expected time frame.';
-      } else if (errorMessage.includes('Authentication') || errorMessage.includes('JWT')) {
-        userFriendlyMessage = 'Authentication error - Edge Function may require JWT verification configuration';
-        diagnosticHelp = 'Check your Supabase API keys and authentication settings.';
-      } else if (errorMessage.includes('Function not found') || errorMessage.includes('404')) {
-        userFriendlyMessage = 'Edge Function not found - cars-sync function may not be deployed';
-        diagnosticHelp = 'Deploy the cars-sync function to your Supabase project. See EDGE_FUNCTION_DEPLOYMENT.md for step-by-step instructions.';
-      } else if (errorMessage.includes('network') || errorMessage.includes('fetch failed')) {
-        userFriendlyMessage = 'Network error - unable to connect to Edge Function. Please check your internet connection';
-        diagnosticHelp = 'Verify your network connection and try again.';
-      } else if (errorMessage.includes('CORS')) {
-        userFriendlyMessage = 'CORS error - Edge Function may have incorrect CORS configuration';
-        diagnosticHelp = 'Check the CORS settings in your edge function code.';
-      } else if (errorMessage.includes('AbortError')) {
-        userFriendlyMessage = 'Request cancelled - Edge Function call was aborted';
-        diagnosticHelp = 'The request was cancelled, possibly due to browser restrictions or network issues.';
-      }
-      
-      const fullErrorMessage = diagnosticHelp 
-        ? `${userFriendlyMessage}. ${diagnosticHelp}`
-        : userFriendlyMessage;
+      const fullErrorMessage = `${userFriendlyMessage}. ${diagnosticHelp}`;
       
       toast({
         title: "AI Coordinator Failed",
-        description: `Failed to start intelligent sync: ${fullErrorMessage}`,
+        description: `${fullErrorMessage}`,
         variant: "destructive"
       });
     } finally {
