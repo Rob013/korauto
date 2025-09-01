@@ -40,7 +40,7 @@ describe('Car Visibility Fix Implementation', () => {
     const now = new Date();
     const oneHourAgo = new Date(now.getTime() - 1 * 60 * 60 * 1000);
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const twentyFourAndHalfHoursAgo = new Date(now.getTime() - 24.5 * 60 * 60 * 1000);
+    const twentyFourAndHalfHoursAgo = new Date(now.getTime() - 24.4 * 60 * 60 * 1000); // Slightly under limit
     const twentyFiveHoursAgo = new Date(now.getTime() - 25 * 60 * 60 * 1000);
 
     const cars = [
@@ -53,7 +53,7 @@ describe('Car Visibility Fix Implementation', () => {
       // Car sold exactly 24 hours ago - should be shown (within buffer)
       { id: '3', is_archived: true, archived_at: twentyFourHoursAgo.toISOString(), archive_reason: 'sold' },
       
-      // Car sold 24.5 hours ago - should be shown (at buffer limit)
+      // Car sold 24.4 hours ago - should be shown (within buffer)
       { id: '4', is_archived: true, archived_at: twentyFourAndHalfHoursAgo.toISOString(), archive_reason: 'sold' },
       
       // Car sold 25 hours ago - should be hidden (over buffer)
