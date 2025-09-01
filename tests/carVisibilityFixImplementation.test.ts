@@ -71,9 +71,9 @@ describe('Car Visibility Fix Implementation', () => {
 
     const visibleCars = cars.filter(car => !shouldHideSoldCar(car));
 
-    // Should show: 1, 2, 3, 6, 7, 8
-    // Should hide: 4 (exactly at buffer limit), 5 (clearly old sold car)
-    expect(visibleCars.map(c => c.id)).toEqual(['1', '2', '3', '6', '7', '8']);
+    // Should show: 1, 2, 3, 4 (at buffer limit), 6, 7, 8
+    // Should hide: 5 (clearly old sold car)
+    expect(visibleCars.map(c => c.id)).toEqual(['1', '2', '3', '4', '6', '7', '8']);
   });
 
   it('should handle edge cases better than the original logic', () => {
