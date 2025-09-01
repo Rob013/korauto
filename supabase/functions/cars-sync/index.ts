@@ -85,14 +85,24 @@ Deno.serve(async (req) => {
       currentSyncStatus = existingStatus;
       console.log(`📍 Resume request: Current status is ${currentSyncStatus?.status}, page ${currentSyncStatus?.current_page}`);
       
-      // Validate resume conditions
+      // Check if sync is actually stuck
       if (currentSyncStatus?.status === 'running') {
-        console.log('⚠️ Sync already running, ignoring resume request');
-        return Response.json({
-          success: false,
-          error: 'Sync is already running',
-          status: 'already_running'
-        }, { headers: corsHeaders });
+        const lastActivity = new Date(currentSyncStatus.last_activity_at || currentSyncStatus.started_at).getTime();
+        const now = Date.now();
+        const timeSinceActivity = now - lastActivity;
+        const STUCK_THRESHOLD = 5 * 60 * 1000; // 5 minutes
+        
+        if (timeSinceActivity < STUCK_THRESHOLD) {
+          console.log('⚠️ Sync already running and not stuck, ignoring request');
+          return Response.json({
+            success: false,
+            error: 'Sync is already running',
+            status: 'already_running'
+          }, { headers: corsHeaders });
+        } else {
+          console.log('🔧 Sync appears stuck, will reset and continue');
+          // Reset stuck sync and continue
+        }
       }
     }
 
@@ -182,7 +192,7 @@ Deno.serve(async (req) => {
         // Memory-efficient car transformation
         const carCacheItems = cars.map(car => {
           const lot = car.lots?.[0];
-          const price = lot?.buy_now ? Math.round(lot.buy_now + 2300) : null;
+          const price = lot?.buy_now ? Math.round(lot.buy_now + 2200) : null;
           
           return {
             id: car.id.toString(),

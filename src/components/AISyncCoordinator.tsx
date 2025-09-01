@@ -375,9 +375,12 @@ export const AISyncCoordinator = ({
     }
   }, [isActive, invokeEdgeFunctionWithRetry, testEdgeFunctionConnectivity, toast]);
 
-  // Monitor sync status and auto-heal when needed
+  // Disabled monitoring to prevent infinite loops
   useEffect(() => {
     if (!enabled) return;
+    
+    console.log('🛑 AI Sync Coordinator: Monitoring disabled to prevent infinite loops');
+    return;
 
     const monitorAndHeal = async () => {
       try {
