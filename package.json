@@ -22,7 +22,8 @@
     "catalog:validate-performance": "tsx scripts/catalog-performance-validation-simple.ts",
     "catalog:verify": "tsx scripts/catalog-verification.ts",
     "verify-sync": "tsx scripts/verify-sync.ts",
-    "verify-complete-api-sync": "tsx scripts/verify-complete-api-sync.ts"
+    "verify-complete-api-sync": "tsx scripts/verify-complete-api-sync.ts",
+    "admin-setup": "tsx scripts/admin-setup.ts"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.2",

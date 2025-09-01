@@ -20,39 +20,78 @@ const AuthLogin = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log('Attempting login for:', email);
+      
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Authentication error:', error);
+        throw error;
+      }
+
+      console.log('Authentication successful, user:', authData.user?.email);
 
       // Check if user has admin role
+      console.log('Checking admin role...');
       const { data: roleData, error: roleError } = await supabase
         .rpc('is_admin');
 
+      console.log('Admin role check result:', { roleData, roleError });
+
       if (roleError) {
         console.error('Role check error:', roleError);
-        await supabase.auth.signOut();
-        throw new Error('Failed to verify admin permissions');
+        
+        // Don't immediately sign out on role check error - could be a temporary issue
+        toast({
+          title: "Role Check Failed",
+          description: `Could not verify admin permissions: ${roleError.message}. Please try again or contact support.`,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
       }
 
       if (!roleData) {
+        console.log('User is not an admin, signing out');
         await supabase.auth.signOut();
-        throw new Error('Access denied: Admin privileges required');
+        throw new Error('Access denied: Admin privileges required. Please contact support if you believe this is an error.');
       }
 
+      console.log('Admin access granted');
       toast({
         title: "Welcome Admin!",
         description: "Successfully logged in to admin dashboard",
       });
 
+      // Call the success callback if provided
+      onLoginSuccess();
+      
       // Redirect admin users to dashboard
       navigate('/admin');
-    } catch (error: any) {
+    } catch (error: unknown) {
+      console.error('Login error:', error);
+      
+      let errorMessage = 'An unexpected error occurred';
+      
+      if (error && typeof error === 'object' && 'message' in error) {
+        errorMessage = (error as { message: string }).message;
+      }
+      
+      // Provide more helpful error messages
+      if (errorMessage?.includes('Invalid login credentials')) {
+        errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+      } else if (errorMessage?.includes('Failed to fetch')) {
+        errorMessage = 'Connection error. Please check your internet connection and try again.';
+      } else if (errorMessage?.includes('Email not confirmed')) {
+        errorMessage = 'Please check your email and click the confirmation link before logging in.';
+      }
+      
       toast({
         title: "Login Failed",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -98,6 +137,23 @@ const AuthLogin = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
               {loading ? "Logging in..." : "Login"}
             </Button>
           </form>
+          
+          <div className="text-center text-sm text-muted-foreground space-y-2">
+            <p>Default admin credentials:</p>
+            <p className="font-mono">admin@korauto.com</p>
+            <p className="font-mono">KorAuto2024!</p>
+            <p className="text-xs mt-2">
+              Having issues? Check the{" "}
+              <a 
+                href="https://github.com/Rob013/korauto/blob/main/ADMIN_LOGIN_FIX.md" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                Admin Login Fix Guide
+              </a>
+            </p>
+          </div>
           
           <div className="text-center">
             <Button 
