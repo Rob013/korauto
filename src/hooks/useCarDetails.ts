@@ -93,12 +93,12 @@ export const useCarDetails = (
     const abortController = new AbortController();
 
     try {
-      // Optimized cache query - try exact matches first for better performance
-      console.log("Searching for car with lot:", lot);
+      // Enhanced cache query - try multiple ID formats for better compatibility
+      console.log("🔍 Searching for car with lot:", lot);
       const cachePromise = supabase
         .from("cars_cache")
         .select("*")
-        .or(`id.eq."${lot}",api_id.eq."${lot}",lot_number.eq."${lot}"`)
+        .or(`id.eq."${lot}",api_id.eq."${lot}",lot_number.eq."${lot}",id.eq.${lot},api_id.eq.${lot}`)
         .maybeSingle();
 
       // Start cache lookup and prepare edge function call concurrently
@@ -204,8 +204,100 @@ export const useCarDetails = (
         }
       }
 
+      // If cache miss or parsing failed, try a secondary cache query with different search patterns
+      if (!cachedCar) {
+        try {
+          console.log("🔍 Trying secondary cache search with broader patterns...");
+          const { data: secondaryCachedCar, error: secondaryCacheError } = await supabase
+            .from("cars_cache")
+            .select("*")
+            .or(`lot_number.ilike.%${lot}%,id.ilike.%${lot}%,api_id.ilike.%${lot}%`)
+            .limit(1)
+            .maybeSingle();
+
+          if (!secondaryCacheError && secondaryCachedCar) {
+            console.log("✅ Found car via secondary cache search");
+            // Process the secondary cache result same as primary
+            try {
+              const carData = typeof secondaryCachedCar.car_data === "string"
+                ? JSON.parse(secondaryCachedCar.car_data || "{}")
+                : secondaryCachedCar.car_data || {};
+              const lotData = typeof secondaryCachedCar.lot_data === "string"
+                ? JSON.parse(secondaryCachedCar.lot_data || "{}")
+                : secondaryCachedCar.lot_data || {};
+              const images = typeof secondaryCachedCar.images === "string"
+                ? JSON.parse(secondaryCachedCar.images || "[]")
+                : secondaryCachedCar.images || [];
+
+              const basePrice = secondaryCachedCar.price || lotData.buy_now || lotData.final_bid || 25000;
+              const price = convertUSDtoEUR(Math.round(basePrice + 2200));
+
+              const transformedCar: CarDetails = {
+                id: secondaryCachedCar.id,
+                make: secondaryCachedCar.make || "Unknown",
+                model: secondaryCachedCar.model || "Unknown",
+                year: secondaryCachedCar.year || 2020,
+                price,
+                image: images[0] || "/placeholder.svg",
+                images: images || [],
+                vin: secondaryCachedCar.vin || carData.vin,
+                mileage: secondaryCachedCar.mileage || 
+                  (lotData.odometer?.km ? `${lotData.odometer.km.toLocaleString()} km` : undefined),
+                transmission: secondaryCachedCar.transmission || carData.transmission?.name,
+                fuel: secondaryCachedCar.fuel || carData.fuel?.name,
+                color: secondaryCachedCar.color || carData.color?.name,
+                condition: secondaryCachedCar.condition || 
+                  lotData.condition?.name?.replace("run_and_drives", "Good Condition"),
+                lot: secondaryCachedCar.lot_number || lotData.lot,
+                title: `${secondaryCachedCar.year} ${secondaryCachedCar.make} ${secondaryCachedCar.model}`,
+                odometer: lotData.odometer,
+                engine: carData.engine,
+                cylinders: carData.cylinders,
+                drive_wheel: carData.drive_wheel,
+                body_type: carData.body_type,
+                damage: lotData.damage,
+                keys_available: lotData.keys_available,
+                airbags: lotData.airbags,
+                grade_iaai: lotData.grade_iaai,
+                seller: lotData.seller,
+                seller_type: lotData.seller_type,
+                sale_date: lotData.sale_date,
+                bid: lotData.bid,
+                buy_now: lotData.buy_now,
+                final_bid: lotData.final_bid,
+                features: getCarFeatures(carData, lotData),
+                safety_features: getSafetyFeatures(carData, lotData),
+                comfort_features: getComfortFeatures(carData, lotData),
+                performance_rating: 4.5,
+                popularity_score: 85,
+                insurance: lotData.insurance,
+                insurance_v2: lotData.insurance_v2,
+                location: lotData.location,
+                inspect: lotData.inspect,
+                details: lotData.details,
+              };
+
+              setCar(transformedCar);
+              setLoading(false);
+
+              const endTime = performance.now();
+              const duration = endTime - startTime;
+              console.log(`⚡ Secondary cache hit - loaded in ${duration.toFixed(2)}ms`);
+
+              trackCarView(secondaryCachedCar.id || secondaryCachedCar.api_id, transformedCar);
+              return;
+            } catch (parseError) {
+              console.error("Error parsing secondary cached car data:", parseError);
+            }
+          }
+        } catch (secondaryError) {
+          console.warn("❌ Secondary cache search failed:", secondaryError);
+        }
+      }
+
       // If cache miss, try edge function
       try {
+        console.log("🌐 Attempting edge function lookup...");
         const secureResponse = await Promise.race([
           edgeFunctionPromise,
           new Promise<Response>((_, reject) => 
@@ -215,6 +307,7 @@ export const useCarDetails = (
 
         if (secureResponse.ok) {
           const carData = await secureResponse.json();
+          console.log("🌐 Edge function response received");
           if (carData && carData.lots && carData.lots[0]) {
             const lotData = carData.lots[0];
             const basePrice = lotData.buy_now ?? lotData.final_bid ?? lotData.price ?? 25000;
@@ -275,15 +368,17 @@ export const useCarDetails = (
           }
         }
       } catch (edgeFunctionError) {
-        console.log("Edge function failed or timed out:", edgeFunctionError);
+        console.log("❌ Edge function failed or timed out:", edgeFunctionError);
       }
 
       // Fallback to static data if available
+      console.log("📊 Trying fallback data...");
       const fallbackCar = fallbackCars.find((car) => 
         car.id === lot || car.lot_number === lot
       );
 
       if (fallbackCar) {
+        console.log("✅ Found car in fallback data");
         const basePrice = fallbackCar.price || 25000;
         const price = convertUSDtoEUR(Math.round(basePrice + 2200));
         
@@ -325,7 +420,7 @@ export const useCarDetails = (
       const duration = endTime - startTime;
       console.warn(`❌ Failed to load car details in ${duration.toFixed(2)}ms for lot ${lot}`);
 
-      setError("Car not found. This car may have been sold or removed.");
+      setError("Car details temporarily unavailable. Please try again or check if the link is correct.");
       setLoading(false);
 
     } catch (error) {
