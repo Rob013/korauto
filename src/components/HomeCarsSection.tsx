@@ -12,6 +12,7 @@ import {
   getSortOptions,
   SortOption,
 } from "@/hooks/useSortedCars";
+import { useBackendSorting } from "@/hooks/useBackendSorting";
 import {
   Select,
   SelectContent,
@@ -289,21 +290,60 @@ const HomeCarsSection = memo(() => {
               pendingFilters.seats_count);
   }, [pendingFilters]);
 
+  // Convert APIFilters to CarFilters format for backend sorting
+  const backendFilters = useMemo(() => ({
+    make: filters.manufacturer_id,
+    model: filters.model_id,
+    yearMin: filters.from_year,
+    yearMax: filters.to_year,
+    priceMin: filters.buy_now_price_from,
+    priceMax: filters.buy_now_price_to,
+    fuel: filters.fuel_type,
+    search: filters.search
+  }), [filters]);
+
+  // Backend sorting hook for when user selects sorting options
+  const [backendSortedCars, setBackendSortedCars] = useState<any[]>([]);
+  const {
+    applySorting,
+    isLoading: isBackendSorting,
+    error: backendSortingError,
+    isBackendSortingEnabled
+  } = useBackendSorting({
+    filters: backendFilters,
+    onSortChange: (cars, total) => {
+      setBackendSortedCars(cars);
+    }
+  });
+
+  // Apply backend sorting when user selects a sort option
+  useEffect(() => {
+    if (hasUserSelectedSort && isBackendSortingEnabled) {
+      applySorting(sortBy);
+    }
+  }, [hasUserSelectedSort, sortBy, applySorting, isBackendSortingEnabled]);
+
   // Apply daily rotating cars when no filters are applied, showing 50 cars same as catalog
   const dailyRotatingCars = useDailyRotatingCars(carsForSorting, hasFilters, 50);
 
-  // Always apply sorting to cars for sorting
-  const sortedCars = useSortedCars(carsForSorting, sortBy);
+  // Frontend fallback sorting for when backend sorting is not available
+  const frontendSortedCars = useSortedCars(carsForSorting, sortBy);
   
-  // Use sorted cars when user has explicitly selected a sort option or when filters are applied
+  // Use backend sorted cars when user has explicitly selected a sort option and backend sorting is available
   const carsToDisplay = useMemo(() => {
-    if (hasUserSelectedSort || hasFilters) {
-      // When user has selected sorting or filters are applied, use sorted cars
-      return sortedCars;
+    if (hasUserSelectedSort) {
+      // Use backend sorting if available, otherwise fallback to frontend sorting
+      return isBackendSortingEnabled && backendSortedCars.length > 0 
+        ? backendSortedCars 
+        : frontendSortedCars;
+    }
+    if (hasFilters) {
+      // For filters without explicit sorting, use frontend sorted cars
+      return frontendSortedCars;
     }
     // When no explicit sort selection and no filters, use daily rotating cars
     return dailyRotatingCars;
-  }, [hasUserSelectedSort, hasFilters, dailyRotatingCars, sortedCars]);
+  }, [hasUserSelectedSort, hasFilters, backendSortedCars, frontendSortedCars, dailyRotatingCars, isBackendSortingEnabled]);
 
   // Show 50 cars by default (daily rotation) to match catalog
   const defaultDisplayCount = 50;
@@ -603,7 +643,7 @@ const HomeCarsSection = memo(() => {
         </div>
 
         {/* Car Cards */}
-        {loading ? (
+        {loading || isBackendSorting ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0 stagger-animation">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="modern-card p-4 pulse-enhanced">
