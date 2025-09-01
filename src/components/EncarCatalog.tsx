@@ -545,8 +545,54 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
     setIsLoading(true);
     try {
-      console.log(`🔄 Fetching all cars with current filters...`);
-      const allCars = await fetchAllCars(filters);
+      console.log(`🔄 Fetching all cars with current filters and sort option: ${sortBy}...`);
+      
+      // Create filters with sort option for global sorting
+      const filtersWithSort = { 
+        ...filters,
+        per_page: "9999" // Get all cars for global sorting
+      };
+      
+      // Apply sort parameters for consistent global sorting
+      switch (sortBy) {
+        case 'price_low':
+          filtersWithSort.sort_by = 'price';
+          filtersWithSort.sort_direction = 'asc';
+          break;
+        case 'price_high':
+          filtersWithSort.sort_by = 'price';
+          filtersWithSort.sort_direction = 'desc';
+          break;
+        case 'year_new':
+          filtersWithSort.sort_by = 'year';
+          filtersWithSort.sort_direction = 'desc';
+          break;
+        case 'year_old':
+          filtersWithSort.sort_by = 'year';
+          filtersWithSort.sort_direction = 'asc';
+          break;
+        case 'mileage_low':
+          filtersWithSort.sort_by = 'mileage';
+          filtersWithSort.sort_direction = 'asc';
+          break;
+        case 'mileage_high':
+          filtersWithSort.sort_by = 'mileage';
+          filtersWithSort.sort_direction = 'desc';
+          break;
+        case 'recently_added':
+          filtersWithSort.sort_by = 'created_at';
+          filtersWithSort.sort_direction = 'desc';
+          break;
+        case 'oldest_first':
+          filtersWithSort.sort_by = 'created_at';
+          filtersWithSort.sort_direction = 'asc';
+          break;
+        default:
+          filtersWithSort.sort_by = 'created_at';
+          filtersWithSort.sort_direction = 'desc';
+      }
+      
+      const allCars = await fetchAllCars(filtersWithSort);
       
       // Apply the same client-side filtering as the current filtered cars
       const filteredAllCars = allCars.filter((car: any) => {
@@ -555,7 +601,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       
       setAllCarsData(filteredAllCars);
       setShowAllCars(true);
-      console.log(`✅ Loaded ${filteredAllCars.length} cars for "Show All" view`);
+      console.log(`✅ Loaded ${filteredAllCars.length} cars for "Show All" view with global ${sortBy} sorting`);
     } catch (error) {
       console.error('❌ Error fetching all cars:', error);
       toast({
@@ -566,7 +612,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     } finally {
       setIsLoading(false);
     }
-  }, [showAllCars, filters, fetchAllCars, toast]);
+  }, [showAllCars, filters, fetchAllCars, toast, sortBy]);
 
   // Legacy function - replaced with backend sorting
   const fetchAllCarsForSorting = useCallback(async () => {

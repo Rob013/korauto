@@ -18,7 +18,7 @@ export const ResilientSyncTrigger = () => {
       const result = await Promise.race([
         supabase.from('cars_cache').select('count', { count: 'exact' }).limit(1),
         new Promise<never>((_, reject) => 
-          setTimeout(() => reject(new Error('Database health check timeout')), 5000)
+          setTimeout(() => reject(new Error('Database health check timeout')), 8000) // Increased from 5s to 8s for better reliability
         )
       ]);
       
