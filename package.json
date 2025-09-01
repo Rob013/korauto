@@ -21,7 +21,8 @@
     "sync-cars:validate": "tsx scripts/validate-sync-performance.ts",
     "catalog:validate-performance": "tsx scripts/catalog-performance-validation-simple.ts",
     "catalog:verify": "tsx scripts/catalog-verification.ts",
-    "verify-sync": "tsx scripts/verify-sync.ts"
+    "verify-sync": "tsx scripts/verify-sync.ts",
+    "verify-complete-api-sync": "tsx scripts/verify-complete-api-sync.ts"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.2",
@@ -63,6 +64,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
+    "dotenv": "^17.2.1",
     "embla-carousel-react": "^8.3.0",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.462.0",
