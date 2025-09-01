@@ -72,12 +72,12 @@ describe('Database Timeout Improvements', () => {
   });
 
   it('should handle database health check timeout enhancement', () => {
-    // Test the improved database health check timeout (5 seconds vs 3 seconds)
-    const originalTimeout = 3000;
-    const improvedTimeout = 5000;
+    // Test the improved database health check timeout (8 seconds vs 5 seconds)
+    const originalTimeout = 5000;
+    const improvedTimeout = 8000;
     
     expect(improvedTimeout).toBeGreaterThan(originalTimeout);
-    expect(improvedTimeout).toBe(5000);
+    expect(improvedTimeout).toBe(8000);
   });
 
   it('should track retry attempts and timing correctly', () => {

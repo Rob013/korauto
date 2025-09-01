@@ -47,7 +47,7 @@ export async function verifySyncToDatabase(
     sampleSize = 10,
     syncTimeThresholdHours = 72, // 3 days instead of 24 hours
     dataIntegrityThresholdPercent = 20, // Allow 20% difference instead of 10%
-    queryTimeoutMs = 10000 // 10 second timeout for queries
+    queryTimeoutMs = 15000 // 15 second timeout for queries (increased for better reliability)
   } = config;
 
   const errors: string[] = [];
