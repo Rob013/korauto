@@ -30,6 +30,17 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Health check endpoint
+  if (req.method === 'GET') {
+    console.log('🏥 Health check requested');
+    return Response.json({
+      success: true,
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      service: 'cars-sync'
+    }, { headers: corsHeaders });
+  }
+
   try {
     // Validate required environment variables
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');

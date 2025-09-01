@@ -109,63 +109,53 @@ export const AISyncCoordinator = ({
     return { category: 'network', recoverable: true, delayMs: retryDelayMs, action: 'retry' };
   }, [retryDelayMs]);
 
-  // Add edge function connectivity test
+  // Add edge function connectivity test with health check
   const testEdgeFunctionConnectivity = useCallback(async (): Promise<{ connected: boolean; error?: string; details?: string }> => {
     console.log('🔍 AI Coordinator: Testing edge function connectivity...');
     
     try {
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Connection test timed out after 10 seconds - edge function may not be deployed')), 10000);
+        setTimeout(() => reject(new Error('Health check timed out after 5 seconds')), 5000);
       });
 
-      const testPromise = supabase.functions.invoke('cars-sync', {
-        body: { test: true, source: 'connectivity-test' },
-        headers: { 'x-test': 'connectivity' }
-      });
-
-      const { data, error } = await Promise.race([testPromise, timeoutPromise]) as { data: unknown; error: unknown };
-
-      if (error) {
-        // Distinguish between different types of errors
-        const errorMsg = (error && typeof error === 'object' && 'message' in error ? (error as any).message : String(error)) || 'Unknown edge function error';
-        let enhancedError = errorMsg;
-        
-        if (errorMsg.includes('fetch') && errorMsg.includes('failed')) {
-          enhancedError = 'Failed to send request to edge function - network or deployment issue';
-        } else if (errorMsg.includes('404') || errorMsg.includes('not found')) {
-          enhancedError = 'Edge function not found - cars-sync function is not deployed';
-        } else if (errorMsg.includes('401') || errorMsg.includes('403')) {
-          enhancedError = 'Authentication error - check API key configuration';
+      // Use GET request for health check instead of POST with parameters
+      const testPromise = fetch('https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/cars-sync', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0eXlpcWlta3lzbWpuYW9jc3dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0MzkxMzQsImV4cCI6MjA2OTAxNTEzNH0.lyRCHiShhW4wrGHL3G7pK5JBUHNAtgSUQACVOBGRpL8`,
+          'Accept': 'application/json'
         }
-        
+      });
+
+      const response = await Promise.race([testPromise, timeoutPromise]) as Response;
+
+      if (!response.ok) {
         return {
           connected: false,
-          error: enhancedError,
-          details: `Edge function returned error: ${JSON.stringify(error)}`
+          error: `Edge function returned ${response.status}: ${response.statusText}`,
+          details: `Health check failed with status ${response.status}`
         };
       }
 
+      const data = await response.json();
+      
       return {
         connected: true,
-        details: `Edge function responded successfully: ${JSON.stringify(data)}`
+        details: `Edge function healthy: ${JSON.stringify(data)}`
       };
 
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       
-      // Enhanced error detection for better user guidance
       let enhancedError = errorMessage;
       let details = `Failed to connect to edge function: ${errorMessage}`;
       
       if (errorMessage.includes('timed out')) {
-        enhancedError = 'Connection timed out - edge function may not be deployed or is unresponsive';
-        details = 'The cars-sync edge function is either not deployed to Supabase or is not responding. Check the Supabase dashboard to ensure the function is deployed and configured correctly.';
+        enhancedError = 'Health check timed out - edge function may be slow or unresponsive';
+        details = 'The cars-sync edge function is responding too slowly. This may be due to high load or resource constraints.';
       } else if (errorMessage.includes('fetch') || errorMessage.includes('network')) {
         enhancedError = 'Network error - unable to reach edge function endpoint';
         details = 'Could not establish connection to the edge function. This may be due to network issues or the function endpoint being unavailable.';
-      } else if (errorMessage.includes('AbortError')) {
-        enhancedError = 'Request aborted - edge function call was cancelled';
-        details = 'The edge function request was aborted, possibly due to network issues or browser restrictions.';
       }
       
       return {
