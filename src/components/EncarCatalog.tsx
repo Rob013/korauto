@@ -53,14 +53,24 @@ import { supabase } from "@/integrations/supabase/client";
 import { mapFrontendSortToBackend, SortOption as BackendSortOption, FrontendSortOption } from "@/services/carsApi";
 import { filterOutTestCars } from "@/utils/testCarFilter";
 import { fallbackCars } from "@/data/fallbackData";
+import { useDatabaseCars } from "@/hooks/useDatabaseCars";
 
 interface EncarCatalogProps {
   highlightCarId?: string | null;
 }
 
+// Feature flag to enable database backend sorting
+const USE_DATABASE_BACKEND = true; // Set to true to use new backend sorting
+
 const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const { toast } = useToast();
   const { restorePageState } = useNavigation();
+  
+  // Use either the new database hook or the old external API hook
+  const apiHook = USE_DATABASE_BACKEND 
+    ? useDatabaseCars({ pageSize: 50 })
+    : useSecureAuctionAPI();
+    
   const {
     cars,
     setCars, // ✅ Import setCars
@@ -81,7 +91,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     fetchGrades,
     fetchTrimLevels,
     loadMore,
-  } = useSecureAuctionAPI();
+  } = apiHook;
   const { convertUSDtoEUR } = useCurrencyAPI();
   
   // Backend sorting - no need for client-side global sorting
