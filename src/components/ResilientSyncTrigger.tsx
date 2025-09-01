@@ -8,27 +8,52 @@ export const ResilientSyncTrigger = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [dbStatus, setDbStatus] = useState<'healthy' | 'timeout' | 'unknown'>('unknown');
   const [lastSyncCheck, setLastSyncCheck] = useState<Date | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [lastRetryTime, setLastRetryTime] = useState<Date | null>(null);
   const { toast } = useToast();
 
-  // Check database connectivity
+  // Check database connectivity with improved timeout handling
   const checkDatabaseHealth = async () => {
     try {
       const result = await Promise.race([
-        supabase.from('cars_cache').select('count').limit(1),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Database timeout')), 3000)
+        supabase.from('cars_cache').select('count', { count: 'exact' }).limit(1),
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Database health check timeout')), 5000)
         )
-      ]) as any;
+      ]);
       
       if (result.error) {
-        setDbStatus('timeout');
+        console.warn('Database health check error:', result.error.message);
+        // Check if it's specifically a timeout-related error
+        if (result.error.message?.includes('timeout') || 
+            result.error.message?.includes('canceling statement') ||
+            result.error.message?.includes('connection')) {
+          setDbStatus('timeout');
+        } else {
+          setDbStatus('timeout'); // Treat other DB errors as timeout for user experience
+        }
         return false;
       }
       
       setDbStatus('healthy');
+      // Reset retry count when database health is restored
+      if (retryCount > 0) {
+        setRetryCount(0);
+        setLastRetryTime(null);
+        console.log('✅ Database health restored, retry count reset');
+      }
       return true;
     } catch (error) {
-      console.error('Database health check failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Database health check failed:', errorMessage);
+      
+      // More specific error handling
+      if (errorMessage.includes('timeout') || 
+          errorMessage.includes('connection') ||
+          errorMessage.includes('network')) {
+        console.warn('⚠️ Database connection timeout detected');
+      }
+      
       setDbStatus('timeout');
       return false;
     }
@@ -94,16 +119,24 @@ export const ResilientSyncTrigger = () => {
       if (error) {
         console.error('Sync error:', error);
         
-        // Check if it's a database connectivity issue
+        // Check if it's a database connectivity issue with improved retry logic
         if (error.message?.includes('timeout') || error.message?.includes('connection')) {
+          const newRetryCount = retryCount + 1;
+          setRetryCount(newRetryCount);
+          setLastRetryTime(new Date());
+          
+          // Exponential backoff: 1min, 2min, 4min, then 5min max
+          const retryDelayMs = Math.min(60000 * Math.pow(2, newRetryCount - 1), 300000);
+          const retryDelayMin = Math.round(retryDelayMs / 60000);
+          
           toast({
-            title: "🔄 Database Connection Issue",
-            description: "Sync will retry automatically when database connectivity recovers",
+            title: "⚠️ Database Connection Issues",
+            description: `Database is experiencing timeouts. Sync will continue when connection recovers. Auto-retry in ${retryDelayMin} minute${retryDelayMin > 1 ? 's' : ''} (attempt ${newRetryCount})`,
             variant: "destructive",
           });
           
-          // Set up retry mechanism
-          setTimeout(() => startResilientSync(), 60000); // Retry in 1 minute
+          // Set up intelligent retry with exponential backoff
+          setTimeout(() => startResilientSync(), retryDelayMs);
           return;
         }
         
@@ -111,6 +144,10 @@ export const ResilientSyncTrigger = () => {
       }
 
       console.log('✅ Resilient sync response:', data);
+      
+      // Reset retry count on successful sync
+      setRetryCount(0);
+      setLastRetryTime(null);
       
       toast({
         title: "✅ Resilient Sync Started",
@@ -123,15 +160,29 @@ export const ResilientSyncTrigger = () => {
       console.error('Resilient sync failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       
-      toast({
-        title: "❌ Resilient Sync Failed",
-        description: `Sync failed: ${errorMessage}. Will retry automatically.`,
-        variant: "destructive",
-      });
-      
-      // Auto-retry in 2 minutes for non-critical errors
+      // Auto-retry with improved logic for non-critical errors
       if (!errorMessage.includes('Configuration') && !errorMessage.includes('Authentication')) {
-        setTimeout(() => startResilientSync(), 120000);
+        const newRetryCount = retryCount + 1;
+        setRetryCount(newRetryCount);
+        setLastRetryTime(new Date());
+        
+        // Exponential backoff for general errors: 2min, 4min, 8min, then 10min max
+        const retryDelayMs = Math.min(120000 * Math.pow(2, newRetryCount - 1), 600000);
+        const retryDelayMin = Math.round(retryDelayMs / 60000);
+        
+        toast({
+          title: "❌ Resilient Sync Failed",
+          description: `Sync failed: ${errorMessage}. Will retry automatically in ${retryDelayMin} minute${retryDelayMin > 1 ? 's' : ''} (attempt ${newRetryCount})`,
+          variant: "destructive",
+        });
+        
+        setTimeout(() => startResilientSync(), retryDelayMs);
+      } else {
+        toast({
+          title: "❌ Resilient Sync Failed",
+          description: `Sync failed: ${errorMessage}. Manual intervention required.`,
+          variant: "destructive",
+        });
       }
     } finally {
       setIsLoading(false);
@@ -154,6 +205,10 @@ export const ResilientSyncTrigger = () => {
       case 'healthy':
         return 'Database Healthy';
       case 'timeout':
+        if (retryCount > 0) {
+          const timeSinceRetry = lastRetryTime ? Math.floor((Date.now() - lastRetryTime.getTime()) / 60000) : 0;
+          return `Database Timeout Issues (${retryCount} attempts, last ${timeSinceRetry}m ago)`;
+        }
         return 'Database Timeout Issues';
       default:
         return 'Checking Database...';
@@ -205,7 +260,13 @@ export const ResilientSyncTrigger = () => {
       
       {dbStatus === 'timeout' && (
         <div className="text-xs text-yellow-600 bg-yellow-50 p-2 rounded border">
-          ⚠️ Database connectivity issues detected. Sync will automatically retry when connection recovers.
+          ⚠️ Database Connection Issues<br/>
+          Database is experiencing timeouts. Sync will continue when connection recovers.
+          {retryCount > 0 && (
+            <div className="mt-1 text-[10px] opacity-75">
+              Retry attempts: {retryCount} • Next retry scheduled with exponential backoff
+            </div>
+          )}
         </div>
       )}
     </div>
