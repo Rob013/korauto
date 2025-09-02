@@ -207,7 +207,7 @@ describe('Edge Function Shutdown and Early Termination Prevention', () => {
         lastActivity: Date.now(),
         processedRecords: 0,
         errors: 0,
-        memorySnapshots: [] as any[]
+        memorySnapshots: [] as unknown[]
       };
       
       // Simulate memory monitoring during processing
