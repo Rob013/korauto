@@ -239,6 +239,7 @@ Deno.serve(async (req) => {
           .single();
         return existingStatus;
       }, 'Get current sync status');
+      
       console.log(`📍 Resume request: Current status is ${currentSyncStatus?.status}, page ${currentSyncStatus?.current_page}`);
       
       // Check if sync is actually stuck
@@ -262,7 +263,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Update sync status to running with enhanced metadata
+    // Enhanced sync status update with error handling
     const updateData: any = {
       id: 'cars-sync-main',
       status: 'running',
@@ -370,7 +371,7 @@ Deno.serve(async (req) => {
           consecutiveEmptyPages++;
           console.log(`📄 Page ${currentPage} empty (${consecutiveEmptyPages}/20)`);
           currentPage++;
-          continue;
+          return { processed: 0, cars: [] };
         }
 
         consecutiveEmptyPages = 0;
