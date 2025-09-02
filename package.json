@@ -25,6 +25,7 @@
     "verify-complete-api-sync": "tsx scripts/verify-complete-api-sync.ts",
     "fix-100-argument-limit": "tsx scripts/apply-100-argument-fix.ts",
     "deploy-100-argument-fix": "tsx scripts/deploy-100-argument-fix.ts",
+    "test-fix-deployment": "tsx scripts/test-fix-deployment.ts",
     "check-100-argument-fix": "tsx scripts/check-100-argument-fix-status.ts",
     "verify-100-argument-fix": "tsx scripts/verify-100-argument-fix.ts"
   },
