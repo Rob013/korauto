@@ -192,11 +192,22 @@ export const FullCarsSyncTrigger = () => {
     try {
       console.log('🛠️ Cleaning up stuck sync...');
       
+      // Get current sync data before cleanup to determine if we should auto-resume
+      const { data: currentSync } = await supabase
+        .from('sync_status')
+        .select('*')
+        .eq('id', 'cars-sync-main')
+        .single();
+      
+      const recordsProcessed = currentSync?.records_processed || 0;
+      const completionPercentage = Math.round((recordsProcessed / 192800) * 100);
+      const shouldAutoResume = completionPercentage >= 50; // Auto-resume if >50% complete
+      
       const { error } = await supabase
         .from('sync_status') 
         .update({
           status: 'failed',
-          error_message: 'Auto-cleaned: Sync was stuck for more than 10 minutes without activity or running too long',
+          error_message: `Auto-cleaned: Sync was stuck at ${completionPercentage}% (${recordsProcessed.toLocaleString()} cars) - ${shouldAutoResume ? 'Auto-resuming...' : 'Manual resume required'}`,
           completed_at: new Date().toISOString(),
           last_activity_at: new Date().toISOString()
         })
@@ -208,10 +219,32 @@ export const FullCarsSyncTrigger = () => {
       setIsLoading(false);
       setIsStuckSyncDetected(false);
       
-      toast({
-        title: "🔧 Stuck Sync Cleaned Up",
-        description: "The stuck sync has been automatically cleaned up. You can now start a new sync.",
-      });
+      if (shouldAutoResume) {
+        console.log(`🔄 Auto-resuming high-completion sync (${completionPercentage}% complete)`);
+        toast({
+          title: "🔄 Auto-Resuming Stuck Sync",
+          description: `Sync was ${completionPercentage}% complete (${recordsProcessed.toLocaleString()} cars). Automatically resuming...`,
+        });
+        
+        // Auto-resume after a short delay
+        setTimeout(async () => {
+          try {
+            await resumeStuckSync(recordsProcessed);
+          } catch (resumeError) {
+            console.error('❌ Auto-resume failed:', resumeError);
+            toast({
+              title: "⚠️ Auto-Resume Failed", 
+              description: "Failed to auto-resume. Please use the Resume Sync button.",
+              variant: "destructive",
+            });
+          }
+        }, 3000);
+      } else {
+        toast({
+          title: "🔧 Stuck Sync Cleaned Up",
+          description: `Sync was ${completionPercentage}% complete. Use Resume Sync to continue.`,
+        });
+      }
       
       // Re-check status after a short delay
       setTimeout(checkSyncStatus, 2000);
@@ -224,6 +257,44 @@ export const FullCarsSyncTrigger = () => {
         description: "Failed to clean up stuck sync. Please try manually stopping the sync.",
         variant: "destructive",
       });
+    }
+  };
+
+  const resumeStuckSync = async (fromRecordsProcessed: number) => {
+    try {
+      console.log(`🔄 Resuming sync from ${fromRecordsProcessed.toLocaleString()} cars...`);
+      
+      // Calculate page to resume from (assuming PAGE_SIZE = 50 from edge function)
+      const PAGE_SIZE = 50;
+      const fromPage = Math.floor(fromRecordsProcessed / PAGE_SIZE) + 1;
+      
+      const { data, error } = await supabase.functions.invoke('cars-sync', {
+        body: { 
+          resume: true,
+          fromPage: fromPage,
+          source: 'auto-resume-stuck',
+          reason: `Resuming stuck sync from ${fromRecordsProcessed.toLocaleString()} cars`
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to resume sync');
+      }
+
+      console.log(`✅ Sync resumed successfully from page ${fromPage}`);
+      
+      toast({
+        title: "🚀 Sync Resumed",
+        description: `Successfully resumed sync from ${fromRecordsProcessed.toLocaleString()} cars.`,
+      });
+
+    } catch (error) {
+      console.error('❌ Failed to resume stuck sync:', error);
+      throw error;
     }
   };
 
@@ -849,6 +920,18 @@ export const FullCarsSyncTrigger = () => {
             title="Reset sync status if showing incorrect car count"
           >
             🔄 Reset Count
+          </Button>
+        )}
+        
+        {/* Resume Sync Button - shown when sync failed with high completion */}
+        {syncStatus && syncStatus.status === 'failed' && syncStatus.records_processed && syncStatus.records_processed >= 50000 && (
+          <Button 
+            onClick={() => resumeStuckSync(syncStatus.records_processed)}
+            variant="outline"
+            className="flex items-center gap-2 text-green-600 border-green-200 hover:bg-green-50"
+            title={`Resume sync from ${syncStatus.records_processed.toLocaleString()} cars`}
+          >
+            🚀 Resume Sync
           </Button>
         )}
       </div>
