@@ -2099,7 +2099,7 @@ export const useSecureAuctionAPI = () => {
       let totalPages = 1;
       let totalCount = 0;
       let consecutiveEmptyPages = 0;
-      const MAX_CONSECUTIVE_EMPTY_PAGES = 5; // Allow a few empty pages before giving up
+      const MAX_CONSECUTIVE_EMPTY_PAGES = 20; // Allow more empty pages for complete dataset fetch
       
       // Fetch all pages without any filters to get the complete dataset
       do {
@@ -2203,7 +2203,7 @@ export const useSecureAuctionAPI = () => {
       let totalPages = 1;
       let totalCount = 0;
       let consecutiveEmptyPages = 0;
-      const MAX_CONSECUTIVE_EMPTY_PAGES = 5; // Allow a few empty pages before giving up
+      const MAX_CONSECUTIVE_EMPTY_PAGES = 20; // Allow more empty pages for complete fetch
       
       // Fetch all pages until we have all cars
       do {
