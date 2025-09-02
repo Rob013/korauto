@@ -16,7 +16,7 @@ const mockFetchAllCars = async (): Promise<any[]> => {
   const perPage = 200;
   const totalPages = Math.ceil(totalCars / perPage);
   
-  let allCars: any[] = [];
+  const allCars: any[] = [];
   
   for (let page = 1; page <= totalPages; page++) {
     // Simulate API delay

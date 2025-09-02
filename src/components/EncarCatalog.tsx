@@ -146,57 +146,72 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [datasetValidation, setDatasetValidation] = useState<DatasetValidationResult | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   
-  // Pre-fetch complete dataset for filter consistency on component mount
-  useEffect(() => {
-    const validateDatasetOnMount = async () => {
-      if (fetchCompleteDatasetForFilters && !isValidating) {
-        setIsValidating(true);
-        try {
-          console.log("🔄 Pre-fetching complete dataset for filter consistency...");
-          const completeData = await fetchCompleteDatasetForFilters();
-          
-          // Validate the dataset
-          const validation = await validateCompleteDataset(completeData, 150000);
-          setDatasetValidation(validation);
-          
-          // Log results for debugging
-          logValidationResults(validation);
-          
-          // Show toast notification about dataset status
-          if (validation.isComplete) {
-            toast({
-              title: "✅ Complete Dataset Loaded",
-              description: `${validation.totalCars.toLocaleString()} cars synced successfully`,
-              duration: 3000,
-            });
-          } else {
-            toast({
-              title: "⚠️ Dataset Incomplete", 
-              description: `${validation.totalCars.toLocaleString()} cars loaded (${validation.coverage}% coverage)`,
-              variant: "destructive",
-              duration: 5000,
-            });
-          }
-        } catch (error) {
-          console.error("❌ Error validating dataset:", error);
+  // Debounced validation function to avoid excessive validation calls
+  const debouncedValidation = useMemo(
+    () => debounce(async () => {
+      if (!fetchCompleteDatasetForFilters || isValidating) {
+        return;
+      }
+      
+      setIsValidating(true);
+      try {
+        console.log("🔄 Starting debounced dataset validation...");
+        const completeData = await fetchCompleteDatasetForFilters();
+        
+        // Validate the dataset
+        const validation = await validateCompleteDataset(completeData, 150000);
+        setDatasetValidation(validation);
+        
+        // Log results for debugging
+        logValidationResults(validation);
+        
+        // Show toast notification about dataset status
+        if (validation.isComplete) {
           toast({
-            title: "❌ Dataset Validation Failed",
-            description: "Unable to validate complete dataset",
+            title: "✅ Complete Dataset Loaded",
+            description: `${validation.totalCars.toLocaleString()} cars synced successfully`,
+            duration: 3000,
+          });
+        } else {
+          toast({
+            title: "⚠️ Dataset Incomplete", 
+            description: `${validation.totalCars.toLocaleString()} cars loaded (${validation.coverage}% coverage)`,
             variant: "destructive",
             duration: 5000,
           });
-        } finally {
-          setIsValidating(false);
         }
-      } else if (!fetchCompleteDatasetForFilters) {
-        console.warn("⚠️ Complete dataset validation not available - using legacy API hook");
+      } catch (error) {
+        console.error("❌ Error validating dataset:", error);
+        toast({
+          title: "❌ Dataset Validation Failed",
+          description: "Unable to validate complete dataset",
+          variant: "destructive",
+          duration: 5000,
+        });
+      } finally {
+        setIsValidating(false);
       }
-    };
+    }, 2000), // 2 second debounce to prevent excessive calls
+    [fetchCompleteDatasetForFilters, isValidating, toast]
+  );
+  
+  // Pre-fetch complete dataset for filter consistency on component mount
+  useEffect(() => {
+    if (!fetchCompleteDatasetForFilters) {
+      console.warn("⚠️ Complete dataset validation not available - using legacy API hook");
+      return;
+    }
     
-    // Run validation after a short delay to not block initial rendering
-    const timeoutId = setTimeout(validateDatasetOnMount, 1000);
-    return () => clearTimeout(timeoutId);
-  }, [fetchCompleteDatasetForFilters, toast]);
+    // Only trigger validation if we haven't already validated recently
+    if (!datasetValidation && !isValidating) {
+      // Run validation after a delay to not block initial rendering
+      const timeoutId = setTimeout(() => {
+        debouncedValidation();
+      }, 2000); // Increased delay to let page load first
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [debouncedValidation, datasetValidation, isValidating, fetchCompleteDatasetForFilters]);
 
   // Catalog lock state - prevents accidental swipe gestures on mobile
   const [catalogLocked, setCatalogLocked] = useState(() => {

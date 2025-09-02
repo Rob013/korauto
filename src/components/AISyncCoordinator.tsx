@@ -268,7 +268,7 @@ export const AISyncCoordinator = ({
       }
 
       // Continue with sync regardless of connectivity test result
-      let enhancedParams: Record<string, unknown> = {
+      const enhancedParams: Record<string, unknown> = {
         smartSync: true,
         aiCoordinated: true,
         source: 'ai-coordinator',
