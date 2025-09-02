@@ -85,9 +85,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Choose which hook data to use based on feature flag and error state
   // If database backend is enabled but has errors, fallback to external API
   const apiHook = useMemo(() => {
-    if (USE_DATABASE_BACKEND && !databaseHook.error) {
+    if (USE_DATABASE_BACKEND && !databaseHook.error && !databaseHook.loading) {
+      // Use database hook if it's not erroring, not loading, and potentially has data
+      console.log('📋 Using database hook - error:', databaseHook.error, 'loading:', databaseHook.loading, 'cars:', databaseHook.cars?.length);
       return databaseHook;
     }
+    // Fallback to external API when database fails or is loading
+    console.log('📋 Using external API hook - db error:', databaseHook.error, 'db loading:', databaseHook.loading, 'external cars:', externalApiHook.cars?.length);
     return externalApiHook;
   }, [databaseHook, externalApiHook]);
     
@@ -215,6 +219,22 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       return () => clearTimeout(timeoutId);
     }
   }, [debouncedValidation, datasetValidation, isValidating, fetchCompleteDatasetForFilters]);
+
+  // Retry fetching cars when switching between hooks (database -> external API)
+  useEffect(() => {
+    // Only retry if we have no cars and we're using the external API hook
+    // This handles the case where database fails and we switch to external API
+    if (cars.length === 0 && !loading && apiHook === externalApiHook && databaseHook.error) {
+      console.log('🔄 Retrying car fetch with external API hook after database failure');
+      
+      // Use a timeout to avoid immediate retry and let the external API hook initialize
+      const retryTimeout = setTimeout(() => {
+        fetchCars(1, {}, true);
+      }, 500);
+      
+      return () => clearTimeout(retryTimeout);
+    }
+  }, [apiHook, externalApiHook, databaseHook.error, cars.length, loading, fetchCars]);
 
   // Catalog lock state - prevents accidental swipe gestures on mobile
   const [catalogLocked, setCatalogLocked] = useState(() => {
