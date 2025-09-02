@@ -30,14 +30,20 @@ export const AutoResumeScheduler = ({
         if (failedSyncs && failedSyncs.length > 0) {
           const lastFailedSync = failedSyncs[0];
           const timeSinceFailure = Date.now() - new Date(lastFailedSync.completed_at || lastFailedSync.last_activity_at).getTime();
-          const RESUME_DELAY = 5 * 1000; // Wait only 5 seconds for MAXIMUM SPEED continuity
+          
+          // Enhanced resume delay based on progress - very low progress gets faster recovery
+          const recordsProcessed = lastFailedSync.records_processed || 0;
+          const progressPercentage = (recordsProcessed / 190000) * 100; // Use actual API total
+          const isVeryLowProgress = progressPercentage < 5; // Less than 5%
+          
+          const RESUME_DELAY = isVeryLowProgress ? 2 * 1000 : 5 * 1000; // 2s for low progress, 5s for others
           
           // Handle failed syncs or running syncs that haven't been active
           if (lastFailedSync.status === 'failed' || 
               (lastFailedSync.status === 'running' && timeSinceFailure > 3 * 60 * 1000)) { // 3 minutes for running syncs
             
             if (timeSinceFailure > RESUME_DELAY) {
-              console.log(`🔄 Enhanced Auto-resume: Attempting immediate resume of ${lastFailedSync.status} sync from page ${lastFailedSync.current_page} with AI coordination...`);
+              console.log(`🔄 Enhanced Auto-resume: Attempting ${isVeryLowProgress ? 'PRIORITY' : 'immediate'} resume of ${lastFailedSync.status} sync from page ${lastFailedSync.current_page} (${progressPercentage.toFixed(1)}% progress) with AI coordination...`);
             
             // Use AI coordinator if available, fallback to direct call
             const aiCoordinator = (window as unknown as { aiSyncCoordinator?: { startIntelligentSync: (params: Record<string, unknown>) => Promise<void> } }).aiSyncCoordinator;
