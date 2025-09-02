@@ -2098,6 +2098,8 @@ export const useSecureAuctionAPI = () => {
       let currentPage = 1;
       let totalPages = 1;
       let totalCount = 0;
+      let consecutiveEmptyPages = 0;
+      const MAX_CONSECUTIVE_EMPTY_PAGES = 5; // Allow a few empty pages before giving up
       
       // Fetch all pages without any filters to get the complete dataset
       do {
@@ -2108,20 +2110,41 @@ export const useSecureAuctionAPI = () => {
         };
         
         console.log(`📄 Dataset fetch: page ${currentPage}/${totalPages} (${allCars.length}/${totalCount} cars)...`);
-        const data: APIResponse = await makeSecureAPICall("cars", pageFilters);
         
-        if (!data.data || !Array.isArray(data.data)) {
-          console.warn(`⚠️ No data returned for dataset page ${currentPage}`);
-          break;
-        }
-        
-        // Add cars from this page
-        allCars.push(...data.data);
-        
-        // Update pagination info from API response
-        if (data.meta) {
-          totalPages = data.meta.last_page || 1;
-          totalCount = data.meta.total || 0;
+        try {
+          const data: APIResponse = await makeSecureAPICall("cars", pageFilters);
+          
+          if (!data.data || !Array.isArray(data.data) || data.data.length === 0) {
+            consecutiveEmptyPages++;
+            console.warn(`⚠️ Empty page ${currentPage}, consecutive empty pages: ${consecutiveEmptyPages}`);
+            
+            // If we've hit too many consecutive empty pages, break
+            if (consecutiveEmptyPages >= MAX_CONSECUTIVE_EMPTY_PAGES) {
+              console.warn(`❌ Breaking after ${consecutiveEmptyPages} consecutive empty pages`);
+              break;
+            }
+          } else {
+            // Reset counter when we get data
+            consecutiveEmptyPages = 0;
+            // Add cars from this page
+            allCars.push(...data.data);
+          }
+          
+          // Update pagination info from API response
+          if (data.meta) {
+            totalPages = data.meta.last_page || 1;
+            totalCount = data.meta.total || 0;
+          }
+          
+        } catch (pageError) {
+          console.warn(`⚠️ Error fetching page ${currentPage}:`, pageError);
+          consecutiveEmptyPages++;
+          
+          // If we've hit too many consecutive errors, break
+          if (consecutiveEmptyPages >= MAX_CONSECUTIVE_EMPTY_PAGES) {
+            console.error(`❌ Breaking after ${consecutiveEmptyPages} consecutive errors`);
+            break;
+          }
         }
         
         currentPage++;
@@ -2179,6 +2202,8 @@ export const useSecureAuctionAPI = () => {
       let currentPage = 1;
       let totalPages = 1;
       let totalCount = 0;
+      let consecutiveEmptyPages = 0;
+      const MAX_CONSECUTIVE_EMPTY_PAGES = 5; // Allow a few empty pages before giving up
       
       // Fetch all pages until we have all cars
       do {
@@ -2189,20 +2214,41 @@ export const useSecureAuctionAPI = () => {
         };
         
         console.log(`📄 Fetching page ${currentPage}/${totalPages} (${allCars.length}/${totalCount} cars)...`);
-        const data: APIResponse = await makeSecureAPICall("cars", pageFilters);
         
-        if (!data.data || !Array.isArray(data.data)) {
-          console.warn(`⚠️ No data returned for page ${currentPage}`);
-          break;
-        }
-        
-        // Add cars from this page
-        allCars.push(...data.data);
-        
-        // Update pagination info from API response
-        if (data.meta) {
-          totalPages = data.meta.last_page || 1;
-          totalCount = data.meta.total || 0;
+        try {
+          const data: APIResponse = await makeSecureAPICall("cars", pageFilters);
+          
+          if (!data.data || !Array.isArray(data.data) || data.data.length === 0) {
+            consecutiveEmptyPages++;
+            console.warn(`⚠️ Empty page ${currentPage}, consecutive empty pages: ${consecutiveEmptyPages}`);
+            
+            // If we've hit too many consecutive empty pages, break
+            if (consecutiveEmptyPages >= MAX_CONSECUTIVE_EMPTY_PAGES) {
+              console.warn(`❌ Breaking after ${consecutiveEmptyPages} consecutive empty pages`);
+              break;
+            }
+          } else {
+            // Reset counter when we get data
+            consecutiveEmptyPages = 0;
+            // Add cars from this page
+            allCars.push(...data.data);
+          }
+          
+          // Update pagination info from API response
+          if (data.meta) {
+            totalPages = data.meta.last_page || 1;
+            totalCount = data.meta.total || 0;
+          }
+          
+        } catch (pageError) {
+          console.warn(`⚠️ Error fetching page ${currentPage}:`, pageError);
+          consecutiveEmptyPages++;
+          
+          // If we've hit too many consecutive errors, break
+          if (consecutiveEmptyPages >= MAX_CONSECUTIVE_EMPTY_PAGES) {
+            console.error(`❌ Breaking after ${consecutiveEmptyPages} consecutive errors`);
+            break;
+          }
         }
         
         currentPage++;
