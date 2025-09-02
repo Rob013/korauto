@@ -323,14 +323,23 @@ export const AISyncCoordinator = ({
       let diagnosticHelp = '';
       
       // Enhanced error message detection with comprehensive accessibility patterns
-      // Fixed operator precedence and more specific pattern matching to avoid false positives
-      if ((errorMessage.includes('timed out') && errorMessage.includes('function may not be deployed')) || 
+      // Check for general connectivity/network issues that should show the problem statement message (user-friendly)
+      if (errorMessage.includes('Failed to send') ||
+          errorMessage.includes('network or deployment issue') ||
+          (errorMessage.includes('Edge Function not accessible') && (
+            errorMessage.includes('fetch') ||
+            errorMessage.includes('network')
+          ))) {
+        userFriendlyMessage = 'Unable to connect to Edge Function - network or deployment issue';
+        diagnosticHelp = 'This could be a network connectivity issue or the edge function may not be deployed. Check your internet connection and Supabase function deployment.';
+      } else if ((errorMessage.includes('timed out') && errorMessage.includes('function may not be deployed')) || 
           errorMessage.includes('Connection test timed out') ||
+          errorMessage.includes('Network error - unable to reach') ||
+          errorMessage.includes('Connection timed out - edge function may not be deployed') ||
           (errorMessage.includes('Edge Function not accessible') && (
             errorMessage.includes('Connection') || 
             errorMessage.includes('timed out') || 
             errorMessage.includes('Unknown connectivity') ||
-            errorMessage.includes('Network error') ||
             errorMessage.includes('Request aborted') ||
             // Handle generic accessibility issues (empty error or generic error)
             errorMessage.match(/Edge Function not accessible:\s*$/) ||
@@ -338,9 +347,6 @@ export const AISyncCoordinator = ({
           ))) {
         userFriendlyMessage = 'Edge Function not accessible - the cars-sync function may not be deployed to Supabase';
         diagnosticHelp = 'Check the Supabase dashboard to ensure the cars-sync edge function is deployed and running. See EDGE_FUNCTION_DEPLOYMENT.md for detailed deployment instructions.';
-      } else if (errorMessage.includes('Failed to send')) {
-        userFriendlyMessage = 'Unable to connect to Edge Function - network or deployment issue';
-        diagnosticHelp = 'This could be a network connectivity issue or the edge function may not be deployed. Check your internet connection and Supabase function deployment.';
       } else if (errorMessage.includes('timeout') || errorMessage.includes('Test timed out')) {
         userFriendlyMessage = 'Edge Function call timed out - the function may not be properly deployed or configured';
         diagnosticHelp = 'The function exists but is not responding within the expected time frame.';
