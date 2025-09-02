@@ -36,11 +36,12 @@ export const AutoResumeScheduler = ({
           const progressPercentage = (recordsProcessed / 190000) * 100; // Use actual API total
           const isVeryLowProgress = progressPercentage < 5; // Less than 5%
           
-          const RESUME_DELAY = isVeryLowProgress ? 2 * 1000 : 5 * 1000; // 2s for low progress, 5s for others
+          // More aggressive resume for stuck syncs at 1%
+          const RESUME_DELAY = isVeryLowProgress ? 1 * 1000 : 3 * 1000; // 1s for low progress, 3s for others
           
           // Handle failed syncs or running syncs that haven't been active
           if (lastFailedSync.status === 'failed' || 
-              (lastFailedSync.status === 'running' && timeSinceFailure > 3 * 60 * 1000)) { // 3 minutes for running syncs
+              (lastFailedSync.status === 'running' && timeSinceFailure > 90 * 1000)) { // 1.5 minutes for running syncs (more aggressive)
             
             if (timeSinceFailure > RESUME_DELAY) {
               console.log(`🔄 Enhanced Auto-resume: Attempting ${isVeryLowProgress ? 'PRIORITY' : 'immediate'} resume of ${lastFailedSync.status} sync from page ${lastFailedSync.current_page} (${progressPercentage.toFixed(1)}% progress) with AI coordination...`);
@@ -73,12 +74,12 @@ export const AutoResumeScheduler = ({
         // Remove legacy pause cleanup since we no longer pause
         // All syncs now run continuously until completion
         
-        // Check for running syncs that might be stuck (no activity for 5 minutes)
+        // Check for running syncs that might be stuck (no activity for 2 minutes)
         const { data: runningSyncs } = await supabase
           .from('sync_status')
           .select('*')
           .eq('status', 'running')
-          .lt('last_activity_at', new Date(Date.now() - 3 * 60 * 1000).toISOString()); // Reduced from 5 to 3 minutes for max speed detection
+          .lt('last_activity_at', new Date(Date.now() - 2 * 60 * 1000).toISOString()); // Reduced from 3 to 2 minutes for max speed detection
 
         if (runningSyncs && runningSyncs.length > 0) {
           for (const stuckSync of runningSyncs) {
@@ -88,7 +89,7 @@ export const AutoResumeScheduler = ({
               .from('sync_status')
               .update({
                 status: 'failed',
-                error_message: 'Auto-detected: Sync was stuck with no activity for 5+ minutes - will auto-resume immediately',
+                error_message: 'Auto-detected: Sync was stuck with no activity for 2+ minutes - will auto-resume immediately',
                 completed_at: new Date().toISOString()
               })
               .eq('id', stuckSync.id);

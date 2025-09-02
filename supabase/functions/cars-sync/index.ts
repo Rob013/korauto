@@ -82,6 +82,7 @@ Deno.serve(async (req) => {
     const PAGE_SIZE = 250; // Increased from 200 for fewer API requests
     const BATCH_SIZE = 750; // Increased from 500 for larger database writes
     const MAX_PAGES_PER_RUN = 999999; // Unlimited pages to ensure 100% completion without pause
+    const MAX_EXECUTION_TIME = 8 * 60 * 1000; // 8 minutes max execution to stay within edge function limits
 
     // Enhanced sync status management
     let currentSyncStatus = null;
@@ -169,6 +170,13 @@ Deno.serve(async (req) => {
 
     // Enhanced processing loop with unlimited pages for complete sync
     while (consecutiveEmptyPages < 20) { // Continue until truly complete (20 consecutive empty pages for better certainty)
+      // Check execution time to avoid edge function timeout
+      const elapsedTime = Date.now() - startTime;
+      if (elapsedTime > MAX_EXECUTION_TIME) {
+        console.log(`⏰ Execution time limit reached (${Math.round(elapsedTime/1000)}s), saving progress and continuing via auto-resume...`);
+        break;
+      }
+      
       try {
         console.log(`📄 Processing page ${currentPage}...`);
 

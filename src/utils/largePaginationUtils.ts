@@ -161,6 +161,55 @@ export function getPaginationStats(
 }
 
 /**
+ * Calculate pagination stats when there's a mismatch between totalItems and actual loaded items
+ * This handles cases where the API returns a total count but sync hasn't completed
+ */
+export function getPaginationStatsWithSync(
+  currentPage: number,
+  totalItems: number,
+  actualLoadedItems: number,
+  itemsPerPage: number = 50
+): {
+  displayText: string;
+  shortText: string;
+  showing: string;
+  isInconsistent: boolean;
+} {
+  const info = calculatePaginationInfo(currentPage, totalItems, itemsPerPage);
+  const totalFormatted = formatPaginationNumber(info.totalItems);
+  const pageFormatted = formatPaginationNumber(info.currentPage);
+  const totalPagesFormatted = formatPaginationNumber(info.totalPages);
+  
+  // Check if there's a sync issue (totalItems > 0 but no cars loaded)
+  const isInconsistent = totalItems > 0 && actualLoadedItems === 0;
+  
+  if (totalItems === 0) {
+    return {
+      displayText: 'No items found',
+      shortText: '0 items',
+      showing: 'Showing 0 items',
+      isInconsistent: false
+    };
+  }
+  
+  if (isInconsistent) {
+    return {
+      displayText: `${totalFormatted} cars available • Page ${pageFormatted} of ${totalPagesFormatted} • Loading cars...`,
+      shortText: `${totalFormatted} cars`,
+      showing: 'Loading cars from database...',
+      isInconsistent: true
+    };
+  }
+
+  return {
+    displayText: `${totalFormatted} cars across ${totalPagesFormatted} pages • Page ${pageFormatted} of ${totalPagesFormatted} • Showing ${actualLoadedItems} cars per page`,
+    shortText: `${totalFormatted} cars`,
+    showing: `Showing ${actualLoadedItems} cars per page`,
+    isInconsistent: false
+  };
+}
+
+/**
  * Generate API parameters for paginated requests
  */
 export function generateApiPaginationParams(

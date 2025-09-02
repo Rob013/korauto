@@ -49,6 +49,9 @@ import {
   getValidationSummary,
   DatasetValidationResult
 } from "@/utils/carDatasetValidation";
+import {
+  getPaginationStatsWithSync
+} from "@/utils/largePaginationUtils";
 
 import { useSearchParams } from "react-router-dom";
 import {
@@ -1490,7 +1493,19 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 Car Catalog
               </h1>
               <p className="text-muted-foreground text-xs sm:text-sm">
-                {totalCount.toLocaleString()} cars across {totalPages.toLocaleString()} pages • Page {currentPage} of {totalPages.toLocaleString()} • Showing {carsToDisplay.length} cars per page
+                {(() => {
+                  const paginationStats = getPaginationStatsWithSync(
+                    currentPage,
+                    totalCount,
+                    carsToDisplay.length,
+                    50
+                  );
+                  return (
+                    <span className={paginationStats.isInconsistent ? "text-orange-600" : ""}>
+                      {paginationStats.displayText}
+                    </span>
+                  );
+                })()}
                 
                 {/* Dataset validation indicator */}
                 {datasetValidation && (
@@ -1665,7 +1680,19 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 <div className="flex flex-col items-center py-8 space-y-4">
                   {/* Page Info */}
                   <div className="text-center text-sm text-muted-foreground">
-                    Page {currentPage} of {totalPages.toLocaleString()} • {carsToDisplay.length} cars shown
+                    {(() => {
+                      const paginationStats = getPaginationStatsWithSync(
+                        currentPage,
+                        totalCount,
+                        carsToDisplay.length,
+                        50
+                      );
+                      return (
+                        <span className={paginationStats.isInconsistent ? "text-orange-600" : ""}>
+                          Page {currentPage} of {totalPages.toLocaleString()} • {paginationStats.showing}
+                        </span>
+                      );
+                    })()}
                   </div>
                   
                   {/* Pagination Navigation */}
