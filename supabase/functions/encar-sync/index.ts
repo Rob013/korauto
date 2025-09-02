@@ -179,7 +179,7 @@ Deno.serve(async (req) => {
       // Handle pagination for cars with better estimates
       let currentPage = 1
       let hasMorePages = true
-      let estimatedTotalPages = syncType === 'full' ? 500 : 50 // Initial estimate
+      const estimatedTotalPages = syncType === 'full' ? 500 : 50 // Initial estimate
       
       while (hasMorePages && currentPage <= MAX_PAGES) {
         const pageUrl = `${baseUrl}&page=${currentPage}`

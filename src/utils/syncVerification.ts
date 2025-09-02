@@ -211,17 +211,23 @@ export async function verifySyncToDatabase(
         } | null;
       }
       
-      const { data: syncStatus, error: statusError }: SyncStatusResponse = await Promise.race([
-        supabase
-          .from('sync_status')
-          .select('status, error_message, started_at')
-          .order('started_at', { ascending: false })
-          .limit(1)
-          .single(),
-        new Promise<never>((_, reject) => 
-          setTimeout(() => reject(new Error('Sync status query timeout')), queryTimeoutMs)
-        )
-      ]);
+      // Create timeout promise only if queryTimeoutMs is set and reasonable
+      const timeoutPromise = queryTimeoutMs > 0 && queryTimeoutMs < 60000 
+        ? new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('Sync status query timeout')), queryTimeoutMs)
+          )
+        : new Promise<never>(() => {}); // Never resolves if timeout is disabled
+      
+      const syncStatusPromise = supabase
+        .from('sync_status')
+        .select('status, error_message, started_at')
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      const { data: syncStatus, error: statusError }: SyncStatusResponse = queryTimeoutMs > 0 && queryTimeoutMs < 60000
+        ? await Promise.race([syncStatusPromise, timeoutPromise])
+        : await syncStatusPromise;
 
       if (statusError && statusError.code !== 'PGRST116') {
         // Check if this is a statement timeout error
