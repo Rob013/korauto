@@ -21,15 +21,7 @@
     "sync-cars:validate": "tsx scripts/validate-sync-performance.ts",
     "catalog:validate-performance": "tsx scripts/catalog-performance-validation-simple.ts",
     "catalog:verify": "tsx scripts/catalog-verification.ts",
-    "verify-sync": "tsx scripts/verify-sync.ts",
-    "verify-complete-api-sync": "tsx scripts/verify-complete-api-sync.ts",
-    "fix-100-argument-limit": "tsx scripts/apply-100-argument-fix.ts",
-    "deploy-100-argument-fix": "tsx scripts/deploy-100-argument-fix.ts",
-    "test-fix-deployment": "tsx scripts/test-fix-deployment.ts",
-    "check-100-argument-fix": "tsx scripts/check-100-argument-fix-status.ts",
-    "verify-100-argument-fix": "tsx scripts/verify-100-argument-fix.ts",
-    "test-mapping-workaround": "tsx scripts/test-mapping-workaround.ts",
-    "verify-deployment-readiness": "tsx scripts/verify-deployment-readiness.ts"
+    "verify-sync": "tsx scripts/verify-sync.ts"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.2",
@@ -71,7 +63,6 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
-    "dotenv": "^17.2.1",
     "embla-carousel-react": "^8.3.0",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.462.0",

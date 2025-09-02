@@ -90,8 +90,6 @@ Deno.serve(async (req) => {
     let minutes: number
     if (syncType === 'daily') {
       minutes = 24 * 60 // 24 hours for daily sync
-    } else if (syncType === '6hour') {
-      minutes = 6 * 60 // 6 hours for 6-hourly sync
     } else if (syncType === 'full') {
       minutes = 0 // Full sync ignores time window
     } else {
@@ -181,7 +179,7 @@ Deno.serve(async (req) => {
       // Handle pagination for cars with better estimates
       let currentPage = 1
       let hasMorePages = true
-      const estimatedTotalPages = syncType === 'full' ? 500 : 50 // Initial estimate
+      let estimatedTotalPages = syncType === 'full' ? 500 : 50 // Initial estimate
       
       while (hasMorePages && currentPage <= MAX_PAGES) {
         const pageUrl = `${baseUrl}&page=${currentPage}`
@@ -380,19 +378,19 @@ Deno.serve(async (req) => {
         errors.push(`Archived lots error: ${archivedError.message}`)
       }
 
-      // For daily and 6-hour sync, call the cleanup function to remove old sold cars
+      // For daily sync, call the cleanup function to remove old sold cars
       let cleanupResult = null
-      if (syncType === 'daily' || syncType === '6hour') {
+      if (syncType === 'daily') {
         try {
-          console.log(`🧹 Running ${syncType} cleanup to remove old sold cars...`)
+          console.log(`🧹 Running daily cleanup to remove old sold cars...`)
           const { data: cleanupData, error: cleanupError } = await supabase.rpc('remove_old_sold_cars')
           
           if (cleanupError) {
-            console.error(`❌ Error during ${syncType} cleanup:`, cleanupError)
+            console.error(`❌ Error during daily cleanup:`, cleanupError)
             errors.push(`Cleanup error: ${cleanupError.message}`)
           } else {
             cleanupResult = cleanupData
-            console.log(`✅ ${syncType} cleanup completed: ${cleanupData?.removed_cars_count || 0} cars removed from website`)
+            console.log(`✅ Daily cleanup completed: ${cleanupData?.removed_cars_count || 0} cars removed from website`)
           }
         } catch (cleanupError) {
           console.error(`❌ Error calling cleanup function:`, cleanupError)

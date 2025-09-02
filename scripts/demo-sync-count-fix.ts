@@ -45,7 +45,7 @@ function calculateDisplayCount(
 }
 
 // Function to calculate percentage
-function calculatePercentage(count: number, estimatedTotal: number = 190000) { // Updated to use actual API total
+function calculatePercentage(count: number, estimatedTotal: number = 200000) {
   return Math.min(100, (count / estimatedTotal) * 100);
 }
 
@@ -57,14 +57,6 @@ const scenarios = [
     cacheCount: 105505,
     mainCarsCount: 16,
     isStuck: false,
-    syncStatus: 'running'
-  },
-  {
-    name: "NEW: 1% Stuck Sync (Enhanced Detection)",
-    syncRecordsProcessed: 1900, // ~1% of 190,000
-    cacheCount: 105505,
-    mainCarsCount: 1900,
-    isStuck: true, // Would be detected by enhanced logic
     syncStatus: 'running'
   },
   {
@@ -93,17 +85,9 @@ const scenarios = [
   },
   {
     name: "Completed Sync: Show final count",
-    syncRecordsProcessed: 180500, // Updated to be closer to 190,000
-    cacheCount: 180500,
-    mainCarsCount: 180500,
-    isStuck: false,
-    syncStatus: 'completed'
-  },
-  {
-    name: "NEW: Suspicious Completion (Only 50% but marked complete)",
-    syncRecordsProcessed: 95000, // Only ~50% of 190,000
-    cacheCount: 95000,
-    mainCarsCount: 95000,
+    syncRecordsProcessed: 180000,
+    cacheCount: 180000,
+    mainCarsCount: 180000,
     isStuck: false,
     syncStatus: 'completed'
   }

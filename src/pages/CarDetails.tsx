@@ -649,7 +649,7 @@ const CarDetails = memo(() => {
   if (error || !car) {
     return (
       <CarDetailsErrorBoundary 
-        error={error || "Detajet e makinës nuk janë të disponueshme përkohësisht. Ju lutemi provoni përsëri."} 
+        error={error || "Makina që po kërkoni nuk mund të gjindet në bazën tonë të të dhënave."} 
         onRetry={refetch}
       />
     );

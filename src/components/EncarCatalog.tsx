@@ -18,8 +18,6 @@ import {
   PanelLeftClose,
   Lock,
   Unlock,
-  CheckCircle,
-  AlertTriangle,
 } from "lucide-react";
 import LoadingLogo from "@/components/LoadingLogo";
 import LazyCarCard from "@/components/LazyCarCard";
@@ -42,16 +40,6 @@ import {
   addPaginationToFilters,
   debounce as catalogDebounce
 } from "@/utils/catalog-filter";
-import {
-  validateCompleteDataset,
-  validateFilterConsistency,
-  logValidationResults,
-  getValidationSummary,
-  DatasetValidationResult
-} from "@/utils/carDatasetValidation";
-import {
-  getPaginationStatsWithSync
-} from "@/utils/largePaginationUtils";
 
 import { useSearchParams } from "react-router-dom";
 import {
@@ -65,36 +53,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { mapFrontendSortToBackend, SortOption as BackendSortOption, FrontendSortOption } from "@/services/carsApi";
 import { filterOutTestCars } from "@/utils/testCarFilter";
 import { fallbackCars } from "@/data/fallbackData";
-import { useDatabaseCars } from "@/hooks/useDatabaseCars";
 
 interface EncarCatalogProps {
   highlightCarId?: string | null;
 }
 
-// Feature flag to enable database backend sorting
-const USE_DATABASE_BACKEND = true; // Set to true to use new backend sorting
-
 const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const { toast } = useToast();
   const { restorePageState } = useNavigation();
-  
-  // Always call both hooks to comply with React rules of hooks
-  const databaseHook = useDatabaseCars({ pageSize: 50 });
-  const externalApiHook = useSecureAuctionAPI();
-  
-  // Choose which hook data to use based on feature flag and error state
-  // If database backend is enabled but has errors, fallback to external API
-  const apiHook = useMemo(() => {
-    if (USE_DATABASE_BACKEND && !databaseHook.error && !databaseHook.loading) {
-      // Use database hook if it's not erroring, not loading, and potentially has data
-      console.log('📋 Using database hook - error:', databaseHook.error, 'loading:', databaseHook.loading, 'cars:', databaseHook.cars?.length);
-      return databaseHook;
-    }
-    // Fallback to external API when database fails or is loading
-    console.log('📋 Using external API hook - db error:', databaseHook.error, 'db loading:', databaseHook.loading, 'external cars:', externalApiHook.cars?.length);
-    return externalApiHook;
-  }, [databaseHook, externalApiHook]);
-    
   const {
     cars,
     setCars, // ✅ Import setCars
@@ -115,9 +81,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     fetchGrades,
     fetchTrimLevels,
     loadMore,
-    // Add complete dataset functions for validation
-    fetchCompleteDatasetForFilters, // ✅ Import function for complete dataset validation
-  } = apiHook;
+  } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
   
   // Backend sorting - no need for client-side global sorting
@@ -145,96 +109,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Start as explicitly closed since we always begin with filters hidden
     return true;
   });
-
-  // Catalog lock state - prevents accidental swipe gestures on mobile
-  const [isLocked, setIsLocked] = useState(false);
-  
-  // Dataset validation state
-  const [datasetValidation, setDatasetValidation] = useState<DatasetValidationResult | null>(null);
-  const [isValidating, setIsValidating] = useState(false);
-  
-  // Debounced validation function to avoid excessive validation calls
-  const debouncedValidation = useMemo(
-    () => debounce(async () => {
-      if (!fetchCompleteDatasetForFilters || isValidating) {
-        return;
-      }
-      
-      setIsValidating(true);
-      try {
-        console.log("🔄 Starting debounced dataset validation...");
-        const completeData = await fetchCompleteDatasetForFilters();
-        
-        // Validate the dataset
-        const validation = await validateCompleteDataset(completeData, 150000);
-        setDatasetValidation(validation);
-        
-        // Log results for debugging
-        logValidationResults(validation);
-        
-        // Show toast notification about dataset status
-        if (validation.isComplete) {
-          toast({
-            title: "✅ Complete Dataset Loaded",
-            description: `${validation.totalCars.toLocaleString()} cars synced successfully`,
-            duration: 3000,
-          });
-        } else {
-          toast({
-            title: "⚠️ Dataset Incomplete", 
-            description: `${validation.totalCars.toLocaleString()} cars loaded (${validation.coverage}% coverage)`,
-            variant: "destructive",
-            duration: 5000,
-          });
-        }
-      } catch (error) {
-        console.error("❌ Error validating dataset:", error);
-        toast({
-          title: "❌ Dataset Validation Failed",
-          description: "Unable to validate complete dataset",
-          variant: "destructive",
-          duration: 5000,
-        });
-      } finally {
-        setIsValidating(false);
-      }
-    }, 2000), // 2 second debounce to prevent excessive calls
-    [fetchCompleteDatasetForFilters, isValidating, toast]
-  );
-  
-  // Pre-fetch complete dataset for filter consistency on component mount
-  useEffect(() => {
-    if (!fetchCompleteDatasetForFilters) {
-      console.warn("⚠️ Complete dataset validation not available - using legacy API hook");
-      return;
-    }
-    
-    // Only trigger validation if we haven't already validated recently
-    if (!datasetValidation && !isValidating) {
-      // Run validation after a delay to not block initial rendering
-      const timeoutId = setTimeout(() => {
-        debouncedValidation();
-      }, 2000); // Increased delay to let page load first
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [debouncedValidation, datasetValidation, isValidating, fetchCompleteDatasetForFilters]);
-
-  // Retry fetching cars when switching between hooks (database -> external API)
-  useEffect(() => {
-    // Only retry if we have no cars and we're using the external API hook
-    // This handles the case where database fails and we switch to external API
-    if (cars.length === 0 && !loading && apiHook === externalApiHook && databaseHook.error) {
-      console.log('🔄 Retrying car fetch with external API hook after database failure');
-      
-      // Use a timeout to avoid immediate retry and let the external API hook initialize
-      const retryTimeout = setTimeout(() => {
-        fetchCars(1, {}, true);
-      }, 500);
-      
-      return () => clearTimeout(retryTimeout);
-    }
-  }, [apiHook, externalApiHook, databaseHook.error, cars.length, loading, fetchCars]);
 
   // Catalog lock state - prevents accidental swipe gestures on mobile
   const [catalogLocked, setCatalogLocked] = useState(() => {
@@ -280,52 +154,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
   // Memoized client-side grade filtering for better performance - now using utility with fallback data
   const filteredCars = useMemo(() => {
-    let sourceCars = cars;
-    
-    // If no real cars loaded, use fallback cars - ensure cars are properly mapped
-    if (cars.length === 0) {
-      sourceCars = fallbackCars.map(car => ({
-        ...car,
-        make: car.manufacturer?.name || car.make || 'Unknown',
-        model: car.model?.name || car.model || 'Unknown',
-        fuel: car.fuel?.name || car.fuel || 'Unknown',
-        transmission: car.transmission?.name || car.transmission || 'Unknown',
-        color: car.color?.name || car.color || 'Unknown',
-        manufacturer: { name: car.manufacturer?.name || car.make || 'Unknown' },
-        lot_number: car.lot_number || car.id,
-        mileage: car.odometer || car.mileage || 0,
-        price: car.price || 0,
-        images: car.images || []
-      }));
-    }
-    
-      const cleanedCars = filterOutTestCars(sourceCars || []);
-      const gradeFilteredCars = applyGradeFilter(cleanedCars, filters?.grade_iaai) || [];
-      
-      // If filtering results in no cars and we were using real cars, try fallback cars
-      if (gradeFilteredCars.length === 0 && cars.length > 0) {
-        console.log('🔄 No cars match filters, showing fallback cars');
-        const mappedFallbackCars = fallbackCars.map(car => ({
-          ...car,
-          make: typeof car.manufacturer === 'object' ? car.manufacturer?.name : car.make || 'Unknown',
-          model: typeof car.model === 'object' ? car.model?.name : car.model || 'Unknown',
-          fuel: typeof car.fuel === 'object' ? car.fuel?.name : car.fuel || 'Unknown',
-          transmission: typeof car.transmission === 'object' ? car.transmission?.name : car.transmission || 'Unknown',
-          color: typeof car.color === 'object' ? car.color?.name : car.color || 'Unknown',
-          engine: typeof car.engine === 'object' ? car.engine : { name: car.engine?.name || 'Unknown' },
-          manufacturer: { name: typeof car.manufacturer === 'object' ? car.manufacturer?.name : car.make || 'Unknown' },
-          lot_number: car.lot_number || (car.lots && Array.isArray(car.lots) && car.lots[0]?.lot) || car.id,
-          mileage: typeof car.mileage === 'number' ? car.mileage : (typeof car.odometer === 'number' ? car.odometer : 0),
-          price: typeof car.price === 'number' ? car.price : 0,
-          images: Array.isArray(car.images) ? car.images : []
-        }));
-        const fallbackFiltered = applyGradeFilter(filterOutTestCars(mappedFallbackCars), filters?.grade_iaai) || [];
-        // If fallback cars also don't match the grade filter, show them anyway (without grade filter)
-        return fallbackFiltered.length > 0 ? fallbackFiltered : filterOutTestCars(mappedFallbackCars);
-    }
-    
-    return gradeFilteredCars;
-  }, [cars, filters?.grade_iaai]);
+    // Use fallback data when there's an error and no cars loaded
+    const sourceCars = (error && cars.length === 0) ? fallbackCars : cars;
+    const cleanedCars = filterOutTestCars(sourceCars || []);
+    return applyGradeFilter(cleanedCars, filters?.grade_iaai) || [];
+  }, [cars, filters?.grade_iaai, error]);
   
   // console.log(`📊 Filter Results: ${filteredCars.length} cars match (total loaded: ${cars.length}, total count from API: ${totalCount}, grade filter: ${filters.grade_iaai || 'none'})`);
 
@@ -712,54 +545,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
     setIsLoading(true);
     try {
-      console.log(`🔄 Fetching all cars with current filters and sort option: ${sortBy}...`);
-      
-      // Create filters with sort option for global sorting
-      const filtersWithSort = { 
-        ...filters,
-        per_page: "9999" // Get all cars for global sorting
-      };
-      
-      // Apply sort parameters for consistent global sorting
-      switch (sortBy) {
-        case 'price_low':
-          filtersWithSort.sort_by = 'price';
-          filtersWithSort.sort_direction = 'asc';
-          break;
-        case 'price_high':
-          filtersWithSort.sort_by = 'price';
-          filtersWithSort.sort_direction = 'desc';
-          break;
-        case 'year_new':
-          filtersWithSort.sort_by = 'year';
-          filtersWithSort.sort_direction = 'desc';
-          break;
-        case 'year_old':
-          filtersWithSort.sort_by = 'year';
-          filtersWithSort.sort_direction = 'asc';
-          break;
-        case 'mileage_low':
-          filtersWithSort.sort_by = 'mileage';
-          filtersWithSort.sort_direction = 'asc';
-          break;
-        case 'mileage_high':
-          filtersWithSort.sort_by = 'mileage';
-          filtersWithSort.sort_direction = 'desc';
-          break;
-        case 'recently_added':
-          filtersWithSort.sort_by = 'created_at';
-          filtersWithSort.sort_direction = 'desc';
-          break;
-        case 'oldest_first':
-          filtersWithSort.sort_by = 'created_at';
-          filtersWithSort.sort_direction = 'asc';
-          break;
-        default:
-          filtersWithSort.sort_by = 'created_at';
-          filtersWithSort.sort_direction = 'desc';
-      }
-      
-      const allCars = await fetchAllCars(filtersWithSort);
+      console.log(`🔄 Fetching all cars with current filters...`);
+      const allCars = await fetchAllCars(filters);
       
       // Apply the same client-side filtering as the current filtered cars
       const filteredAllCars = allCars.filter((car: any) => {
@@ -768,7 +555,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       
       setAllCarsData(filteredAllCars);
       setShowAllCars(true);
-      console.log(`✅ Loaded ${filteredAllCars.length} cars for "Show All" view with global ${sortBy} sorting`);
+      console.log(`✅ Loaded ${filteredAllCars.length} cars for "Show All" view`);
     } catch (error) {
       console.error('❌ Error fetching all cars:', error);
       toast({
@@ -779,7 +566,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     } finally {
       setIsLoading(false);
     }
-  }, [showAllCars, filters, fetchAllCars, toast, sortBy]);
+  }, [showAllCars, filters, fetchAllCars, toast]);
 
   // Legacy function - replaced with backend sorting
   const fetchAllCarsForSorting = useCallback(async () => {
@@ -1186,12 +973,12 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         // Find the car by lot number or ID and scroll to it
         const targetCar = cars.find(
           (car) =>
-            (car as any).lot_number === highlightCarId || car.id === highlightCarId
+            car.lot_number === highlightCarId || car.id === highlightCarId
         );
 
         if (targetCar) {
           const lotNumber =
-            (targetCar as any).lot_number || ((targetCar as any).lots && Array.isArray((targetCar as any).lots) && (targetCar as any).lots[0]?.lot) || "";
+            targetCar.lot_number || targetCar.lots?.[0]?.lot || "";
           setHighlightedCarId(lotNumber || targetCar.id);
 
           // Scroll to the car
@@ -1513,47 +1300,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 Car Catalog
               </h1>
               <p className="text-muted-foreground text-xs sm:text-sm">
-                {(() => {
-                  const paginationStats = getPaginationStatsWithSync(
-                    currentPage,
-                    totalCount,
-                    carsToDisplay.length,
-                    50
-                  );
-                  return (
-                    <span className={paginationStats.isInconsistent ? "text-orange-600" : ""}>
-                      {paginationStats.displayText}
-                    </span>
-                  );
-                })()}
-                
-                {/* Dataset validation indicator */}
-                {datasetValidation && (
-                  <span className="ml-2 inline-flex items-center gap-1">
-                    {datasetValidation.isComplete ? (
-                      <>
-                        <CheckCircle className="w-3 h-3 text-green-500" />
-                        <span className="text-green-600 text-xs">
-                          Complete sync ({datasetValidation.coverage}%)
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertTriangle className="w-3 h-3 text-orange-500" />
-                        <span className="text-orange-600 text-xs">
-                          Partial sync ({datasetValidation.coverage}%)
-                        </span>
-                      </>
-                    )}
-                  </span>
-                )}
-                
-                {isValidating && (
-                  <span className="ml-2 inline-flex items-center gap-1">
-                    <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
-                    <span className="text-blue-600 text-xs">Validating dataset...</span>
-                  </span>
-                )}
+                {totalCount.toLocaleString()} cars across {totalPages.toLocaleString()} pages • Page {currentPage} of {totalPages.toLocaleString()} • Showing {carsToDisplay.length} cars per page
 
                 {yearFilterProgress === 'instant' && (
                   <span className="ml-2 text-primary text-xs">⚡ Instant results</span>
@@ -1700,19 +1447,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 <div className="flex flex-col items-center py-8 space-y-4">
                   {/* Page Info */}
                   <div className="text-center text-sm text-muted-foreground">
-                    {(() => {
-                      const paginationStats = getPaginationStatsWithSync(
-                        currentPage,
-                        totalCount,
-                        carsToDisplay.length,
-                        50
-                      );
-                      return (
-                        <span className={paginationStats.isInconsistent ? "text-orange-600" : ""}>
-                          Page {currentPage} of {totalPages.toLocaleString()} • {paginationStats.showing}
-                        </span>
-                      );
-                    })()}
+                    Page {currentPage} of {totalPages.toLocaleString()} • {carsToDisplay.length} cars shown
                   </div>
                   
                   {/* Pagination Navigation */}
@@ -1745,7 +1480,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                         const maxVisible = 5;
                         const half = Math.floor(maxVisible / 2);
                         let start = Math.max(1, currentPage - half);
-                        const end = Math.min(totalPages, start + maxVisible - 1);
+                        let end = Math.min(totalPages, start + maxVisible - 1);
                         
                         // Adjust start if we're near the end
                         if (end - start < maxVisible - 1) {

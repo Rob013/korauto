@@ -67,7 +67,7 @@ interface EdgeSyncMetrics {
   currentPage: number
 }
 
-const metrics: EdgeSyncMetrics = {
+let metrics: EdgeSyncMetrics = {
   startTime: Date.now(),
   totalPages: 0,
   totalRows: 0,

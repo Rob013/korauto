@@ -8,14 +8,6 @@ import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from '../utils/
 const apiCache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_DURATION = 60000; // 60 seconds
 
-// Global cache for complete car dataset to ensure filter consistency
-const completeCarDatasetCache = {
-  data: null as any[] | null,
-  timestamp: 0,
-  isLoading: false,
-};
-const COMPLETE_DATASET_CACHE_DURATION = 300000; // 5 minutes for complete dataset
-
 // Helper function to get cached data or make API call
 const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => Promise<any>) => {
   const cacheKey = `${endpoint}-${JSON.stringify(filters)}`;
@@ -1182,171 +1174,17 @@ export const useSecureAuctionAPI = () => {
     currentFilters: APIFilters = {},
     manufacturersList: any[] = []
   ) => {
-    try {
-      console.log("📊 Starting comprehensive filter count calculation from complete API dataset...");
-      
-      // Use complete cached dataset for filter counts to ensure consistency
-      const allCars = await fetchCompleteDatasetForFilters();
-      
-      if (!allCars || allCars.length === 0) {
-        console.warn("⚠️ No cars available for filter count calculation");
-        return {
-          manufacturers: {},
-          models: {},
-          generations: {},
-          colors: {},
-          fuelTypes: {},
-          transmissions: {},
-          bodyTypes: {},
-          years: {},
-        };
-      }
-      
-      console.log(`📊 Calculating filter counts from complete dataset (${allCars.length} cars)...`);
-      
-      // Apply current filters to the complete dataset to get relevant subset
-      let filteredCars = allCars;
-      
-      // Apply manufacturer filter if specified
-      if (currentFilters.manufacturer_id && currentFilters.manufacturer_id !== 'all') {
-        filteredCars = filteredCars.filter(car => 
-          car.manufacturer?.id?.toString() === currentFilters.manufacturer_id ||
-          car.manufacturer?.name === currentFilters.manufacturer_id
-        );
-      }
-      
-      // Apply model filter if specified
-      if (currentFilters.model_id && currentFilters.model_id !== 'all') {
-        filteredCars = filteredCars.filter(car => 
-          car.model?.id?.toString() === currentFilters.model_id ||
-          car.model?.name === currentFilters.model_id
-        );
-      }
-      
-      // Apply year filters if specified
-      if (currentFilters.from_year) {
-        const fromYear = parseInt(currentFilters.from_year);
-        if (!isNaN(fromYear)) {
-          filteredCars = filteredCars.filter(car => car.year >= fromYear);
-        }
-      }
-      
-      if (currentFilters.to_year) {
-        const toYear = parseInt(currentFilters.to_year);
-        if (!isNaN(toYear)) {
-          filteredCars = filteredCars.filter(car => car.year <= toYear);
-        }
-      }
-      
-      console.log(`📊 Calculating counts from ${filteredCars.length} filtered cars (out of ${allCars.length} total)...`);
-      
-      // Initialize count maps
-      const counts = {
-        manufacturers: new Map<string, number>(),
-        models: new Map<string, number>(),
-        generations: new Map<string, number>(),
-        colors: new Map<string, number>(),
-        fuelTypes: new Map<string, number>(),
-        transmissions: new Map<string, number>(),
-        bodyTypes: new Map<string, number>(),
-        years: new Map<string, number>(),
-      };
-      
-      // Count occurrences in filtered cars
-      filteredCars.forEach(car => {
-        // Count manufacturers
-        if (car.manufacturer?.name) {
-          const manufacturer = car.manufacturer.name;
-          counts.manufacturers.set(manufacturer, (counts.manufacturers.get(manufacturer) || 0) + 1);
-        }
-        
-        // Count models
-        if (car.model?.name) {
-          const model = car.model.name;
-          counts.models.set(model, (counts.models.get(model) || 0) + 1);
-        }
-        
-        // Count generations
-        if (car.generation?.name) {
-          const generation = car.generation.name;
-          counts.generations.set(generation, (counts.generations.get(generation) || 0) + 1);
-        }
-        
-        // Count colors
-        if (car.color) {
-          const color = car.color;
-          counts.colors.set(color, (counts.colors.get(color) || 0) + 1);
-        }
-        
-        // Count fuel types
-        if (car.fuel_type) {
-          const fuelType = car.fuel_type;
-          counts.fuelTypes.set(fuelType, (counts.fuelTypes.get(fuelType) || 0) + 1);
-        } else if (car.fuel?.name) {
-          const fuelType = car.fuel.name;
-          counts.fuelTypes.set(fuelType, (counts.fuelTypes.get(fuelType) || 0) + 1);
-        }
-        
-        // Count transmissions
-        if (car.transmission) {
-          const transmission = car.transmission;
-          counts.transmissions.set(transmission, (counts.transmissions.get(transmission) || 0) + 1);
-        } else if (car.transmission?.name) {
-          const transmission = car.transmission.name;
-          counts.transmissions.set(transmission, (counts.transmissions.get(transmission) || 0) + 1);
-        }
-        
-        // Count body types
-        if (car.body_type) {
-          const bodyType = car.body_type;
-          counts.bodyTypes.set(bodyType, (counts.bodyTypes.get(bodyType) || 0) + 1);
-        }
-        
-        // Count years
-        if (car.year) {
-          const year = car.year.toString();
-          counts.years.set(year, (counts.years.get(year) || 0) + 1);
-        }
-      });
-      
-      // Convert maps to objects
-      const result = {
-        manufacturers: Object.fromEntries(counts.manufacturers),
-        models: Object.fromEntries(counts.models),
-        generations: Object.fromEntries(counts.generations),
-        colors: Object.fromEntries(counts.colors),
-        fuelTypes: Object.fromEntries(counts.fuelTypes),
-        transmissions: Object.fromEntries(counts.transmissions),
-        bodyTypes: Object.fromEntries(counts.bodyTypes),
-        years: Object.fromEntries(counts.years),
-      };
-      
-      console.log(`✅ Filter counts calculated from ${filteredCars.length} cars:`, {
-        manufacturers: Object.keys(result.manufacturers).length,
-        models: Object.keys(result.models).length,
-        generations: Object.keys(result.generations).length,
-        colors: Object.keys(result.colors).length,
-        fuelTypes: Object.keys(result.fuelTypes).length,
-        transmissions: Object.keys(result.transmissions).length,
-        bodyTypes: Object.keys(result.bodyTypes).length,
-        years: Object.keys(result.years).length,
-      });
-      
-      return result;
-      
-    } catch (error) {
-      console.error("❌ Error calculating filter counts:", error);
-      return {
-        manufacturers: {},
-        models: {},
-        generations: {},
-        colors: {},
-        fuelTypes: {},
-        transmissions: {},
-        bodyTypes: {},
-        years: {},
-      };
-    }
+    // Mock implementation for backward compatibility
+    console.log("📊 fetchFilterCounts called with filters:", currentFilters);
+    return {
+      manufacturers: {},
+      models: {},
+      generations: {},
+      colors: {},
+      fuelTypes: {},
+      transmissions: {},
+      years: {},
+    };
   };
 
   const fetchCarCounts = async (
@@ -2068,213 +1906,34 @@ export const useSecureAuctionAPI = () => {
     }
   };
 
-  /**
-   * Fetch complete car dataset (all 150k+ cars) and cache it for filter consistency
-   * This ensures filters show counts that match exactly what's available in the catalog
-   */
-  const fetchCompleteDatasetForFilters = async (): Promise<any[]> => {
-    // Check if we have cached data
-    if (completeCarDatasetCache.data && 
-        Date.now() - completeCarDatasetCache.timestamp < COMPLETE_DATASET_CACHE_DURATION) {
-      console.log(`📋 Using cached complete dataset (${completeCarDatasetCache.data.length} cars)`);
-      return completeCarDatasetCache.data;
-    }
-
-    // Prevent multiple simultaneous fetches
-    if (completeCarDatasetCache.isLoading) {
-      console.log(`⏳ Complete dataset fetch already in progress, waiting...`);
-      // Wait for current fetch to complete
-      while (completeCarDatasetCache.isLoading) {
-        await delay(500);
-      }
-      return completeCarDatasetCache.data || [];
-    }
-
-    try {
-      completeCarDatasetCache.isLoading = true;
-      console.log(`🔄 Fetching complete dataset for filter consistency (all 150k+ cars)...`);
-      
-      const allCars: any[] = [];
-      let currentPage = 1;
-      let totalPages = 1;
-      let totalCount = 0;
-      let consecutiveEmptyPages = 0;
-      const MAX_CONSECUTIVE_EMPTY_PAGES = 20; // Allow more empty pages for complete dataset fetch
-      
-      // Fetch all pages without any filters to get the complete dataset
-      do {
-        const pageFilters = {
-          page: currentPage.toString(),
-          per_page: "200", // Larger page size for efficiency
-          simple_paginate: "0",
-        };
-        
-        console.log(`📄 Dataset fetch: page ${currentPage}/${totalPages} (${allCars.length}/${totalCount} cars)...`);
-        
-        try {
-          const data: APIResponse = await makeSecureAPICall("cars", pageFilters);
-          
-          if (!data.data || !Array.isArray(data.data) || data.data.length === 0) {
-            consecutiveEmptyPages++;
-            console.warn(`⚠️ Empty page ${currentPage}, consecutive empty pages: ${consecutiveEmptyPages}`);
-            
-            // If we've hit too many consecutive empty pages, break
-            if (consecutiveEmptyPages >= MAX_CONSECUTIVE_EMPTY_PAGES) {
-              console.warn(`❌ Breaking after ${consecutiveEmptyPages} consecutive empty pages`);
-              break;
-            }
-          } else {
-            // Reset counter when we get data
-            consecutiveEmptyPages = 0;
-            // Add cars from this page
-            allCars.push(...data.data);
-          }
-          
-          // Update pagination info from API response
-          if (data.meta) {
-            totalPages = data.meta.last_page || 1;
-            totalCount = data.meta.total || 0;
-          }
-          
-        } catch (pageError) {
-          console.warn(`⚠️ Error fetching page ${currentPage}:`, pageError);
-          consecutiveEmptyPages++;
-          
-          // If we've hit too many consecutive errors, break
-          if (consecutiveEmptyPages >= MAX_CONSECUTIVE_EMPTY_PAGES) {
-            console.error(`❌ Breaking after ${consecutiveEmptyPages} consecutive errors`);
-            break;
-          }
-        }
-        
-        currentPage++;
-        
-        // Add a small delay to prevent overwhelming the API
-        if (currentPage <= totalPages) {
-          await delay(50); // Smaller delay for background dataset fetch
-        }
-        
-      } while (currentPage <= totalPages);
-
-      console.log(`✅ Complete dataset fetched: ${allCars.length} cars across ${currentPage - 1} pages`);
-      
-      // Verify we got all expected cars
-      if (totalCount > 0) {
-        const coverage = Math.round(allCars.length/totalCount*100);
-        if (coverage < 100) {
-          console.warn(`⚠️ Dataset fetch incomplete: ${coverage}% coverage (${allCars.length}/${totalCount} cars)`);
-        } else {
-          console.log(`✅ Complete dataset fetch: 100% coverage (${allCars.length} cars)`);
-        }
-      }
-
-      // Cache the complete dataset
-      completeCarDatasetCache.data = allCars;
-      completeCarDatasetCache.timestamp = Date.now();
-      
-      return allCars;
-      
-    } catch (error) {
-      console.error("❌ Error fetching complete dataset:", error);
-      return [];
-    } finally {
-      completeCarDatasetCache.isLoading = false;
-    }
-  };
-
   const fetchAllCars = async (
     newFilters: APIFilters = filters
   ): Promise<any[]> => {
     try {
-      console.log(`🔄 Starting complete API sync for all cars with filters:`, newFilters);
+      // Create API filters without pagination to get all cars
+      const apiFilters = {
+        ...newFilters,
+        // Remove pagination parameters to get all cars
+        page: undefined,
+        per_page: "9999", // Set a high limit to ensure we get all cars
+        simple_paginate: "0",
+      };
       
       // Remove grade_iaai and trim_level from server request for client-side filtering
       const selectedVariant = newFilters.grade_iaai;
       const selectedTrimLevel = newFilters.trim_level;
-      const apiFilters = {
-        ...newFilters,
-        simple_paginate: "0",
-      };
       delete apiFilters.grade_iaai;
       delete apiFilters.trim_level;
 
-      const allCars: any[] = [];
-      let currentPage = 1;
-      let totalPages = 1;
-      let totalCount = 0;
-      let consecutiveEmptyPages = 0;
-      const MAX_CONSECUTIVE_EMPTY_PAGES = 20; // Allow more empty pages for complete fetch
-      
-      // Fetch all pages until we have all cars
-      do {
-        const pageFilters = {
-          ...apiFilters,
-          page: currentPage.toString(),
-          per_page: "100", // Use reasonable page size for consistent API responses
-        };
-        
-        console.log(`📄 Fetching page ${currentPage}/${totalPages} (${allCars.length}/${totalCount} cars)...`);
-        
-        try {
-          const data: APIResponse = await makeSecureAPICall("cars", pageFilters);
-          
-          if (!data.data || !Array.isArray(data.data) || data.data.length === 0) {
-            consecutiveEmptyPages++;
-            console.warn(`⚠️ Empty page ${currentPage}, consecutive empty pages: ${consecutiveEmptyPages}`);
-            
-            // If we've hit too many consecutive empty pages, break
-            if (consecutiveEmptyPages >= MAX_CONSECUTIVE_EMPTY_PAGES) {
-              console.warn(`❌ Breaking after ${consecutiveEmptyPages} consecutive empty pages`);
-              break;
-            }
-          } else {
-            // Reset counter when we get data
-            consecutiveEmptyPages = 0;
-            // Add cars from this page
-            allCars.push(...data.data);
-          }
-          
-          // Update pagination info from API response
-          if (data.meta) {
-            totalPages = data.meta.last_page || 1;
-            totalCount = data.meta.total || 0;
-          }
-          
-        } catch (pageError) {
-          console.warn(`⚠️ Error fetching page ${currentPage}:`, pageError);
-          consecutiveEmptyPages++;
-          
-          // If we've hit too many consecutive errors, break
-          if (consecutiveEmptyPages >= MAX_CONSECUTIVE_EMPTY_PAGES) {
-            console.error(`❌ Breaking after ${consecutiveEmptyPages} consecutive errors`);
-            break;
-          }
-        }
-        
-        currentPage++;
-        
-        // Add a small delay to prevent overwhelming the API
-        if (currentPage <= totalPages) {
-          await delay(100); // 100ms delay between requests
-        }
-        
-      } while (currentPage <= totalPages);
-
-      console.log(`✅ Complete API sync finished: ${allCars.length} cars fetched across ${currentPage - 1} pages`);
-      
-      // Verify we got all expected cars
-      if (totalCount > 0 && allCars.length < totalCount) {
-        console.warn(`⚠️ API sync incomplete: got ${allCars.length}/${totalCount} cars (${Math.round(allCars.length/totalCount*100)}% coverage)`);
-      } else {
-        console.log(`✅ API sync complete: 100% coverage (${allCars.length} cars)`);
-      }
+      console.log(`🔄 Fetching ALL cars for global sorting with filters:`, apiFilters);
+      const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
 
       // Apply client-side variant filtering if a variant is selected
-      let filteredCars = allCars;
+      let filteredCars = data.data || [];
       if (selectedVariant && selectedVariant !== 'all') {
-        console.log(`🔍 Applying client-side variant filter: "${selectedVariant}" to ${allCars.length} cars`);
+        console.log(`🔍 Applying client-side variant filter: "${selectedVariant}"`);
         
-        filteredCars = allCars.filter(car => {
+        filteredCars = filteredCars.filter(car => {
           if (car.lots && Array.isArray(car.lots)) {
             return car.lots.some(lot => {
               if (lot.grade_iaai && lot.grade_iaai.trim() === selectedVariant) {
@@ -2294,13 +1953,11 @@ export const useSecureAuctionAPI = () => {
           }
           return false;
         });
-        
-        console.log(`✅ Variant filter "${selectedVariant}": ${filteredCars.length} cars match out of ${allCars.length} total`);
       }
 
       // Apply client-side trim level filtering if a trim level is selected
       if (selectedTrimLevel && selectedTrimLevel !== 'all') {
-        console.log(`🔍 Applying client-side trim level filter: "${selectedTrimLevel}" to ${filteredCars.length} cars`);
+        console.log(`🔍 Applying client-side trim level filter: "${selectedTrimLevel}"`);
         
         filteredCars = filteredCars.filter(car => {
           if (car.lots && Array.isArray(car.lots)) {
@@ -2322,27 +1979,36 @@ export const useSecureAuctionAPI = () => {
           }
           return false;
         });
-        
-        console.log(`✅ Trim level filter "${selectedTrimLevel}": ${filteredCars.length} cars match out of ${allCars.length} total`);
       }
 
+      console.log(`✅ Fetched ${filteredCars.length} cars for global sorting`);
       return filteredCars;
       
     } catch (err: any) {
       console.error("❌ API Error fetching all cars:", err);
       
       if (err.message === "RATE_LIMITED") {
-        console.log("🕐 Rate limited, waiting before retry...");
+        // Retry once after rate limit
         try {
-          await delay(5000); // Longer delay for rate limits
+          await delay(2000);
           return fetchAllCars(newFilters);
         } catch (retryErr) {
           console.error("❌ Retry failed:", retryErr);
         }
       }
       
-      // Don't use fallback cars for complete sync - we need real data
-      console.log("❌ API failed for complete sync, returning empty array");
+      // Use fallback car data when API fails - but only if no specific brand filter is applied
+      if (newFilters.manufacturer_id && 
+          newFilters.manufacturer_id !== 'all' && 
+          newFilters.manufacturer_id !== '' &&
+          newFilters.manufacturer_id !== undefined &&
+          newFilters.manufacturer_id !== null) {
+        console.log("❌ API failed for brand-specific global sorting, not using fallback cars");
+        return [];
+      }
+      
+      // No fallback cars for global sorting - return empty array
+      console.log("❌ API failed for global sorting, returning empty array instead of fallback cars");
       return [];
     }
   };
@@ -2370,8 +2036,7 @@ export const useSecureAuctionAPI = () => {
     setTotalCount, // ✅ Export setTotalCount for optimized filtering
     hasMorePages,
     fetchCars,
-    fetchAllCars, // ✅ Export function for complete car sync
-    fetchCompleteDatasetForFilters, // ✅ Export function for filter consistency
+    fetchAllCars, // ✅ Export new function for global sorting
     filters,
     setFilters,
     fetchManufacturers,
@@ -2381,7 +2046,7 @@ export const useSecureAuctionAPI = () => {
     getCategoryCount, // ✅ Export new function for real-time counts
     fetchCarById,
     fetchCarCounts,
-    fetchFilterCounts, // ✅ Export enhanced filter counts function
+    fetchFilterCounts,
     fetchKoreaDuplicates,
     fetchGrades,
     fetchTrimLevels,

@@ -147,7 +147,7 @@ describe('Catalog UI Pagination - Large Dataset Support', () => {
     const totalCars = 180000;
     const totalPages = Math.ceil(totalCars / 50);
     let currentPage = 1;
-    const loading = false;
+    let loading = false;
     
     // Simulate pagination state changes
     const stateChanges = [
@@ -233,7 +233,7 @@ describe('Catalog UI Pagination - Large Dataset Support', () => {
   it('should maintain pagination state across filter changes', () => {
     // Test that pagination resets appropriately when filters change
     let currentPage = 1800; // User is on page 1800
-    const totalPages = 3600;   // 180k cars
+    let totalPages = 3600;   // 180k cars
     
     // Simulate applying Audi A5 filter
     const newTotalCars = 187;

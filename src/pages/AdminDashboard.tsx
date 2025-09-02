@@ -41,8 +41,6 @@ import PerformanceAuditWidget from "@/components/PerformanceAuditWidget";
 import { FullCarsSyncTrigger } from "@/components/FullCarsSyncTrigger";
 import { AutoResumeScheduler } from "@/components/AutoResumeScheduler";
 import { AISyncCoordinator } from "@/components/AISyncCoordinator";
-import { DirectSyncTrigger } from "@/components/DirectSyncTrigger";
-import { ResilientSyncTrigger } from "@/components/ResilientSyncTrigger";
 
 // Lazy load heavy admin components
 const AdminSyncDashboard = lazy(() => 
@@ -1140,9 +1138,6 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
 
-              {/* Resilient Sync Component - Handles database timeouts */}
-              <ResilientSyncTrigger />
-              
               {/* Full Cars Sync Component */}
               <FullCarsSyncTrigger />
             </div>

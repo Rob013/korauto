@@ -12,7 +12,6 @@ import {
   getSortOptions,
   SortOption,
 } from "@/hooks/useSortedCars";
-import { useBackendSorting } from "@/hooks/useBackendSorting";
 import {
   Select,
   SelectContent,
@@ -261,14 +260,8 @@ const HomeCarsSection = memo(() => {
 
   // Type conversion to match the sorting hook interface - use fallback data if API fails
   const carsForSorting = useMemo(() => {
-    let sourceCars = cars;
-    
-    // If no real cars loaded, use fallback cars
-    if (cars.length === 0) {
-      console.log('🔄 No cars loaded from API, using fallback cars for homepage');
-      sourceCars = fallbackCars;
-    }
-    
+    // Use fallback data when there's an error and no cars loaded
+    const sourceCars = (error && cars.length === 0) ? fallbackCars : cars;
     const cleanedCars = filterOutTestCars(sourceCars);
     return cleanedCars.map((car) => ({
       ...car,
@@ -276,7 +269,7 @@ const HomeCarsSection = memo(() => {
       lot_number: String(car.lot_number || ""),
       cylinders: Number(car.cylinders || 0),
     }));
-  }, [cars]);
+  }, [cars, error]);
 
   // Check if any meaningful filters are applied (using pendingFilters for homepage)
   const hasFilters = useMemo(() => {
@@ -296,60 +289,21 @@ const HomeCarsSection = memo(() => {
               pendingFilters.seats_count);
   }, [pendingFilters]);
 
-  // Convert APIFilters to CarFilters format for backend sorting
-  const backendFilters = useMemo(() => ({
-    make: filters.manufacturer_id,
-    model: filters.model_id,
-    yearMin: filters.from_year,
-    yearMax: filters.to_year,
-    priceMin: filters.buy_now_price_from,
-    priceMax: filters.buy_now_price_to,
-    fuel: filters.fuel_type,
-    search: filters.search
-  }), [filters]);
-
-  // Backend sorting hook for when user selects sorting options
-  const [backendSortedCars, setBackendSortedCars] = useState<any[]>([]);
-  const {
-    applySorting,
-    isLoading: isBackendSorting,
-    error: backendSortingError,
-    isBackendSortingEnabled
-  } = useBackendSorting({
-    filters: backendFilters,
-    onSortChange: (cars, total) => {
-      setBackendSortedCars(cars);
-    }
-  });
-
-  // Apply backend sorting when user selects a sort option
-  useEffect(() => {
-    if (hasUserSelectedSort && isBackendSortingEnabled) {
-      applySorting(sortBy);
-    }
-  }, [hasUserSelectedSort, sortBy, applySorting, isBackendSortingEnabled]);
-
   // Apply daily rotating cars when no filters are applied, showing 50 cars same as catalog
   const dailyRotatingCars = useDailyRotatingCars(carsForSorting, hasFilters, 50);
 
-  // Frontend fallback sorting for when backend sorting is not available
-  const frontendSortedCars = useSortedCars(carsForSorting, sortBy);
+  // Always apply sorting to cars for sorting
+  const sortedCars = useSortedCars(carsForSorting, sortBy);
   
-  // Use backend sorted cars when user has explicitly selected a sort option and backend sorting is available
+  // Use sorted cars when user has explicitly selected a sort option or when filters are applied
   const carsToDisplay = useMemo(() => {
-    if (hasUserSelectedSort) {
-      // Use backend sorting if available, otherwise fallback to frontend sorting
-      return isBackendSortingEnabled && backendSortedCars.length > 0 
-        ? backendSortedCars 
-        : frontendSortedCars;
-    }
-    if (hasFilters) {
-      // For filters without explicit sorting, use frontend sorted cars
-      return frontendSortedCars;
+    if (hasUserSelectedSort || hasFilters) {
+      // When user has selected sorting or filters are applied, use sorted cars
+      return sortedCars;
     }
     // When no explicit sort selection and no filters, use daily rotating cars
     return dailyRotatingCars;
-  }, [hasUserSelectedSort, hasFilters, backendSortedCars, frontendSortedCars, dailyRotatingCars, isBackendSortingEnabled]);
+  }, [hasUserSelectedSort, hasFilters, dailyRotatingCars, sortedCars]);
 
   // Show 50 cars by default (daily rotation) to match catalog
   const defaultDisplayCount = 50;
@@ -649,7 +603,7 @@ const HomeCarsSection = memo(() => {
         </div>
 
         {/* Car Cards */}
-        {loading || isBackendSorting ? (
+        {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0 stagger-animation">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="modern-card p-4 pulse-enhanced">

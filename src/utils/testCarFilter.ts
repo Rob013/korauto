@@ -1,78 +1,70 @@
 /**
  * Test car filtering utility
  * Filters out cars that appear to be test data or have unrealistic characteristics
- * 
- * UPDATED: Made filtering more surgical to avoid removing legitimate cars.
- * - Removed overly broad patterns like 'elite', 'altima', 'lot', 'code'
- * - Removed requirement for images (many legitimate cars may load images later)
- * - Expanded price range to 100-1M EUR for Korean market
- * - Relaxed missing data requirements
- * - Made test patterns more specific (e.g. 'test car' vs 'test')
  */
 
 export const isTestCar = (car: any): boolean => {
   if (!car) return true;
   
-  // Check for test car indicators in title - be more specific
+  // Check for test car indicators in title
   const title = car.title?.toLowerCase() || '';
   const testPatterns = [
     'gjenarta',
-    'test car',    // More specific - must have "test car" not just "test"
-    'test vehicle',
-    'sample car',
-    'demo vehicle',
+    'elite',
+    'test',
+    'sample',
+    'demo',
     'placeholder',
-    'emergency-vehicle',
-    'nis2005', // Specific code pattern that was identified as test data
-    // Removed 'elite', 'altima', 'code ', 'lot ' as these filter legitimate cars
+    'emergency-',
+    'nis2005', // Specific code pattern
+    'altima', // Remove all Altimas as they seem to be test data
+    'code ',   // Any car with "code" in title
+    'lot ',    // Any car with "lot" in title pattern
   ];
   
   if (testPatterns.some(pattern => title.includes(pattern))) {
     return true;
   }
   
-  // Check manufacturer and model names for test patterns - be more specific
+  // Check manufacturer and model names for test patterns
   const make = car.manufacturer?.name?.toLowerCase() || '';
   const model = car.model?.name?.toLowerCase() || '';
   
-  // Filter out suspicious makes/models - be more specific
-  if (make.includes('test vehicle') || model.includes('test vehicle') || 
-      make.includes('demo vehicle') || model.includes('demo vehicle') ||
-      make.includes('sample vehicle') || model.includes('sample vehicle')) {
+  // Filter out suspicious makes/models
+  if (make.includes('test') || model.includes('test') || 
+      make.includes('demo') || model.includes('demo') ||
+      make.includes('sample') || model.includes('sample')) {
     return true;
   }
   
-  // REMOVED: Filtering cars without images - many legitimate cars may not have images loaded yet
-  // const lot = car.lots?.[0];
-  // const hasImages = lot?.images?.normal?.length > 0 || lot?.images?.big?.length > 0;
-  // if (!hasImages) {
-  //   return true; // Remove cars without images
-  // }
-  
-  // Check for extremely unrealistic pricing (broadened range for Korean market)
+  // Check for cars without proper images
   const lot = car.lots?.[0];
+  const hasImages = lot?.images?.normal?.length > 0 || lot?.images?.big?.length > 0;
+  if (!hasImages) {
+    return true; // Remove cars without images
+  }
+  
+  // Check for unrealistic pricing (too high or too low)
   const price = lot?.buy_now || 0;
-  if (price > 0 && (price < 100 || price > 1000000)) { // Expanded range: 100-1M EUR
+  if (price < 1000 || price > 500000) {
     return true;
   }
   
-  // RELAXED: Check for missing essential data - allow cars with some missing data
-  // Only filter if completely empty of identifying information
-  if (!car.manufacturer?.name && !car.model?.name && !car.year && !car.title) {
+  // Check for missing essential data
+  if (!car.manufacturer?.name || !car.model?.name || !car.year) {
     return true;
   }
   
-  // Check for suspicious VIN patterns - be more specific
+  // Check for suspicious VIN patterns
   const vin = car.vin?.toLowerCase() || '';
-  if (vin.includes('test') || vin.includes('demo') || 
-      (vin.length > 0 && vin.length < 8)) { // VINs should be at least 8 chars if present
+  if (vin.includes('test') || vin.includes('demo') || vin.length < 10) {
     return true;
   }
   
-  // Check for lot numbers that seem like test data - be more specific
+  // Check for lot numbers that seem like test data
   const lotNumber = car.lot_number?.toLowerCase() || '';
   if (lotNumber.includes('test') || lotNumber.includes('demo') || 
-      lotNumber.includes('emergency') || lotNumber.includes('sample')) {
+      lotNumber.includes('emergency') || lotNumber.startsWith('nis')) {
     return true;
   }
   
@@ -81,19 +73,6 @@ export const isTestCar = (car: any): boolean => {
 
 export const filterOutTestCars = (cars: any[]): any[] => {
   const filtered = cars.filter(car => !isTestCar(car));
-  const filteredCount = cars.length - filtered.length;
-  
-  if (filteredCount > 0) {
-    console.log(`🧹 Filtered out ${filteredCount} test/invalid cars, ${filtered.length} remaining`);
-    
-    // Log examples of what was filtered for debugging (max 3 examples)
-    const filteredCars = cars.filter(car => isTestCar(car)).slice(0, 3);
-    filteredCars.forEach(car => {
-      console.log(`🗑️ Filtered car example: ${car.title || 'No title'} (${car.manufacturer?.name || 'No make'} ${car.model?.name || 'No model'})`);
-    });
-  } else {
-    console.log(`✅ No test cars filtered out of ${cars.length} cars`);
-  }
-  
+  console.log(`🧹 Filtered out ${cars.length - filtered.length} test/invalid cars, ${filtered.length} remaining`);
   return filtered;
 };

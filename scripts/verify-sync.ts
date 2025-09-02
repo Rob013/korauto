@@ -146,7 +146,7 @@ async function runSyncVerification(): Promise<VerificationReport> {
       report.issues.push(`Failed to fetch sample records: ${sampleError.message}`);
     } else if (sampleCars) {
       let validCount = 0;
-      const totalSample = sampleCars.length;
+      let totalSample = sampleCars.length;
       
       for (const car of sampleCars) {
         if (car.id && car.make && car.model && car.external_id && car.source_api) {

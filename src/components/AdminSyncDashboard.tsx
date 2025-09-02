@@ -29,7 +29,6 @@ export default function AdminSyncDashboard() {
         description: "Fetching ALL real car data from live API - auto-syncing every minute!"
       });
     } catch (error) {
-      console.error('Full sync failed:', error);
       toast({
         title: "Sync Failed",
         description: error instanceof Error ? error.message : "Failed to start sync",
@@ -128,25 +127,18 @@ export default function AdminSyncDashboard() {
         })
         .eq('status', 'running');
       
-      if (error) {
-        console.error('Stop sync database error:', error);
-        throw error;
-      }
+      if (error) throw error;
       
       toast({
         title: "🛑 Sync Stopped",
         description: "All running syncs have been stopped"
       });
       
-      // Refresh status after a short delay to allow database update
-      setTimeout(() => {
-        getSyncStatus();
-      }, 1000);
+      getSyncStatus();
     } catch (error) {
-      console.error('Stop sync failed:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to stop running syncs",
+        description: "Failed to stop running syncs",
         variant: "destructive"
       });
     }
@@ -170,8 +162,7 @@ export default function AdminSyncDashboard() {
       return 0;
     }
     const processed = syncStatus.records_processed || 0;
-    const total = syncStatus.total_records || 1; // Prevent division by zero
-    return Math.min(Math.max((processed / total) * 100, 0), 100); // Clamp between 0-100
+    return Math.min(processed / syncStatus.total_records * 100, 100);
   };
 
   // Calculate estimated time to completion
@@ -187,19 +178,13 @@ export default function AdminSyncDashboard() {
     const processed = syncStatus.records_processed || 0;
     const total = syncStatus.total_records || 0;
     
-    // Safety checks to prevent invalid calculations
-    if (processed === 0 || elapsedMinutes === 0 || total === 0 || processed >= total) {
-      return null;
-    }
+    if (processed === 0 || elapsedMinutes === 0) return null;
 
     const processingRate = processed / elapsedMinutes; // records per minute
-    if (processingRate <= 0) return null;
-    
     const remaining = total - processed;
     const estimatedRemainingMinutes = remaining / processingRate;
 
-    // Return null for unrealistic estimates (over 24 hours)
-    return estimatedRemainingMinutes > 1440 ? null : estimatedRemainingMinutes;
+    return estimatedRemainingMinutes;
   };
 
   // Calculate sync throughput
@@ -214,18 +199,14 @@ export default function AdminSyncDashboard() {
     
     const processed = syncStatus.records_processed || 0;
     
-    // Safety checks
     if (processed === 0 || elapsedMinutes === 0) return null;
 
-    const throughput = processed / elapsedMinutes; // records per minute
-    return throughput > 0 ? Math.round(throughput) : null;
+    return Math.round(processed / elapsedMinutes); // records per minute
   };
 
   // Format ETA display
   const formatETA = (minutes: number | null) => {
-    if (minutes === null || minutes <= 0 || !isFinite(minutes)) {
-      return 'Calculating...';
-    }
+    if (minutes === null || minutes <= 0) return 'Calculating...';
     
     if (minutes < 60) {
       return `${Math.round(minutes)}m`;
@@ -405,24 +386,16 @@ export default function AdminSyncDashboard() {
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">
-                {(() => {
-                  const processed = syncStatus?.records_processed || 0;
-                  const total = totalCount || 1;
-                  const percentage = total > 0 ? Math.round((processed / total) * 100) : 0;
-                  return Math.min(Math.max(percentage, 0), 100);
-                })()}%
+                {syncStatus?.records_processed ? Math.round((syncStatus.records_processed / (totalCount || 1)) * 100) : 0}%
               </div>
               <p className="text-sm text-muted-foreground">Database Coverage</p>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">
-                {(() => {
-                  if (!syncStatus?.last_activity_at) return 'N/A';
-                  const lastActivity = new Date(syncStatus.last_activity_at).getTime();
-                  const now = Date.now();
-                  const minutesAgo = Math.round((now - lastActivity) / 60000);
-                  return isNaN(minutesAgo) ? 'N/A' : minutesAgo;
-                })()}
+                {syncStatus?.last_activity_at 
+                  ? Math.round((Date.now() - new Date(syncStatus.last_activity_at).getTime()) / 60000)
+                  : 'N/A'
+                }
               </div>
               <p className="text-sm text-muted-foreground">Minutes Since Last Update</p>
             </div>

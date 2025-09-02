@@ -833,7 +833,7 @@ export type Database = {
           source_endpoints?: Json | null
           started_at?: string | null
           status?: string
-          sync_type?: string
+          sync_type: string
           total_pages?: number | null
           total_records?: number | null
         }
@@ -1076,23 +1076,7 @@ export type Database = {
         Args: { car_count?: number }
         Returns: number
       }
-      get_accurate_sync_progress: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          cache_count: number
-          correction_applied: boolean
-          display_count: number
-          main_count: number
-          sync_page: number
-          sync_status: string
-          sync_status_records: number
-        }[]
-      }
       get_precise_resume_position: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      get_real_time_sync_progress: {
         Args: Record<PropertyKey, never>
         Returns: Json
       }

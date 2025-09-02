@@ -158,33 +158,19 @@ export const FullCarsSyncTrigger = () => {
     const now = Date.now();
     const timeSinceActivity = now - lastActivity.getTime();
     
-    // Standard thresholds
+    // Reduced threshold to 10 minutes for faster detection of stuck syncs
     const STUCK_THRESHOLD = 10 * 60 * 1000; // 10 minutes
-    const MAX_SYNC_TIME = 2 * 60 * 60 * 1000; // 2 hours max
     
-    // Enhanced detection for very low progress syncs (addresses 1% stuck issue)
+    // Also consider sync stuck if it's been running for more than 2 hours regardless of activity
     const startTime = sync.started_at ? new Date(sync.started_at) : new Date(0);
     const timeSinceStart = now - startTime.getTime();
-    const recordsProcessed = sync.records_processed || 0;
-    const progressPercentage = (recordsProcessed / 190000) * 100; // Use actual API total of 190,000
+    const MAX_SYNC_TIME = 2 * 60 * 60 * 1000; // 2 hours max
     
-    // Standard stuck detection
     const isStuckByActivity = timeSinceActivity > STUCK_THRESHOLD;
     const isStuckByDuration = timeSinceStart > MAX_SYNC_TIME;
-    
-    // Enhanced detection for very low progress scenarios (1-5%)
-    const isVeryLowProgress = progressPercentage < 5; // Less than 5%
-    const hasSufficientRuntime = timeSinceStart > 10 * 60 * 1000; // Running for 10+ minutes
-    const hasStagnatedProgress = timeSinceActivity > 3 * 60 * 1000; // No progress for 3+ minutes
-    const isStuckByLowProgress = isVeryLowProgress && hasSufficientRuntime && hasStagnatedProgress;
-    
-    const isStuck = isStuckByActivity || isStuckByDuration || isStuckByLowProgress;
+    const isStuck = isStuckByActivity || isStuckByDuration;
     
     if (isStuck) {
-      const stuckReason = isStuckByActivity ? 'no_activity' : 
-                         isStuckByDuration ? 'too_long_running' : 
-                         isStuckByLowProgress ? 'low_progress_stagnant' : 'unknown';
-      
       console.log('🚨 Stuck sync detected:', {
         syncId: sync.id,
         status: sync.status,
@@ -192,13 +178,10 @@ export const FullCarsSyncTrigger = () => {
         last_activity_at: sync.last_activity_at,
         timeSinceActivity: Math.round(timeSinceActivity / 60000) + ' minutes',
         timeSinceStart: Math.round(timeSinceStart / 60000) + ' minutes',
-        stuckReason,
+        stuckReason: isStuckByActivity ? 'no_activity' : 'too_long_running',
         threshold: Math.round(STUCK_THRESHOLD / 60000) + ' minutes',
         current_page: sync.current_page,
-        records_processed: recordsProcessed,
-        progressPercentage: progressPercentage.toFixed(2) + '%',
-        isVeryLowProgress,
-        hasStagnatedProgress
+        records_processed: sync.records_processed
       });
     }
     
@@ -282,20 +265,11 @@ export const FullCarsSyncTrigger = () => {
     }
   };
 
-  const validateSyncCompletion = (status: SyncStatus): boolean => {
-    const recordsProcessed = status.records_processed || 0;
-    const estimatedTotal = 190000; // Actual API total
-    const completionPercentage = recordsProcessed / estimatedTotal;
-    const minimumCompletionThreshold = 0.95; // 95% threshold
-    
-    return completionPercentage >= minimumCompletionThreshold;
-  };
-
   const updateProgressMessage = (status: SyncStatus) => {
     if (!status) return;
     
     const recordsProcessed = status.records_processed || 0;
-    const estimatedTotal = 190000; // Actual API total of 190,000 cars
+    const estimatedTotal = 200000; // Conservative estimate based on API
     const percentage = Math.round((recordsProcessed / estimatedTotal) * 100);
     
     const formattedRecords = recordsProcessed.toLocaleString();
@@ -318,13 +292,7 @@ export const FullCarsSyncTrigger = () => {
         setProgress(`🔄 Syncing${rateText}... ${formattedRecords} / ${formattedTotal} cars (${percentage}%) - Running for ${timeRunning}min`);
         break;
       case 'completed':
-        const isProperlyCompleted = validateSyncCompletion(status);
-        if (isProperlyCompleted) {
-          setProgress(`✅ Sync complete! ${formattedRecords} cars synced successfully (${percentage}%)`);
-        } else {
-          setProgress(`⚠️ Sync marked complete but only ${formattedRecords} / ${formattedTotal} cars (${percentage}%) - May need restart`);
-          console.warn(`🚨 Suspicious completion: Only ${percentage}% of expected cars synced`);
-        }
+        setProgress(`✅ Sync complete! ${formattedRecords} cars synced successfully`);
         // Auto-verify when sync completes
         setTimeout(() => verifySync(), 2000);
         break;
@@ -400,9 +368,18 @@ export const FullCarsSyncTrigger = () => {
         description: "Advanced AI coordination with infinite retry capabilities and intelligent error recovery!",
       });
 
-      // Always use direct sync to avoid AI coordinator infinite loops
-      console.log('🔄 Using enhanced direct edge function call');
-      await startSyncWithRetry();
+      // Use AI coordinator if available, fallback to direct invocation
+      const aiCoordinator = (window as unknown as { aiSyncCoordinator?: { startIntelligentSync: (params: Record<string, unknown>) => Promise<void> } }).aiSyncCoordinator;
+      
+      if (aiCoordinator) {
+        console.log('🤖 Using AI Coordinator for sync');
+        await aiCoordinator.startIntelligentSync({
+          source: 'manual-smart-sync'
+        });
+      } else {
+        console.log('🔄 Using enhanced direct edge function call');
+        await startSyncWithRetry();
+      }
 
       toast({
         title: "🚀 AI-POWERED SYNC LAUNCHED!",
@@ -507,35 +484,6 @@ export const FullCarsSyncTrigger = () => {
       }
 
       console.log('✅ Sync start successful on attempt', attempt);
-      
-      // Handle continuous sync response - if shouldContinue is true, trigger auto-resume after short delay
-      if (data?.shouldContinue && data?.status === 'running') {
-        console.log('🔄 Sync batch completed, scheduling auto-continuation...');
-        toast({
-          title: "Sync Batch Complete",
-          description: `Processed ${data.totalProcessed} cars. Continuing automatically...`,
-        });
-        
-        // Trigger auto-resume after short delay to allow status update
-        setTimeout(() => {
-          console.log('🚀 Auto-triggering sync continuation...');
-          supabase.functions.invoke('cars-sync', {
-            body: { 
-              resume: true,
-              fromPage: data.currentPage,
-              reconcileProgress: true,
-              source: 'auto-continuation'
-            }
-          }).then((response) => {
-            if (response.data?.shouldContinue) {
-              // Chain the continuation recursively if needed
-              console.log('🔄 Chaining next sync batch...');
-            }
-          }).catch((error) => {
-            console.error('❌ Auto-continuation failed:', error);
-          });
-        }, 3000);
-      }
 
     } catch (error: unknown) {
       console.error(`❌ Sync start failed on attempt ${attempt}:`, error);
@@ -609,7 +557,7 @@ export const FullCarsSyncTrigger = () => {
 
   const getProgressPercentage = () => {
     if (!syncStatus || !syncStatus.records_processed) return 0;
-    const estimatedTotal = 190000; // Use actual API total of 190,000 cars
+    const estimatedTotal = 200000; // Conservative API estimate
     
     // Use the corrected records_processed count which includes the fix for stuck syncs
     // This ensures percentage calculation uses the real count (105,505) not stuck count (16)
