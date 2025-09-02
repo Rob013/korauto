@@ -141,7 +141,7 @@ describe('Sync System Improvements', () => {
     // Simulate the enhanced updateProgressMessage function
     const updateProgressMessage = (status: any): string => {
       const recordsProcessed = status.records_processed || 0;
-      const estimatedTotal = 200000;
+      const estimatedTotal = 192800;
       const percentage = Math.round((recordsProcessed / estimatedTotal) * 100);
       
       const formattedRecords = recordsProcessed.toLocaleString();
@@ -167,7 +167,7 @@ describe('Sync System Improvements', () => {
     const progressMessage = updateProgressMessage(syncStatus);
     
     expect(progressMessage).toContain('🔄 Syncing (250 cars/min)');
-    expect(progressMessage).toContain('5,000 / 200,000 cars');
+    expect(progressMessage).toContain('5,000 / 192,800 cars');
     expect(progressMessage).toContain('(3%)');
     expect(progressMessage).toContain('Running for 30min');
   });

@@ -1296,7 +1296,7 @@ const CarDetails = memo(() => {
                                                 "goodness",
                                                 "proper", 
                                                 "doesn't exist",
-                                              ].includes(value) && `⚠ ${value}`}
+                                              ].includes(String(value)) && `⚠ ${value}`}
                                             </Badge>
                                           </div>
                                         );
