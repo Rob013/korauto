@@ -28,7 +28,8 @@
     "test-fix-deployment": "tsx scripts/test-fix-deployment.ts",
     "check-100-argument-fix": "tsx scripts/check-100-argument-fix-status.ts",
     "verify-100-argument-fix": "tsx scripts/verify-100-argument-fix.ts",
-    "test-mapping-workaround": "tsx scripts/test-mapping-workaround.ts"
+    "test-mapping-workaround": "tsx scripts/test-mapping-workaround.ts",
+    "verify-deployment-readiness": "tsx scripts/verify-deployment-readiness.ts"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.2",
