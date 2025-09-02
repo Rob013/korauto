@@ -97,7 +97,17 @@ export const AISyncCoordinator = ({
       return { category: 'auth', recoverable: false, delayMs: 0, action: 'abort' };
     }
     
-    if (errorMessage.includes('HTTP 5') || errorMessage.includes('Server error') || errorMessage.includes('Internal Server Error')) {
+    // Server errors - enhanced to catch specific HTTP status codes and edge function errors
+    if (errorMessage.includes('HTTP 5') || 
+        errorMessage.includes('Server error') || 
+        errorMessage.includes('Internal Server Error') ||
+        errorMessage.includes('503') ||
+        errorMessage.includes('502') ||
+        errorMessage.includes('500') ||
+        errorMessage.includes('Service Unavailable') ||
+        errorMessage.includes('Bad Gateway') ||
+        (errorMessage.includes('Function responded with') && (errorMessage.includes('503') || errorMessage.includes('502') || errorMessage.includes('500'))) ||
+        errorMessage.includes('Edge function returned an error')) {
       return { category: 'server', recoverable: true, delayMs: 8000, action: 'retry' };
     }
     
@@ -191,9 +201,9 @@ export const AISyncCoordinator = ({
       if (error) {
         console.error('🚨 AI Coordinator: Edge function returned error:', error);
         console.error('🚨 AI Coordinator: Error details:', {
-          message: error && typeof error === 'object' && 'message' in error ? (error as any).message : 'Unknown',
-          name: error && typeof error === 'object' && 'name' in error ? (error as any).name : 'Unknown',
-          stack: error && typeof error === 'object' && 'stack' in error ? (error as any).stack : 'No stack',
+          message: error && typeof error === 'object' && 'message' in error ? (error as { message: string }).message : 'Unknown',
+          name: error && typeof error === 'object' && 'name' in error ? (error as { name: string }).name : 'Unknown',
+          stack: error && typeof error === 'object' && 'stack' in error ? (error as { stack: string }).stack : 'No stack',
           details: error
         });
         throw error;
@@ -302,6 +312,21 @@ export const AISyncCoordinator = ({
       if (strategy.category === 'deployment') {
         userFriendlyMessage = 'Failed to start intelligent sync: Unable to connect to Edge Function - network or deployment issue';
         diagnosticHelp = 'This could be a network connectivity issue or the edge function may not be deployed. Check your internet connection and Supabase function deployment.';
+      } else if (strategy.category === 'server') {
+        // Specific handling for 503 and other server errors
+        if (errorMessage.includes('503') || errorMessage.includes('Service Unavailable')) {
+          userFriendlyMessage = 'Failed to start intelligent sync: Edge Function temporarily unavailable (503 Service Unavailable)';
+          diagnosticHelp = 'The edge function is temporarily overloaded or under maintenance. The system will retry automatically with exponential backoff.';
+        } else if (errorMessage.includes('502') || errorMessage.includes('Bad Gateway')) {
+          userFriendlyMessage = 'Failed to start intelligent sync: Edge Function gateway error (502 Bad Gateway)';
+          diagnosticHelp = 'There is a temporary issue with the edge function gateway. The system will retry automatically.';
+        } else if (errorMessage.includes('500') || errorMessage.includes('Internal Server Error')) {
+          userFriendlyMessage = 'Failed to start intelligent sync: Edge Function internal error (500 Internal Server Error)';
+          diagnosticHelp = 'The edge function encountered an internal error. The system will retry automatically.';
+        } else {
+          userFriendlyMessage = 'Failed to start intelligent sync: Edge Function server error';
+          diagnosticHelp = 'The edge function is experiencing server-side issues. The system will retry automatically with increasing delays.';
+        }
       }
       
       const fullErrorMessage = `${userFriendlyMessage}. ${diagnosticHelp}`;
@@ -314,7 +339,7 @@ export const AISyncCoordinator = ({
     } finally {
       setIsActive(false);
     }
-  }, [isActive, invokeEdgeFunctionWithRetry, testEdgeFunctionConnectivity, toast]);
+  }, [isActive, invokeEdgeFunctionWithRetry, testEdgeFunctionConnectivity, toast, classifyErrorAndGetStrategy]);
 
   // Disabled monitoring to prevent infinite loops
   useEffect(() => {
