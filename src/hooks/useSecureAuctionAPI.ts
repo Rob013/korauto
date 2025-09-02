@@ -2094,7 +2094,7 @@ export const useSecureAuctionAPI = () => {
       completeCarDatasetCache.isLoading = true;
       console.log(`🔄 Fetching complete dataset for filter consistency (all 150k+ cars)...`);
       
-      let allCars: any[] = [];
+      const allCars: any[] = [];
       let currentPage = 1;
       let totalPages = 1;
       let totalCount = 0;
@@ -2198,7 +2198,7 @@ export const useSecureAuctionAPI = () => {
       delete apiFilters.grade_iaai;
       delete apiFilters.trim_level;
 
-      let allCars: any[] = [];
+      const allCars: any[] = [];
       let currentPage = 1;
       let totalPages = 1;
       let totalCount = 0;

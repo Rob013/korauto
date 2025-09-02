@@ -15,13 +15,49 @@ export interface DatasetValidationResult {
   validationErrors: string[];
 }
 
+// Cache for validation results to avoid redundant work
+const validationCache = new Map<string, { result: DatasetValidationResult; timestamp: number }>();
+const VALIDATION_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+
+// Helper function for non-blocking chunked processing
+const processInChunks = async <T>(
+  array: T[],
+  chunkSize: number,
+  processor: (chunk: T[]) => any
+): Promise<any[]> => {
+  const results: any[] = [];
+  
+  for (let i = 0; i < array.length; i += chunkSize) {
+    const chunk = array.slice(i, i + chunkSize);
+    const chunkResult = processor(chunk);
+    results.push(chunkResult);
+    
+    // Yield control to prevent blocking the main thread
+    if (i + chunkSize < array.length) {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    }
+  }
+  
+  return results;
+};
+
 /**
  * Validate that we have the complete dataset from the external API
+ * Optimized with chunked processing to avoid blocking the main thread
  */
 export const validateCompleteDataset = async (
   allCars: any[],
   expectedMinimum: number = 150000
 ): Promise<DatasetValidationResult> => {
+  // Check cache first
+  const cacheKey = `${allCars.length}-${expectedMinimum}`;
+  const cached = validationCache.get(cacheKey);
+  
+  if (cached && Date.now() - cached.timestamp < VALIDATION_CACHE_DURATION) {
+    console.log(`📋 Using cached validation result for ${allCars.length} cars`);
+    return cached.result;
+  }
+
   const result: DatasetValidationResult = {
     isComplete: false,
     totalCars: allCars.length,
@@ -47,30 +83,77 @@ export const validateCompleteDataset = async (
     result.isComplete = true;
   }
 
-  // Validate data quality
-  const carsWithoutManufacturer = allCars.filter(car => !car.manufacturer?.name);
-  if (carsWithoutManufacturer.length > 0) {
-    const percentMissing = Math.round((carsWithoutManufacturer.length / allCars.length) * 100);
-    result.validationErrors.push(
-      `${percentMissing}% of cars missing manufacturer data (${carsWithoutManufacturer.length} cars)`
-    );
+  // Validate data quality using chunked processing for large datasets
+  if (allCars.length > 1000) {
+    console.log(`🔄 Starting chunked validation for ${allCars.length} cars...`);
+    
+    // Process in chunks of 5000 cars to avoid blocking
+    const chunkSize = 5000;
+    let carsWithoutManufacturer = 0;
+    let carsWithoutModel = 0;
+    let carsWithoutYear = 0;
+    
+    await processInChunks(allCars, chunkSize, (chunk) => {
+      carsWithoutManufacturer += chunk.filter(car => !car.manufacturer?.name).length;
+      carsWithoutModel += chunk.filter(car => !car.model?.name).length;
+      carsWithoutYear += chunk.filter(car => !car.year).length;
+    });
+    
+    // Add validation errors for missing data
+    if (carsWithoutManufacturer > 0) {
+      const percentMissing = Math.round((carsWithoutManufacturer / allCars.length) * 100);
+      result.validationErrors.push(
+        `${percentMissing}% of cars missing manufacturer data (${carsWithoutManufacturer} cars)`
+      );
+    }
+
+    if (carsWithoutModel > 0) {
+      const percentMissing = Math.round((carsWithoutModel / allCars.length) * 100);
+      result.validationErrors.push(
+        `${percentMissing}% of cars missing model data (${carsWithoutModel} cars)`
+      );
+    }
+
+    if (carsWithoutYear > 0) {
+      const percentMissing = Math.round((carsWithoutYear / allCars.length) * 100);
+      result.validationErrors.push(
+        `${percentMissing}% of cars missing year data (${carsWithoutYear} cars)`
+      );
+    }
+    
+    console.log(`✅ Chunked validation completed for ${allCars.length} cars`);
+  } else {
+    // For smaller datasets, use synchronous processing
+    const carsWithoutManufacturer = allCars.filter(car => !car.manufacturer?.name);
+    if (carsWithoutManufacturer.length > 0) {
+      const percentMissing = Math.round((carsWithoutManufacturer.length / allCars.length) * 100);
+      result.validationErrors.push(
+        `${percentMissing}% of cars missing manufacturer data (${carsWithoutManufacturer.length} cars)`
+      );
+    }
+
+    const carsWithoutModel = allCars.filter(car => !car.model?.name);
+    if (carsWithoutModel.length > 0) {
+      const percentMissing = Math.round((carsWithoutModel.length / allCars.length) * 100);
+      result.validationErrors.push(
+        `${percentMissing}% of cars missing model data (${carsWithoutModel.length} cars)`
+      );
+    }
+
+    const carsWithoutYear = allCars.filter(car => !car.year);
+    if (carsWithoutYear.length > 0) {
+      const percentMissing = Math.round((carsWithoutYear.length / allCars.length) * 100);
+      result.validationErrors.push(
+        `${percentMissing}% of cars missing year data (${carsWithoutYear.length} cars)`
+      );
+    }
   }
 
-  const carsWithoutModel = allCars.filter(car => !car.model?.name);
-  if (carsWithoutModel.length > 0) {
-    const percentMissing = Math.round((carsWithoutModel.length / allCars.length) * 100);
-    result.validationErrors.push(
-      `${percentMissing}% of cars missing model data (${carsWithoutModel.length} cars)`
-    );
-  }
-
-  const carsWithoutYear = allCars.filter(car => !car.year);
-  if (carsWithoutYear.length > 0) {
-    const percentMissing = Math.round((carsWithoutYear.length / allCars.length) * 100);
-    result.validationErrors.push(
-      `${percentMissing}% of cars missing year data (${carsWithoutYear.length} cars)`
-    );
-  }
+  // Cache the result
+  validationCache.set(cacheKey, {
+    result,
+    timestamp: Date.now()
+  });
 
   return result;
 };
