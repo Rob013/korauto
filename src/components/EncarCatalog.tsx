@@ -18,6 +18,8 @@ import {
   PanelLeftClose,
   Lock,
   Unlock,
+  CheckCircle,
+  AlertTriangle,
 } from "lucide-react";
 import LoadingLogo from "@/components/LoadingLogo";
 import LazyCarCard from "@/components/LazyCarCard";
@@ -40,6 +42,13 @@ import {
   addPaginationToFilters,
   debounce as catalogDebounce
 } from "@/utils/catalog-filter";
+import {
+  validateCompleteDataset,
+  validateFilterConsistency,
+  logValidationResults,
+  getValidationSummary,
+  DatasetValidationResult
+} from "@/utils/carDatasetValidation";
 
 import { useSearchParams } from "react-router-dom";
 import {
@@ -99,6 +108,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     fetchGrades,
     fetchTrimLevels,
     loadMore,
+    // Add complete dataset functions for validation
+    fetchCompleteDatasetForFilters, // ✅ Import function for complete dataset validation
   } = apiHook;
   const { convertUSDtoEUR } = useCurrencyAPI();
   
@@ -127,6 +138,65 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Start as explicitly closed since we always begin with filters hidden
     return true;
   });
+
+  // Catalog lock state - prevents accidental swipe gestures on mobile
+  const [isLocked, setIsLocked] = useState(false);
+  
+  // Dataset validation state
+  const [datasetValidation, setDatasetValidation] = useState<DatasetValidationResult | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
+  
+  // Pre-fetch complete dataset for filter consistency on component mount
+  useEffect(() => {
+    const validateDatasetOnMount = async () => {
+      if (fetchCompleteDatasetForFilters && !isValidating) {
+        setIsValidating(true);
+        try {
+          console.log("🔄 Pre-fetching complete dataset for filter consistency...");
+          const completeData = await fetchCompleteDatasetForFilters();
+          
+          // Validate the dataset
+          const validation = await validateCompleteDataset(completeData, 150000);
+          setDatasetValidation(validation);
+          
+          // Log results for debugging
+          logValidationResults(validation);
+          
+          // Show toast notification about dataset status
+          if (validation.isComplete) {
+            toast({
+              title: "✅ Complete Dataset Loaded",
+              description: `${validation.totalCars.toLocaleString()} cars synced successfully`,
+              duration: 3000,
+            });
+          } else {
+            toast({
+              title: "⚠️ Dataset Incomplete", 
+              description: `${validation.totalCars.toLocaleString()} cars loaded (${validation.coverage}% coverage)`,
+              variant: "destructive",
+              duration: 5000,
+            });
+          }
+        } catch (error) {
+          console.error("❌ Error validating dataset:", error);
+          toast({
+            title: "❌ Dataset Validation Failed",
+            description: "Unable to validate complete dataset",
+            variant: "destructive",
+            duration: 5000,
+          });
+        } finally {
+          setIsValidating(false);
+        }
+      } else if (!fetchCompleteDatasetForFilters) {
+        console.warn("⚠️ Complete dataset validation not available - using legacy API hook");
+      }
+    };
+    
+    // Run validation after a short delay to not block initial rendering
+    const timeoutId = setTimeout(validateDatasetOnMount, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [fetchCompleteDatasetForFilters, toast]);
 
   // Catalog lock state - prevents accidental swipe gestures on mobile
   const [catalogLocked, setCatalogLocked] = useState(() => {
@@ -1406,6 +1476,34 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               </h1>
               <p className="text-muted-foreground text-xs sm:text-sm">
                 {totalCount.toLocaleString()} cars across {totalPages.toLocaleString()} pages • Page {currentPage} of {totalPages.toLocaleString()} • Showing {carsToDisplay.length} cars per page
+                
+                {/* Dataset validation indicator */}
+                {datasetValidation && (
+                  <span className="ml-2 inline-flex items-center gap-1">
+                    {datasetValidation.isComplete ? (
+                      <>
+                        <CheckCircle className="w-3 h-3 text-green-500" />
+                        <span className="text-green-600 text-xs">
+                          Complete sync ({datasetValidation.coverage}%)
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertTriangle className="w-3 h-3 text-orange-500" />
+                        <span className="text-orange-600 text-xs">
+                          Partial sync ({datasetValidation.coverage}%)
+                        </span>
+                      </>
+                    )}
+                  </span>
+                )}
+                
+                {isValidating && (
+                  <span className="ml-2 inline-flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
+                    <span className="text-blue-600 text-xs">Validating dataset...</span>
+                  </span>
+                )}
 
                 {yearFilterProgress === 'instant' && (
                   <span className="ml-2 text-primary text-xs">⚡ Instant results</span>

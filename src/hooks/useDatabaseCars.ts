@@ -449,6 +449,29 @@ export const useDatabaseCars = () => {
     }
   });
 
+  /**
+   * Fetch complete dataset for filter consistency (compatibility with external API hook)
+   */
+  const fetchCompleteDatasetForFilters = useCallback(async (): Promise<any[]> => {
+    try {
+      console.log("📊 Database: Fetching complete dataset for filter consistency...");
+      
+      // For database backend, we can get all cars efficiently
+      const { data, error } = await supabase
+        .from('cars_cache')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      console.log(`✅ Database: Complete dataset fetched (${data?.length || 0} cars)`);
+      return data || [];
+    } catch (error) {
+      console.error('❌ Database: Error fetching complete dataset:', error);
+      return [];
+    }
+  }, []);
+
   return {
     cars,
     loading,
@@ -459,6 +482,7 @@ export const useDatabaseCars = () => {
     filters,
     fetchCars,
     fetchAllCars,
+    fetchCompleteDatasetForFilters, // ✅ Add compatibility function
     loadMore,
     fetchManufacturers,
     fetchModels,
