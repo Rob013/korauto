@@ -211,6 +211,127 @@ Deno.serve(async (req) => {
         // Complete API data transformation using the mapping function
         const carCacheItems = [];
         
+        // Client-side complete mapping function to handle 100-argument limit errors
+        const mapCompleteApiDataClientSide = (apiRecord: any) => {
+          // Extract all possible images from the API response
+          const allImages = [
+            ...(apiRecord.images || []),
+            ...(apiRecord.photos || []),
+            ...(apiRecord.pictures || []),
+            ...(apiRecord.thumbnails || []),
+            ...(apiRecord.gallery || []),
+            ...(apiRecord.lots?.[0]?.images?.normal || []),
+            ...(apiRecord.lots?.[0]?.images?.large || [])
+          ].filter(Boolean);
+
+          // Extract high resolution images
+          const highResImages = [
+            ...(apiRecord.high_res_images || []),
+            ...(apiRecord.hd_images || []),
+            ...(apiRecord.full_size_images || []),
+            ...(apiRecord.lots?.[0]?.images?.large || [])
+          ].filter(Boolean);
+
+          // Map all available fields using chunked approach (client-side equivalent of database function)
+          const mappedData = {
+            // Basic vehicle information (chunk 1)
+            api_id: apiRecord.id?.toString() || apiRecord.lot_id?.toString() || apiRecord.external_id?.toString(),
+            make: apiRecord.make || apiRecord.manufacturer?.name,
+            model: apiRecord.model?.name || apiRecord.model,
+            year: parseInt(apiRecord.year || apiRecord.model_year) || 2020,
+            vin: apiRecord.vin || apiRecord.chassis_number,
+            mileage: apiRecord.mileage?.toString() || apiRecord.odometer?.toString() || apiRecord.kilometers?.toString() || apiRecord.lots?.[0]?.odometer?.km?.toString(),
+            fuel: apiRecord.fuel?.name || apiRecord.fuel_type || apiRecord.fuel,
+            transmission: apiRecord.transmission?.name || apiRecord.gearbox || apiRecord.transmission,
+            color: apiRecord.color?.name || apiRecord.exterior_color || apiRecord.color,
+            price: parseFloat(apiRecord.price || apiRecord.current_bid || apiRecord.lots?.[0]?.buy_now) || null,
+            price_cents: (parseFloat(apiRecord.price || apiRecord.current_bid || apiRecord.lots?.[0]?.buy_now) || 0) * 100,
+            condition: apiRecord.condition || apiRecord.grade || 'good',
+            lot_number: apiRecord.lot_number || apiRecord.lot_id || apiRecord.lots?.[0]?.lot,
+            images: allImages,
+            high_res_images: highResImages,
+            all_images_urls: allImages,
+
+            // Engine and performance data (chunk 2)
+            engine_size: apiRecord.engine_size || apiRecord.displacement || apiRecord.engine_capacity,
+            engine_displacement: apiRecord.displacement,
+            cylinders: parseInt(apiRecord.cylinders || apiRecord.engine_cylinders) || null,
+            max_power: apiRecord.power || apiRecord.max_power || apiRecord.horsepower,
+            torque: apiRecord.torque,
+            acceleration: apiRecord.acceleration || apiRecord.zero_to_sixty,
+            top_speed: apiRecord.top_speed || apiRecord.max_speed,
+            co2_emissions: apiRecord.co2_emissions,
+            fuel_consumption: apiRecord.fuel_consumption || apiRecord.mpg,
+            doors: parseInt(apiRecord.doors || apiRecord.door_count) || null,
+            seats: parseInt(apiRecord.seats || apiRecord.seat_count) || null,
+            body_style: apiRecord.body_style || apiRecord.body_type,
+            drive_type: apiRecord.drive_type || apiRecord.drivetrain,
+
+            // Auction and sale data (chunk 3)
+            lot_seller: apiRecord.seller,
+            sale_title: apiRecord.title || apiRecord.sale_title,
+            grade: apiRecord.grade || apiRecord.condition_grade,
+            auction_date: apiRecord.auction_date || apiRecord.sale_date,
+            time_left: apiRecord.time_left,
+            bid_count: parseInt(apiRecord.bid_count) || 0,
+            watchers_count: parseInt(apiRecord.watchers) || 0,
+            views_count: parseInt(apiRecord.views) || 0,
+            reserve_met: !!apiRecord.reserve_met,
+            estimated_value: parseFloat(apiRecord.estimated_value) || null,
+            previous_owners: parseInt(apiRecord.previous_owners) || 1,
+            service_history: apiRecord.service_history,
+            accident_history: apiRecord.accident_history || apiRecord.damage_history,
+            modifications: apiRecord.modifications,
+            warranty_info: apiRecord.warranty,
+
+            // Registration and legal data (chunk 4)
+            registration_date: apiRecord.registration_date || apiRecord.reg_date,
+            first_registration: apiRecord.first_registration,
+            mot_expiry: apiRecord.mot_expiry,
+            road_tax: parseFloat(apiRecord.road_tax) || null,
+            insurance_group: apiRecord.insurance_group,
+            title_status: apiRecord.title_status || apiRecord.title,
+            keys_count: parseInt(apiRecord.keys || apiRecord.key_count) || 0,
+            keys_count_detailed: parseInt(apiRecord.keys) || 0,
+            books_count: parseInt(apiRecord.books) || 0,
+            spare_key_available: !!apiRecord.spare_key,
+            service_book_available: !!apiRecord.service_book,
+            location_country: apiRecord.country || 'South Korea',
+            location_state: apiRecord.state,
+            location_city: apiRecord.city,
+            seller_type: apiRecord.seller_type,
+
+            // Damage, features and metadata (chunk 5)
+            damage_primary: apiRecord.primary_damage,
+            damage_secondary: apiRecord.secondary_damage,
+            features: apiRecord.features || apiRecord.equipment || [],
+            inspection_report: apiRecord.inspection,
+            seller_notes: apiRecord.description || apiRecord.notes || apiRecord.seller_notes,
+            original_api_data: apiRecord,
+            sync_metadata: {
+              mapped_at: new Date().toISOString(),
+              mapping_version: '2.0-client-side',
+              sync_method: 'client_side_complete_mapping',
+              api_fields_count: Object.keys(apiRecord).length,
+              images_found: allImages.length,
+              high_res_images_found: highResImages.length,
+              has_lot_data: !!(apiRecord.lots && apiRecord.lots.length > 0),
+              has_images: allImages.length > 0,
+              fallback_reason: '100_argument_limit_workaround'
+            },
+            
+            // Calculate rank_score based on price
+            rank_score: 0
+          };
+
+          // Calculate rank_score based on price
+          if (mappedData.price) {
+            mappedData.rank_score = (1 / mappedData.price) * 1000000;
+          }
+
+          return mappedData;
+        }
+        
         for (const car of cars) {
           try {
             // Use the complete API mapping function to ensure all fields are captured
@@ -219,7 +340,25 @@ Deno.serve(async (req) => {
 
             if (mappingError) {
               console.error('❌ Mapping error for car', car.id, ':', mappingError);
-              // Fallback to basic mapping
+              
+              // Check if it's the 100-argument limit error
+              if (mappingError.code === '54023' || mappingError.message?.includes('cannot pass more than 100 arguments')) {
+                console.log('🔧 Using client-side complete mapping workaround for car', car.id);
+                
+                // Use client-side complete mapping instead of basic fallback
+                const clientMappedData = mapCompleteApiDataClientSide(car);
+                carCacheItems.push({
+                  ...clientMappedData,
+                  id: car.id.toString(),
+                  api_id: car.id.toString(),
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                  last_api_sync: new Date().toISOString()
+                });
+                continue;
+              }
+              
+              // For other mapping errors, use basic fallback
               const lot = car.lots?.[0];
               const price = lot?.buy_now ? Math.round(lot.buy_now + 2200) : null;
               
