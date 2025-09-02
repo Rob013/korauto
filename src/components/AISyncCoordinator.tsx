@@ -78,7 +78,7 @@ export const AISyncCoordinator = ({
     }
     
     // Edge function specific errors (function responded but with error)
-    if (errorMessage.includes('Edge Function') && !errorMessage.includes('Failed to send') || 
+    if ((errorMessage.includes('Edge Function') && !errorMessage.includes('Failed to send')) || 
         errorMessage.includes('Deno') || 
         errorMessage.includes('Function Error')) {
       return { category: 'edge_function', recoverable: true, delayMs: 5000, action: 'retry' };
