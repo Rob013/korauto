@@ -76,6 +76,22 @@ describe('Dataset Incomplete Fix - Issue: 1,000 cars loaded (1% coverage)', () =
       expect(result.missingDataPercent).toBe(100);
     });
 
+    it('should handle zero cars scenario correctly', async () => {
+      // Simulate the exact problem scenario: 0 cars
+      const emptyDataset = createMockCarDataset(0);
+      
+      const result = await validateCompleteDataset(emptyDataset, 150000);
+      
+      expect(result.isComplete).toBe(false);
+      expect(result.totalCars).toBe(0);
+      expect(result.coverage).toBe(0); // 0% coverage (0/150000)
+      expect(result.missingDataPercent).toBe(100);
+      expect(result.validationErrors).toContain('Dataset incomplete: got 0 cars, expected at least 150000');
+      
+      const summary = getValidationSummary(result);
+      expect(summary).toBe('🔄 Database empty: Using fallback data while sync initializes');
+    });
+
     it('should validate data quality regardless of dataset size', async () => {
       // Create dataset with some missing manufacturer data
       const datasetWithMissingData = [
@@ -105,6 +121,33 @@ describe('Dataset Incomplete Fix - Issue: 1,000 cars loaded (1% coverage)', () =
         expect(result.coverage).toBe(Math.round((size / 150000) * 100));
         expect(result.isComplete).toBe(size >= 150000);
       }
+    });
+  });
+
+  describe('Fallback Mechanism', () => {
+    it('should provide appropriate fallback messaging for empty database', async () => {
+      const emptyDataset = createMockCarDataset(0);
+      const result = await validateCompleteDataset(emptyDataset, 150000);
+      
+      expect(result.isComplete).toBe(false);
+      expect(result.totalCars).toBe(0);
+      
+      const summary = getValidationSummary(result);
+      expect(summary).toBe('🔄 Database empty: Using fallback data while sync initializes');
+      expect(summary).not.toContain('❌');  // Should not show error icon for 0 cars
+      expect(summary).toContain('🔄');     // Should show loading/sync icon
+    });
+
+    it('should handle small datasets with appropriate error messaging', async () => {
+      const smallDataset = createMockCarDataset(1000);
+      const result = await validateCompleteDataset(smallDataset, 150000);
+      
+      expect(result.isComplete).toBe(false);
+      expect(result.totalCars).toBe(1000);
+      
+      const summary = getValidationSummary(result);
+      expect(summary).toBe('❌ Incomplete dataset: 1,000 cars (1% coverage)');
+      expect(summary).toContain('❌');     // Should show error icon for partial data
     });
   });
 });

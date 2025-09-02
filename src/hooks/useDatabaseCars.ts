@@ -197,6 +197,48 @@ export const useDatabaseCars = () => {
         rank_score: car.rank_score
       }));
 
+      // Check if database is empty and provide fallback
+      if (actualTotalCount === 0 && page === 1) {
+        console.log('🔄 Database empty (0 cars), using fallback data for user experience');
+        // Import fallback data dynamically to avoid circular dependencies
+        const { fallbackCars } = await import('@/data/fallbackData');
+        
+        // Transform fallback data to match our Car interface
+        const fallbackTransformed: Car[] = fallbackCars.slice(0, limit).map((car, index) => ({
+          id: car.id,
+          make: car.manufacturer?.name || 'Unknown',
+          model: car.model?.name || 'Unknown',
+          year: car.year,
+          price: car.price,
+          mileage: car.odometer,
+          fuel: car.fuel?.name,
+          transmission: car.transmission?.name,
+          color: car.color?.name,
+          location: car.location,
+          images: car.lots?.[0]?.images?.normal || [],
+          image_url: car.lots?.[0]?.images?.normal?.[0],
+          title: car.title,
+          created_at: new Date().toISOString()
+        }));
+        
+        setCars(fallbackTransformed);
+        setTotalCount(fallbackCars.length); // Use fallback count to show something is available
+        setHasMorePages(false);
+        
+        setPagination({
+          page: 1,
+          totalPages: 1,
+          totalCount: fallbackCars.length,
+          hasMore: false
+        });
+
+        return {
+          items: fallbackTransformed,
+          total: fallbackCars.length,
+          nextCursor: undefined
+        };
+      }
+
       if (resetCars) {
         setCars(transformedCars);
       } else {

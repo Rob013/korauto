@@ -235,6 +235,8 @@ export const getValidationSummary = (result: DatasetValidationResult): string =>
     return `✅ Complete dataset: ${result.totalCars.toLocaleString()} cars (100% coverage)`;
   } else if (result.isComplete) {
     return `⚠️ Dataset complete but filter inconsistencies detected`;
+  } else if (result.totalCars === 0) {
+    return `🔄 Database empty: Using fallback data while sync initializes`;
   } else {
     return `❌ Incomplete dataset: ${result.totalCars.toLocaleString()} cars (${result.coverage}% coverage)`;
   }

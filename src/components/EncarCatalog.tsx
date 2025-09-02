@@ -175,6 +175,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             description: `${validation.totalCars.toLocaleString()} cars synced successfully`,
             duration: 3000,
           });
+        } else if (validation.totalCars === 0) {
+          // Special handling for 0 cars - provide guidance instead of destructive error
+          toast({
+            title: "🔄 Database Empty", 
+            description: "No cars in database. Using fallback data while sync initializes.",
+            duration: 7000,
+          });
         } else {
           toast({
             title: "⚠️ Dataset Incomplete", 
