@@ -32,8 +32,13 @@ export const AutoResumeScheduler = ({
           const timeSinceFailure = Date.now() - new Date(lastFailedSync.completed_at || lastFailedSync.last_activity_at).getTime();
           const RESUME_DELAY = 5 * 1000; // Wait only 5 seconds for MAXIMUM SPEED continuity
           
-          if (timeSinceFailure > RESUME_DELAY) {
-            console.log(`🔄 Enhanced Auto-resume: Attempting immediate resume of sync from page ${lastFailedSync.current_page} with AI coordination...`);
+          // Check if this sync has failed too many times recently (prevent infinite loops)
+          const recentFailureThreshold = 10 * 60 * 1000; // 10 minutes
+          const failureCount = (lastFailedSync.error_message || '').includes('Auto-detected') ? 
+            ((lastFailedSync.error_message || '').match(/attempt/g) || []).length : 0;
+          
+          if (timeSinceFailure > RESUME_DELAY && failureCount < 5) {
+            console.log(`🔄 Enhanced Auto-resume: Attempting immediate resume of sync from page ${lastFailedSync.current_page} with AI coordination (attempt ${failureCount + 1})...`);
             
             // Use AI coordinator if available, fallback to direct call
             const aiCoordinator = (window as unknown as { aiSyncCoordinator?: { startIntelligentSync: (params: Record<string, unknown>) => Promise<void> } }).aiSyncCoordinator;
@@ -45,7 +50,8 @@ export const AutoResumeScheduler = ({
                   resume: true,
                   fromPage: lastFailedSync.current_page,
                   reconcileProgress: true,
-                  source: 'immediate-auto-resume'
+                  source: 'immediate-auto-resume',
+                  attemptNumber: failureCount + 1
                 });
                 console.log('✅ Enhanced Auto-resume: Successfully triggered immediate AI-coordinated sync resume');
               } catch (error) {
@@ -56,18 +62,20 @@ export const AutoResumeScheduler = ({
               console.log('🔄 AI Coordinator not available, using immediate direct resume');
               await fallbackResumeAttempt(lastFailedSync);
             }
+          } else if (failureCount >= 5) {
+            console.warn(`⚠️ Enhanced Auto-resume: Sync has failed ${failureCount} times recently, pausing auto-resume to prevent loops`);
           }
         }
         
         // Remove legacy pause cleanup since we no longer pause
         // All syncs now run continuously until completion
         
-        // Check for running syncs that might be stuck (no activity for 5 minutes)
+        // Check for running syncs that might be stuck (no activity for 3 minutes)
         const { data: runningSyncs } = await supabase
           .from('sync_status')
           .select('*')
           .eq('status', 'running')
-          .lt('last_activity_at', new Date(Date.now() - 3 * 60 * 1000).toISOString()); // Reduced from 5 to 3 minutes for max speed detection
+          .lt('last_activity_at', new Date(Date.now() - 3 * 60 * 1000).toISOString()); // 3 minutes for fast detection
 
         if (runningSyncs && runningSyncs.length > 0) {
           for (const stuckSync of runningSyncs) {
@@ -77,7 +85,7 @@ export const AutoResumeScheduler = ({
               .from('sync_status')
               .update({
                 status: 'failed',
-                error_message: 'Auto-detected: Sync was stuck with no activity for 5+ minutes - will auto-resume immediately',
+                error_message: 'Auto-detected: Sync was stuck with no activity for 3+ minutes - will auto-resume immediately',
                 completed_at: new Date().toISOString()
               })
               .eq('id', stuckSync.id);
