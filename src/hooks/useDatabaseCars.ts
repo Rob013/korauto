@@ -9,6 +9,31 @@ import { useState, useCallback, useEffect } from 'react';
 import { fetchCarsWithKeyset, CarFilters, SortOption, FrontendSortOption, mapFrontendSortToBackend } from '@/services/carsApi';
 import { supabase } from '@/integrations/supabase/client';
 import { useAutoRefreshOnSync } from '@/hooks/useCarSync';
+import { fallbackCars } from '@/data/fallbackData';
+
+/**
+ * Transform fallback data to match Car interface
+ */
+const transformFallbackCar = (fallbackCar: any): Car => {
+  return {
+    id: fallbackCar.id,
+    make: fallbackCar.manufacturer?.name || 'Unknown',
+    model: fallbackCar.model?.name || 'Unknown',
+    year: fallbackCar.year,
+    price: fallbackCar.price,
+    mileage: fallbackCar.odometer,
+    fuel: fallbackCar.fuel?.name,
+    transmission: fallbackCar.transmission?.name,
+    color: fallbackCar.color?.name,
+    location: fallbackCar.location,
+    images: fallbackCar.lots?.[0]?.images?.normal || [],
+    image_url: fallbackCar.lots?.[0]?.images?.normal?.[0],
+    title: fallbackCar.title,
+    created_at: new Date().toISOString(),
+    price_cents: fallbackCar.price * 100,
+    rank_score: parseFloat(fallbackCar.grade) || 0
+  };
+};
 
 /**
  * Generate generation name from year, make and model
@@ -77,7 +102,12 @@ interface PaginationInfo {
   hasMore: boolean;
 }
 
-export const useDatabaseCars = () => {
+interface DatabaseCarsOptions {
+  pageSize?: number;
+}
+
+export const useDatabaseCars = (options: DatabaseCarsOptions = {}) => {
+  const { pageSize = 24 } = options;
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -91,6 +121,31 @@ export const useDatabaseCars = () => {
     hasMore: false
   });
 
+  // Test database connectivity on hook initialization
+  useEffect(() => {
+    const testConnectivity = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('cars')
+          .select('count', { count: 'exact', head: true })
+          .limit(1);
+        
+        if (error) {
+          console.warn('🔄 Database connectivity test failed, will fallback to external API:', error.message);
+          setError('Database connectivity failed');
+        } else {
+          console.log('✅ Database connectivity test passed');
+          setError(null);
+        }
+      } catch (err) {
+        console.warn('🔄 Database connectivity test failed, will fallback to external API:', err);
+        setError('Database connectivity failed');
+      }
+    };
+
+    testConnectivity();
+  }, []);
+
   /**
    * Fetch cars from cars_cache table with proper error handling
    */
@@ -103,7 +158,7 @@ export const useDatabaseCars = () => {
     setError(null);
 
     try {
-      const limit = 24;
+      const limit = pageSize;
       const offset = (page - 1) * limit;
 
       // Use backend global sorting for optimal performance
@@ -222,8 +277,49 @@ export const useDatabaseCars = () => {
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch cars';
-      setError(errorMessage);
       console.error('Database cars fetch error:', err);
+      
+      // Check if this is a network/connectivity error
+      if (err instanceof Error && (
+        err.message.includes('Failed to fetch') ||
+        err.message.includes('network') ||
+        err.message.includes('ERR_BLOCKED_BY_CLIENT') ||
+        err.message.includes('ERR_NETWORK')
+      )) {
+        console.warn('🔄 Database connectivity issue detected, using fallback data');
+        setError('Database connectivity issue');
+        
+        // Use fallback data when database fails
+        const transformedFallbackCars = fallbackCars.map(transformFallbackCar);
+        const startIndex = (page - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        const paginatedFallbackCars = transformedFallbackCars.slice(startIndex, endIndex);
+        
+        if (resetCars) {
+          setCars(paginatedFallbackCars);
+        } else {
+          setCars(prev => [...prev, ...paginatedFallbackCars]);
+        }
+        
+        setTotalCount(transformedFallbackCars.length);
+        setHasMorePages(endIndex < transformedFallbackCars.length);
+        
+        setPagination({
+          page,
+          totalPages: Math.ceil(transformedFallbackCars.length / pageSize),
+          totalCount: transformedFallbackCars.length,
+          hasMore: endIndex < transformedFallbackCars.length
+        });
+        
+        return {
+          items: paginatedFallbackCars,
+          total: transformedFallbackCars.length,
+          nextCursor: endIndex < transformedFallbackCars.length ? page + 1 : undefined
+        };
+      } else {
+        setError(errorMessage);
+      }
+      
       return { items: [], total: 0, nextCursor: undefined };
     } finally {
       setLoading(false);
@@ -235,10 +331,10 @@ export const useDatabaseCars = () => {
    */
   const loadMore = useCallback(() => {
     if (hasMorePages && !loading) {
-      const nextPage = Math.floor(cars.length / 24) + 1;
+      const nextPage = Math.floor(cars.length / pageSize) + 1;
       fetchCars(nextPage);
     }
-  }, [hasMorePages, loading, cars.length, fetchCars]);
+  }, [hasMorePages, loading, cars.length, fetchCars, pageSize]);
 
   /**
    * Get available manufacturers from cars_cache
@@ -265,7 +361,19 @@ export const useDatabaseCars = () => {
       return manufacturers;
     } catch (error) {
       console.error('Error fetching manufacturers:', error);
-      return [];
+      
+      // Return fallback manufacturers from fallback cars
+      const fallbackManufacturers = Array.from(new Set(fallbackCars.map(car => car.manufacturer?.name || 'Unknown')))
+        .sort()
+        .map((make, index) => ({ 
+          id: index + 1, 
+          name: make,
+          cars_qty: 0,
+          car_count: 0
+        }));
+      
+      console.log('🔄 Using fallback manufacturers:', fallbackManufacturers.length);
+      return fallbackManufacturers;
     }
   }, []);
 
@@ -301,6 +409,30 @@ export const useDatabaseCars = () => {
       return models;
     } catch (error) {
       console.error('Error fetching models:', error);
+      
+      // Return fallback models for the specified manufacturer
+      const manufacturers = await fetchManufacturers();
+      const manufacturer = manufacturers.find(m => m.id.toString() === manufacturerId);
+      
+      if (manufacturer) {
+        const fallbackModels = Array.from(new Set(
+          fallbackCars
+            .filter(car => car.manufacturer?.name === manufacturer.name)
+            .map(car => car.model?.name || 'Unknown')
+        ))
+        .sort()
+        .map((model, index) => ({ 
+          id: index + 1, 
+          name: model, 
+          manufacturer_id: parseInt(manufacturerId),
+          cars_qty: 0,
+          car_count: 0
+        }));
+        
+        console.log('🔄 Using fallback models for', manufacturer.name, ':', fallbackModels.length);
+        return fallbackModels;
+      }
+      
       return [];
     }
   }, [fetchManufacturers]);

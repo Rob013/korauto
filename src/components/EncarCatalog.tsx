@@ -85,9 +85,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Choose which hook data to use based on feature flag and error state
   // If database backend is enabled but has errors, fallback to external API
   const apiHook = useMemo(() => {
-    if (USE_DATABASE_BACKEND && !databaseHook.error) {
+    if (USE_DATABASE_BACKEND && !databaseHook.error && !databaseHook.loading) {
+      // Use database hook if it's not erroring, not loading, and potentially has data
       return databaseHook;
     }
+    // Fallback to external API when database fails or is loading
     return externalApiHook;
   }, [databaseHook, externalApiHook]);
     
