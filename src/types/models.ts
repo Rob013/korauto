@@ -22,10 +22,28 @@ export interface Lot {
 
 export interface Car {
   id: string;
+  make: string;
+  model: string;
+  year: number;
+  price: number;
+  price_cents?: number;
+  mileage: string | number;
+  fuel: string;
+  transmission: string;
+  color: string;
+  images: string[] | any[];
   title?: string;
+  created_at?: string;
+  lot_number?: string;
   lots?: Lot[];
   engine?: { name?: string };
-  price?: number;
+  manufacturer?: { name: string };
+  location?: string;
+  rank_score?: number;
+  status?: string;
+  image_url?: string;
+  currency?: string;
+  odometer?: number;
   [key: string]: unknown;
 }
 

@@ -574,25 +574,28 @@ export const useDatabaseCars = (options: UseDatabaseCarsOptions = {}) => {
         seats: new Map<number, number>(),
       };
 
-      data?.forEach(car => {
-        if (car.make) counts.manufacturers.set(car.make, (counts.manufacturers.get(car.make) || 0) + 1);
-        if (car.model) counts.models.set(car.model, (counts.models.get(car.model) || 0) + 1);
-        if (car.fuel) counts.fuelTypes.set(car.fuel, (counts.fuelTypes.get(car.fuel) || 0) + 1);
-        if (car.transmission) counts.transmissions.set(car.transmission, (counts.transmissions.get(car.transmission) || 0) + 1);
-        if (car.body_style) counts.bodyTypes.set(car.body_style, (counts.bodyTypes.get(car.body_style) || 0) + 1);
-        if (car.drive_type) counts.driveTypes.set(car.drive_type, (counts.driveTypes.get(car.drive_type) || 0) + 1);
-        if (car.doors) counts.doors.set(car.doors, (counts.doors.get(car.doors) || 0) + 1);
-        if (car.seats) counts.seats.set(car.seats, (counts.seats.get(car.seats) || 0) + 1);
-        if (car.year) {
-          counts.years.set(car.year, (counts.years.get(car.year) || 0) + 1);
-          // Generate generation data from years (group into generations based on year ranges)
-          const generationName = generateGenerationNameFromYear(car.year, car.make, car.model);
-          if (generationName) {
-            counts.generations.set(generationName, (counts.generations.get(generationName) || 0) + 1);
+      // Only count if we have valid data array
+      if (Array.isArray(data)) {
+        data.forEach(car => {
+          if (car?.make) counts.manufacturers.set(car.make, (counts.manufacturers.get(car.make) || 0) + 1);
+          if (car?.model) counts.models.set(car.model, (counts.models.get(car.model) || 0) + 1);
+          if (car?.fuel) counts.fuelTypes.set(car.fuel, (counts.fuelTypes.get(car.fuel) || 0) + 1);
+          if (car?.transmission) counts.transmissions.set(car.transmission, (counts.transmissions.get(car.transmission) || 0) + 1);
+          if (car?.body_style) counts.bodyTypes.set(car.body_style, (counts.bodyTypes.get(car.body_style) || 0) + 1);
+          if (car?.drive_type) counts.driveTypes.set(car.drive_type, (counts.driveTypes.get(car.drive_type) || 0) + 1);
+          if (car?.doors) counts.doors.set(car.doors, (counts.doors.get(car.doors) || 0) + 1);
+          if (car?.seats) counts.seats.set(car.seats, (counts.seats.get(car.seats) || 0) + 1);
+          if (car?.year) {
+            counts.years.set(car.year, (counts.years.get(car.year) || 0) + 1);
+            // Generate generation data from years (group into generations based on year ranges)
+            const generationName = generateGenerationNameFromYear(car.year, car.make, car.model);
+            if (generationName) {
+              counts.generations.set(generationName, (counts.generations.get(generationName) || 0) + 1);
+            }
           }
-        }
-        if (car.color) counts.colors.set(car.color, (counts.colors.get(car.color) || 0) + 1);
-      });
+          if (car?.color) counts.colors.set(car.color, (counts.colors.get(car.color) || 0) + 1);
+        });
+      }
 
       // Convert to expected format
       const filterCounts = {

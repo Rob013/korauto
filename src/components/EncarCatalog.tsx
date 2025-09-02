@@ -174,9 +174,15 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const filteredCars = useMemo(() => {
     let sourceCars = cars;
     
-    // If no real cars loaded, use fallback cars
+    // If no real cars loaded, use fallback cars - ensure cars are properly mapped
     if (cars.length === 0) {
-      sourceCars = fallbackCars;
+      sourceCars = fallbackCars.map(car => ({
+        ...car,
+        make: car.manufacturer?.name || car.make,
+        model: car.model?.name || car.model,
+        manufacturer: { name: car.manufacturer?.name || car.make },
+        lot_number: car.lot_number || car.lots?.[0]?.lot || car.id
+      }));
     }
     
     const cleanedCars = filterOutTestCars(sourceCars || []);
