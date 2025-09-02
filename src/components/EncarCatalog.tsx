@@ -178,22 +178,42 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     if (cars.length === 0) {
       sourceCars = fallbackCars.map(car => ({
         ...car,
-        make: car.manufacturer?.name || car.make,
-        model: car.model?.name || car.model,
-        manufacturer: { name: car.manufacturer?.name || car.make },
-        lot_number: car.lot_number || car.lots?.[0]?.lot || car.id
+        make: car.manufacturer?.name || car.make || 'Unknown',
+        model: car.model?.name || car.model || 'Unknown',
+        fuel: car.fuel?.name || car.fuel || 'Unknown',
+        transmission: car.transmission?.name || car.transmission || 'Unknown',
+        color: car.color?.name || car.color || 'Unknown',
+        manufacturer: { name: car.manufacturer?.name || car.make || 'Unknown' },
+        lot_number: car.lot_number || car.id,
+        mileage: car.odometer || car.mileage || 0,
+        price: car.price || 0,
+        images: car.images || []
       }));
     }
     
-    const cleanedCars = filterOutTestCars(sourceCars || []);
-    const gradeFilteredCars = applyGradeFilter(cleanedCars, filters?.grade_iaai) || [];
-    
-    // If filtering results in no cars and we were using real cars, try fallback cars
-    if (gradeFilteredCars.length === 0 && cars.length > 0) {
-      console.log('🔄 No cars match filters, showing fallback cars');
-      const fallbackFiltered = applyGradeFilter(filterOutTestCars(fallbackCars), filters?.grade_iaai) || [];
-      // If fallback cars also don't match the grade filter, show them anyway (without grade filter)
-      return fallbackFiltered.length > 0 ? fallbackFiltered : filterOutTestCars(fallbackCars);
+      const cleanedCars = filterOutTestCars(sourceCars || []);
+      const gradeFilteredCars = applyGradeFilter(cleanedCars, filters?.grade_iaai) || [];
+      
+      // If filtering results in no cars and we were using real cars, try fallback cars
+      if (gradeFilteredCars.length === 0 && cars.length > 0) {
+        console.log('🔄 No cars match filters, showing fallback cars');
+        const mappedFallbackCars = fallbackCars.map(car => ({
+          ...car,
+          make: typeof car.manufacturer === 'object' ? car.manufacturer?.name : car.make || 'Unknown',
+          model: typeof car.model === 'object' ? car.model?.name : car.model || 'Unknown',
+          fuel: typeof car.fuel === 'object' ? car.fuel?.name : car.fuel || 'Unknown',
+          transmission: typeof car.transmission === 'object' ? car.transmission?.name : car.transmission || 'Unknown',
+          color: typeof car.color === 'object' ? car.color?.name : car.color || 'Unknown',
+          engine: typeof car.engine === 'object' ? car.engine : { name: car.engine?.name || 'Unknown' },
+          manufacturer: { name: typeof car.manufacturer === 'object' ? car.manufacturer?.name : car.make || 'Unknown' },
+          lot_number: car.lot_number || (car.lots && Array.isArray(car.lots) && car.lots[0]?.lot) || car.id,
+          mileage: typeof car.mileage === 'number' ? car.mileage : (typeof car.odometer === 'number' ? car.odometer : 0),
+          price: typeof car.price === 'number' ? car.price : 0,
+          images: Array.isArray(car.images) ? car.images : []
+        }));
+        const fallbackFiltered = applyGradeFilter(filterOutTestCars(mappedFallbackCars), filters?.grade_iaai) || [];
+        // If fallback cars also don't match the grade filter, show them anyway (without grade filter)
+        return fallbackFiltered.length > 0 ? fallbackFiltered : filterOutTestCars(mappedFallbackCars);
     }
     
     return gradeFilteredCars;
@@ -1058,12 +1078,12 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         // Find the car by lot number or ID and scroll to it
         const targetCar = cars.find(
           (car) =>
-            car.lot_number === highlightCarId || car.id === highlightCarId
+            (car as any).lot_number === highlightCarId || car.id === highlightCarId
         );
 
         if (targetCar) {
           const lotNumber =
-            targetCar.lot_number || targetCar.lots?.[0]?.lot || "";
+            (targetCar as any).lot_number || ((targetCar as any).lots && Array.isArray((targetCar as any).lots) && (targetCar as any).lots[0]?.lot) || "";
           setHighlightedCarId(lotNumber || targetCar.id);
 
           // Scroll to the car

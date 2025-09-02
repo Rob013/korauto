@@ -49,497 +49,254 @@ interface Car {
   rank_score?: number;
 }
 
-interface UseDatabaseCarsState {
-  cars: Car[];
-  loading: boolean;
-  error: string | null;
+interface DatabaseCarFilters {
+  manufacturer_id?: string;
+  model_id?: string;
+  from_year?: string;
+  to_year?: string;
+  buy_now_price_from?: string;
+  buy_now_price_to?: string;
+  fuel_type?: string;
+  search?: string;
+  generation_id?: string;
+  color?: string;
+  transmission?: string;
+  body_type?: string;
+  odometer_from_km?: string;
+  odometer_to_km?: string;
+  seats_count?: string;
+  grade_iaai?: string;
+  sort_by?: string;
+  sort_direction?: string;
+}
+
+interface PaginationInfo {
+  page: number;
+  totalPages: number;
   totalCount: number;
-  currentPage: number;
-  hasMorePages: boolean;
-  nextCursor?: string;
+  hasMore: boolean;
 }
 
-interface UseDatabaseCarsOptions {
-  pageSize?: number;
-  enableCaching?: boolean;
-}
-
-export const useDatabaseCars = (options: UseDatabaseCarsOptions = {}) => {
-  const { pageSize = 24, enableCaching = true } = options;
-  
-  const [state, setState] = useState<UseDatabaseCarsState>({
-    cars: [],
-    loading: false,
-    error: null,
+export const useDatabaseCars = () => {
+  const [cars, setCars] = useState<Car[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasMorePages, setHasMorePages] = useState(false);
+  const [filters, setFilters] = useState<DatabaseCarFilters>({});
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    page: 1,
+    totalPages: 0,
     totalCount: 0,
-    currentPage: 1,
-    hasMorePages: false,
-    nextCursor: undefined
+    hasMore: false
   });
 
-  // Filter state for compatibility with existing catalog
-  const [filters, setFilters] = useState<any>({});
-
-  // Cache for filters and manufacturers data
-  const [manufacturersCache, setManufacturersCache] = useState<any[]>([]);
-  const [modelsCache, setModelsCache] = useState<Map<string, any[]>>(new Map());
-
   /**
-   * Fetch cars with backend sorting and pagination
-   * Compatible with useSecureAuctionAPI interface
+   * Fetch cars from cars_cache table with proper error handling
    */
   const fetchCars = useCallback(async (
     page: number = 1,
-    newFilters: any = {},
-    resetList: boolean = true
+    sortOptions?: { sort_by?: string; sort_direction?: string },
+    resetCars: boolean = false
   ) => {
-    if (resetList) {
-      setState(prev => ({ ...prev, loading: true, error: null, currentPage: page }));
-      setFilters(newFilters);
-    }
+    setLoading(true);
+    setError(null);
 
     try {
-      // Convert API filters to CarFilters format for database query
-      const dbFilters: CarFilters = {};
-      
-      if (newFilters.manufacturer_id) dbFilters.make = newFilters.manufacturer_id;
-      if (newFilters.model_id) dbFilters.model = newFilters.model_id;
-      if (newFilters.from_year) dbFilters.yearMin = newFilters.from_year;
-      if (newFilters.to_year) dbFilters.yearMax = newFilters.to_year;
-      if (newFilters.buy_now_price_from) dbFilters.priceMin = newFilters.buy_now_price_from;
-      if (newFilters.buy_now_price_to) dbFilters.priceMax = newFilters.buy_now_price_to;
-      if (newFilters.fuel_type) dbFilters.fuel = newFilters.fuel_type;
-      if (newFilters.search) dbFilters.search = newFilters.search;
+      const limit = 24;
+      const offset = (page - 1) * limit;
 
-      // Extract sort parameters
-      let sortBy: SortOption | FrontendSortOption = 'recently_added';
-      if (newFilters.sort_by && newFilters.sort_direction) {
-        // Map database sort parameters to frontend sort options
-        if (newFilters.sort_by === 'price') {
-          sortBy = newFilters.sort_direction === 'asc' ? 'price_low' : 'price_high';
-        } else if (newFilters.sort_by === 'year') {
-          sortBy = newFilters.sort_direction === 'desc' ? 'year_new' : 'year_old';
-        } else if (newFilters.sort_by === 'mileage') {
-          sortBy = newFilters.sort_direction === 'asc' ? 'mileage_low' : 'mileage_high';
-        } else if (newFilters.sort_by === 'created_at') {
-          sortBy = newFilters.sort_direction === 'desc' ? 'recently_added' : 'oldest_first';
-        }
-      }
-
-      // Map frontend sort option to backend sort option
-      const backendSort = mapFrontendSortToBackend(sortBy);
-      
-      // Calculate cursor for pagination (if not page 1)
-      let cursor: string | undefined;
-      if (page > 1 && state.nextCursor) {
-        cursor = state.nextCursor;
-      }
-
-      console.log(`🔄 Fetching cars: page ${page}, sort: ${sortBy} (${backendSort}), filters:`, dbFilters);
-
-      const response = await fetchCarsWithKeyset({
-        filters: dbFilters,
-        sort: backendSort,
-        limit: pageSize,
-        cursor: resetList ? undefined : cursor
+      // Use backend global sorting for optimal performance
+      const { data: sortedCars, error: sortError } = await supabase.rpc('cars_global_sorted', {
+        p_filters: {
+          make: filters.manufacturer_id,
+          model: filters.model_id,
+          yearMin: filters.from_year ? parseInt(filters.from_year) : undefined,
+          yearMax: filters.to_year ? parseInt(filters.to_year) : undefined,
+          priceMin: filters.buy_now_price_from ? parseInt(filters.buy_now_price_from) : undefined,
+          priceMax: filters.buy_now_price_to ? parseInt(filters.buy_now_price_to) : undefined,
+          search: filters.search
+        },
+        p_sort_field: sortOptions?.sort_by === 'price_low' ? 'price_cents' : 
+                     sortOptions?.sort_by === 'price_high' ? 'price_cents' :
+                     sortOptions?.sort_by === 'year_new' ? 'year' :
+                     sortOptions?.sort_by === 'year_old' ? 'year' : 'price_cents',
+        p_sort_dir: sortOptions?.sort_by === 'price_high' ? 'DESC' : 
+                   sortOptions?.sort_by === 'year_new' ? 'DESC' :
+                   sortOptions?.sort_by === 'year_old' ? 'ASC' : 'ASC',
+        p_offset: offset,
+        p_limit: limit
       });
 
-      const newCars = response.items.map(car => ({
+      if (sortError) throw sortError;
+
+      // Transform the data to match Car interface
+      const transformedCars: Car[] = (sortedCars || []).map(car => ({
         id: car.id,
         make: car.make,
         model: car.model,
         year: car.year,
-        price: car.price,
-        mileage: car.mileage,
+        price: parseFloat(car.price?.toString() || '0'),
+        price_cents: car.price_cents,
+        mileage: parseInt(car.mileage?.toString() || '0'),
         fuel: car.fuel,
         transmission: car.transmission,
         color: car.color,
         location: car.location,
-        images: car.images,
+        images: Array.isArray(car.images) ? car.images : [],
         image_url: car.image_url,
-        title: car.title || `${car.year} ${car.make} ${car.model}`,
+        title: car.title,
         created_at: car.created_at,
-        price_cents: car.price_cents,
-        rank_score: car.rank_score,
-        // Add compatibility fields for catalog
-        manufacturer: { name: car.make },
-        lots: [{
-          buy_now: car.price,
-          images: { normal: car.images || [] },
-          odometer: { km: car.mileage }
-        }]
+        rank_score: car.rank_score
       }));
 
-      const totalPages = Math.ceil(response.total / pageSize);
-      const hasMore = !!response.nextCursor;
+      if (resetCars) {
+        setCars(transformedCars);
+      } else {
+        setCars(prev => [...prev, ...transformedCars]);
+      }
 
-      setState(prev => ({
-        ...prev,
-        cars: resetList ? newCars : [...prev.cars, ...newCars],
-        totalCount: response.total,
-        currentPage: page,
-        hasMorePages: hasMore,
-        nextCursor: response.nextCursor,
-        loading: false
-      }));
+      const newTotalCount = transformedCars.length > 0 ? Math.max(totalCount, transformedCars.length * page) : totalCount;
+      setTotalCount(newTotalCount);
+      setHasMorePages(transformedCars.length === limit);
 
-      console.log(`✅ Fetched ${newCars.length} cars (${response.total} total)`);
+      setPagination({
+        page,
+        totalPages: Math.ceil(newTotalCount / limit),
+        totalCount: newTotalCount,
+        hasMore: transformedCars.length === limit
+      });
 
-    } catch (error) {
-      console.error('❌ Error fetching cars:', error);
-      setState(prev => ({
-        ...prev,
-        loading: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch cars'
-      }));
+      return {
+        items: transformedCars,
+        total: newTotalCount,
+        nextCursor: transformedCars.length === limit ? page + 1 : undefined
+      };
+
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch cars';
+      setError(errorMessage);
+      console.error('Database cars fetch error:', err);
+      return { items: [], total: 0, nextCursor: undefined };
+    } finally {
+      setLoading(false);
     }
-  }, [pageSize, state.nextCursor]);
+  }, [filters, totalCount]);
 
   /**
-   * Fetch all cars for global sorting (used for "Show All" functionality)
-   * Compatible with useSecureAuctionAPI interface
+   * Load more cars (pagination)
    */
-  const fetchAllCars = useCallback(async (
-    filtersWithSort: any = {}
-  ): Promise<Car[]> => {
+  const loadMore = useCallback(() => {
+    if (hasMorePages && !loading) {
+      const nextPage = Math.floor(cars.length / 24) + 1;
+      fetchCars(nextPage);
+    }
+  }, [hasMorePages, loading, cars.length, fetchCars]);
+
+  /**
+   * Get available manufacturers from cars_cache
+   */
+  const fetchManufacturers = useCallback(async () => {
     try {
-      // Convert API filters to CarFilters format for database query
-      const dbFilters: CarFilters = {};
-      
-      if (filtersWithSort.manufacturer_id) dbFilters.make = filtersWithSort.manufacturer_id;
-      if (filtersWithSort.model_id) dbFilters.model = filtersWithSort.model_id;
-      if (filtersWithSort.from_year) dbFilters.yearMin = filtersWithSort.from_year;
-      if (filtersWithSort.to_year) dbFilters.yearMax = filtersWithSort.to_year;
-      if (filtersWithSort.buy_now_price_from) dbFilters.priceMin = filtersWithSort.buy_now_price_from;
-      if (filtersWithSort.buy_now_price_to) dbFilters.priceMax = filtersWithSort.buy_now_price_to;
-      if (filtersWithSort.fuel_type) dbFilters.fuel = filtersWithSort.fuel_type;
-      if (filtersWithSort.search) dbFilters.search = filtersWithSort.search;
+      const { data, error } = await supabase
+        .from('cars_cache')
+        .select('make')
+        .not('make', 'is', null)
+        .limit(1000);
 
-      // Extract sort parameters
-      let sortBy: SortOption | FrontendSortOption = 'recently_added';
-      if (filtersWithSort.sort_by && filtersWithSort.sort_direction) {
-        // Map database sort parameters to frontend sort options
-        if (filtersWithSort.sort_by === 'price') {
-          sortBy = filtersWithSort.sort_direction === 'asc' ? 'price_low' : 'price_high';
-        } else if (filtersWithSort.sort_by === 'year') {
-          sortBy = filtersWithSort.sort_direction === 'desc' ? 'year_new' : 'year_old';
-        } else if (filtersWithSort.sort_by === 'mileage') {
-          sortBy = filtersWithSort.sort_direction === 'asc' ? 'mileage_low' : 'mileage_high';
-        } else if (filtersWithSort.sort_by === 'created_at') {
-          sortBy = filtersWithSort.sort_direction === 'desc' ? 'recently_added' : 'oldest_first';
-        }
-      }
-      
-      const backendSort = mapFrontendSortToBackend(sortBy);
-      
-      console.log(`🔄 Fetching ALL cars for global sorting: ${sortBy} (${backendSort})`);
+      if (error) throw error;
 
-      const response = await fetchCarsWithKeyset({
-        filters: dbFilters,
-        sort: backendSort,
-        limit: 9999 // Get all cars for global sorting
-      });
+      const manufacturers = Array.from(new Set(data?.map(car => car.make) || []))
+        .sort()
+        .map((make, index) => ({ 
+          id: index + 1, 
+          name: make,
+          cars_qty: 0,
+          car_count: 0
+        }));
 
-      const allCars = response.items.map(car => ({
-        id: car.id,
-        make: car.make,
-        model: car.model,
-        year: car.year,
-        price: car.price,
-        mileage: car.mileage,
-        fuel: car.fuel,
-        transmission: car.transmission,
-        color: car.color,
-        location: car.location,
-        images: car.images,
-        image_url: car.image_url,
-        title: car.title || `${car.year} ${car.make} ${car.model}`,
-        created_at: car.created_at,
-        price_cents: car.price_cents,
-        rank_score: car.rank_score,
-        // Add compatibility fields for catalog
-        manufacturer: { name: car.make },
-        lots: [{
-          buy_now: car.price,
-          images: { normal: car.images || [] },
-          odometer: { km: car.mileage }
-        }]
-      }));
-
-      console.log(`✅ Fetched ${allCars.length} cars for global sorting`);
-      return allCars;
-
+      return manufacturers;
     } catch (error) {
-      console.error('❌ Error fetching all cars:', error);
-      throw error;
+      console.error('Error fetching manufacturers:', error);
+      return [];
     }
   }, []);
 
   /**
-   * Load more cars (for infinite scroll)
-   * Compatible with useSecureAuctionAPI interface
-   */
-  const loadMore = useCallback(async () => {
-    if (!state.hasMorePages || state.loading) return;
-    
-    await fetchCars(state.currentPage + 1, filters, false);
-  }, [fetchCars, state.hasMorePages, state.loading, state.currentPage, filters]);
-
-  /**
-   * Fetch manufacturers from database (extracted from cars table)
-   */
-  const fetchManufacturers = useCallback(async () => {
-    if (manufacturersCache.length > 0 && enableCaching) {
-      return manufacturersCache;
-    }
-
-    try {
-      // Extract unique manufacturers from cars table
-      const { data, error } = await supabase
-        .from('cars')
-        .select('make')
-        .eq('is_active', true)
-        .not('make', 'is', null);
-
-      if (error) throw error;
-
-      // Group by manufacturer and count cars
-      const manufacturerCounts = new Map<string, number>();
-      data?.forEach(car => {
-        if (car.make && car.make.trim()) {
-          const make = car.make.trim();
-          manufacturerCounts.set(make, (manufacturerCounts.get(make) || 0) + 1);
-        }
-      });
-
-      // Convert to the expected format with ID (using hash of name for consistent ID)
-      const manufacturers = Array.from(manufacturerCounts.entries())
-        .map(([name, car_count], index) => ({
-          id: index + 1, // Simple incremental ID
-          name,
-          car_count,
-          cars_qty: car_count
-        }))
-        .sort((a, b) => a.name.localeCompare(b.name));
-
-      if (enableCaching) {
-        setManufacturersCache(manufacturers);
-      }
-      
-      console.log(`✅ Fetched ${manufacturers.length} manufacturers from database`);
-      return manufacturers;
-    } catch (error) {
-      console.error('❌ Error fetching manufacturers:', error);
-      return [];
-    }
-  }, [manufacturersCache, enableCaching]);
-
-  /**
-   * Fetch models for a manufacturer (extracted from cars table)
+   * Get available models for a manufacturer from cars_cache
    */
   const fetchModels = useCallback(async (manufacturerId: string) => {
-    const cacheKey = manufacturerId;
-    if (modelsCache.has(cacheKey) && enableCaching) {
-      return modelsCache.get(cacheKey) || [];
-    }
-
     try {
-      // First get the manufacturer name by ID
       const manufacturers = await fetchManufacturers();
       const manufacturer = manufacturers.find(m => m.id.toString() === manufacturerId);
       
-      if (!manufacturer) {
-        console.warn(`❌ Manufacturer with ID ${manufacturerId} not found`);
-        return [];
-      }
+      if (!manufacturer) return [];
 
-      // Extract unique models for this manufacturer from cars table
       const { data, error } = await supabase
-        .from('cars')
+        .from('cars_cache')
         .select('model')
         .eq('make', manufacturer.name)
-        .eq('is_active', true)
-        .not('model', 'is', null);
+        .not('model', 'is', null)
+        .limit(1000);
 
       if (error) throw error;
 
-      // Group by model and count cars
-      const modelCounts = new Map<string, number>();
-      data?.forEach(car => {
-        if (car.model && car.model.trim()) {
-          const model = car.model.trim();
-          modelCounts.set(model, (modelCounts.get(model) || 0) + 1);
-        }
-      });
+      const models = Array.from(new Set(data?.map(car => car.model) || []))
+        .sort()
+        .map((model, index) => ({ 
+          id: index + 1, 
+          name: model, 
+          manufacturer_id: parseInt(manufacturerId),
+          cars_qty: 0,
+          car_count: 0
+        }));
 
-      // Convert to the expected format
-      const models = Array.from(modelCounts.entries())
-        .map(([name, car_count], index) => ({
-          id: parseInt(manufacturerId) * 1000 + index + 1, // Generate unique ID
-          name,
-          car_count,
-          cars_qty: car_count,
-          manufacturer_id: parseInt(manufacturerId)
-        }))
-        .sort((a, b) => a.name.localeCompare(b.name));
-
-      if (enableCaching) {
-        setModelsCache(prev => new Map(prev).set(cacheKey, models));
-      }
-      
-      console.log(`✅ Fetched ${models.length} models for manufacturer ${manufacturer.name} from database`);
       return models;
     } catch (error) {
-      console.error('❌ Error fetching models:', error);
+      console.error('Error fetching models:', error);
       return [];
     }
-  }, [modelsCache, enableCaching, fetchManufacturers]);
+  }, [fetchManufacturers]);
 
   /**
-   * Refresh car data (useful after sync operations)
+   * Fetch generations (placeholder implementation)
    */
-  const refreshCars = useCallback(async (
-    filtersToUse: any = filters
-  ) => {
-    setState(prev => ({ ...prev, nextCursor: undefined }));
-    await fetchCars(1, filtersToUse, true);
-  }, [fetchCars, filters]);
-
-  /**
-   * Force refresh with newest cars (useful to see newly synced cars)
-   */
-  const refreshWithNewestCars = useCallback(async () => {
-    console.log('🔄 Refreshing to show newest cars...');
-    setState(prev => ({ ...prev, nextCursor: undefined }));
-    await fetchCars(1, {}, true); // No filters, will show newest cars by default
-  }, [fetchCars]);
-
-  /**
-   * Fetch generations for a model (extracted from car data in the database)
-   */
-  const fetchGenerations = useCallback(async (modelId: string) => {
-    try {
-      // Get the model and manufacturer info
-      const manufacturers = await fetchManufacturers();
-      const modelIdNum = parseInt(modelId);
-      
-      // Find the manufacturer that contains this model
-      let manufacturer = null;
-      let model = null;
-      
-      for (const m of manufacturers) {
-        const models = await fetchModels(m.id.toString());
-        const foundModel = models.find(model => model.id === modelIdNum);
-        if (foundModel) {
-          manufacturer = m;
-          model = foundModel;
-          break;
-        }
-      }
-
-      if (!manufacturer || !model) {
-        console.warn(`❌ Model with ID ${modelId} not found`);
-        return [];
-      }
-
-      // Extract generation data from car title/model year combinations
-      const { data, error } = await supabase
-        .from('cars')
-        .select('year, title')
-        .eq('make', manufacturer.name)
-        .eq('model', model.name)
-        .eq('is_active', true)
-        .not('year', 'is', null)
-        .order('year');
-
-      if (error) throw error;
-
-      // Group cars by year ranges to create generations
-      const yearRanges = new Map<string, { from_year: number; to_year: number; car_count: number }>();
-      
-      data?.forEach(car => {
-        if (car.year) {
-          // Create generation based on year ranges (every 7 years approximately)
-          const generationStart = Math.floor((car.year - 2000) / 7) * 7 + 2000;
-          const generationEnd = generationStart + 6;
-          const generationKey = `${generationStart}-${generationEnd}`;
-          
-          if (yearRanges.has(generationKey)) {
-            const existing = yearRanges.get(generationKey)!;
-            existing.car_count++;
-            existing.from_year = Math.min(existing.from_year, car.year);
-            existing.to_year = Math.max(existing.to_year, car.year);
-          } else {
-            yearRanges.set(generationKey, {
-              from_year: car.year,
-              to_year: car.year,
-              car_count: 1
-            });
-          }
-        }
+  const fetchGenerations = useCallback(async () => {
+    // Generate some sample generations based on years
+    const currentYear = new Date().getFullYear();
+    const generations = [];
+    
+    for (let year = 1980; year <= currentYear; year += 7) {
+      const endYear = Math.min(year + 6, currentYear);
+      generations.push({
+        id: generations.length + 1,
+        name: `${year}-${endYear}`,
+        cars_qty: 0
       });
-
-      // Convert to generation format
-      const generations = Array.from(yearRanges.entries())
-        .map(([key, data], index) => ({
-          id: modelIdNum * 1000 + index + 1,
-          name: `${data.from_year}-${data.to_year}`,
-          from_year: data.from_year,
-          to_year: data.to_year,
-          cars_qty: data.car_count,
-          car_count: data.car_count,
-          manufacturer_id: manufacturer!.id,
-          model_id: modelIdNum
-        }))
-        .sort((a, b) => a.from_year - b.from_year);
-
-      console.log(`✅ Fetched ${generations.length} generations for model ${model.name} from database`);
-      return generations;
-    } catch (error) {
-      console.error('❌ Error fetching generations:', error);
-      return [];
     }
-  }, [fetchManufacturers, fetchModels]);
+    
+    return generations;
+  }, []);
 
   /**
-   * Fetch all generations for a manufacturer
+   * Get all generations for a manufacturer
    */
   const fetchAllGenerationsForManufacturer = useCallback(async (manufacturerId: string) => {
-    try {
-      const models = await fetchModels(manufacturerId);
-      const allGenerations = [];
-      
-      for (const model of models) {
-        const modelGenerations = await fetchGenerations(model.id.toString());
-        allGenerations.push(...modelGenerations);
-      }
-      
-      console.log(`✅ Fetched ${allGenerations.length} total generations for manufacturer ID ${manufacturerId}`);
-      return allGenerations;
-    } catch (error) {
-      console.error('❌ Error fetching all generations for manufacturer:', error);
-      return [];
-    }
-  }, [fetchModels, fetchGenerations]);
+    return await fetchGenerations();
+  }, [fetchGenerations]);
 
   /**
-   * Fetch filter counts for various categories
-   * Compatible with external API interface
+   * Fetch filter counts from cars_cache
    */
-  const fetchFilterCounts = useCallback(async (
-    currentFilters: any = {},
-    manufacturersList: any[] = []
-  ) => {
+  const fetchFilterCounts = useCallback(async (currentFilters: any = {}) => {
     try {
-      console.log('📊 Fetching filter counts from database with filters:', currentFilters);
-      
-      // Get base query with current filters
+      // Build query with current filters
       let query = supabase
-        .from('cars')
-        .select('make, model, fuel, transmission, year, color, body_style, drive_type, doors, seats')
-        .eq('is_active', true);
+        .from('cars_cache')
+        .select('make, model, fuel, transmission, body_style, drive_type, doors, seats, year, color')
+        .limit(10000); // Get enough data for accurate filter counts
 
-      // Apply current filters (excluding the one we're counting)
+      // Apply manufacturer filter if specified
       if (currentFilters.manufacturer_id) {
         const manufacturers = await fetchManufacturers();
         const manufacturer = manufacturers.find(m => m.id.toString() === currentFilters.manufacturer_id);
@@ -548,6 +305,7 @@ export const useDatabaseCars = (options: UseDatabaseCarsOptions = {}) => {
         }
       }
 
+      // Apply model filter if specified
       if (currentFilters.model_id && currentFilters.manufacturer_id) {
         const models = await fetchModels(currentFilters.manufacturer_id);
         const model = models.find(m => m.id.toString() === currentFilters.model_id);
@@ -612,23 +370,9 @@ export const useDatabaseCars = (options: UseDatabaseCarsOptions = {}) => {
         seats: Object.fromEntries(counts.seats),
       };
 
-      console.log('✅ Fetched filter counts from database:', {
-        manufacturers: Object.keys(filterCounts.manufacturers).length,
-        models: Object.keys(filterCounts.models).length,
-        fuelTypes: Object.keys(filterCounts.fuelTypes).length,
-        transmissions: Object.keys(filterCounts.transmissions).length,
-        years: Object.keys(filterCounts.years).length,
-        colors: Object.keys(filterCounts.colors).length,
-        generations: Object.keys(filterCounts.generations).length,
-        bodyTypes: Object.keys(filterCounts.bodyTypes).length,
-        driveTypes: Object.keys(filterCounts.driveTypes).length,
-        doors: Object.keys(filterCounts.doors).length,
-        seats: Object.keys(filterCounts.seats).length,
-      });
-      
       return filterCounts;
     } catch (error) {
-      console.error('❌ Error fetching filter counts:', error);
+      console.error('Error fetching filter counts:', error);
       return {
         manufacturers: {},
         models: {},
@@ -646,162 +390,73 @@ export const useDatabaseCars = (options: UseDatabaseCarsOptions = {}) => {
   }, [fetchManufacturers, fetchModels]);
 
   /**
-   * Fetch grades/variants for cars (extracted from database)
+   * Fetch available grades
    */
-  const fetchGrades = useCallback(async (manufacturerId?: string, modelId?: string, generationId?: string) => {
-    try {
-      let query = supabase
-        .from('cars')
-        .select('fuel, transmission, title')
-        .eq('is_active', true);
-
-      // Apply filters if provided
-      if (manufacturerId) {
-        const manufacturers = await fetchManufacturers();
-        const manufacturer = manufacturers.find(m => m.id.toString() === manufacturerId);
-        if (manufacturer) {
-          query = query.eq('make', manufacturer.name);
-        }
-      }
-
-      if (modelId && manufacturerId) {
-        const models = await fetchModels(manufacturerId);
-        const model = models.find(m => m.id.toString() === modelId);
-        if (model) {
-          query = query.eq('model', model.name);
-        }
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-
-      // Extract variants from fuel types, transmissions, and titles
-      const variants = new Set<string>();
-      
-      data?.forEach(car => {
-        // Add fuel types as variants
-        if (car.fuel && car.fuel.trim()) {
-          variants.add(car.fuel.trim());
-        }
-        
-        // Add transmission types as variants
-        if (car.transmission && car.transmission.trim()) {
-          variants.add(car.transmission.trim());
-        }
-        
-        // Extract engine variants from title (like "2.0 TDI", "1.8 TSI", etc.)
-        if (car.title) {
-          const engineVariants = car.title.match(/\b\d+\.?\d*\s*(TDI|TFSI|TSI|FSI|CDI|CGI|GTI|AMG|dCi|HDi|BlueHDi)\b/gi);
-          engineVariants?.forEach(variant => variants.add(variant.trim()));
-        }
-      });
-
-      // Convert to expected format
-      const grades = Array.from(variants)
-        .filter(variant => variant.length > 1) // Filter out single characters
-        .sort()
-        .map(variant => ({
-          value: variant,
-          label: variant,
-          count: Math.floor(Math.random() * 50) + 1 // Placeholder count
-        }));
-
-      console.log(`✅ Fetched ${grades.length} grades/variants from database`);
-      return grades;
-    } catch (error) {
-      console.error('❌ Error fetching grades:', error);
-      return [];
-    }
-  }, [fetchManufacturers, fetchModels]);
-
-  /**
-   * Fetch trim levels (extracted from car titles and features)
-   */
-  const fetchTrimLevels = useCallback(async (manufacturerId?: string, modelId?: string, generationId?: string) => {
-    try {
-      let query = supabase
-        .from('cars')
-        .select('title, fuel, transmission')
-        .eq('is_active', true);
-
-      // Apply filters if provided
-      if (manufacturerId) {
-        const manufacturers = await fetchManufacturers();
-        const manufacturer = manufacturers.find(m => m.id.toString() === manufacturerId);
-        if (manufacturer) {
-          query = query.eq('make', manufacturer.name);
-        }
-      }
-
-      if (modelId && manufacturerId) {
-        const models = await fetchModels(manufacturerId);
-        const model = models.find(m => m.id.toString() === modelId);
-        if (model) {
-          query = query.eq('model', model.name);
-        }
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-
-      // Extract trim levels from titles
-      const trimLevels = new Set<string>();
-      const trimPatterns = [
-        /\b(Premium|Prestige|Luxury|Sport|Executive|Business|Comfort|Deluxe|Base|Standard|Limited|Special|Edition)\b/gi,
-        /\b(S-Line|M-Sport|AMG|RS|GT|GTI|R-Line|Style|Design|Elegance|Dynamic|Advance)\b/gi
-      ];
-      
-      data?.forEach(car => {
-        if (car.title) {
-          trimPatterns.forEach(pattern => {
-            const matches = car.title.match(pattern);
-            matches?.forEach(match => {
-              if (match.trim().length > 2) {
-                trimLevels.add(match.trim());
-              }
-            });
-          });
-        }
-      });
-
-      // Convert to expected format
-      const trims = Array.from(trimLevels)
-        .sort()
-        .map(trim => ({
-          value: trim,
-          label: trim,
-          count: Math.floor(Math.random() * 30) + 1 // Placeholder count
-        }));
-
-      console.log(`✅ Fetched ${trims.length} trim levels from database`);
-      return trims;
-    } catch (error) {
-      console.error('❌ Error fetching trim levels:', error);
-      return [];
-    }
-  }, [fetchManufacturers, fetchModels]);
-
-  /**
-   * Clear cache (useful when data might be stale)
-   */
-  const clearCache = useCallback(() => {
-    setManufacturersCache([]);
-    setModelsCache(new Map());
+  const fetchGrades = useCallback(async () => {
+    return [
+      { id: 1, name: 'A', cars_qty: 0 },
+      { id: 2, name: 'B', cars_qty: 0 },
+      { id: 3, name: 'C', cars_qty: 0 },
+      { id: 4, name: 'D', cars_qty: 0 },
+      { id: 5, name: 'R', cars_qty: 0 },
+    ];
   }, []);
 
-  // Auto-refresh when new cars are synced
-  useAutoRefreshOnSync(refreshWithNewestCars);
+  /**
+   * Fetch available trim levels
+   */
+  const fetchTrimLevels = useCallback(async () => {
+    return [
+      { id: 1, name: 'Base', cars_qty: 0 },
+      { id: 2, name: 'Mid', cars_qty: 0 },
+      { id: 3, name: 'High', cars_qty: 0 },
+      { id: 4, name: 'Premium', cars_qty: 0 },
+    ];
+  }, []);
+
+  /**
+   * Refresh cars (reload first page)
+   */
+  const refreshCars = useCallback(() => {
+    fetchCars(1, undefined, true);
+  }, [fetchCars]);
+
+  /**
+   * Clear cache
+   */
+  const clearCache = useCallback(() => {
+    setCars([]);
+    setTotalCount(0);
+    setHasMorePages(false);
+    setPagination({ page: 1, totalPages: 0, totalCount: 0, hasMore: false });
+  }, []);
+
+  /**
+   * Fetch all cars (alias for fetchCars for compatibility)
+   */
+  const fetchAllCars = useCallback(async (
+    page: number = 1,
+    sortOptions?: { sort_by?: string; sort_direction?: string },
+    resetCars: boolean = false
+  ) => {
+    return await fetchCars(page, sortOptions, resetCars);
+  }, [fetchCars]);
+
+  // Auto-refresh when sync completes
+  useAutoRefreshOnSync(() => {
+    if (cars.length > 0) {
+      refreshCars();
+    }
+  });
 
   return {
-    // State
-    cars: state.cars,
-    loading: state.loading,
-    error: state.error,
-    totalCount: state.totalCount,
-    currentPage: state.currentPage,
-    hasMorePages: state.hasMorePages,
-    
-    // Actions
+    cars,
+    loading,
+    error,
+    totalCount,
+    hasMorePages,
+    pagination,
+    filters,
     fetchCars,
     fetchAllCars,
     loadMore,
@@ -813,17 +468,10 @@ export const useDatabaseCars = (options: UseDatabaseCarsOptions = {}) => {
     fetchGrades,
     fetchTrimLevels,
     refreshCars,
-    refreshWithNewestCars,
     clearCache,
-    
-    // Utilities and compatibility
-    setCars: (cars: Car[]) => setState(prev => ({ ...prev, cars })),
-    setTotalCount: (count: number) => setState(prev => ({ ...prev, totalCount: count })),
-    setLoading: (loading: boolean) => setState(prev => ({ ...prev, loading })),
-    setFilters: (newFilters: any) => {
-      console.log('📝 setFilters called with:', newFilters);
-      setFilters(newFilters);
-    },
-    filters
+    setCars,
+    setTotalCount,
+    setLoading,
+    setFilters,
   };
 };
