@@ -421,13 +421,13 @@ Deno.serve(async (req) => {
     const isNaturalCompletion = consecutiveEmptyPages >= 10;
     
     // Check if we've reached the API total (if available)
-    const { data: currentSyncStatus } = await supabase
+    const { data: statusData } = await supabase
       .from('sync_status')
-      .select('api_total_records')
+      .select('api_total_records, records_processed')
       .eq('id', 'cars-sync-main')
       .single();
     
-    const apiTotal = currentSyncStatus?.api_total_records;
+    const apiTotal = statusData?.api_total_records;
     const finalRecordsProcessed = isResumeRequest 
       ? (currentSyncStatus?.records_processed || 0) + totalProcessed
       : (existingCars || 0) + totalProcessed;
@@ -545,32 +545,3 @@ Deno.serve(async (req) => {
   }
 });
 
-// MAXIMUM SPEED: Optimized fetch with minimal retry delays for max throughput
-async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const response = await fetch(url, options);
-      
-      if (response.status === 429) {
-        console.log(`⏰ Rate limited on attempt ${attempt}, minimal wait for max speed...`);
-        await new Promise(resolve => setTimeout(resolve, 1000 + (attempt * 500))); // Reduced from 3000 * attempt for max speed
-        continue;
-      }
-      
-      if (!response.ok && response.status >= 500 && attempt < maxRetries) {
-        console.log(`🔄 Server error ${response.status} on attempt ${attempt}, instant retry...`);
-        await new Promise(resolve => setTimeout(resolve, 250 * attempt)); // Reduced from 1000 * attempt for max speed
-        continue;
-      }
-      
-      return response;
-    } catch (error) {
-      if (attempt === maxRetries) throw error;
-      
-      console.log(`❌ Request failed on attempt ${attempt}, minimal delay retry:`, error);
-      await new Promise(resolve => setTimeout(resolve, 100 * attempt)); // Reduced from 500 * attempt for max speed
-    }
-  }
-  
-  throw new Error('Max retries exceeded');
-}
