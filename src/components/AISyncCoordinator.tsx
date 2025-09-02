@@ -127,7 +127,7 @@ export const AISyncCoordinator = ({
 
       if (error) {
         // Distinguish between different types of errors
-        const errorMsg = (error && typeof error === 'object' && 'message' in error ? (error as any).message : String(error)) || 'Unknown edge function error';
+        const errorMsg = error.message || 'Unknown edge function error';
         let enhancedError = errorMsg;
         
         if (errorMsg.includes('fetch') && errorMsg.includes('failed')) {
@@ -180,7 +180,7 @@ export const AISyncCoordinator = ({
   const invokeEdgeFunctionWithRetry = useCallback(async (params: Record<string, unknown>, attempt = 1): Promise<unknown> => {
     console.log(`🤖 AI Coordinator: Invoking edge function (attempt ${attempt}/${maxRetries})...`);
     console.log(`🤖 AI Coordinator: Params:`, JSON.stringify(params, null, 2));
-    console.log(`🤖 AI Coordinator: Invoking cars-sync function...`);
+    console.log(`🤖 AI Coordinator: Supabase URL:`, supabase.supabaseUrl);
     
     try {
       // Add timeout to detect edge function deployment issues
@@ -201,9 +201,9 @@ export const AISyncCoordinator = ({
       if (error) {
         console.error('🚨 AI Coordinator: Edge function returned error:', error);
         console.error('🚨 AI Coordinator: Error details:', {
-          message: error && typeof error === 'object' && 'message' in error ? (error as any).message : 'Unknown',
-          name: error && typeof error === 'object' && 'name' in error ? (error as any).name : 'Unknown',
-          stack: error && typeof error === 'object' && 'stack' in error ? (error as any).stack : 'No stack',
+          message: error.message,
+          name: error.name,
+          stack: error.stack,
           details: error
         });
         throw error;
@@ -283,7 +283,7 @@ export const AISyncCoordinator = ({
         console.warn('🤖 AI Coordinator: Could not fetch sync status:', statusError);
       }
 
-      let enhancedParams: Record<string, unknown> = {
+      let enhancedParams = {
         smartSync: true,
         aiCoordinated: true,
         source: 'ai-coordinator',
@@ -295,6 +295,7 @@ export const AISyncCoordinator = ({
         console.log(`🧠 AI Coordinator: Detected resumable sync at page ${currentStatus.current_page}`);
         enhancedParams = {
           ...enhancedParams,
+          resume: true,
           fromPage: currentStatus.current_page,
           reconcileProgress: true,
           resumeFromFailure: currentStatus.status === 'failed'

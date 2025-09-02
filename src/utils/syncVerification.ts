@@ -173,8 +173,8 @@ export async function verifySyncToDatabase(
         details.dataIntegrityPassed = true; // Don't fail verification for cache issues
       } else {
         // Cars cache may be empty after sync completion - only check if cache has data
-        const cacheCountValue = Number(cacheCount) || 0;
-        const mainCount = Number(details.actualCount) || 0;
+        const cacheCountValue = cacheCount || 0;
+        const mainCount = details.actualCount || 0;
         
         if (cacheCountValue === 0) {
           // Empty cache is normal after sync completion - not an error
