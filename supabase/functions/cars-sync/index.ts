@@ -370,7 +370,7 @@ Deno.serve(async (req) => {
           consecutiveEmptyPages++;
           console.log(`📄 Page ${currentPage} empty (${consecutiveEmptyPages}/20)`);
           currentPage++;
-          continue;
+          return { processed: 0, cars: [], skipToNextPage: true };
         }
 
         consecutiveEmptyPages = 0;
@@ -630,6 +630,10 @@ Deno.serve(async (req) => {
       }, `Process page ${currentPage}`);
 
       if (pageResult) {
+        // Check if we should skip to the next page (empty page case)
+        if (pageResult.skipToNextPage) {
+          continue;
+        }
         totalProcessed += pageResult.processed;
       }
 
