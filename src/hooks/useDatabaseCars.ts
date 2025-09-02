@@ -130,6 +130,53 @@ export const useDatabaseCars = () => {
 
       if (sortError) throw sortError;
 
+      // Get the actual total count from cars_cache for accurate pagination
+      // We need to run a separate count query since the RPC doesn't return total count
+      let actualTotalCount = totalCount; // Keep existing count as fallback
+      
+      if (page === 1 || resetCars) {
+        // Only fetch total count on first page or when resetting to avoid unnecessary queries
+        try {
+          let countQuery = supabase
+            .from('cars_cache')
+            .select('*', { count: 'exact', head: true });
+
+          // Apply the same filters to count query
+          if (filters.manufacturer_id) {
+            countQuery = countQuery.eq('make', filters.manufacturer_id);
+          }
+          if (filters.model_id) {
+            countQuery = countQuery.eq('model', filters.model_id);
+          }
+          if (filters.from_year) {
+            countQuery = countQuery.gte('year', parseInt(filters.from_year));
+          }
+          if (filters.to_year) {
+            countQuery = countQuery.lte('year', parseInt(filters.to_year));
+          }
+          if (filters.buy_now_price_from) {
+            countQuery = countQuery.gte('price_cents', parseInt(filters.buy_now_price_from) * 100);
+          }
+          if (filters.buy_now_price_to) {
+            countQuery = countQuery.lte('price_cents', parseInt(filters.buy_now_price_to) * 100);
+          }
+          if (filters.search) {
+            countQuery = countQuery.or(`make.ilike.%${filters.search}%,model.ilike.%${filters.search}%,title.ilike.%${filters.search}%`);
+          }
+
+          const { count, error: countError } = await countQuery;
+          
+          if (!countError && count !== null) {
+            actualTotalCount = count;
+            console.log(`📊 Database: Total count for current filters: ${actualTotalCount}`);
+          } else {
+            console.warn('⚠️ Failed to get filtered count, using previous total:', countError);
+          }
+        } catch (countErr) {
+          console.warn('⚠️ Error fetching total count:', countErr);
+        }
+      }
+
       // Transform the data to match Car interface
       const transformedCars: Car[] = (sortedCars || []).map(car => ({
         id: car.id,
@@ -156,20 +203,20 @@ export const useDatabaseCars = () => {
         setCars(prev => [...prev, ...transformedCars]);
       }
 
-      const newTotalCount = transformedCars.length > 0 ? Math.max(totalCount, transformedCars.length * page) : totalCount;
-      setTotalCount(newTotalCount);
+      // Use the actual total count from the database instead of calculating from page results
+      setTotalCount(actualTotalCount);
       setHasMorePages(transformedCars.length === limit);
 
       setPagination({
         page,
-        totalPages: Math.ceil(newTotalCount / limit),
-        totalCount: newTotalCount,
+        totalPages: Math.ceil(actualTotalCount / limit),
+        totalCount: actualTotalCount,
         hasMore: transformedCars.length === limit
       });
 
       return {
         items: transformedCars,
-        total: newTotalCount,
+        total: actualTotalCount,
         nextCursor: transformedCars.length === limit ? page + 1 : undefined
       };
 
