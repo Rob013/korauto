@@ -26,12 +26,12 @@ interface Car {
 
 // Enhanced shutdown and error tracking
 let shutdownHandled = false;
-const executionMetrics = {
+let executionMetrics = {
   startTime: 0,
   lastActivity: 0,
   processedRecords: 0,
   errors: 0,
-  memorySnapshots: [] as unknown[]
+  memorySnapshots: [] as any[]
 };
 
 // Enhanced shutdown handling and cleanup
@@ -200,7 +200,7 @@ Deno.serve(async (req) => {
     const API_BASE_URL = 'https://auctionsapi.com/api';
 
     // Enhanced request body parsing with error handling
-    let syncParams: Record<string, unknown> = {};
+    let syncParams: any = {};
     const bodyParseResult = await safeExecute(async () => {
       if (req.body) {
         const bodyText = await req.text();
@@ -239,6 +239,7 @@ Deno.serve(async (req) => {
           .single();
         return existingStatus;
       }, 'Get current sync status');
+      
       console.log(`📍 Resume request: Current status is ${currentSyncStatus?.status}, page ${currentSyncStatus?.current_page}`);
       
       // Check if sync is actually stuck
@@ -262,8 +263,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Update sync status to running with enhanced metadata
-    const updateData: Record<string, unknown> = {
+    // Enhanced sync status update with error handling
+    const updateData: any = {
       id: 'cars-sync-main',
       status: 'running',
       started_at: new Date().toISOString(),
@@ -313,7 +314,7 @@ Deno.serve(async (req) => {
     let totalProcessed = 0;
     let currentPage = startPage;
     let consecutiveEmptyPages = 0;
-    const errors = 0;
+    let errors = 0;
     const startTime = Date.now();
     let lastProgressUpdate = startTime;
 
@@ -370,7 +371,7 @@ Deno.serve(async (req) => {
           consecutiveEmptyPages++;
           console.log(`📄 Page ${currentPage} empty (${consecutiveEmptyPages}/20)`);
           currentPage++;
-          continue;
+          return { processed: 0, cars: [] };
         }
 
         consecutiveEmptyPages = 0;
@@ -380,31 +381,24 @@ Deno.serve(async (req) => {
         const carCacheItems = [];
         
         // Client-side complete mapping function to handle 100-argument limit errors
-        const mapCompleteApiDataClientSide = (apiRecord: Record<string, unknown>) => {
-          // Extract all possible images from the API response with type safety
-          const getStringArray = (value: unknown): string[] => {
-            if (Array.isArray(value)) {
-              return value.filter((item): item is string => typeof item === 'string');
-            }
-            return [];
-          };
-          
+        const mapCompleteApiDataClientSide = (apiRecord: any) => {
+          // Extract all possible images from the API response
           const allImages = [
-            ...getStringArray(apiRecord.images),
-            ...getStringArray(apiRecord.photos),
-            ...getStringArray(apiRecord.pictures),
-            ...getStringArray(apiRecord.thumbnails),
-            ...getStringArray(apiRecord.gallery),
-            ...getStringArray((apiRecord.lots as Record<string, unknown>[])?.[0]?.images?.normal),
-            ...getStringArray((apiRecord.lots as Record<string, unknown>[])?.[0]?.images?.large)
+            ...(apiRecord.images || []),
+            ...(apiRecord.photos || []),
+            ...(apiRecord.pictures || []),
+            ...(apiRecord.thumbnails || []),
+            ...(apiRecord.gallery || []),
+            ...(apiRecord.lots?.[0]?.images?.normal || []),
+            ...(apiRecord.lots?.[0]?.images?.large || [])
           ].filter(Boolean);
 
           // Extract high resolution images
           const highResImages = [
-            ...getStringArray(apiRecord.high_res_images),
-            ...getStringArray(apiRecord.hd_images),
-            ...getStringArray(apiRecord.full_size_images),
-            ...getStringArray((apiRecord.lots as Record<string, unknown>[])?.[0]?.images?.large)
+            ...(apiRecord.high_res_images || []),
+            ...(apiRecord.hd_images || []),
+            ...(apiRecord.full_size_images || []),
+            ...(apiRecord.lots?.[0]?.images?.large || [])
           ].filter(Boolean);
 
           // Map all available fields using chunked approach (client-side equivalent of database function)
@@ -667,7 +661,7 @@ Deno.serve(async (req) => {
       // Force garbage collection hint for memory management
       if (currentPage % 50 === 0) {
         console.log('🧹 Memory cleanup hint');
-        // @ts-expect-error - gc function may not be available
+        // @ts-ignore
         if (typeof gc !== 'undefined') gc();
       }
     } // End of while loop
