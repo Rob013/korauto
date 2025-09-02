@@ -18,10 +18,14 @@ describe('Exact Problem Statement Verification', () => {
     let userFriendlyMessage = errorMessage;
     let diagnosticHelp = '';
     
-    // Enhanced error message detection with comprehensive accessibility patterns
-    // Fixed operator precedence and more specific pattern matching to avoid false positives
-    if ((errorMessage.includes('timed out') && errorMessage.includes('function may not be deployed')) || 
+    // Network connectivity and deployment issues - prioritize general message as per problem statement
+    if (errorMessage.includes('Failed to send') ||
+        errorMessage.includes('Connection timed out') ||
         errorMessage.includes('Connection test timed out') ||
+        errorMessage.includes('Network error') ||
+        errorMessage.includes('Request aborted') ||
+        errorMessage.includes('Unknown connectivity') ||
+        (errorMessage.includes('timed out') && errorMessage.includes('function may not be deployed')) ||
         (errorMessage.includes('Edge Function not accessible') && (
           errorMessage.includes('Connection') || 
           errorMessage.includes('timed out') || 
@@ -32,8 +36,8 @@ describe('Exact Problem Statement Verification', () => {
           errorMessage.match(/Edge Function not accessible:\s*$/) ||
           errorMessage.includes('Unknown connectivity issue')
         ))) {
-      userFriendlyMessage = 'Edge Function not accessible - the cars-sync function may not be deployed to Supabase';
-      diagnosticHelp = 'Check the Supabase dashboard to ensure the cars-sync edge function is deployed and running. See EDGE_FUNCTION_DEPLOYMENT.md for detailed deployment instructions.';
+      userFriendlyMessage = 'Unable to connect to Edge Function - network or deployment issue';
+      diagnosticHelp = 'This could be a network connectivity issue or the edge function may not be deployed. Check your internet connection and Supabase function deployment.';
     } else if (errorMessage.includes('Failed to send')) {
       userFriendlyMessage = 'Unable to connect to Edge Function - network or deployment issue';
       diagnosticHelp = 'This could be a network connectivity issue or the edge function may not be deployed. Check your internet connection and Supabase function deployment.';
@@ -77,7 +81,7 @@ describe('Exact Problem Statement Verification', () => {
     // Verify the exact problem statement result
     expect(result.title).toBe("AI Coordinator Failed");
     expect(result.description).toBe(
-      "Failed to start intelligent sync: Edge Function not accessible - the cars-sync function may not be deployed to Supabase. Check the Supabase dashboard to ensure the cars-sync edge function is deployed and running. See EDGE_FUNCTION_DEPLOYMENT.md for detailed deployment instructions."
+      "Failed to start intelligent sync: Unable to connect to Edge Function - network or deployment issue. This could be a network connectivity issue or the edge function may not be deployed. Check your internet connection and Supabase function deployment."
     );
     
     console.log('✅ Timeout scenario generates exact problem statement message');
@@ -92,7 +96,7 @@ describe('Exact Problem Statement Verification', () => {
     // Verify the exact problem statement result
     expect(result.title).toBe("AI Coordinator Failed");
     expect(result.description).toBe(
-      "Failed to start intelligent sync: Edge Function not accessible - the cars-sync function may not be deployed to Supabase. Check the Supabase dashboard to ensure the cars-sync edge function is deployed and running. See EDGE_FUNCTION_DEPLOYMENT.md for detailed deployment instructions."
+      "Failed to start intelligent sync: Unable to connect to Edge Function - network or deployment issue. This could be a network connectivity issue or the edge function may not be deployed. Check your internet connection and Supabase function deployment."
     );
     
     console.log('✅ Direct timeout scenario generates exact problem statement message');
@@ -107,7 +111,7 @@ describe('Exact Problem Statement Verification', () => {
     // Verify the exact problem statement result
     expect(result.title).toBe("AI Coordinator Failed");
     expect(result.description).toBe(
-      "Failed to start intelligent sync: Edge Function not accessible - the cars-sync function may not be deployed to Supabase. Check the Supabase dashboard to ensure the cars-sync edge function is deployed and running. See EDGE_FUNCTION_DEPLOYMENT.md for detailed deployment instructions."
+      "Failed to start intelligent sync: Unable to connect to Edge Function - network or deployment issue. This could be a network connectivity issue or the edge function may not be deployed. Check your internet connection and Supabase function deployment."
     );
     
     console.log('✅ Generic accessibility scenario generates exact problem statement message');
@@ -127,7 +131,7 @@ describe('Exact Problem Statement Verification', () => {
       
       expect(result.title).toBe("AI Coordinator Failed");
       expect(result.description).toBe(
-        "Failed to start intelligent sync: Edge Function not accessible - the cars-sync function may not be deployed to Supabase. Check the Supabase dashboard to ensure the cars-sync edge function is deployed and running. See EDGE_FUNCTION_DEPLOYMENT.md for detailed deployment instructions."
+        "Failed to start intelligent sync: Unable to connect to Edge Function - network or deployment issue. This could be a network connectivity issue or the edge function may not be deployed. Check your internet connection and Supabase function deployment."
       );
       
       console.log(`✅ Error pattern ${index + 1} triggers correct deployment message: "${connectivityError}"`);
@@ -146,7 +150,7 @@ describe('Exact Problem Statement Verification', () => {
       
       expect(result.title).toBe("AI Coordinator Failed");
       expect(result.description).toBe(
-        "Failed to start intelligent sync: Edge Function not accessible - the cars-sync function may not be deployed to Supabase. Check the Supabase dashboard to ensure the cars-sync edge function is deployed and running. See EDGE_FUNCTION_DEPLOYMENT.md for detailed deployment instructions."
+        "Failed to start intelligent sync: Unable to connect to Edge Function - network or deployment issue. This could be a network connectivity issue or the edge function may not be deployed. Check your internet connection and Supabase function deployment."
       );
       console.log(`✅ Edge case ${index + 1} correctly triggers deployment message: "${connectivityError || '(empty)'} -> Edge Function not accessible: ${connectivityError}"`);
     });
