@@ -112,7 +112,7 @@ describe('Cars Sync Edge Function - Duplicate Identifier Fix', () => {
   it('should verify that both variables can coexist without naming conflicts', () => {
     // This test ensures that both currentSyncStatus and statusData can be used simultaneously
     
-    let currentSyncStatus = { records_processed: 100, status: 'paused' };
+    const currentSyncStatus = { records_processed: 100, status: 'paused' };
     const { data: statusData } = { data: { api_total_records: 5000, records_processed: 200 } };
     
     // Both variables should be accessible and have different values

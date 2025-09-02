@@ -212,7 +212,7 @@ function loadCheckpoint(): Checkpoint | null {
 }
 
 // Generate stable MD5 hash for change detection (business fields only)
-function generateCarHash(car: Record<string, any>): string {
+function generateCarHash(car: Record<string, unknown>): string {
   // Sort keys for consistent hashing, include only business-relevant fields
   const businessFields = {
     make: car.make,
@@ -818,8 +818,8 @@ async function syncCars() {
         
         // Compare with merge result
         if (mergeResult && typeof mergeResult === 'object') {
-          const mergeData = mergeResult as any
-          const expectedMinimum = mergeData.total_processed || 0
+          const mergeData = mergeResult as Record<string, unknown>
+          const expectedMinimum = (mergeData.total_processed as number) || 0
           
           if (finalCarCount >= expectedMinimum) {
             console.log(`✅ Record count verification passed: ${finalCarCount} >= ${expectedMinimum} expected`)
