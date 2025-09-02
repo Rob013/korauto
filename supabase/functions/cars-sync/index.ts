@@ -432,17 +432,24 @@ Deno.serve(async (req) => {
       ? (currentSyncStatus?.records_processed || 0) + totalProcessed
       : (existingCars || 0) + totalProcessed;
     
-    // Enhanced completion detection
+    // Enhanced completion detection with fixed logic
     let completionPercentage = 100;
     let finalStatus = 'completed';
     
     if (apiTotal && finalRecordsProcessed < apiTotal) {
       completionPercentage = Math.round((finalRecordsProcessed / apiTotal) * 100);
-      if (completionPercentage < 99 && !isNaturalCompletion) {
+      // Only continue if we're significantly below the API total AND haven't hit natural completion
+      if (completionPercentage < 95 && !isNaturalCompletion) {
         finalStatus = 'running'; // Continue syncing if we haven't reached near 100%
       }
-    } else if (!isNaturalCompletion) {
-      finalStatus = 'running'; // Continue if no natural completion yet
+    } else if (!isNaturalCompletion && (!apiTotal || finalRecordsProcessed < apiTotal * 0.95)) {
+      finalStatus = 'running'; // Continue if no natural completion yet and we're not near the target
+    }
+    
+    // Force completion if we hit natural completion (10+ consecutive empty pages)
+    if (isNaturalCompletion) {
+      finalStatus = 'completed';
+      console.log('🏁 Natural completion detected - forcing sync to completed status');
     }
     
     console.log(`📊 Sync finishing: ${totalProcessed} new cars processed, ${finalRecordsProcessed} total records`);

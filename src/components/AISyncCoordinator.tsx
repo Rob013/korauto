@@ -184,7 +184,7 @@ export const AISyncCoordinator = ({
     
     try {
       // Add timeout to detect edge function deployment issues
-      const timeoutPromise = new Promise((_, reject) => {
+      const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error('Edge Function request timed out - function may not be deployed or accessible')), 15000);
       });
 
@@ -196,7 +196,7 @@ export const AISyncCoordinator = ({
         }
       });
 
-      const { data, error } = await Promise.race([invokePromise, timeoutPromise]) as { data: unknown; error: unknown };
+      const { data, error } = await Promise.race([invokePromise, timeoutPromise]);
 
       if (error) {
         console.error('🚨 AI Coordinator: Edge function returned error:', error);
