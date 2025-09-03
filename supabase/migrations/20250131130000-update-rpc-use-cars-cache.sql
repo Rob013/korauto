@@ -107,41 +107,69 @@ BEGIN
 
   -- Build cursor condition for keyset pagination (extended for new fields)
   IF p_cursor_value IS NOT NULL AND p_cursor_id IS NOT NULL THEN
-    IF p_sort_dir = 'ASC' THEN
-      cursor_condition := ' AND (' || p_sort_field || ', cars.id) > (' || 
-                         CASE 
-                           WHEN p_sort_field IN ('price_cents', 'year') THEN p_cursor_value::BIGINT::TEXT
-                           WHEN p_sort_field = 'mileage' THEN COALESCE(p_cursor_value::TEXT, '0')
-                           WHEN p_sort_field = 'rank_score' THEN p_cursor_value::NUMERIC::TEXT
-                           WHEN p_sort_field = 'created_at' THEN quote_literal(p_cursor_value::TIMESTAMPTZ::TEXT)
-                           ELSE quote_literal(p_cursor_value)
-                         END || ', ' || quote_literal(p_cursor_id) || ')';
+    IF p_sort_field = 'mileage' THEN
+      -- Special handling for mileage since it's stored as TEXT but used as INTEGER
+      IF p_sort_dir = 'ASC' THEN
+        cursor_condition := ' AND (COALESCE(NULLIF(cars.mileage, '''')::INTEGER, 0), cars.id) > (' || 
+                           COALESCE(p_cursor_value::INTEGER::TEXT, '0') || ', ' || quote_literal(p_cursor_id) || ')';
+      ELSE
+        cursor_condition := ' AND (COALESCE(NULLIF(cars.mileage, '''')::INTEGER, 0), cars.id) < (' || 
+                           COALESCE(p_cursor_value::INTEGER::TEXT, '999999') || ', ' || quote_literal(p_cursor_id) || ')';
+      END IF;
     ELSE
-      cursor_condition := ' AND (' || p_sort_field || ', cars.id) < (' || 
-                         CASE 
-                           WHEN p_sort_field IN ('price_cents', 'year') THEN p_cursor_value::BIGINT::TEXT
-                           WHEN p_sort_field = 'mileage' THEN COALESCE(p_cursor_value::TEXT, '999999')
-                           WHEN p_sort_field = 'rank_score' THEN p_cursor_value::NUMERIC::TEXT
-                           WHEN p_sort_field = 'created_at' THEN quote_literal(p_cursor_value::TIMESTAMPTZ::TEXT)
-                           ELSE quote_literal(p_cursor_value)
-                         END || ', ' || quote_literal(p_cursor_id) || ')';
+      -- Standard handling for other fields
+      IF p_sort_dir = 'ASC' THEN
+        cursor_condition := ' AND (' || p_sort_field || ', cars.id) > (' || 
+                           CASE 
+                             WHEN p_sort_field IN ('price_cents', 'year') THEN p_cursor_value::BIGINT::TEXT
+                             WHEN p_sort_field = 'rank_score' THEN p_cursor_value::NUMERIC::TEXT
+                             WHEN p_sort_field = 'created_at' THEN quote_literal(p_cursor_value::TIMESTAMPTZ::TEXT)
+                             ELSE quote_literal(p_cursor_value)
+                           END || ', ' || quote_literal(p_cursor_id) || ')';
+      ELSE
+        cursor_condition := ' AND (' || p_sort_field || ', cars.id) < (' || 
+                           CASE 
+                             WHEN p_sort_field IN ('price_cents', 'year') THEN p_cursor_value::BIGINT::TEXT
+                             WHEN p_sort_field = 'rank_score' THEN p_cursor_value::NUMERIC::TEXT
+                             WHEN p_sort_field = 'created_at' THEN quote_literal(p_cursor_value::TIMESTAMPTZ::TEXT)
+                             ELSE quote_literal(p_cursor_value)
+                           END || ', ' || quote_literal(p_cursor_id) || ')';
+      END IF;
     END IF;
   END IF;
 
-  -- Build order clause
-  order_clause := 'ORDER BY ' || p_sort_field || ' ' || p_sort_dir || ' NULLS LAST, cars.id ASC';
+  -- Build order clause with proper type conversion for mileage
+  IF p_sort_field = 'mileage' THEN
+    order_clause := 'ORDER BY COALESCE(NULLIF(cars.mileage, '''')::INTEGER, 0) ' || p_sort_dir || ' NULLS LAST, cars.id ASC';
+  ELSE
+    order_clause := 'ORDER BY ' || p_sort_field || ' ' || p_sort_dir || ' NULLS LAST, cars.id ASC';
+  END IF;
 
   -- Build and execute query using cars_cache table with synced data
-  query_sql := 'SELECT cars.id, cars.make, cars.model, cars.year, cars.price, cars.price_cents, cars.rank_score, ' ||
-               'COALESCE(cars.mileage::INTEGER, 0) as mileage, cars.fuel, cars.transmission, cars.color, ' ||
-               'COALESCE(cars.condition, '''') as location, ' ||
-               'COALESCE((cars.images->>0), '''') as image_url, cars.images, ' ||
-               'COALESCE(cars.make || '' '' || cars.model || '' '' || cars.year::TEXT, '''') as title, ' ||
-               'cars.created_at ' ||
-               'FROM public.cars_cache cars ' ||
-               'WHERE ' || p_sort_field || ' IS NOT NULL' ||
-               filter_conditions || cursor_condition || ' ' ||
-               order_clause || ' LIMIT ' || p_limit;
+  -- Handle special WHERE condition for mileage since it's stored as TEXT
+  IF p_sort_field = 'mileage' THEN
+    query_sql := 'SELECT cars.id, cars.make, cars.model, cars.year, cars.price, cars.price_cents, cars.rank_score, ' ||
+                 'COALESCE(NULLIF(cars.mileage, '''')::INTEGER, 0) as mileage, cars.fuel, cars.transmission, cars.color, ' ||
+                 'COALESCE(cars.condition, '''') as location, ' ||
+                 'COALESCE((cars.images->>0), '''') as image_url, cars.images, ' ||
+                 'COALESCE(cars.make || '' '' || cars.model || '' '' || cars.year::TEXT, '''') as title, ' ||
+                 'cars.created_at ' ||
+                 'FROM public.cars_cache cars ' ||
+                 'WHERE cars.mileage IS NOT NULL AND cars.mileage != '''' ' ||
+                 filter_conditions || cursor_condition || ' ' ||
+                 order_clause || ' LIMIT ' || p_limit;
+  ELSE
+    query_sql := 'SELECT cars.id, cars.make, cars.model, cars.year, cars.price, cars.price_cents, cars.rank_score, ' ||
+                 'COALESCE(NULLIF(cars.mileage, '''')::INTEGER, 0) as mileage, cars.fuel, cars.transmission, cars.color, ' ||
+                 'COALESCE(cars.condition, '''') as location, ' ||
+                 'COALESCE((cars.images->>0), '''') as image_url, cars.images, ' ||
+                 'COALESCE(cars.make || '' '' || cars.model || '' '' || cars.year::TEXT, '''') as title, ' ||
+                 'cars.created_at ' ||
+                 'FROM public.cars_cache cars ' ||
+                 'WHERE ' || p_sort_field || ' IS NOT NULL' ||
+                 filter_conditions || cursor_condition || ' ' ||
+                 order_clause || ' LIMIT ' || p_limit;
+  END IF;
 
   RETURN QUERY EXECUTE query_sql;
 END;
