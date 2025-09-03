@@ -69,8 +69,8 @@ describe('Extended Car Sorting API', () => {
         { sort: 'year_desc', field: 'year', direction: 'DESC' },
         
         // Mileage
-        { sort: 'mileage_asc', field: 'mileage', direction: 'ASC' },
-        { sort: 'mileage_desc', field: 'mileage', direction: 'DESC' },
+        { sort: 'mileage_asc', field: 'mileage_km', direction: 'ASC' },
+        { sort: 'mileage_desc', field: 'mileage_km', direction: 'DESC' },
         
         // Make
         { sort: 'make_asc', field: 'make', direction: 'ASC' },
@@ -93,8 +93,8 @@ describe('Extended Car Sorting API', () => {
         { sort: 'price_high', field: 'price_cents', direction: 'DESC' },
         { sort: 'year_new', field: 'year', direction: 'DESC' },
         { sort: 'year_old', field: 'year', direction: 'ASC' },
-        { sort: 'mileage_low', field: 'mileage', direction: 'ASC' },
-        { sort: 'mileage_high', field: 'mileage', direction: 'DESC' },
+        { sort: 'mileage_low', field: 'mileage_km', direction: 'ASC' },
+        { sort: 'mileage_high', field: 'mileage_km', direction: 'DESC' },
         { sort: 'make_az', field: 'make', direction: 'ASC' },
         { sort: 'make_za', field: 'make', direction: 'DESC' },
         { sort: 'recently_added', field: 'created_at', direction: 'DESC' },
@@ -136,7 +136,7 @@ describe('Extended Car Sorting API', () => {
 
       expect(priceParams.field).toBe('price_cents');
       expect(yearParams.field).toBe('year');
-      expect(mileageParams.field).toBe('mileage');
+      expect(mileageParams.field).toBe('mileage_km');
       expect(makeParams.field).toBe('make');
       expect(createdParams.field).toBe('created_at');
       expect(rankParams.field).toBe('rank_score');
