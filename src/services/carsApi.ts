@@ -23,8 +23,8 @@ export type FrontendSortOption = 'recently_added' | 'oldest_first' | 'price_low'
 export interface CarsApiParams {
   filters?: CarFilters;
   sort?: SortOption | FrontendSortOption;
-  limit?: number;
-  cursor?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export interface Car {
@@ -46,32 +46,25 @@ export interface Car {
   created_at: string;
 }
 
+// New backend-only response format matching requirements
 export interface CarsApiResponse {
   items: Car[];
-  nextCursor?: string;
   total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasPrev: boolean;
+  hasNext: boolean;
+  facets: {
+    makes: Array<{ value: string; count: number }>;
+    models: Array<{ value: string; count: number }>;
+    fuels: Array<{ value: string; count: number }>;
+    year_range: { min: number; max: number };
+    price_range: { min: number; max: number };
+  };
 }
 
-// Parse cursor string "value|id" 
-function parseCursor(cursor: string): { value: string; id: string } | null {
-  if (!cursor) return null;
-  
-  try {
-    const decoded = atob(cursor);
-    const [value, id] = decoded.split('|');
-    if (!value || !id) return null;
-    return { value, id };
-  } catch {
-    return null;
-  }
-}
-
-// Create cursor string from last item
-function createCursor(sortField: string, sortValue: any, id: string): string {
-  const cursorValue = `${sortValue}|${id}`;
-  return btoa(cursorValue);
-}
-
+// BACKEND-ONLY ARCHITECTURE - NO CLIENT-SIDE SORTING
 // Map frontend sort options to backend sort options
 export function mapFrontendSortToBackend(sort: SortOption | FrontendSortOption): SortOption {
   // If it's already a backend sort option, return as-is
@@ -80,7 +73,7 @@ export function mapFrontendSortToBackend(sort: SortOption | FrontendSortOption):
     return sort as SortOption;
   }
 
-  // Map frontend options to backend options
+  // Map frontend options to backend options - ALL SORTING HAPPENS IN BACKEND
   switch (sort as FrontendSortOption) {
     case 'price_low':
       return 'price_asc';
@@ -127,9 +120,9 @@ export function getSortParams(sort: SortOption | FrontendSortOption): { field: s
     case 'year_desc':
       return { field: 'year', direction: 'DESC' };
     case 'mileage_asc':
-      return { field: 'mileage', direction: 'ASC' };
+      return { field: 'mileage_km', direction: 'ASC' };
     case 'mileage_desc':
-      return { field: 'mileage', direction: 'DESC' };
+      return { field: 'mileage_km', direction: 'DESC' };
     case 'make_asc':
       return { field: 'make', direction: 'ASC' };
     case 'make_desc':
@@ -143,113 +136,88 @@ export function getSortParams(sort: SortOption | FrontendSortOption): { field: s
   }
 }
 
-export async function fetchCarsWithKeyset(params: CarsApiParams): Promise<CarsApiResponse> {
+// Backend-only API call using new pagination format
+export async function fetchCarsApi(searchParams: URLSearchParams): Promise<CarsApiResponse> {
+  const baseUrl = `${supabase.supabaseUrl}/functions/v1/cars-api`;
+  const url = new URL(baseUrl);
+  
+  // Copy all search params to maintain filters and sort in URL
+  searchParams.forEach((value, key) => {
+    url.searchParams.append(key, value);
+  });
+
+  console.log('🔄 Fetching cars from backend-only API:', url.toString());
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${supabase.supabaseKey}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(`API Error ${response.status}: ${errorData.error || 'Failed to fetch cars'}`);
+  }
+
+  const data = await response.json();
+  
+  console.log('✅ Received cars data:', {
+    items: data.items?.length || 0,
+    total: data.total,
+    page: data.page,
+    totalPages: data.totalPages,
+    facets: Object.keys(data.facets || {}).length
+  });
+
+  return data;
+}
+
+// Main API function for backend-only architecture
+export async function fetchCarsWithPagination(params: CarsApiParams): Promise<CarsApiResponse> {
   const {
     filters = {},
     sort = 'price_asc',
-    limit = 24,
-    cursor
+    page = 1,
+    pageSize = 24
   } = params;
 
-  // Parse sort parameters
-  const { field: sortField, direction: sortDir } = getSortParams(sort);
+  // Build URL params for backend-only API
+  const searchParams = new URLSearchParams();
   
-  // Parse cursor
-  const cursorData = cursor ? parseCursor(cursor) : null;
-  
-  // Prepare filters for RPC call
-  const rpcFilters = { ...filters };
-
-  try {
-    // Get total count (for pagination info)
-    const { data: totalCount, error: countError } = await supabase
-      .rpc('cars_filtered_count', { p_filters: rpcFilters });
-
-    if (countError) {
-      console.error('Error getting car count:', countError);
-      throw countError;
+  // Add filters
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      searchParams.append(key, String(value));
     }
+  });
 
-    // Get paginated results using keyset pagination
-    const { data: cars, error: carsError } = await supabase
-      .rpc('cars_keyset_page', {
-        p_filters: rpcFilters,
-        p_sort_field: sortField,
-        p_sort_dir: sortDir,
-        p_cursor_value: cursorData?.value || null,
-        p_cursor_id: cursorData?.id || null,
-        p_limit: limit
-      });
+  // Add pagination and sort - ALL HANDLED BY BACKEND
+  searchParams.append('sort', mapFrontendSortToBackend(sort));
+  searchParams.append('page', String(page));
+  searchParams.append('pageSize', String(pageSize));
 
-    if (carsError) {
-      console.error('Error fetching cars:', carsError);
-      throw carsError;
-    }
-
-    const items = cars || [];
-    
-    // Create next cursor if we have a full page (indicating more data)
-    let nextCursor: string | undefined;
-    if (items.length === limit) {
-      const lastItem = items[items.length - 1];
-      let sortValue;
-      
-      // Get the appropriate sort value based on the sort field
-      switch (sortField) {
-        case 'price_cents':
-          sortValue = lastItem.price_cents;
-          break;
-        case 'rank_score':
-          sortValue = lastItem.rank_score;
-          break;
-        case 'year':
-          sortValue = lastItem.year;
-          break;
-        case 'mileage':
-          sortValue = lastItem.mileage;
-          break;
-        case 'make':
-          sortValue = lastItem.make;
-          break;
-        case 'created_at':
-          sortValue = lastItem.created_at;
-          break;
-        default:
-          sortValue = lastItem.price_cents;
-      }
-      
-      nextCursor = createCursor(sortField, sortValue, lastItem.id);
-    }
-
-    return {
-      items,
-      nextCursor,
-      total: totalCount || 0
-    };
-
-  } catch (error) {
-    console.error('Error in fetchCarsWithKeyset:', error);
-    throw error;
-  }
+  return fetchCarsApi(searchParams);
 }
 
-// Compatibility function that matches the expected API format for GET /api/cars
-export async function fetchCarsApi(searchParams: URLSearchParams): Promise<CarsApiResponse> {
-  const filters: CarFilters = {};
+// Legacy compatibility function (DEPRECATED - use fetchCarsWithPagination)
+export async function fetchCarsWithKeyset(params: CarsApiParams): Promise<CarsApiResponse> {
+  console.warn('⚠️ fetchCarsWithKeyset is deprecated. Use fetchCarsWithPagination for backend-only architecture.');
   
-  // Extract filters from URL search params
-  if (searchParams.has('make')) filters.make = searchParams.get('make')!;
-  if (searchParams.has('model')) filters.model = searchParams.get('model')!;
-  if (searchParams.has('yearMin')) filters.yearMin = searchParams.get('yearMin')!;
-  if (searchParams.has('yearMax')) filters.yearMax = searchParams.get('yearMax')!;
-  if (searchParams.has('priceMin')) filters.priceMin = searchParams.get('priceMin')!;
-  if (searchParams.has('priceMax')) filters.priceMax = searchParams.get('priceMax')!;
-  if (searchParams.has('fuel')) filters.fuel = searchParams.get('fuel')!;
-  if (searchParams.has('search')) filters.search = searchParams.get('search')!;
+  // Convert old keyset params to new pagination params
+  const paginationParams: CarsApiParams = {
+    filters: params.filters,
+    sort: params.sort,
+    page: 1, // Default to first page
+    pageSize: params.limit || 24
+  };
 
-  const sort = (searchParams.get('sort') as SortOption | FrontendSortOption) || 'price_asc';
-  const limit = parseInt(searchParams.get('limit') || '24');
-  const cursor = searchParams.get('cursor') || undefined;
-
-  return fetchCarsWithKeyset({ filters, sort, limit, cursor });
+  const result = await fetchCarsWithPagination(paginationParams);
+  
+  // Convert new format back to legacy format for backward compatibility
+  return {
+    ...result,
+    nextCursor: result.hasNext ? 'has-next' : undefined // Simplified cursor for compatibility
+  };
 }
