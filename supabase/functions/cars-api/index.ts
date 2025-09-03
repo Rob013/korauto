@@ -104,6 +104,7 @@ function mapDbToExternal(row: any): any {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  const startTime = performance.now();
   console.log('🚗 Cars API called:', req.method, req.url);
 
   // Handle CORS preflight requests
@@ -112,6 +113,11 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Check READ_SOURCE feature flag - fail fast if external API calls are attempted
+    const readSource = Deno.env.get('READ_SOURCE') || 'db';
+    if (readSource !== 'db') {
+      console.warn('⚠️ READ_SOURCE is not set to "db". External API calls may be attempted.');
+    }
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -153,6 +159,14 @@ const handler = async (req: Request): Promise<Response> => {
       // Map individual car to external API format using the same mapping
       const mappedCar = mapDbToExternal(car);
 
+      const duration = performance.now() - startTime;
+      console.log('📊 Individual Car API Telemetry:', {
+        source: 'db',
+        duration_ms: Math.round(duration * 100) / 100,
+        carId,
+        operation: 'get_car_details'
+      });
+
       console.log('✅ Returning individual car:', carId);
       
       return new Response(
@@ -161,7 +175,10 @@ const handler = async (req: Request): Promise<Response> => {
           headers: { 
             ...corsHeaders, 
             'Content-Type': 'application/json',
-            'Cache-Control': 'public, max-age=300, stale-while-revalidate=600'
+            'Cache-Control': 'public, max-age=300, stale-while-revalidate=600',
+            'X-Source': 'db',
+            'X-Duration-Ms': `${Math.round(duration * 100) / 100}`,
+            'X-Car-Id': carId
           }
         }
       );
@@ -334,6 +351,19 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`✅ Returning ${items.length} cars, total: ${total}, page: ${page}/${totalPages}, facets: ${Object.keys(facets).length} types`);
 
+    // Add telemetry logging as required
+    const duration = performance.now() - startTime;
+    console.log('📊 Cars API Telemetry:', {
+      source: 'db',
+      duration_ms: Math.round(duration * 100) / 100,
+      rows: items.length,
+      sort,
+      pageSize,
+      page,
+      total,
+      filters: Object.keys(filters).length
+    });
+
     // Edge caching with route + sorted querystring keys and stale-while-revalidate
     const cacheHeaders = getCacheHeaders(180); // 3 min TTL with 6 min stale-while-revalidate
 
@@ -345,6 +375,9 @@ const handler = async (req: Request): Promise<Response> => {
           'Content-Type': 'application/json',
           ...cacheHeaders,
           'X-Cache-Key': cacheKey,
+          'X-Source': 'db',
+          'X-Duration-Ms': `${Math.round(duration * 100) / 100}`,
+          'X-Rows': `${items.length}`,
           'X-Response-Time': `${Date.now() - performance.now()}ms`
         }
       }

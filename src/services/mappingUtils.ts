@@ -14,13 +14,13 @@ export function mapDbToExternal(row: any): any {
     price_cents: Number(row.price_cents) || null,
     mileage: Number(row.mileage_km) || 0,
     fuel: row.fuel,
-    transmission: row.transmission,
+    transmission: row.transmission || row.gearbox, // Support both field names
     color: row.color,
     condition: row.condition,
     vin: row.vin,
     
     // Location and images - external API structure
-    location: row.location || '',
+    location: row.location || row.city || '', // Support both field names
     image_url: row.image_url,
     images: row.images || [],
     
