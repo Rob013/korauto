@@ -8,8 +8,13 @@ export interface CarFilters {
   yearMax?: string;
   priceMin?: string;
   priceMax?: string;
+  mileageMax?: string;
   fuel?: string;
+  gearbox?: string;
+  drivetrain?: string;
+  city?: string;
   search?: string;
+  q?: string;
 }
 
 export type SortOption = 'price_asc' | 'price_desc' | 'rank_asc' | 'rank_desc' | 
@@ -138,7 +143,7 @@ export function getSortParams(sort: SortOption | FrontendSortOption): { field: s
 
 // Backend-only API call using new pagination format
 export async function fetchCarsApi(searchParams: URLSearchParams): Promise<CarsApiResponse> {
-  const baseUrl = `${supabase.supabaseUrl}/functions/v1/cars-api`;
+  const baseUrl = `https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/cars-api`;
   const url = new URL(baseUrl);
   
   // Copy all search params to maintain filters and sort in URL
@@ -151,7 +156,7 @@ export async function fetchCarsApi(searchParams: URLSearchParams): Promise<CarsA
   const response = await fetch(url.toString(), {
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${supabase.supabaseKey}`,
+      'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0eXlpcWlta3lzbWpuYW9jc3dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0MzkxMzQsImV4cCI6MjA2OTAxNTEzNH0.lyRCHiShhW4wrGHL3G7pK5JBUHNAtgSUQACVOBGRpL8`,
       'Content-Type': 'application/json',
     },
   });
@@ -170,6 +175,32 @@ export async function fetchCarsApi(searchParams: URLSearchParams): Promise<CarsA
     totalPages: data.totalPages,
     facets: Object.keys(data.facets || {}).length
   });
+
+  return data;
+}
+
+// Individual car API call
+export async function fetchCarById(carId: string): Promise<Car> {
+  const baseUrl = `https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/cars-api/${carId}`;
+
+  console.log('🔍 Fetching individual car:', carId);
+
+  const response = await fetch(baseUrl, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0eXlpcWlta3lzbWpuYW9jc3dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0MzkxMzQsImV4cCI6MjA2OTAxNTEzNH0.lyRCHiShhW4wrGHL3G7pK5JBUHNAtgSUQACVOBGRpL8`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(`API Error ${response.status}: ${errorData.error || 'Car not found'}`);
+  }
+
+  const data = await response.json();
+  
+  console.log('✅ Received individual car data:', carId);
 
   return data;
 }

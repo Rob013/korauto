@@ -29,6 +29,80 @@ function getCacheHeaders(ttl: number = 180): HeadersInit {
   };
 }
 
+// SORT_MAP whitelist for safe dynamic ordering
+const SORT_MAP: Record<string, { field: string; direction: string }> = {
+  'price_asc': { field: 'price_cents', direction: 'ASC' },
+  'price_desc': { field: 'price_cents', direction: 'DESC' },
+  'year_asc': { field: 'year', direction: 'ASC' },
+  'year_desc': { field: 'year', direction: 'DESC' },
+  'mileage_asc': { field: 'mileage_km', direction: 'ASC' },
+  'mileage_desc': { field: 'mileage_km', direction: 'DESC' },
+  'rank_asc': { field: 'rank_score', direction: 'ASC' },
+  'rank_desc': { field: 'rank_score', direction: 'DESC' },
+  'make_asc': { field: 'make', direction: 'ASC' },
+  'make_desc': { field: 'make', direction: 'DESC' },
+  'created_asc': { field: 'created_at', direction: 'ASC' },
+  'created_desc': { field: 'created_at', direction: 'DESC' },
+  // Frontend mappings
+  'price_low': { field: 'price_cents', direction: 'ASC' },
+  'price_high': { field: 'price_cents', direction: 'DESC' },
+  'year_new': { field: 'year', direction: 'DESC' },
+  'year_old': { field: 'year', direction: 'ASC' },
+  'mileage_low': { field: 'mileage_km', direction: 'ASC' },
+  'mileage_high': { field: 'mileage_km', direction: 'DESC' },
+  'make_az': { field: 'make', direction: 'ASC' },
+  'make_za': { field: 'make', direction: 'DESC' },
+  'recently_added': { field: 'created_at', direction: 'DESC' },
+  'oldest_first': { field: 'created_at', direction: 'ASC' },
+  'popular': { field: 'rank_score', direction: 'DESC' },
+};
+
+// mapDbToExternal: Maps database row to exact external API JSON shape
+function mapDbToExternal(row: any): any {
+  return {
+    // Core identifiers
+    id: row.id,
+    api_id: row.api_id,
+    
+    // Basic car info - same keys as external API
+    make: row.make,
+    model: row.model,
+    year: Number(row.year) || 0,
+    price: row.price_cents ? Number(row.price_cents) / 100 : null,
+    price_cents: Number(row.price_cents) || null,
+    mileage: Number(row.mileage_km) || 0,
+    fuel: row.fuel,
+    transmission: row.transmission,
+    color: row.color,
+    condition: row.condition,
+    vin: row.vin,
+    
+    // Location and images
+    location: row.location || '',
+    image_url: row.image_url,
+    images: row.images || [],
+    
+    // Additional external API fields
+    title: `${row.year} ${row.make} ${row.model}`,
+    rank_score: Number(row.rank_score) || 0,
+    lot_number: row.lot_number,
+    created_at: row.created_at,
+    
+    // Preserve complete external API structure from stored raw data
+    ...(row.car_data && typeof row.car_data === 'object' ? row.car_data : {}),
+    
+    // Include lot data as lots array (external API structure)
+    lots: row.lot_data ? [row.lot_data] : [],
+    
+    // Override with our normalized/computed values
+    make: row.make,
+    model: row.model,
+    year: Number(row.year) || 0,
+    price: row.price_cents ? Number(row.price_cents) / 100 : null,
+    mileage: Number(row.mileage_km) || 0,
+  };
+}
+
 const handler = async (req: Request): Promise<Response> => {
   console.log('🚗 Cars API called:', req.method, req.url);
 
@@ -42,6 +116,56 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Parse URL and query parameters
+    const url = new URL(req.url);
+    const pathname = url.pathname;
+    const searchParams = url.searchParams;
+
+    // Check if this is a request for a specific car (e.g., /cars-api/car123)
+    const pathMatch = pathname.match(/\/cars-api\/(.+)$/);
+    if (pathMatch && pathMatch[1]) {
+      const carId = pathMatch[1];
+      console.log('🔍 Fetching individual car:', carId);
+      
+      // Get individual car data
+      const { data: car, error: carError } = await supabase
+        .from('cars_cache')
+        .select('*')
+        .eq('id', carId)
+        .eq('is_active', true)
+        .single();
+
+      if (carError || !car) {
+        console.error('❌ Car not found:', carId, carError);
+        return new Response(
+          JSON.stringify({ 
+            error: 'Car not found',
+            details: carError?.message || 'Car does not exist or is not active'
+          }),
+          { 
+            status: 404, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      // Map individual car to external API format using the same mapping
+      const mappedCar = mapDbToExternal(car);
+
+      console.log('✅ Returning individual car:', carId);
+      
+      return new Response(
+        JSON.stringify(mappedCar),
+        {
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Cache-Control': 'public, max-age=300, stale-while-revalidate=600'
+          }
+        }
+      );
+    }
 
     // Parse URL and query parameters
     const url = new URL(req.url);
@@ -61,8 +185,13 @@ const handler = async (req: Request): Promise<Response> => {
     if (searchParams.has('yearMax')) filters.yearMax = searchParams.get('yearMax');
     if (searchParams.has('priceMin')) filters.priceMin = searchParams.get('priceMin');
     if (searchParams.has('priceMax')) filters.priceMax = searchParams.get('priceMax');
+    if (searchParams.has('mileageMax')) filters.mileageMax = searchParams.get('mileageMax');
     if (searchParams.has('fuel')) filters.fuel = searchParams.get('fuel');
+    if (searchParams.has('gearbox')) filters.gearbox = searchParams.get('gearbox');
+    if (searchParams.has('drivetrain')) filters.drivetrain = searchParams.get('drivetrain');
+    if (searchParams.has('city')) filters.city = searchParams.get('city');
     if (searchParams.has('search')) filters.search = searchParams.get('search');
+    if (searchParams.has('q')) filters.q = searchParams.get('q');
 
     // Extract pagination and sorting parameters - BACKEND ONLY, NO CLIENT SORTING
     const sort = searchParams.get('sort') || 'price_asc';
@@ -70,18 +199,11 @@ const handler = async (req: Request): Promise<Response> => {
     const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get('pageSize') || '24')));
     const offset = (page - 1) * pageSize;
 
-    // Validate sort parameter (backend-only sorting with all options)
-    const validSorts = ['price_asc', 'price_desc', 'rank_asc', 'rank_desc',
-                       'year_asc', 'year_desc', 'mileage_asc', 'mileage_desc', 
-                       'make_asc', 'make_desc', 'created_asc', 'created_desc',
-                       // Frontend sort options for backwards compatibility
-                       'price_low', 'price_high', 'year_new', 'year_old', 
-                       'mileage_low', 'mileage_high', 'make_az', 'make_za', 
-                       'recently_added', 'oldest_first', 'popular'];
-    if (!validSorts.includes(sort)) {
+    // Validate sort parameter using SORT_MAP whitelist
+    if (!SORT_MAP[sort]) {
       return new Response(
         JSON.stringify({ 
-          error: `Invalid sort parameter. Must be one of: ${validSorts.join(', ')}` 
+          error: `Invalid sort parameter. Must be one of: ${Object.keys(SORT_MAP).join(', ')}` 
         }),
         { 
           status: 400, 
@@ -115,94 +237,8 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Map frontend sort options to backend sort options
-    const mapFrontendSortToBackend = (sort: string): string => {
-      // If it's already a backend sort option, return as-is
-      if (['price_asc', 'price_desc', 'rank_asc', 'rank_desc', 'year_asc', 'year_desc', 
-           'mileage_asc', 'mileage_desc', 'make_asc', 'make_desc', 'created_asc', 'created_desc'].includes(sort)) {
-        return sort;
-      }
-
-      // Map frontend options to backend options
-      switch (sort) {
-        case 'price_low':
-          return 'price_asc';
-        case 'price_high':
-          return 'price_desc';
-        case 'year_new':
-          return 'year_desc';
-        case 'year_old':
-          return 'year_asc';
-        case 'mileage_low':
-          return 'mileage_asc';
-        case 'mileage_high':
-          return 'mileage_desc';
-        case 'make_az':
-          return 'make_asc';
-        case 'make_za':
-          return 'make_desc';
-        case 'recently_added':
-          return 'created_desc';
-        case 'oldest_first':
-          return 'created_asc';
-        case 'popular':
-          return 'rank_desc';
-        default:
-          return 'price_asc';
-      }
-    };
-
-    // Map sort option to database field and direction with NULLS LAST for global ordering
-    const getSortParams = (sort: string): { field: string; direction: string } => {
-      const backendSort = mapFrontendSortToBackend(sort);
-      
-      switch (backendSort) {
-        case 'price_asc':
-          return { field: 'price_cents', direction: 'ASC' };
-        case 'price_desc':
-          return { field: 'price_cents', direction: 'DESC' };
-        case 'rank_asc':
-          return { field: 'rank_score', direction: 'ASC' };
-        case 'rank_desc':
-          return { field: 'rank_score', direction: 'DESC' };
-        case 'year_asc':
-          return { field: 'year', direction: 'ASC' };
-        case 'year_desc':
-          return { field: 'year', direction: 'DESC' };
-        case 'mileage_asc':
-          return { field: 'mileage_km', direction: 'ASC' };
-        case 'mileage_desc':
-          return { field: 'mileage_km', direction: 'DESC' };
-        case 'make_asc':
-          return { field: 'make', direction: 'ASC' };
-        case 'make_desc':
-          return { field: 'make', direction: 'DESC' };
-        case 'created_asc':
-          return { field: 'created_at', direction: 'ASC' };
-        case 'created_desc':
-          return { field: 'created_at', direction: 'DESC' };
-        default:
-          return { field: 'price_cents', direction: 'ASC' };
-      }
-    };
-
-    const { field: sortField, direction: sortDir } = getSortParams(sort);
-
-    // Parse cursor
-    const parseCursor = (cursor: string): { value: string; id: string } | null => {
-      if (!cursor) return null;
-      
-      try {
-        const decoded = atob(cursor);
-        const [value, id] = decoded.split('|');
-        if (!value || !id) return null;
-        return { value, id };
-      } catch {
-        return null;
-      }
-    };
-
-    const cursorData = cursor ? parseCursor(cursor) : null;
+    // Get sort parameters from SORT_MAP
+    const { field: sortField, direction: sortDir } = SORT_MAP[sort];
 
     console.log('📊 Request params:', {
       filters,
@@ -275,33 +311,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     const items = cars || [];
 
-    // Map items to exact external API JSON shape (like Encar API)
-    const mappedItems = items.map((car: any) => ({
-      id: car.id,
-      api_id: car.api_id,
-      make: car.make,
-      model: car.model,
-      year: car.year,
-      price: car.price_cents ? car.price_cents / 100 : null,
-      price_cents: car.price_cents,
-      rank_score: car.rank_score || 0,
-      mileage: car.mileage_km,
-      fuel: car.fuel,
-      transmission: car.transmission,
-      color: car.color,
-      condition: car.condition,
-      vin: car.vin,
-      lot_number: car.lot_number,
-      location: car.location || '',
-      image_url: car.image_url,
-      images: car.images || [],
-      title: `${car.year} ${car.make} ${car.model}`,
-      created_at: car.created_at,
-      // Preserve exact structure from external API
-      ...(car.car_data || {}),
-      // Override with normalized data
-      lots: car.lot_data ? [car.lot_data] : []
-    }));
+    // Map items to exact external API JSON shape using mapDbToExternal
+    const mappedItems = items.map(mapDbToExternal);
 
     // Calculate pagination info for new response format
     const total = totalCount || 0;
