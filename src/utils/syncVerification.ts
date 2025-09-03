@@ -182,7 +182,7 @@ export async function verifySyncToDatabase(
           details.dataIntegrityPassed = true;
         } else {
           // Only validate integrity if both tables have data
-          const countDifference = Math.abs(mainCount - Number(cacheCountValue));
+          const countDifference = Math.abs(mainCount - cacheCountValue);
           const percentDifference = mainCount > 0 ? (countDifference / mainCount) * 100 : 0;
           
           details.dataIntegrityPassed = percentDifference < dataIntegrityThresholdPercent;

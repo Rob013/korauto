@@ -45,7 +45,7 @@ function calculateDisplayCount(
 }
 
 // Function to calculate percentage
-function calculatePercentage(count: number, estimatedTotal: number = 192800) {
+function calculatePercentage(count: number, estimatedTotal: number = 200000) {
   return Math.min(100, (count / estimatedTotal) * 100);
 }
 

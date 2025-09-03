@@ -24,31 +24,6 @@ interface Car {
   }[];
 }
 
-// Enhanced retry function for reliable API calls
-async function fetchWithRetry(url: string, options: RequestInit, maxRetries: number = 3): Promise<Response> {
-  let lastError: Error | null = null;
-  
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const response = await fetch(url, options);
-      if (response.ok) {
-        return response;
-      }
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-      console.warn(`Attempt ${attempt}/${maxRetries} failed:`, lastError.message);
-      
-      if (attempt < maxRetries) {
-        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-    }
-  }
-  
-  throw lastError || new Error('All retry attempts failed');
-}
-
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -73,9 +48,10 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    
+    const API_BASE_URL = 'https://auctionsapi.com/api';
+
     // Parse request body for sync parameters with enhanced resume handling
-    let syncParams: Record<string, unknown> = {};
+    let syncParams: any = {};
     try {
       if (req.body) {
         syncParams = await req.json();
@@ -83,55 +59,8 @@ Deno.serve(async (req) => {
     } catch (e) {
       console.log('No body parameters provided, using defaults');
     }
-
-    // Handle connectivity test requests from AI Coordinator
-    if (syncParams.test === true || syncParams.source === 'connectivity-test') {
-      console.log('🔍 Connectivity test requested');
-      return Response.json({
-        success: true,
-        status: 'connected',
-        message: 'Edge function is accessible and ready for sync operations',
-        timestamp: new Date().toISOString()
-      }, { headers: corsHeaders });
-    }
-    const API_BASE_URL = 'https://auctionsapi.com/api';
     
     console.log('🚀 Starting enhanced car sync with params:', syncParams);
-
-    // Enhanced API total data detection for 100% completion
-    console.log('📊 Checking API total data availability...');
-    try {
-      const metaResponse = await fetchWithRetry(
-        `${API_BASE_URL}/cars?per_page=1&page=1`,
-        { 
-          headers: { 
-            'accept': 'application/json',
-            'x-api-key': API_KEY,
-            'User-Agent': 'KorAuto-EdgeSync/2.0-AI-Optimized'
-          }
-        },
-        2
-      );
-      const metaData = await metaResponse.json();
-      const totalApiRecords = metaData.total || metaData.meta?.total || null;
-      
-      if (totalApiRecords) {
-        console.log(`📈 API reports ${totalApiRecords} total records available`);
-        
-        // Update sync status with API target
-        await supabase
-          .from('sync_status')
-          .upsert({
-            id: 'cars-sync-main',
-            api_total_records: totalApiRecords,
-            last_api_check: new Date().toISOString()
-          });
-      } else {
-        console.log('⚠️ Could not determine total API records, will sync until natural completion');
-      }
-    } catch (error) {
-      console.warn('⚠️ Failed to check API total:', error);
-    }
 
     // Check if this is a resume request
     const isResumeRequest = syncParams.resume === true;
@@ -168,7 +97,7 @@ Deno.serve(async (req) => {
     }
 
     // Update sync status to running with enhanced metadata
-    const updateData: Record<string, unknown> = {
+    const updateData: any = {
       id: 'cars-sync-main',
       status: 'running',
       started_at: new Date().toISOString(),
@@ -250,14 +179,10 @@ Deno.serve(async (req) => {
         consecutiveEmptyPages = 0;
         console.log(`⚡ Processing ${cars.length} cars from page ${currentPage}...`);
 
-        // Memory-efficient car transformation with enhanced image handling
+        // Memory-efficient car transformation
         const carCacheItems = cars.map(car => {
           const lot = car.lots?.[0];
           const price = lot?.buy_now ? Math.round(lot.buy_now + 2300) : null;
-          
-          // Enhanced image processing to ensure all pictures are captured
-          const images = lot?.images?.normal || [];
-          const primaryImage = images.length > 0 ? images[0] : null;
           
           return {
             id: car.id.toString(),
@@ -275,14 +200,11 @@ Deno.serve(async (req) => {
             color: car.color?.name,
             lot_number: lot?.lot,
             condition: 'good',
-            image_url: primaryImage, // Primary image for display
-            images: JSON.stringify(images), // All images as JSON array
+            images: JSON.stringify(lot?.images?.normal || []),
             car_data: {
               buy_now: lot?.buy_now,
               current_bid: lot?.bid,
-              keys_available: lot?.keys_available !== false,
-              has_images: images.length > 0,
-              image_count: images.length
+              keys_available: lot?.keys_available !== false
             },
             lot_data: lot,
             created_at: new Date().toISOString(),
@@ -291,50 +213,19 @@ Deno.serve(async (req) => {
           };
         });
 
-        // Enhanced database writes with chunking to both cache and main table
+        // Enhanced database writes with chunking
         for (let j = 0; j < carCacheItems.length; j += BATCH_SIZE) {
           const batch = carCacheItems.slice(j, j + BATCH_SIZE);
           
-          // Write to cache table
-          const { error: cacheError } = await supabase
+          const { error } = await supabase
             .from('cars_cache')
             .upsert(batch, { onConflict: 'id' });
 
-          if (cacheError) {
-            console.error('❌ Cache database error:', cacheError);
+          if (error) {
+            console.error('❌ Database error:', error);
             errors++;
           } else {
             totalProcessed += batch.length;
-          }
-          
-          // Also write to main cars table for global sorting
-          const mainTableBatch = batch.map(car => ({
-            id: car.id,
-            make: car.make,
-            model: car.model,
-            year: car.year,
-            price: car.price,
-            price_cents: car.price_cents,
-            mileage: car.mileage ? parseInt(car.mileage) : null,
-            fuel: car.fuel,
-            transmission: car.transmission,
-            color: car.color,
-            image_url: car.image_url,
-            images: car.images,
-            rank_score: car.rank_score,
-            created_at: car.created_at,
-            updated_at: car.updated_at,
-            external_id: car.api_id,
-            source_api: 'auctions'
-          }));
-          
-          const { error: mainError } = await supabase
-            .from('cars')
-            .upsert(mainTableBatch, { onConflict: 'id' });
-
-          if (mainError) {
-            console.warn('⚠️ Main table sync warning:', mainError);
-            // Don't count this as an error that stops sync
           }
           
           // MAXIMUM SPEED: No artificial delays - let the system run at natural pace
@@ -375,7 +266,7 @@ Deno.serve(async (req) => {
         // Force garbage collection hint for memory management
         if (currentPage % 50 === 0) {
           console.log('🧹 Memory cleanup hint');
-          // @ts-expect-error gc is not in type definitions but available in Deno
+          // @ts-ignore
           if (typeof gc !== 'undefined') gc();
         }
 
@@ -417,38 +308,15 @@ Deno.serve(async (req) => {
       }
     } // End of while loop
 
-    // Enhanced completion logic for 100% sync with API total verification
+    // Enhanced completion logic - NEVER PAUSE, ONLY COMPLETE WHEN TRULY DONE
+    const finalStatus = consecutiveEmptyPages >= 10 ? 'completed' : 'running'; // Changed from 'paused' to 'running'
     const isNaturalCompletion = consecutiveEmptyPages >= 10;
     
-    // Check if we've reached the API total (if available)
-    const { data: currentSyncStatus } = await supabase
-      .from('sync_status')
-      .select('api_total_records')
-      .eq('id', 'cars-sync-main')
-      .single();
-    
-    const apiTotal = currentSyncStatus?.api_total_records;
     const finalRecordsProcessed = isResumeRequest 
       ? (currentSyncStatus?.records_processed || 0) + totalProcessed
       : (existingCars || 0) + totalProcessed;
     
-    // Enhanced completion detection
-    let completionPercentage = 100;
-    let finalStatus = 'completed';
-    
-    if (apiTotal && finalRecordsProcessed < apiTotal) {
-      completionPercentage = Math.round((finalRecordsProcessed / apiTotal) * 100);
-      if (completionPercentage < 99 && !isNaturalCompletion) {
-        finalStatus = 'running'; // Continue syncing if we haven't reached near 100%
-      }
-    } else if (!isNaturalCompletion) {
-      finalStatus = 'running'; // Continue if no natural completion yet
-    }
-    
-    console.log(`📊 Sync finishing: ${totalProcessed} new cars processed, ${finalRecordsProcessed} total records`);
-    if (apiTotal) {
-      console.log(`📈 Progress: ${completionPercentage}% (${finalRecordsProcessed}/${apiTotal} from API)`);
-    }
+    console.log(`📊 Sync finishing: ${totalProcessed} new cars processed, ${consecutiveEmptyPages} consecutive empty pages`);
     
     await supabase
       .from('sync_status')
@@ -456,18 +324,17 @@ Deno.serve(async (req) => {
         status: finalStatus,
         current_page: currentPage,
         records_processed: finalRecordsProcessed,
-        completion_percentage: completionPercentage,
         completed_at: finalStatus === 'completed' ? new Date().toISOString() : null,
         last_activity_at: new Date().toISOString(),
-        error_message: finalStatus === 'completed' ? 
-          `Sync completed: processed ${totalProcessed} new cars, ${errors} errors (${completionPercentage}%)` :
-          `Processed ${totalProcessed} new cars, ${errors} errors - continuing to 100% (${completionPercentage}%)`
+        error_message: isNaturalCompletion ? 
+          `Sync completed naturally - processed ${totalProcessed} new cars, ${errors} errors` :
+          `Processed ${totalProcessed} new cars, ${errors} errors - continuing automatically to 100%`
       })
       .eq('id', 'cars-sync-main');
 
-    const completionMessage = finalStatus === 'completed'
+    const completionMessage = isNaturalCompletion 
       ? `✅ SYNC 100% COMPLETE! Processed ${totalProcessed} new cars (Total: ${finalRecordsProcessed})`
-      : `✅ Sync continuing: ${totalProcessed} new cars processed - ${completionPercentage}% complete, continuing to 100%`;
+      : `✅ Sync continuing: ${totalProcessed} new cars processed - will continue automatically to 100%`;
     
     console.log(completionMessage);
 
@@ -476,8 +343,6 @@ Deno.serve(async (req) => {
       status: finalStatus,
       totalProcessed,
       totalRecords: finalRecordsProcessed,
-      completionPercentage,
-      apiTotal,
       currentPage,
       errors,
       isResume: isResumeRequest,

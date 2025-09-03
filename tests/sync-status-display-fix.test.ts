@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 describe('Sync Status Display Fix', () => {
   // Mock the status message generation from FullCarsSyncTrigger
   const generateStatusMessage = (status: string, recordsProcessed: number): string => {
-    const estimatedTotal = 192800;
+    const estimatedTotal = 200000;
     const percentage = Math.round((recordsProcessed / estimatedTotal) * 100);
     
     const formattedRecords = recordsProcessed.toLocaleString();
