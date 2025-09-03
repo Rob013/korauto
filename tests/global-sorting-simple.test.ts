@@ -63,8 +63,8 @@ describe('Global Sorting Implementation', () => {
         { sort: 'year_desc', field: 'year', direction: 'DESC' },
         
         // Mileage
-        { sort: 'mileage_asc', field: 'mileage', direction: 'ASC' },
-        { sort: 'mileage_desc', field: 'mileage', direction: 'DESC' },
+        { sort: 'mileage_asc', field: 'mileage_km', direction: 'ASC' },
+        { sort: 'mileage_desc', field: 'mileage_km', direction: 'DESC' },
         
         // Make
         { sort: 'make_asc', field: 'make', direction: 'ASC' },
@@ -87,8 +87,8 @@ describe('Global Sorting Implementation', () => {
         { sort: 'price_high', field: 'price_cents', direction: 'DESC' },
         { sort: 'year_new', field: 'year', direction: 'DESC' },
         { sort: 'year_old', field: 'year', direction: 'ASC' },
-        { sort: 'mileage_low', field: 'mileage', direction: 'ASC' },
-        { sort: 'mileage_high', field: 'mileage', direction: 'DESC' },
+        { sort: 'mileage_low', field: 'mileage_km', direction: 'ASC' },
+        { sort: 'mileage_high', field: 'mileage_km', direction: 'DESC' },
         { sort: 'make_az', field: 'make', direction: 'ASC' },
         { sort: 'make_za', field: 'make', direction: 'DESC' },
         { sort: 'recently_added', field: 'created_at', direction: 'DESC' },
@@ -106,7 +106,7 @@ describe('Global Sorting Implementation', () => {
   describe('Global Sorting Requirements Compliance', () => {
     it('should support all required sort fields from problem statement', () => {
       // Problem statement mentions: price, year, mileage, etc.
-      const requiredFields = ['price_cents', 'year', 'mileage'];
+      const requiredFields = ['price_cents', 'year', 'mileage_km'];
       
       const priceParams = getSortParams('price_asc');
       const yearParams = getSortParams('year_asc');
@@ -114,7 +114,7 @@ describe('Global Sorting Implementation', () => {
 
       expect(priceParams.field).toBe('price_cents');
       expect(yearParams.field).toBe('year');
-      expect(mileageParams.field).toBe('mileage');
+      expect(mileageParams.field).toBe('mileage_km');
     });
 
     it('should ensure price_asc maps to correct field for global sorting', () => {
@@ -136,7 +136,7 @@ describe('Global Sorting Implementation', () => {
       const fieldPairs = [
         { asc: 'price_asc', desc: 'price_desc', field: 'price_cents' },
         { asc: 'year_asc', desc: 'year_desc', field: 'year' },
-        { asc: 'mileage_asc', desc: 'mileage_desc', field: 'mileage' },
+        { asc: 'mileage_asc', desc: 'mileage_desc', field: 'mileage_km' },
         { asc: 'make_asc', desc: 'make_desc', field: 'make' },
         { asc: 'rank_asc', desc: 'rank_desc', field: 'rank_score' },
         { asc: 'created_asc', desc: 'created_desc', field: 'created_at' },
