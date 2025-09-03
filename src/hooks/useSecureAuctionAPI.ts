@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { findGenerationYears } from "@/data/generationYears";
 import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from '../utils/grade-categorization';
+import { guardExternalApiCall, isDbOnlyMode } from '@/guards/externalApiGuard';
 
 // Simple cache to prevent redundant API calls
 const apiCache = new Map<string, { data: any; timestamp: number }>();
@@ -600,6 +601,12 @@ export const useSecureAuctionAPI = () => {
     carId?: string
   ): Promise<any> => {
     try {
+      // Check for READ_SOURCE=db mode and block external API calls
+      if (isDbOnlyMode()) {
+        console.warn('🚫 External API call blocked: READ_SOURCE=db mode is enabled');
+        throw new Error('External API calls are blocked when READ_SOURCE=db mode is enabled. Use database-only endpoints instead.');
+      }
+
       console.log("🔐 Making secure API call:", { endpoint, filters, carId });
 
       // Add a minimal delay to prevent rapid successive calls
