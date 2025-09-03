@@ -792,11 +792,13 @@ export const useSecureAuctionAPI = () => {
         model: { id: 0, name: dbCar.model },
         year: dbCar.year,
         title: dbCar.title || `${dbCar.year} ${dbCar.make} ${dbCar.model}`,
-        vin: '', // Not available in current DB structure
+        vin: dbCar.vin || '', // Include VIN from database if available
         fuel: dbCar.fuel ? { id: 0, name: dbCar.fuel } : undefined,
         transmission: dbCar.transmission ? { id: 0, name: dbCar.transmission } : undefined,
         color: dbCar.color ? { id: 0, name: dbCar.color } : undefined,
         location: dbCar.location || '',
+        lot_number: dbCar.lot_number || '',
+        isFromDatabase: true, // Mark as database car for filtering
         lots: [{
           buy_now: dbCar.price,
           lot: '',
@@ -2115,7 +2117,16 @@ export const useSecureAuctionAPI = () => {
         });
         
         if (response.items && response.items.length > 0) {
-          allCars.push(...response.items);
+          // Mark items as coming from database and add any missing fields
+          const databaseCars = response.items.map(car => ({
+            ...car,
+            isFromDatabase: true,
+            // Ensure lot_number is available for filtering
+            lot_number: car.lot_number || '',
+            // Ensure VIN is available if present
+            vin: car.vin || ''
+          }));
+          allCars.push(...databaseCars);
           console.log(`✅ Page ${pageCount}: Got ${response.items.length} cars (total so far: ${allCars.length})`);
         }
         
