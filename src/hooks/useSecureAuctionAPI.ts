@@ -728,23 +728,93 @@ export const useSecureAuctionAPI = () => {
     setError(null);
 
     try {
-      // Pass filters to the API - DO NOT send grade_iaai to server for filtering
-      const apiFilters = {
-        ...newFilters,
-        page: page.toString(),
-        per_page: newFilters.per_page || "50", // Show 50 cars per page
-        simple_paginate: "0",
-      };
+      // Import the proper backend API function for keyset pagination
+      const { fetchCarsWithKeyset, mapFrontendSortToBackend } = await import('@/services/carsApi');
       
-      // IMPORTANT: Remove grade_iaai and trim_level from server request - we'll do client-side filtering
-      // This prevents backend errors and ensures we get all cars for client-side filtering
+      // Convert API filters to the proper format for fetchCarsWithKeyset
+      const carsApiFilters = {
+        make: newFilters.manufacturer_id ? 
+          manufacturers.find(m => m.id.toString() === newFilters.manufacturer_id)?.name : undefined,
+        model: newFilters.model_id ? 
+          models.find(m => m.id.toString() === newFilters.model_id)?.name : undefined,
+        yearMin: newFilters.from_year,
+        yearMax: newFilters.to_year,
+        priceMin: newFilters.buy_now_price_from,
+        priceMax: newFilters.buy_now_price_to,
+        fuel: newFilters.fuel_type,
+        search: newFilters.search
+      };
+
+      // Remove undefined values
+      Object.keys(carsApiFilters).forEach(key => {
+        if (carsApiFilters[key] === undefined) {
+          delete carsApiFilters[key];
+        }
+      });
+
+      // Store client-side filters for later
       const selectedVariant = newFilters.grade_iaai;
       const selectedTrimLevel = newFilters.trim_level;
-      delete apiFilters.grade_iaai;
-      delete apiFilters.trim_level;
+      
+      // Use the current sort option, defaulting to recently_added
+      const sortOption = newFilters.sort_by || 'recently_added';
+      const backendSort = mapFrontendSortToBackend(sortOption);
+      
+      // Calculate pagination - for page-based systems, convert to cursor
+      const pageSize = parseInt(newFilters.per_page || "50");
+      let cursor: string | undefined = undefined;
+      
+      // For pages beyond 1, we would need to calculate cursor
+      // For now, we'll use simple approach of fetching more data if page > 1
+      const limit = pageSize;
+      const skip = page > 1 ? (page - 1) * pageSize : 0;
 
-      console.log(`🔄 Fetching cars - Page ${page} with filters:`, apiFilters);
-      const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
+      console.log(`🔄 Fetching cars from database - Page ${page} with filters:`, carsApiFilters, `sort:`, backendSort);
+      
+      // Fetch from database using keyset pagination
+      const response = await fetchCarsWithKeyset({
+        filters: carsApiFilters,
+        sort: backendSort,
+        limit: limit + skip, // Fetch more to simulate pagination for now
+        cursor
+      });
+
+      // Simulate pagination by slicing results if page > 1
+      let paginatedCars = response.items || [];
+      if (skip > 0) {
+        paginatedCars = paginatedCars.slice(skip);
+      }
+
+      // Convert database car format to external API format for compatibility
+      const convertedCars = paginatedCars.map(dbCar => ({
+        id: dbCar.id,
+        manufacturer: { id: 0, name: dbCar.make },
+        model: { id: 0, name: dbCar.model },
+        year: dbCar.year,
+        title: dbCar.title || `${dbCar.year} ${dbCar.make} ${dbCar.model}`,
+        vin: '', // Not available in current DB structure
+        fuel: dbCar.fuel ? { id: 0, name: dbCar.fuel } : undefined,
+        transmission: dbCar.transmission ? { id: 0, name: dbCar.transmission } : undefined,
+        color: dbCar.color ? { id: 0, name: dbCar.color } : undefined,
+        location: dbCar.location || '',
+        lots: [{
+          buy_now: dbCar.price,
+          lot: '',
+          odometer: { km: dbCar.mileage || 0 },
+          images: { 
+            normal: dbCar.images ? (Array.isArray(dbCar.images) ? dbCar.images : [dbCar.image_url].filter(Boolean)) : [dbCar.image_url].filter(Boolean),
+            big: dbCar.images ? (Array.isArray(dbCar.images) ? dbCar.images : [dbCar.image_url].filter(Boolean)) : [dbCar.image_url].filter(Boolean)
+          }
+        }]
+      }));
+
+      const data = {
+        data: convertedCars,
+        meta: {
+          total: response.total,
+          last_page: Math.ceil(response.total / pageSize)
+        }
+      };
 
       // Apply client-side variant filtering if a variant is selected
       let filteredCars = data.data || [];
@@ -828,7 +898,7 @@ export const useSecureAuctionAPI = () => {
       setHasMorePages(page < (data.meta?.last_page || 1));
 
       console.log(
-        `✅ API Success - Fetched ${filteredCars.length} cars from page ${page}, server total: ${data.meta?.total || 0}, filtered displayed: ${filteredCars.length}`
+        `✅ Database Success - Fetched ${filteredCars.length} cars from page ${page}, database total: ${data.meta?.total || 0}, filtered displayed: ${filteredCars.length}`
       );
 
       if (resetList || page === 1) {
@@ -839,26 +909,15 @@ export const useSecureAuctionAPI = () => {
         setCurrentPage(page);
       }
     } catch (err: any) {
-      console.error("❌ API Error:", err);
+      console.error("❌ Database Error:", err);
       
-      if (err.message === "RATE_LIMITED") {
-        // Retry once after rate limit
-        try {
-          await delay(2000);
-          return fetchCars(page, newFilters, resetList);
-        } catch (retryErr) {
-          console.error("❌ Retry failed:", retryErr);
-          // Fall through to use fallback data
-        }
-      }
-      
-      // Use fallback car data when API fails - but only if no specific brand filter is applied
+      // Use fallback car data when database fails - but only if no specific brand filter is applied
       if (newFilters.manufacturer_id && 
           newFilters.manufacturer_id !== 'all' && 
           newFilters.manufacturer_id !== '' &&
           newFilters.manufacturer_id !== undefined &&
           newFilters.manufacturer_id !== null) {
-        console.log("❌ API failed for brand-specific search, not showing fallback cars to avoid test car display");
+        console.log("❌ Database failed for brand-specific search, not showing fallback cars to avoid test car display");
         setError("Failed to load cars for the selected brand. Please try again.");
         setCars([]);
         setTotalCount(0);
@@ -866,8 +925,8 @@ export const useSecureAuctionAPI = () => {
         return;
       }
       
-      // Use fallback cars when API fails
-      console.log("❌ API failed, using fallback cars for pagination testing");
+      // Use fallback cars when database fails
+      console.log("❌ Database failed, using fallback cars for pagination testing");
       const fallbackCars = createFallbackCars(newFilters);
       
       if (fallbackCars.length === 0) {
@@ -920,74 +979,107 @@ export const useSecureAuctionAPI = () => {
 
   const fetchManufacturers = async (): Promise<Manufacturer[]> => {
     try {
-      console.log(`🔍 Fetching all manufacturers`);
+      console.log(`🔍 Fetching all manufacturers from cars_cache database`);
       
-      // Try to get manufacturers from cache or API
-      const data = await getCachedApiCall("manufacturers/cars", { per_page: "1000", simple_paginate: "0" }, 
-        () => makeSecureAPICall("manufacturers/cars", {
-          per_page: "1000",
-          simple_paginate: "0"
-        })
-      );
-      
-      let manufacturers = data.data || [];
-      
-      // If we got manufacturers from API, normalize them
-      if (manufacturers.length > 0) {
-        console.log(`✅ Found ${manufacturers.length} manufacturers from API`);
-        manufacturers = manufacturers.map(manufacturer => ({
-          id: manufacturer.id,
-          name: manufacturer.name,
-          cars_qty: manufacturer.cars_qty || manufacturer.car_count || 0,
-          car_count: manufacturer.car_count || manufacturer.cars_qty || 0
-        }));
-      } else {
-        // No manufacturers from API, use fallback data
-        console.log(`⚠️ No manufacturers from API, using fallback data`);
-        manufacturers = createFallbackManufacturers();
+      // Get unique manufacturers from synced cars_cache with counts
+      const { data: manufacturers, error } = await supabase
+        .from('cars_cache')
+        .select('make')
+        .not('make', 'is', null)
+        .neq('make', '');
+
+      if (error) {
+        console.error('Error fetching manufacturers from cars_cache:', error);
+        return createFallbackManufacturers();
       }
+
+      // Count cars per manufacturer
+      const manufacturerCounts = {};
+      manufacturers.forEach(car => {
+        const make = car.make.trim();
+        if (make) {
+          manufacturerCounts[make] = (manufacturerCounts[make] || 0) + 1;
+        }
+      });
+
+      // Convert to manufacturer objects
+      const manufacturerList = Object.entries(manufacturerCounts)
+        .map(([name, count], index) => ({
+          id: index + 1,
+          name: name,
+          cars_qty: count,
+          car_count: count
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      console.log(`✅ Found ${manufacturerList.length} manufacturers from cars_cache database`);
+      console.log(`🏷️ Top manufacturers:`, 
+        manufacturerList.slice(0, 5).map(m => `${m.name} (${m.cars_qty || 0} cars)`));
       
-      console.log(`🏷️ Retrieved manufacturers:`, 
-        manufacturers.slice(0, 5).map(m => `${m.name} (${m.cars_qty || 0} cars)`));
-      
-      return manufacturers;
+      return manufacturerList;
     } catch (err) {
-      console.error("❌ Error fetching manufacturers:", err);
+      console.error("❌ Error fetching manufacturers from cars_cache database:", err);
       console.log(`🔄 Using fallback manufacturer data`);
       
-      // Return fallback data when API fails
+      // Return fallback data when database fails
       return createFallbackManufacturers();
     }
   };
 
   const fetchModels = async (manufacturerId: string): Promise<Model[]> => {
     try {
-      // Use cached API call for models
-      const fallbackData = await getCachedApiCall(`models/${manufacturerId}/cars`, { per_page: "1000", simple_paginate: "0" },
-        () => makeSecureAPICall(`models/${manufacturerId}/cars`, {
-          per_page: "1000",
-          simple_paginate: "0"
-        })
-      );
+      // Get manufacturer name from ID
+      const manufacturer = manufacturers.find(m => m.id.toString() === manufacturerId);
+      if (!manufacturer) {
+        console.log(`❌ Manufacturer with ID ${manufacturerId} not found`);
+        return [];
+      }
+
+      console.log(`🔍 Fetching models for manufacturer: ${manufacturer.name} from cars_cache`);
       
-      let fallbackModels = (fallbackData.data || []).filter((m: any) => m && m.id && m.name);
+      // Get unique models from synced cars_cache for this manufacturer
+      const { data: models, error } = await supabase
+        .from('cars_cache')
+        .select('model')
+        .eq('make', manufacturer.name)
+        .not('model', 'is', null)
+        .neq('model', '');
 
-      // Filter models by manufacturer_id (in case API returns extra)
-      fallbackModels = fallbackModels.filter((m: any) =>
-        m.manufacturer_id?.toString() === manufacturerId ||
-        m.manufacturer?.id?.toString() === manufacturerId
-      );
+      if (error) {
+        console.error('Error fetching models from cars_cache:', error);
+        return createFallbackModels(manufacturer.name);
+      }
 
-      fallbackModels.sort((a: any, b: any) => a.name.localeCompare(b.name));
-      return fallbackModels;
+      // Count cars per model
+      const modelCounts = {};
+      models.forEach(car => {
+        const model = car.model.trim();
+        if (model) {
+          modelCounts[model] = (modelCounts[model] || 0) + 1;
+        }
+      });
+
+      // Convert to model objects
+      const modelList = Object.entries(modelCounts)
+        .map(([name, count], index) => ({
+          id: index + 1,
+          name: name,
+          cars_qty: count,
+          car_count: count,
+          manufacturer_id: parseInt(manufacturerId)
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      console.log(`✅ Found ${modelList.length} models for ${manufacturer.name} from cars_cache`);
+      return modelList;
     } catch (err) {
       console.error("[fetchModels] Error:", err);
       console.log(`🔄 Using fallback model data for manufacturer ${manufacturerId}`);
       
-      // Use fallback model data based on manufacturer name - more efficient approach
+      // Use fallback model data based on manufacturer name
       try {
-        const manufacturers = await fetchManufacturers();
-        const manufacturer = manufacturers.find(m => m.id.toString() === manufacturerId);
+        const manufacturersList = await fetchManufacturers();
+        const manufacturer = manufacturersList.find(m => m.id.toString() === manufacturerId);
         if (manufacturer) {
           return createFallbackModels(manufacturer.name);
         }
@@ -1191,26 +1283,90 @@ export const useSecureAuctionAPI = () => {
     filters: APIFilters = {}
   ): Promise<{ [key: string]: number }> => {
     try {
-      const apiFilters = {
-        ...filters,
-        per_page: "1",
-        simple_paginate: "1",
+      // Import the proper backend API function
+      const { fetchCarsWithKeyset } = await import('@/services/carsApi');
+      
+      // Convert API filters to the proper format
+      const carsApiFilters = {
+        make: filters.manufacturer_id ? 
+          manufacturers.find(m => m.id.toString() === filters.manufacturer_id)?.name : undefined,
+        model: filters.model_id ? 
+          models.find(m => m.id.toString() === filters.model_id)?.name : undefined,
+        yearMin: filters.from_year,
+        yearMax: filters.to_year,
+        priceMin: filters.buy_now_price_from,
+        priceMax: filters.buy_now_price_to,
+        fuel: filters.fuel_type,
+        search: filters.search
       };
 
-      const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
-      return { total: data.meta?.total || 0 };
+      // Remove undefined values
+      Object.keys(carsApiFilters).forEach(key => {
+        if (carsApiFilters[key] === undefined) {
+          delete carsApiFilters[key];
+        }
+      });
+
+      // Get count by fetching with limit 1 - the total count will be returned
+      const response = await fetchCarsWithKeyset({
+        filters: carsApiFilters,
+        sort: 'price_asc',
+        limit: 1
+      });
+
+      return { total: response.total || 0 };
     } catch (err) {
-      console.error("❌ Error fetching car counts:", err);
+      console.error("❌ Error fetching car counts from database:", err);
       return { total: 0 };
     }
   };
 
   const fetchCarById = async (carId: string): Promise<Car | null> => {
     try {
-      const data = await makeSecureAPICall("cars", {}, carId);
-      return data.data || null;
+      // Query the cars_cache table directly for the car by ID  
+      const { data: car, error } = await supabase
+        .from('cars_cache')
+        .select('*')
+        .eq('id', carId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching car by ID from cars_cache:', error);
+        return null;
+      }
+
+      if (!car) {
+        return null;
+      }
+
+      // Convert cars_cache car to API format for compatibility
+      const images = Array.isArray(car.images) ? car.images : (car.images ? [car.images] : []);
+      
+      return {
+        id: car.id,
+        manufacturer: { id: 0, name: car.make },
+        model: { id: 0, name: car.model },
+        year: car.year,
+        title: `${car.year} ${car.make} ${car.model}`,
+        vin: car.vin || '',
+        fuel: car.fuel ? { id: 0, name: car.fuel } : undefined,
+        transmission: car.transmission ? { id: 0, name: car.transmission } : undefined,
+        color: car.color ? { id: 0, name: car.color } : undefined,
+        location: car.condition || '', // Using condition field as location
+        lots: [{
+          buy_now: car.price,
+          lot: car.lot_number || '',
+          odometer: { km: parseInt(car.mileage) || 0 },
+          images: { 
+            normal: images,
+            big: images
+          },
+          // Include additional car data if available
+          ...(car.car_data && typeof car.car_data === 'object' ? car.car_data : {})
+        }]
+      };
     } catch (err) {
-      console.error("❌ Error fetching car by ID:", err);
+      console.error("❌ Error fetching car by ID from cars_cache:", err);
       return null;
     }
   };
