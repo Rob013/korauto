@@ -1910,26 +1910,79 @@ export const useSecureAuctionAPI = () => {
     newFilters: APIFilters = filters
   ): Promise<any[]> => {
     try {
-      // Create API filters without pagination to get all cars
-      const apiFilters = {
-        ...newFilters,
-        // Remove pagination parameters to get all cars
-        page: undefined,
-        per_page: "9999", // Set a high limit to ensure we get all cars
-        simple_paginate: "0",
+      // Import the proper backend API function for keyset pagination
+      const { fetchCarsWithKeyset, mapFrontendSortToBackend } = await import('@/services/carsApi');
+      
+      // Convert API filters to the proper format for fetchCarsWithKeyset
+      const carsApiFilters = {
+        make: newFilters.manufacturer_id ? 
+          manufacturers.find(m => m.id.toString() === newFilters.manufacturer_id)?.name : undefined,
+        model: newFilters.model_id ? 
+          models.find(m => m.id.toString() === newFilters.model_id)?.name : undefined,
+        yearMin: newFilters.from_year,
+        yearMax: newFilters.to_year,
+        priceMin: newFilters.buy_now_price_from,
+        priceMax: newFilters.buy_now_price_to,
+        fuel: newFilters.fuel_type,
+        search: newFilters.search
       };
       
-      // Remove grade_iaai and trim_level from server request for client-side filtering
-      const selectedVariant = newFilters.grade_iaai;
-      const selectedTrimLevel = newFilters.trim_level;
-      delete apiFilters.grade_iaai;
-      delete apiFilters.trim_level;
-
-      console.log(`🔄 Fetching ALL cars for global sorting with filters:`, apiFilters);
-      const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
-
+      // Remove undefined values
+      Object.keys(carsApiFilters).forEach(key => {
+        if (carsApiFilters[key] === undefined) {
+          delete carsApiFilters[key];
+        }
+      });
+      
+      // Use the current sort option, defaulting to recently_added
+      const sortOption = newFilters.sort_by || 'recently_added';
+      const backendSort = mapFrontendSortToBackend(sortOption);
+      
+      console.log(`🔄 Fetching ALL cars using proper backend API with filters:`, carsApiFilters, `sort:`, backendSort);
+      
+      // Fetch all cars using keyset pagination
+      const allCars: any[] = [];
+      let cursor: string | undefined = undefined;
+      let hasMore = true;
+      let pageCount = 0;
+      const maxPages = 1000; // Safety limit to prevent infinite loops
+      
+      while (hasMore && pageCount < maxPages) {
+        pageCount++;
+        console.log(`📄 Fetching page ${pageCount} for global sorting...`);
+        
+        const response = await fetchCarsWithKeyset({
+          filters: carsApiFilters,
+          sort: backendSort,
+          limit: 100, // Use reasonable page size for fetching all data
+          cursor
+        });
+        
+        if (response.items && response.items.length > 0) {
+          allCars.push(...response.items);
+          console.log(`✅ Page ${pageCount}: Got ${response.items.length} cars (total so far: ${allCars.length})`);
+        }
+        
+        // Check if there are more pages
+        hasMore = !!response.nextCursor;
+        cursor = response.nextCursor;
+        
+        // If we got fewer items than the limit, we've reached the end
+        if (response.items.length < 100) {
+          hasMore = false;
+        }
+      }
+      
+      if (pageCount >= maxPages) {
+        console.warn(`⚠️ Reached maximum page limit (${maxPages}) when fetching all cars. May not have fetched all data.`);
+      }
+      
+      console.log(`✅ Successfully fetched ${allCars.length} cars across ${pageCount} pages using backend sorting`);
+      
+      // Apply client-side filtering for grade_iaai and trim_level if needed
+      let filteredCars = allCars;
+      
       // Apply client-side variant filtering if a variant is selected
-      let filteredCars = data.data || [];
       if (selectedVariant && selectedVariant !== 'all') {
         console.log(`🔍 Applying client-side variant filter: "${selectedVariant}"`);
         
@@ -1953,6 +2006,7 @@ export const useSecureAuctionAPI = () => {
           }
           return false;
         });
+        console.log(`✅ Variant filter "${selectedVariant}": ${filteredCars.length} cars match out of ${allCars.length} total`);
       }
 
       // Apply client-side trim level filtering if a trim level is selected
@@ -1979,9 +2033,10 @@ export const useSecureAuctionAPI = () => {
           }
           return false;
         });
+        console.log(`✅ Trim level filter "${selectedTrimLevel}": ${filteredCars.length} cars match out of ${allCars.length} total`);
       }
 
-      console.log(`✅ Fetched ${filteredCars.length} cars for global sorting`);
+      console.log(`✅ Completed fetchAllCars: ${filteredCars.length} cars ready for global sorting`);
       return filteredCars;
       
     } catch (err: any) {
