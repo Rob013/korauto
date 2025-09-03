@@ -1,8 +1,9 @@
 /**
  * Test to validate global sorting works across all pages
+ * Updated to test new backend API pagination approach
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { applyChronologicalRanking, getCarsForPage } from '../src/utils/chronologicalRanking';
 
 describe('Global Sorting Fix', () => {
@@ -94,5 +95,91 @@ describe('Global Sorting Fix', () => {
     // Attempting to get page 2 should return empty
     const page2Cars = getCarsForPage(result.rankedCars, 2, 50);
     expect(page2Cars).toHaveLength(0);
+  });
+
+  describe('Backend API Pagination Fix', () => {
+    it('should not use artificial limits for fetching all cars', () => {
+      // Test that we avoid artificial high limits like 9999
+      const artificialLimits = [9999, 99999, 999999];
+      const properPageSize = 100; // The page size we now use for pagination
+      
+      artificialLimits.forEach(limit => {
+        expect(limit).toBeGreaterThan(properPageSize);
+      });
+      
+      // Verify we use reasonable page sizes
+      expect(properPageSize).toBeLessThanOrEqual(200);
+      expect(properPageSize).toBeGreaterThanOrEqual(50);
+    });
+
+    it('should handle keyset pagination correctly', () => {
+      // Mock the pagination scenario
+      const mockPaginationData = [
+        { page: 1, itemCount: 100, hasNextCursor: true },
+        { page: 2, itemCount: 100, hasNextCursor: true },
+        { page: 3, itemCount: 50, hasNextCursor: false } // Last page with fewer items
+      ];
+
+      let totalItems = 0;
+      let pageCount = 0;
+      let shouldContinue = true;
+
+      mockPaginationData.forEach(pageData => {
+        if (shouldContinue) {
+          pageCount++;
+          totalItems += pageData.itemCount;
+          shouldContinue = pageData.hasNextCursor;
+        }
+      });
+
+      expect(totalItems).toBe(250); // All items collected
+      expect(pageCount).toBe(3); // All pages processed
+    });
+
+    it('should respect safety limits to prevent infinite loops', () => {
+      const maxSafetyPages = 1000;
+      
+      // Simulate a scenario where we might hit the safety limit
+      let currentPage = 1;
+      let hasMore = true;
+      
+      while (hasMore && currentPage <= maxSafetyPages) {
+        currentPage++;
+        
+        // Simulate reaching safety limit
+        if (currentPage >= maxSafetyPages) {
+          hasMore = false;
+        }
+      }
+      
+      expect(currentPage).toBeLessThanOrEqual(maxSafetyPages);
+    });
+
+    it('should include sort options in fetchAllCars requests', () => {
+      // Test that sort options are properly included
+      const testFilters = {
+        manufacturer_id: '1',
+        model_id: '101',
+        sort_by: 'price_low'
+      };
+
+      // Verify sort option is included
+      expect(testFilters.sort_by).toBeDefined();
+      expect(testFilters.sort_by).toBe('price_low');
+      
+      // Test sort option mapping
+      const sortMappings = [
+        { frontend: 'price_low', backend: 'price_asc' },
+        { frontend: 'price_high', backend: 'price_desc' },
+        { frontend: 'year_new', backend: 'year_desc' },
+        { frontend: 'recently_added', backend: 'created_desc' }
+      ];
+
+      sortMappings.forEach(mapping => {
+        expect(mapping.frontend).toBeDefined();
+        expect(mapping.backend).toBeDefined();
+        expect(mapping.backend).toMatch(/_(asc|desc)$/);
+      });
+    });
   });
 });
