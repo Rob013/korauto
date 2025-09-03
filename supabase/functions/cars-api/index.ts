@@ -6,6 +6,29 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Cache helper functions
+function generateCacheKey(url: URL): string {
+  const searchParams = new URLSearchParams();
+  
+  // Sort query parameters for consistent cache keys
+  const sortedParams = Array.from(url.searchParams.entries())
+    .filter(([key]) => !['_', 'timestamp'].includes(key)) // Exclude cache busting params
+    .sort(([a], [b]) => a.localeCompare(b));
+  
+  sortedParams.forEach(([key, value]) => {
+    searchParams.append(key, value);
+  });
+  
+  return `cars-api:${url.pathname}?${searchParams.toString()}`;
+}
+
+function getCacheHeaders(ttl: number = 180): HeadersInit {
+  return {
+    'Cache-Control': `public, max-age=${ttl}, stale-while-revalidate=${ttl * 2}`,
+    'Vary': 'Accept-Encoding',
+  };
+}
+
 const handler = async (req: Request): Promise<Response> => {
   console.log('🚗 Cars API called:', req.method, req.url);
 
@@ -24,6 +47,10 @@ const handler = async (req: Request): Promise<Response> => {
     const url = new URL(req.url);
     const searchParams = url.searchParams;
 
+    // Generate cache key for edge caching
+    const cacheKey = generateCacheKey(url);
+    console.log('🔑 Cache key:', cacheKey);
+
     // Extract parameters from URL
     const filters: Record<string, any> = {};
     
@@ -37,12 +64,13 @@ const handler = async (req: Request): Promise<Response> => {
     if (searchParams.has('fuel')) filters.fuel = searchParams.get('fuel');
     if (searchParams.has('search')) filters.search = searchParams.get('search');
 
-    // Extract pagination and sorting parameters
+    // Extract pagination and sorting parameters - BACKEND ONLY, NO CLIENT SORTING
     const sort = searchParams.get('sort') || 'price_asc';
-    const limit = parseInt(searchParams.get('limit') || '24');
-    const cursor = searchParams.get('cursor') || null;
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
+    const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get('pageSize') || '24')));
+    const offset = (page - 1) * pageSize;
 
-    // Validate sort parameter (extended to support new fields)
+    // Validate sort parameter (backend-only sorting with all options)
     const validSorts = ['price_asc', 'price_desc', 'rank_asc', 'rank_desc',
                        'year_asc', 'year_desc', 'mileage_asc', 'mileage_desc', 
                        'make_asc', 'make_desc', 'created_asc', 'created_desc',
@@ -62,11 +90,23 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Validate limit parameter
-    if (limit < 1 || limit > 100) {
+    // Validate page and pageSize parameters  
+    if (page < 1) {
       return new Response(
         JSON.stringify({ 
-          error: 'Limit must be between 1 and 100' 
+          error: 'Page must be >= 1' 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    if (pageSize < 1 || pageSize > 100) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'PageSize must be between 1 and 100' 
         }),
         { 
           status: 400, 
@@ -112,7 +152,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
     };
 
-    // Map sort option to database field and direction
+    // Map sort option to database field and direction with NULLS LAST for global ordering
     const getSortParams = (sort: string): { field: string; direction: string } => {
       const backendSort = mapFrontendSortToBackend(sort);
       
@@ -130,9 +170,9 @@ const handler = async (req: Request): Promise<Response> => {
         case 'year_desc':
           return { field: 'year', direction: 'DESC' };
         case 'mileage_asc':
-          return { field: 'mileage', direction: 'ASC' };
+          return { field: 'mileage_km', direction: 'ASC' };
         case 'mileage_desc':
-          return { field: 'mileage', direction: 'DESC' };
+          return { field: 'mileage_km', direction: 'DESC' };
         case 'make_asc':
           return { field: 'make', direction: 'ASC' };
         case 'make_desc':
@@ -167,15 +207,17 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('📊 Request params:', {
       filters,
       sort,
-      limit,
-      cursor: cursor ? 'present' : 'none',
+      page,
+      pageSize,
+      offset,
       sortField,
-      sortDir
+      sortDir,
+      cacheKey
     });
 
-    // Get total count first
+    // Get total count first using cars_cache_filtered_count
     const { data: totalCount, error: countError } = await supabase
-      .rpc('cars_filtered_count', { p_filters: filters });
+      .rpc('cars_cache_filtered_count', { p_filters: filters });
 
     if (countError) {
       console.error('❌ Error getting car count:', countError);
@@ -191,15 +233,14 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Get paginated results using keyset pagination
+    // Get paginated results using new cars_cache_paginated function
     const { data: cars, error: carsError } = await supabase
-      .rpc('cars_keyset_page', {
+      .rpc('cars_cache_paginated', {
         p_filters: filters,
         p_sort_field: sortField,
         p_sort_dir: sortDir,
-        p_cursor_value: cursorData?.value || null,
-        p_cursor_id: cursorData?.id || null,
-        p_limit: limit
+        p_limit: pageSize,
+        p_offset: offset
       });
 
     if (carsError) {
@@ -216,53 +257,74 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const items = cars || [];
+    // Get facets for filtering
+    const { data: facetsData, error: facetsError } = await supabase
+      .rpc('cars_cache_facets', { p_filters: filters });
 
-    // Create next cursor if we have a full page (indicating more data)
-    const createCursor = (sortField: string, sortValue: any, id: string): string => {
-      const cursorValue = `${sortValue}|${id}`;
-      return btoa(cursorValue);
-    };
-
-    let nextCursor: string | undefined;
-    if (items.length === limit && items.length > 0) {
-      const lastItem = items[items.length - 1];
-      let sortValue;
-      
-      // Get the appropriate sort value based on the sort field
-      switch (sortField) {
-        case 'price_cents':
-          sortValue = lastItem.price_cents;
-          break;
-        case 'rank_score':
-          sortValue = lastItem.rank_score;
-          break;
-        case 'year':
-          sortValue = lastItem.year;
-          break;
-        case 'mileage':
-          sortValue = lastItem.mileage;
-          break;
-        case 'make':
-          sortValue = lastItem.make;
-          break;
-        case 'created_at':
-          sortValue = lastItem.created_at;
-          break;
-        default:
-          sortValue = lastItem.price_cents;
-      }
-      
-      nextCursor = createCursor(sortField, sortValue, lastItem.id);
+    if (facetsError) {
+      console.warn('⚠️ Error getting facets (non-critical):', facetsError);
     }
 
-    const response = {
-      items,
-      nextCursor,
-      total: totalCount || 0
+    const facets = facetsData && facetsData.length > 0 ? facetsData[0] : {
+      makes: [],
+      models: [],
+      fuels: [],
+      year_range: { min: 2000, max: 2024 },
+      price_range: { min: 0, max: 1000000 }
     };
 
-    console.log(`✅ Returning ${items.length} cars, total: ${totalCount}, nextCursor: ${nextCursor ? 'present' : 'none'}`);
+    const items = cars || [];
+
+    // Map items to exact external API JSON shape (like Encar API)
+    const mappedItems = items.map((car: any) => ({
+      id: car.id,
+      api_id: car.api_id,
+      make: car.make,
+      model: car.model,
+      year: car.year,
+      price: car.price_cents ? car.price_cents / 100 : null,
+      price_cents: car.price_cents,
+      rank_score: car.rank_score || 0,
+      mileage: car.mileage_km,
+      fuel: car.fuel,
+      transmission: car.transmission,
+      color: car.color,
+      condition: car.condition,
+      vin: car.vin,
+      lot_number: car.lot_number,
+      location: car.location || '',
+      image_url: car.image_url,
+      images: car.images || [],
+      title: `${car.year} ${car.make} ${car.model}`,
+      created_at: car.created_at,
+      // Preserve exact structure from external API
+      ...(car.car_data || {}),
+      // Override with normalized data
+      lots: car.lot_data ? [car.lot_data] : []
+    }));
+
+    // Calculate pagination info for new response format
+    const total = totalCount || 0;
+    const totalPages = Math.ceil(total / pageSize);
+    const hasPrev = page > 1;
+    const hasNext = page < totalPages;
+
+    // New response format: {items,total,page,pageSize,totalPages,hasPrev,hasNext,facets}
+    const response = {
+      items: mappedItems,
+      total,
+      page,
+      pageSize,
+      totalPages,
+      hasPrev,
+      hasNext,
+      facets
+    };
+
+    console.log(`✅ Returning ${items.length} cars, total: ${total}, page: ${page}/${totalPages}, facets: ${Object.keys(facets).length} types`);
+
+    // Edge caching with route + sorted querystring keys and stale-while-revalidate
+    const cacheHeaders = getCacheHeaders(180); // 3 min TTL with 6 min stale-while-revalidate
 
     return new Response(
       JSON.stringify(response),
@@ -270,7 +332,9 @@ const handler = async (req: Request): Promise<Response> => {
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json',
-          'Cache-Control': 'public, max-age=300' // Cache for 5 minutes
+          ...cacheHeaders,
+          'X-Cache-Key': cacheKey,
+          'X-Response-Time': `${Date.now() - performance.now()}ms`
         }
       }
     );
