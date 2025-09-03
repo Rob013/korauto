@@ -11,12 +11,34 @@ interface Car {
   year: number;
   price: number;
   mileage?: number;
+  
+  // Basic car info
   fuel?: string;
   transmission?: string;
   bodyType?: string;
   color?: string;
   location?: string;
+  title?: string;
+  vin?: string;
+  condition?: string;
+  
+  // Auction/Sale info
+  lot_number?: string;
+  current_bid?: number;
+  buy_now_price?: number;
+  final_bid?: number;
+  sale_date?: string;
+  
+  // Images and media
   images?: string[];
+  image_url?: string;
+  
+  // Status and metadata
+  status?: string;
+  is_live?: boolean;
+  keys_available?: boolean;
+  source_api?: string;
+  domain_name?: string;
 }
 
 interface CarsResponse {
@@ -42,12 +64,34 @@ const convertApiCarToUICar = (apiCar: ApiCar): Car => ({
   year: apiCar.year,
   price: apiCar.price,
   mileage: apiCar.mileage,
+  
+  // Basic car info
   fuel: apiCar.fuel,
   transmission: apiCar.transmission,
-  bodyType: '', // Not in API response
+  bodyType: '', // Not in API response, could be derived from data
   color: apiCar.color,
   location: apiCar.location,
-  images: apiCar.images ? (Array.isArray(apiCar.images) ? apiCar.images : []) : []
+  title: apiCar.title,
+  vin: apiCar.vin,
+  condition: apiCar.condition,
+  
+  // Auction/Sale info
+  lot_number: apiCar.lot_number,
+  current_bid: apiCar.current_bid,
+  buy_now_price: apiCar.buy_now_price,
+  final_bid: apiCar.final_bid,
+  sale_date: apiCar.sale_date,
+  
+  // Images and media
+  images: apiCar.images ? (Array.isArray(apiCar.images) ? apiCar.images : []) : [],
+  image_url: apiCar.image_url,
+  
+  // Status and metadata
+  status: apiCar.status,
+  is_live: apiCar.is_live,
+  keys_available: apiCar.keys_available,
+  source_api: apiCar.source_api,
+  domain_name: apiCar.domain_name
 });
 
 // Map UI sort to API sort
