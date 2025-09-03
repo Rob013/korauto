@@ -27,6 +27,16 @@ const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => P
 export const createFallbackCars = (filters: any = {}): any[] => {
   console.log(`🔄 Creating fallback cars for development/testing`);
   
+  // Don't show fallback cars when a specific brand is selected to avoid showing "test cars"
+  if (filters.manufacturer_id && 
+      filters.manufacturer_id !== 'all' && 
+      filters.manufacturer_id !== '' &&
+      filters.manufacturer_id !== undefined &&
+      filters.manufacturer_id !== null) {
+    console.log(`❌ Specific brand filter applied (${filters.manufacturer_id}), not showing fallback cars to avoid test car display`);
+    return [];
+  }
+  
   // Generate mock cars for pagination testing
   const mockCars = [];
   const brands = ['BMW', 'Audi', 'Mercedes-Benz', 'Toyota', 'Honda', 'Hyundai', 'Kia'];
