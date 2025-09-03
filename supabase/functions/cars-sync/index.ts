@@ -145,9 +145,12 @@ Deno.serve(async (req) => {
     let errors = 0;
     const startTime = Date.now();
     let lastProgressUpdate = startTime;
+    let apiTotalCars: number | null = null;
+    let apiLastPage: number | null = null;
+    let discoveredApiTotal = false;
 
-    // Enhanced processing loop with unlimited pages for complete sync
-    while (consecutiveEmptyPages < 10) { // Continue until naturally complete (10 consecutive empty pages)
+    // Enhanced processing loop with proper API total discovery for 100% completion
+    while (true) { // Continue until we've processed all available API cars
       try {
         console.log(`📄 Processing page ${currentPage}...`);
 
@@ -168,10 +171,43 @@ Deno.serve(async (req) => {
 
         const data = await response.json();
         const cars: Car[] = data.data || [];
+        
+        // IMPORTANT: Extract API metadata on first successful response to get real totals
+        if (!discoveredApiTotal && data.meta) {
+          apiTotalCars = data.meta.total || null;
+          apiLastPage = data.meta.last_page || null;
+          discoveredApiTotal = true;
+          
+          console.log(`📊 API DISCOVERY: Total cars available: ${apiTotalCars}, Last page: ${apiLastPage}`);
+          
+          // Update sync status with real totals instead of estimates
+          if (apiTotalCars) {
+            await supabase
+              .from('sync_status')
+              .update({
+                total_records: apiTotalCars,
+                total_pages: apiLastPage || Math.ceil(apiTotalCars / PAGE_SIZE),
+                last_activity_at: new Date().toISOString()
+              })
+              .eq('id', 'cars-sync-main');
+          }
+        }
 
         if (cars.length === 0) {
           consecutiveEmptyPages++;
-          console.log(`📄 Page ${currentPage} empty (${consecutiveEmptyPages}/10)`);
+          console.log(`📄 Page ${currentPage} empty (${consecutiveEmptyPages}/25)`);
+          
+          // NEW LOGIC: More intelligent completion detection
+          // Stop only if we have API metadata and we've reached the known last page + some buffer
+          // OR if we have too many consecutive empty pages (increased to 25 for better coverage)
+          if (apiLastPage && currentPage > apiLastPage + 5) {
+            console.log(`✅ Reached beyond API last page (${apiLastPage}), stopping sync`);
+            break;
+          } else if (consecutiveEmptyPages >= 25) {
+            console.log(`⚠️ Too many consecutive empty pages (${consecutiveEmptyPages}), stopping sync`);
+            break;
+          }
+          
           currentPage++;
           continue;
         }
@@ -238,14 +274,24 @@ Deno.serve(async (req) => {
             ? (currentSyncStatus?.records_processed || 0) + totalProcessed
             : (existingCars || 0) + totalProcessed;
 
+          const updateData: any = {
+            current_page: currentPage,
+            records_processed: finalRecordsProcessed,
+            last_activity_at: new Date().toISOString(),
+            error_message: errors > 0 ? `${errors} errors encountered` : null
+          };
+
+          // Include real API totals if discovered
+          if (apiTotalCars && !updateData.total_records) {
+            updateData.total_records = apiTotalCars;
+          }
+          if (apiLastPage && !updateData.total_pages) {
+            updateData.total_pages = apiLastPage;
+          }
+
           await supabase
             .from('sync_status')
-            .update({
-              current_page: currentPage,
-              records_processed: finalRecordsProcessed,
-              last_activity_at: new Date().toISOString(),
-              error_message: errors > 0 ? `${errors} errors encountered` : null
-            })
+            .update(updateData)
             .eq('id', 'cars-sync-main');
 
           lastProgressUpdate = now;
@@ -308,33 +354,49 @@ Deno.serve(async (req) => {
       }
     } // End of while loop
 
-    // Enhanced completion logic - NEVER PAUSE, ONLY COMPLETE WHEN TRULY DONE
-    const finalStatus = consecutiveEmptyPages >= 10 ? 'completed' : 'running'; // Changed from 'paused' to 'running'
-    const isNaturalCompletion = consecutiveEmptyPages >= 10;
+    // Enhanced completion logic - ONLY COMPLETE when we've truly processed all API cars
+    const isNaturalCompletion = (apiLastPage && currentPage > apiLastPage) || consecutiveEmptyPages >= 25;
+    const finalStatus = isNaturalCompletion ? 'completed' : 'running';
     
     const finalRecordsProcessed = isResumeRequest 
       ? (currentSyncStatus?.records_processed || 0) + totalProcessed
       : (existingCars || 0) + totalProcessed;
     
-    console.log(`📊 Sync finishing: ${totalProcessed} new cars processed, ${consecutiveEmptyPages} consecutive empty pages`);
+    // Calculate completion percentage using real API totals if available
+    const completionPercentage = apiTotalCars && finalRecordsProcessed ? 
+      Math.round((finalRecordsProcessed / apiTotalCars) * 100) : 0;
     
+    console.log(`📊 Sync finishing: ${totalProcessed} new cars processed, ${consecutiveEmptyPages} consecutive empty pages`);
+    console.log(`📊 API Discovery Results: Total API cars: ${apiTotalCars || 'unknown'}, Last page: ${apiLastPage || 'unknown'}`);
+    console.log(`📊 Completion: ${finalRecordsProcessed}/${apiTotalCars || 'unknown'} cars (${completionPercentage}%)`);
+    
+    const updateData: any = {
+      status: finalStatus,
+      current_page: currentPage,
+      records_processed: finalRecordsProcessed,
+      completed_at: finalStatus === 'completed' ? new Date().toISOString() : null,
+      last_activity_at: new Date().toISOString(),
+      error_message: isNaturalCompletion ? 
+        `Sync completed - processed ${totalProcessed} new cars, ${errors} errors. API total: ${apiTotalCars || 'unknown'}, completion: ${completionPercentage}%` :
+        `Processed ${totalProcessed} new cars, ${errors} errors - continuing automatically to 100%. API total: ${apiTotalCars || 'unknown'}`
+    };
+
+    // Include real API totals in final update
+    if (apiTotalCars) {
+      updateData.total_records = apiTotalCars;
+    }
+    if (apiLastPage) {
+      updateData.total_pages = apiLastPage;
+    }
+
     await supabase
       .from('sync_status')
-      .update({
-        status: finalStatus,
-        current_page: currentPage,
-        records_processed: finalRecordsProcessed,
-        completed_at: finalStatus === 'completed' ? new Date().toISOString() : null,
-        last_activity_at: new Date().toISOString(),
-        error_message: isNaturalCompletion ? 
-          `Sync completed naturally - processed ${totalProcessed} new cars, ${errors} errors` :
-          `Processed ${totalProcessed} new cars, ${errors} errors - continuing automatically to 100%`
-      })
+      .update(updateData)
       .eq('id', 'cars-sync-main');
 
     const completionMessage = isNaturalCompletion 
-      ? `✅ SYNC 100% COMPLETE! Processed ${totalProcessed} new cars (Total: ${finalRecordsProcessed})`
-      : `✅ Sync continuing: ${totalProcessed} new cars processed - will continue automatically to 100%`;
+      ? `✅ SYNC 100% COMPLETE! Processed ${totalProcessed} new cars (Total: ${finalRecordsProcessed}/${apiTotalCars || 'unknown'} - ${completionPercentage}%)`
+      : `✅ Sync continuing: ${totalProcessed} new cars processed - will continue automatically to 100%. Progress: ${finalRecordsProcessed}/${apiTotalCars || 'unknown'} (${completionPercentage}%)`;
     
     console.log(completionMessage);
 
@@ -343,6 +405,9 @@ Deno.serve(async (req) => {
       status: finalStatus,
       totalProcessed,
       totalRecords: finalRecordsProcessed,
+      apiTotalCars: apiTotalCars,
+      apiLastPage: apiLastPage,
+      completionPercentage: completionPercentage,
       currentPage,
       errors,
       isResume: isResumeRequest,
