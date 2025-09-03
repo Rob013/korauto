@@ -6,7 +6,7 @@ import { useEncarAPI } from '@/hooks/useEncarAPI';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { verifySyncToDatabase, type SyncVerificationResult } from '@/utils/syncVerification';
-import { Activity, CheckCircle, AlertCircle, Clock, Database, RefreshCw, Zap, StopCircle, Shield } from 'lucide-react';
+import { Activity, CheckCircle, AlertCircle, Clock, Database, RefreshCw, Zap, StopCircle, Shield, TrendingUp } from 'lucide-react';
 
 export default function AdminSyncDashboard() {
   const {
@@ -186,6 +186,30 @@ export default function AdminSyncDashboard() {
     if (processed === 0 || elapsedMinutes === 0) return null;
 
     return Math.round(processed / elapsedMinutes); // records per minute
+  };
+
+  // Calculate estimated time to completion
+  const getEstimatedTimeToCompletion = () => {
+    const throughput = getSyncThroughput();
+    if (!throughput || !syncStatus?.total_records) return null;
+    
+    const remaining = (syncStatus.total_records || 0) - (syncStatus.records_processed || 0);
+    if (remaining <= 0) return null;
+    
+    return Math.round(remaining / throughput); // minutes
+  };
+
+  // Format ETA display
+  const formatETA = (minutes: number | null) => {
+    if (!minutes || minutes <= 0) return 'N/A';
+    
+    if (minutes < 60) {
+      return `${minutes}m`;
+    } else {
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      return `${hours}h ${mins}m`;
+    }
   };
 
   return (

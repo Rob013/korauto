@@ -380,8 +380,25 @@ export const AISyncCoordinator = ({
   useEffect(() => {
     if (!enabled) return;
 
+    let deploymentFailureCount = 0;
+    const maxDeploymentFailures = 3;
+    let lastDeploymentFailure = 0;
+    const deploymentFailureCooldown = 5 * 60 * 1000; // 5 minutes
+
     const monitorAndHeal = async () => {
       try {
+        // Check if we're in deployment failure cooldown
+        const now = Date.now();
+        if (deploymentFailureCount >= maxDeploymentFailures && 
+            now - lastDeploymentFailure < deploymentFailureCooldown) {
+          return; // Skip monitoring during cooldown
+        }
+        
+        // Reset failure count if cooldown period has passed
+        if (now - lastDeploymentFailure > deploymentFailureCooldown) {
+          deploymentFailureCount = 0;
+        }
+
         const { data: syncStatus } = await supabase
           .from('sync_status')
           .select('*')
@@ -390,7 +407,6 @@ export const AISyncCoordinator = ({
 
         if (!syncStatus) return;
 
-        const now = Date.now();
         const lastActivity = new Date(syncStatus.last_activity_at || syncStatus.started_at).getTime();
         const timeSinceActivity = now - lastActivity;
         
@@ -398,24 +414,60 @@ export const AISyncCoordinator = ({
         if (syncStatus.status === 'running' && timeSinceActivity > 5 * 60 * 1000) {
           console.log('🚨 AI Coordinator: Detected stuck sync, initiating auto-heal...');
           
-          await startIntelligentSync({
-            resume: true,
-            fromPage: syncStatus.current_page,
-            reconcileProgress: true,
-            autoHeal: true
-          });
+          try {
+            await startIntelligentSync({
+              resume: true,
+              fromPage: syncStatus.current_page,
+              reconcileProgress: true,
+              autoHeal: true
+            });
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            
+            // Check if this is a deployment error
+            if (errorMessage.includes('Edge Function not accessible') || 
+                errorMessage.includes('Failed to send') ||
+                errorMessage.includes('Connection test timed out')) {
+              deploymentFailureCount++;
+              lastDeploymentFailure = now;
+              console.error(`💥 AI Coordinator: Deployment failure ${deploymentFailureCount}/${maxDeploymentFailures}. ${deploymentFailureCount >= maxDeploymentFailures ? 'Entering cooldown.' : 'Will retry.'}`);
+            }
+          }
         }
         
-        // Auto-resume failed syncs (after 2 minutes)
-        if (syncStatus.status === 'failed' && timeSinceActivity > 2 * 60 * 1000) {
-          console.log('🔄 AI Coordinator: Auto-resuming failed sync...');
+        // Auto-resume failed syncs (after 2 minutes) - only if not deployment failures
+        if (syncStatus.status === 'failed' && 
+            timeSinceActivity > 2 * 60 * 1000 &&
+            deploymentFailureCount < maxDeploymentFailures) {
           
-          await startIntelligentSync({
-            resume: true,
-            fromPage: syncStatus.current_page,
-            reconcileProgress: true,
-            autoResume: true
-          });
+          // Check if the failure was due to deployment issues
+          const isDeploymentFailure = syncStatus.error_message?.includes('Edge Function not accessible') ||
+                                     syncStatus.error_message?.includes('Failed to send') ||
+                                     syncStatus.error_message?.includes('network or deployment issue');
+          
+          if (!isDeploymentFailure) {
+            console.log('🔄 AI Coordinator: Auto-resuming failed sync...');
+            
+            try {
+              await startIntelligentSync({
+                resume: true,
+                fromPage: syncStatus.current_page,
+                reconcileProgress: true,
+                autoResume: true
+              });
+            } catch (error) {
+              const errorMessage = error instanceof Error ? error.message : String(error);
+              
+              if (errorMessage.includes('Edge Function not accessible') || 
+                  errorMessage.includes('Failed to send')) {
+                deploymentFailureCount++;
+                lastDeploymentFailure = now;
+                console.error(`💥 AI Coordinator: Deployment failure on auto-resume ${deploymentFailureCount}/${maxDeploymentFailures}`);
+              }
+            }
+          } else {
+            console.log('🚫 AI Coordinator: Skipping auto-resume due to deployment failure in error message');
+          }
         }
 
       } catch (error) {

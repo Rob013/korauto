@@ -37,7 +37,13 @@ export const AutoResumeScheduler = ({
           const failureCount = (lastFailedSync.error_message || '').includes('Auto-detected') ? 
             ((lastFailedSync.error_message || '').match(/attempt/g) || []).length : 0;
           
-          if (timeSinceFailure > RESUME_DELAY && failureCount < 5) {
+          // Check if last failure was due to deployment issues
+          const isDeploymentFailure = (lastFailedSync.error_message || '').includes('Edge Function not accessible') ||
+                                     (lastFailedSync.error_message || '').includes('Failed to send') ||
+                                     (lastFailedSync.error_message || '').includes('network or deployment issue') ||
+                                     (lastFailedSync.error_message || '').includes('Connection test timed out');
+          
+          if (timeSinceFailure > RESUME_DELAY && failureCount < 5 && !isDeploymentFailure) {
             console.log(`🔄 Enhanced Auto-resume: Attempting immediate resume of sync from page ${lastFailedSync.current_page} with AI coordination (attempt ${failureCount + 1})...`);
             
             // Use AI coordinator if available, fallback to direct call
@@ -64,6 +70,8 @@ export const AutoResumeScheduler = ({
             }
           } else if (failureCount >= 5) {
             console.warn(`⚠️ Enhanced Auto-resume: Sync has failed ${failureCount} times recently, pausing auto-resume to prevent loops`);
+          } else if (isDeploymentFailure) {
+            console.warn(`⚠️ Enhanced Auto-resume: Skipping auto-resume due to deployment failure: ${lastFailedSync.error_message}`);
           }
         }
         
