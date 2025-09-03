@@ -595,11 +595,11 @@ Deno.serve(async (req) => {
     if (apiTotal && finalRecordsProcessed < apiTotal) {
       completionPercentage = Math.round((finalRecordsProcessed / apiTotal) * 100);
       // Only continue if we're significantly below the API total AND haven't hit natural completion
-      if (completionPercentage < 95 && !isNaturalCompletion) {
-        finalStatus = 'running'; // Continue syncing if we haven't reached near 100%
+      if (completionPercentage < 99 && !isNaturalCompletion) {
+        finalStatus = 'running'; // Continue syncing until 99% completion
       }
-    } else if (!isNaturalCompletion && (!apiTotal || finalRecordsProcessed < apiTotal * 0.95)) {
-      finalStatus = 'running'; // Continue if no natural completion yet and we're not near the target
+    } else if (!isNaturalCompletion && (!apiTotal || finalRecordsProcessed < apiTotal * 0.99)) {
+      finalStatus = 'running'; // Continue if no natural completion yet and we're not near 99%
     }
     
     // Force completion if we hit natural completion (10+ consecutive empty pages)
