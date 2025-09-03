@@ -1060,11 +1060,8 @@ export const useSecureAuctionAPI = () => {
       // Get counts from the external API for each manufacturer
       for (const manufacturer of majorManufacturers) {
         try {
-          const response = await makeSecureApiCall('/cars-search', 'POST', {
-            filters: { make: [manufacturer] },
-            page: 1,
-            pageSize: 1,
-            mode: 'results'
+          const response = await makeSecureAPICall('/cars-search', {
+            make: [manufacturer]
           });
 
           counts[manufacturer] = response?.total || 0;
