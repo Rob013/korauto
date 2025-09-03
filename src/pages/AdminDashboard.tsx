@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import ComprehensiveSyncTrigger from "@/components/ComprehensiveSyncTrigger";
 import {
   RefreshCw,
   Mail,
@@ -783,11 +784,12 @@ const AdminDashboard = () => {
           onValueChange={setActiveTab}
           className="space-y-3 sm:space-y-4"
         >
-          <TabsList className="grid w-full grid-cols-5 h-auto">
+          <TabsList className="grid w-full grid-cols-6 h-auto">
             <TabsTrigger value="overview" className="text-xs sm:text-sm p-2 sm:p-3">Overview</TabsTrigger>
+            <TabsTrigger value="sync" className="text-xs sm:text-sm p-2 sm:p-3">Sync</TabsTrigger>
+            <TabsTrigger value="comprehensive" className="text-xs sm:text-sm p-2 sm:p-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white">193K Sync</TabsTrigger>
             <TabsTrigger value="inspections" className="text-xs sm:text-sm p-2 sm:p-3">Inspections</TabsTrigger>
             <TabsTrigger value="analytics" className="text-xs sm:text-sm p-2 sm:p-3">Analytics</TabsTrigger>
-            <TabsTrigger value="performance" className="text-xs sm:text-sm p-2 sm:p-3">Performance</TabsTrigger>
             <TabsTrigger value="cookies" className="text-xs sm:text-sm p-2 sm:p-3">Cookies</TabsTrigger>
           </TabsList>
 
@@ -1775,6 +1777,10 @@ const AdminDashboard = () => {
             <div className="w-full">
               <PerformanceAuditWidget />
             </div>
+          </TabsContent>
+
+          <TabsContent value="comprehensive" className="space-y-3 sm:space-y-4">
+            <ComprehensiveSyncTrigger />
           </TabsContent>
 
           <TabsContent value="cookies" className="space-y-3 sm:space-y-4">
