@@ -31,7 +31,9 @@ CREATE TABLE IF NOT EXISTS public.cars (
   model TEXT NOT NULL,
   year INTEGER NOT NULL,
   price NUMERIC NOT NULL DEFAULT 0,
+  price_cents BIGINT, -- Added for PostgREST compatibility and sorting
   mileage INTEGER DEFAULT 0,
+  rank_score NUMERIC DEFAULT 0, -- Added for ranking and sorting
   
   -- Basic car info
   title TEXT,
@@ -78,7 +80,9 @@ CREATE TABLE IF NOT EXISTS public.cars_staging (
   model TEXT NOT NULL,
   year INTEGER NOT NULL,
   price NUMERIC NOT NULL DEFAULT 0,
+  price_cents BIGINT, -- Added for consistency with main cars table
   mileage INTEGER DEFAULT 0,
+  rank_score NUMERIC DEFAULT 0, -- Added for consistency with main cars table
   
   -- Basic car info
   title TEXT,
@@ -125,6 +129,8 @@ CREATE TABLE IF NOT EXISTS public.cars_cache (
   model TEXT NOT NULL,
   year INTEGER NOT NULL,
   price NUMERIC,
+  price_cents BIGINT, -- Added for proper sorting and PostgREST compatibility
+  rank_score NUMERIC DEFAULT 0, -- Added for ranking and sorting
   vin TEXT,
   fuel TEXT,
   transmission TEXT,
@@ -132,6 +138,10 @@ CREATE TABLE IF NOT EXISTS public.cars_cache (
   condition TEXT,
   lot_number TEXT,
   mileage TEXT,
+  mileage_km INTEGER, -- Added for proper sorting 
+  is_active BOOLEAN DEFAULT true, -- Added for filtering active cars
+  status TEXT DEFAULT 'available', -- Added for car status
+  image_url TEXT, -- Added for images
   images JSONB DEFAULT '[]'::jsonb,
   car_data JSONB NOT NULL,
   lot_data JSONB,
@@ -223,6 +233,8 @@ CREATE TABLE IF NOT EXISTS public.website_analytics (
 -- Create essential indexes for performance
 CREATE INDEX IF NOT EXISTS idx_cars_make_model ON public.cars(make, model);
 CREATE INDEX IF NOT EXISTS idx_cars_year_price ON public.cars(year, price);
+CREATE INDEX IF NOT EXISTS idx_cars_price_cents ON public.cars(price_cents) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_cars_rank_score ON public.cars(rank_score) WHERE is_active = true;
 CREATE INDEX IF NOT EXISTS idx_cars_status ON public.cars(status);
 CREATE INDEX IF NOT EXISTS idx_cars_source ON public.cars(source_api);
 CREATE INDEX IF NOT EXISTS idx_cars_updated ON public.cars(last_synced_at);
@@ -232,6 +244,8 @@ CREATE INDEX IF NOT EXISTS idx_cars_is_active ON public.cars(is_active);
 
 CREATE INDEX IF NOT EXISTS idx_cars_staging_make_model ON public.cars_staging(make, model);
 CREATE INDEX IF NOT EXISTS idx_cars_staging_year_price ON public.cars_staging(year, price);
+CREATE INDEX IF NOT EXISTS idx_cars_staging_price_cents ON public.cars_staging(price_cents) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_cars_staging_rank_score ON public.cars_staging(rank_score) WHERE is_active = true;
 CREATE INDEX IF NOT EXISTS idx_cars_staging_external_id ON public.cars_staging(external_id);
 CREATE INDEX IF NOT EXISTS idx_cars_staging_updated ON public.cars_staging(last_synced_at);
 
@@ -239,6 +253,10 @@ CREATE INDEX IF NOT EXISTS idx_cars_cache_api_id ON public.cars_cache(api_id);
 CREATE INDEX IF NOT EXISTS idx_cars_cache_make_model ON public.cars_cache(make, model);
 CREATE INDEX IF NOT EXISTS idx_cars_cache_year ON public.cars_cache(year);
 CREATE INDEX IF NOT EXISTS idx_cars_cache_price ON public.cars_cache(price);
+CREATE INDEX IF NOT EXISTS idx_cars_cache_price_cents ON public.cars_cache(price_cents) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_cars_cache_rank_score ON public.cars_cache(rank_score) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_cars_cache_mileage_km ON public.cars_cache(mileage_km) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_cars_cache_is_active ON public.cars_cache(is_active);
 CREATE INDEX IF NOT EXISTS idx_cars_cache_updated_at ON public.cars_cache(updated_at);
 
 CREATE INDEX IF NOT EXISTS idx_sync_status_type ON public.sync_status(sync_type, status);
