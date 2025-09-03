@@ -104,6 +104,7 @@ function mapDbToExternal(row: any): any {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  const startTime = performance.now();
   console.log('🚗 Cars API called:', req.method, req.url);
 
   // Handle CORS preflight requests
@@ -333,6 +334,23 @@ const handler = async (req: Request): Promise<Response> => {
     };
 
     console.log(`✅ Returning ${items.length} cars, total: ${total}, page: ${page}/${totalPages}, facets: ${Object.keys(facets).length} types`);
+
+    // Add telemetry logging as required
+    const endTime = performance.now();
+    const duration_ms = Math.round(endTime - startTime);
+    const telemetryLog = {
+      source: 'db',
+      duration_ms,
+      rows: items.length,
+      sort,
+      pageSize,
+      page,
+      total,
+      filters: Object.keys(filters).length,
+      timestamp: new Date().toISOString()
+    };
+    
+    console.log('📊 Cars API Telemetry:', JSON.stringify(telemetryLog));
 
     // Edge caching with route + sorted querystring keys and stale-while-revalidate
     const cacheHeaders = getCacheHeaders(180); // 3 min TTL with 6 min stale-while-revalidate

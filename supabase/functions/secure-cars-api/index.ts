@@ -38,6 +38,26 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Feature flag check: Block external API calls when READ_SOURCE=db
+    const readSource = Deno.env.get('READ_SOURCE') || 'db';
+    
+    if (readSource === 'db') {
+      const errorMessage = '🚫 External API call blocked in DB-only mode (READ_SOURCE=db). Use /api/cars endpoint instead.';
+      console.error(errorMessage);
+      return new Response(
+        JSON.stringify({ 
+          error: 'External API blocked in DB-only mode',
+          message: errorMessage,
+          readSource: readSource,
+          recommendation: 'Use the /api/cars endpoint for database-only car data'
+        }),
+        { 
+          status: 403, 
+          headers: { 'Content-Type': 'application/json', ...corsHeaders } 
+        }
+      );
+    }
+
     // Get API key from Supabase secrets
     const apiKey = Deno.env.get('AUCTIONS_API_KEY');
     if (!apiKey) {

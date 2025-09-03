@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { findGenerationYears } from "@/data/generationYears";
 import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from '../utils/grade-categorization';
+import { ExternalApiGuard } from '@/guards/externalApiGuard';
 
 // Simple cache to prevent redundant API calls
 const apiCache = new Map<string, { data: any; timestamp: number }>();
@@ -601,6 +602,18 @@ export const useSecureAuctionAPI = () => {
   ): Promise<any> => {
     try {
       console.log("🔐 Making secure API call:", { endpoint, filters, carId });
+
+      // In DB-only mode, block calls to secure-cars-api (which calls external APIs)
+      // Instead, users should use the /api/cars endpoint for database data
+      if (ExternalApiGuard && typeof ExternalApiGuard.checkExternalApiCall === 'function') {
+        try {
+          ExternalApiGuard.checkExternalApiCall('secure-cars-api-external', 'useSecureAuctionAPI.makeSecureAPICall - calls external auctionsapi.com');
+        } catch (error) {
+          console.warn('🔄 External API blocked in DB-only mode, returning fallback data');
+          // Return fallback data when external API is blocked
+          return { data: [] };
+        }
+      }
 
       // Add a minimal delay to prevent rapid successive calls
       const now = Date.now();

@@ -145,18 +145,17 @@ export const matchesGradeFilter = (car: Car, gradeFilter: string): boolean => {
 };
 
 /**
- * Applies client-side grade filtering to a list of cars
- * Also filters out cars without real pricing data
+ * Applies grade filtering - MOVED TO BACKEND
+ * 
+ * @deprecated All filtering is now handled on the backend via /api/cars endpoint
+ * This function is kept for backward compatibility only.
  */
 export const applyGradeFilter = (cars: Car[], gradeFilter?: string): Car[] => {
-  // First filter out cars without real pricing data
-  const carsWithRealPricing = cars.filter(hasRealPricing);
+  console.warn('⚠️ applyGradeFilter is deprecated. All filtering is now handled on the backend via /api/cars endpoint.');
   
-  if (!gradeFilter || gradeFilter === 'all') {
-    return carsWithRealPricing;
-  }
-
-  return carsWithRealPricing.filter(car => matchesGradeFilter(car, gradeFilter));
+  // For backward compatibility, return all cars unfiltered
+  // The backend handles all filtering including grade filtering
+  return cars;
 };
 
 /**

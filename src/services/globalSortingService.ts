@@ -125,21 +125,15 @@ export class GlobalSortingService {
   }
 
   /**
-   * Filters cars based on current filter settings (client-side filtering)
+   * Client-side filtering - DEPRECATED
+   * 
+   * @deprecated All filtering is now handled on the backend via /api/cars endpoint
    */
   applyClientSideFilters(cars: any[], filters: APIFilters): any[] {
-    return cars.filter(car => {
-      // Apply grade filter if specified
-      if (filters.grade_iaai && filters.grade_iaai !== 'all') {
-        const carGrade = car.lots?.[0]?.grade_iaai || '';
-        if (carGrade.toLowerCase() !== filters.grade_iaai.toLowerCase()) {
-          return false;
-        }
-      }
-
-      // Add other client-side filters as needed
-      return true;
-    });
+    console.warn('⚠️ applyClientSideFilters is deprecated. All filtering is now handled on the backend via /api/cars endpoint.');
+    
+    // For backward compatibility, return all cars unfiltered
+    return cars;
   }
 
   /**

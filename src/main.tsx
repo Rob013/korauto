@@ -4,6 +4,9 @@ import './index.css'
 import { ThemeProvider } from "@/components/ThemeProvider"
 import { NavigationProvider } from './contexts/NavigationContext.tsx'
 
+// Initialize external API guard for database-only mode
+import '@/guards/externalApiGuard'
+
 // Register service worker for caching
 if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
   window.addEventListener('load', () => {
