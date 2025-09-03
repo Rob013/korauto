@@ -1,18 +1,19 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-// Mock the actual API call function
-vi.mock('@/services/carsApi', async () => {
-  const actual = await vi.importActual('@/services/carsApi');
-  return {
-    ...actual,
-    fetchCarsApi: vi.fn()
-  };
-});
+// Mock Supabase client before importing the service
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: {
+    rpc: vi.fn()
+  }
+}));
 
-import { fetchCarsWithKeyset, fetchCarsApi, SortOption } from '@/services/carsApi';
+import { fetchCarsWithKeyset, SortOption } from '@/services/carsApi';
+import { supabase } from '@/integrations/supabase/client';
 
-// Access the mocked function
-const mockFetchCarsApi = fetchCarsApi as ReturnType<typeof vi.fn>;
+// Access the mocked supabase
+const mockSupabase = supabase as {
+  rpc: ReturnType<typeof vi.fn>
+};
 
 describe('Cars API - Global Sorting & Keyset Pagination', () => {
   beforeEach(() => {
@@ -21,28 +22,16 @@ describe('Cars API - Global Sorting & Keyset Pagination', () => {
 
   describe('fetchCarsWithKeyset', () => {
     it('should fetch cars with price ascending order across multiple pages', async () => {
-      const mockResponse = {
-        items: [
-          { id: 'car1', price_cents: 1500000, price: 15000, make: 'Toyota', model: 'Camry', year: 2020 },
-          { id: 'car2', price_cents: 1600000, price: 16000, make: 'Honda', model: 'Civic', year: 2021 },
-          { id: 'car3', price_cents: 1700000, price: 17000, make: 'BMW', model: '3 Series', year: 2022 }
-        ],
-        total: 100,
-        page: 1,
-        pageSize: 3,
-        totalPages: 34,
-        hasPrev: false,
-        hasNext: true,
-        facets: {
-          makes: [],
-          models: [],
-          fuels: [],
-          year_range: { min: 2000, max: 2024 },
-          price_range: { min: 0, max: 1000000 }
-        }
-      };
+      const mockCars = [
+        { id: 'car1', price_cents: 1500000, price: 15000, make: 'Toyota', model: 'Camry', year: 2020 },
+        { id: 'car2', price_cents: 1600000, price: 16000, make: 'Honda', model: 'Civic', year: 2021 },
+        { id: 'car3', price_cents: 1700000, price: 17000, make: 'BMW', model: '3 Series', year: 2022 }
+      ];
 
-      mockFetchCarsApi.mockResolvedValueOnce(mockResponse);
+      // Mock count response
+      mockSupabase.rpc.mockResolvedValueOnce({ data: 100, error: null });
+      // Mock cars response  
+      mockSupabase.rpc.mockResolvedValueOnce({ data: mockCars, error: null });
 
       const result = await fetchCarsWithKeyset({
         sort: 'price_asc',
@@ -57,33 +46,28 @@ describe('Cars API - Global Sorting & Keyset Pagination', () => {
       const prices = result.items.map(car => car.price);
       expect(prices).toEqual([15000, 16000, 17000]);
 
-      // Verify API was called correctly
-      expect(mockFetchCarsApi).toHaveBeenCalledTimes(1);
+      // Verify RPC calls
+      expect(mockSupabase.rpc).toHaveBeenCalledTimes(2);
+      expect(mockSupabase.rpc).toHaveBeenCalledWith('cars_filtered_count', { p_filters: {} });
+      expect(mockSupabase.rpc).toHaveBeenCalledWith('cars_keyset_page', {
+        p_filters: {},
+        p_sort_field: 'price_cents',
+        p_sort_dir: 'ASC',
+        p_cursor_value: null,
+        p_cursor_id: null,
+        p_limit: 3
+      });
     });
 
     it('should ensure stable ordering with equal prices via id ASC tie-break', async () => {
-      const mockResponse = {
-        items: [
-          { id: 'car_a', price_cents: 1500000, price: 15000, make: 'Toyota', model: 'Camry', year: 2020 },
-          { id: 'car_b', price_cents: 1500000, price: 15000, make: 'Honda', model: 'Civic', year: 2021 },
-          { id: 'car_c', price_cents: 1500000, price: 15000, make: 'BMW', model: '3 Series', year: 2022 }
-        ],
-        total: 3,
-        page: 1,
-        pageSize: 3,
-        totalPages: 1,
-        hasPrev: false,
-        hasNext: false,
-        facets: {
-          makes: [],
-          models: [],
-          fuels: [],
-          year_range: { min: 2000, max: 2024 },
-          price_range: { min: 0, max: 1000000 }
-        }
-      };
+      const mockCars = [
+        { id: 'car_a', price_cents: 1500000, price: 15000, make: 'Toyota', model: 'Camry', year: 2020 },
+        { id: 'car_b', price_cents: 1500000, price: 15000, make: 'Honda', model: 'Civic', year: 2021 },
+        { id: 'car_c', price_cents: 1500000, price: 15000, make: 'BMW', model: '3 Series', year: 2022 }
+      ];
 
-      mockFetchCarsApi.mockResolvedValueOnce(mockResponse);
+      mockSupabase.rpc.mockResolvedValueOnce({ data: 3, error: null });
+      mockSupabase.rpc.mockResolvedValueOnce({ data: mockCars, error: null });
 
       const result = await fetchCarsWithKeyset({
         sort: 'price_asc',
@@ -97,27 +81,20 @@ describe('Cars API - Global Sorting & Keyset Pagination', () => {
 
     it('should validate cursor round-trip without duplicates or skips', async () => {
       // First page
-      const page1Response = {
-        items: [
-          { id: 'car1', price_cents: 1500000, price: 15000, make: 'Toyota', model: 'Camry', year: 2020 },
-          { id: 'car2', price_cents: 1600000, price: 16000, make: 'Honda', model: 'Civic', year: 2021 }
-        ],
-        total: 4,
-        page: 1,
-        pageSize: 2,
-        totalPages: 2,
-        hasPrev: false,
-        hasNext: true,
-        facets: {
-          makes: [],
-          models: [],
-          fuels: [],
-          year_range: { min: 2000, max: 2024 },
-          price_range: { min: 0, max: 1000000 }
-        }
-      };
+      const page1Cars = [
+        { id: 'car1', price_cents: 1500000, price: 15000, make: 'Toyota', model: 'Camry', year: 2020 },
+        { id: 'car2', price_cents: 1600000, price: 16000, make: 'Honda', model: 'Civic', year: 2021 }
+      ];
 
-      mockFetchCarsApi.mockResolvedValueOnce(page1Response);
+      // Second page 
+      const page2Cars = [
+        { id: 'car3', price_cents: 1700000, price: 17000, make: 'BMW', model: '3 Series', year: 2022 },
+        { id: 'car4', price_cents: 1800000, price: 18000, make: 'Audi', model: 'A4', year: 2023 }
+      ];
+
+      // Mock first page request
+      mockSupabase.rpc.mockResolvedValueOnce({ data: 4, error: null });
+      mockSupabase.rpc.mockResolvedValueOnce({ data: page1Cars, error: null });
 
       const page1Result = await fetchCarsWithKeyset({
         sort: 'price_asc',
@@ -128,27 +105,8 @@ describe('Cars API - Global Sorting & Keyset Pagination', () => {
       expect(page1Result.nextCursor).toBeDefined();
 
       // Mock second page request using cursor
-      const page2Response = {
-        items: [
-          { id: 'car3', price_cents: 1700000, price: 17000, make: 'BMW', model: '3 Series', year: 2022 },
-          { id: 'car4', price_cents: 1800000, price: 18000, make: 'Audi', model: 'A4', year: 2023 }
-        ],
-        total: 4,
-        page: 2,
-        pageSize: 2,
-        totalPages: 2,
-        hasPrev: true,
-        hasNext: false,
-        facets: {
-          makes: [],
-          models: [],
-          fuels: [],
-          year_range: { min: 2000, max: 2024 },
-          price_range: { min: 0, max: 1000000 }
-        }
-      };
-
-      mockFetchCarsApi.mockResolvedValueOnce(page2Response);
+      mockSupabase.rpc.mockResolvedValueOnce({ data: 4, error: null });
+      mockSupabase.rpc.mockResolvedValueOnce({ data: page2Cars, error: null });
 
       const page2Result = await fetchCarsWithKeyset({
         sort: 'price_asc',
@@ -176,8 +134,8 @@ describe('Cars API - Global Sorting & Keyset Pagination', () => {
         { id: 'car2', price_cents: 2500000, price: 25000, make: 'Toyota', model: 'RAV4', year: 2021 }
       ];
 
-      mockFetchCarsApi.mockResolvedValueOnce(mockResponse);
-      mockFetchCarsApi.mockResolvedValueOnce(mockResponse);
+      mockSupabase.rpc.mockResolvedValueOnce({ data: 2, error: null });
+      mockSupabase.rpc.mockResolvedValueOnce({ data: mockFilteredCars, error: null });
 
       const result = await fetchCarsWithKeyset({
         filters: { make: 'Toyota', priceMin: '20000', priceMax: '30000' },
@@ -215,8 +173,8 @@ describe('Cars API - Global Sorting & Keyset Pagination', () => {
       ];
 
       for (const test of sortTests) {
-        mockFetchCarsApi.mockResolvedValueOnce(mockResponse);
-        mockFetchCarsApi.mockResolvedValueOnce(mockResponse);
+        mockSupabase.rpc.mockResolvedValueOnce({ data: 0, error: null });
+        mockSupabase.rpc.mockResolvedValueOnce({ data: [], error: null });
 
         await fetchCarsWithKeyset({ sort: test.sort });
 
@@ -238,8 +196,8 @@ describe('Cars API - Global Sorting & Keyset Pagination', () => {
         { id: 'car1', price_cents: 1500000, price: 15000, make: 'Toyota', model: 'Camry', year: 2020 }
       ];
 
-      mockFetchCarsApi.mockResolvedValueOnce(mockResponse);
-      mockFetchCarsApi.mockResolvedValueOnce(mockResponse);
+      mockSupabase.rpc.mockResolvedValueOnce({ data: 1, error: null });
+      mockSupabase.rpc.mockResolvedValueOnce({ data: mockCars, error: null });
 
       const result = await fetchCarsWithKeyset({
         sort: 'price_asc',
@@ -255,8 +213,8 @@ describe('Cars API - Global Sorting & Keyset Pagination', () => {
         { id: 'car1', price_cents: 1500000, price: 15000, make: 'Toyota', model: 'Camry', year: 2020 }
       ];
 
-      mockFetchCarsApi.mockResolvedValueOnce(mockResponse);
-      mockFetchCarsApi.mockResolvedValueOnce(mockResponse);
+      mockSupabase.rpc.mockResolvedValueOnce({ data: 1, error: null });
+      mockSupabase.rpc.mockResolvedValueOnce({ data: mockCars, error: null });
 
       await fetchCarsWithKeyset({
         filters: { search: 'Toyota' },
@@ -274,7 +232,7 @@ describe('Cars API - Global Sorting & Keyset Pagination', () => {
     });
 
     it('should handle API errors gracefully', async () => {
-      mockFetchCarsApi.mockResolvedValueOnce(mockResponse);
+      mockSupabase.rpc.mockResolvedValueOnce({ data: null, error: { message: 'Database error' } });
 
       await expect(fetchCarsWithKeyset({})).rejects.toThrow();
     });
@@ -287,8 +245,8 @@ describe('Cars API - Global Sorting & Keyset Pagination', () => {
         { id: 'car2', price_cents: 1600000, price: 16000, make: 'Honda', model: 'Civic', year: 2021 }
       ];
 
-      mockFetchCarsApi.mockResolvedValueOnce(mockResponse);
-      mockFetchCarsApi.mockResolvedValueOnce(mockResponse);
+      mockSupabase.rpc.mockResolvedValueOnce({ data: 10, error: null });
+      mockSupabase.rpc.mockResolvedValueOnce({ data: mockCars, error: null });
 
       const result = await fetchCarsWithKeyset({
         sort: 'price_asc',

@@ -78,7 +78,7 @@ export const AISyncCoordinator = ({
     }
     
     // Edge function specific errors (function responded but with error)
-    if ((errorMessage.includes('Edge Function') && !errorMessage.includes('Failed to send')) || 
+    if (errorMessage.includes('Edge Function') && !errorMessage.includes('Failed to send') || 
         errorMessage.includes('Deno') || 
         errorMessage.includes('Function Error')) {
       return { category: 'edge_function', recoverable: true, delayMs: 5000, action: 'retry' };
@@ -184,7 +184,7 @@ export const AISyncCoordinator = ({
     
     try {
       // Add timeout to detect edge function deployment issues
-      const timeoutPromise = new Promise<never>((_, reject) => {
+      const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Edge Function request timed out - function may not be deployed or accessible')), 15000);
       });
 
@@ -196,7 +196,7 @@ export const AISyncCoordinator = ({
         }
       });
 
-      const { data, error } = await Promise.race([invokePromise, timeoutPromise]);
+      const { data, error } = await Promise.race([invokePromise, timeoutPromise]) as { data: unknown; error: unknown };
 
       if (error) {
         console.error('🚨 AI Coordinator: Edge function returned error:', error);
@@ -322,14 +322,10 @@ export const AISyncCoordinator = ({
       let userFriendlyMessage = errorMessage;
       let diagnosticHelp = '';
       
-      // Network connectivity and deployment issues - prioritize general message as per problem statement
-      if (errorMessage.includes('Failed to send') ||
-          errorMessage.includes('Connection timed out') ||
+      // Enhanced error message detection with comprehensive accessibility patterns
+      // Fixed operator precedence and more specific pattern matching to avoid false positives
+      if ((errorMessage.includes('timed out') && errorMessage.includes('function may not be deployed')) || 
           errorMessage.includes('Connection test timed out') ||
-          errorMessage.includes('Network error') ||
-          errorMessage.includes('Request aborted') ||
-          errorMessage.includes('Unknown connectivity') ||
-          (errorMessage.includes('timed out') && errorMessage.includes('function may not be deployed')) ||
           (errorMessage.includes('Edge Function not accessible') && (
             errorMessage.includes('Connection') || 
             errorMessage.includes('timed out') || 
@@ -340,6 +336,9 @@ export const AISyncCoordinator = ({
             errorMessage.match(/Edge Function not accessible:\s*$/) ||
             errorMessage.includes('Unknown connectivity issue')
           ))) {
+        userFriendlyMessage = 'Edge Function not accessible - the cars-sync function may not be deployed to Supabase';
+        diagnosticHelp = 'Check the Supabase dashboard to ensure the cars-sync edge function is deployed and running. See EDGE_FUNCTION_DEPLOYMENT.md for detailed deployment instructions.';
+      } else if (errorMessage.includes('Failed to send')) {
         userFriendlyMessage = 'Unable to connect to Edge Function - network or deployment issue';
         diagnosticHelp = 'This could be a network connectivity issue or the edge function may not be deployed. Check your internet connection and Supabase function deployment.';
       } else if (errorMessage.includes('timeout') || errorMessage.includes('Test timed out')) {
@@ -380,25 +379,8 @@ export const AISyncCoordinator = ({
   useEffect(() => {
     if (!enabled) return;
 
-    let deploymentFailureCount = 0;
-    const maxDeploymentFailures = 3;
-    let lastDeploymentFailure = 0;
-    const deploymentFailureCooldown = 5 * 60 * 1000; // 5 minutes
-
     const monitorAndHeal = async () => {
       try {
-        // Check if we're in deployment failure cooldown
-        const now = Date.now();
-        if (deploymentFailureCount >= maxDeploymentFailures && 
-            now - lastDeploymentFailure < deploymentFailureCooldown) {
-          return; // Skip monitoring during cooldown
-        }
-        
-        // Reset failure count if cooldown period has passed
-        if (now - lastDeploymentFailure > deploymentFailureCooldown) {
-          deploymentFailureCount = 0;
-        }
-
         const { data: syncStatus } = await supabase
           .from('sync_status')
           .select('*')
@@ -407,6 +389,7 @@ export const AISyncCoordinator = ({
 
         if (!syncStatus) return;
 
+        const now = Date.now();
         const lastActivity = new Date(syncStatus.last_activity_at || syncStatus.started_at).getTime();
         const timeSinceActivity = now - lastActivity;
         
@@ -414,60 +397,24 @@ export const AISyncCoordinator = ({
         if (syncStatus.status === 'running' && timeSinceActivity > 5 * 60 * 1000) {
           console.log('🚨 AI Coordinator: Detected stuck sync, initiating auto-heal...');
           
-          try {
-            await startIntelligentSync({
-              resume: true,
-              fromPage: syncStatus.current_page,
-              reconcileProgress: true,
-              autoHeal: true
-            });
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            
-            // Check if this is a deployment error
-            if (errorMessage.includes('Edge Function not accessible') || 
-                errorMessage.includes('Failed to send') ||
-                errorMessage.includes('Connection test timed out')) {
-              deploymentFailureCount++;
-              lastDeploymentFailure = now;
-              console.error(`💥 AI Coordinator: Deployment failure ${deploymentFailureCount}/${maxDeploymentFailures}. ${deploymentFailureCount >= maxDeploymentFailures ? 'Entering cooldown.' : 'Will retry.'}`);
-            }
-          }
+          await startIntelligentSync({
+            resume: true,
+            fromPage: syncStatus.current_page,
+            reconcileProgress: true,
+            autoHeal: true
+          });
         }
         
-        // Auto-resume failed syncs (after 2 minutes) - only if not deployment failures
-        if (syncStatus.status === 'failed' && 
-            timeSinceActivity > 2 * 60 * 1000 &&
-            deploymentFailureCount < maxDeploymentFailures) {
+        // Auto-resume failed syncs (after 2 minutes)
+        if (syncStatus.status === 'failed' && timeSinceActivity > 2 * 60 * 1000) {
+          console.log('🔄 AI Coordinator: Auto-resuming failed sync...');
           
-          // Check if the failure was due to deployment issues
-          const isDeploymentFailure = syncStatus.error_message?.includes('Edge Function not accessible') ||
-                                     syncStatus.error_message?.includes('Failed to send') ||
-                                     syncStatus.error_message?.includes('network or deployment issue');
-          
-          if (!isDeploymentFailure) {
-            console.log('🔄 AI Coordinator: Auto-resuming failed sync...');
-            
-            try {
-              await startIntelligentSync({
-                resume: true,
-                fromPage: syncStatus.current_page,
-                reconcileProgress: true,
-                autoResume: true
-              });
-            } catch (error) {
-              const errorMessage = error instanceof Error ? error.message : String(error);
-              
-              if (errorMessage.includes('Edge Function not accessible') || 
-                  errorMessage.includes('Failed to send')) {
-                deploymentFailureCount++;
-                lastDeploymentFailure = now;
-                console.error(`💥 AI Coordinator: Deployment failure on auto-resume ${deploymentFailureCount}/${maxDeploymentFailures}`);
-              }
-            }
-          } else {
-            console.log('🚫 AI Coordinator: Skipping auto-resume due to deployment failure in error message');
-          }
+          await startIntelligentSync({
+            resume: true,
+            fromPage: syncStatus.current_page,
+            reconcileProgress: true,
+            autoResume: true
+          });
         }
 
       } catch (error) {

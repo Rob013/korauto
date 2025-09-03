@@ -12,7 +12,7 @@ describe('Sort URL Persistence Fix', () => {
     // Mock the URL parsing logic from EncarCatalog
     const urlFilters: Record<string, any> = {};
     let urlCurrentPage = 1;
-    const urlSortBy = 'recently_added'; // This is the default - showing the bug!
+    let urlSortBy = 'recently_added'; // This is the default - showing the bug!
 
     // Current URL parsing logic (problematic)
     for (const [key, value] of mockSearchParams.entries()) {
@@ -20,7 +20,7 @@ describe('Sort URL Persistence Fix', () => {
         urlCurrentPage = parseInt(value) || 1;
       } else if (value && key !== "loadedPages" && key !== "fromHomepage" && key !== "page") {
         // "sort" gets added to urlFilters but not handled specially
-        const decodedValue = value;
+        let decodedValue = value;
         urlFilters[key] = decodedValue;
       }
     }
@@ -53,7 +53,7 @@ describe('Sort URL Persistence Fix', () => {
         // FIX: Handle sort parameter specially
         urlSortBy = value;
       } else if (value && key !== "loadedPages" && key !== "fromHomepage" && key !== "page" && key !== "sort") {
-        const decodedValue = value;
+        let decodedValue = value;
         urlFilters[key] = decodedValue;
       }
     }

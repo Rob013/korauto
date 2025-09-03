@@ -6,105 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Cache helper functions
-function generateCacheKey(url: URL): string {
-  const searchParams = new URLSearchParams();
-  
-  // Sort query parameters for consistent cache keys
-  const sortedParams = Array.from(url.searchParams.entries())
-    .filter(([key]) => !['_', 'timestamp'].includes(key)) // Exclude cache busting params
-    .sort(([a], [b]) => a.localeCompare(b));
-  
-  sortedParams.forEach(([key, value]) => {
-    searchParams.append(key, value);
-  });
-  
-  return `cars-api:${url.pathname}?${searchParams.toString()}`;
-}
-
-function getCacheHeaders(ttl: number = 180): HeadersInit {
-  return {
-    'Cache-Control': `public, max-age=${ttl}, stale-while-revalidate=${ttl * 2}`,
-    'Vary': 'Accept-Encoding',
-  };
-}
-
-// SORT_MAP whitelist for safe dynamic ordering
-const SORT_MAP: Record<string, { field: string; direction: string }> = {
-  'price_asc': { field: 'price_cents', direction: 'ASC' },
-  'price_desc': { field: 'price_cents', direction: 'DESC' },
-  'year_asc': { field: 'year', direction: 'ASC' },
-  'year_desc': { field: 'year', direction: 'DESC' },
-  'mileage_asc': { field: 'mileage_km', direction: 'ASC' },
-  'mileage_desc': { field: 'mileage_km', direction: 'DESC' },
-  'rank_asc': { field: 'rank_score', direction: 'ASC' },
-  'rank_desc': { field: 'rank_score', direction: 'DESC' },
-  'make_asc': { field: 'make', direction: 'ASC' },
-  'make_desc': { field: 'make', direction: 'DESC' },
-  'created_asc': { field: 'created_at', direction: 'ASC' },
-  'created_desc': { field: 'created_at', direction: 'DESC' },
-  // Frontend mappings
-  'price_low': { field: 'price_cents', direction: 'ASC' },
-  'price_high': { field: 'price_cents', direction: 'DESC' },
-  'year_new': { field: 'year', direction: 'DESC' },
-  'year_old': { field: 'year', direction: 'ASC' },
-  'mileage_low': { field: 'mileage_km', direction: 'ASC' },
-  'mileage_high': { field: 'mileage_km', direction: 'DESC' },
-  'make_az': { field: 'make', direction: 'ASC' },
-  'make_za': { field: 'make', direction: 'DESC' },
-  'recently_added': { field: 'created_at', direction: 'DESC' },
-  'oldest_first': { field: 'created_at', direction: 'ASC' },
-  'popular': { field: 'rank_score', direction: 'DESC' },
-};
-
-// mapDbToExternal: Maps database row to exact external API JSON shape
-function mapDbToExternal(row: any): any {
-  return {
-    // Core identifiers
-    id: row.id,
-    api_id: row.api_id,
-    
-    // Basic car info - same keys as external API
-    make: row.make,
-    model: row.model,
-    year: Number(row.year) || 0,
-    price: row.price_cents ? Number(row.price_cents) / 100 : null,
-    price_cents: Number(row.price_cents) || null,
-    mileage: Number(row.mileage_km) || 0,
-    fuel: row.fuel,
-    transmission: row.transmission,
-    color: row.color,
-    condition: row.condition,
-    vin: row.vin,
-    
-    // Location and images
-    location: row.location || '',
-    image_url: row.image_url,
-    images: row.images || [],
-    
-    // Additional external API fields
-    title: `${row.year} ${row.make} ${row.model}`,
-    rank_score: Number(row.rank_score) || 0,
-    lot_number: row.lot_number,
-    created_at: row.created_at,
-    
-    // Preserve complete external API structure from stored raw data
-    ...(row.car_data && typeof row.car_data === 'object' ? row.car_data : {}),
-    
-    // Include lot data as lots array (external API structure)
-    lots: row.lot_data ? [row.lot_data] : [],
-    
-    // Override with our normalized/computed values
-    make: row.make,
-    model: row.model,
-    year: Number(row.year) || 0,
-    price: row.price_cents ? Number(row.price_cents) / 100 : null,
-    mileage: Number(row.mileage_km) || 0,
-  };
-}
-
 const handler = async (req: Request): Promise<Response> => {
-  const startTime = performance.now();
   console.log('🚗 Cars API called:', req.method, req.url);
 
   // Handle CORS preflight requests
@@ -113,11 +15,6 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Check READ_SOURCE feature flag - fail fast if external API calls are attempted
-    const readSource = Deno.env.get('READ_SOURCE') || 'db';
-    if (readSource !== 'db') {
-      console.warn('⚠️ READ_SOURCE is not set to "db". External API calls may be attempted.');
-    }
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -125,72 +22,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Parse URL and query parameters
     const url = new URL(req.url);
-    const pathname = url.pathname;
     const searchParams = url.searchParams;
-
-    // Check if this is a request for a specific car (e.g., /cars-api/car123)
-    const pathMatch = pathname.match(/\/cars-api\/(.+)$/);
-    if (pathMatch && pathMatch[1]) {
-      const carId = pathMatch[1];
-      console.log('🔍 Fetching individual car:', carId);
-      
-      // Get individual car data
-      const { data: car, error: carError } = await supabase
-        .from('cars_cache')
-        .select('*')
-        .eq('id', carId)
-        .eq('is_active', true)
-        .single();
-
-      if (carError || !car) {
-        console.error('❌ Car not found:', carId, carError);
-        return new Response(
-          JSON.stringify({ 
-            error: 'Car not found',
-            details: carError?.message || 'Car does not exist or is not active'
-          }),
-          { 
-            status: 404, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
-      }
-
-      // Map individual car to external API format using the same mapping
-      const mappedCar = mapDbToExternal(car);
-
-      const duration = performance.now() - startTime;
-      console.log('📊 Individual Car API Telemetry:', {
-        source: 'db',
-        duration_ms: Math.round(duration * 100) / 100,
-        carId,
-        operation: 'get_car_details'
-      });
-
-      console.log('✅ Returning individual car:', carId);
-      
-      return new Response(
-        JSON.stringify(mappedCar),
-        {
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json',
-            'Cache-Control': 'public, max-age=300, stale-while-revalidate=600',
-            'X-Source': 'db',
-            'X-Duration-Ms': `${Math.round(duration * 100) / 100}`,
-            'X-Car-Id': carId
-          }
-        }
-      );
-    }
-
-    // Parse URL and query parameters
-    const url = new URL(req.url);
-    const searchParams = url.searchParams;
-
-    // Generate cache key for edge caching
-    const cacheKey = generateCacheKey(url);
-    console.log('🔑 Cache key:', cacheKey);
 
     // Extract parameters from URL
     const filters: Record<string, any> = {};
@@ -202,25 +34,26 @@ const handler = async (req: Request): Promise<Response> => {
     if (searchParams.has('yearMax')) filters.yearMax = searchParams.get('yearMax');
     if (searchParams.has('priceMin')) filters.priceMin = searchParams.get('priceMin');
     if (searchParams.has('priceMax')) filters.priceMax = searchParams.get('priceMax');
-    if (searchParams.has('mileageMax')) filters.mileageMax = searchParams.get('mileageMax');
     if (searchParams.has('fuel')) filters.fuel = searchParams.get('fuel');
-    if (searchParams.has('gearbox')) filters.gearbox = searchParams.get('gearbox');
-    if (searchParams.has('drivetrain')) filters.drivetrain = searchParams.get('drivetrain');
-    if (searchParams.has('city')) filters.city = searchParams.get('city');
     if (searchParams.has('search')) filters.search = searchParams.get('search');
-    if (searchParams.has('q')) filters.q = searchParams.get('q');
 
-    // Extract pagination and sorting parameters - BACKEND ONLY, NO CLIENT SORTING
+    // Extract pagination and sorting parameters
     const sort = searchParams.get('sort') || 'price_asc';
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
-    const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get('pageSize') || '24')));
-    const offset = (page - 1) * pageSize;
+    const limit = parseInt(searchParams.get('limit') || '24');
+    const cursor = searchParams.get('cursor') || null;
 
-    // Validate sort parameter using SORT_MAP whitelist
-    if (!SORT_MAP[sort]) {
+    // Validate sort parameter (extended to support new fields)
+    const validSorts = ['price_asc', 'price_desc', 'rank_asc', 'rank_desc',
+                       'year_asc', 'year_desc', 'mileage_asc', 'mileage_desc', 
+                       'make_asc', 'make_desc', 'created_asc', 'created_desc',
+                       // Frontend sort options for backwards compatibility
+                       'price_low', 'price_high', 'year_new', 'year_old', 
+                       'mileage_low', 'mileage_high', 'make_az', 'make_za', 
+                       'recently_added', 'oldest_first', 'popular'];
+    if (!validSorts.includes(sort)) {
       return new Response(
         JSON.stringify({ 
-          error: `Invalid sort parameter. Must be one of: ${Object.keys(SORT_MAP).join(', ')}` 
+          error: `Invalid sort parameter. Must be one of: ${validSorts.join(', ')}` 
         }),
         { 
           status: 400, 
@@ -229,11 +62,11 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Validate page and pageSize parameters  
-    if (page < 1) {
+    // Validate limit parameter
+    if (limit < 1 || limit > 100) {
       return new Response(
         JSON.stringify({ 
-          error: 'Page must be >= 1' 
+          error: 'Limit must be between 1 and 100' 
         }),
         { 
           status: 400, 
@@ -242,35 +75,107 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    if (pageSize < 1 || pageSize > 100) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'PageSize must be between 1 and 100' 
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
+    // Map frontend sort options to backend sort options
+    const mapFrontendSortToBackend = (sort: string): string => {
+      // If it's already a backend sort option, return as-is
+      if (['price_asc', 'price_desc', 'rank_asc', 'rank_desc', 'year_asc', 'year_desc', 
+           'mileage_asc', 'mileage_desc', 'make_asc', 'make_desc', 'created_asc', 'created_desc'].includes(sort)) {
+        return sort;
+      }
 
-    // Get sort parameters from SORT_MAP
-    const { field: sortField, direction: sortDir } = SORT_MAP[sort];
+      // Map frontend options to backend options
+      switch (sort) {
+        case 'price_low':
+          return 'price_asc';
+        case 'price_high':
+          return 'price_desc';
+        case 'year_new':
+          return 'year_desc';
+        case 'year_old':
+          return 'year_asc';
+        case 'mileage_low':
+          return 'mileage_asc';
+        case 'mileage_high':
+          return 'mileage_desc';
+        case 'make_az':
+          return 'make_asc';
+        case 'make_za':
+          return 'make_desc';
+        case 'recently_added':
+          return 'created_desc';
+        case 'oldest_first':
+          return 'created_asc';
+        case 'popular':
+          return 'rank_desc';
+        default:
+          return 'price_asc';
+      }
+    };
+
+    // Map sort option to database field and direction
+    const getSortParams = (sort: string): { field: string; direction: string } => {
+      const backendSort = mapFrontendSortToBackend(sort);
+      
+      switch (backendSort) {
+        case 'price_asc':
+          return { field: 'price_cents', direction: 'ASC' };
+        case 'price_desc':
+          return { field: 'price_cents', direction: 'DESC' };
+        case 'rank_asc':
+          return { field: 'rank_score', direction: 'ASC' };
+        case 'rank_desc':
+          return { field: 'rank_score', direction: 'DESC' };
+        case 'year_asc':
+          return { field: 'year', direction: 'ASC' };
+        case 'year_desc':
+          return { field: 'year', direction: 'DESC' };
+        case 'mileage_asc':
+          return { field: 'mileage', direction: 'ASC' };
+        case 'mileage_desc':
+          return { field: 'mileage', direction: 'DESC' };
+        case 'make_asc':
+          return { field: 'make', direction: 'ASC' };
+        case 'make_desc':
+          return { field: 'make', direction: 'DESC' };
+        case 'created_asc':
+          return { field: 'created_at', direction: 'ASC' };
+        case 'created_desc':
+          return { field: 'created_at', direction: 'DESC' };
+        default:
+          return { field: 'price_cents', direction: 'ASC' };
+      }
+    };
+
+    const { field: sortField, direction: sortDir } = getSortParams(sort);
+
+    // Parse cursor
+    const parseCursor = (cursor: string): { value: string; id: string } | null => {
+      if (!cursor) return null;
+      
+      try {
+        const decoded = atob(cursor);
+        const [value, id] = decoded.split('|');
+        if (!value || !id) return null;
+        return { value, id };
+      } catch {
+        return null;
+      }
+    };
+
+    const cursorData = cursor ? parseCursor(cursor) : null;
 
     console.log('📊 Request params:', {
       filters,
       sort,
-      page,
-      pageSize,
-      offset,
+      limit,
+      cursor: cursor ? 'present' : 'none',
       sortField,
-      sortDir,
-      cacheKey
+      sortDir
     });
 
-    // Get total count first using cars_cache_filtered_count
+    // Get total count first
     const { data: totalCount, error: countError } = await supabase
-      .rpc('cars_cache_filtered_count', { p_filters: filters });
+      .rpc('cars_filtered_count', { p_filters: filters });
 
     if (countError) {
       console.error('❌ Error getting car count:', countError);
@@ -286,14 +191,15 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Get paginated results using new cars_cache_paginated function
+    // Get paginated results using keyset pagination
     const { data: cars, error: carsError } = await supabase
-      .rpc('cars_cache_paginated', {
+      .rpc('cars_keyset_page', {
         p_filters: filters,
         p_sort_field: sortField,
         p_sort_dir: sortDir,
-        p_limit: pageSize,
-        p_offset: offset
+        p_cursor_value: cursorData?.value || null,
+        p_cursor_id: cursorData?.id || null,
+        p_limit: limit
       });
 
     if (carsError) {
@@ -310,62 +216,53 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Get facets for filtering
-    const { data: facetsData, error: facetsError } = await supabase
-      .rpc('cars_cache_facets', { p_filters: filters });
-
-    if (facetsError) {
-      console.warn('⚠️ Error getting facets (non-critical):', facetsError);
-    }
-
-    const facets = facetsData && facetsData.length > 0 ? facetsData[0] : {
-      makes: [],
-      models: [],
-      fuels: [],
-      year_range: { min: 2000, max: 2024 },
-      price_range: { min: 0, max: 1000000 }
-    };
-
     const items = cars || [];
 
-    // Map items to exact external API JSON shape using mapDbToExternal
-    const mappedItems = items.map(mapDbToExternal);
-
-    // Calculate pagination info for new response format
-    const total = totalCount || 0;
-    const totalPages = Math.ceil(total / pageSize);
-    const hasPrev = page > 1;
-    const hasNext = page < totalPages;
-
-    // New response format: {items,total,page,pageSize,totalPages,hasPrev,hasNext,facets}
-    const response = {
-      items: mappedItems,
-      total,
-      page,
-      pageSize,
-      totalPages,
-      hasPrev,
-      hasNext,
-      facets
+    // Create next cursor if we have a full page (indicating more data)
+    const createCursor = (sortField: string, sortValue: any, id: string): string => {
+      const cursorValue = `${sortValue}|${id}`;
+      return btoa(cursorValue);
     };
 
-    console.log(`✅ Returning ${items.length} cars, total: ${total}, page: ${page}/${totalPages}, facets: ${Object.keys(facets).length} types`);
+    let nextCursor: string | undefined;
+    if (items.length === limit && items.length > 0) {
+      const lastItem = items[items.length - 1];
+      let sortValue;
+      
+      // Get the appropriate sort value based on the sort field
+      switch (sortField) {
+        case 'price_cents':
+          sortValue = lastItem.price_cents;
+          break;
+        case 'rank_score':
+          sortValue = lastItem.rank_score;
+          break;
+        case 'year':
+          sortValue = lastItem.year;
+          break;
+        case 'mileage':
+          sortValue = lastItem.mileage;
+          break;
+        case 'make':
+          sortValue = lastItem.make;
+          break;
+        case 'created_at':
+          sortValue = lastItem.created_at;
+          break;
+        default:
+          sortValue = lastItem.price_cents;
+      }
+      
+      nextCursor = createCursor(sortField, sortValue, lastItem.id);
+    }
 
-    // Add telemetry logging as required
-    const duration = performance.now() - startTime;
-    console.log('📊 Cars API Telemetry:', {
-      source: 'db',
-      duration_ms: Math.round(duration * 100) / 100,
-      rows: items.length,
-      sort,
-      pageSize,
-      page,
-      total,
-      filters: Object.keys(filters).length
-    });
+    const response = {
+      items,
+      nextCursor,
+      total: totalCount || 0
+    };
 
-    // Edge caching with route + sorted querystring keys and stale-while-revalidate
-    const cacheHeaders = getCacheHeaders(180); // 3 min TTL with 6 min stale-while-revalidate
+    console.log(`✅ Returning ${items.length} cars, total: ${totalCount}, nextCursor: ${nextCursor ? 'present' : 'none'}`);
 
     return new Response(
       JSON.stringify(response),
@@ -373,12 +270,7 @@ const handler = async (req: Request): Promise<Response> => {
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json',
-          ...cacheHeaders,
-          'X-Cache-Key': cacheKey,
-          'X-Source': 'db',
-          'X-Duration-Ms': `${Math.round(duration * 100) / 100}`,
-          'X-Rows': `${items.length}`,
-          'X-Response-Time': `${Date.now() - performance.now()}ms`
+          'Cache-Control': 'public, max-age=300' // Cache for 5 minutes
         }
       }
     );

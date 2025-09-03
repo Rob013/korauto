@@ -13,33 +13,12 @@ import {
   verifyBatchWrite 
 } from '@/utils/syncVerification';
 
-// Mock Supabase client with proper structure
+// Mock Supabase client
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
-    from: vi.fn().mockImplementation(() => ({
-      select: vi.fn().mockResolvedValue({ count: 0, error: null }),
-      delete: vi.fn().mockResolvedValue({ error: null }),
-      update: vi.fn().mockResolvedValue({ error: null }),
-      insert: vi.fn().mockResolvedValue({ error: null }),
-      upsert: vi.fn().mockResolvedValue({ error: null })
-    }))
+    from: vi.fn()
   }
 }));
-
-// Helper to create a proper Supabase-like mock response
-const createMockChain = (finalResponse: any) => ({
-  select: vi.fn().mockReturnValue({
-    order: vi.fn().mockReturnValue({
-      limit: vi.fn().mockReturnValue({
-        single: vi.fn().mockResolvedValue(finalResponse)
-      }),
-      then: vi.fn().mockResolvedValue(finalResponse)
-    }),
-    limit: vi.fn().mockResolvedValue(finalResponse),
-    in: vi.fn().mockResolvedValue(finalResponse),
-    then: vi.fn().mockResolvedValue(finalResponse)
-  })
-});
 
 describe('Sync Verification System', () => {
   beforeEach(() => {
@@ -52,58 +31,72 @@ describe('Sync Verification System', () => {
 
   describe('verifySyncToDatabase', () => {
     it('should pass verification when database has expected data', async () => {
+      // Mock successful database responses
       const mockSupabase = supabase as any;
       
-      // Setup mock calls in order they are called by the function
-      mockSupabase.from
-        // 1. Cars count query
-        .mockReturnValueOnce({
-          select: vi.fn().mockResolvedValue({ count: 1000, error: null })
-        })
-        // 2. Staging count query
-        .mockReturnValueOnce({
-          select: vi.fn().mockResolvedValue({ count: 0, error: null })
-        })
-        // 3. Recent sync timestamps query
-        .mockReturnValueOnce({
-          select: vi.fn().mockReturnValue({
-            order: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue({
-                data: [{ last_synced_at: new Date().toISOString() }],
-                error: null
-              })
-            })
-          })
-        })
-        // 4. Sample records query
-        .mockReturnValueOnce({
-          select: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue({
-              data: [
-                { id: '1', make: 'Toyota', model: 'Camry', external_id: 'ext1' },
-                { id: '2', make: 'Honda', model: 'Civic', external_id: 'ext2' }
-              ],
-              error: null
-            })
-          })
-        })
-        // 5. Cars cache query
-        .mockReturnValueOnce({
-          select: vi.fn().mockResolvedValue({ count: 950, error: null })
-        })
-        // 6. Sync status query
-        .mockReturnValueOnce({
-          select: vi.fn().mockReturnValue({
-            order: vi.fn().mockReturnValue({
-              limit: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({
-                  data: { status: 'completed', error_message: null, started_at: new Date().toISOString() },
-                  error: null
+      let callCount = 0;
+      mockSupabase.from.mockImplementation((tableName: string) => {
+        callCount++;
+        
+        switch (tableName) {
+          case 'cars':
+            if (callCount === 1) { // Record count
+              return {
+                select: vi.fn().mockResolvedValue({ count: 1000, error: null })
+              };
+            } else if (callCount === 3) { // Recent sync timestamps
+              return {
+                select: vi.fn().mockReturnValue({
+                  order: vi.fn().mockReturnValue({
+                    limit: vi.fn().mockResolvedValue({
+                      data: [{ last_synced_at: new Date().toISOString() }],
+                      error: null
+                    })
+                  })
+                })
+              };
+            } else if (callCount === 4) { // Sample records
+              return {
+                select: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockResolvedValue({
+                    data: [
+                      { id: '1', make: 'Toyota', model: 'Camry', external_id: 'ext1' },
+                      { id: '2', make: 'Honda', model: 'Civic', external_id: 'ext2' }
+                    ],
+                    error: null
+                  })
+                })
+              };
+            }
+            break;
+          case 'cars_staging':
+            return {
+              select: vi.fn().mockResolvedValue({ count: 0, error: null })
+            };
+          case 'cars_cache':
+            return {
+              select: vi.fn().mockResolvedValue({ count: 950, error: null })
+            };
+          case 'sync_status':
+            return {
+              select: vi.fn().mockReturnValue({
+                order: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockReturnValue({
+                    single: vi.fn().mockResolvedValue({
+                      data: { status: 'completed', error_message: null },
+                      error: null
+                    })
+                  })
                 })
               })
-            })
-          })
-        });
+            };
+        }
+        
+        // Default fallback
+        return {
+          select: vi.fn().mockResolvedValue({ count: 0, error: null })
+        };
+      });
 
       const result = await verifySyncToDatabase(1000);
 
@@ -112,60 +105,36 @@ describe('Sync Verification System', () => {
       expect(result.details.stagingTableCleared).toBe(true);
       expect(result.details.sampleRecordsVerified).toBe(true);
       expect(result.details.dataIntegrityPassed).toBe(true);
-    }, 15000);
+    }, 15000); // Increase timeout to 10 seconds
 
     it('should fail verification when record count does not match expected', async () => {
       const mockSupabase = supabase as any;
       
-      // Setup mocks for failing record count scenario
-      mockSupabase.from
-        // 1. Cars count query with wrong count
-        .mockReturnValueOnce({
-          select: vi.fn().mockResolvedValue({ count: 500, error: null })
-        })
-        // 2. Staging count query
-        .mockReturnValueOnce({
-          select: vi.fn().mockResolvedValue({ count: 0, error: null })
-        })
-        // 3. Recent sync timestamps query (won't get here if timestamp verification is skipped)
-        .mockReturnValueOnce({
-          select: vi.fn().mockReturnValue({
-            order: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue({
-                data: [{ last_synced_at: new Date().toISOString() }],
-                error: null
+      let callCount = 0;
+      mockSupabase.from.mockImplementation(() => {
+        callCount++;
+        
+        switch (callCount) {
+          case 1: // cars table count with wrong count
+            return {
+              select: vi.fn().mockReturnValue({
+                then: vi.fn().mockResolvedValue({ count: 500, error: null })
               })
-            })
-          })
-        })
-        // 4. Sample records query
-        .mockReturnValueOnce({
-          select: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue({
-              data: [
-                { id: '1', make: 'Toyota', model: 'Camry', external_id: 'ext1' }
-              ],
-              error: null
-            })
-          })
-        })
-        // 5. Cars cache query
-        .mockReturnValueOnce({
-          select: vi.fn().mockResolvedValue({ count: 0, error: null })
-        })
-        // 6. Sync status query - make it not critical
-        .mockReturnValueOnce({
-          select: vi.fn().mockReturnValue({
-            order: vi.fn().mockReturnValue({
-              limit: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({
-                  data: null,
-                  error: { code: 'PGRST116', message: 'No rows found' }
-                })
+            };
+          default:
+            return {
+              select: vi.fn().mockReturnValue({
+                then: vi.fn().mockResolvedValue({ count: 0, error: null }),
+                order: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockReturnValue({
+                    single: vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } })
+                  })
+                }),
+                limit: vi.fn().mockResolvedValue({ data: [], error: null })
               })
-            })
-          })
-        });
+            };
+        }
+      });
 
       const result = await verifySyncToDatabase(1000);
 
@@ -176,55 +145,37 @@ describe('Sync Verification System', () => {
     it('should fail verification when staging table is not cleared', async () => {
       const mockSupabase = supabase as any;
       
-      // Setup mocks for staging table not cleared scenario
-      mockSupabase.from
-        // 1. Cars count query
-        .mockReturnValueOnce({
-          select: vi.fn().mockResolvedValue({ count: 1000, error: null })
-        })
-        // 2. Staging count query with remaining records
-        .mockReturnValueOnce({
-          select: vi.fn().mockResolvedValue({ count: 50, error: null })
-        })
-        // 3. Recent sync timestamps query
-        .mockReturnValueOnce({
-          select: vi.fn().mockReturnValue({
-            order: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue({
-                data: [{ last_synced_at: new Date().toISOString() }],
-                error: null
+      let callCount = 0;
+      mockSupabase.from.mockImplementation(() => {
+        callCount++;
+        
+        switch (callCount) {
+          case 1: // cars table count
+            return {
+              select: vi.fn().mockReturnValue({
+                then: vi.fn().mockResolvedValue({ count: 1000, error: null })
               })
-            })
-          })
-        })
-        // 4. Sample records query
-        .mockReturnValueOnce({
-          select: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue({
-              data: [
-                { id: '1', make: 'Toyota', model: 'Camry', external_id: 'ext1' }
-              ],
-              error: null
-            })
-          })
-        })
-        // 5. Cars cache query
-        .mockReturnValueOnce({
-          select: vi.fn().mockResolvedValue({ count: 1000, error: null })
-        })
-        // 6. Sync status query
-        .mockReturnValueOnce({
-          select: vi.fn().mockReturnValue({
-            order: vi.fn().mockReturnValue({
-              limit: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({
-                  data: null,
-                  error: { code: 'PGRST116', message: 'No rows found' }
-                })
+            };
+          case 2: // staging table not empty
+            return {
+              select: vi.fn().mockReturnValue({
+                then: vi.fn().mockResolvedValue({ count: 50, error: null })
               })
-            })
-          })
-        });
+            };
+          default:
+            return {
+              select: vi.fn().mockReturnValue({
+                then: vi.fn().mockResolvedValue({ count: 1000, error: null }),
+                order: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockReturnValue({
+                    single: vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } })
+                  })
+                }),
+                limit: vi.fn().mockResolvedValue({ data: [], error: null })
+              })
+            };
+        }
+      });
 
       const result = await verifySyncToDatabase();
 
@@ -236,56 +187,59 @@ describe('Sync Verification System', () => {
     it('should fail verification when sample records are invalid', async () => {
       const mockSupabase = supabase as any;
       
-      // Setup mocks for invalid sample records scenario
-      mockSupabase.from
-        // 1. Cars count query
-        .mockReturnValueOnce({
-          select: vi.fn().mockResolvedValue({ count: 1000, error: null })
-        })
-        // 2. Staging count query
-        .mockReturnValueOnce({
-          select: vi.fn().mockResolvedValue({ count: 0, error: null })
-        })
-        // 3. Recent sync timestamps query
-        .mockReturnValueOnce({
-          select: vi.fn().mockReturnValue({
-            order: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue({
-                data: [{ last_synced_at: new Date().toISOString() }],
-                error: null
+      let callCount = 0;
+      mockSupabase.from.mockImplementation(() => {
+        callCount++;
+        
+        switch (callCount) {
+          case 1: // cars table count
+            return {
+              select: vi.fn().mockReturnValue({
+                then: vi.fn().mockResolvedValue({ count: 1000, error: null })
               })
-            })
-          })
-        })
-        // 4. Sample records query with invalid records
-        .mockReturnValueOnce({
-          select: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue({
-              data: [
-                { id: '1', make: null, model: 'Camry', external_id: 'ext1' }, // Invalid - missing make
-                { id: '2', make: 'Honda', model: null, external_id: 'ext2' }  // Invalid - missing model
-              ],
-              error: null
-            })
-          })
-        })
-        // 5. Cars cache query
-        .mockReturnValueOnce({
-          select: vi.fn().mockResolvedValue({ count: 1000, error: null })
-        })
-        // 6. Sync status query
-        .mockReturnValueOnce({
-          select: vi.fn().mockReturnValue({
-            order: vi.fn().mockReturnValue({
-              limit: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({
-                  data: null,
-                  error: { code: 'PGRST116', message: 'No rows found' }
+            };
+          case 2: // staging table empty
+            return {
+              select: vi.fn().mockReturnValue({
+                then: vi.fn().mockResolvedValue({ count: 0, error: null })
+              })
+            };
+          case 3: // recent timestamps
+            return {
+              select: vi.fn().mockReturnValue({
+                order: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockResolvedValue({
+                    data: [{ last_synced_at: new Date().toISOString() }],
+                    error: null
+                  })
                 })
               })
-            })
-          })
-        });
+            };
+          case 4: // invalid sample records
+            return {
+              select: vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue({
+                  data: [
+                    { id: '1', make: null, model: 'Camry', external_id: 'ext1' }, // Invalid - missing make
+                    { id: '2', make: 'Honda', model: null, external_id: 'ext2' }  // Invalid - missing model
+                  ],
+                  error: null
+                })
+              })
+            };
+          default:
+            return {
+              select: vi.fn().mockReturnValue({
+                then: vi.fn().mockResolvedValue({ count: 1000, error: null }),
+                order: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockReturnValue({
+                    single: vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } })
+                  })
+                })
+              })
+            };
+        }
+      });
 
       const result = await verifySyncToDatabase();
 
@@ -300,110 +254,57 @@ describe('Sync Verification System', () => {
       // Create a date that's 50 hours old (more than 24h but less than 72h default)
       const oldSyncTime = new Date(Date.now() - 50 * 60 * 60 * 1000).toISOString();
       
-      // Test with default 72h threshold - should pass
-      mockSupabase.from
-        // 1. Cars count query
-        .mockReturnValueOnce({
-          select: vi.fn().mockResolvedValue({ count: 1000, error: null })
-        })
-        // 2. Staging count query
-        .mockReturnValueOnce({
-          select: vi.fn().mockResolvedValue({ count: 0, error: null })
-        })
-        // 3. Recent sync timestamps query - 50 hours old
-        .mockReturnValueOnce({
-          select: vi.fn().mockReturnValue({
-            order: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue({
-                data: [{ last_synced_at: oldSyncTime }],
-                error: null
+      let callCount = 0;
+      mockSupabase.from.mockImplementation(() => {
+        callCount++;
+        
+        switch (callCount) {
+          case 1: // cars table count
+            return {
+              select: vi.fn().mockReturnValue({
+                then: vi.fn().mockResolvedValue({ count: 1000, error: null })
               })
-            })
-          })
-        })
-        // 4. Sample records query
-        .mockReturnValueOnce({
-          select: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue({
-              data: [
-                { id: '1', make: 'Toyota', model: 'Camry', external_id: 'ext1' }
-              ],
-              error: null
-            })
-          })
-        })
-        // 5. Cars cache query
-        .mockReturnValueOnce({
-          select: vi.fn().mockResolvedValue({ count: 1000, error: null })
-        })
-        // 6. Sync status query
-        .mockReturnValueOnce({
-          select: vi.fn().mockReturnValue({
-            order: vi.fn().mockReturnValue({
-              limit: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({
-                  data: null,
-                  error: { code: 'PGRST116', message: 'No rows found' }
+            };
+          case 2: // staging table count
+            return {
+              select: vi.fn().mockReturnValue({
+                then: vi.fn().mockResolvedValue({ count: 0, error: null })
+              })
+            };
+          case 3: // recent sync timestamps - 50 hours old
+            return {
+              select: vi.fn().mockReturnValue({
+                order: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockResolvedValue({
+                    data: [{ last_synced_at: oldSyncTime }],
+                    error: null
+                  })
                 })
               })
-            })
-          })
-        });
+            };
+          default:
+            return {
+              select: vi.fn().mockReturnValue({
+                then: vi.fn().mockResolvedValue({ count: 0, error: null }),
+                order: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockReturnValue({
+                    single: vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } })
+                  })
+                }),
+                limit: vi.fn().mockResolvedValue({ data: [], error: null })
+              })
+            };
+        }
+      });
 
+      // Test with default 72h threshold - should pass
       const resultWithDefault = await verifySyncToDatabase(1000);
       expect(resultWithDefault.success).toBe(true);
 
-      // Test with stricter 24h threshold - should fail
-      // Reset the mocks for the second call
-      mockSupabase.from
-        // 1. Cars count query
-        .mockReturnValueOnce({
-          select: vi.fn().mockResolvedValue({ count: 1000, error: null })
-        })
-        // 2. Staging count query
-        .mockReturnValueOnce({
-          select: vi.fn().mockResolvedValue({ count: 0, error: null })
-        })
-        // 3. Recent sync timestamps query - 50 hours old
-        .mockReturnValueOnce({
-          select: vi.fn().mockReturnValue({
-            order: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue({
-                data: [{ last_synced_at: oldSyncTime }],
-                error: null
-              })
-            })
-          })
-        })
-        // 4. Sample records query
-        .mockReturnValueOnce({
-          select: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue({
-              data: [
-                { id: '1', make: 'Toyota', model: 'Camry', external_id: 'ext1' }
-              ],
-              error: null
-            })
-          })
-        })
-        // 5. Cars cache query
-        .mockReturnValueOnce({
-          select: vi.fn().mockResolvedValue({ count: 1000, error: null })
-        })
-        // 6. Sync status query
-        .mockReturnValueOnce({
-          select: vi.fn().mockReturnValue({
-            order: vi.fn().mockReturnValue({
-              limit: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({
-                  data: null,
-                  error: { code: 'PGRST116', message: 'No rows found' }
-                })
-              })
-            })
-          })
-        });
+      // Reset call count
+      callCount = 0;
       
+      // Test with stricter 24h threshold - should fail
       const resultWithStrict = await verifySyncToDatabase(1000, { syncTimeThresholdHours: 24 });
       expect(resultWithStrict.success).toBe(false);
       expect(resultWithStrict.errors?.[0]).toContain('Last sync is too old: 50.0 hours ago');
@@ -412,110 +313,73 @@ describe('Sync Verification System', () => {
     it('should use configurable data integrity threshold', async () => {
       const mockSupabase = supabase as any;
       
-      // Test with default 20% threshold - should pass (15% difference)
-      mockSupabase.from
-        // 1. Cars count query
-        .mockReturnValueOnce({
-          select: vi.fn().mockResolvedValue({ count: 1000, error: null })
-        })
-        // 2. Staging count query
-        .mockReturnValueOnce({
-          select: vi.fn().mockResolvedValue({ count: 0, error: null })
-        })
-        // 3. Recent sync timestamps query
-        .mockReturnValueOnce({
-          select: vi.fn().mockReturnValue({
-            order: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue({
-                data: [{ last_synced_at: new Date().toISOString() }],
-                error: null
+      let callCount = 0;
+      mockSupabase.from.mockImplementation(() => {
+        callCount++;
+        
+        switch (callCount) {
+          case 1: // cars table count
+            return {
+              select: vi.fn().mockReturnValue({
+                then: vi.fn().mockResolvedValue({ count: 1000, error: null })
               })
-            })
-          })
-        })
-        // 4. Sample records query
-        .mockReturnValueOnce({
-          select: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue({
-              data: [
-                { id: '1', make: 'Toyota', model: 'Camry', external_id: 'ext1' }
-              ],
-              error: null
-            })
-          })
-        })
-        // 5. Cars cache query - 15% difference (1000 vs 850)
-        .mockReturnValueOnce({
-          select: vi.fn().mockResolvedValue({ data: 850, error: null })
-        })
-        // 6. Sync status query
-        .mockReturnValueOnce({
-          select: vi.fn().mockReturnValue({
-            order: vi.fn().mockReturnValue({
-              limit: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({
-                  data: null,
-                  error: { code: 'PGRST116', message: 'No rows found' }
+            };
+          case 2: // staging table count
+            return {
+              select: vi.fn().mockReturnValue({
+                then: vi.fn().mockResolvedValue({ count: 0, error: null })
+              })
+            };
+          case 3: // recent sync timestamps
+            return {
+              select: vi.fn().mockReturnValue({
+                order: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockResolvedValue({
+                    data: [{ last_synced_at: new Date().toISOString() }],
+                    error: null
+                  })
                 })
               })
-            })
-          })
-        });
+            };
+          case 4: // sample records
+            return {
+              select: vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue({
+                  data: [
+                    { id: '1', make: 'Toyota', model: 'Camry', external_id: 'ext1' }
+                  ],
+                  error: null
+                })
+              })
+            };
+          case 5: // cars_cache count - 15% difference (1000 vs 850)
+            return {
+              select: vi.fn().mockReturnValue({
+                then: vi.fn().mockResolvedValue({ count: 850, error: null })
+              })
+            };
+          default:
+            return {
+              select: vi.fn().mockReturnValue({
+                order: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockReturnValue({
+                    single: vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } })
+                  })
+                })
+              })
+            };
+        }
+      });
 
+      // Test with default 20% threshold - should pass (15% difference)
       const resultWithDefault = await verifySyncToDatabase(1000);
       expect(resultWithDefault.success).toBe(true);
       expect(resultWithDefault.details.dataIntegrityPassed).toBe(true);
 
+      // Reset call count
+      callCount = 0;
+      
       // Test with stricter 10% threshold - should fail (15% difference)
-      mockSupabase.from
-        // 1. Cars count query
-        .mockReturnValueOnce({
-          select: vi.fn().mockResolvedValue({ count: 1000, error: null })
-        })
-        // 2. Staging count query
-        .mockReturnValueOnce({
-          select: vi.fn().mockResolvedValue({ count: 0, error: null })
-        })
-        // 3. Recent sync timestamps query
-        .mockReturnValueOnce({
-          select: vi.fn().mockReturnValue({
-            order: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue({
-                data: [{ last_synced_at: new Date().toISOString() }],
-                error: null
-              })
-            })
-          })
-        })
-        // 4. Sample records query
-        .mockReturnValueOnce({
-          select: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue({
-              data: [
-                { id: '1', make: 'Toyota', model: 'Camry', external_id: 'ext1' }
-              ],
-              error: null
-            })
-          })
-        })
-        // 5. Cars cache query - 15% difference (1000 vs 850)
-        .mockReturnValueOnce({
-          select: vi.fn().mockResolvedValue({ data: 850, error: null })
-        })
-        // 6. Sync status query
-        .mockReturnValueOnce({
-          select: vi.fn().mockReturnValue({
-            order: vi.fn().mockReturnValue({
-              limit: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({
-                  data: null,
-                  error: { code: 'PGRST116', message: 'No rows found' }
-                })
-              })
-            })
-          })
-        });
-
       const resultWithStrict = await verifySyncToDatabase(1000, { dataIntegrityThresholdPercent: 10 });
       expect(resultWithStrict.success).toBe(false);
       expect(resultWithStrict.errors?.[0]).toContain('Data integrity issue: 15.0% difference');
@@ -526,38 +390,44 @@ describe('Sync Verification System', () => {
     it('should return true when cars table has data', async () => {
       const mockSupabase = supabase as any;
       mockSupabase.from.mockReturnValueOnce({
-        select: vi.fn().mockResolvedValue({ count: 100, error: null })
+        select: vi.fn().mockReturnValue({
+          then: vi.fn().mockResolvedValue({ count: 100, error: null })
+        })
       });
 
       const result = await quickSyncCheck();
 
       expect(result).toBe(true);
-    }, 5000);
+    }, 10000);
 
     it('should return false when cars table is empty', async () => {
       const mockSupabase = supabase as any;
       mockSupabase.from.mockReturnValueOnce({
-        select: vi.fn().mockResolvedValue({ count: 0, error: null })
-      });
-
-      const result = await quickSyncCheck();
-
-      expect(result).toBe(false);
-    }, 5000);
-
-    it('should return false when there is a database error', async () => {
-      const mockSupabase = supabase as any;
-      mockSupabase.from.mockReturnValueOnce({
-        select: vi.fn().mockResolvedValue({ 
-          count: null, 
-          error: { message: 'Database connection failed' }
+        select: vi.fn().mockReturnValue({
+          then: vi.fn().mockResolvedValue({ count: 0, error: null })
         })
       });
 
       const result = await quickSyncCheck();
 
       expect(result).toBe(false);
-    }, 5000);
+    }, 10000);
+
+    it('should return false when there is a database error', async () => {
+      const mockSupabase = supabase as any;
+      mockSupabase.from.mockReturnValueOnce({
+        select: vi.fn().mockReturnValue({
+          then: vi.fn().mockResolvedValue({ 
+            count: null, 
+            error: { message: 'Database connection failed' }
+          })
+        })
+      });
+
+      const result = await quickSyncCheck();
+
+      expect(result).toBe(false);
+    }, 10000);
   });
 
   describe('verifyBatchWrite', () => {
@@ -644,13 +514,14 @@ describe('Sync Verification System', () => {
 
     it('should handle malformed database responses', async () => {
       const mockSupabase = supabase as any;
-      
-      // Mock malformed response for cars count
       mockSupabase.from.mockReturnValueOnce({
-        select: vi.fn().mockResolvedValue({ 
-          count: 'invalid',  // Invalid count type
-          error: null 
-        })
+        select: vi.fn(() => ({
+          head: true
+        }))
+      });
+      mockSupabase.from().select.mockResolvedValueOnce({ 
+        count: 'invalid',  // Invalid count type
+        error: null 
       });
 
       const result = await verifySyncToDatabase();

@@ -39,14 +39,13 @@ describe('AI Sync Coordinator', () => {
 
   describe('Error Classification', () => {
     it('should classify timeout errors correctly', () => {
-      // Note: AISyncCoordinator is a React component that encapsulates error classification
-      // The actual error classification logic is tested via integration tests in:
-      // - operator-precedence-fix.test.ts
-      // - ai-coordinator-error-improvements.test.ts  
-      // - exact-problem-statement-verification.test.ts
-      // This test serves as a placeholder for the unit test structure
+      const { AISyncCoordinator } = require('@/components/AISyncCoordinator');
       
-      expect(true).toBe(true); // Integration tests cover the actual logic
+      // Mock the component to expose internal functions
+      const coordinator = new AISyncCoordinator({ enabled: true });
+      
+      // Test would verify error classification logic
+      expect(true).toBe(true); // Placeholder for actual test
     });
 
     it('should classify network errors correctly', () => {

@@ -1,11 +1,6 @@
 /**
- * Chronological Ranking Utility - DEPRECATED
- * 
- * ⚠️ WARNING: This file contains client-side sorting logic that has been deprecated.
- * All sorting is now handled by the backend API at /api/cars with global sorting.
- * 
- * This file is kept for backward compatibility but should not be used for new code.
- * Use the backend API with proper sort parameters instead.
+ * Chronological Ranking Utility
+ * Handles proper chronological ordering and ranking of cars across all pages
  */
 
 import { SortOption } from '@/hooks/useSortedCars';
@@ -27,7 +22,6 @@ export interface ChronologicalRankingResult {
 }
 
 /**
- * @deprecated Use backend API /api/cars with sort parameter instead
  * Applies chronological ranking to all filtered cars
  */
 export const applyChronologicalRanking = (
@@ -35,10 +29,11 @@ export const applyChronologicalRanking = (
   sortBy: SortOption,
   carsPerPage: number = 50
 ): ChronologicalRankingResult => {
-  console.warn('⚠️ DEPRECATED: applyChronologicalRanking is deprecated. Use backend API /api/cars with sort parameter instead.');
+  // Sort all cars first
+  const sortedCars = sortCarsByOption(cars, sortBy);
   
-  // Just return the cars as-is without sorting (backend handles this now)
-  const rankedCars: CarWithRank[] = cars.map((car, index) => {
+  // Apply ranking and pagination info
+  const rankedCars: CarWithRank[] = sortedCars.map((car, index) => {
     const rank = index + 1;
     const pageNumber = Math.ceil(rank / carsPerPage);
     const positionInPage = ((rank - 1) % carsPerPage) + 1;
@@ -51,19 +46,18 @@ export const applyChronologicalRanking = (
     };
   });
   
-  const totalPages = Math.ceil(cars.length / carsPerPage);
+  const totalPages = Math.ceil(sortedCars.length / carsPerPage);
   
   return {
     rankedCars,
     totalPages,
     carsPerPage,
-    totalCars: cars.length,
+    totalCars: sortedCars.length,
     sortedBy: sortBy
   };
 };
 
 /**
- * @deprecated Use backend pagination instead
  * Gets cars for a specific page from ranked results
  */
 export const getCarsForPage = (
@@ -71,8 +65,6 @@ export const getCarsForPage = (
   pageNumber: number,
   carsPerPage: number = 50
 ): CarWithRank[] => {
-  console.warn('⚠️ DEPRECATED: getCarsForPage is deprecated. Use backend API /api/cars with page parameter instead.');
-  
   const startIndex = (pageNumber - 1) * carsPerPage;
   const endIndex = startIndex + carsPerPage;
   
@@ -80,15 +72,97 @@ export const getCarsForPage = (
 };
 
 /**
- * @deprecated All sorting is now handled by the backend API
- * CLIENT-SIDE SORTING IS NO LONGER USED - BACKEND HANDLES ALL SORTING
+ * Sorts cars by the selected option with proper chronological ordering
  */
 const sortCarsByOption = (cars: any[], sortBy: SortOption): any[] => {
-  console.error('🚫 CLIENT-SIDE SORTING BLOCKED: sortCarsByOption should not be used. All sorting is handled by the backend API /api/cars.');
+  const sortedCars = [...cars];
   
-  // Return cars as-is without sorting to prevent client-side sorting
-  // The backend API should handle all sorting with proper global ordering
-  return cars;
+  switch (sortBy) {
+    case "recently_added":
+      return sortedCars.sort((a, b) => {
+        const dateA = new Date(a.created_at || a.last_synced_at || 0).getTime();
+        const dateB = new Date(b.created_at || b.last_synced_at || 0).getTime();
+        return dateB - dateA; // Newest first
+      });
+      
+    case "price_low":
+      return sortedCars.sort((a, b) => {
+        const priceA = getBuyNowPrice(a) || 0;
+        const priceB = getBuyNowPrice(b) || 0;
+        return priceA - priceB; // Lowest first
+      });
+      
+    case "price_high":
+      return sortedCars.sort((a, b) => {
+        const priceA = getBuyNowPrice(a) || 0;
+        const priceB = getBuyNowPrice(b) || 0;
+        return priceB - priceA; // Highest first
+      });
+      
+    case "year_new":
+      return sortedCars.sort((a, b) => {
+        const yearA = parseInt(a.year) || 0;
+        const yearB = parseInt(b.year) || 0;
+        if (yearA !== yearB) {
+          return yearB - yearA; // Newest year first
+        }
+        // Secondary sort by recently added for same year
+        const dateA = new Date(a.created_at || a.last_synced_at || 0).getTime();
+        const dateB = new Date(b.created_at || b.last_synced_at || 0).getTime();
+        return dateB - dateA;
+      });
+      
+    case "year_old":
+      return sortedCars.sort((a, b) => {
+        const yearA = parseInt(a.year) || 0;
+        const yearB = parseInt(b.year) || 0;
+        if (yearA !== yearB) {
+          return yearA - yearB; // Oldest year first
+        }
+        // Secondary sort by recently added for same year
+        const dateA = new Date(a.created_at || a.last_synced_at || 0).getTime();
+        const dateB = new Date(b.created_at || b.last_synced_at || 0).getTime();
+        return dateB - dateA;
+      });
+      
+    case "mileage_low":
+      return sortedCars.sort((a, b) => {
+        const mileageA = getMileage(a) || 999999;
+        const mileageB = getMileage(b) || 999999;
+        return mileageA - mileageB; // Lowest mileage first
+      });
+      
+    case "mileage_high":
+      return sortedCars.sort((a, b) => {
+        const mileageA = getMileage(a) || 0;
+        const mileageB = getMileage(b) || 0;
+        return mileageB - mileageA; // Highest mileage first
+      });
+      
+    case "make_az":
+      return sortedCars.sort((a, b) => {
+        const makeA = (a.manufacturer?.name || a.make || "").toLowerCase();
+        const makeB = (b.manufacturer?.name || b.make || "").toLowerCase();
+        return makeA.localeCompare(makeB);
+      });
+      
+    case "make_za":
+      return sortedCars.sort((a, b) => {
+        const makeA = (a.manufacturer?.name || a.make || "").toLowerCase();
+        const makeB = (b.manufacturer?.name || b.make || "").toLowerCase();
+        return makeB.localeCompare(makeA);
+      });
+      
+    case "popular":
+      return sortedCars.sort((a, b) => {
+        const popularityA = a.popularity_score || a.lots?.[0]?.popularity_score || 0;
+        const popularityB = b.popularity_score || b.lots?.[0]?.popularity_score || 0;
+        return popularityB - popularityA; // Highest popularity first
+      });
+      
+    default:
+      return sortedCars;
+  }
 };
 
 /**
@@ -139,22 +213,29 @@ export const getCarRankingInfo = (
 };
 
 /**
- * @deprecated Backend sorting validation is handled server-side
  * Validates if chronological ranking is consistent
  */
 export const validateChronologicalRanking = (
   rankedCars: CarWithRank[],
   sortBy: SortOption
 ): boolean => {
-  console.warn('⚠️ DEPRECATED: validateChronologicalRanking is deprecated. Backend API handles sorting validation.');
-  
-  // Simplified validation since backend handles sorting
   if (rankedCars.length <= 1) return true;
   
-  // Just check if ranks are sequential (basic check)
+  // Check if ranks are sequential
   for (let i = 0; i < rankedCars.length; i++) {
     if (rankedCars[i].rank !== i + 1) {
       console.warn(`Invalid rank at index ${i}: expected ${i + 1}, got ${rankedCars[i].rank}`);
+      return false;
+    }
+  }
+  
+  // Check if sorting is consistent
+  for (let i = 1; i < rankedCars.length; i++) {
+    const prev = rankedCars[i - 1];
+    const curr = rankedCars[i];
+    
+    if (!isCorrectOrder(prev, curr, sortBy)) {
+      console.warn(`Incorrect sort order at index ${i} for sort option ${sortBy}`);
       return false;
     }
   }
@@ -163,12 +244,23 @@ export const validateChronologicalRanking = (
 };
 
 /**
- * @deprecated Backend handles sort order validation
  * Helper to check if two cars are in correct order for the sort option
  */
 const isCorrectOrder = (car1: any, car2: any, sortBy: SortOption): boolean => {
-  console.warn('⚠️ DEPRECATED: isCorrectOrder is deprecated. Backend API handles sort order validation.');
-  
-  // Always return true since backend handles sort validation
-  return true;
+  switch (sortBy) {
+    case "price_low":
+      return getBuyNowPrice(car1) <= getBuyNowPrice(car2);
+    case "price_high":
+      return getBuyNowPrice(car1) >= getBuyNowPrice(car2);
+    case "year_new":
+      return (parseInt(car1.year) || 0) >= (parseInt(car2.year) || 0);
+    case "year_old":
+      return (parseInt(car1.year) || 0) <= (parseInt(car2.year) || 0);
+    case "mileage_low":
+      return getMileage(car1) <= getMileage(car2);
+    case "mileage_high":
+      return getMileage(car1) >= getMileage(car2);
+    default:
+      return true; // For other sort options, assume order is correct
+  }
 };

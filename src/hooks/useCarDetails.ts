@@ -49,7 +49,7 @@ interface CarDetails {
   bid?: number;
   buy_now?: number;
   final_bid?: number;
-  features?: string[] | string;
+  features?: string[];
   safety_features?: string[];
   comfort_features?: string[];
   performance_rating?: number;
@@ -60,55 +60,6 @@ interface CarDetails {
   inspect?: any;
   details?: any;
   lots?: any[];
-  
-  // Comprehensive API data fields for 193,306 cars sync
-  engine_size?: string;
-  engine_displacement?: string;
-  cylinders?: number;
-  max_power?: string;
-  torque?: string;
-  acceleration?: string;
-  top_speed?: string;
-  fuel_consumption?: string;
-  co2_emissions?: string;
-  doors?: number;
-  seats?: number;
-  body_style?: string;
-  drive_type?: string;
-  grade?: string;
-  auction_date?: string;
-  time_left?: string;
-  bid_count?: number;
-  watchers_count?: number;
-  views_count?: number;
-  reserve_met?: boolean;
-  estimated_value?: number;
-  sale_title?: string;
-  lot_seller?: string;
-  previous_owners?: number;
-  service_history?: string;
-  accident_history?: string;
-  modifications?: string;
-  warranty_info?: string;
-  registration_date?: string;
-  first_registration?: string;
-  mot_expiry?: string;
-  road_tax?: string;
-  insurance_group?: string;
-  title_status?: string;
-  keys_count?: number;
-  keys_count_detailed?: number;
-  books_count?: number;
-  spare_key_available?: boolean;
-  service_book_available?: boolean;
-  location_country?: string;
-  location_state?: string;
-  location_city?: string;
-  seller_type?: string;
-  damage_primary?: string;
-  damage_secondary?: string;
-  inspection_report?: string;
-  seller_notes?: string;
 }
 
 interface UseCarDetailsOptions {

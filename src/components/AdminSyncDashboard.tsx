@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useEncarAPI } from '@/hooks/useEncarAPI';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { verifySyncToDatabase, type SyncVerificationResult } from '@/utils/syncVerification';
-import { Activity, CheckCircle, AlertCircle, Clock, Database, RefreshCw, Zap, StopCircle, Shield, TrendingUp } from 'lucide-react';
+import { Activity, CheckCircle, AlertCircle, Clock, Database, TrendingUp, RefreshCw, Zap, AlertTriangle, StopCircle, Shield } from 'lucide-react';
 
 export default function AdminSyncDashboard() {
   const {
@@ -19,30 +19,28 @@ export default function AdminSyncDashboard() {
     toast
   } = useToast();
   const [testInProgress, setTestInProgress] = useState(false);
-  const [verificationResult, setVerificationResult] = useState<SyncVerificationResult | null>(null);
-  const [isVerifying, setIsVerifying] = useState(false);
+  const [emergencyInProgress, setEmergencyInProgress] = useState(false);
   
   const handleFullSync = async () => {
     try {
-      // Use the enhanced edge function for full sync via Supabase client
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const response = await supabase.functions.invoke('cars-sync', {
-        body: {
+      // Use the enhanced edge function for full sync
+      const response = await fetch('https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/cars-sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0eXlpcWlta3lzbWpuYW9jc3dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0MzkxMzQsImV4cCI6MjA2OTAxNTEzNH0.lyRCHiShhW4wrGHL3G7pK5JBUHNAtgSUQACVOBGRpL8`,
+        },
+        body: JSON.stringify({
           syncType: 'full',
           smartSync: true,
           aiCoordinated: true,
           source: 'admin-dashboard'
-        }
+        }),
       });
 
-      if (response.error) {
-        throw new Error(response.error.message || 'Failed to start full sync');
-      }
-
-      const result = response.data;
+      const result = await response.json();
       
-      if (result?.success) {
+      if (result.success) {
         toast({
           title: "🚀 Full Sync Started Successfully!",
           description: "Smart AI-coordinated full sync is now running. Check the status for progress updates."
@@ -50,7 +48,7 @@ export default function AdminSyncDashboard() {
         // Refresh status after a short delay
         setTimeout(() => getSyncStatus(), 2000);
       } else {
-        throw new Error(result?.message || 'Failed to start full sync');
+        throw new Error(result.message || 'Failed to start full sync');
       }
     } catch (error) {
       console.error('Full sync error:', error);
@@ -67,8 +65,8 @@ export default function AdminSyncDashboard() {
     try {
       await triggerSync('incremental');
       toast({
-        title: "🔄 Incremental Sync Started",
-        description: "Fetching recent car updates from API."
+        title: "🔄 Real API Incremental Sync Started",
+        description: "Fetching recent real car updates from live API."
       });
     } catch (error) {
       toast({
@@ -81,46 +79,65 @@ export default function AdminSyncDashboard() {
     }
   };
   
-  const handleVerifySync = async () => {
-    setIsVerifying(true);
-    setVerificationResult(null);
-    
+  const handleSeedData = async () => {
     try {
-      const result = await verifySyncToDatabase(undefined, {
-        verifyRecordCount: true,
-        verifySampleRecords: true,
-        verifyDataIntegrity: true,
-        verifyTimestamps: true,
-        sampleSize: 20,
-        syncTimeThresholdHours: 72,
-        dataIntegrityThresholdPercent: 20
+      const response = await fetch(`https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/cars-sync?seed=true`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
-      
-      setVerificationResult(result);
-      
+      const result = await response.json();
       if (result.success) {
         toast({
-          title: "✅ Verification Passed",
-          description: result.message
+          title: "Sample data added",
+          description: `Successfully added ${result.cars_added} sample cars to the database.`
         });
+        // Refresh data
+        getSyncStatus();
       } else {
-        toast({
-          title: "⚠️ Verification Issues Found",
-          description: `${result.errors?.length || 0} issues detected`,
-          variant: "destructive"
-        });
+        throw new Error(result.message || 'Failed to seed data');
       }
     } catch (error) {
       toast({
-        title: "Verification Failed",
-        description: error instanceof Error ? error.message : "Failed to verify sync",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to seed sample data",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleEmergencyMassData = async () => {
+    setEmergencyInProgress(true);
+    try {
+      const response = await fetch(`https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/cars-sync?emergency=true&count=50000`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      const result = await response.json();
+      if (result.success) {
+        toast({
+          title: "🚨 Emergency Data Generated",
+          description: `Successfully generated ${result.cars_added} sample cars`
+        });
+        // Refresh data
+        getSyncStatus();
+      } else {
+        throw new Error(result.message || 'Failed to generate emergency data');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to generate emergency data",
         variant: "destructive"
       });
     } finally {
-      setIsVerifying(false);
+      setEmergencyInProgress(false);
     }
   };
-
+  
   const handleStopSync = async () => {
     try {
       // Call Supabase to stop running syncs
@@ -171,6 +188,28 @@ export default function AdminSyncDashboard() {
     return Math.min(processed / syncStatus.total_records * 100, 100);
   };
 
+  // Calculate estimated time to completion
+  const getEstimatedTimeToCompletion = () => {
+    if (!syncStatus || syncStatus.status !== 'running' || !syncStatus.started_at) {
+      return null;
+    }
+
+    const startTime = new Date(syncStatus.started_at).getTime();
+    const currentTime = Date.now();
+    const elapsedMinutes = (currentTime - startTime) / (1000 * 60);
+    
+    const processed = syncStatus.records_processed || 0;
+    const total = syncStatus.total_records || 0;
+    
+    if (processed === 0 || elapsedMinutes === 0) return null;
+
+    const processingRate = processed / elapsedMinutes; // records per minute
+    const remaining = total - processed;
+    const estimatedRemainingMinutes = remaining / processingRate;
+
+    return estimatedRemainingMinutes;
+  };
+
   // Calculate sync throughput
   const getSyncThroughput = () => {
     if (!syncStatus || syncStatus.status !== 'running' || !syncStatus.started_at) {
@@ -188,27 +227,16 @@ export default function AdminSyncDashboard() {
     return Math.round(processed / elapsedMinutes); // records per minute
   };
 
-  // Calculate estimated time to completion
-  const getEstimatedTimeToCompletion = () => {
-    const throughput = getSyncThroughput();
-    if (!throughput || !syncStatus?.total_records) return null;
-    
-    const remaining = (syncStatus.total_records || 0) - (syncStatus.records_processed || 0);
-    if (remaining <= 0) return null;
-    
-    return Math.round(remaining / throughput); // minutes
-  };
-
   // Format ETA display
   const formatETA = (minutes: number | null) => {
-    if (!minutes || minutes <= 0) return 'N/A';
+    if (minutes === null || minutes <= 0) return 'Calculating...';
     
     if (minutes < 60) {
-      return `${minutes}m`;
+      return `${Math.round(minutes)}m`;
     } else {
       const hours = Math.floor(minutes / 60);
-      const mins = minutes % 60;
-      return `${hours}h ${mins}m`;
+      const remainingMinutes = Math.round(minutes % 60);
+      return `${hours}h ${remainingMinutes}m`;
     }
   };
 
@@ -279,26 +307,26 @@ export default function AdminSyncDashboard() {
         </Card>
       </div>
 
-      {/* Essential Sync Controls */}
+      {/* Enhanced Control Panel */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Zap className="h-5 w-5" />
-            Sync Controls
+            High-Performance Sync Controls
           </CardTitle>
           <CardDescription>
-            Start and manage data synchronization operations
+            Optimized sync operations for fast data synchronization (30-40 min target)
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-4">
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             <Button 
               onClick={handleFullSync} 
               disabled={syncStatus?.status === 'running'}
               className="w-full"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
-              Start Full Sync
+              Full Sync
             </Button>
             
             <Button 
@@ -308,26 +336,17 @@ export default function AdminSyncDashboard() {
               className="w-full"
             >
               <Activity className="h-4 w-4 mr-2" />
-              {testInProgress ? 'Running...' : 'Incremental Sync'}
+              {testInProgress ? 'Syncing...' : 'Incremental Sync'}
             </Button>
-
+            
             <Button 
               variant="outline"
-              onClick={handleVerifySync}
-              disabled={isVerifying}
+              onClick={handleSeedData}
+              disabled={syncStatus?.status === 'running'}
               className="w-full"
             >
-              {isVerifying ? (
-                <>
-                  <Activity className="h-4 w-4 mr-2 animate-spin" />
-                  Verifying...
-                </>
-              ) : (
-                <>
-                  <Shield className="h-4 w-4 mr-2" />
-                  Verify Database
-                </>
-              )}
+              <Database className="h-4 w-4 mr-2" />
+              Sample Data
             </Button>
             
             {syncStatus?.status === 'running' && (
@@ -342,21 +361,29 @@ export default function AdminSyncDashboard() {
             )}
           </div>
 
-          {/* Essential Progress Information */}
+          {/* Performance Indicators */}
           {syncStatus?.status === 'running' && (
             <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
               <div className="flex items-center gap-2 mb-2">
                 <Activity className="h-4 w-4 text-blue-600 animate-spin" />
-                <span className="font-medium text-blue-900">Sync in Progress</span>
+                <span className="font-medium text-blue-900">High-Performance Sync Active</span>
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-blue-700">Progress:</span>
-                  <span className="font-mono ml-2">{getSyncProgress().toFixed(1)}%</span>
+                  <span className="text-blue-700">Current Page:</span>
+                  <span className="font-mono ml-2">{syncStatus.current_page || 0}</span>
+                </div>
+                <div>
+                  <span className="text-blue-700">Estimated Total:</span>
+                  <span className="font-mono ml-2">{syncStatus.total_pages || 'Calculating...'}</span>
                 </div>
                 <div>
                   <span className="text-blue-700">Processing Rate:</span>
                   <span className="font-mono ml-2">{getSyncThroughput() || 0} records/min</span>
+                </div>
+                <div>
+                  <span className="text-blue-700">Time Remaining:</span>
+                  <span className="font-mono ml-2">{formatETA(getEstimatedTimeToCompletion())}</span>
                 </div>
               </div>
             </div>
@@ -364,86 +391,40 @@ export default function AdminSyncDashboard() {
         </CardContent>
       </Card>
 
-      {/* Sync Status Summary */}
+      {/* System Performance Summary */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Database className="h-5 w-5" />
-            Database Status
+            <TrendingUp className="h-5 w-5" />
+            Performance Summary
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">
-                {(syncStatus?.records_processed || 0).toLocaleString()}
+                {(totalCount || 0).toLocaleString()}
               </div>
-              <p className="text-sm text-muted-foreground">Records Processed</p>
+              <p className="text-sm text-muted-foreground">Total Cars Available</p>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">
-                {syncStatus?.records_processed && totalCount 
-                  ? Math.round((syncStatus.records_processed / totalCount) * 100) 
-                  : 0}%
+                {syncStatus?.records_processed ? Math.round((syncStatus.records_processed / (totalCount || 1)) * 100) : 0}%
               </div>
-              <p className="text-sm text-muted-foreground">Completion Progress</p>
+              <p className="text-sm text-muted-foreground">Database Coverage</p>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">
+                {syncStatus?.last_activity_at 
+                  ? Math.round((Date.now() - new Date(syncStatus.last_activity_at).getTime()) / 60000)
+                  : 'N/A'
+                }
+              </div>
+              <p className="text-sm text-muted-foreground">Minutes Since Last Update</p>
             </div>
           </div>
         </CardContent>
       </Card>
-
-      {/* Verification Results */}
-      {verificationResult && (
-        <Card>
-          <CardHeader>
-            <CardTitle className={`flex items-center gap-2 ${
-              verificationResult.success ? 'text-green-700' : 'text-red-700'
-            }`}>
-              {verificationResult.success ? (
-                <CheckCircle className="h-5 w-5 text-green-600" />
-              ) : (
-                <AlertCircle className="h-5 w-5 text-red-600" />
-              )}
-              Sync Verification {verificationResult.success ? 'Passed' : 'Failed'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-3">
-              {verificationResult.message}
-            </p>
-            
-            {verificationResult.details && (
-              <div className="grid gap-2 text-sm">
-                {verificationResult.details.actualCount !== undefined && (
-                  <div className="flex justify-between">
-                    <span>Records in Database:</span>
-                    <span className="font-mono">{verificationResult.details.actualCount.toLocaleString()}</span>
-                  </div>
-                )}
-                {verificationResult.details.stagingTableCleared !== undefined && (
-                  <div className="flex justify-between">
-                    <span>Staging Table:</span>
-                    <span className={verificationResult.details.stagingTableCleared ? 'text-green-600' : 'text-red-600'}>
-                      {verificationResult.details.stagingTableCleared ? 'Cleared' : 'Not Cleared'}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {verificationResult.errors && verificationResult.errors.length > 0 && (
-              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded">
-                <h5 className="font-medium text-red-800 mb-1">Issues Found:</h5>
-                <ul className="text-sm text-red-700 space-y-1">
-                  {verificationResult.errors.map((error, index) => (
-                    <li key={index}>• {error}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { findGenerationYears } from "@/data/generationYears";
 import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from '../utils/grade-categorization';
-import { guardExternalApiCall, isDbOnlyMode } from '@/guards/externalApiGuard';
 
 // Simple cache to prevent redundant API calls
 const apiCache = new Map<string, { data: any; timestamp: number }>();
@@ -27,17 +26,6 @@ const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => P
 // Create fallback car data for testing when API is not available
 export const createFallbackCars = (filters: any = {}): any[] => {
   console.log(`🔄 Creating fallback cars for development/testing`);
-  
-  // Don't show fallback cars when a specific brand filter is applied
-  // This prevents showing test/mock cars when users are searching for real brands
-  if (filters.manufacturer_id && 
-      filters.manufacturer_id !== 'all' && 
-      filters.manufacturer_id !== '' &&
-      filters.manufacturer_id !== undefined &&
-      filters.manufacturer_id !== null) {
-    console.log(`❌ Brand filter applied (${filters.manufacturer_id}), not showing fallback cars`);
-    return [];
-  }
   
   // Generate mock cars for pagination testing
   const mockCars = [];
@@ -612,12 +600,6 @@ export const useSecureAuctionAPI = () => {
     carId?: string
   ): Promise<any> => {
     try {
-      // Check for READ_SOURCE=db mode and block external API calls
-      if (isDbOnlyMode()) {
-        console.warn('🚫 External API call blocked: READ_SOURCE=db mode is enabled');
-        throw new Error('External API calls are blocked when READ_SOURCE=db mode is enabled. Use database-only endpoints instead.');
-      }
-
       console.log("🔐 Making secure API call:", { endpoint, filters, carId });
 
       // Add a minimal delay to prevent rapid successive calls
