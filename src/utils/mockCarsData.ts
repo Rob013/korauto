@@ -64,7 +64,13 @@ export const generateMockCars = (count: number, startId: number = 1): MockCar[] 
       bodyType: bodyTypes[Math.floor(seededRandom(seed * 8) * bodyTypes.length)],
       color: colors[Math.floor(seededRandom(seed * 9) * colors.length)],
       location: locations[Math.floor(seededRandom(seed * 10) * locations.length)],
-      images: [`https://picsum.photos/400/300?random=${startId + i}`]
+      // Use a more realistic image URL pattern that could represent real API data
+      // In production, this would be replaced with actual car image URLs from the API
+      images: [
+        `/api/car-images/${make.toLowerCase()}-${model.toLowerCase().replace(/\s+/g, '-')}-${startId + i}-front.jpg`,
+        `/api/car-images/${make.toLowerCase()}-${model.toLowerCase().replace(/\s+/g, '-')}-${startId + i}-side.jpg`,
+        `/api/car-images/${make.toLowerCase()}-${model.toLowerCase().replace(/\s+/g, '-')}-${startId + i}-interior.jpg`
+      ]
     });
   }
   
