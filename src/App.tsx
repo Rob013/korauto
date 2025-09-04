@@ -12,7 +12,6 @@ import { AccessibilityEnhancer } from "./utils/accessibilityEnhancer";
 // Lazy load all pages for better code splitting
 const Index = lazy(() => import("./pages/Index"));
 const Catalog = lazy(() => import("./pages/Catalog"));
-const NewCatalog = lazy(() => import("./pages/NewCatalog"));
 const CarDetails = lazy(() => import("./pages/CarDetails"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AuthPage = lazy(() => import("./pages/AuthPage"));
@@ -135,11 +134,6 @@ const App = () => {
             <Route path="/catalog" element={
               <Suspense fallback={<PageSkeleton />}>
                 <Catalog />
-              </Suspense>
-            } />
-            <Route path="/catalog-new" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <NewCatalog />
               </Suspense>
             } />
             <Route path="/car/:id" element={

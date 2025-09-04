@@ -1020,8 +1020,8 @@ export const useSecureAuctionAPI = () => {
       console.error("❌ Error details:", { 
         message: err.message, 
         code: err.code,
-        filters: carsApiFilters,
-        manufacturerName: manufacturerName 
+        filters: typeof carsApiFilters !== 'undefined' ? carsApiFilters : 'undefined',
+        manufacturerName: typeof manufacturerName !== 'undefined' ? manufacturerName : 'undefined'
       });
       
       // Enhanced error handling - check if the issue is with manufacturer mapping
