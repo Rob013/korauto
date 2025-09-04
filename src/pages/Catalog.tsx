@@ -156,6 +156,41 @@ const CatalogContent: React.FC = () => {
     yearRange: mockFiltersData.yearRange,
     priceRange: mockFiltersData.priceRange,
     mileageRange: mockFiltersData.mileageRange,
+    
+    // Add missing required fields for enhanced filters
+    fuelTypes: [
+      { id: 'gasoline', name: 'Benzinë', count: 300 },
+      { id: 'diesel', name: 'Dizel', count: 250 },
+      { id: 'hybrid', name: 'Hibrid', count: 120 },
+      { id: 'electric', name: 'Elektrik', count: 45 },
+    ],
+    transmissions: [
+      { id: 'manual', name: 'Manual', count: 280 },
+      { id: 'automatic', name: 'Automatik', count: 320 },
+      { id: 'cvt', name: 'CVT', count: 65 },
+    ],
+    conditions: [
+      { id: 'new', name: 'I Ri', count: 50 },
+      { id: 'used', name: 'I Përdorur', count: 500 },
+      { id: 'certified', name: 'I Certifikuar', count: 75 }
+    ],
+    saleStatuses: [
+      { id: 'available', name: 'I Disponueshëm', count: 580 },
+      { id: 'sold', name: 'I Shitur', count: 45 },
+      { id: 'pending', name: 'Në Pritje', count: 15 }
+    ],
+    drivetrains: [
+      { id: 'fwd', name: 'FWD', count: 220 },
+      { id: 'awd', name: 'AWD', count: 180 },
+      { id: 'rwd', name: 'RWD', count: 160 },
+      { id: '4wd', name: '4WD', count: 80 }
+    ],
+    doorCounts: [
+      { id: '2', name: '2 Dyer', count: 30 },
+      { id: '4', name: '4 Dyer', count: 480 },
+      { id: '5', name: '5 Dyer', count: 130 }
+    ],
+    engineSizeRange: { min: 1.0, max: 6.0 }
   };
 
   return (
