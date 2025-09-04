@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
-import { Car, Gauge, Settings, Fuel, Palette, Shield, Heart } from "lucide-react";
+import { Car, Gauge, Settings, Fuel, Palette, Shield, Heart, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ImageCarousel } from "@/components/ImageCarousel";
 
 interface LazyCarCardProps {
   id: string;
@@ -65,7 +66,6 @@ const LazyCarCard = memo(({
   const { toast } = useToast();
   const [isFavorite, setIsFavorite] = useState(false);
   const [user, setUser] = useState<any>(null);
-  const [imageLoaded, setImageLoaded] = useState(false);
   const [isIntersecting, setIsIntersecting] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -282,21 +282,28 @@ const LazyCarCard = memo(({
       onClick={handleCardClick}
     >
       <div className="relative h-40 sm:h-52 lg:h-56 bg-muted overflow-hidden">
-        {/* Always show single image - swipe functionality removed from car cards */}
+        {/* Show all available images using ImageCarousel */}
         {(image || (images && images.length > 0)) ? (
-          <img 
-            src={image || images?.[0]} 
-            alt={`${year} ${make} ${model}`} 
-            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
-              imageLoaded ? 'opacity-100' : 'opacity-0'
-            }`}
-            onLoad={() => setImageLoaded(true)}
-            onError={(e) => {
-              e.currentTarget.src = "/placeholder.svg";
-              setImageLoaded(true);
-            }}
-            loading="lazy"
-          />
+          <>
+            <ImageCarousel 
+              images={images && images.length > 0 ? images : (image ? [image] : [])}
+              alt={`${year} ${make} ${model}`}
+              className="w-full h-full"
+              showArrows={true}
+              showDots={images && images.length > 1}
+              onImageChange={(index) => {
+                // Optional: track image views for analytics
+                console.log(`Viewing image ${index + 1} of ${images?.length || 1} for car ${id}`);
+              }}
+            />
+            {/* Image count indicator */}
+            {images && images.length > 1 && (
+              <div className="absolute top-1 sm:top-2 left-1 sm:left-2 bg-black/70 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs font-medium flex items-center gap-1">
+                <Camera className="h-3 w-3" />
+                <span>{images.length}</span>
+              </div>
+            )}
+          </>
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-muted">
             <Car className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />

@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   X, 
   Search, 
@@ -17,7 +18,11 @@ import {
   Fuel, 
   Palette, 
   MapPin,
-  Filter
+  Filter,
+  Shield,
+  Camera,
+  Award,
+  AlertTriangle
 } from 'lucide-react';
 import { FilterState } from '@/hooks/useFiltersFromUrl';
 import { validateFilters } from '@/utils/buildQueryParams';
@@ -31,9 +36,18 @@ interface FiltersData {
   bodyTypes: Array<{ id: string; name: string; count?: number }>;
   colors: Array<{ id: string; name: string; count?: number }>;
   locations: Array<{ id: string; name: string; count?: number }>;
+  
+  // Enhanced filter data for old layout
+  conditions: Array<{ id: string; name: string; count?: number }>;
+  saleStatuses: Array<{ id: string; name: string; count?: number }>;
+  drivetrains: Array<{ id: string; name: string; count?: number }>;
+  doorCounts: Array<{ id: string; name: string; count?: number }>;
+  
+  // Range data
   yearRange: { min: number; max: number };
   priceRange: { min: number; max: number };
   mileageRange: { min: number; max: number };
+  engineSizeRange: { min: number; max: number }; // New range for engine size
 }
 
 interface FiltersPanelProps {
@@ -75,6 +89,10 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   const [yearRange, setYearRange] = useState([filters.yearMin || data.yearRange.min, filters.yearMax || data.yearRange.max]);
   const [priceRange, setPriceRange] = useState([filters.priceMin || data.priceRange.min, filters.priceMax || data.priceRange.max]);
   const [mileageRange, setMileageRange] = useState([filters.mileageMin || data.mileageRange.min, filters.mileageMax || data.mileageRange.max]);
+  const [engineSizeRange, setEngineSizeRange] = useState([
+    filters.engineSizeMin || data.engineSizeRange?.min || 1.0, 
+    filters.engineSizeMax || data.engineSizeRange?.max || 6.0
+  ]);
   const [expandedSections, setExpandedSections] = useState<string[]>(['basic']);
 
   // Debounce search term with 250ms delay as specified
@@ -91,6 +109,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   const debouncedYearRange = useDebounce(yearRange, 250);
   const debouncedPriceRange = useDebounce(priceRange, 250);
   const debouncedMileageRange = useDebounce(mileageRange, 250);
+  const debouncedEngineSizeRange = useDebounce(engineSizeRange, 250);
 
   useEffect(() => {
     if (debouncedYearRange[0] !== filters.yearMin || debouncedYearRange[1] !== filters.yearMax) {
@@ -118,6 +137,15 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       });
     }
   }, [debouncedMileageRange, filters.mileageMin, filters.mileageMax, data.mileageRange, onFiltersChange]);
+
+  useEffect(() => {
+    if (data.engineSizeRange && (debouncedEngineSizeRange[0] !== filters.engineSizeMin || debouncedEngineSizeRange[1] !== filters.engineSizeMax)) {
+      onFiltersChange({
+        engineSizeMin: debouncedEngineSizeRange[0] !== data.engineSizeRange.min ? debouncedEngineSizeRange[0] : undefined,
+        engineSizeMax: debouncedEngineSizeRange[1] !== data.engineSizeRange.max ? debouncedEngineSizeRange[1] : undefined,
+      });
+    }
+  }, [debouncedEngineSizeRange, filters.engineSizeMin, filters.engineSizeMax, data.engineSizeRange, onFiltersChange]);
 
   // Get available models based on selected brand
   const availableModels = useMemo(() => {
@@ -518,6 +546,183 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Enhanced Filters for Old Layout */}
+            
+            {/* Car Condition */}
+            {data.conditions && data.conditions.length > 0 && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  Gjendja
+                </Label>
+                <Select value={filters.condition || ''} onValueChange={(value) => onFiltersChange({ condition: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Zgjidhni gjendjen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {data.conditions.map((condition) => (
+                      <SelectItem key={condition.id} value={condition.id}>
+                        {condition.name} {condition.count && `(${condition.count})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Sale Status */}
+            {data.saleStatuses && data.saleStatuses.length > 0 && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  Statusi i Shitjes
+                </Label>
+                <Select value={filters.saleStatus || ''} onValueChange={(value) => onFiltersChange({ saleStatus: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Zgjidhni statusin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {data.saleStatuses.map((status) => (
+                      <SelectItem key={status.id} value={status.id}>
+                        {status.name} {status.count && `(${status.count})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Drivetrain */}
+            {data.drivetrains && data.drivetrains.length > 0 && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Sistemi i Nxitjes
+                </Label>
+                <Select value={filters.drivetrain || ''} onValueChange={(value) => onFiltersChange({ drivetrain: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Zgjidhni sistemin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {data.drivetrains.map((drivetrain) => (
+                      <SelectItem key={drivetrain.id} value={drivetrain.id}>
+                        {drivetrain.name} {drivetrain.count && `(${drivetrain.count})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Doors Count */}
+            {data.doorCounts && data.doorCounts.length > 0 && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Car className="h-4 w-4" />
+                  Numri i Dyerve
+                </Label>
+                <Select value={filters.doors || ''} onValueChange={(value) => onFiltersChange({ doors: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Zgjidhni numrin e dyerve" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {data.doorCounts.map((door) => (
+                      <SelectItem key={door.id} value={door.id}>
+                        {door.name} {door.count && `(${door.count})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Engine Size Range */}
+            {data.engineSizeRange && (
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Vëllimi i Motorrit (L)
+                </Label>
+                <div className="px-2">
+                  <Slider
+                    value={engineSizeRange}
+                    onValueChange={setEngineSizeRange}
+                    min={data.engineSizeRange.min}
+                    max={data.engineSizeRange.max}
+                    step={0.1}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-sm text-muted-foreground mt-1">
+                    <span>{engineSizeRange[0].toFixed(1)}L</span>
+                    <span>{engineSizeRange[1].toFixed(1)}L</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Boolean Filters */}
+            <div className="space-y-3 border-t pt-3">
+              <Label className="text-sm font-medium text-foreground">Filtrat e Përshtatur</Label>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="hasImages"
+                  checked={filters.hasImages || false}
+                  onCheckedChange={(checked) => onFiltersChange({ hasImages: checked ? true : undefined })}
+                />
+                <Label htmlFor="hasImages" className="flex items-center gap-2 text-sm cursor-pointer">
+                  <Camera className="h-4 w-4" />
+                  Vetëm me fotografi
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="isCertified"
+                  checked={filters.isCertified || false}
+                  onCheckedChange={(checked) => onFiltersChange({ isCertified: checked ? true : undefined })}
+                />
+                <Label htmlFor="isCertified" className="flex items-center gap-2 text-sm cursor-pointer">
+                  <Award className="h-4 w-4" />
+                  Vetëm të certifikuara
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="noAccidents"
+                  checked={filters.noAccidents || false}
+                  onCheckedChange={(checked) => onFiltersChange({ noAccidents: checked ? true : undefined })}
+                />
+                <Label htmlFor="noAccidents" className="flex items-center gap-2 text-sm cursor-pointer">
+                  <Shield className="h-4 w-4" />
+                  Pa aksidente
+                </Label>
+              </div>
+            </div>
+
+            {/* Accident Count Filter */}
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                Maksimum {filters.accidentCountMax || 0} aksidente
+              </Label>
+              <div className="px-2">
+                <Slider
+                  value={[filters.accidentCountMax || 0]}
+                  onValueChange={([value]) => onFiltersChange({ accidentCountMax: value })}
+                  min={0}
+                  max={10}
+                  step={1}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-sm text-muted-foreground mt-1">
+                  <span>0 aksidente</span>
+                  <span>10+ aksidente</span>
+                </div>
+              </div>
             </div>
           </div>
         )}
