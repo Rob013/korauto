@@ -589,24 +589,58 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         return matchesGradeFilter(car, filters.grade_iaai);
       });
       
-      // If auto-sorting for price, apply client-side sorting to ensure global order
-      if (autoSort && hasUserSelectedSort && (sortBy === 'price_low' || sortBy === 'price_high')) {
-        console.log(`💰 Applying global ${sortBy} sorting to ${filteredAllCars.length} cars`);
+      // If auto-sorting, apply client-side global sorting for ANY sort option
+      if (autoSort && hasUserSelectedSort) {
+        console.log(`🌍 Applying global ${sortBy} sorting to ${filteredAllCars.length} cars`);
         
-        filteredAllCars = filteredAllCars.sort((a, b) => {
+        // Use the comprehensive sorting logic from useSortedCars for ALL sort options
+        filteredAllCars = [...filteredAllCars].sort((a, b) => {
           const aLot = a.lots?.[0];
           const bLot = b.lots?.[0];
-          const aPrice = aLot?.buy_now || aLot?.final_bid || aLot?.price || 0;
-          const bPrice = bLot?.buy_now || bLot?.final_bid || bLot?.price || 0;
           
-          if (sortBy === 'price_low') {
-            return aPrice - bPrice; // Low to high
-          } else {
-            return bPrice - aPrice; // High to low
+          switch (sortBy) {
+            case 'price_low': {
+              const aPrice = aLot?.buy_now || aLot?.final_bid || aLot?.price || 0;
+              const bPrice = bLot?.buy_now || bLot?.final_bid || bLot?.price || 0;
+              return aPrice - bPrice;
+            }
+            case 'price_high': {
+              const aPrice = aLot?.buy_now || aLot?.final_bid || aLot?.price || 0;
+              const bPrice = bLot?.buy_now || bLot?.final_bid || bLot?.price || 0;
+              return bPrice - aPrice;
+            }
+            case 'year_new':
+              return b.year - a.year;
+            case 'year_old':
+              return a.year - b.year;
+            case 'mileage_low': {
+              const aMileage = aLot?.odometer?.km || 999999;
+              const bMileage = bLot?.odometer?.km || 999999;
+              return aMileage - bMileage;
+            }
+            case 'mileage_high': {
+              const aMileage = aLot?.odometer?.km || 0;
+              const bMileage = bLot?.odometer?.km || 0;
+              return bMileage - aMileage;
+            }
+            case 'recently_added': {
+              // Sort by sale_date if available, otherwise by ID (assuming newer IDs = more recent)
+              const aDate = aLot?.sale_date ? new Date(aLot.sale_date).getTime() : parseInt(a.id) || 0;
+              const bDate = bLot?.sale_date ? new Date(bLot.sale_date).getTime() : parseInt(b.id) || 0;
+              return bDate - aDate; // Most recent first
+            }
+            case 'oldest_first': {
+              // Sort by sale_date if available, otherwise by ID (assuming newer IDs = more recent)
+              const aDate = aLot?.sale_date ? new Date(aLot.sale_date).getTime() : parseInt(a.id) || 0;
+              const bDate = bLot?.sale_date ? new Date(bLot.sale_date).getTime() : parseInt(b.id) || 0;
+              return aDate - bDate; // Oldest first
+            }
+            default:
+              return 0;
           }
         });
         
-        console.log(`✅ Global price sorting complete: ${sortBy === 'price_low' ? 'cheapest first' : 'most expensive first'}`);
+        console.log(`✅ Global ${sortBy} sorting complete: ${filteredAllCars.length} cars properly ranked`);
       }
       
       setAllCarsData(filteredAllCars);
@@ -964,71 +998,24 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
   }, [totalCount, showAllCars, allCarsData.length]); // Update when any of these change
 
-  // Trigger backend sorting when sort option changes
+  // Trigger global sorting when sort option changes
   useEffect(() => {
     if (totalCount > 0 && hasUserSelectedSort) {
-      console.log(`🔄 Applying backend sorting: totalCount=${totalCount}, sortBy=${sortBy}`);
+      console.log(`🔄 Applying global sorting: totalCount=${totalCount}, sortBy=${sortBy}`);
       
-      // Check if this is a price sorting option - if so, automatically enable global sorting
-      const isPriceSorting = sortBy === 'price_low' || sortBy === 'price_high';
+      // Enable global sorting for ALL sort options to ensure proper ranking across all pages
+      console.log(`🌍 Global sorting detected (${sortBy}) - automatically enabling global sorting for all ${totalCount} cars`);
       
-      if (isPriceSorting) {
-        console.log(`💰 Price sorting detected (${sortBy}) - automatically enabling global sorting for all ${totalCount} cars`);
-        
-        // Automatically fetch all cars for global price sorting
-        handleShowAllCars(true); // Pass true to indicate auto-sorting
-        
-        // Update URL with sort option  
-        const currentParams = Object.fromEntries(searchParams.entries());
-        currentParams.page = '1';
-        currentParams.sort = sortBy;
-        debouncedSetSearchParams(currentParams);
-        
-        return; // Exit early as handleShowAllCars will handle the sorting
-      }
+      // Automatically fetch all cars for global sorting
+      handleShowAllCars(true); // Pass true to indicate auto-sorting
       
-      // For non-price sorting, use regular backend pagination sorting
-      const filtersWithPagination = addPaginationToFilters(filters, 50, 1);
-      
-      // Add sort parameters in secure auction API format
-      switch (sortBy) {
-        case 'year_new':
-          filtersWithPagination.sort_by = 'year';
-          filtersWithPagination.sort_direction = 'desc';
-          break;
-        case 'year_old':
-          filtersWithPagination.sort_by = 'year';
-          filtersWithPagination.sort_direction = 'asc';
-          break;
-        case 'mileage_low':
-          filtersWithPagination.sort_by = 'mileage';
-          filtersWithPagination.sort_direction = 'asc';
-          break;
-        case 'mileage_high':
-          filtersWithPagination.sort_by = 'mileage';
-          filtersWithPagination.sort_direction = 'desc';
-          break;
-        case 'recently_added':
-          filtersWithPagination.sort_by = 'created_at';
-          filtersWithPagination.sort_direction = 'desc';
-          break;
-        case 'oldest_first':
-          filtersWithPagination.sort_by = 'created_at';
-          filtersWithPagination.sort_direction = 'asc';
-          break;
-      }
-      
-      // Reset to page 1 and fetch with new sort
-      setCurrentPage(1);
-      fetchCars(1, filtersWithPagination, true);
-      
-      // Update URL with sort option
+      // Update URL with sort option  
       const currentParams = Object.fromEntries(searchParams.entries());
       currentParams.page = '1';
       currentParams.sort = sortBy;
       debouncedSetSearchParams(currentParams);
     }
-  }, [sortBy, hasUserSelectedSort, totalCount, handleShowAllCars, fetchCars, debouncedSetSearchParams, filters, searchParams]);
+  }, [sortBy, hasUserSelectedSort, totalCount, handleShowAllCars, debouncedSetSearchParams, searchParams]);
 
   // Show cars without requiring brand and model selection
   const shouldShowCars = true;
