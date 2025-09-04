@@ -37,6 +37,27 @@ export const OptimizedCarImage: React.FC<OptimizedCarImageProps> = ({
     setCurrentImageIndex(0);
   }, [images, image]);
 
+  // Get a working car image from local assets
+  const getLocalCarImage = () => {
+    // List of available local car images
+    const localImages = [
+      '/lovable-uploads/91efade6-53ff-4c15-ae10-6ac8f338c2b9.png',
+      '/lovable-uploads/fb2b9889-d3da-4280-a77b-7567f307aed5.png',
+      '/lovable-uploads/3657dff4-7afd-45bb-9f8a-8d3f4ba8d7b4.png',
+      '/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png',
+      '/lovable-uploads/7a3e2aa4-2a3b-4320-b33c-72d3d7721cfd.png',
+      '/lovable-uploads/3094fd63-7a92-4497-8103-e166b6b09f70.png'
+    ];
+    
+    // Use a hash of the alt text to consistently pick the same image for the same car
+    const hash = alt.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    
+    return localImages[Math.abs(hash) % localImages.length];
+  };
+
   // Generate a local placeholder image based on car details
   const getLocalPlaceholderImage = () => {
     // Extract car make from alt text for themed placeholder
@@ -83,14 +104,27 @@ export const OptimizedCarImage: React.FC<OptimizedCarImageProps> = ({
     setImageError(true);
   };
 
-  // If no images available or all failed, show fallback
-  if (!currentImageSrc || (imageError && currentImageIndex >= allImages.length - 1)) {
+  // Determine the best image source to use
+  const getBestImageSource = () => {
+    // If we have images and no error yet, try the current image
+    if (currentImageSrc && !imageError) {
+      return currentImageSrc;
+    }
+    
+    // If the current image failed or no images provided, use a local car image
+    return getLocalCarImage();
+  };
+
+  // If no images available at all, show fallback icon
+  if (!currentImageSrc && (!images || images.length === 0) && !image) {
     return (
       <div className={`w-full h-full bg-muted flex items-center justify-center ${className}`}>
         {fallbackIcon || <Car className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />}
       </div>
     );
   }
+
+  const imageSrc = getBestImageSource();
 
   return (
     <div className={`relative w-full h-full ${className}`}>
@@ -103,7 +137,7 @@ export const OptimizedCarImage: React.FC<OptimizedCarImageProps> = ({
       
       {/* Main image */}
       <img
-        src={imageError ? getLocalPlaceholderImage() : currentImageSrc}
+        src={imageSrc}
         alt={alt}
         className="w-full h-full object-cover transition-opacity duration-300"
         loading="lazy"
