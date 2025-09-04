@@ -912,106 +912,50 @@ export const useSecureAuctionAPI = () => {
     setError(null);
 
     try {
-      // Import the proper backend API function for keyset pagination
-      const { fetchCarsWithKeyset, mapFrontendSortToBackend } = await import('@/services/carsApi');
-      
-      // Convert API filters to the proper format for fetchCarsWithKeyset
-      // Enhanced manufacturer mapping with fallback and direct database lookup
-      let manufacturerName = undefined;
-      if (newFilters.manufacturer_id) {
-        // First try to find in loaded manufacturers array
-        const foundManufacturer = manufacturers.find(m => m.id.toString() === newFilters.manufacturer_id);
-        if (foundManufacturer) {
-          manufacturerName = foundManufacturer.name;
-        } else {
-          // Fallback: Map common manufacturer IDs directly to database names
-          const manufacturerIdMap = {
-            '1': 'Audi',
-            '2': 'Honda', 
-            '3': 'Toyota',
-            '4': 'Nissan',
-            '5': 'Ford',
-            '6': 'Chevrolet',
-            '7': 'Hyundai',
-            '8': 'Kia',
-            '9': 'BMW',
-            '10': 'Mazda',
-            '13': 'Porsche',
-            '16': 'Mercedes-Benz',
-            '147': 'Volkswagen'
-          };
-          manufacturerName = manufacturerIdMap[newFilters.manufacturer_id];
-          console.log(`🔧 Using fallback manufacturer mapping: ID ${newFilters.manufacturer_id} -> ${manufacturerName}`);
-        }
-      }
-
-      let modelName = undefined;
-      if (newFilters.model_id) {
-        const foundModel = models.find(m => m.id.toString() === newFilters.model_id);
-        modelName = foundModel?.name;
-      }
-
-      const carsApiFilters = {
-        make: manufacturerName,
-        model: modelName,
-        yearMin: newFilters.from_year,
-        yearMax: newFilters.to_year,
-        priceMin: newFilters.buy_now_price_from,
-        priceMax: newFilters.buy_now_price_to,
-        fuel: newFilters.fuel_type,
-        search: newFilters.search
-      };
-
-      // Remove undefined values
-      Object.keys(carsApiFilters).forEach(key => {
-        if (carsApiFilters[key] === undefined) {
-          delete carsApiFilters[key];
-        }
-      });
-
       // Store client-side filters for later
       const selectedVariant = newFilters.grade_iaai;
       const selectedTrimLevel = newFilters.trim_level;
       
-      // Use the current sort option, defaulting to recently_added
-      const sortOption = newFilters.sort_by || 'recently_added';
-      const backendSort = mapFrontendSortToBackend(sortOption);
+      // Map frontend sort options to external API parameters
+      const sortMapping = mapSortToAPI(newFilters.sort_by || 'recently_added');
       
-      // Calculate pagination - for page-based systems, convert to cursor
-      const pageSize = parseInt(newFilters.per_page || "50");
-      let cursor: string | undefined = undefined;
-      
-      // For pages beyond 1, we would need to calculate cursor
-      // For now, we'll use simple approach of fetching more data if page > 1
-      const limit = pageSize;
-      const skip = page > 1 ? (page - 1) * pageSize : 0;
+      // Prepare filters for external API call
+      const apiFilters = {
+        page: page.toString(),
+        per_page: newFilters.per_page || "50",
+        manufacturer_id: newFilters.manufacturer_id,
+        model_id: newFilters.model_id,
+        generation_id: newFilters.generation_id,
+        from_year: newFilters.from_year,
+        to_year: newFilters.to_year,
+        buy_now_price_from: newFilters.buy_now_price_from,
+        buy_now_price_to: newFilters.buy_now_price_to,
+        fuel_type: newFilters.fuel_type,
+        transmission: newFilters.transmission,
+        body_type: newFilters.body_type,
+        color: newFilters.color,
+        search: newFilters.search,
+        odometer_from_km: newFilters.odometer_from_km,
+        odometer_to_km: newFilters.odometer_to_km,
+        seats_count: newFilters.seats_count,
+        ...sortMapping // Include sort parameters for backend sorting
+      };
 
-      console.log(`🔄 Fetching cars from database - Page ${page} with filters:`, carsApiFilters, `sort:`, backendSort);
-      
-      // Fetch from database using keyset pagination
-      const response = await fetchCarsWithKeyset({
-        filters: carsApiFilters,
-        sort: backendSort,
-        limit: limit + skip, // Fetch more to simulate pagination for now
-        cursor
+      // Remove undefined values
+      Object.keys(apiFilters).forEach(key => {
+        if (apiFilters[key] === undefined || apiFilters[key] === '') {
+          delete apiFilters[key];
+        }
       });
 
-      // Simulate pagination by slicing results if page > 1
-      let paginatedCars = response.items || [];
-      if (skip > 0) {
-        paginatedCars = paginatedCars.slice(skip);
+      console.log(`🔄 Fetching cars from external API - Page ${page} with filters:`, apiFilters);
+      
+      // Fetch from external API with backend sorting
+      const data = await makeSecureAPICall("cars", apiFilters);
+
+      if (!data || !data.data) {
+        throw new Error("Invalid response from external API");
       }
-
-      // Convert database car format to external API format for compatibility - ENHANCED VERSION
-      const convertedCars = paginatedCars.map(convertDatabaseCarToApiFormat);
-
-      const data = {
-        data: convertedCars,
-        meta: {
-          total: response.total,
-          last_page: Math.ceil(response.total / pageSize)
-        }
-      };
 
       // Apply client-side variant filtering if a variant is selected
       let filteredCars = data.data || [];
@@ -1095,7 +1039,7 @@ export const useSecureAuctionAPI = () => {
       setHasMorePages(page < (data.meta?.last_page || 1));
 
       console.log(
-        `✅ Database Success - Fetched ${filteredCars.length} cars from page ${page}, database total: ${data.meta?.total || 0}, filtered displayed: ${filteredCars.length}`
+        `✅ External API Success - Fetched ${filteredCars.length} cars from page ${page}, API total: ${data.meta?.total || 0}, filtered displayed: ${filteredCars.length}`
       );
 
       if (resetList || page === 1) {
@@ -1106,85 +1050,32 @@ export const useSecureAuctionAPI = () => {
         setCurrentPage(page);
       }
     } catch (err: any) {
-      console.error("❌ Database Error:", err);
+      console.error("❌ External API Error:", err);
       console.error("❌ Error details:", { 
         message: err.message, 
         code: err.code,
-        filters: typeof carsApiFilters !== 'undefined' ? carsApiFilters : 'undefined',
-        manufacturerName: typeof manufacturerName !== 'undefined' ? manufacturerName : 'undefined'
+        filters: apiFilters
       });
       
-      // Enhanced error handling - check if the issue is with manufacturer mapping
-      if (newFilters.manufacturer_id && !manufacturerName) {
-        console.log("❌ Could not map manufacturer_id to manufacturer name");
-        setError(`Unable to find manufacturer with ID ${newFilters.manufacturer_id}. Please try refreshing the page.`);
-        setCars([]);
-        setTotalCount(0);
-        setHasMorePages(false);
-        return;
+      // Provide user-friendly error messages for common API issues
+      let userMessage = "Failed to load cars from external API. Please try again.";
+      
+      if (err.message?.includes('timeout')) {
+        userMessage = "Request timed out. Please try again.";
+      } else if (err.message?.includes('network')) {
+        userMessage = "Network error. Please check your connection.";
+      } else if (err.message?.includes('rate limit') || err.message?.includes('RATE_LIMITED')) {
+        userMessage = "Too many requests. Please wait a moment and try again.";
+      } else if (err.message?.includes('404')) {
+        userMessage = "No cars found for your search criteria.";
+      } else if (err.message?.includes('401') || err.message?.includes('unauthorized')) {
+        userMessage = "Authentication error. Please refresh the page.";
       }
       
-      // Use fallback car data when database fails - but only if no specific brand filter is applied
-      if (newFilters.manufacturer_id && 
-          newFilters.manufacturer_id !== 'all' && 
-          newFilters.manufacturer_id !== '' &&
-          newFilters.manufacturer_id !== undefined &&
-          newFilters.manufacturer_id !== null) {
-        console.log("❌ Database failed for brand-specific search, not showing fallback cars to avoid test car display");
-        setError("Failed to load cars for the selected brand. Please try again.");
-        setCars([]);
-        setTotalCount(0);
-        setHasMorePages(false);
-        return;
-      }
-      
-      // Use fallback cars when database fails
-      console.log("❌ Database failed, using fallback cars for pagination testing");
-      const fallbackCars = createFallbackCars(newFilters);
-      
-      if (fallbackCars.length === 0) {
-        console.log("❌ No fallback cars available, showing empty state");
-        setError("Failed to load cars. Please try again.");
-        setCars([]);
-        setTotalCount(0);
-        setHasMorePages(false);
-        return;
-      }
-      
-      // Simulate pagination with fallback data
-      const pageSize = parseInt(newFilters.per_page || "50");
-      const startIndex = (page - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      const paginatedCars = fallbackCars.slice(startIndex, endIndex);
-      
-      console.log(
-        `✅ Fallback Success - Showing ${paginatedCars.length} cars from page ${page}, total: ${fallbackCars.length}`
-      );
-      
-      setTotalCount(fallbackCars.length);
-      setHasMorePages(endIndex < fallbackCars.length);
-      
-      if (resetList || page === 1) {
-        setCars(paginatedCars);
-        setCurrentPage(page);
-      } else {
-        setCars((prev) => [...prev, ...paginatedCars]);
-        setCurrentPage(page);
-      }
-      
-      // Clear error since we're showing fallback data
-      setError(null);
-      
-      if (resetList || page === 1) {
-        setCars(paginatedCars);
-        setCurrentPage(1);
-      } else {
-        setCars((prev) => [...prev, ...paginatedCars]);
-        setCurrentPage(page);
-      }
-      
-      // Clear error since we're showing fallback data
-      setError(null);
+      setError(userMessage);
+      setCars([]);
+      setTotalCount(0);
+      setHasMorePages(false);
     } finally {
       setLoading(false);
     }
@@ -2337,83 +2228,78 @@ export const useSecureAuctionAPI = () => {
     newFilters: APIFilters = filters
   ): Promise<any[]> => {
     try {
-      // Import the proper backend API function for keyset pagination
-      const { fetchCarsWithKeyset, mapFrontendSortToBackend } = await import('@/services/carsApi');
+      // Store client-side filters for later
+      const selectedVariant = newFilters.grade_iaai;
+      const selectedTrimLevel = newFilters.trim_level;
       
-      // Convert API filters to the proper format for fetchCarsWithKeyset
-      const carsApiFilters = {
-        make: newFilters.manufacturer_id ? 
-          manufacturers.find(m => m.id.toString() === newFilters.manufacturer_id)?.name : undefined,
-        model: newFilters.model_id ? 
-          models.find(m => m.id.toString() === newFilters.model_id)?.name : undefined,
-        yearMin: newFilters.from_year,
-        yearMax: newFilters.to_year,
-        priceMin: newFilters.buy_now_price_from,
-        priceMax: newFilters.buy_now_price_to,
-        fuel: newFilters.fuel_type,
-        search: newFilters.search
-      };
+      // Map frontend sort options to external API parameters
+      const sortMapping = mapSortToAPI(newFilters.sort_by || 'recently_added');
       
-      // Remove undefined values
-      Object.keys(carsApiFilters).forEach(key => {
-        if (carsApiFilters[key] === undefined) {
-          delete carsApiFilters[key];
-        }
-      });
+      console.log(`🔄 Fetching ALL cars using external API with filters:`, newFilters, `sort:`, sortMapping);
       
-      // Use the current sort option, defaulting to recently_added
-      const sortOption = newFilters.sort_by || 'recently_added';
-      const backendSort = mapFrontendSortToBackend(sortOption);
-      
-      console.log(`🔄 Fetching ALL cars using proper backend API with filters:`, carsApiFilters, `sort:`, backendSort);
-      
-      // Fetch all cars using keyset pagination
+      // Fetch all cars using external API pagination
       const allCars: any[] = [];
-      let cursor: string | undefined = undefined;
+      let currentPage = 1;
       let hasMore = true;
-      let pageCount = 0;
-      const maxPages = 1000; // Safety limit to prevent infinite loops
+      const maxPages = 100; // Safety limit to prevent infinite loops (reasonable for external API)
+      const pageSize = 100; // Use reasonable page size for fetching all data
       
-      while (hasMore && pageCount < maxPages) {
-        pageCount++;
-        console.log(`📄 Fetching page ${pageCount} for global sorting...`);
+      while (hasMore && currentPage <= maxPages) {
+        console.log(`📄 Fetching page ${currentPage} for global sorting...`);
         
-        const response = await fetchCarsWithKeyset({
-          filters: carsApiFilters,
-          sort: backendSort,
-          limit: 100, // Use reasonable page size for fetching all data
-          cursor
+        // Prepare filters for external API call
+        const apiFilters = {
+          page: currentPage.toString(),
+          per_page: pageSize.toString(),
+          manufacturer_id: newFilters.manufacturer_id,
+          model_id: newFilters.model_id,
+          generation_id: newFilters.generation_id,
+          from_year: newFilters.from_year,
+          to_year: newFilters.to_year,
+          buy_now_price_from: newFilters.buy_now_price_from,
+          buy_now_price_to: newFilters.buy_now_price_to,
+          fuel_type: newFilters.fuel_type,
+          transmission: newFilters.transmission,
+          body_type: newFilters.body_type,
+          color: newFilters.color,
+          search: newFilters.search,
+          odometer_from_km: newFilters.odometer_from_km,
+          odometer_to_km: newFilters.odometer_to_km,
+          seats_count: newFilters.seats_count,
+          ...sortMapping // Include sort parameters for backend sorting
+        };
+
+        // Remove undefined values
+        Object.keys(apiFilters).forEach(key => {
+          if (apiFilters[key] === undefined || apiFilters[key] === '') {
+            delete apiFilters[key];
+          }
         });
         
-        if (response.items && response.items.length > 0) {
-          // Mark items as coming from database and add any missing fields
-          const databaseCars = response.items.map(car => ({
-            ...car,
-            isFromDatabase: true,
-            // Ensure lot_number is available for filtering
-            lot_number: car.lot_number || '',
-            // Ensure VIN is available if present
-            vin: car.vin || ''
-          }));
-          allCars.push(...databaseCars);
-          console.log(`✅ Page ${pageCount}: Got ${response.items.length} cars (total so far: ${allCars.length})`);
+        const response = await makeSecureAPICall("cars", apiFilters);
+        
+        if (response?.data && response.data.length > 0) {
+          allCars.push(...response.data);
+          console.log(`✅ Page ${currentPage}: Got ${response.data.length} cars (total so far: ${allCars.length})`);
         }
         
-        // Check if there are more pages
-        hasMore = !!response.nextCursor;
-        cursor = response.nextCursor;
+        // Check if there are more pages based on API response
+        hasMore = response?.meta && currentPage < response.meta.last_page;
+        currentPage++;
         
-        // If we got fewer items than the limit, we've reached the end
-        if (response.items.length < 100) {
+        // If we got fewer items than the page size, we've reached the end
+        if (!response?.data || response.data.length < pageSize) {
           hasMore = false;
         }
+        
+        // Safety check to prevent infinite loops
+        if (currentPage > maxPages) {
+          console.warn(`⚠️ Reached maximum page limit (${maxPages}) for safety`);
+          break;
+        }
       }
       
-      if (pageCount >= maxPages) {
-        console.warn(`⚠️ Reached maximum page limit (${maxPages}) when fetching all cars. May not have fetched all data.`);
-      }
-      
-      console.log(`✅ Successfully fetched ${allCars.length} cars across ${pageCount} pages using backend sorting`);
+      console.log(`✅ External API global fetch completed: ${allCars.length} total cars from ${currentPage - 1} pages`);
       
       // Apply client-side filtering for grade_iaai and trim_level if needed
       let filteredCars = allCars;
