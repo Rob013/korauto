@@ -50,7 +50,6 @@ import {
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
-import { mapFrontendSortToBackend, SortOption as BackendSortOption, FrontendSortOption } from "@/services/carsApi";
 import { filterOutTestCars } from "@/utils/testCarFilter";
 import { fallbackCars } from "@/data/fallbackData";
 
