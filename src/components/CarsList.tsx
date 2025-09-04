@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import LoadingLogo from "@/components/LoadingLogo";
+import { OptimizedCarImage } from "@/components/OptimizedCarImage";
+import { useNavigate } from 'react-router-dom';
 
 interface Car {
   id: string;
@@ -23,14 +25,16 @@ interface Car {
 
 interface CarsListProps {
   cars: Car[];
-  isLoading: boolean;
-  error?: Error | null;
+  total: number;
+  totalPages: number;
   hasMore: boolean;
-  onLoadMore: () => void;
-  onCarClick: (car: Car) => void;
+  isLoading: boolean;
+  isFetching: boolean;
+  error?: Error | null;
+  filters: any;
+  prefetchNextPage: () => void;
+  highlightCarId?: string | null;
   className?: string;
-  totalCount?: number; // Add total count for better display
-  activeFiltersCount?: number; // Add active filters count
 }
 
 // Skeleton component for loading states
@@ -60,21 +64,11 @@ const CarCard: React.FC<{ car: Car; onClick: () => void }> = React.memo(({ car, 
     <CardContent className="p-4">
       {/* Car Image */}
       <div className="relative h-48 mb-4 rounded-lg overflow-hidden bg-muted">
-        {car.images && car.images.length > 0 ? (
-          <img
-            src={car.images[0]}
-            alt={`${car.make} ${car.model}`}
-            className="w-full h-full object-cover"
-            loading="lazy"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = '/images/car-placeholder.jpg';
-            }}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-            <span className="text-sm">No Image</span>
-          </div>
-        )}
+        <OptimizedCarImage
+          images={car.images}
+          alt={`${car.make} ${car.model}`}
+          className="w-full h-full rounded-lg"
+        />
       </div>
 
       {/* Car Details */}
@@ -175,16 +169,24 @@ const useLoadMoreObserver = (
 
 const CarsList: React.FC<CarsListProps> = ({
   cars,
-  isLoading,
-  error,
+  total,
+  totalPages,
   hasMore,
-  onLoadMore,
-  onCarClick,
+  isLoading,
+  isFetching,
+  error,
+  filters,
+  prefetchNextPage,
+  highlightCarId,
   className = '',
-  totalCount,
-  activeFiltersCount,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+
+  // Handle car click navigation
+  const handleCarClick = useCallback((car: Car) => {
+    navigate(`/car/${car.id}`);
+  }, [navigate]);
 
   // Calculate grid dimensions
   const { columnsPerRow, rowCount, cardWidth, cardHeight } = useMemo(() => {
@@ -220,10 +222,10 @@ const CarsList: React.FC<CarsListProps> = ({
   // Prefetch next page when near bottom
   const loadMoreRef = useLoadMoreObserver(
     useCallback(() => {
-      if (hasMore && !isLoading) {
-        onLoadMore();
+      if (hasMore && !isLoading && !isFetching) {
+        prefetchNextPage();
       }
-    }, [hasMore, isLoading, onLoadMore]),
+    }, [hasMore, isLoading, isFetching, prefetchNextPage]),
     { rootMargin: '200px' } // Start loading 200px before reaching bottom
   );
 
@@ -231,9 +233,9 @@ const CarsList: React.FC<CarsListProps> = ({
   const gridData = useMemo(() => ({
     cars,
     columnsPerRow,
-    onCarClick,
+    onCarClick: handleCarClick,
     isLoading,
-  }), [cars, columnsPerRow, onCarClick, isLoading]);
+  }), [cars, columnsPerRow, handleCarClick, isLoading]);
 
   if (error) {
     return (
@@ -299,23 +301,22 @@ const CarsList: React.FC<CarsListProps> = ({
       {hasMore && !isLoading && cars.length > 0 && (
         <div className="flex justify-center py-8">
           <Button
-            onClick={onLoadMore}
+            onClick={prefetchNextPage}
             variant="outline"
             size="lg"
             className="flex items-center gap-2"
+            disabled={isFetching}
           >
-            {activeFiltersCount && activeFiltersCount > 0 ? (
+            {isFetching ? (
               <>
-                Load More Filtered Cars
-                <div className="text-xs text-muted-foreground ml-2">
-                  ({cars.length} of {totalCount ? totalCount.toLocaleString() : 'many'} shown)
-                </div>
+                <LoadingLogo className="h-4 w-4" />
+                Loading...
               </>
             ) : (
               <>
                 Load More Cars
                 <div className="text-xs text-muted-foreground ml-2">
-                  ({cars.length} of {totalCount ? totalCount.toLocaleString() : 'many'} shown)
+                  ({cars.length} of {total} shown)
                 </div>
               </>
             )}

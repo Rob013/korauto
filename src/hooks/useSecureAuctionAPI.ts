@@ -57,7 +57,15 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       lots: [{
         buy_now: 20000 + (i * 100),
         images: {
-          normal: [`https://picsum.photos/400/300?random=${i}`]
+          normal: [
+            // Use local car images from the public directory
+            `/lovable-uploads/${['91efade6-53ff-4c15-ae10-6ac8f338c2b9.png', 
+                              'fb2b9889-d3da-4280-a77b-7567f307aed5.png',
+                              '3657dff4-7afd-45bb-9f8a-8d3f4ba8d7b4.png',
+                              'd1ff645d-f293-44ab-b806-ae5eb2483633.png',
+                              '7a3e2aa4-2a3b-4320-b33c-72d3d7721cfd.png',
+                              '3094fd63-7a92-4497-8103-e166b6b09f70.png'][i % 6]}`
+          ]
         },
         odometer: { km: 50000 + (i * 1000) }
       }],
