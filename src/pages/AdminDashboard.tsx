@@ -32,6 +32,7 @@ import {
   Cookie,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useNavigate } from "react-router-dom";
 import AuthLogin from "@/components/AuthLogin";
 import { CarsSyncButton } from "@/components/CarsSyncButton";
@@ -141,6 +142,7 @@ const AdminDashboard = () => {
   const [authLoading, setAuthLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
+  const { convertUSDtoEUR } = useCurrencyAPI();
   const navigate = useNavigate();
 
   // Check authentication and admin status
@@ -240,7 +242,7 @@ const AdminDashboard = () => {
           make: car.make,
           model: car.model,
           year: car.year,
-          price: lot?.buy_now ? Math.round(lot.buy_now + 2200) : undefined,
+          price: lot?.buy_now ? convertUSDtoEUR(Math.round(lot.buy_now + 2200)) : undefined,
           image: lot?.images?.normal?.[0] || lot?.images?.big?.[0],
           vin: car.vin,
           mileage: lot?.odometer?.km

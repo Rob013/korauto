@@ -3,6 +3,7 @@ import { useRef, useCallback, useState, useEffect, useMemo } from 'react';
 import { FilterState } from '@/hooks/useFiltersFromUrl';
 import { buildQueryParams } from '@/utils/buildQueryParams';
 import { fetchCarsWithKeyset, Car as ApiCar, CarsApiResponse, SortOption, FrontendSortOption } from '@/services/carsApi';
+import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
 
 interface Car {
   id: string;
@@ -173,7 +174,7 @@ const fetchCarsFallback = async (
       make: car.manufacturer?.name || '',
       model: car.model?.name || '',
       year: car.year || 2020,
-      price: Math.round((car.lots?.[0]?.buy_now || 25000) + 2200), // Add fees like homepage
+      price: convertUSDtoEUR(Math.round((car.lots?.[0]?.buy_now || 25000) + 2200)), // Add fees like homepage
       mileage: car.lots?.[0]?.odometer?.km,
       fuel: car.fuel?.name,
       transmission: car.transmission?.name,
@@ -250,6 +251,7 @@ const fetchModels = async (brandId: string, signal?: AbortSignal): Promise<Model
 
 export const useCarsQuery = (filters: FilterState) => {
   const queryClient = useQueryClient();
+  const { convertUSDtoEUR } = useCurrencyAPI();
   const abortControllerRef = useRef<AbortController | null>(null);
   
   // Track accumulated cars for infinite scroll
