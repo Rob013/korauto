@@ -174,7 +174,7 @@ const fetchCarsFallback = async (
       make: car.manufacturer?.name || '',
       model: car.model?.name || '',
       year: car.year || 2020,
-      price: convertUSDtoEUR(Math.round((car.lots?.[0]?.buy_now || 25000) + 2200)), // Add fees like homepage
+      price: Math.round(convertUSDtoEUR(car.lots?.[0]?.buy_now || 25000) + 2200), // Add fees like homepage
       mileage: car.lots?.[0]?.odometer?.km,
       fuel: car.fuel?.name,
       transmission: car.transmission?.name,

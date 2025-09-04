@@ -625,7 +625,7 @@ const HomeCarsSection = memo(() => {
               {displayedCars.map((car) => {
                 const lot = car.lots?.[0];
                 const usdPrice = lot?.buy_now || 25000;
-                const price = convertUSDtoEUR(Math.round(usdPrice + 2200));
+                const price = Math.round(convertUSDtoEUR(usdPrice) + 2200);
                 return (
                   <LazyCarCard
                     key={car.id}

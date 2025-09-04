@@ -26,9 +26,9 @@ export const filterCarsWithRealPricing = <T>(cars: T[]): T[] => {
 
 /**
  * Check if a calculated price is the default fallback price
- * Default is 25000 USD + 2200 markup = 27200 USD
- * When converted to EUR with default rate 0.92: 27200 * 0.92 = 25024 EUR
+ * Default is 25000 USD converted to EUR + 2200 EUR markup
+ * With default rate 0.92: (25000 * 0.92) + 2200 = 23000 + 2200 = 25200 EUR
  */
 export const isDefaultPrice = (priceEUR: number): boolean => {
-  return priceEUR === 25024;
+  return priceEUR === 25200;
 };

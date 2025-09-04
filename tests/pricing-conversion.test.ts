@@ -11,56 +11,59 @@ vi.mock('@/hooks/useCurrencyAPI', () => ({
   })
 }));
 
-describe('API Car Pricing with EUR Conversion + 2200', () => {
+describe('API Car Pricing with USD to EUR Conversion + 2200 EUR', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Default mock: 1 USD = 0.92 EUR
     mockConvertUSDtoEUR.mockImplementation((usd: number) => Math.round(usd * 0.92));
   });
 
-  it('should convert USD price + 2200 to EUR in admin search results', () => {
+  it('should convert USD price to EUR then add 2200 EUR in admin search results', () => {
     // Simulate car with buy_now price
     const carWithPrice = {
       lots: [{ buy_now: 25000 }]
     };
 
-    // Expected behavior: (25000 + 2200) * 0.92 = 25024
-    const expectedUSDWithMarkup = 25000 + 2200; // 27200
-    const expectedEURPrice = Math.round(expectedUSDWithMarkup * 0.92); // 25024
+    // Expected behavior: (25000 * 0.92) + 2200 = 23000 + 2200 = 25200
+    const expectedEURFromUSD = Math.round(25000 * 0.92); // 23000
+    const expectedFinalPrice = expectedEURFromUSD + 2200; // 25200
 
     // This would be called in AdminCarSearch logic
-    const result = mockConvertUSDtoEUR(expectedUSDWithMarkup);
+    const usdConverted = mockConvertUSDtoEUR(25000);
+    const result = usdConverted + 2200;
     
-    expect(mockConvertUSDtoEUR).toHaveBeenCalledWith(27200);
-    expect(result).toBe(25024);
+    expect(mockConvertUSDtoEUR).toHaveBeenCalledWith(25000);
+    expect(result).toBe(25200);
   });
 
-  it('should handle fallback price of 25000 USD + 2200 markup', () => {
+  it('should handle fallback price of 25000 USD converted to EUR + 2200 EUR markup', () => {
     // Simulate car without buy_now price - should use fallback 25000
     const carWithoutPrice = {
       lots: [{}]
     };
 
     const fallbackUSD = 25000;
-    const expectedUSDWithMarkup = fallbackUSD + 2200; // 27200
-    const expectedEURPrice = Math.round(expectedUSDWithMarkup * 0.92); // 25024
+    const expectedEURFromUSD = Math.round(fallbackUSD * 0.92); // 23000
+    const expectedFinalPrice = expectedEURFromUSD + 2200; // 25200
 
-    const result = mockConvertUSDtoEUR(expectedUSDWithMarkup);
+    const usdConverted = mockConvertUSDtoEUR(fallbackUSD);
+    const result = usdConverted + 2200;
     
-    expect(mockConvertUSDtoEUR).toHaveBeenCalledWith(27200);
-    expect(result).toBe(25024);
+    expect(mockConvertUSDtoEUR).toHaveBeenCalledWith(25000);
+    expect(result).toBe(25200);
   });
 
   it('should work with different USD amounts', () => {
     // Test with various USD prices
     const testCases = [
-      { usd: 15000, expected: Math.round((15000 + 2200) * 0.92) }, // 15824
-      { usd: 30000, expected: Math.round((30000 + 2200) * 0.92) }, // 29624
-      { usd: 50000, expected: Math.round((50000 + 2200) * 0.92) }, // 48024
+      { usd: 15000, expected: Math.round(15000 * 0.92) + 2200 }, // 13800 + 2200 = 16000
+      { usd: 30000, expected: Math.round(30000 * 0.92) + 2200 }, // 27600 + 2200 = 29800
+      { usd: 50000, expected: Math.round(50000 * 0.92) + 2200 }, // 46000 + 2200 = 48200
     ];
 
     testCases.forEach(({ usd, expected }) => {
-      const result = mockConvertUSDtoEUR(usd + 2200);
+      const usdConverted = mockConvertUSDtoEUR(usd);
+      const result = usdConverted + 2200;
       expect(result).toBe(expected);
     });
   });
@@ -69,10 +72,12 @@ describe('API Car Pricing with EUR Conversion + 2200', () => {
     // Test with different exchange rate
     mockConvertUSDtoEUR.mockImplementation((usd: number) => Math.round(usd * 0.85)); // Different rate
 
-    const usdWithMarkup = 25000 + 2200; // 27200
-    const expectedEUR = Math.round(27200 * 0.85); // 23120
+    const usdAmount = 25000;
+    const expectedEUR = Math.round(25000 * 0.85); // 21250
+    const expectedFinalPrice = expectedEUR + 2200; // 23450
 
-    const result = mockConvertUSDtoEUR(usdWithMarkup);
-    expect(result).toBe(23120);
+    const usdConverted = mockConvertUSDtoEUR(usdAmount);
+    const result = usdConverted + 2200;
+    expect(result).toBe(23450);
   });
 });

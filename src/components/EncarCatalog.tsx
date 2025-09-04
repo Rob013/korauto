@@ -1394,7 +1394,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 {carsToDisplay.map((car: any) => {
                   const lot = car.lots?.[0];
                   const usdPrice = lot?.buy_now || 25000;
-                  const price = convertUSDtoEUR(Math.round(usdPrice + 2200));
+                  const price = Math.round(convertUSDtoEUR(usdPrice) + 2200);
                   const lotNumber = car.lot_number || lot?.lot || "";
 
                   return (

@@ -143,7 +143,7 @@ export const useCarDetails = (
             : cachedCar.images || [];
 
           const basePrice = cachedCar.price || lotData.buy_now || lotData.final_bid || 25000;
-          const price = convertUSDtoEUR(Math.round(basePrice + 2200));
+          const price = Math.round(convertUSDtoEUR(basePrice) + 2200);
 
           const transformedCar: CarDetails = {
             id: cachedCar.id,
@@ -218,7 +218,7 @@ export const useCarDetails = (
           if (carData && carData.lots && carData.lots[0]) {
             const lotData = carData.lots[0];
             const basePrice = lotData.buy_now ?? lotData.final_bid ?? lotData.price ?? 25000;
-            const price = convertUSDtoEUR(Math.round(basePrice + 2200));
+            const price = Math.round(convertUSDtoEUR(basePrice) + 2200);
 
             const transformedCar: CarDetails = {
               id: carData.id?.toString() || lotData.lot,
@@ -285,7 +285,7 @@ export const useCarDetails = (
 
       if (fallbackCar) {
         const basePrice = fallbackCar.price || 25000;
-        const price = convertUSDtoEUR(Math.round(basePrice + 2200));
+        const price = Math.round(convertUSDtoEUR(basePrice) + 2200);
         
         const transformedCar: CarDetails = {
           id: fallbackCar.id,
