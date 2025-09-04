@@ -1015,7 +1015,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       currentParams.sort = sortBy;
       debouncedSetSearchParams(currentParams);
     }
-  }, [sortBy, hasUserSelectedSort, totalCount, handleShowAllCars, debouncedSetSearchParams, searchParams]);
+  }, [sortBy, hasUserSelectedSort, totalCount]);
 
   // Show cars without requiring brand and model selection
   const shouldShowCars = true;
