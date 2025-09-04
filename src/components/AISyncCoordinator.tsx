@@ -127,7 +127,7 @@ export const AISyncCoordinator = ({
 
       if (error) {
         // Distinguish between different types of errors
-        const errorMsg = error.message || 'Unknown edge function error';
+        const errorMsg = (error as any)?.message || 'Unknown edge function error';
         let enhancedError = errorMsg;
         
         if (errorMsg.includes('fetch') && errorMsg.includes('failed')) {
@@ -180,7 +180,7 @@ export const AISyncCoordinator = ({
   const invokeEdgeFunctionWithRetry = useCallback(async (params: Record<string, unknown>, attempt = 1): Promise<unknown> => {
     console.log(`🤖 AI Coordinator: Invoking edge function (attempt ${attempt}/${maxRetries})...`);
     console.log(`🤖 AI Coordinator: Params:`, JSON.stringify(params, null, 2));
-    console.log(`🤖 AI Coordinator: Supabase URL:`, supabase.supabaseUrl);
+    console.log(`🤖 AI Coordinator: Supabase connection ready`);
     
     try {
       // Add timeout to detect edge function deployment issues
@@ -201,9 +201,9 @@ export const AISyncCoordinator = ({
       if (error) {
         console.error('🚨 AI Coordinator: Edge function returned error:', error);
         console.error('🚨 AI Coordinator: Error details:', {
-          message: error.message,
-          name: error.name,
-          stack: error.stack,
+          message: (error as any)?.message,
+          name: (error as any)?.name,
+          stack: (error as any)?.stack,
           details: error
         });
         throw error;
@@ -293,13 +293,10 @@ export const AISyncCoordinator = ({
       // Intelligent resume detection (removed paused status since it's deprecated)
       if (currentStatus?.status === 'failed') {
         console.log(`🧠 AI Coordinator: Detected resumable sync at page ${currentStatus.current_page}`);
-        enhancedParams = {
-          ...enhancedParams,
-          resume: true,
-          fromPage: currentStatus.current_page,
-          reconcileProgress: true,
-          resumeFromFailure: currentStatus.status === 'failed'
-        };
+        // Add resume parameters to the enhanced params
+        (enhancedParams as any).fromPage = currentStatus.current_page;
+        (enhancedParams as any).reconcileProgress = true;
+        (enhancedParams as any).resumeFromFailure = true;
       }
 
       console.log('🤖 AI Coordinator: Enhanced parameters:', JSON.stringify(enhancedParams, null, 2));

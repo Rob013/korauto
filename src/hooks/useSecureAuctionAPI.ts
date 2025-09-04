@@ -804,11 +804,44 @@ export const useSecureAuctionAPI = () => {
       const { fetchCarsWithKeyset, mapFrontendSortToBackend } = await import('@/services/carsApi');
       
       // Convert API filters to the proper format for fetchCarsWithKeyset
+      // Enhanced manufacturer mapping with fallback and direct database lookup
+      let manufacturerName = undefined;
+      if (newFilters.manufacturer_id) {
+        // First try to find in loaded manufacturers array
+        const foundManufacturer = manufacturers.find(m => m.id.toString() === newFilters.manufacturer_id);
+        if (foundManufacturer) {
+          manufacturerName = foundManufacturer.name;
+        } else {
+          // Fallback: Map common manufacturer IDs directly to database names
+          const manufacturerIdMap = {
+            '1': 'Audi',
+            '2': 'Honda', 
+            '3': 'Toyota',
+            '4': 'Nissan',
+            '5': 'Ford',
+            '6': 'Chevrolet',
+            '7': 'Hyundai',
+            '8': 'Kia',
+            '9': 'BMW',
+            '10': 'Mazda',
+            '13': 'Porsche',
+            '16': 'Mercedes-Benz',
+            '147': 'Volkswagen'
+          };
+          manufacturerName = manufacturerIdMap[newFilters.manufacturer_id];
+          console.log(`🔧 Using fallback manufacturer mapping: ID ${newFilters.manufacturer_id} -> ${manufacturerName}`);
+        }
+      }
+
+      let modelName = undefined;
+      if (newFilters.model_id) {
+        const foundModel = models.find(m => m.id.toString() === newFilters.model_id);
+        modelName = foundModel?.name;
+      }
+
       const carsApiFilters = {
-        make: newFilters.manufacturer_id ? 
-          manufacturers.find(m => m.id.toString() === newFilters.manufacturer_id)?.name : undefined,
-        model: newFilters.model_id ? 
-          models.find(m => m.id.toString() === newFilters.model_id)?.name : undefined,
+        make: manufacturerName,
+        model: modelName,
         yearMin: newFilters.from_year,
         yearMax: newFilters.to_year,
         priceMin: newFilters.buy_now_price_from,
@@ -984,6 +1017,22 @@ export const useSecureAuctionAPI = () => {
       }
     } catch (err: any) {
       console.error("❌ Database Error:", err);
+      console.error("❌ Error details:", { 
+        message: err.message, 
+        code: err.code,
+        filters: carsApiFilters,
+        manufacturerName: manufacturerName 
+      });
+      
+      // Enhanced error handling - check if the issue is with manufacturer mapping
+      if (newFilters.manufacturer_id && !manufacturerName) {
+        console.log("❌ Could not map manufacturer_id to manufacturer name");
+        setError(`Unable to find manufacturer with ID ${newFilters.manufacturer_id}. Please try refreshing the page.`);
+        setCars([]);
+        setTotalCount(0);
+        setHasMorePages(false);
+        return;
+      }
       
       // Use fallback car data when database fails - but only if no specific brand filter is applied
       if (newFilters.manufacturer_id && 
