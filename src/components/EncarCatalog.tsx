@@ -97,6 +97,22 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [allCarsData, setAllCarsData] = useState<any[]>([]); // Store all cars when fetched
   const isMobile = useIsMobile();
   
+  // Create a debounced version of setSearchParams to prevent SecurityError: history.replaceState() rate limiting
+  const debouncedSetSearchParams = useMemo(
+    () => debounce((params: URLSearchParams | Record<string, string>) => {
+      setSearchParams(params);
+    }, 300), // 300ms debounce to prevent rapid successive calls
+    [setSearchParams]
+  );
+  
+  // Create a throttled version of direct history.replaceState to prevent rate limiting
+  const throttledReplaceState = useMemo(
+    () => debounce((url: string) => {
+      window.history.replaceState({}, '', url);
+    }, 500), // 500ms throttle for direct history calls
+    []
+  );
+  
   // Initialize showFilters - always start closed, only open when user explicitly clicks filter button
   const [showFilters, setShowFilters] = useState(() => {
     // Always start with filters closed when navigating to catalog
@@ -390,8 +406,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     if (sortOption) {
       searchParams.set('sort', sortOption);
     }
-    setSearchParams(searchParams);
-  }, [fetchCars, setSearchParams]);
+    debouncedSetSearchParams(searchParams);
+  }, [fetchCars, debouncedSetSearchParams]);
 
   // Optimized year filtering hook for better performance
   const {
@@ -675,7 +691,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           paramsToSet[key] = value.toString();
         }
       });
-      setSearchParams(paramsToSet);
+      debouncedSetSearchParams(paramsToSet);
       
     } catch (error) {
       console.error('[handleManufacturerChange] Error:', error);
@@ -735,7 +751,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           paramsToSet[key] = value.toString();
         }
       });
-      setSearchParams(paramsToSet);
+      debouncedSetSearchParams(paramsToSet);
       
     } catch (error) {
       console.error('[handleModelChange] Error:', error);
@@ -840,7 +856,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         // Remove the fromHomepage flag from URL without causing re-render
         const newSearchParams = new URLSearchParams(searchParams);
         newSearchParams.delete('fromHomepage');
-        window.history.replaceState({}, '', `${window.location.pathname}?${newSearchParams.toString()}`);
+        throttledReplaceState(`${window.location.pathname}?${newSearchParams.toString()}`);
       } else {
         // Try to restore complete page state from navigation context first
         setTimeout(() => {
@@ -966,7 +982,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         const currentParams = Object.fromEntries(searchParams.entries());
         currentParams.page = '1';
         currentParams.sort = sortBy;
-        setSearchParams(currentParams);
+        debouncedSetSearchParams(currentParams);
         
         return; // Exit early as handleShowAllCars will handle the sorting
       }
@@ -1010,9 +1026,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       const currentParams = Object.fromEntries(searchParams.entries());
       currentParams.page = '1';
       currentParams.sort = sortBy;
-      setSearchParams(currentParams);
+      debouncedSetSearchParams(currentParams);
     }
-  }, [sortBy, hasUserSelectedSort, totalCount, handleShowAllCars, fetchCars, setSearchParams, filters, searchParams]);
+  }, [sortBy, hasUserSelectedSort, totalCount, handleShowAllCars, fetchCars, debouncedSetSearchParams, filters, searchParams]);
 
   // Show cars without requiring brand and model selection
   const shouldShowCars = true;
