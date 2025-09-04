@@ -1,10 +1,9 @@
 /**
  * Test car filtering utility
  * Filters out cars that appear to be test data or have unrealistic characteristics
- * Updated to be more lenient with database cars while still filtering obvious test data
  */
 
-export const isTestCar = (car: any, isFromDatabase: boolean = false): boolean => {
+export const isTestCar = (car: any): boolean => {
   if (!car) return true;
   
   // Check for test car indicators in title
@@ -18,20 +17,12 @@ export const isTestCar = (car: any, isFromDatabase: boolean = false): boolean =>
     'placeholder',
     'emergency-',
     'nis2005', // Specific code pattern
+    'altima', // Remove all Altimas as they seem to be test data
     'code ',   // Any car with "code" in title
     'lot ',    // Any car with "lot" in title pattern
   ];
   
-  // Only filter out Altimas if they have obvious test indicators
-  const hasTestInTitle = testPatterns.some(pattern => title.includes(pattern));
-  const hasAltima = title.includes('altima');
-  
-  // More specific Altima filtering - only filter if combined with test patterns
-  if (hasAltima && (title.includes('test') || title.includes('demo') || title.includes('sample'))) {
-    return true;
-  }
-  
-  if (hasTestInTitle && !hasAltima) {
+  if (testPatterns.some(pattern => title.includes(pattern))) {
     return true;
   }
   
@@ -46,20 +37,16 @@ export const isTestCar = (car: any, isFromDatabase: boolean = false): boolean =>
     return true;
   }
   
-  // For database cars, be more lenient with images since they might not be populated yet
-  if (!isFromDatabase) {
-    // Check for cars without proper images (only for external API cars)
-    const lot = car.lots?.[0];
-    const hasImages = lot?.images?.normal?.length > 0 || lot?.images?.big?.length > 0;
-    if (!hasImages) {
-      return true; // Remove external API cars without images
-    }
+  // Check for cars without proper images
+  const lot = car.lots?.[0];
+  const hasImages = lot?.images?.normal?.length > 0 || lot?.images?.big?.length > 0;
+  if (!hasImages) {
+    return true; // Remove cars without images
   }
   
   // Check for unrealistic pricing (too high or too low)
-  const lot = car.lots?.[0];
-  const price = lot?.buy_now || car.price || 0;
-  if (price < 500 || price > 1000000) { // More reasonable range
+  const price = lot?.buy_now || 0;
+  if (price < 1000 || price > 500000) {
     return true;
   }
   
@@ -68,19 +55,10 @@ export const isTestCar = (car: any, isFromDatabase: boolean = false): boolean =>
     return true;
   }
   
-  // For database cars, be more lenient with VIN validation
-  if (!isFromDatabase) {
-    // Check for suspicious VIN patterns (only for external API cars)
-    const vin = car.vin?.toLowerCase() || '';
-    if (vin.includes('test') || vin.includes('demo') || vin.length < 10) {
-      return true;
-    }
-  } else {
-    // For database cars, only filter if VIN explicitly contains test patterns
-    const vin = car.vin?.toLowerCase() || '';
-    if (vin.includes('test') || vin.includes('demo')) {
-      return true;
-    }
+  // Check for suspicious VIN patterns
+  const vin = car.vin?.toLowerCase() || '';
+  if (vin.includes('test') || vin.includes('demo') || vin.length < 10) {
+    return true;
   }
   
   // Check for lot numbers that seem like test data
@@ -93,14 +71,8 @@ export const isTestCar = (car: any, isFromDatabase: boolean = false): boolean =>
   return false;
 };
 
-export const filterOutTestCars = (cars: any[], isFromDatabase?: boolean): any[] => {
-  // Auto-detect if cars are from database if not explicitly specified
-  if (isFromDatabase === undefined) {
-    // Check if any car has the isFromDatabase flag
-    isFromDatabase = cars.some(car => car.isFromDatabase === true);
-  }
-  
-  const filtered = cars.filter(car => !isTestCar(car, isFromDatabase));
-  console.log(`🧹 Filtered out ${cars.length - filtered.length} test/invalid cars, ${filtered.length} remaining (database mode: ${isFromDatabase})`);
+export const filterOutTestCars = (cars: any[]): any[] => {
+  const filtered = cars.filter(car => !isTestCar(car));
+  console.log(`🧹 Filtered out ${cars.length - filtered.length} test/invalid cars, ${filtered.length} remaining`);
   return filtered;
 };

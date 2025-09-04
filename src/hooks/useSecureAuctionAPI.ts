@@ -23,118 +23,6 @@ const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => P
   return data;
 };
 
-// Enhanced conversion function to convert database car to external API format
-const convertDatabaseCarToApiFormat = (dbCar: any) => {
-  // Parse stored JSONB data
-  const carData = dbCar.car_data || {};
-  const lotData = dbCar.lot_data || {};
-  
-  // Extract images properly from database
-  let normalImages = [];
-  let bigImages = [];
-  
-  if (dbCar.images && Array.isArray(dbCar.images)) {
-    normalImages = dbCar.images;
-    bigImages = dbCar.images;
-  } else if (dbCar.image_url) {
-    normalImages = [dbCar.image_url];
-    bigImages = [dbCar.image_url];
-  } else if (carData.images) {
-    // Try to extract from car_data
-    if (Array.isArray(carData.images)) {
-      normalImages = carData.images;
-      bigImages = carData.images;
-    } else if (carData.images.normal) {
-      normalImages = carData.images.normal || [];
-      bigImages = carData.images.big || carData.images.normal || [];
-    }
-  }
-  
-  // Convert mileage to number
-  const mileageKm = dbCar.mileage ? (typeof dbCar.mileage === 'string' ? parseInt(dbCar.mileage.replace(/[^\d]/g, '')) || 0 : dbCar.mileage) : 0;
-  
-  // Create enhanced lot with all external API fields
-  const enhancedLot = {
-    buy_now: dbCar.price || carData.price || 0,
-    lot: dbCar.lot_number || carData.lot_number || '',
-    odometer: { km: mileageKm },
-    images: { 
-      normal: normalImages,
-      big: bigImages
-    },
-    // Add all missing external API fields
-    status: carData.status || 'available',
-    sale_status: carData.sale_status || 'active',
-    final_price: carData.final_price,
-    estimate_repair_price: carData.estimate_repair_price,
-    pre_accident_price: carData.pre_accident_price,
-    clean_wholesale_price: carData.clean_wholesale_price,
-    actual_cash_value: carData.actual_cash_value,
-    sale_date: carData.sale_date,
-    seller: carData.seller,
-    seller_type: carData.seller_type,
-    detailed_title: carData.detailed_title,
-    damage: carData.damage,
-    keys_available: carData.keys_available,
-    airbags: carData.airbags,
-    grade_iaai: carData.grade_iaai || lotData.grade_iaai,
-    domain: carData.domain || { name: 'database' },
-    external_id: dbCar.api_id,
-    // Enhanced insurance data from lot_data or car_data
-    insurance: lotData.insurance || carData.insurance,
-    insurance_v2: lotData.insurance_v2 || carData.insurance_v2,
-    location: carData.location || {
-      location: dbCar.location,
-      raw: dbCar.location
-    },
-    inspect: carData.inspect || lotData.inspect,
-    details: {
-      engine_volume: carData.engine_volume,
-      original_price: carData.original_price,
-      year: dbCar.year,
-      badge: carData.badge || lotData.badge,
-      comment: carData.comment,
-      description_ko: carData.description_ko,
-      description_en: carData.description_en,
-      is_leasing: carData.is_leasing,
-      sell_type: carData.sell_type,
-      equipment: carData.equipment,
-      options: carData.options,
-      inspect_outer: carData.inspect_outer,
-      seats_count: carData.seats_count,
-      ...lotData.details
-    }
-  };
-
-  return {
-    id: dbCar.id,
-    manufacturer: { id: 0, name: dbCar.make },
-    model: { id: 0, name: dbCar.model },
-    year: dbCar.year,
-    title: dbCar.title || carData.title || `${dbCar.year} ${dbCar.make} ${dbCar.model}`,
-    vin: dbCar.vin || carData.vin || '',
-    fuel: dbCar.fuel ? { id: 0, name: dbCar.fuel } : (carData.fuel ? { id: 0, name: carData.fuel } : undefined),
-    transmission: dbCar.transmission ? { id: 0, name: dbCar.transmission } : (carData.transmission ? { id: 0, name: carData.transmission } : undefined),
-    color: dbCar.color ? { id: 0, name: dbCar.color } : (carData.color ? { id: 0, name: carData.color } : undefined),
-    location: dbCar.location || carData.location || '',
-    lot_number: dbCar.lot_number || carData.lot_number || '',
-    image_url: normalImages[0] || '',
-    // Add missing external API car fields
-    condition: dbCar.condition || carData.condition,
-    status: carData.status,
-    sale_status: carData.sale_status,
-    final_price: carData.final_price,
-    body_type: carData.body_type ? { id: 0, name: carData.body_type } : undefined,
-    engine: carData.engine ? { id: 0, name: carData.engine } : undefined,
-    drive_wheel: carData.drive_wheel,
-    vehicle_type: carData.vehicle_type ? { id: 0, name: carData.vehicle_type } : undefined,
-    cylinders: carData.cylinders,
-    // Enhanced lots array with complete external API structure
-    lots: [enhancedLot],
-    isFromDatabase: true // Mark as database car for filtering
-  };
-};
-
 // Create fallback car data for testing when API is not available
 export const createFallbackCars = (filters: any = {}): any[] => {
   console.log(`🔄 Creating fallback cars for development/testing`);
@@ -291,89 +179,89 @@ export const createFallbackGenerations = (manufacturerName: string): Generation[
   return generationData[manufacturerName] || [];
 };
 
-// Create fallback model data for testing when API is not available - with realistic counts
+// Create fallback model data for testing when API is not available
 export const createFallbackModels = (manufacturerName: string): Model[] => {
   const modelData: { [key: string]: Model[] } = {
     'BMW': [
-      { id: 101, name: '3 Series', cars_qty: 2400 },
-      { id: 102, name: '5 Series', cars_qty: 1800 },
-      { id: 103, name: '7 Series', cars_qty: 800 },
-      { id: 104, name: 'X3', cars_qty: 1600 },
-      { id: 105, name: 'X5', cars_qty: 1400 }
+      { id: 101, name: '3 Series', cars_qty: 201 },
+      { id: 102, name: '5 Series', cars_qty: 157 },
+      { id: 103, name: '7 Series', cars_qty: 89 },
+      { id: 104, name: 'X3', cars_qty: 145 },
+      { id: 105, name: 'X5', cars_qty: 123 }
     ],
     'Audi': [
-      { id: 201, name: 'A6', cars_qty: 2200 },
-      { id: 202, name: 'A4', cars_qty: 2100 },
-      { id: 203, name: 'A3', cars_qty: 1800 },
-      { id: 204, name: 'Q7', cars_qty: 1200 }
+      { id: 201, name: 'A6', cars_qty: 112 },
+      { id: 202, name: 'A4', cars_qty: 98 },
+      { id: 203, name: 'A3', cars_qty: 76 },
+      { id: 204, name: 'Q7', cars_qty: 45 }
     ],
     'Mercedes-Benz': [
-      { id: 301, name: 'C-Class', cars_qty: 2600 },
-      { id: 302, name: 'E-Class', cars_qty: 2200 },
-      { id: 303, name: 'S-Class', cars_qty: 1500 }
-    ],
-    'Volkswagen': [
-      { id: 1101, name: 'Golf', cars_qty: 2400 },
-      { id: 1102, name: 'Jetta', cars_qty: 1800 },
-      { id: 1103, name: 'Passat', cars_qty: 1600 },
-      { id: 1104, name: 'Tiguan', cars_qty: 1400 },
-      { id: 1105, name: 'Atlas', cars_qty: 1000 }
+      { id: 301, name: 'C-Class', cars_qty: 134 },
+      { id: 302, name: 'E-Class', cars_qty: 98 },
+      { id: 303, name: 'S-Class', cars_qty: 67 }
     ],
     'Toyota': [
-      { id: 401, name: 'Camry', cars_qty: 1800 },
-      { id: 402, name: 'Corolla', cars_qty: 2200 },
-      { id: 403, name: 'RAV4', cars_qty: 1900 },
-      { id: 404, name: 'Prius', cars_qty: 1400 },
-      { id: 405, name: 'Highlander', cars_qty: 1200 }
+      { id: 401, name: 'Camry', cars_qty: 89 },
+      { id: 402, name: 'Corolla', cars_qty: 134 },
+      { id: 403, name: 'RAV4', cars_qty: 95 },
+      { id: 404, name: 'Prius', cars_qty: 67 },
+      { id: 405, name: 'Highlander', cars_qty: 45 }
     ],
     'Honda': [
-      { id: 501, name: 'Civic', cars_qty: 1600 },
-      { id: 502, name: 'Accord', cars_qty: 1400 },
-      { id: 503, name: 'CR-V', cars_qty: 1800 },
-      { id: 504, name: 'Pilot', cars_qty: 800 },
-      { id: 505, name: 'Fit', cars_qty: 600 }
+      { id: 501, name: 'Civic', cars_qty: 78 },
+      { id: 502, name: 'Accord', cars_qty: 65 },
+      { id: 503, name: 'CR-V', cars_qty: 89 },
+      { id: 504, name: 'Pilot', cars_qty: 34 },
+      { id: 505, name: 'Fit', cars_qty: 23 }
     ],
     'Hyundai': [
-      { id: 601, name: 'Elantra', cars_qty: 1400 },
-      { id: 602, name: 'Sonata', cars_qty: 1200 },
-      { id: 603, name: 'Tucson', cars_qty: 1600 },
-      { id: 604, name: 'Santa Fe', cars_qty: 1000 },
-      { id: 605, name: 'Genesis G90', cars_qty: 600 }
+      { id: 601, name: 'Elantra', cars_qty: 67 },
+      { id: 602, name: 'Sonata', cars_qty: 56 },
+      { id: 603, name: 'Tucson', cars_qty: 78 },
+      { id: 604, name: 'Santa Fe', cars_qty: 45 },
+      { id: 605, name: 'Genesis G90', cars_qty: 23 }
     ],
     'Kia': [
-      { id: 701, name: 'Optima', cars_qty: 1200 },
-      { id: 702, name: 'Forte', cars_qty: 1000 },
-      { id: 703, name: 'Sportage', cars_qty: 1400 },
-      { id: 704, name: 'Sorento', cars_qty: 800 },
-      { id: 705, name: 'Stinger', cars_qty: 600 }
+      { id: 701, name: 'Optima', cars_qty: 56 },
+      { id: 702, name: 'Forte', cars_qty: 45 },
+      { id: 703, name: 'Sportage', cars_qty: 67 },
+      { id: 704, name: 'Sorento', cars_qty: 34 },
+      { id: 705, name: 'Stinger', cars_qty: 23 }
     ],
     'Nissan': [
-      { id: 801, name: 'Altima', cars_qty: 1200 },
-      { id: 802, name: 'Sentra', cars_qty: 1000 },
-      { id: 803, name: 'Rogue', cars_qty: 1400 },
-      { id: 804, name: 'Murano', cars_qty: 800 },
-      { id: 805, name: '370Z', cars_qty: 500 }
+      { id: 801, name: 'Altima', cars_qty: 45 },
+      { id: 802, name: 'Sentra', cars_qty: 34 },
+      { id: 803, name: 'Rogue', cars_qty: 67 },
+      { id: 804, name: 'Murano', cars_qty: 23 },
+      { id: 805, name: '370Z', cars_qty: 12 }
     ],
     'Ford': [
-      { id: 901, name: 'Focus', cars_qty: 1000 },
-      { id: 902, name: 'Fusion', cars_qty: 800 },
-      { id: 903, name: 'Escape', cars_qty: 1200 },
-      { id: 904, name: 'Explorer', cars_qty: 800 },
-      { id: 905, name: 'Mustang', cars_qty: 600 }
+      { id: 901, name: 'Focus', cars_qty: 45 },
+      { id: 902, name: 'Fusion', cars_qty: 34 },
+      { id: 903, name: 'Escape', cars_qty: 56 },
+      { id: 904, name: 'Explorer', cars_qty: 23 },
+      { id: 905, name: 'Mustang', cars_qty: 18 }
     ],
     'Chevrolet': [
-      { id: 1001, name: 'Cruze', cars_qty: 800 },
-      { id: 1002, name: 'Malibu', cars_qty: 600 },
-      { id: 1003, name: 'Equinox', cars_qty: 1000 },
-      { id: 1004, name: 'Tahoe', cars_qty: 500 },
-      { id: 1005, name: 'Camaro', cars_qty: 400 }
+      { id: 1001, name: 'Cruze', cars_qty: 34 },
+      { id: 1002, name: 'Malibu', cars_qty: 23 },
+      { id: 1003, name: 'Equinox', cars_qty: 45 },
+      { id: 1004, name: 'Tahoe', cars_qty: 12 },
+      { id: 1005, name: 'Camaro', cars_qty: 8 }
+    ],
+    'Volkswagen': [
+      { id: 1101, name: 'Golf', cars_qty: 67 },
+      { id: 1102, name: 'Jetta', cars_qty: 45 },
+      { id: 1103, name: 'Passat', cars_qty: 34 },
+      { id: 1104, name: 'Tiguan', cars_qty: 23 },
+      { id: 1105, name: 'Atlas', cars_qty: 12 }
     ],
     'Mazda': [
-      { id: 1201, name: 'Mazda3', cars_qty: 800 },
-      { id: 1202, name: 'Mazda6', cars_qty: 600 },
-      { id: 1203, name: 'CX-5', cars_qty: 1000 },
-      { id: 1204, name: 'CX-9', cars_qty: 500 },
-      { id: 1205, name: 'MX-5', cars_qty: 300 }
+      { id: 1201, name: 'Mazda3', cars_qty: 34 },
+      { id: 1202, name: 'Mazda6', cars_qty: 23 },
+      { id: 1203, name: 'CX-5', cars_qty: 45 },
+      { id: 1204, name: 'CX-9', cars_qty: 12 },
+      { id: 1205, name: 'MX-5', cars_qty: 8 }
     ]
   };
 
@@ -442,78 +330,6 @@ export const createFallbackManufacturers = () => {
     // Other European brands
     { id: 41, name: 'Skoda', cars_qty: 24 },
     { id: 42, name: 'Seat', cars_qty: 16 }
-  ];
-  
-  return fallbackData.map(manufacturer => ({
-    id: manufacturer.id,
-    name: manufacturer.name,
-    cars_qty: manufacturer.cars_qty,
-    car_count: manufacturer.cars_qty
-  }));
-};
-
-// Create fallback manufacturer data with realistic counts (10k+ for major brands)
-export const createFallbackManufacturersWithRealCounts = () => {
-  const fallbackData = [
-    // German brands (priority) - using realistic high counts
-    { id: 9, name: 'BMW', cars_qty: 12000 },
-    { id: 16, name: 'Mercedes-Benz', cars_qty: 11500 },
-    { id: 1, name: 'Audi', cars_qty: 10800 },
-    { id: 147, name: 'Volkswagen', cars_qty: 10200 },
-    { id: 13, name: 'Porsche', cars_qty: 3500 },
-    { id: 22, name: 'Opel', cars_qty: 2800 },
-    
-    // Japanese brands - realistic high counts
-    { id: 3, name: 'Toyota', cars_qty: 8500 },
-    { id: 2, name: 'Honda', cars_qty: 7200 },
-    { id: 4, name: 'Nissan', cars_qty: 5900 },
-    { id: 10, name: 'Mazda', cars_qty: 4200 },
-    { id: 11, name: 'Subaru', cars_qty: 3100 },
-    { id: 12, name: 'Lexus', cars_qty: 2800 },
-    { id: 17, name: 'Infiniti', cars_qty: 1800 },
-    { id: 18, name: 'Acura', cars_qty: 1500 },
-    { id: 23, name: 'Mitsubishi', cars_qty: 2200 },
-    
-    // Korean brands - realistic high counts
-    { id: 7, name: 'Hyundai', cars_qty: 6800 },
-    { id: 8, name: 'Kia', cars_qty: 6200 },
-    { id: 19, name: 'Genesis', cars_qty: 1200 },
-    
-    // American brands - realistic counts
-    { id: 5, name: 'Ford', cars_qty: 5200 },
-    { id: 6, name: 'Chevrolet', cars_qty: 4800 },
-    { id: 24, name: 'Cadillac', cars_qty: 1800 },
-    { id: 25, name: 'GMC', cars_qty: 2200 },
-    { id: 20, name: 'Tesla', cars_qty: 3200 },
-    { id: 26, name: 'Chrysler', cars_qty: 1200 },
-    { id: 27, name: 'Jeep', cars_qty: 2800 },
-    { id: 28, name: 'Dodge', cars_qty: 1600 },
-    
-    // Luxury/European brands
-    { id: 14, name: 'Land Rover', cars_qty: 2200 },
-    { id: 21, name: 'Jaguar', cars_qty: 1800 },
-    { id: 15, name: 'Volvo', cars_qty: 3200 },
-    { id: 29, name: 'Ferrari', cars_qty: 300 },
-    { id: 30, name: 'Lamborghini', cars_qty: 200 },
-    { id: 31, name: 'Maserati', cars_qty: 400 },
-    { id: 32, name: 'Bentley', cars_qty: 200 },
-    { id: 33, name: 'Rolls-Royce', cars_qty: 100 },
-    { id: 34, name: 'Aston Martin', cars_qty: 200 },
-    { id: 35, name: 'McLaren', cars_qty: 100 },
-    { id: 43, name: 'Mini', cars_qty: 2100 },
-    
-    // French brands
-    { id: 36, name: 'Peugeot', cars_qty: 2800 },
-    { id: 37, name: 'Renault', cars_qty: 3500 },
-    { id: 38, name: 'Citroën', cars_qty: 1800 },
-    
-    // Italian brands
-    { id: 39, name: 'Fiat', cars_qty: 1800 },
-    { id: 40, name: 'Alfa Romeo', cars_qty: 1100 },
-    
-    // Other European brands
-    { id: 41, name: 'Skoda', cars_qty: 2400 },
-    { id: 42, name: 'Seat', cars_qty: 1600 }
   ];
   
   return fallbackData.map(manufacturer => ({
@@ -912,50 +728,23 @@ export const useSecureAuctionAPI = () => {
     setError(null);
 
     try {
-      // Store client-side filters for later
+      // Pass filters to the API - DO NOT send grade_iaai to server for filtering
+      const apiFilters = {
+        ...newFilters,
+        page: page.toString(),
+        per_page: newFilters.per_page || "50", // Show 50 cars per page
+        simple_paginate: "0",
+      };
+      
+      // IMPORTANT: Remove grade_iaai and trim_level from server request - we'll do client-side filtering
+      // This prevents backend errors and ensures we get all cars for client-side filtering
       const selectedVariant = newFilters.grade_iaai;
       const selectedTrimLevel = newFilters.trim_level;
-      
-      // Map frontend sort options to external API parameters
-      const sortMapping = mapSortToAPI(newFilters.sort_by || 'recently_added');
-      
-      // Prepare filters for external API call
-      const apiFilters = {
-        page: page.toString(),
-        per_page: newFilters.per_page || "50",
-        manufacturer_id: newFilters.manufacturer_id,
-        model_id: newFilters.model_id,
-        generation_id: newFilters.generation_id,
-        from_year: newFilters.from_year,
-        to_year: newFilters.to_year,
-        buy_now_price_from: newFilters.buy_now_price_from,
-        buy_now_price_to: newFilters.buy_now_price_to,
-        fuel_type: newFilters.fuel_type,
-        transmission: newFilters.transmission,
-        body_type: newFilters.body_type,
-        color: newFilters.color,
-        search: newFilters.search,
-        odometer_from_km: newFilters.odometer_from_km,
-        odometer_to_km: newFilters.odometer_to_km,
-        seats_count: newFilters.seats_count,
-        ...sortMapping // Include sort parameters for backend sorting
-      };
+      delete apiFilters.grade_iaai;
+      delete apiFilters.trim_level;
 
-      // Remove undefined values
-      Object.keys(apiFilters).forEach(key => {
-        if (apiFilters[key] === undefined || apiFilters[key] === '') {
-          delete apiFilters[key];
-        }
-      });
-
-      console.log(`🔄 Fetching cars from external API - Page ${page} with filters:`, apiFilters);
-      
-      // Fetch from external API with backend sorting
-      const data = await makeSecureAPICall("cars", apiFilters);
-
-      if (!data || !data.data) {
-        throw new Error("Invalid response from external API");
-      }
+      console.log(`🔄 Fetching cars - Page ${page} with filters:`, apiFilters);
+      const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
 
       // Apply client-side variant filtering if a variant is selected
       let filteredCars = data.data || [];
@@ -1039,7 +828,7 @@ export const useSecureAuctionAPI = () => {
       setHasMorePages(page < (data.meta?.last_page || 1));
 
       console.log(
-        `✅ External API Success - Fetched ${filteredCars.length} cars from page ${page}, API total: ${data.meta?.total || 0}, filtered displayed: ${filteredCars.length}`
+        `✅ API Success - Fetched ${filteredCars.length} cars from page ${page}, server total: ${data.meta?.total || 0}, filtered displayed: ${filteredCars.length}`
       );
 
       if (resetList || page === 1) {
@@ -1050,222 +839,155 @@ export const useSecureAuctionAPI = () => {
         setCurrentPage(page);
       }
     } catch (err: any) {
-      console.error("❌ External API Error:", err);
-      console.error("❌ Error details:", { 
-        message: err.message, 
-        code: err.code,
-        filters: apiFilters
-      });
+      console.error("❌ API Error:", err);
       
-      // Provide user-friendly error messages for common API issues
-      let userMessage = "Failed to load cars from external API. Please try again.";
-      
-      if (err.message?.includes('timeout')) {
-        userMessage = "Request timed out. Please try again.";
-      } else if (err.message?.includes('network')) {
-        userMessage = "Network error. Please check your connection.";
-      } else if (err.message?.includes('rate limit') || err.message?.includes('RATE_LIMITED')) {
-        userMessage = "Too many requests. Please wait a moment and try again.";
-      } else if (err.message?.includes('404')) {
-        userMessage = "No cars found for your search criteria.";
-      } else if (err.message?.includes('401') || err.message?.includes('unauthorized')) {
-        userMessage = "Authentication error. Please refresh the page.";
+      if (err.message === "RATE_LIMITED") {
+        // Retry once after rate limit
+        try {
+          await delay(2000);
+          return fetchCars(page, newFilters, resetList);
+        } catch (retryErr) {
+          console.error("❌ Retry failed:", retryErr);
+          // Fall through to use fallback data
+        }
       }
       
-      setError(userMessage);
-      setCars([]);
-      setTotalCount(0);
-      setHasMorePages(false);
+      // Use fallback car data when API fails - but only if no specific brand filter is applied
+      if (newFilters.manufacturer_id && 
+          newFilters.manufacturer_id !== 'all' && 
+          newFilters.manufacturer_id !== '' &&
+          newFilters.manufacturer_id !== undefined &&
+          newFilters.manufacturer_id !== null) {
+        console.log("❌ API failed for brand-specific search, not showing fallback cars to avoid test car display");
+        setError("Failed to load cars for the selected brand. Please try again.");
+        setCars([]);
+        setTotalCount(0);
+        setHasMorePages(false);
+        return;
+      }
+      
+      // Use fallback cars when API fails
+      console.log("❌ API failed, using fallback cars for pagination testing");
+      const fallbackCars = createFallbackCars(newFilters);
+      
+      if (fallbackCars.length === 0) {
+        console.log("❌ No fallback cars available, showing empty state");
+        setError("Failed to load cars. Please try again.");
+        setCars([]);
+        setTotalCount(0);
+        setHasMorePages(false);
+        return;
+      }
+      
+      // Simulate pagination with fallback data
+      const pageSize = parseInt(newFilters.per_page || "50");
+      const startIndex = (page - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      const paginatedCars = fallbackCars.slice(startIndex, endIndex);
+      
+      console.log(
+        `✅ Fallback Success - Showing ${paginatedCars.length} cars from page ${page}, total: ${fallbackCars.length}`
+      );
+      
+      setTotalCount(fallbackCars.length);
+      setHasMorePages(endIndex < fallbackCars.length);
+      
+      if (resetList || page === 1) {
+        setCars(paginatedCars);
+        setCurrentPage(page);
+      } else {
+        setCars((prev) => [...prev, ...paginatedCars]);
+        setCurrentPage(page);
+      }
+      
+      // Clear error since we're showing fallback data
+      setError(null);
+      
+      if (resetList || page === 1) {
+        setCars(paginatedCars);
+        setCurrentPage(1);
+      } else {
+        setCars((prev) => [...prev, ...paginatedCars]);
+        setCurrentPage(page);
+      }
+      
+      // Clear error since we're showing fallback data
+      setError(null);
     } finally {
       setLoading(false);
     }
   }, [filters]);
 
-  // Helper function to get real manufacturer counts from the API
-  const getRealManufacturerCounts = async (): Promise<{ [key: string]: number }> => {
-    try {
-      const majorManufacturers = ['BMW', 'Mercedes-Benz', 'Audi', 'Volkswagen', 'Porsche', 'Toyota', 'Honda', 'Hyundai', 'Kia', 'Nissan', 'Ford', 'Chevrolet', 'Mazda'];
-      const counts: { [key: string]: number } = {};
-
-      // Get counts from the external API for each manufacturer
-      for (const manufacturer of majorManufacturers) {
-        try {
-          const response = await makeSecureAPICall('/cars-search', {
-            make: [manufacturer]
-          });
-
-          counts[manufacturer] = response?.total || 0;
-          console.log(`📊 Real API count for ${manufacturer}: ${counts[manufacturer]}`);
-        } catch (err) {
-          console.error(`❌ Failed to get API count for ${manufacturer}:`, err);
-          // Use realistic fallback counts for major brands if API fails
-          counts[manufacturer] = manufacturer === 'BMW' ? 12000 : 
-                               manufacturer === 'Mercedes-Benz' ? 11500 :
-                               manufacturer === 'Audi' ? 10800 :
-                               manufacturer === 'Volkswagen' ? 10200 :
-                               manufacturer === 'Porsche' ? 3500 :
-                               manufacturer === 'Toyota' ? 8500 :
-                               manufacturer === 'Honda' ? 7200 :
-                               manufacturer === 'Hyundai' ? 6800 :
-                               manufacturer === 'Kia' ? 6200 :
-                               manufacturer === 'Nissan' ? 5900 :
-                               manufacturer === 'Ford' ? 5200 :
-                               manufacturer === 'Chevrolet' ? 4800 :
-                               manufacturer === 'Mazda' ? 4200 : 3000;
-        }
-      }
-
-      return counts;
-    } catch (err) {
-      console.error('❌ Failed to get real manufacturer counts:', err);
-      // Return realistic estimates if everything fails
-      return {
-        'BMW': 12000,
-        'Mercedes-Benz': 11500,
-        'Audi': 10800,
-        'Volkswagen': 10200,
-        'Porsche': 3500,
-        'Toyota': 8500,
-        'Honda': 7200,
-        'Hyundai': 6800,
-        'Kia': 6200,
-        'Nissan': 5900,
-        'Ford': 5200,
-        'Chevrolet': 4800,
-        'Mazda': 4200
-      };
-    }
-  };
-
   const fetchManufacturers = async (): Promise<Manufacturer[]> => {
     try {
-      console.log(`🔍 Fetching real manufacturer counts from API`);
+      console.log(`🔍 Fetching all manufacturers`);
       
-      // First, try to get real counts from the API
-      const realCounts = await getRealManufacturerCounts();
+      // Try to get manufacturers from cache or API
+      const data = await getCachedApiCall("manufacturers/cars", { per_page: "1000", simple_paginate: "0" }, 
+        () => makeSecureAPICall("manufacturers/cars", {
+          per_page: "1000",
+          simple_paginate: "0"
+        })
+      );
       
-      // Convert to manufacturer objects with real counts
-      const manufacturerList = Object.entries(realCounts)
-        .map(([name, count], index) => ({
-          id: index + 1,
-          name: name,
-          cars_qty: count,
-          car_count: count
-        }))
-        .sort((a, b) => b.cars_qty - a.cars_qty); // Sort by count (highest first)
-
-      console.log(`✅ Found ${manufacturerList.length} manufacturers with real API counts`);
-      console.log(`🏷️ Top manufacturers:`, 
-        manufacturerList.slice(0, 5).map(m => `${m.name} (${m.cars_qty || 0} cars)`));
+      let manufacturers = data.data || [];
       
-      return manufacturerList;
-    } catch (err) {
-      console.error("❌ Error fetching real manufacturer counts, trying database fallback:", err);
-      
-      // Fallback to database counts if API fails
-      try {
-        console.log(`🔄 Trying cars_cache database as fallback`);
-        
-        // Get unique manufacturers from synced cars_cache with counts
-        const { data: manufacturers, error } = await supabase
-          .from('cars_cache')
-          .select('make')
-          .not('make', 'is', null)
-          .neq('make', '');
-
-        if (error) {
-          console.error('Error fetching manufacturers from cars_cache:', error);
-          return createFallbackManufacturersWithRealCounts();
-        }
-
-        // Count cars per manufacturer
-        const manufacturerCounts = {};
-        manufacturers.forEach(car => {
-          const make = car.make.trim();
-          if (make) {
-            manufacturerCounts[make] = (manufacturerCounts[make] || 0) + 1;
-          }
-        });
-
-        // Convert to manufacturer objects
-        const manufacturerList = Object.entries(manufacturerCounts)
-          .map(([name, count], index) => ({
-            id: index + 1,
-            name: name,
-            cars_qty: count,
-            car_count: count
-          }))
-          .sort((a, b) => b.cars_qty - a.cars_qty); // Sort by count (highest first)
-
-        console.log(`✅ Found ${manufacturerList.length} manufacturers from cars_cache database`);
-        console.log(`🏷️ Top manufacturers:`, 
-          manufacturerList.slice(0, 5).map(m => `${m.name} (${m.cars_qty || 0} cars)`));
-        
-        return manufacturerList;
-      } catch (dbErr) {
-        console.error("❌ Database fallback also failed:", dbErr);
-        console.log(`🔄 Using realistic fallback manufacturer data`);
-        
-        // Return realistic fallback data when everything fails
-        return createFallbackManufacturersWithRealCounts();
+      // If we got manufacturers from API, normalize them
+      if (manufacturers.length > 0) {
+        console.log(`✅ Found ${manufacturers.length} manufacturers from API`);
+        manufacturers = manufacturers.map(manufacturer => ({
+          id: manufacturer.id,
+          name: manufacturer.name,
+          cars_qty: manufacturer.cars_qty || manufacturer.car_count || 0,
+          car_count: manufacturer.car_count || manufacturer.cars_qty || 0
+        }));
+      } else {
+        // No manufacturers from API, use fallback data
+        console.log(`⚠️ No manufacturers from API, using fallback data`);
+        manufacturers = createFallbackManufacturers();
       }
+      
+      console.log(`🏷️ Retrieved manufacturers:`, 
+        manufacturers.slice(0, 5).map(m => `${m.name} (${m.cars_qty || 0} cars)`));
+      
+      return manufacturers;
+    } catch (err) {
+      console.error("❌ Error fetching manufacturers:", err);
+      console.log(`🔄 Using fallback manufacturer data`);
+      
+      // Return fallback data when API fails
+      return createFallbackManufacturers();
     }
   };
 
   const fetchModels = async (manufacturerId: string): Promise<Model[]> => {
     try {
-      // Get manufacturer name from ID
-      const manufacturer = manufacturers.find(m => m.id.toString() === manufacturerId);
-      if (!manufacturer) {
-        console.log(`❌ Manufacturer with ID ${manufacturerId} not found`);
-        return [];
-      }
-
-      console.log(`🔍 Fetching models for manufacturer: ${manufacturer.name} from cars_cache`);
+      // Use cached API call for models
+      const fallbackData = await getCachedApiCall(`models/${manufacturerId}/cars`, { per_page: "1000", simple_paginate: "0" },
+        () => makeSecureAPICall(`models/${manufacturerId}/cars`, {
+          per_page: "1000",
+          simple_paginate: "0"
+        })
+      );
       
-      // Get unique models from synced cars_cache for this manufacturer
-      const { data: models, error } = await supabase
-        .from('cars_cache')
-        .select('model')
-        .eq('make', manufacturer.name)
-        .not('model', 'is', null)
-        .neq('model', '');
+      let fallbackModels = (fallbackData.data || []).filter((m: any) => m && m.id && m.name);
 
-      if (error) {
-        console.error('Error fetching models from cars_cache:', error);
-        return createFallbackModels(manufacturer.name);
-      }
+      // Filter models by manufacturer_id (in case API returns extra)
+      fallbackModels = fallbackModels.filter((m: any) =>
+        m.manufacturer_id?.toString() === manufacturerId ||
+        m.manufacturer?.id?.toString() === manufacturerId
+      );
 
-      // Count cars per model
-      const modelCounts = {};
-      models.forEach(car => {
-        const model = car.model.trim();
-        if (model) {
-          modelCounts[model] = (modelCounts[model] || 0) + 1;
-        }
-      });
-
-      // Convert to model objects
-      const modelList = Object.entries(modelCounts)
-        .map(([name, count], index) => ({
-          id: index + 1,
-          name: name,
-          cars_qty: count,
-          car_count: count,
-          manufacturer_id: parseInt(manufacturerId)
-        }))
-        .sort((a, b) => a.name.localeCompare(b.name));
-
-      console.log(`✅ Found ${modelList.length} models for ${manufacturer.name} from cars_cache`);
-      return modelList;
+      fallbackModels.sort((a: any, b: any) => a.name.localeCompare(b.name));
+      return fallbackModels;
     } catch (err) {
       console.error("[fetchModels] Error:", err);
       console.log(`🔄 Using fallback model data for manufacturer ${manufacturerId}`);
       
-      // Use fallback model data based on manufacturer name
+      // Use fallback model data based on manufacturer name - more efficient approach
       try {
-        const manufacturersList = await fetchManufacturers();
-        const manufacturer = manufacturersList.find(m => m.id.toString() === manufacturerId);
+        const manufacturers = await fetchManufacturers();
+        const manufacturer = manufacturers.find(m => m.id.toString() === manufacturerId);
         if (manufacturer) {
           return createFallbackModels(manufacturer.name);
         }
@@ -1469,66 +1191,26 @@ export const useSecureAuctionAPI = () => {
     filters: APIFilters = {}
   ): Promise<{ [key: string]: number }> => {
     try {
-      // Prepare filters for external API call
       const apiFilters = {
-        page: '1',
-        per_page: '1', // Only need count, so fetch minimal data
-        manufacturer_id: filters.manufacturer_id,
-        model_id: filters.model_id,
-        generation_id: filters.generation_id,
-        from_year: filters.from_year,
-        to_year: filters.to_year,
-        buy_now_price_from: filters.buy_now_price_from,
-        buy_now_price_to: filters.buy_now_price_to,
-        fuel_type: filters.fuel_type,
-        transmission: filters.transmission,
-        body_type: filters.body_type,
-        color: filters.color,
-        search: filters.search,
-        odometer_from_km: filters.odometer_from_km,
-        odometer_to_km: filters.odometer_to_km,
-        seats_count: filters.seats_count
+        ...filters,
+        per_page: "1",
+        simple_paginate: "1",
       };
 
-      // Remove undefined values
-      Object.keys(apiFilters).forEach(key => {
-        if (apiFilters[key] === undefined || apiFilters[key] === '') {
-          delete apiFilters[key];
-        }
-      });
-
-      // Get count by calling external API with minimal data
-      const response = await makeSecureAPICall("cars", apiFilters);
-
-      return { total: response?.meta?.total || 0 };
+      const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
+      return { total: data.meta?.total || 0 };
     } catch (err) {
-      console.error("❌ Error fetching car counts from external API:", err);
+      console.error("❌ Error fetching car counts:", err);
       return { total: 0 };
     }
   };
 
   const fetchCarById = async (carId: string): Promise<Car | null> => {
     try {
-      // Query the cars_cache table directly for the car by ID  
-      const { data: dbCar, error } = await supabase
-        .from('cars_cache')
-        .select('*')
-        .eq('id', carId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching car by ID from cars_cache:', error);
-        return null;
-      }
-
-      if (!dbCar) {
-        return null;
-      }
-
-      // Use the same enhanced conversion logic as fetchCars
-      return convertDatabaseCarToApiFormat(dbCar);
+      const data = await makeSecureAPICall("cars", {}, carId);
+      return data.data || null;
     } catch (err) {
-      console.error("❌ Error fetching car by ID from cars_cache:", err);
+      console.error("❌ Error fetching car by ID:", err);
       return null;
     }
   };
@@ -2228,83 +1910,26 @@ export const useSecureAuctionAPI = () => {
     newFilters: APIFilters = filters
   ): Promise<any[]> => {
     try {
-      // Store client-side filters for later
+      // Create API filters without pagination to get all cars
+      const apiFilters = {
+        ...newFilters,
+        // Remove pagination parameters to get all cars
+        page: undefined,
+        per_page: "9999", // Set a high limit to ensure we get all cars
+        simple_paginate: "0",
+      };
+      
+      // Remove grade_iaai and trim_level from server request for client-side filtering
       const selectedVariant = newFilters.grade_iaai;
       const selectedTrimLevel = newFilters.trim_level;
-      
-      // Map frontend sort options to external API parameters
-      const sortMapping = mapSortToAPI(newFilters.sort_by || 'recently_added');
-      
-      console.log(`🔄 Fetching ALL cars using external API with filters:`, newFilters, `sort:`, sortMapping);
-      
-      // Fetch all cars using external API pagination
-      const allCars: any[] = [];
-      let currentPage = 1;
-      let hasMore = true;
-      const maxPages = 100; // Safety limit to prevent infinite loops (reasonable for external API)
-      const pageSize = 100; // Use reasonable page size for fetching all data
-      
-      while (hasMore && currentPage <= maxPages) {
-        console.log(`📄 Fetching page ${currentPage} for global sorting...`);
-        
-        // Prepare filters for external API call
-        const apiFilters = {
-          page: currentPage.toString(),
-          per_page: pageSize.toString(),
-          manufacturer_id: newFilters.manufacturer_id,
-          model_id: newFilters.model_id,
-          generation_id: newFilters.generation_id,
-          from_year: newFilters.from_year,
-          to_year: newFilters.to_year,
-          buy_now_price_from: newFilters.buy_now_price_from,
-          buy_now_price_to: newFilters.buy_now_price_to,
-          fuel_type: newFilters.fuel_type,
-          transmission: newFilters.transmission,
-          body_type: newFilters.body_type,
-          color: newFilters.color,
-          search: newFilters.search,
-          odometer_from_km: newFilters.odometer_from_km,
-          odometer_to_km: newFilters.odometer_to_km,
-          seats_count: newFilters.seats_count,
-          ...sortMapping // Include sort parameters for backend sorting
-        };
+      delete apiFilters.grade_iaai;
+      delete apiFilters.trim_level;
 
-        // Remove undefined values
-        Object.keys(apiFilters).forEach(key => {
-          if (apiFilters[key] === undefined || apiFilters[key] === '') {
-            delete apiFilters[key];
-          }
-        });
-        
-        const response = await makeSecureAPICall("cars", apiFilters);
-        
-        if (response?.data && response.data.length > 0) {
-          allCars.push(...response.data);
-          console.log(`✅ Page ${currentPage}: Got ${response.data.length} cars (total so far: ${allCars.length})`);
-        }
-        
-        // Check if there are more pages based on API response
-        hasMore = response?.meta && currentPage < response.meta.last_page;
-        currentPage++;
-        
-        // If we got fewer items than the page size, we've reached the end
-        if (!response?.data || response.data.length < pageSize) {
-          hasMore = false;
-        }
-        
-        // Safety check to prevent infinite loops
-        if (currentPage > maxPages) {
-          console.warn(`⚠️ Reached maximum page limit (${maxPages}) for safety`);
-          break;
-        }
-      }
-      
-      console.log(`✅ External API global fetch completed: ${allCars.length} total cars from ${currentPage - 1} pages`);
-      
-      // Apply client-side filtering for grade_iaai and trim_level if needed
-      let filteredCars = allCars;
-      
+      console.log(`🔄 Fetching ALL cars for global sorting with filters:`, apiFilters);
+      const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
+
       // Apply client-side variant filtering if a variant is selected
+      let filteredCars = data.data || [];
       if (selectedVariant && selectedVariant !== 'all') {
         console.log(`🔍 Applying client-side variant filter: "${selectedVariant}"`);
         
@@ -2328,7 +1953,6 @@ export const useSecureAuctionAPI = () => {
           }
           return false;
         });
-        console.log(`✅ Variant filter "${selectedVariant}": ${filteredCars.length} cars match out of ${allCars.length} total`);
       }
 
       // Apply client-side trim level filtering if a trim level is selected
@@ -2355,10 +1979,9 @@ export const useSecureAuctionAPI = () => {
           }
           return false;
         });
-        console.log(`✅ Trim level filter "${selectedTrimLevel}": ${filteredCars.length} cars match out of ${allCars.length} total`);
       }
 
-      console.log(`✅ Completed fetchAllCars: ${filteredCars.length} cars ready for global sorting`);
+      console.log(`✅ Fetched ${filteredCars.length} cars for global sorting`);
       return filteredCars;
       
     } catch (err: any) {

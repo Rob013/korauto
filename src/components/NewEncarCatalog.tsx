@@ -1,410 +1,349 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Search, 
   Filter, 
   X, 
-  SlidersHorizontal, 
   ArrowUpDown,
   ChevronLeft,
   ChevronRight,
   Loader2,
+  PanelLeftOpen,
+  PanelLeftClose,
 } from 'lucide-react';
-
-// Import our new components and hooks
-import { useFilterStore, useFilterStoreSelectors } from '@/store/filterStore';
-import { useUrlFilters } from '@/hooks/useUrlFilters';
-import { useCarsResults, useCarsFacets, useCarsSearchPrefetch } from '@/hooks/useCarsSearch';
-import { CarsGrid } from '@/components/results/CarsGrid';
-import { Facet } from '@/components/filters/Facet';
-import { RangeFacet } from '@/components/filters/RangeFacet';
-import { SearchReq, SortOption, FACET_FIELDS } from '@/lib/search/types';
+import LazyCarCard from '@/components/LazyCarCard';
+import { fetchCarsWithKeyset, SortOption as CarsApiSortOption } from '@/services/carsApi';
+import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
 
 interface NewEncarCatalogProps {
   highlightCarId?: string | null;
   className?: string;
 }
 
-const SORT_OPTIONS: SortOption[] = [
-  { field: 'listed_at', dir: 'desc', label: 'Recently Added' },
-  { field: 'listed_at', dir: 'asc', label: 'Oldest First' },
-  { field: 'price_eur', dir: 'asc', label: 'Price: Low to High' },
-  { field: 'price_eur', dir: 'desc', label: 'Price: High to Low' },
-  { field: 'mileage_km', dir: 'asc', label: 'Mileage: Low to High' },
-  { field: 'mileage_km', dir: 'desc', label: 'Mileage: High to Low' },
-  { field: 'year', dir: 'desc', label: 'Year: Newest First' },
-  { field: 'year', dir: 'asc', label: 'Year: Oldest First' },
+const SORT_OPTIONS: Array<{value: CarsApiSortOption, label: string}> = [
+  { value: 'price_asc', label: 'Price: Low to High' },
+  { value: 'price_desc', label: 'Price: High to Low' },
+  { value: 'year_desc', label: 'Year: Newest First' },
+  { value: 'year_asc', label: 'Year: Oldest First' },
+  { value: 'mileage_asc', label: 'Mileage: Low to High' },
+  { value: 'mileage_desc', label: 'Mileage: High to Low' },
+  { value: 'make_asc', label: 'Make: A to Z' },
+  { value: 'make_desc', label: 'Make: Z to A' },
 ];
 
 export const NewEncarCatalog = ({ highlightCarId, className = '' }: NewEncarCatalogProps) => {
-  // Initialize URL synchronization
-  const { isInitialized } = useUrlFilters();
+  const { toast } = useToast();
+  const { convertUSDtoEUR } = useCurrencyAPI();
   
-  // Get store state and actions
-  const store = useFilterStore();
-  const { searchRequest, hasActiveFilters, activeFilterCount } = useFilterStoreSelectors();
+  // State for cars and pagination
+  const [cars, setCars] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
+  const [sortBy, setSortBy] = useState<CarsApiSortOption>('price_asc');
+  const [showFilters, setShowFilters] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | undefined>();
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   
-  // Local state for UI
-  const [filtersVisible, setFiltersVisible] = useState(true);
-  const [searchInputValue, setSearchInputValue] = useState(store.query);
+  // Filters state
+  const [filters, setFilters] = useState<Record<string, any>>({});
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  const ITEMS_PER_PAGE = 24;
 
-  // Update search input when store query changes
+  // Fetch cars with global sorting
+  const fetchCars = useCallback(async (loadMore = false, cursor?: string) => {
+    try {
+      if (!loadMore) {
+        setLoading(true);
+        setError(null);
+      } else {
+        setIsLoadingMore(true);
+      }
+
+      const result = await fetchCarsWithKeyset({
+        filters: {
+          ...filters,
+          ...(searchTerm ? { search: searchTerm } : {})
+        },
+        sort: sortBy,
+        limit: ITEMS_PER_PAGE,
+        cursor: cursor
+      });
+
+      if (loadMore) {
+        setCars(prev => [...prev, ...result.items]);
+      } else {
+        setCars(result.items);
+        setTotalCount(result.total);
+      }
+      
+      setNextCursor(result.nextCursor);
+
+    } catch (err) {
+      console.error('Error fetching cars:', err);
+      setError('Failed to load cars. Please try again.');
+      toast({
+        title: "Error",
+        description: "Failed to load cars. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+      setIsLoadingMore(false);
+    }
+  }, [filters, searchTerm, sortBy, toast]);
+
+  // Initial load and refresh when sort/filters change
   useEffect(() => {
-    setSearchInputValue(store.query);
-  }, [store.query]);
-
-  // Build search requests
-  const resultsRequest = useMemo((): SearchReq => ({
-    ...searchRequest(),
-    mode: 'results',
-  }), [searchRequest]);
-
-  const facetsRequest = useMemo((): SearchReq => ({
-    ...searchRequest(),
-    mode: 'facets',
-    facets: [...FACET_FIELDS],
-    page: 1,
-    pageSize: 1,
-  }), [searchRequest]);
-
-  // Fetch data with two-phase approach
-  const resultsQuery = useCarsResults(resultsRequest, { 
-    enabled: isInitialized,
-    keepPreviousData: true,
-  });
-
-  const facetsQuery = useCarsFacets(
-    { q: resultsRequest.q, filters: resultsRequest.filters, sort: resultsRequest.sort },
-    [...FACET_FIELDS],
-    { enabled: isInitialized }
-  );
-
-  // Prefetch helpers
-  const { prefetchPage, prefetchMakeResults } = useCarsSearchPrefetch();
-
-  // Handle search input change (debounced)
-  const handleSearchChange = useCallback((value: string) => {
-    setSearchInputValue(value);
-    const timeoutId = setTimeout(() => {
-      store.setQuery(value);
-    }, 300);
-    return () => clearTimeout(timeoutId);
-  }, [store]);
-
-  // Handle search submit
-  const handleSearchSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    store.setQuery(searchInputValue);
-  }, [store, searchInputValue]);
-
-  // Handle filter changes
-  const handleFilterChange = useCallback((field: keyof SearchReq['filters'], value: any) => {
-    store.setFilter(field, value);
-  }, [store]);
+    fetchCars();
+  }, [sortBy, filters, searchTerm]);
 
   // Handle sort change
-  const handleSortChange = useCallback((sortString: string) => {
-    const [field, dir] = sortString.split(':');
-    if (field && dir) {
-      store.setSort({ field: field as any, dir: dir as 'asc' | 'desc' });
-    }
-  }, [store]);
-
-  // Handle pagination
-  const handlePageChange = useCallback((newPage: number) => {
-    store.setPage(newPage);
-  }, [store]);
-
-  // Prefetch next/prev pages on hover
-  const handlePrefetchPage = useCallback(async (page: number) => {
-    try {
-      await prefetchPage(resultsRequest, page);
-    } catch (error) {
-      console.warn('Failed to prefetch page:', error);
-    }
-  }, [prefetchPage, resultsRequest]);
-
-  // Prefetch make results on dropdown interaction
-  const handleMakePrefetch = useCallback(async (make: string) => {
-    try {
-      await prefetchMakeResults(make, resultsRequest);
-    } catch (error) {
-      console.warn('Failed to prefetch make results:', error);
-    }
-  }, [prefetchMakeResults, resultsRequest]);
-
-  // Handle car click
-  const handleCarClick = useCallback((car: any) => {
-    console.log('Car clicked:', car);
-    // Navigate to car detail page
-    // This would typically use router.push() in Next.js or navigate() in React Router
+  const handleSortChange = useCallback((newSort: CarsApiSortOption) => {
+    setSortBy(newSort);
+    setNextCursor(undefined); // Reset pagination
   }, []);
 
-  // Calculate pagination info
-  const totalResults = resultsQuery.data?.total || 0;
-  const totalPages = Math.ceil(totalResults / store.pageSize);
-  const hasNextPage = store.page < totalPages;
-  const hasPrevPage = store.page > 1;
-
-  // Loading states
-  const isLoading = resultsQuery.isLoading || !isInitialized;
-  const isFacetsLoading = facetsQuery.isLoading;
-
-  // Format price for range facet
-  const formatPrice = useCallback((value: number) => {
-    return new Intl.NumberFormat('en-EU', {
-      style: 'currency',
-      currency: 'EUR',
-      maximumFractionDigits: 0,
-    }).format(value);
+  // Handle search
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchTerm(value);
+    setNextCursor(undefined); // Reset pagination
   }, []);
 
-  // Format mileage for range facet
-  const formatMileage = useCallback((value: number) => {
-    return `${value.toLocaleString()} km`;
+  // Handle filter changes
+  const handleFilterChange = useCallback((field: string, value: any) => {
+    setFilters(prev => ({
+      ...prev,
+      [field]: value || undefined
+    }));
+    setNextCursor(undefined); // Reset pagination
   }, []);
 
-  if (!isInitialized) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
+  // Clear filters
+  const handleClearFilters = useCallback(() => {
+    setFilters({});
+    setSearchTerm('');
+    setNextCursor(undefined);
+  }, []);
+
+  // Load more cars
+  const handleLoadMore = useCallback(() => {
+    if (nextCursor && !isLoadingMore) {
+      fetchCars(true, nextCursor);
+    }
+  }, [nextCursor, isLoadingMore, fetchCars]);
+
+  const hasActiveFilters = Object.keys(filters).some(key => filters[key] !== undefined) || searchTerm;
 
   return (
     <div className={`min-h-screen bg-background ${className}`}>
       <div className="container mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-4">Cars Catalog</h1>
-          
-          {/* Search and Controls */}
-          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
-            {/* Search */}
-            <form onSubmit={handleSearchSubmit} className="flex-1 max-w-md">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search cars..."
-                  value={searchInputValue}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </form>
+        {/* Header with Search and Controls */}
+        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center mb-6">
+          {/* Search */}
+          <div className="flex-1 max-w-md">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search cars..."
+                value={searchTerm}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
 
-            {/* Controls */}
-            <div className="flex items-center gap-2">
-              {/* Filters toggle */}
+          {/* Controls */}
+          <div className="flex items-center gap-2">
+            {/* Filters toggle */}
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2"
+            >
+              {showFilters ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+              Filters
+              {hasActiveFilters && (
+                <Badge variant="secondary" className="ml-1">
+                  Active
+                </Badge>
+              )}
+            </Button>
+
+            {/* Sort */}
+            <Select value={sortBy} onValueChange={handleSortChange}>
+              <SelectTrigger className="w-48">
+                <ArrowUpDown className="h-4 w-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SORT_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Clear filters */}
+            {hasActiveFilters && (
               <Button
                 variant="outline"
-                onClick={() => setFiltersVisible(!filtersVisible)}
+                onClick={handleClearFilters}
                 className="flex items-center gap-2"
               >
-                <SlidersHorizontal className="h-4 w-4" />
-                Filters
-                {activeFilterCount() > 0 && (
-                  <Badge variant="secondary" className="ml-1">
-                    {activeFilterCount()}
-                  </Badge>
-                )}
+                <X className="h-4 w-4" />
+                Clear
               </Button>
+            )}
+          </div>
+        </div>
 
-              {/* Sort */}
-              <Select 
-                value={`${store.sort.field}:${store.sort.dir}`}
-                onValueChange={handleSortChange}
-              >
-                <SelectTrigger className="w-48">
-                  <ArrowUpDown className="h-4 w-4 mr-2" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SORT_OPTIONS.map((option) => (
-                    <SelectItem 
-                      key={`${option.field}:${option.dir}`}
-                      value={`${option.field}:${option.dir}`}
-                    >
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Clear all filters */}
-              {hasActiveFilters() && (
-                <Button
-                  variant="outline"
-                  onClick={store.clearFilters}
-                  className="flex items-center gap-2"
-                >
-                  <X className="h-4 w-4" />
-                  Clear All
-                </Button>
-              )}
-            </div>
+        {/* Status */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-sm text-muted-foreground">
+            {loading ? (
+              'Loading...'
+            ) : (
+              `${totalCount.toLocaleString()} cars found • Globally sorted by ${SORT_OPTIONS.find(opt => opt.value === sortBy)?.label}`
+            )}
           </div>
         </div>
 
         <div className="flex gap-6">
           {/* Filters Sidebar */}
-          {filtersVisible && (
+          {showFilters && (
             <div className="w-80 space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Filters</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Make Filter */}
-                  <Facet
-                    title="Make"
-                    field="make"
-                    facetCounts={facetsQuery.data?.facets?.make}
-                    selectedValues={store.filters.make || []}
-                    onSelectionChange={(values) => handleFilterChange('make', values.length > 0 ? values : undefined)}
-                    disabled={isFacetsLoading}
-                  />
-
-                  {/* Model Filter (dependent on make) */}
-                  <Facet
-                    title="Model"
-                    field="model"
-                    facetCounts={facetsQuery.data?.facets?.model}
-                    selectedValues={store.filters.model || []}
-                    onSelectionChange={(values) => handleFilterChange('model', values.length > 0 ? values : undefined)}
-                    disabled={isFacetsLoading}
-                  />
-
-                  {/* Year Range */}
-                  <RangeFacet
-                    title="Year"
-                    field="year"
-                    min={1990}
-                    max={new Date().getFullYear()}
-                    selectedRange={store.filters.year}
-                    onRangeChange={(range) => handleFilterChange('year', range)}
-                    disabled={isFacetsLoading}
-                  />
-
-                  {/* Price Range */}
-                  <RangeFacet
-                    title="Price"
-                    field="price_eur"
-                    min={1000}
-                    max={200000}
-                    step={1000}
-                    selectedRange={store.filters.price_eur}
-                    onRangeChange={(range) => handleFilterChange('price_eur', range)}
-                    formatValue={formatPrice}
-                    disabled={isFacetsLoading}
-                  />
-
-                  {/* Mileage Range */}
-                  <RangeFacet
-                    title="Mileage"
-                    field="mileage_km"
-                    min={0}
-                    max={300000}
-                    step={5000}
-                    selectedRange={store.filters.mileage_km}
-                    onRangeChange={(range) => handleFilterChange('mileage_km', range)}
-                    formatValue={formatMileage}
-                    disabled={isFacetsLoading}
-                  />
-
-                  {/* Fuel Type */}
-                  <Facet
-                    title="Fuel Type"
-                    field="fuel"
-                    facetCounts={facetsQuery.data?.facets?.fuel}
-                    selectedValues={store.filters.fuel || []}
-                    onSelectionChange={(values) => handleFilterChange('fuel', values.length > 0 ? values : undefined)}
-                    disabled={isFacetsLoading}
-                  />
-
-                  {/* Transmission */}
-                  <Facet
-                    title="Transmission"
-                    field="transmission"
-                    facetCounts={facetsQuery.data?.facets?.transmission}
-                    selectedValues={store.filters.transmission || []}
-                    onSelectionChange={(values) => handleFilterChange('transmission', values.length > 0 ? values : undefined)}
-                    disabled={isFacetsLoading}
-                  />
-
-                  {/* Body Type */}
-                  <Facet
-                    title="Body Type"
-                    field="body"
-                    facetCounts={facetsQuery.data?.facets?.body}
-                    selectedValues={store.filters.body || []}
-                    onSelectionChange={(values) => handleFilterChange('body', values.length > 0 ? values : undefined)}
-                    disabled={isFacetsLoading}
-                  />
-                </CardContent>
-              </Card>
+              <div className="glass-card p-4 rounded-lg">
+                <h3 className="font-semibold mb-4">Quick Filters</h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium">Make</label>
+                    <Input
+                      placeholder="e.g. BMW, Audi"
+                      value={filters.make || ''}
+                      onChange={(e) => handleFilterChange('make', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Model</label>
+                    <Input
+                      placeholder="e.g. A4, X3"
+                      value={filters.model || ''}
+                      onChange={(e) => handleFilterChange('model', e.target.value)}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-sm font-medium">Min Year</label>
+                      <Input
+                        type="number"
+                        placeholder="2010"
+                        value={filters.yearMin || ''}
+                        onChange={(e) => handleFilterChange('yearMin', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Max Year</label>
+                      <Input
+                        type="number"
+                        placeholder="2024"
+                        value={filters.yearMax || ''}
+                        onChange={(e) => handleFilterChange('yearMax', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-sm font-medium">Min Price (€)</label>
+                      <Input
+                        type="number"
+                        placeholder="5000"
+                        value={filters.priceMin || ''}
+                        onChange={(e) => handleFilterChange('priceMin', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Max Price (€)</label>
+                      <Input
+                        type="number"
+                        placeholder="50000"
+                        value={filters.priceMax || ''}
+                        onChange={(e) => handleFilterChange('priceMax', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
-          {/* Results */}
+          {/* Cars Grid */}
           <div className="flex-1">
-            {/* Results header */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-sm text-muted-foreground">
-                {isLoading ? (
-                  'Loading...'
-                ) : (
-                  `${totalResults.toLocaleString()} cars found`
-                )}
+            {loading && cars.length === 0 ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin" />
               </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(store.page - 1)}
-                    disabled={!hasPrevPage || isLoading}
-                    onMouseEnter={() => hasPrevPage && handlePrefetchPage(store.page - 1)}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Previous
-                  </Button>
-                  
-                  <span className="text-sm px-2">
-                    Page {store.page} of {totalPages}
-                  </span>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(store.page + 1)}
-                    disabled={!hasNextPage || isLoading}
-                    onMouseEnter={() => hasNextPage && handlePrefetchPage(store.page + 1)}
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+            ) : error ? (
+              <div className="text-center py-12">
+                <p className="text-destructive">{error}</p>
+                <Button onClick={() => fetchCars()} className="mt-4">
+                  Try Again
+                </Button>
+              </div>
+            ) : cars.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">No cars found matching your criteria.</p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {cars.map((car) => (
+                    <LazyCarCard
+                      key={car.id}
+                      id={car.id}
+                      make={car.make}
+                      model={car.model}
+                      year={car.year}
+                      price={convertUSDtoEUR(car.price_cents ? Math.round(car.price_cents / 100) : car.price || 25000)}
+                      image={car.images?.[0]}
+                      images={car.images}
+                      mileage={car.mileage}
+                      transmission={car.transmission}
+                      fuel={car.fuel}
+                      color={car.color}
+                      lot={car.id}
+                      title={car.title || `${car.make} ${car.model} ${car.year}`}
+                    />
+                  ))}
                 </div>
-              )}
-            </div>
 
-            {/* Cars Grid */}
-            <CarsGrid
-              cars={resultsQuery.data?.hits || []}
-              loading={isLoading}
-              onCarClick={handleCarClick}
-              width={filtersVisible ? 800 : 1200}
-              height={600}
-              columnCount={filtersVisible ? 3 : 4}
-            />
+                {/* Load More Button */}
+                {nextCursor && (
+                  <div className="flex justify-center mt-8">
+                    <Button 
+                      onClick={handleLoadMore}
+                      disabled={isLoadingMore}
+                      className="flex items-center gap-2"
+                    >
+                      {isLoadingMore ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Loading More...
+                        </>
+                      ) : (
+                        'Load More Cars'
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>

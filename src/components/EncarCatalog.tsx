@@ -50,6 +50,7 @@ import {
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
+import { mapFrontendSortToBackend, SortOption as BackendSortOption, FrontendSortOption } from "@/services/carsApi";
 import { filterOutTestCars } from "@/utils/testCarFilter";
 import { fallbackCars } from "@/data/fallbackData";
 
@@ -544,13 +545,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
     setIsLoading(true);
     try {
-      console.log(`🔄 Fetching all cars with current filters and sort: ${sortBy}...`);
-      // Include sort option in filters for proper backend sorting
-      const filtersWithSort = {
-        ...filters,
-        sort_by: sortBy // Include the current sort option
-      };
-      const allCars = await fetchAllCars(filtersWithSort);
+      console.log(`🔄 Fetching all cars with current filters...`);
+      const allCars = await fetchAllCars(filters);
       
       // Apply the same client-side filtering as the current filtered cars
       const filteredAllCars = allCars.filter((car: any) => {
@@ -559,7 +555,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       
       setAllCarsData(filteredAllCars);
       setShowAllCars(true);
-      console.log(`✅ Loaded ${filteredAllCars.length} cars for "Show All" view with ${sortBy} sorting`);
+      console.log(`✅ Loaded ${filteredAllCars.length} cars for "Show All" view`);
     } catch (error) {
       console.error('❌ Error fetching all cars:', error);
       toast({
@@ -570,7 +566,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     } finally {
       setIsLoading(false);
     }
-  }, [showAllCars, filters, fetchAllCars, toast, sortBy]);
+  }, [showAllCars, filters, fetchAllCars, toast]);
 
   // Legacy function - replaced with backend sorting
   const fetchAllCarsForSorting = useCallback(async () => {

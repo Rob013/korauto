@@ -29,7 +29,6 @@ export interface CarsApiParams {
 
 export interface Car {
   id: string;
-  external_id?: string;
   make: string;
   model: string;
   year: number;
@@ -37,45 +36,14 @@ export interface Car {
   price_cents: number;
   rank_score: number;
   mileage?: number;
-  
-  // Basic car info
-  title?: string;
-  vin?: string;
-  color?: string;
   fuel?: string;
   transmission?: string;
-  condition?: string;
+  color?: string;
   location?: string;
-  
-  // Auction/Sale info
-  lot_number?: string;
-  current_bid?: number;
-  buy_now_price?: number;
-  final_bid?: number;
-  sale_date?: string;
-  
-  // Images and media
   image_url?: string;
   images?: any;
-  
-  // Source tracking
-  source_api?: string;
-  domain_name?: string;
-  
-  // Status and metadata
-  status?: string;
-  is_live?: boolean;
-  keys_available?: boolean;
-  is_active?: boolean;
-  is_archived?: boolean;
-  
-  // Hash for change detection
-  data_hash?: string;
-  
-  // Timestamps
+  title?: string;
   created_at: string;
-  updated_at?: string;
-  last_synced_at?: string;
 }
 
 export interface CarsApiResponse {
@@ -193,7 +161,6 @@ export async function fetchCarsWithKeyset(params: CarsApiParams): Promise<CarsAp
   const rpcFilters = { ...filters };
 
   try {
-    // First try the RPC function for normal operation
     // Get total count (for pagination info)
     const { data: totalCount, error: countError } = await supabase
       .rpc('cars_filtered_count', { p_filters: rpcFilters });
@@ -219,65 +186,7 @@ export async function fetchCarsWithKeyset(params: CarsApiParams): Promise<CarsAp
       throw carsError;
     }
 
-    let items = cars || [];
-    
-    // Enhance the data by fetching from cars_cache to get complete information
-    // This provides the "all possible infos same as external api" functionality
-    if (items.length > 0) {
-      console.log('🔄 Enhancing car data from cars_cache for complete API information...');
-      
-      // Get the IDs from the RPC result (which handles sorting and pagination correctly)
-      const carIds = items.map(car => car.id);
-      
-      // Fetch complete car data from cars_cache
-      const { data: enhancedCars, error: enhancedError } = await supabase
-        .from('cars_cache')
-        .select('*')
-        .in('id', carIds);
-      
-      if (!enhancedError && enhancedCars) {
-        // Map the enhanced data back to the original order
-        const enhancedCarMap = new Map(enhancedCars.map(car => [car.id, car]));
-        
-        items = items.map(originalCar => {
-          const enhancedCar = enhancedCarMap.get(originalCar.id);
-          if (enhancedCar) {
-            // Merge RPC result with enhanced data, preserving sorting fields
-            return {
-              ...enhancedCar,
-              // Preserve computed fields from RPC
-              price_cents: originalCar.price_cents,
-              rank_score: originalCar.rank_score,
-              // Convert cars_cache format to expected API format
-              external_id: enhancedCar.api_id,
-              vin: enhancedCar.vin || '',
-              condition: enhancedCar.condition || '',
-              lot_number: enhancedCar.lot_number || '',
-              // Extract additional data from car_data JSONB field
-              current_bid: enhancedCar.car_data?.lots?.[0]?.bid || 0,
-              buy_now_price: enhancedCar.car_data?.lots?.[0]?.buy_now || enhancedCar.price,
-              final_bid: enhancedCar.car_data?.lots?.[0]?.final_price || 0,
-              sale_date: enhancedCar.car_data?.lots?.[0]?.sale_date || null,
-              is_live: enhancedCar.car_data?.lots?.[0]?.status === 'active' || false,
-              keys_available: enhancedCar.car_data?.lots?.[0]?.keys_available !== false,
-              status: enhancedCar.car_data?.lots?.[0]?.status || 'active',
-              source_api: 'cars_cache',
-              domain_name: enhancedCar.car_data?.lots?.[0]?.domain?.name || 'korauto',
-              is_active: true,
-              is_archived: false,
-              data_hash: null,
-              updated_at: enhancedCar.updated_at,
-              last_synced_at: enhancedCar.last_api_sync
-            };
-          }
-          return originalCar;
-        });
-        
-        console.log(`✅ Enhanced ${items.length} cars with complete data from cars_cache`);
-      } else {
-        console.log('⚠️ Could not enhance data from cars_cache, using basic RPC data');
-      }
-    }
+    const items = cars || [];
     
     // Create next cursor if we have a full page (indicating more data)
     let nextCursor: string | undefined;
