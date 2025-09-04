@@ -3,7 +3,7 @@
  * In-memory cache + IndexedDB with TTL support for sorted car data
  */
 
-import { LeanCar } from './aggregateFetch';
+import { LeanCar } from './globalSort';
 
 export interface CacheEntry<T> {
   data: T;

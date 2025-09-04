@@ -5,15 +5,7 @@
 
 import { fetchCarsWithKeyset, CarsApiResponse, CarsApiParams, Car } from './carsApi';
 
-export interface LeanCar {
-  id: string;
-  price: number;
-  year: number;
-  mileage?: number;
-  make: string;
-  model: string;
-  thumbnail?: string;
-}
+import { LeanCar } from './globalSort';
 
 export interface AggregateParams extends Omit<CarsApiParams, 'cursor' | 'limit'> {
   pageSize?: number;
@@ -214,7 +206,7 @@ export async function aggregateFetch(
         if (!cursor) break;
         
         const currentCursor = cursor;
-        const promise = limiter.execute(async () => {
+        const promise = limiter.execute(async (): Promise<CarsApiResponse | undefined> => {
           const response = await withRetry(
             () => fetchCarsWithKeyset({
               ...params,
@@ -225,7 +217,7 @@ export async function aggregateFetch(
             signal
           );
 
-          if (signal?.aborted) return;
+          if (signal?.aborted) return undefined;
 
           const leanItems = response.items.map(toLeanCar);
           allItems.push(...leanItems);
@@ -241,14 +233,17 @@ export async function aggregateFetch(
           return response;
         });
 
-        batchPromises.push(promise);
+        batchPromises.push(promise as any);
         
-        // For cursor pagination, we need to fetch sequentially to get next cursor
-        // But we can still batch a few requests if the API supports it
         try {
           const response = await promise;
-          cursor = response.nextCursor;
-          hasMore = !!cursor;
+          if (response) {
+            cursor = response.nextCursor;
+            hasMore = !!cursor;
+          } else {
+            hasMore = false;
+            break;
+          }
         } catch (error) {
           hasMore = false;
           break;

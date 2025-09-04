@@ -168,13 +168,13 @@ const fetchCarsFallback = async (
       return shuffleWithSeed(availableCars, dailySeed).slice(0, 50);
     })();
     
-    // Convert to the expected format
+    // Convert to the expected format with proper currency conversion
     const convertedCars = dailyRotatingCars.map(car => ({
       id: car.id?.toString() || '',
       make: car.manufacturer?.name || '',
       model: car.model?.name || '',
       year: car.year || 2020,
-      price: convertUSDtoEUR(Math.round((car.lots?.[0]?.buy_now || 25000) + 2200)), // Add fees like homepage
+      price: Math.round((car.lots?.[0]?.buy_now || 25000) + 2200), // Add fees like homepage
       mileage: car.lots?.[0]?.odometer?.km,
       fuel: car.fuel?.name,
       transmission: car.transmission?.name,

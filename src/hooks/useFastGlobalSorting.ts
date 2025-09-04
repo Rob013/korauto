@@ -4,7 +4,8 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { aggregateFetch, AggregateParams, AggregateProgress, LeanCar } from '../services/aggregateFetch';
+import { aggregateFetch, AggregateParams, AggregateProgress } from '../services/aggregateFetch';
+import { LeanCar } from '../services/globalSort';
 import { cacheManager, SortedCacheData } from '../services/cacheManager';
 import { globalSort, paginateSortedResults, SortKey, PaginatedResult, sortProfiler } from '../services/globalSort';
 import { sortWithOptimalMethod } from '../workers/sortWorker';

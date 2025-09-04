@@ -3,7 +3,16 @@
  * High-performance sorting with stable comparators and NULLS LAST behavior
  */
 
-import { LeanCar } from './aggregateFetch';
+// LeanCar interface moved here to avoid circular dependency
+export interface LeanCar {
+  id: string;
+  price: number;
+  year: number;
+  mileage?: number;
+  make: string;
+  model: string;
+  thumbnail?: string;
+}
 
 export type SortKey = 
   | 'price_asc' | 'price_desc'

@@ -44,7 +44,7 @@ export function FastSortingDemo({ filters = {}, onCarsChange }: FastSortingDemoP
     isReady,
     getCacheStats
   } = useFastGlobalSorting(
-    { filters, sort: selectedSort },
+    { filters, sort: selectedSort as any },
     {
       pageSize,
       cacheEnabled: true,

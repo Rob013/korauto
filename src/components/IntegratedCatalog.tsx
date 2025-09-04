@@ -32,7 +32,7 @@ export function IntegratedCatalog({
     getPage,
     isReady
   } = useFastGlobalSorting(
-    { filters, sort: mapToSortKey(selectedSort) },
+    { filters, sort: mapToSortKey(selectedSort) as any },
     { 
       pageSize,
       cacheEnabled: true,
@@ -112,23 +112,18 @@ export function IntegratedCatalog({
             {currentPageData.items.map((car) => (
               <LazyCarCard
                 key={car.id}
-                car={{
-                  id: car.id,
-                  make: car.make,
-                  model: car.model,
-                  year: car.year,
-                  price: car.price || 0,
-                  mileage: car.mileage,
-                  image_url: car.thumbnail,
-                  // Add other required fields for LazyCarCard
-                  fuel: '',
-                  transmission: '',
-                  bodyType: '',
-                  color: '',
-                  location: '',
-                  images: car.thumbnail ? [car.thumbnail] : []
-                }}
-                convertUSDtoEUR={(price) => price} // Pass through conversion function
+                id={car.id}
+                make={car.make}
+                model={car.model}
+                year={car.year}
+                price={car.price || 0}
+                mileage={car.mileage?.toString()}
+                image={car.thumbnail}
+                images={car.thumbnail ? [car.thumbnail] : []}
+                fuel=""
+                transmission=""
+                color=""
+                lot={car.id}
               />
             ))}
           </div>
