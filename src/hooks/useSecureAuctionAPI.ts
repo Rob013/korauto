@@ -1469,40 +1469,40 @@ export const useSecureAuctionAPI = () => {
     filters: APIFilters = {}
   ): Promise<{ [key: string]: number }> => {
     try {
-      // Import the proper backend API function
-      const { fetchCarsWithKeyset } = await import('@/services/carsApi');
-      
-      // Convert API filters to the proper format
-      const carsApiFilters = {
-        make: filters.manufacturer_id ? 
-          manufacturers.find(m => m.id.toString() === filters.manufacturer_id)?.name : undefined,
-        model: filters.model_id ? 
-          models.find(m => m.id.toString() === filters.model_id)?.name : undefined,
-        yearMin: filters.from_year,
-        yearMax: filters.to_year,
-        priceMin: filters.buy_now_price_from,
-        priceMax: filters.buy_now_price_to,
-        fuel: filters.fuel_type,
-        search: filters.search
+      // Prepare filters for external API call
+      const apiFilters = {
+        page: '1',
+        per_page: '1', // Only need count, so fetch minimal data
+        manufacturer_id: filters.manufacturer_id,
+        model_id: filters.model_id,
+        generation_id: filters.generation_id,
+        from_year: filters.from_year,
+        to_year: filters.to_year,
+        buy_now_price_from: filters.buy_now_price_from,
+        buy_now_price_to: filters.buy_now_price_to,
+        fuel_type: filters.fuel_type,
+        transmission: filters.transmission,
+        body_type: filters.body_type,
+        color: filters.color,
+        search: filters.search,
+        odometer_from_km: filters.odometer_from_km,
+        odometer_to_km: filters.odometer_to_km,
+        seats_count: filters.seats_count
       };
 
       // Remove undefined values
-      Object.keys(carsApiFilters).forEach(key => {
-        if (carsApiFilters[key] === undefined) {
-          delete carsApiFilters[key];
+      Object.keys(apiFilters).forEach(key => {
+        if (apiFilters[key] === undefined || apiFilters[key] === '') {
+          delete apiFilters[key];
         }
       });
 
-      // Get count by fetching with limit 1 - the total count will be returned
-      const response = await fetchCarsWithKeyset({
-        filters: carsApiFilters,
-        sort: 'price_asc',
-        limit: 1
-      });
+      // Get count by calling external API with minimal data
+      const response = await makeSecureAPICall("cars", apiFilters);
 
-      return { total: response.total || 0 };
+      return { total: response?.meta?.total || 0 };
     } catch (err) {
-      console.error("❌ Error fetching car counts from database:", err);
+      console.error("❌ Error fetching car counts from external API:", err);
       return { total: 0 };
     }
   };
