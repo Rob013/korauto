@@ -186,14 +186,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // This ensures consistency between "Show All" and paginated modes
     if (hasUserSelectedSort) {
       if (showAllCars && allCarsData.length > 0) {
-        // For global sorting (showAllCars), implement pagination on the client side
-        const carsPerPage = 50;
-        const startIndex = (currentPage - 1) * carsPerPage;
-        const endIndex = startIndex + carsPerPage;
-        const paginatedCars = allCarsData.slice(startIndex, endIndex);
-        
-        console.log(`🌟 Global sorting: showing ${paginatedCars.length} cars (${startIndex + 1}-${Math.min(endIndex, allCarsData.length)} of ${allCarsData.length} total) on page ${currentPage} with ${sortBy} sort`);
-        return paginatedCars;
+        // Use all data but maintain backend sorting consistency
+        // Note: For truly consistent sorting, we should fetch all cars with backend sorting
+        // For now, we'll use the available data but this should be improved to call backend
+        console.log(`🌟 Showing all ${allCarsData.length} cars with user-selected sort (${sortBy})`);
+        return allCarsData; // Use raw data to avoid client-side sorting inconsistencies
       } else {
         // Use backend-sorted paginated results
         console.log(`🎯 Using backend-sorted cars for page ${currentPage}: ${filteredCars.length} cars (${sortBy} sort applied on server)`);
@@ -480,24 +477,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     
     setCurrentPage(page);
     
-    // If we're in global sorting mode (showAllCars), just update the page - no need to fetch
-    if (showAllCars && allCarsData.length > 0) {
-      // Update URL to reflect current page
-      const currentParams = Object.fromEntries(searchParams.entries());
-      currentParams.page = page.toString();
-      if (hasUserSelectedSort && sortBy !== 'recently_added') {
-        currentParams.sort = sortBy;
-      }
-      setSearchParams(currentParams);
-      
-      // Scroll to top when changing pages
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      
-      console.log(`📄 Global sorting: navigated to page ${page} of ${totalPages} (client-side pagination)`);
-      return;
-    }
-    
-    // For regular pagination, fetch cars for the specific page with proper API pagination and backend sorting
+    // Fetch cars for the specific page with proper API pagination and backend sorting
     const filtersWithPagination = addPaginationToFilters(filters, 50, page);
     
     // Add current sort option for backend sorting using secure auction API format
@@ -550,13 +530,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Scroll to top when changing pages
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
-    console.log(`📄 Regular pagination: navigated to page ${page} of ${totalPages} with filters:`, filtersWithPagination);
-  }, [filters, fetchCars, setSearchParams, addPaginationToFilters, totalPages, sortBy, hasUserSelectedSort, showAllCars, allCarsData.length, searchParams]);
+    console.log(`📄 Navigated to page ${page} of ${totalPages} with filters:`, filtersWithPagination);
+  }, [filters, fetchCars, setSearchParams, addPaginationToFilters, totalPages, sortBy, hasUserSelectedSort]);
 
-  // Function to fetch and display all cars with optional sorting
-  const handleShowAllCars = useCallback(async (autoSort?: boolean) => {
-    if (showAllCars && !autoSort) {
-      // If already showing all cars and not auto-sorting, switch back to pagination
+  // Function to fetch and display all cars
+  const handleShowAllCars = useCallback(async () => {
+    if (showAllCars) {
+      // If already showing all cars, switch back to pagination
       setShowAllCars(false);
       setAllCarsData([]);
       setCurrentPage(1);
@@ -565,39 +545,17 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
     setIsLoading(true);
     try {
-      console.log(`🔄 Fetching all cars with current filters for ${autoSort ? 'auto-sort' : 'show all'}...`);
+      console.log(`🔄 Fetching all cars with current filters...`);
       const allCars = await fetchAllCars(filters);
       
       // Apply the same client-side filtering as the current filtered cars
-      let filteredAllCars = allCars.filter((car: any) => {
+      const filteredAllCars = allCars.filter((car: any) => {
         return matchesGradeFilter(car, filters.grade_iaai);
       });
       
-      // If auto-sorting for price, apply client-side sorting to ensure global order
-      if (autoSort && hasUserSelectedSort && (sortBy === 'price_low' || sortBy === 'price_high')) {
-        console.log(`💰 Applying global ${sortBy} sorting to ${filteredAllCars.length} cars`);
-        
-        filteredAllCars = filteredAllCars.sort((a, b) => {
-          const aLot = a.lots?.[0];
-          const bLot = b.lots?.[0];
-          const aPrice = aLot?.buy_now || aLot?.final_bid || aLot?.price || 0;
-          const bPrice = bLot?.buy_now || bLot?.final_bid || bLot?.price || 0;
-          
-          if (sortBy === 'price_low') {
-            return aPrice - bPrice; // Low to high
-          } else {
-            return bPrice - aPrice; // High to low
-          }
-        });
-        
-        console.log(`✅ Global price sorting complete: ${sortBy === 'price_low' ? 'cheapest first' : 'most expensive first'}`);
-      }
-      
       setAllCarsData(filteredAllCars);
       setShowAllCars(true);
-      setCurrentPage(1); // Reset to first page for sorted results
-      
-      console.log(`✅ Loaded ${filteredAllCars.length} cars for "${autoSort ? 'global sorting' : 'show all'}" view`);
+      console.log(`✅ Loaded ${filteredAllCars.length} cars for "Show All" view`);
     } catch (error) {
       console.error('❌ Error fetching all cars:', error);
       toast({
@@ -608,7 +566,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     } finally {
       setIsLoading(false);
     }
-  }, [showAllCars, filters, fetchAllCars, toast, hasUserSelectedSort, sortBy]);
+  }, [showAllCars, filters, fetchAllCars, toast]);
 
   // Legacy function - replaced with backend sorting
   const fetchAllCarsForSorting = useCallback(async () => {
@@ -931,51 +889,36 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     loadInitialCounts();
   }, [manufacturers.length]); // Only run when manufacturers are first loaded
 
-  // Calculate total pages based on actual total count or global sorting data
+  // Calculate total pages based on actual total count
   useEffect(() => {
-    // When showing all cars with global sorting, calculate pages based on allCarsData
-    if (showAllCars && allCarsData.length > 0) {
-      const calculatedPages = Math.ceil(allCarsData.length / 50);
-      setTotalPages(calculatedPages);
-      console.log(`📊 Global sorting pagination: ${allCarsData.length} globally sorted cars across ${calculatedPages} pages (50 cars per page)`);
-    } else if (totalCount > 0) {
+    if (totalCount > 0) {
       const calculatedPages = Math.ceil(totalCount / 50);
       setTotalPages(calculatedPages);
-      console.log(`📊 Regular pagination: ${totalCount} cars across ${calculatedPages} pages (50 cars per page)`);
+      console.log(`📊 Calculated pagination: ${totalCount} cars across ${calculatedPages} pages (50 cars per page)`);
     } else {
       setTotalPages(0);
       console.log(`📊 No cars available: ${totalCount} cars, 0 pages`);
     }
-  }, [totalCount, showAllCars, allCarsData.length]); // Update when any of these change
+  }, [totalCount]); // Update when totalCount changes
 
   // Trigger backend sorting when sort option changes
   useEffect(() => {
     if (totalCount > 0 && hasUserSelectedSort) {
       console.log(`🔄 Applying backend sorting: totalCount=${totalCount}, sortBy=${sortBy}`);
       
-      // Check if this is a price sorting option - if so, automatically enable global sorting
-      const isPriceSorting = sortBy === 'price_low' || sortBy === 'price_high';
-      
-      if (isPriceSorting) {
-        console.log(`💰 Price sorting detected (${sortBy}) - automatically enabling global sorting for all ${totalCount} cars`);
-        
-        // Automatically fetch all cars for global price sorting
-        handleShowAllCars(true); // Pass true to indicate auto-sorting
-        
-        // Update URL with sort option  
-        const currentParams = Object.fromEntries(searchParams.entries());
-        currentParams.page = '1';
-        currentParams.sort = sortBy;
-        setSearchParams(currentParams);
-        
-        return; // Exit early as handleShowAllCars will handle the sorting
-      }
-      
-      // For non-price sorting, use regular backend pagination sorting
+      // Apply current filters with new sort option using secure auction API format
       const filtersWithPagination = addPaginationToFilters(filters, 50, 1);
       
       // Add sort parameters in secure auction API format
       switch (sortBy) {
+        case 'price_low':
+          filtersWithPagination.sort_by = 'price';
+          filtersWithPagination.sort_direction = 'asc';
+          break;
+        case 'price_high':
+          filtersWithPagination.sort_by = 'price';
+          filtersWithPagination.sort_direction = 'desc';
+          break;
         case 'year_new':
           filtersWithPagination.sort_by = 'year';
           filtersWithPagination.sort_direction = 'desc';
@@ -1012,7 +955,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       currentParams.sort = sortBy;
       setSearchParams(currentParams);
     }
-  }, [sortBy, hasUserSelectedSort, totalCount, handleShowAllCars, fetchCars, setSearchParams, filters, searchParams]);
+  }, [sortBy, hasUserSelectedSort, totalCount]);
 
   // Show cars without requiring brand and model selection
   const shouldShowCars = true;
@@ -1499,8 +1442,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 })}
               </div>
 
-              {/* Pagination Controls - show for both regular pagination and global sorting */}
-              {totalPages > 1 && (
+              {/* Pagination Controls - replace Load More button */}
+              {!showAllCars && totalPages > 1 && (
                 <div className="flex flex-col items-center py-8 space-y-4">
                   {/* Page Info */}
                   <div className="text-center text-sm text-muted-foreground">
