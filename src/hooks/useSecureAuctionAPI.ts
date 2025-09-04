@@ -23,6 +23,118 @@ const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => P
   return data;
 };
 
+// Enhanced conversion function to convert database car to external API format
+const convertDatabaseCarToApiFormat = (dbCar: any) => {
+  // Parse stored JSONB data
+  const carData = dbCar.car_data || {};
+  const lotData = dbCar.lot_data || {};
+  
+  // Extract images properly from database
+  let normalImages = [];
+  let bigImages = [];
+  
+  if (dbCar.images && Array.isArray(dbCar.images)) {
+    normalImages = dbCar.images;
+    bigImages = dbCar.images;
+  } else if (dbCar.image_url) {
+    normalImages = [dbCar.image_url];
+    bigImages = [dbCar.image_url];
+  } else if (carData.images) {
+    // Try to extract from car_data
+    if (Array.isArray(carData.images)) {
+      normalImages = carData.images;
+      bigImages = carData.images;
+    } else if (carData.images.normal) {
+      normalImages = carData.images.normal || [];
+      bigImages = carData.images.big || carData.images.normal || [];
+    }
+  }
+  
+  // Convert mileage to number
+  const mileageKm = dbCar.mileage ? (typeof dbCar.mileage === 'string' ? parseInt(dbCar.mileage.replace(/[^\d]/g, '')) || 0 : dbCar.mileage) : 0;
+  
+  // Create enhanced lot with all external API fields
+  const enhancedLot = {
+    buy_now: dbCar.price || carData.price || 0,
+    lot: dbCar.lot_number || carData.lot_number || '',
+    odometer: { km: mileageKm },
+    images: { 
+      normal: normalImages,
+      big: bigImages
+    },
+    // Add all missing external API fields
+    status: carData.status || 'available',
+    sale_status: carData.sale_status || 'active',
+    final_price: carData.final_price,
+    estimate_repair_price: carData.estimate_repair_price,
+    pre_accident_price: carData.pre_accident_price,
+    clean_wholesale_price: carData.clean_wholesale_price,
+    actual_cash_value: carData.actual_cash_value,
+    sale_date: carData.sale_date,
+    seller: carData.seller,
+    seller_type: carData.seller_type,
+    detailed_title: carData.detailed_title,
+    damage: carData.damage,
+    keys_available: carData.keys_available,
+    airbags: carData.airbags,
+    grade_iaai: carData.grade_iaai || lotData.grade_iaai,
+    domain: carData.domain || { name: 'database' },
+    external_id: dbCar.api_id,
+    // Enhanced insurance data from lot_data or car_data
+    insurance: lotData.insurance || carData.insurance,
+    insurance_v2: lotData.insurance_v2 || carData.insurance_v2,
+    location: carData.location || {
+      location: dbCar.location,
+      raw: dbCar.location
+    },
+    inspect: carData.inspect || lotData.inspect,
+    details: {
+      engine_volume: carData.engine_volume,
+      original_price: carData.original_price,
+      year: dbCar.year,
+      badge: carData.badge || lotData.badge,
+      comment: carData.comment,
+      description_ko: carData.description_ko,
+      description_en: carData.description_en,
+      is_leasing: carData.is_leasing,
+      sell_type: carData.sell_type,
+      equipment: carData.equipment,
+      options: carData.options,
+      inspect_outer: carData.inspect_outer,
+      seats_count: carData.seats_count,
+      ...lotData.details
+    }
+  };
+
+  return {
+    id: dbCar.id,
+    manufacturer: { id: 0, name: dbCar.make },
+    model: { id: 0, name: dbCar.model },
+    year: dbCar.year,
+    title: dbCar.title || carData.title || `${dbCar.year} ${dbCar.make} ${dbCar.model}`,
+    vin: dbCar.vin || carData.vin || '',
+    fuel: dbCar.fuel ? { id: 0, name: dbCar.fuel } : (carData.fuel ? { id: 0, name: carData.fuel } : undefined),
+    transmission: dbCar.transmission ? { id: 0, name: dbCar.transmission } : (carData.transmission ? { id: 0, name: carData.transmission } : undefined),
+    color: dbCar.color ? { id: 0, name: dbCar.color } : (carData.color ? { id: 0, name: carData.color } : undefined),
+    location: dbCar.location || carData.location || '',
+    lot_number: dbCar.lot_number || carData.lot_number || '',
+    image_url: normalImages[0] || '',
+    // Add missing external API car fields
+    condition: dbCar.condition || carData.condition,
+    status: carData.status,
+    sale_status: carData.sale_status,
+    final_price: carData.final_price,
+    body_type: carData.body_type ? { id: 0, name: carData.body_type } : undefined,
+    engine: carData.engine ? { id: 0, name: carData.engine } : undefined,
+    drive_wheel: carData.drive_wheel,
+    vehicle_type: carData.vehicle_type ? { id: 0, name: carData.vehicle_type } : undefined,
+    cylinders: carData.cylinders,
+    // Enhanced lots array with complete external API structure
+    lots: [enhancedLot],
+    isFromDatabase: true // Mark as database car for filtering
+  };
+};
+
 // Create fallback car data for testing when API is not available
 export const createFallbackCars = (filters: any = {}): any[] => {
   console.log(`🔄 Creating fallback cars for development/testing`);
@@ -890,30 +1002,8 @@ export const useSecureAuctionAPI = () => {
         paginatedCars = paginatedCars.slice(skip);
       }
 
-      // Convert database car format to external API format for compatibility
-      const convertedCars = paginatedCars.map(dbCar => ({
-        id: dbCar.id,
-        manufacturer: { id: 0, name: dbCar.make },
-        model: { id: 0, name: dbCar.model },
-        year: dbCar.year,
-        title: dbCar.title || `${dbCar.year} ${dbCar.make} ${dbCar.model}`,
-        vin: dbCar.vin || '', // Include VIN from database if available
-        fuel: dbCar.fuel ? { id: 0, name: dbCar.fuel } : undefined,
-        transmission: dbCar.transmission ? { id: 0, name: dbCar.transmission } : undefined,
-        color: dbCar.color ? { id: 0, name: dbCar.color } : undefined,
-        location: dbCar.location || '',
-        lot_number: dbCar.lot_number || '',
-        isFromDatabase: true, // Mark as database car for filtering
-        lots: [{
-          buy_now: dbCar.price,
-          lot: '',
-          odometer: { km: dbCar.mileage || 0 },
-          images: { 
-            normal: dbCar.images ? (Array.isArray(dbCar.images) ? dbCar.images : [dbCar.image_url].filter(Boolean)) : [dbCar.image_url].filter(Boolean),
-            big: dbCar.images ? (Array.isArray(dbCar.images) ? dbCar.images : [dbCar.image_url].filter(Boolean)) : [dbCar.image_url].filter(Boolean)
-          }
-        }]
-      }));
+      // Convert database car format to external API format for compatibility - ENHANCED VERSION
+      const convertedCars = paginatedCars.map(convertDatabaseCarToApiFormat);
 
       const data = {
         data: convertedCars,
@@ -1529,7 +1619,7 @@ export const useSecureAuctionAPI = () => {
   const fetchCarById = async (carId: string): Promise<Car | null> => {
     try {
       // Query the cars_cache table directly for the car by ID  
-      const { data: car, error } = await supabase
+      const { data: dbCar, error } = await supabase
         .from('cars_cache')
         .select('*')
         .eq('id', carId)
@@ -1540,36 +1630,12 @@ export const useSecureAuctionAPI = () => {
         return null;
       }
 
-      if (!car) {
+      if (!dbCar) {
         return null;
       }
 
-      // Convert cars_cache car to API format for compatibility
-      const images = Array.isArray(car.images) ? car.images : (car.images ? [car.images] : []);
-      
-      return {
-        id: car.id,
-        manufacturer: { id: 0, name: car.make },
-        model: { id: 0, name: car.model },
-        year: car.year,
-        title: `${car.year} ${car.make} ${car.model}`,
-        vin: car.vin || '',
-        fuel: car.fuel ? { id: 0, name: car.fuel } : undefined,
-        transmission: car.transmission ? { id: 0, name: car.transmission } : undefined,
-        color: car.color ? { id: 0, name: car.color } : undefined,
-        location: car.condition || '', // Using condition field as location
-        lots: [{
-          buy_now: car.price,
-          lot: car.lot_number || '',
-          odometer: { km: parseInt(car.mileage) || 0 },
-          images: { 
-            normal: images,
-            big: images
-          },
-          // Include additional car data if available
-          ...(car.car_data && typeof car.car_data === 'object' ? car.car_data : {})
-        }]
-      };
+      // Use the same enhanced conversion logic as fetchCars
+      return convertDatabaseCarToApiFormat(dbCar);
     } catch (err) {
       console.error("❌ Error fetching car by ID from cars_cache:", err);
       return null;
