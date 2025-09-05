@@ -43,6 +43,8 @@ export interface Car {
   image_url?: string;
   images?: any;
   title?: string;
+  status?: string;
+  sale_status?: string;
   created_at: string;
 }
 
