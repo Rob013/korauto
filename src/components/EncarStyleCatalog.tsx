@@ -9,6 +9,8 @@ import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/hooks/use-toast';
+import EncarStyleFilter from '@/components/EncarStyleFilter';
+import { MobileFilterUX } from '@/components/mobile-filter-ux';
 import { 
   Search, 
   Filter, 
@@ -128,6 +130,58 @@ export const EncarStyleCatalog = ({ highlightCarId, className = '' }: EncarStyle
   const [searchTerm, setSearchTerm] = useState(urlState.searchTerm);
   const [selectedMakes, setSelectedMakes] = useState<string[]>(urlState.selectedMakes);
 
+  // Enhanced filter state for EncarStyleFilter
+  const [apiFilters, setApiFilters] = useState<any>({
+    manufacturer_id: undefined,
+    model_id: undefined,
+    from_year: undefined,
+    to_year: undefined,
+    buy_now_price_from: undefined,
+    buy_now_price_to: undefined,
+    odometer_from_km: undefined,
+    odometer_to_km: undefined,
+    color: undefined,
+    fuel_type: undefined,
+    transmission: undefined,
+    body_type: undefined,
+    drive_type: undefined,
+    seats_count: undefined,
+    max_accidents: undefined,
+    registration_type: undefined,
+    is_certified: undefined,
+    has_warranty: undefined,
+    service_history: undefined,
+    grade_iaai: undefined,
+    trim_level: undefined,
+    engine_displacement_from: undefined,
+    engine_displacement_to: undefined,
+    location_city: undefined,
+    location_distance: undefined
+  });
+
+  // Mock manufacturers data - in a real app this would come from an API
+  const mockManufacturers = [
+    { id: 1, name: 'Toyota', cars_qty: 245, image: '/brand-logos/toyota.png' },
+    { id: 2, name: 'Honda', cars_qty: 198, image: '/brand-logos/honda.png' },
+    { id: 3, name: 'BMW', cars_qty: 167, image: '/brand-logos/bmw.png' },
+    { id: 4, name: 'Mercedes-Benz', cars_qty: 145, image: '/brand-logos/mercedes.png' },
+    { id: 5, name: 'Audi', cars_qty: 134, image: '/brand-logos/audi.png' },
+    { id: 6, name: 'Volkswagen', cars_qty: 123, image: '/brand-logos/volkswagen.png' },
+    { id: 7, name: 'Hyundai', cars_qty: 112, image: '/brand-logos/hyundai.png' },
+    { id: 8, name: 'Kia', cars_qty: 98, image: '/brand-logos/kia.png' },
+    { id: 9, name: 'Nissan', cars_qty: 87, image: '/brand-logos/nissan.png' },
+    { id: 10, name: 'Ford', cars_qty: 76, image: '/brand-logos/ford.png' }
+  ];
+
+  // Mock models data - filtered by selected manufacturer
+  const mockModels = apiFilters.manufacturer_id ? [
+    { id: 1, name: 'Camry', cars_qty: 45 },
+    { id: 2, name: 'Corolla', cars_qty: 38 },
+    { id: 3, name: 'RAV4', cars_qty: 32 },
+    { id: 4, name: 'Prius', cars_qty: 28 },
+    { id: 5, name: 'Highlander', cars_qty: 22 }
+  ] : [];
+
   // Update URL parameters whenever state changes
   const updateURLParams = useCallback(() => {
     const params = new URLSearchParams();
@@ -245,7 +299,72 @@ export const EncarStyleCatalog = ({ highlightCarId, className = '' }: EncarStyle
     });
     setSearchTerm('');
     setSelectedMakes([]);
+    // Clear enhanced filter state
+    setApiFilters({
+      manufacturer_id: undefined,
+      model_id: undefined,
+      from_year: undefined,
+      to_year: undefined,
+      buy_now_price_from: undefined,
+      buy_now_price_to: undefined,
+      odometer_from_km: undefined,
+      odometer_to_km: undefined,
+      color: undefined,
+      fuel_type: undefined,
+      transmission: undefined,
+      body_type: undefined,
+      drive_type: undefined,
+      seats_count: undefined,
+      max_accidents: undefined,
+      registration_type: undefined,
+      is_certified: undefined,
+      has_warranty: undefined,
+      service_history: undefined,
+      grade_iaai: undefined,
+      trim_level: undefined,
+      engine_displacement_from: undefined,
+      engine_displacement_to: undefined,
+      location_city: undefined,
+      location_distance: undefined
+    });
   };
+
+  // Enhanced filter handlers
+  const handleFiltersChange = useCallback((newFilters: any) => {
+    setApiFilters(newFilters);
+    // Trigger car fetch after filter change
+    setTimeout(() => {
+      fetchCars(true);
+    }, 300);
+  }, [fetchCars]);
+
+  const handleManufacturerChange = useCallback((manufacturerId: string) => {
+    // When manufacturer changes, clear model selection
+    setApiFilters(prev => ({
+      ...prev,
+      manufacturer_id: manufacturerId,
+      model_id: undefined
+    }));
+  }, []);
+
+  const handleModelChange = useCallback((modelId: string) => {
+    setApiFilters(prev => ({
+      ...prev,
+      model_id: modelId
+    }));
+  }, []);
+
+  const handleToggleFilters = useCallback(() => {
+    setShowFilters(!showFilters);
+  }, [showFilters]);
+
+  const handleSearchCars = useCallback(() => {
+    fetchCars(true);
+  }, [fetchCars]);
+
+  const handleCloseFilter = useCallback(() => {
+    setShowFilters(false);
+  }, []);
 
   return (
     <div className={`min-h-screen bg-background ${className}`}>
@@ -372,121 +491,32 @@ export const EncarStyleCatalog = ({ highlightCarId, className = '' }: EncarStyle
 
       <div className="container mx-auto px-4">
         <div className="flex gap-6 py-6">
-          {/* Filters Sidebar - Encar Style */}
-          {showFilters && (
-            <div className="w-80 space-y-6">
-              {/* Price Range */}
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-4">Price Range</h3>
-                  <div className="space-y-4">
-                    <Slider
-                      value={filters.priceRange || [5000, 100000]}
-                      onValueChange={(value) => setFilters(prev => ({ ...prev, priceRange: value as [number, number] }))}
-                      max={200000}
-                      min={1000}
-                      step={1000}
-                      className="w-full"
-                    />
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>€{filters.priceRange?.[0]?.toLocaleString()}</span>
-                      <span>€{filters.priceRange?.[1]?.toLocaleString()}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Year Range */}
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-4">Year</h3>
-                  <div className="space-y-4">
-                    <Slider
-                      value={filters.yearRange || [2000, 2024]}
-                      onValueChange={(value) => setFilters(prev => ({ ...prev, yearRange: value as [number, number] }))}
-                      max={2024}
-                      min={1990}
-                      step={1}
-                      className="w-full"
-                    />
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>{filters.yearRange?.[0]}</span>
-                      <span>{filters.yearRange?.[1]}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Fuel Type */}
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-4">Fuel Type</h3>
-                  <div className="space-y-3">
-                    {FUEL_TYPES.map((fuel) => (
-                      <div key={fuel} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={fuel}
-                          checked={filters.fuel === fuel}
-                          onCheckedChange={(checked) => 
-                            setFilters(prev => ({ ...prev, fuel: checked ? fuel : undefined }))
-                          }
-                        />
-                        <label htmlFor={fuel} className="text-sm font-medium cursor-pointer">
-                          {fuel}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Transmission */}
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-4">Transmission</h3>
-                  <div className="space-y-3">
-                    {TRANSMISSIONS.map((trans) => (
-                      <div key={trans} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={trans}
-                          checked={filters.transmission === trans}
-                          onCheckedChange={(checked) => 
-                            setFilters(prev => ({ ...prev, transmission: checked ? trans : undefined }))
-                          }
-                        />
-                        <label htmlFor={trans} className="text-sm font-medium cursor-pointer">
-                          {trans}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Body Type */}
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-4">Body Type</h3>
-                  <div className="space-y-3">
-                    {BODY_TYPES.map((body) => (
-                      <div key={body} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={body}
-                          checked={filters.bodyType === body}
-                          onCheckedChange={(checked) => 
-                            setFilters(prev => ({ ...prev, bodyType: checked ? body : undefined }))
-                          }
-                        />
-                        <label htmlFor={body} className="text-sm font-medium cursor-pointer">
-                          {body}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+          {/* Enhanced Filters - Encar Style with Mobile Support */}
+          <MobileFilterUX
+            showFilters={showFilters}
+            onToggleFilters={handleToggleFilters}
+            onClearFilters={clearAllFilters}
+            onSearchCars={handleSearchCars}
+            hasSelectedCategories={Object.values(apiFilters).some(value => value !== undefined && value !== '')}
+            selectedFiltersCount={Object.values(apiFilters).filter(value => value !== undefined && value !== '').length}
+          >
+            {showFilters && (
+              <div className="w-80 flex-shrink-0">
+                <EncarStyleFilter
+                  filters={apiFilters}
+                  manufacturers={mockManufacturers}
+                  models={mockModels}
+                  onFiltersChange={handleFiltersChange}
+                  onClearFilters={clearAllFilters}
+                  onManufacturerChange={handleManufacturerChange}
+                  onModelChange={handleModelChange}
+                  onSearchCars={handleSearchCars}
+                  onCloseFilter={handleCloseFilter}
+                  compact={false}
+                />
+              </div>
+            )}
+          </MobileFilterUX>
 
           {/* Cars Grid/List */}
           <div className="flex-1">
