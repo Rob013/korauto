@@ -37,8 +37,8 @@ const Header = () => {
 
   return (
     <header className="bg-background/95 backdrop-blur-md shadow-sm border-b border-border sticky top-0 z-50 transition-all duration-300">
-      {/* Main header */}
-      <div className="container mx-auto">
+      {/* Main header with proper navigation landmark */}
+      <nav className="container mx-auto" role="navigation" aria-label="Main navigation">
         <div className="flex h-14 sm:h-16 items-center justify-between px-3 sm:px-4">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 group min-w-0 focus:outline-none focus:ring-2 focus:ring-primary rounded-lg" aria-label="KORAUTO kryefaqja">
@@ -52,7 +52,7 @@ const Header = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-6" role="navigation" aria-label="Navigimi kryesor">
+          <div className="hidden lg:flex items-center space-x-6">{/* Removed duplicate nav wrapper */}
             <Link 
               to="/" 
               className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
@@ -89,7 +89,7 @@ const Header = () => {
               <Heart className="h-4 w-4" />
               Të Preferuarat
             </Link>
-          </nav>
+          </div>
 
           {/* Right side actions */}
           <div className="flex items-center space-x-1 sm:space-x-2">
@@ -122,9 +122,8 @@ const Header = () => {
               </Button>
             </div>
           </div>
-
         </div>
-      </div>
+      </nav>
 
       {/* Mobile Navigation */}
       {isMobileMenuOpen && (
