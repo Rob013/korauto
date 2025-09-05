@@ -474,7 +474,7 @@ const CarCard = ({
           )}
           {transmission && (
             <div className="flex items-center gap-1">
-              <Settings className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <Cog className="h-3 w-3 text-muted-foreground flex-shrink-0" />
               <span className="capitalize truncate text-muted-foreground">{transmission}</span>
             </div>
           )}
