@@ -562,6 +562,7 @@ const HomeCarsSection = memo(() => {
               onModelChange={handleModelChange}
               onFetchGrades={fetchGrades}
               onFetchTrimLevels={fetchTrimLevels}
+              fetchFilterCounts={fetchFilterCounts}
               isHomepage={true}
               onSearchCars={handleSearchCars}
             />

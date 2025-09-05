@@ -216,7 +216,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
         console.warn('Failed to update filter counts:', error);
       });
     }
-  }, [manufacturers.length]);
+  }, [filterCounts, manufacturers.length, fetchFilterCounts]);
 
   // Load filter counts on component mount and when base filters change
   useEffect(() => {

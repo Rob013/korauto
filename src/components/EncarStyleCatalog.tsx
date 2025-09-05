@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { fetchCarsWithKeyset, SortOption as CarsApiSortOption, CarFilters } from '@/services/carsApi';
 import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
+import { useSecureAuctionAPI } from '@/hooks/useSecureAuctionAPI';
 
 interface EncarStyleCatalogProps {
   highlightCarId?: string | null;
@@ -63,6 +64,7 @@ const BODY_TYPES = ['Sedan', 'SUV', 'Hatchback', 'Wagon', 'Coupe', 'Convertible'
 export const EncarStyleCatalog = ({ highlightCarId, className = '' }: EncarStyleCatalogProps) => {
   const { toast } = useToast();
   const { convertUSDtoEUR } = useCurrencyAPI();
+  const { fetchFilterCounts } = useSecureAuctionAPI();
   const [searchParams, setSearchParams] = useSearchParams();
   
   // State for cars and pagination
@@ -512,6 +514,7 @@ export const EncarStyleCatalog = ({ highlightCarId, className = '' }: EncarStyle
                   onModelChange={handleModelChange}
                   onSearchCars={handleSearchCars}
                   onCloseFilter={handleCloseFilter}
+                  fetchFilterCounts={fetchFilterCounts}
                   compact={false}
                 />
               </div>
