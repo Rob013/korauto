@@ -247,35 +247,35 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   };
 
   return (
-    <div className={cn('space-y-3 sm:space-y-4', className)}>
-      {/* Header with active filters count - Optimized for mobile */}
-      <div className="flex items-center justify-between gap-2">
+    <div className={cn('space-y-2 sm:space-y-3 lg:space-y-4', className)}>
+      {/* Header with active filters count - Enhanced mobile responsiveness */}
+      <div className="flex items-center justify-between gap-2 p-2 sm:p-0">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
-          <h3 className="text-sm sm:text-lg font-semibold truncate">Filtrat e Kërkimit</h3>
+          <h3 className="text-sm sm:text-base lg:text-lg font-semibold truncate">Filtrat e Kërkimit</h3>
         </div>
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           {activeFiltersCount > 0 && (
-            <Badge variant="secondary" className="text-xs px-1.5 py-0.5">{activeFiltersCount}</Badge>
+            <Badge variant="secondary" className="text-xs px-1.5 py-0.5 sm:px-2 sm:py-1">{activeFiltersCount}</Badge>
           )}
-          <Button variant="outline" size="sm" onClick={onClearFilters} className="text-xs sm:text-sm px-2 sm:px-3 h-7 sm:h-8">
-            <X className="h-3 w-3 mr-1" />
+          <Button variant="outline" size="sm" onClick={onClearFilters} className="text-xs sm:text-sm px-2 sm:px-3 h-8 sm:h-9 touch-target">
+            <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
             <span className="hidden xs:inline">Pastro të gjitha</span>
             <span className="xs:hidden">Pastro</span>
           </Button>
         </div>
       </div>
 
-      {/* Selected filters chips - Optimized for mobile */}
+      {/* Selected filters chips - Enhanced mobile responsiveness */}
       {selectedFilters.length > 0 && (
-        <div className="flex flex-wrap gap-1 sm:gap-2 max-h-20 sm:max-h-none overflow-y-auto">
+        <div className="flex flex-wrap gap-1.5 sm:gap-2 max-h-16 sm:max-h-20 lg:max-h-none overflow-y-auto p-1 sm:p-0">
           {selectedFilters.map((chip) => (
-            <Badge key={chip.key} variant="default" className="flex items-center gap-1 text-xs px-2 py-1 max-w-[150px] sm:max-w-none">
+            <Badge key={chip.key} variant="default" className="flex items-center gap-1 text-xs sm:text-sm px-2 py-1 max-w-[140px] sm:max-w-[180px] lg:max-w-none touch-target">
               <span className="truncate">{chip.label}: {chip.value}</span>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-auto w-auto p-0 hover:bg-transparent ml-1"
+                className="h-auto w-auto p-0.5 hover:bg-transparent ml-1 touch-target rounded-full"
                 onClick={() => removeFilter(chip.key)}
               >
                 <X className="h-3 w-3 flex-shrink-0" />
@@ -285,54 +285,54 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
         </div>
       )}
 
-      {/* Search - Mobile optimized */}
-      <div className="space-y-1 sm:space-y-2">
-        <Label htmlFor="search" className="flex items-center gap-2 text-sm sm:text-base">
+      {/* Search - Enhanced mobile experience */}
+      <div className="space-y-1.5 sm:space-y-2 p-2 sm:p-0">
+        <Label htmlFor="search" className="flex items-center gap-2 text-sm sm:text-base font-medium">
           <Search className="h-3 w-3 sm:h-4 sm:w-4" />
           Kërko
         </Label>
         <div className="relative">
-          <Search className="absolute left-2 sm:left-3 top-1/2 h-3 w-3 sm:h-4 sm:w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             id="search"
             type="text"
             placeholder="Kërko makinat..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8 sm:pl-10 h-8 sm:h-10 text-sm"
+            className="pl-10 h-10 sm:h-11 text-sm sm:text-base touch-target"
           />
         </div>
       </div>
 
-      {/* Basic Filters Section */}
-      <div className="space-y-3">
+      {/* Basic Filters Section - Enhanced mobile layout */}
+      <div className="space-y-2 sm:space-y-3">
         <Button
           variant="ghost"
           onClick={() => toggleSection('basic')}
-          className="w-full justify-between p-2 h-auto"
+          className="w-full justify-between p-3 h-auto hover:bg-muted/50 touch-target"
         >
           <div className="flex items-center gap-2">
-            <Car className="h-4 w-4 text-primary" />
-            <span className="font-medium">Filtrat Bazë</span>
+            <Car className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            <span className="font-medium text-sm sm:text-base">Filtrat Bazë</span>
           </div>
           {expandedSections.includes('basic') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
 
         {expandedSections.includes('basic') && (
-          <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
-            {/* Brand */}
+          <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-muted/30 rounded-lg">
+            {/* Brand - Enhanced touch target */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
+              <Label className="flex items-center gap-2 text-sm sm:text-base font-medium">
                 <Car className="h-4 w-4" />
                 Marka
               </Label>
               <Select value={filters.brand || ''} onValueChange={handleBrandChange}>
-                <SelectTrigger>
+                <SelectTrigger className="h-10 sm:h-11 touch-target">
                   <SelectValue placeholder="Zgjidhni markën" />
                 </SelectTrigger>
                 <SelectContent>
                   {data.brands.map((brand) => (
-                    <SelectItem key={brand.id} value={brand.id}>
+                    <SelectItem key={brand.id} value={brand.id} className="touch-target">
                       {brand.name} {brand.count && `(${brand.count})`}
                     </SelectItem>
                   ))}
@@ -340,9 +340,9 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
               </Select>
             </div>
 
-            {/* Model (dependent on brand) */}
+            {/* Model (dependent on brand) - Enhanced touch target */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
+              <Label className="flex items-center gap-2 text-sm sm:text-base font-medium">
                 <Settings className="h-4 w-4" />
                 Modeli
               </Label>

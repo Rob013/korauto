@@ -322,14 +322,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 ...(isStrictMode && filters.manufacturer_id ? [] : [{ value: 'all', label: 'Të gjitha markat' }]),
                 ...sortedManufacturers.map((manufacturer) => ({
                   value: manufacturer.id.toString(),
-                  label: (
-                    <div className="flex items-center gap-1.5">
-                      {(manufacturer as any).image && (
-                        <img src={(manufacturer as any).image} alt={manufacturer.name} className="w-3 h-3 object-contain" />
-                      )}
-                      <span className="text-xs">{manufacturer.name} ({manufacturer.cars_qty})</span>
-                    </div>
-                  )
+                  label: `${manufacturer.name} ${manufacturer.cars_qty ? `(${manufacturer.cars_qty})` : ''}`.trim()
                 }))
               ]}
             />

@@ -142,18 +142,18 @@ export const MobileFilterUX: React.FC<MobileFilterUXProps> = ({
   // Return the filter toggle button and mobile sheet if on mobile
   return (
     <>
-      {/* Filter Toggle Button */}
+      {/* Filter Toggle Button - Enhanced mobile responsiveness */}
       <Button
         variant="default"
         size="lg"
         onClick={handleToggleFilters}
-        className="flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 transition-transform"
+        className="flex items-center gap-2 h-11 sm:h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 transition-all duration-200 touch-target rounded-lg"
       >
-        {showFilters ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
+        {showFilters ? <PanelLeftClose className="h-4 w-4 sm:h-5 sm:w-5" /> : <PanelLeftOpen className="h-4 w-4 sm:h-5 sm:w-5" />}
         <span className="hidden xs:inline">{showFilters ? 'Fshih Filtrat' : 'Shfaq Filtrat'}</span>
         <span className="xs:hidden">Filtrat</span>
         {hasSelectedCategories && !showFilters && (
-          <span className="ml-1 text-xs bg-primary-foreground/20 px-2 py-1 rounded-full animate-bounce">
+          <span className="ml-1 text-xs bg-primary-foreground/20 px-2 py-1 rounded-full animate-pulse">
             {selectedFiltersCount}
           </span>
         )}

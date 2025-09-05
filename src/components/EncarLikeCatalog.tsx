@@ -290,6 +290,16 @@ export const EncarLikeCatalog = ({ highlightCarId, className = '' }: EncarLikeCa
     fetchCars(true);
   }, []); // Remove dependencies to prevent infinite loop
 
+  // Fetch manufacturers on component mount to ensure filters are populated
+  useEffect(() => {
+    if (!realManufacturers || realManufacturers.length === 0) {
+      console.log('🚀 Fetching manufacturers for filters...');
+      fetchManufacturers().catch(err => {
+        console.log('ℹ️ Could not fetch manufacturers:', err.message);
+      });
+    }
+  }, [fetchManufacturers, realManufacturers]);
+
   // Debounced search and filter changes - with proper dependencies
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -464,40 +474,43 @@ export const EncarLikeCatalog = ({ highlightCarId, className = '' }: EncarLikeCa
       </div>
 
       <div className="container mx-auto px-4">
-        <div className="flex gap-6 py-6">
-          {/* Enhanced Filters Sidebar - Encar Style */}
+        <div className="flex gap-8 py-6">
+          {/* Enhanced Filters Sidebar - Desktop Optimized */}
           {showFilters && (
-            <div className="w-80">
-              <EncarStyleFilter
-                filters={apiFilters}
-                manufacturers={realManufacturers && realManufacturers.length > 0 ? realManufacturers : [
-                  // Enhanced fallback manufacturers data with proper structure
-                  { id: 1, name: 'Toyota', cars_qty: 67, car_count: 67 },
-                  { id: 2, name: 'Honda', cars_qty: 45, car_count: 45 },
-                  { id: 3, name: 'BMW', cars_qty: 38, car_count: 38 },
-                  { id: 4, name: 'Mercedes-Benz', cars_qty: 42, car_count: 42 },
-                  { id: 5, name: 'Audi', cars_qty: 35, car_count: 35 },
-                  { id: 6, name: 'Volkswagen', cars_qty: 28, car_count: 28 },
-                  { id: 7, name: 'Hyundai', cars_qty: 52, car_count: 52 },
-                  { id: 8, name: 'Kia', cars_qty: 44, car_count: 44 },
-                  { id: 9, name: 'Nissan', cars_qty: 33, car_count: 33 },
-                  { id: 10, name: 'Ford', cars_qty: 29, car_count: 29 },
-                  { id: 11, name: 'Mazda', cars_qty: 22, car_count: 22 },
-                  { id: 12, name: 'Lexus', cars_qty: 18, car_count: 18 },
-                ]}
-                models={realModels && realModels.length > 0 ? realModels : [
-                  // Enhanced fallback models based on popular Korean market models
-                  { id: 101, name: 'Camry', cars_qty: 15, car_count: 15 },
-                  { id: 102, name: 'Corolla', cars_qty: 12, car_count: 12 },
-                  { id: 103, name: 'RAV4', cars_qty: 18, car_count: 18 },
-                  { id: 104, name: 'Civic', cars_qty: 14, car_count: 14 },
-                  { id: 105, name: 'Accord', cars_qty: 11, car_count: 11 },
-                  { id: 106, name: 'CR-V', cars_qty: 16, car_count: 16 },
-                  { id: 107, name: '3 Series', cars_qty: 13, car_count: 13 },
-                  { id: 108, name: 'X3', cars_qty: 10, car_count: 10 },
-                  { id: 109, name: 'C-Class', cars_qty: 15, car_count: 15 },
-                  { id: 110, name: 'GLC', cars_qty: 12, car_count: 12 },
-                ]}
+            <div className="w-80 flex-shrink-0">
+              <div className="sticky top-4">
+                <Card className="shadow-lg border-border/50">
+                  <div className="p-6">
+                    <EncarStyleFilter
+                      filters={apiFilters}
+                      manufacturers={realManufacturers && realManufacturers.length > 0 ? realManufacturers : [
+                        // Enhanced fallback manufacturers data with proper structure
+                        { id: 1, name: 'Toyota', cars_qty: 67, car_count: 67 },
+                        { id: 2, name: 'Honda', cars_qty: 45, car_count: 45 },
+                        { id: 3, name: 'BMW', cars_qty: 38, car_count: 38 },
+                        { id: 4, name: 'Mercedes-Benz', cars_qty: 42, car_count: 42 },
+                        { id: 5, name: 'Audi', cars_qty: 35, car_count: 35 },
+                        { id: 6, name: 'Volkswagen', cars_qty: 28, car_count: 28 },
+                        { id: 7, name: 'Hyundai', cars_qty: 52, car_count: 52 },
+                        { id: 8, name: 'Kia', cars_qty: 44, car_count: 44 },
+                        { id: 9, name: 'Nissan', cars_qty: 33, car_count: 33 },
+                        { id: 10, name: 'Ford', cars_qty: 29, car_count: 29 },
+                        { id: 11, name: 'Mazda', cars_qty: 22, car_count: 22 },
+                        { id: 12, name: 'Lexus', cars_qty: 18, car_count: 18 },
+                      ]}
+                      models={realModels && realModels.length > 0 ? realModels : [
+                        // Enhanced fallback models based on popular Korean market models
+                        { id: 101, name: 'Camry', cars_qty: 15, car_count: 15 },
+                        { id: 102, name: 'Corolla', cars_qty: 12, car_count: 12 },
+                        { id: 103, name: 'RAV4', cars_qty: 18, car_count: 18 },
+                        { id: 104, name: 'Civic', cars_qty: 14, car_count: 14 },
+                        { id: 105, name: 'Accord', cars_qty: 11, car_count: 11 },
+                        { id: 106, name: 'CR-V', cars_qty: 16, car_count: 16 },
+                        { id: 107, name: '3 Series', cars_qty: 13, car_count: 13 },
+                        { id: 108, name: 'X3', cars_qty: 10, car_count: 10 },
+                        { id: 109, name: 'C-Class', cars_qty: 15, car_count: 15 },
+                        { id: 110, name: 'GLC', cars_qty: 12, car_count: 12 },
+                      ]}
                 onFiltersChange={(newFilters) => {
                   setApiFilters(newFilters);
                   // Sync with legacy filter state for backward compatibility
@@ -535,6 +548,9 @@ export const EncarLikeCatalog = ({ highlightCarId, className = '' }: EncarLikeCa
                 compact={false}
                 isHomepage={false}
               />
+                  </div>
+                </Card>
+              </div>
             </div>
           )}
 
