@@ -349,6 +349,63 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
               <Select 
                 value={filters.model || ''} 
                 onValueChange={(value) => onFiltersChange({ model: value })}
+                disabled={!filters.brand}
+              >
+                <SelectTrigger className="h-10 sm:h-11 touch-target">
+                  <SelectValue placeholder={filters.brand ? "Zgjidhni modelin" : "Zgjidhni markën së pari"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableModels.map((model) => (
+                    <SelectItem key={model.id} value={model.id} className="touch-target">
+                      {model.name} {model.count && `(${model.count})`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Fuel Type - Enhanced with API counts */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2 text-sm sm:text-base font-medium">
+                <Fuel className="h-4 w-4" />
+                Karburanti
+              </Label>
+              <Select value={filters.fuel || ''} onValueChange={(value) => onFiltersChange({ fuel: value })}>
+                <SelectTrigger className="h-10 sm:h-11 touch-target">
+                  <SelectValue placeholder="Zgjidhni karburantin" />
+                </SelectTrigger>
+                <SelectContent>
+                  {data.fuelTypes.map((fuel) => (
+                    <SelectItem key={fuel.id} value={fuel.id} className="touch-target">
+                      {fuel.name} {fuel.count && `(${fuel.count})`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Transmission - Enhanced with API counts */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2 text-sm sm:text-base font-medium">
+                <Settings className="h-4 w-4" />
+                Transmisioni
+              </Label>
+              <Select value={filters.transmission || ''} onValueChange={(value) => onFiltersChange({ transmission: value })}>
+                <SelectTrigger className="h-10 sm:h-11 touch-target">
+                  <SelectValue placeholder="Zgjidhni transmisionin" />
+                </SelectTrigger>
+                <SelectContent>
+                  {data.transmissions.map((transmission) => (
+                    <SelectItem key={transmission.id} value={transmission.id} className="touch-target">
+                      {transmission.name} {transmission.count && `(${transmission.count})`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+                onValueChange={(value) => onFiltersChange({ model: value })}
                 disabled={!filters.brand || availableModels.length === 0}
               >
                 <SelectTrigger>

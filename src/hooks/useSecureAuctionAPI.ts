@@ -1193,17 +1193,102 @@ export const useSecureAuctionAPI = () => {
     currentFilters: APIFilters = {},
     manufacturersList: any[] = []
   ) => {
-    // Mock implementation for backward compatibility
     console.log("📊 fetchFilterCounts called with filters:", currentFilters);
-    return {
-      manufacturers: {},
-      models: {},
-      generations: {},
-      colors: {},
-      fuelTypes: {},
-      transmissions: {},
-      years: {},
-    };
+    
+    try {
+      // Create base API filters for counting
+      const baseFilters = {
+        ...currentFilters,
+        per_page: "1", // We only need count data, not actual cars
+        simple_paginate: "1",
+      };
+
+      // Get manufacturer counts if manufacturers list is provided
+      const manufacturerCounts: { [key: string]: number } = {};
+      if (manufacturersList && manufacturersList.length > 0) {
+        for (const manufacturer of manufacturersList.slice(0, 20)) { // Limit to top 20 for performance
+          try {
+            const response = await makeSecureAPICall('/api/cars', {
+              ...baseFilters,
+              manufacturer_id: manufacturer.id.toString()
+            });
+            
+            if (response?.meta?.total) {
+              manufacturerCounts[manufacturer.id.toString()] = response.meta.total;
+            }
+          } catch (error) {
+            console.warn(`Failed to get count for manufacturer ${manufacturer.name}:`, error);
+          }
+        }
+      }
+
+      // Get fuel type counts
+      const fuelTypes = ['diesel', 'gasoline', 'hybrid', 'electric', 'gas', 'lpg'];
+      const fuelTypeCounts: { [key: string]: number } = {};
+      
+      for (const fuelType of fuelTypes) {
+        try {
+          const response = await makeSecureAPICall('/api/cars', {
+            ...baseFilters,
+            fuel_type: fuelType
+          });
+          
+          if (response?.meta?.total) {
+            fuelTypeCounts[fuelType] = response.meta.total;
+          }
+        } catch (error) {
+          console.warn(`Failed to get count for fuel type ${fuelType}:`, error);
+        }
+      }
+
+      // Get transmission counts
+      const transmissions = ['automatic', 'manual', 'cvt'];
+      const transmissionCounts: { [key: string]: number } = {};
+      
+      for (const transmission of transmissions) {
+        try {
+          const response = await makeSecureAPICall('/api/cars', {
+            ...baseFilters,
+            transmission_type: transmission
+          });
+          
+          if (response?.meta?.total) {
+            transmissionCounts[transmission] = response.meta.total;
+          }
+        } catch (error) {
+          console.warn(`Failed to get count for transmission ${transmission}:`, error);
+        }
+      }
+
+      console.log("✅ Filter counts fetched successfully:", {
+        manufacturers: Object.keys(manufacturerCounts).length,
+        fuelTypes: Object.keys(fuelTypeCounts).length,
+        transmissions: Object.keys(transmissionCounts).length
+      });
+
+      return {
+        manufacturers: manufacturerCounts,
+        models: {}, // Models are handled dynamically when manufacturer is selected
+        generations: {}, // Generations are handled dynamically when model is selected
+        colors: {}, // Colors require special handling
+        fuelTypes: fuelTypeCounts,
+        transmissions: transmissionCounts,
+        years: {}, // Year ranges are handled separately
+      };
+    } catch (error) {
+      console.error("❌ Error fetching filter counts:", error);
+      
+      // Return empty counts on error
+      return {
+        manufacturers: {},
+        models: {},
+        generations: {},
+        colors: {},
+        fuelTypes: {},
+        transmissions: {},
+        years: {},
+      };
+    }
   };
 
   const fetchCarCounts = async (
