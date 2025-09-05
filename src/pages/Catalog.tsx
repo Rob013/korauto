@@ -2,7 +2,7 @@ import React, { lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Skeleton } from '@/components/ui/skeleton';
-import EncarStyleCatalog from '@/components/EncarStyleCatalog';
+import EncarLikeCatalog from '@/components/EncarLikeCatalog';
 
 const Header = lazy(() => import('@/components/Header'));
 const Footer = lazy(() => import('@/components/Footer'));
@@ -53,7 +53,7 @@ const CatalogContent: React.FC = () => {
         <Header />
       </Suspense>
       
-      <EncarStyleCatalog highlightCarId={highlightCarId} />
+      <EncarLikeCatalog highlightCarId={highlightCarId} />
 
       <Suspense fallback={<FooterSkeleton />}>
         <Footer />
