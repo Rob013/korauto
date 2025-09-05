@@ -1,5 +1,6 @@
 import React, { useState, memo, useCallback, useMemo, useEffect } from 'react';
 import { AdaptiveSelect } from "@/components/ui/adaptive-select";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -455,20 +456,40 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     <Cog className="h-2.5 w-2.5" />
                     Grada/Motori
                   </Label>
-                  <AdaptiveSelect 
-                    value={filters.grade_iaai || 'all'} 
-                    onValueChange={(value) => updateFilter('grade_iaai', value)}
-                    disabled={!filters.manufacturer_id}
-                    placeholder={filters.manufacturer_id ? "Të gjitha gradat" : "Zgjidhni markën së pari"}
-                    className="filter-control h-8 text-xs"
-                    options={[
-                      { value: 'all', label: 'Të gjitha gradat' },
-                      ...grades.map((grade) => ({
+                  {filters.model_id && filters.model_id !== 'all' ? (
+                    <MultiSelect
+                      value={Array.isArray(filters.grade_iaai) ? filters.grade_iaai : filters.grade_iaai ? [filters.grade_iaai] : []}
+                      onValueChange={(selectedGrades) => {
+                        // Convert back to the expected format - using comma-separated string for API compatibility
+                        const gradeValue = selectedGrades.length > 0 ? selectedGrades.join(',') : undefined;
+                        updateFilter('grade_iaai', gradeValue);
+                      }}
+                      disabled={!filters.manufacturer_id}
+                      placeholder={filters.manufacturer_id ? "Zgjidhni gradat" : "Zgjidhni markën së pari"}
+                      className="filter-control h-8 text-xs"
+                      options={grades.map((grade) => ({
                         value: grade.value,
-                        label: `${grade.label}${grade.count ? ` (${grade.count})` : ''}`
-                      }))
-                    ]}
-                  />
+                        label: grade.label,
+                        count: grade.count
+                      }))}
+                      maxDisplayed={2}
+                    />
+                  ) : (
+                    <AdaptiveSelect 
+                      value={filters.grade_iaai || 'all'} 
+                      onValueChange={(value) => updateFilter('grade_iaai', value)}
+                      disabled={!filters.manufacturer_id}
+                      placeholder={filters.manufacturer_id ? "Të gjitha gradat" : "Zgjidhni markën së pari"}
+                      className="filter-control h-8 text-xs"
+                      options={[
+                        { value: 'all', label: 'Të gjitha gradat' },
+                        ...grades.map((grade) => ({
+                          value: grade.value,
+                          label: `${grade.label}${grade.count ? ` (${grade.count})` : ''}`
+                        }))
+                      ]}
+                    />
+                  )}
                 </div>
 
                 <div className="space-y-1 filter-section">
