@@ -1,5 +1,4 @@
-import React, { useEffect, useRef, useCallback, useMemo } from 'react';
-import { FixedSizeGrid as Grid } from 'react-window';
+import React, { useCallback } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -110,63 +109,6 @@ const CarCard: React.FC<{ car: Car; onClick: () => void }> = React.memo(({ car, 
 
 CarCard.displayName = 'CarCard';
 
-// Grid item renderer for react-window
-const GridItem: React.FC<{
-  columnIndex: number;
-  rowIndex: number;
-  style: React.CSSProperties;
-  data: {
-    cars: Car[];
-    columnsPerRow: number;
-    onCarClick: (car: Car) => void;
-    isLoading: boolean;
-  };
-}> = ({ columnIndex, rowIndex, style, data }) => {
-  const { cars, columnsPerRow, onCarClick, isLoading } = data;
-  const carIndex = rowIndex * columnsPerRow + columnIndex;
-  const car = cars[carIndex];
-
-  return (
-    <div style={{ ...style, padding: '8px' }}>
-      {car ? (
-        <CarCard car={car} onClick={() => onCarClick(car)} />
-      ) : isLoading ? (
-        <CarCardSkeleton />
-      ) : null}
-    </div>
-  );
-};
-
-// Hook for intersection observer to detect when to load more
-const useLoadMoreObserver = (
-  callback: () => void,
-  options?: IntersectionObserverInit
-) => {
-  const targetRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const target = targetRef.current;
-    if (!target) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          callback();
-        }
-      },
-      options
-    );
-
-    observer.observe(target);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [callback, options]);
-
-  return targetRef;
-};
-
 const CarsList: React.FC<CarsListProps> = ({
   cars,
   total,
@@ -180,62 +122,12 @@ const CarsList: React.FC<CarsListProps> = ({
   highlightCarId,
   className = '',
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   // Handle car click navigation
   const handleCarClick = useCallback((car: Car) => {
     navigate(`/car/${car.id}`);
   }, [navigate]);
-
-  // Calculate grid dimensions
-  const { columnsPerRow, rowCount, cardWidth, cardHeight } = useMemo(() => {
-    const containerWidth = window.innerWidth;
-    
-    // Responsive card sizing
-    let cardWidth: number;
-    let columnsPerRow: number;
-    
-    if (containerWidth >= 1536) { // 2xl
-      cardWidth = 280;
-      columnsPerRow = Math.floor((containerWidth - 64) / (cardWidth + 16));
-    } else if (containerWidth >= 1280) { // xl
-      cardWidth = 260;
-      columnsPerRow = Math.floor((containerWidth - 64) / (cardWidth + 16));
-    } else if (containerWidth >= 1024) { // lg
-      cardWidth = 240;
-      columnsPerRow = Math.floor((containerWidth - 48) / (cardWidth + 16));
-    } else if (containerWidth >= 768) { // md
-      cardWidth = 220;
-      columnsPerRow = Math.floor((containerWidth - 32) / (cardWidth + 16));
-    } else { // sm and smaller
-      cardWidth = Math.min(300, containerWidth - 32);
-      columnsPerRow = 1;
-    }
-
-    const cardHeight = 320; // Fixed height for consistent grid
-    const rowCount = Math.ceil(cars.length / columnsPerRow);
-
-    return { columnsPerRow, rowCount, cardWidth, cardHeight };
-  }, [cars.length]);
-
-  // Prefetch next page when near bottom
-  const loadMoreRef = useLoadMoreObserver(
-    useCallback(() => {
-      if (hasMore && !isLoading && !isFetching) {
-        prefetchNextPage();
-      }
-    }, [hasMore, isLoading, isFetching, prefetchNextPage]),
-    { rootMargin: '200px' } // Start loading 200px before reaching bottom
-  );
-
-  // Grid data for react-window
-  const gridData = useMemo(() => ({
-    cars,
-    columnsPerRow,
-    onCarClick: handleCarClick,
-    isLoading,
-  }), [cars, columnsPerRow, handleCarClick, isLoading]);
 
   if (error) {
     return (
@@ -268,36 +160,24 @@ const CarsList: React.FC<CarsListProps> = ({
   }
 
   return (
-    <div className={`w-full ${className}`} ref={containerRef}>
-      {/* Grid Container */}
-      <div className="w-full" style={{ height: '80vh', minHeight: '600px' }}>
-        <Grid
-          columnCount={columnsPerRow}
-          rowCount={rowCount}
-          columnWidth={cardWidth + 16} // Add margin
-          rowHeight={cardHeight + 16} // Add margin
-          width={columnsPerRow * (cardWidth + 16)}
-          height={Math.min(window.innerHeight * 0.8, rowCount * (cardHeight + 16))}
-          itemData={gridData}
-          className="scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent"
-        >
-          {GridItem}
-        </Grid>
+    <div className={`w-full ${className}`}>
+      {/* Simple Grid Container - No Virtual Scrolling */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 p-4">
+        {cars.map((car) => (
+          <CarCard 
+            key={car.id} 
+            car={car} 
+            onClick={() => handleCarClick(car)} 
+          />
+        ))}
+        
+        {/* Loading More Skeletons */}
+        {isFetching && Array.from({ length: 8 }).map((_, index) => (
+          <CarCardSkeleton key={`loading-${index}`} />
+        ))}
       </div>
 
-      {/* Loading More Indicator */}
-      {isLoading && cars.length > 0 && (
-        <div className="flex justify-center py-8">
-          <LoadingLogo size="md" />
-        </div>
-      )}
-
-      {/* Load More Trigger (invisible, for intersection observer) */}
-      {hasMore && !isLoading && (
-        <div ref={loadMoreRef} className="h-1" />
-      )}
-
-      {/* Load More Button (visible backup) */}
+      {/* Load More Button */}
       {hasMore && !isLoading && cars.length > 0 && (
         <div className="flex justify-center py-8">
           <Button
@@ -316,7 +196,7 @@ const CarsList: React.FC<CarsListProps> = ({
               <>
                 Load More Cars
                 <div className="text-xs text-muted-foreground ml-2">
-                  ({cars.length} of {total} shown)
+                  ({cars.length} of {total})
                 </div>
               </>
             )}
@@ -326,7 +206,7 @@ const CarsList: React.FC<CarsListProps> = ({
 
       {/* Initial Loading Skeletons */}
       {isLoading && cars.length === 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 p-4">
           {Array.from({ length: 20 }).map((_, index) => (
             <CarCardSkeleton key={index} />
           ))}
@@ -336,8 +216,8 @@ const CarsList: React.FC<CarsListProps> = ({
       {/* End of Results */}
       {!hasMore && cars.length > 0 && (
         <div className="text-center py-8 text-muted-foreground">
-          <p>You've reached the end of the results</p>
-          <p className="text-sm mt-1">{cars.length} cars total</p>
+          <p>You've reached the end</p>
+          <p className="text-sm mt-1">{cars.length} cars shown</p>
         </div>
       )}
     </div>
