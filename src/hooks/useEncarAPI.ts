@@ -60,6 +60,7 @@ interface UseEncarAPIReturn {
   fetchCars: (page?: number, limit?: number, filters?: CarFilters) => Promise<void>;
   triggerSync: (type?: 'full' | 'incremental') => Promise<void>;
   getSyncStatus: () => Promise<void>;
+  cleanupSoldCars: () => Promise<any>;
 }
 
 interface CarFilters {
@@ -86,45 +87,67 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     setError(null);
 
     try {
-      // Generate mock car data for testing since the database may not have the correct structure
-      const mockCars: Car[] = [
-        {
-          id: '1',
-          make: 'BMW',
-          model: 'M3',
-          year: 2022,
-          price: 67300,
-          mileage: 25000,
-          image_url: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800',
-          source_api: 'auctionapis',
-          status: 'active'
-        },
-        {
-          id: '2',
-          make: 'Mercedes-Benz',
-          model: 'C-Class',
-          year: 2021,
-          price: 47300,
-          mileage: 30000,
-          image_url: 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800',
-          source_api: 'auctionapis',
-          status: 'active'
-        },
-        // Add more mock cars as needed
-      ];
+      console.log(`📊 Fetching cars from active_cars view - Page ${page}, Limit ${limit}`);
+      
+      // Build query for active cars (excludes sold cars > 24h)
+      let query = supabase
+        .from('active_cars')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Apply filters if provided
+      if (filters?.make?.length) {
+        query = query.in('make', filters.make);
+      }
+      if (filters?.model?.length) {
+        query = query.in('model', filters.model);
+      }
+      if (filters?.yearFrom) {
+        query = query.gte('year', filters.yearFrom);
+      }
+      if (filters?.yearTo) {
+        query = query.lte('year', filters.yearTo);
+      }
+      if (filters?.priceFrom) {
+        query = query.gte('price', filters.priceFrom);
+      }
+      if (filters?.priceTo) {
+        query = query.lte('price', filters.priceTo);
+      }
+      if (filters?.search) {
+        query = query.or(`make.ilike.%${filters.search}%,model.ilike.%${filters.search}%,vin.ilike.%${filters.search}%`);
+      }
+
+      // Apply pagination
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+      query = query.range(from, to);
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('❌ Error fetching cars from active_cars view:', error);
+        throw error;
+      }
+
+      console.log(`✅ Fetched ${data?.length || 0} active cars from database`);
 
       if (page === 1) {
-        setCars(mockCars);
+        setCars(data || []);
       } else {
-        setCars(prev => [...prev, ...mockCars]);
+        setCars(prev => [...prev, ...(data || [])]);
       }
       
-      setTotalCount(mockCars.length);
+      // Get total count of active cars for pagination
+      const { count } = await supabase
+        .from('active_cars')
+        .select('id', { count: 'exact', head: true });
+      
+      if (count !== null) {
+        setTotalCount(count);
+      }
     } catch (err) {
-      console.error('Error fetching cars:', err);
+      console.error('❌ Error fetching cars:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch cars');
     } finally {
       setLoading(false);
@@ -235,6 +258,29 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
       throw new Error(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const cleanupSoldCars = async () => {
+    try {
+      console.log('🧹 Triggering sold car cleanup...');
+      
+      const { data, error } = await supabase.rpc('remove_old_sold_cars');
+
+      if (error) {
+        console.error('❌ Error running sold car cleanup:', error);
+        throw error;
+      }
+
+      console.log('✅ Sold car cleanup completed:', data);
+      
+      // Refresh cars list after cleanup
+      await fetchCars(1, 100);
+      
+      return data;
+    } catch (err) {
+      console.error('❌ Error during sold car cleanup:', err);
+      throw err;
     }
   };
 
@@ -355,8 +401,8 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     // Auto-refresh every 30 seconds to get latest counts
     const refreshInterval = setInterval(() => {
       getSyncStatus();
-      // Get fresh active car count (excludes sold cars > 24h)
-      supabase.from('cars_cache').select('id', { count: 'exact', head: true })
+      // Get fresh active car count (excludes sold cars > 24h) using active_cars view
+      supabase.from('active_cars').select('id', { count: 'exact', head: true })
         .then(({ count }) => {
           if (count !== null) {
             setTotalCount(count);
@@ -379,6 +425,7 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     totalCount,
     fetchCars,
     triggerSync,
-    getSyncStatus
+    getSyncStatus,
+    cleanupSoldCars
   };
 };
