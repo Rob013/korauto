@@ -4,7 +4,7 @@
  * Debug script to test catalog data fetching
  */
 
-import { supabase } from '../src/integrations/supabase/client.js';
+import { supabase } from '../src/integrations/supabase/client.ts';
 
 async function testDatabaseConnection() {
   console.log('🔌 Testing database connection...');
