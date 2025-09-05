@@ -46,6 +46,26 @@ export const createFallbackCars = (filters: any = {}): any[] => {
     const brandModels = models[brand] || ['Model'];
     const model = brandModels[(i + 1) % brandModels.length];
     
+    // Add some test cars with different statuses for badge testing
+    let status = 1; // default active
+    let sale_status = 'active'; // default active
+    
+    // Make specific cars have different statuses for testing
+    if (i === 1) {
+      status = 3;
+      sale_status = 'sold';
+    } else if (i === 2) {
+      status = 1;
+      sale_status = 'reserved';
+    } else if (i === 3) {
+      status = 2;
+      sale_status = 'pending';
+    } else if (i === 4) {
+      status = 2; // pending status without sale_status
+    } else if (i === 5) {
+      status = 3; // sold status without sale_status
+    }
+    
     mockCars.push({
       id: i,
       title: `${2015 + (i % 10)} ${brand} ${model}`,
@@ -54,12 +74,15 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       model: { name: model },
       vin: `KMHJ381${String(i).padStart(7, '0')}ABC`, // Valid VIN format (17 characters)
       lot_number: `LOT${String(i).padStart(6, '0')}`, // Valid lot number
+      status: status,
+      sale_status: sale_status,
       lots: [{
         buy_now: 20000 + (i * 100),
         images: {
           normal: [`https://picsum.photos/400/300?random=${i}`]
         },
-        odometer: { km: 50000 + (i * 1000) }
+        odometer: { km: 50000 + (i * 1000) },
+        status: status
       }],
       fuel: { name: i % 3 === 0 ? 'Petrol' : i % 3 === 1 ? 'Diesel' : 'Hybrid' },
       transmission: { name: i % 2 === 0 ? 'Automatic' : 'Manual' },

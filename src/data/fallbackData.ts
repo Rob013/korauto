@@ -98,6 +98,109 @@ export const fallbackCars = [
     accidents_count: 1,
     inspection_available: true,
     status: "1"
+  },
+  // Test cars for status badge verification
+  {
+    id: "test-sold-car",
+    title: "2023 Tesla Model 3 - SOLD",
+    manufacturer: { name: "Tesla" },
+    model: { name: "Model 3" },
+    year: 2023,
+    price: 45000,
+    currency: "USD",
+    odometer: 15000,
+    fuel: { name: "Electric" },
+    transmission: { name: "Automatic" },
+    color: { name: "Red" },
+    grade: "5.0",
+    vin: "5YJ3E1EA7JF123456",
+    lot_number: "SOLD001",
+    lots: [{
+      buy_now: 45000,
+      odometer: { km: 15000 },
+      images: {
+        normal: ["/images/placeholder-car.jpg"],
+        big: ["/images/placeholder-car.jpg"]
+      },
+      lot: "SOLD001",
+      status: 3
+    }],
+    location: "Prishtinë, Kosovo",
+    features: ["Electric", "Autopilot", "Premium Interior"],
+    is_premium: true,
+    seats_count: 5,
+    accidents_count: 0,
+    inspection_available: false,
+    status: "3",
+    sale_status: "sold"
+  },
+  {
+    id: "test-reserved-car",
+    title: "2022 BMW X5 - RESERVED",
+    manufacturer: { name: "BMW" },
+    model: { name: "X5" },
+    year: 2022,
+    price: 55000,
+    currency: "USD", 
+    odometer: 20000,
+    fuel: { name: "Gasoline" },
+    transmission: { name: "Automatic" },
+    color: { name: "Blue" },
+    grade: "4.8",
+    vin: "5UXCR6C0XN9123456",
+    lot_number: "RSV001",
+    lots: [{
+      buy_now: 55000,
+      odometer: { km: 20000 },
+      images: {
+        normal: ["/images/placeholder-car.jpg"],
+        big: ["/images/placeholder-car.jpg"]
+      },
+      lot: "RSV001",
+      status: 1
+    }],
+    location: "Prishtinë, Kosovo",
+    features: ["All-Wheel Drive", "Premium Package", "Navigation"],
+    is_premium: true,
+    seats_count: 7,
+    accidents_count: 0,
+    inspection_available: true,
+    status: "1",
+    sale_status: "reserved"
+  },
+  {
+    id: "test-pending-car",
+    title: "2021 Mercedes C-Class - PENDING",
+    manufacturer: { name: "Mercedes-Benz" },
+    model: { name: "C-Class" },
+    year: 2021,
+    price: 42000,
+    currency: "USD",
+    odometer: 30000,
+    fuel: { name: "Gasoline" },
+    transmission: { name: "Automatic" },
+    color: { name: "Silver" },
+    grade: "4.6",
+    vin: "55SWF8DB9JU123456",
+    lot_number: "PND001",
+    lots: [{
+      buy_now: 42000,
+      odometer: { km: 30000 },
+      images: {
+        normal: ["/images/placeholder-car.jpg"],
+        big: ["/images/placeholder-car.jpg"]
+      },
+      lot: "PND001",
+      status: 2
+    }],
+    location: "Prishtinë, Kosovo",
+    features: ["Luxury Interior", "Sport Package", "Premium Sound"],
+    is_premium: true,
+    seats_count: 5,
+    accidents_count: 0,
+    inspection_available: true,
+    status: "2",
+    sale_status: "pending"
   }
 ];
 

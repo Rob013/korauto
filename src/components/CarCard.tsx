@@ -31,6 +31,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import { getStatusBadgeConfig } from "@/utils/statusBadgeUtils";
 interface CarCardProps {
   id: string;
   make: string;
@@ -438,18 +439,25 @@ const CarCard = ({
             <Car className="h-16 w-16 text-muted-foreground" />
           </div>
         )}
-        {/* Sold Out Badge - Takes priority over lot number */}
-        {status === 3 || sale_status === "sold" ? (
-          <div className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded text-xs font-bold shadow-lg z-10">
-            E SHITUR
-          </div>
-        ) : (
-          lot && (
+        {/* Status Badge - Takes priority over lot number */}
+        {(() => {
+          const statusBadge = getStatusBadgeConfig({ status, sale_status });
+          
+          if (statusBadge.show) {
+            return (
+              <div className={`absolute top-2 right-2 ${statusBadge.className} px-3 py-1 rounded text-xs font-bold shadow-lg z-10`}>
+                {statusBadge.text}
+              </div>
+            );
+          }
+          
+          // Show lot number if no status badge and lot exists
+          return lot ? (
             <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-semibold">
               Kodi #{lot}
             </div>
-          )
-        )}
+          ) : null;
+        })()}
       </div>
 
       <div className="p-3 flex flex-col flex-1" style={{ minHeight: '160px' }}>
