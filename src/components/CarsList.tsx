@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import LoadingLogo from "@/components/LoadingLogo";
+import LazyCarCard from "@/components/LazyCarCard";
 
 interface Car {
   id: string;
@@ -19,6 +20,14 @@ interface Car {
   color?: string;
   location?: string;
   images?: string[];
+  image?: string;
+  lot?: string;
+  title?: string;
+  status?: number;
+  sale_status?: string;
+  is_archived?: boolean;
+  archived_at?: string;
+  archive_reason?: string;
 }
 
 interface CarsListProps {
@@ -51,70 +60,33 @@ const CarCardSkeleton: React.FC = () => (
   </Card>
 );
 
-// Individual car card component
-const CarCard: React.FC<{ car: Car; onClick: () => void }> = React.memo(({ car, onClick }) => (
-  <Card 
-    className="w-full h-full cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02]"
-    onClick={onClick}
-  >
-    <CardContent className="p-4">
-      {/* Car Image */}
-      <div className="relative h-48 mb-4 rounded-lg overflow-hidden bg-muted">
-        {car.images && car.images.length > 0 ? (
-          <img
-            src={car.images[0]}
-            alt={`${car.make} ${car.model}`}
-            className="w-full h-full object-cover"
-            loading="lazy"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = '/images/car-placeholder.jpg';
-            }}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-            <span className="text-sm">No Image</span>
-          </div>
-        )}
-      </div>
-
-      {/* Car Details */}
-      <div className="space-y-2">
-        <h3 className="font-semibold text-lg line-clamp-1">
-          {car.year} {car.make} {car.model}
-        </h3>
-        
-        <div className="text-sm text-muted-foreground space-y-1">
-          {car.mileage && (
-            <p>{car.mileage.toLocaleString()} km</p>
-          )}
-          {car.fuel && car.transmission && (
-            <p>{car.fuel} • {car.transmission}</p>
-          )}
-          {car.color && (
-            <p>Color: {car.color}</p>
-          )}
-          {car.location && (
-            <p>📍 {car.location}</p>
-          )}
-        </div>
-
-        {/* Price and Body Type */}
-        <div className="flex justify-between items-center mt-3">
-          <div className="text-xl font-bold text-primary">
-            €{car.price.toLocaleString()}
-          </div>
-          {car.bodyType && (
-            <Badge variant="outline" className="text-xs">
-              {car.bodyType}
-            </Badge>
-          )}
-        </div>
-      </div>
-    </CardContent>
-  </Card>
+// Individual car card component using the actual LazyCarCard
+const CarCardWrapper: React.FC<{ car: Car; onClick: () => void }> = React.memo(({ car, onClick }) => (
+  <div className="h-full" onClick={onClick}>
+    <LazyCarCard
+      id={car.id}
+      make={car.make}
+      model={car.model}
+      year={car.year}
+      price={car.price}
+      image={car.image || car.images?.[0]}
+      images={car.images}
+      mileage={car.mileage?.toString()}
+      transmission={car.transmission}
+      fuel={car.fuel}
+      color={car.color}
+      lot={car.lot}
+      title={car.title}
+      status={car.status}
+      sale_status={car.sale_status}
+      is_archived={car.is_archived}
+      archived_at={car.archived_at}
+      archive_reason={car.archive_reason}
+    />
+  </div>
 ));
 
-CarCard.displayName = 'CarCard';
+CarCardWrapper.displayName = 'CarCardWrapper';
 
 // Grid item renderer for react-window
 const GridItem: React.FC<{
@@ -135,7 +107,7 @@ const GridItem: React.FC<{
   return (
     <div style={{ ...style, padding: '8px' }}>
       {car ? (
-        <CarCard car={car} onClick={() => onCarClick(car)} />
+        <CarCardWrapper car={car} onClick={() => onCarClick(car)} />
       ) : isLoading ? (
         <CarCardSkeleton />
       ) : null}
@@ -244,6 +216,12 @@ const CarsList: React.FC<CarsListProps> = ({
         <div className="text-muted-foreground mb-4">
           {error.message}
         </div>
+        <div className="text-xs text-muted-foreground mb-4 font-mono bg-muted p-3 rounded max-w-md">
+          Debug info: {JSON.stringify({ 
+            errorName: error.name,
+            errorStack: error.stack?.split('\n')[0]
+          }, null, 2)}
+        </div>
         <Button onClick={() => window.location.reload()}>
           Retry
         </Button>
@@ -258,6 +236,14 @@ const CarsList: React.FC<CarsListProps> = ({
         <div className="text-muted-foreground mb-4">
           Try adjusting your filters to see more results
         </div>
+        <div className="text-xs text-muted-foreground mb-4 font-mono bg-muted p-3 rounded max-w-md">
+          Debug info: {JSON.stringify({ 
+            totalCount,
+            activeFiltersCount,
+            hasMore,
+            isLoading
+          }, null, 2)}
+        </div>
         <Button variant="outline" onClick={() => window.dispatchEvent(new CustomEvent('clear-filters'))}>
           Clear Filters
         </Button>
@@ -267,20 +253,11 @@ const CarsList: React.FC<CarsListProps> = ({
 
   return (
     <div className={`w-full ${className}`} ref={containerRef}>
-      {/* Grid Container */}
-      <div className="w-full" style={{ height: '80vh', minHeight: '600px' }}>
-        <Grid
-          columnCount={columnsPerRow}
-          rowCount={rowCount}
-          columnWidth={cardWidth + 16} // Add margin
-          rowHeight={cardHeight + 16} // Add margin
-          width={columnsPerRow * (cardWidth + 16)}
-          height={Math.min(window.innerHeight * 0.8, rowCount * (cardHeight + 16))}
-          itemData={gridData}
-          className="scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent"
-        >
-          {GridItem}
-        </Grid>
+      {/* Simple Grid Layout */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+        {cars.map((car) => (
+          <CarCardWrapper key={car.id} car={car} onClick={() => onCarClick(car)} />
+        ))}
       </div>
 
       {/* Loading More Indicator */}
@@ -325,8 +302,8 @@ const CarsList: React.FC<CarsListProps> = ({
 
       {/* Initial Loading Skeletons */}
       {isLoading && cars.length === 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-          {Array.from({ length: 20 }).map((_, index) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+          {Array.from({ length: 24 }).map((_, index) => (
             <CarCardSkeleton key={index} />
           ))}
         </div>
