@@ -139,6 +139,14 @@ All colors MUST be HSL.
 @layer base {
   * {
     @apply border-border;
+    /* Ensure all elements use border-box model to prevent overflow */
+    box-sizing: border-box;
+  }
+
+  /* Prevent horizontal scrolling globally */
+  html, body {
+    overflow-x: hidden;
+    max-width: 100%;
   }
 
   body {
@@ -150,6 +158,28 @@ All colors MUST be HSL.
 
   html {
     scroll-behavior: smooth;
+  }
+
+  /* Ensure all elements respect viewport boundaries */
+  * {
+    max-width: 100%;
+  }
+
+  /* Specific rules for common overflow-causing elements */
+  img, video, iframe, embed, object {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Ensure containers don't exceed viewport */
+  .container, [class*="container"] {
+    max-width: 100%;
+  }
+
+  /* Prevent text from causing horizontal overflow */
+  p, div, span, h1, h2, h3, h4, h5, h6 {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 }
 
@@ -803,6 +833,23 @@ All colors MUST be HSL.
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1.5rem;
     align-items: start;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Mobile-safe stable grid */
+  @media (max-width: 768px) {
+    .stable-grid {
+      grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+      gap: 1rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .stable-grid {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
   }
 
   /* Better focus management */
@@ -837,6 +884,7 @@ All colors MUST be HSL.
     min-width: 44px;
     padding: 12px;
     position: relative;
+    max-width: 100%;
   }
 
   .enhanced-touch-target::before {
@@ -851,8 +899,50 @@ All colors MUST be HSL.
     min-height: 44px;
   }
 
+  /* Additional overflow prevention utilities */
+  .no-horizontal-scroll {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
+  .mobile-safe {
+    max-width: 100vw;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  .responsive-container {
+    width: 100%;
+    max-width: 100%;
+    padding-left: clamp(0.75rem, 4vw, 2rem);
+    padding-right: clamp(0.75rem, 4vw, 2rem);
+    margin-left: auto;
+    margin-right: auto;
+    overflow-x: hidden;
+  }
+
+  /* Ensure images and media never overflow */
+  .responsive-media {
+    max-width: 100% !important;
+    height: auto !important;
+    object-fit: cover;
+  }
+}
+
 /* Mobile Layout Optimizations */
 @media (max-width: 768px) {
+  /* Ensure no horizontal scrolling on mobile */
+  body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
+  /* Prevent any element from exceeding viewport width */
+  * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
   /* Safe area inset for notched devices */
   .safe-area-inset {
     padding-top: env(safe-area-inset-top);
@@ -915,12 +1005,28 @@ All colors MUST be HSL.
   .mobile-car-grid {
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 6px;
+    width: 100%;
+    max-width: 100%;
   }
   
   /* Extra compact layout for very small screens */
   .mobile-car-grid-compact {
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 4px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Ensure all grid and flex containers stay within bounds */
+  .grid, [class*="grid"], .flex, [class*="flex"] {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Ensure specific layouts don't overflow */
+  .container-responsive, .responsive-grid, .stable-grid {
+    max-width: 100vw;
+    overflow-x: hidden;
   }
 
   /* Better loading states */
@@ -977,20 +1083,33 @@ All colors MUST be HSL.
 
 /* Small mobile devices - Even more compact */
 @media (max-width: 375px) {
+  /* Extra strict overflow prevention for small screens */
+  body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    position: relative;
+  }
+
   .container-responsive {
     padding-left: 6px;
     padding-right: 6px;
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   .mobile-car-grid {
     grid-template-columns: 1fr;
     gap: 4px;
+    width: 100%;
+    max-width: 100%;
   }
   
   /* Ultra compact for smallest devices */
   .mobile-car-grid-compact {
     grid-template-columns: 1fr;
     gap: 3px;
+    width: 100%;
+    max-width: 100%;
   }
 
   .mobile-text-optimize {
@@ -1146,6 +1265,4 @@ All colors MUST be HSL.
 .inspection-section-black .bg-purple-600 svg,
 .inspection-section-black .bg-yellow-600 svg {
   color: #000000 !important;
-}
-
 }
