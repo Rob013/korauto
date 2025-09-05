@@ -19,7 +19,11 @@ import {
   Settings,
   MapPin,
   DollarSign,
-  Cog
+  Cog,
+  AlertTriangle,
+  Award,
+  Shield,
+  Gauge
 } from "lucide-react";
 import { 
   COLOR_OPTIONS, 
@@ -1103,6 +1107,209 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   value={filters.odometer_to_km || ''}
                   onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
                 />
+              </div>
+            </div>
+
+            {/* Enhanced Filter Options - Drive Type, Engine, Seats */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Cog className="h-3 w-3" />
+                  Lloji i Transmetimit të Fuqisë
+                </Label>
+                <AdaptiveSelect 
+                  value={filters.drive_type || 'all'} 
+                  onValueChange={(value) => updateFilter('drive_type', value)}
+                  placeholder="Çdo tip"
+                  options={[
+                    { value: 'all', label: 'Çdo tip' },
+                    ...Object.entries(DRIVE_TYPE_OPTIONS).map(([name, id]) => ({
+                      value: id.toString(),
+                      label: name.toUpperCase()
+                    }))
+                  ]}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Settings className="h-3 w-3" />
+                  Vendet
+                </Label>
+                <AdaptiveSelect 
+                  value={filters.seats_count || 'all'} 
+                  onValueChange={(value) => updateFilter('seats_count', value)}
+                  placeholder="Çdo numër"
+                  options={[
+                    { value: 'all', label: 'Çdo numër' },
+                    ...Object.entries(SEATS_COUNT_OPTIONS).map(([name, id]) => ({
+                      value: id.toString(),
+                      label: `${name} vendet`
+                    }))
+                  ]}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Gauge className="h-3 w-3" />
+                  Motorri (L)
+                </Label>
+                <div className="grid grid-cols-2 gap-1">
+                  <Input
+                    type="number"
+                    step="0.1"
+                    placeholder="Nga"
+                    value={filters.engine_displacement_from || ''}
+                    onChange={(e) => updateFilter('engine_displacement_from', e.target.value)}
+                  />
+                  <Input
+                    type="number"
+                    step="0.1"
+                    placeholder="Deri"
+                    value={filters.engine_displacement_to || ''}
+                    onChange={(e) => updateFilter('engine_displacement_to', e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Accident History and Certification */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <AlertTriangle className="h-3 w-3" />
+                  Historia e Aksidenteve
+                </Label>
+                <AdaptiveSelect 
+                  value={filters.max_accidents || 'all'} 
+                  onValueChange={(value) => updateFilter('max_accidents', value)}
+                  placeholder="Çdo histori"
+                  options={[
+                    { value: 'all', label: 'Çdo histori' },
+                    ...Object.entries(ACCIDENT_HISTORY_OPTIONS).map(([name, id]) => ({
+                      value: id.toString(),
+                      label: name.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+                    }))
+                  ]}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Award className="h-3 w-3" />
+                  Lloji i Regjistrimit
+                </Label>
+                <AdaptiveSelect 
+                  value={filters.registration_type || 'all'} 
+                  onValueChange={(value) => updateFilter('registration_type', value)}
+                  placeholder="Çdo tip"
+                  options={[
+                    { value: 'all', label: 'Çdo tip' },
+                    ...Object.entries(REGISTRATION_TYPE_OPTIONS).map(([name, id]) => ({
+                      value: id.toString(),
+                      label: name.charAt(0).toUpperCase() + name.slice(1)
+                    }))
+                  ]}
+                />
+              </div>
+            </div>
+
+            {/* Certification and Warranty Options */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Shield className="h-3 w-3" />
+                Certifikim dhe Garanci
+              </Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="is_certified"
+                    checked={filters.is_certified === 'true'}
+                    onCheckedChange={(checked) => updateFilter('is_certified', checked ? 'true' : 'false')}
+                  />
+                  <Label htmlFor="is_certified" className="text-xs">
+                    I Certifikuar
+                  </Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="has_warranty"
+                    checked={filters.has_warranty === 'true'}
+                    onCheckedChange={(checked) => updateFilter('has_warranty', checked ? 'true' : 'false')}
+                  />
+                  <Label htmlFor="has_warranty" className="text-xs">
+                    Me Garanci
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="service_history"
+                    checked={filters.service_history === 'true'}
+                    onCheckedChange={(checked) => updateFilter('service_history', checked ? 'true' : 'false')}
+                  />
+                  <Label htmlFor="service_history" className="text-xs">
+                    Historia e Shërbimit
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="keys_available"
+                    checked={filters.keys_available === 'true'}
+                    onCheckedChange={(checked) => updateFilter('keys_available', checked ? 'true' : 'false')}
+                  />
+                  <Label htmlFor="keys_available" className="text-xs">
+                    Çelësat në Dispozicion
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="is_imported"
+                    checked={filters.is_imported === 'true'}
+                    onCheckedChange={(checked) => updateFilter('is_imported', checked ? 'true' : 'false')}
+                  />
+                  <Label htmlFor="is_imported" className="text-xs">
+                    I Importuar
+                  </Label>
+                </div>
+              </div>
+            </div>
+
+            {/* Location Filter */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <MapPin className="h-3 w-3" />
+                Vendndodhja
+              </Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Qyteti</Label>
+                  <Input
+                    placeholder="Shkruani qytetin"
+                    value={filters.location_city || ''}
+                    onChange={(e) => updateFilter('location_city', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Distanca (km)</Label>
+                  <AdaptiveSelect 
+                    value={filters.location_distance || 'all'} 
+                    onValueChange={(value) => updateFilter('location_distance', value)}
+                    placeholder="Çdo distancë"
+                    options={[
+                      { value: 'all', label: 'Çdo distancë' },
+                      { value: '10', label: 'Brenda 10 km' },
+                      { value: '25', label: 'Brenda 25 km' },
+                      { value: '50', label: 'Brenda 50 km' },
+                      { value: '100', label: 'Brenda 100 km' },
+                      { value: '200', label: 'Brenda 200 km' }
+                    ]}
+                  />
+                </div>
               </div>
             </div>
           </div>
