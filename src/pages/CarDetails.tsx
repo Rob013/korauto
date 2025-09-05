@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, memo, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { trackPageView, trackCarView, trackFavorite } from "@/utils/analytics";
+import { calculateFinalPriceEUR } from "@/utils/carPricing";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -371,7 +372,7 @@ const CarDetails = memo(() => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { goBack, restorePageState, pageState } = useNavigation();
-  const { convertUSDtoEUR, processFloodDamageText } = useCurrencyAPI();
+  const { convertUSDtoEUR, processFloodDamageText, exchangeRate } = useCurrencyAPI();
   const [car, setCar] = useState<CarDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -629,7 +630,7 @@ const CarDetails = memo(() => {
               : cachedCar.images || [];
           const basePrice =
             cachedCar.price || lotData.buy_now || lotData.final_bid || 25000;
-          const price = convertUSDtoEUR(Math.round(basePrice + 2200));
+          const price = calculateFinalPriceEUR(basePrice, exchangeRate.rate);
           const transformedCar: CarDetails = {
             id: cachedCar.id,
             make: cachedCar.make || "Unknown",
@@ -714,7 +715,7 @@ const CarDetails = memo(() => {
               const lotData = carData.lots[0];
               const basePrice =
                 lotData.buy_now ?? lotData.final_bid ?? lotData.price ?? 25000;
-              const price = convertUSDtoEUR(Math.round(basePrice + 2200));
+              const price = calculateFinalPriceEUR(basePrice, exchangeRate.rate);
               const transformedCar: CarDetails = {
                 id: carData.id?.toString() || lotData.lot,
                 make: carData.manufacturer?.name || "Unknown",
@@ -824,7 +825,7 @@ const CarDetails = memo(() => {
         if (!lotData) throw new Error("Missing lot data");
         const basePrice =
           lotData.buy_now ?? lotData.final_bid ?? lotData.price ?? 25000;
-        const price = convertUSDtoEUR(Math.round(basePrice + 2200));
+        const price = calculateFinalPriceEUR(basePrice, exchangeRate.rate);
         const transformedCar: CarDetails = {
           id: carData.id?.toString() || lotData.lot,
           make: carData.manufacturer?.name || "Unknown",
@@ -890,7 +891,7 @@ const CarDetails = memo(() => {
             console.log("Using fallback car data for:", lot);
             const lotData = fallbackCar.lots[0];
             const basePrice = lotData.buy_now || fallbackCar.price || 25000;
-            const price = convertUSDtoEUR(Math.round(basePrice + 2200));
+            const price = calculateFinalPriceEUR(basePrice, exchangeRate.rate);
             
             const transformedCar: CarDetails = {
               id: fallbackCar.id,

@@ -55,6 +55,7 @@ import { useGlobalCarSorting } from "@/hooks/useGlobalCarSorting";
 // for consistent backend sorting like NewCatalog.tsx
 import { CarWithRank } from "@/utils/chronologicalRanking";
 import { filterOutTestCars } from "@/utils/testCarFilter";
+import { calculateFinalPriceEUR } from "@/utils/carPricing";
 import { fallbackCars } from "@/data/fallbackData";
 
 interface EncarCatalogProps {
@@ -85,7 +86,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     fetchTrimLevels,
     loadMore,
   } = useSecureAuctionAPI();
-  const { convertUSDtoEUR } = useCurrencyAPI();
+  const { convertUSDtoEUR, exchangeRate } = useCurrencyAPI();
   
   // Global sorting hook
   const {
@@ -1370,7 +1371,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 {carsToDisplay.map((car: CarWithRank | any) => {
                   const lot = car.lots?.[0];
                   const usdPrice = lot?.buy_now || 25000;
-                  const price = convertUSDtoEUR(Math.round(usdPrice + 2200));
+                  const price = calculateFinalPriceEUR(usdPrice, exchangeRate.rate);
                   const lotNumber = car.lot_number || lot?.lot || "";
 
                   return (

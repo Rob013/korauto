@@ -23,6 +23,7 @@ import { ArrowUpDown } from "lucide-react";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
 import { useDailyRotatingCars } from "@/hooks/useDailyRotatingCars";
 import { filterOutTestCars } from "@/utils/testCarFilter";
+import { calculateFinalPriceEUR } from "@/utils/carPricing";
 import { fallbackCars, fallbackManufacturers } from "@/data/fallbackData";
 
 interface APIFilters {
@@ -60,7 +61,7 @@ const HomeCarsSection = memo(() => {
     fetchGrades,
     fetchTrimLevels,
   } = useSecureAuctionAPI();
-  const { convertUSDtoEUR } = useCurrencyAPI();
+  const { convertUSDtoEUR, exchangeRate } = useCurrencyAPI();
   const [sortBy, setSortBy] = useState<SortOption>("popular");
   const [showAllCars, setShowAllCars] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -617,7 +618,7 @@ const HomeCarsSection = memo(() => {
               {displayedCars.map((car) => {
                 const lot = car.lots?.[0];
                 const usdPrice = lot?.buy_now || 25000;
-                const price = convertUSDtoEUR(Math.round(usdPrice + 2200));
+                const price = calculateFinalPriceEUR(usdPrice, exchangeRate.rate);
                 return (
                   <LazyCarCard
                     key={car.id}

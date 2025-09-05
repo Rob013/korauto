@@ -4,7 +4,7 @@ import { ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSecureAuctionAPI } from '@/hooks/useSecureAuctionAPI';
 import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
-import { hasRealPricing } from '@/utils/carPricing';
+import { hasRealPricing, calculateFinalPriceEUR } from '@/utils/carPricing';
 import CarCard from './CarCard';
 
 interface SimilarCarsTabProps {
@@ -16,7 +16,7 @@ interface SimilarCarsTabProps {
 const SimilarCarsTab = ({ carMake, carModel, currentCarId }: SimilarCarsTabProps) => {
   const navigate = useNavigate();
   const { cars, fetchCars, fetchManufacturers } = useSecureAuctionAPI();
-  const { convertUSDtoEUR } = useCurrencyAPI();
+  const { convertUSDtoEUR, exchangeRate } = useCurrencyAPI();
   const [similarCars, setSimilarCars] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -90,7 +90,7 @@ const SimilarCarsTab = ({ carMake, carModel, currentCarId }: SimilarCarsTabProps
             {similarCars.map((car) => {
               const lot = car.lots?.[0];
               const usdPrice = lot?.buy_now || 25000;
-              const price = convertUSDtoEUR(Math.round(usdPrice + 2200));
+              const price = calculateFinalPriceEUR(usdPrice, exchangeRate.rate);
               
               return (
                 <div 
