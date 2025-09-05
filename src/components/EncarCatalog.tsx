@@ -104,7 +104,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     totalCount,
     carsPerPage: 50,
     enableCaching: true,
-    validationEnabled: false
+    validationEnabled: false,
+    hasUserSelectedSort
   });
   
   const [sortBy, setSortBy] = useState<SortOption>("recently_added");
