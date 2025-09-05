@@ -239,7 +239,7 @@ class CatalogPerformanceValidator {
     if (!this.page) return 0;
 
     const frameTimes: number[] = [];
-    let frameCount = 0;
+    const frameCount = 0;
     
     // Monitor frame rate during scroll
     await this.page.evaluate(() => {

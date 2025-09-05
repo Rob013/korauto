@@ -34,6 +34,21 @@ import {
 import { fetchCarsWithKeyset, SortOption as CarsApiSortOption, CarFilters } from '@/services/carsApi';
 import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
 
+interface Car {
+  id: string;
+  make: string;
+  model: string;
+  year: number;
+  price: number;
+  price_cents?: number;
+  mileage?: number;
+  fuel?: string;
+  transmission?: string;
+  location?: string;
+  images?: string[];
+  image_url?: string;
+}
+
 interface EncarLikeCatalogProps {
   highlightCarId?: string | null;
   className?: string;
@@ -64,7 +79,7 @@ export const EncarLikeCatalog = ({ highlightCarId, className = '' }: EncarLikeCa
   const [searchParams, setSearchParams] = useSearchParams();
   
   // State for cars and pagination
-  const [cars, setCars] = useState<any[]>([]);
+  const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
@@ -196,9 +211,9 @@ export const EncarLikeCatalog = ({ highlightCarId, className = '' }: EncarLikeCa
       
       setNextCursor(response.nextCursor);
       setTotalCount(response.total);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch cars:', err);
-      setError(err.message || 'Failed to load cars');
+      setError(err instanceof Error ? err.message : 'Failed to load cars');
       toast({
         title: "Error",
         description: "Failed to load cars. Please try again.",
@@ -213,7 +228,7 @@ export const EncarLikeCatalog = ({ highlightCarId, className = '' }: EncarLikeCa
   // Initial load
   useEffect(() => {
     fetchCars(true);
-  }, [sortBy]);
+  }, [fetchCars, sortBy]);
 
   // Debounced search and filter changes
   useEffect(() => {
@@ -221,7 +236,7 @@ export const EncarLikeCatalog = ({ highlightCarId, className = '' }: EncarLikeCa
       fetchCars(true);
     }, 500);
     return () => clearTimeout(timer);
-  }, [filters, searchTerm, selectedMakes]);
+  }, [fetchCars, filters, searchTerm, selectedMakes]);
 
   const handleLoadMore = () => {
     if (nextCursor && !isLoadingMore) {
@@ -584,7 +599,7 @@ export const EncarLikeCatalog = ({ highlightCarId, className = '' }: EncarLikeCa
 
 // Enhanced Car Card Component with Brand Colors
 const CarCard = ({ car, convertUSDtoEUR, highlightCarId }: { 
-  car: any; 
+  car: Car; 
   convertUSDtoEUR: (amount: number) => number;
   highlightCarId?: string | null;
 }) => {
@@ -678,7 +693,7 @@ const CarCard = ({ car, convertUSDtoEUR, highlightCarId }: {
 
 // Enhanced Car List Item Component with Brand Colors
 const CarListItem = ({ car, convertUSDtoEUR, highlightCarId }: { 
-  car: any; 
+  car: Car; 
   convertUSDtoEUR: (amount: number) => number;
   highlightCarId?: string | null;
 }) => {
