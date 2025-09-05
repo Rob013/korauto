@@ -311,7 +311,7 @@ const LazyCarCard = memo(({
           
           if (statusBadge.show) {
             return (
-              <div className={`absolute top-1 sm:top-2 right-1 sm:right-2 ${statusBadge.className} px-2 sm:px-3 py-0.5 sm:py-1 rounded text-xs font-bold shadow-lg z-10`}>
+              <div className={`absolute top-1 sm:top-1.5 right-1 sm:right-1.5 ${statusBadge.className} px-1.5 sm:px-2 py-0.5 rounded-md text-xs font-medium shadow-sm z-10`}>
                 {statusBadge.text}
               </div>
             );
@@ -319,7 +319,7 @@ const LazyCarCard = memo(({
           
           // Show lot number if no status badge and lot exists
           return lot ? (
-            <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-primary text-primary-foreground px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs font-semibold">
+            <div className="absolute top-1 sm:top-1.5 right-1 sm:right-1.5 bg-primary/90 text-primary-foreground px-1.5 sm:px-2 py-0.5 rounded-md text-xs font-medium backdrop-blur-sm">
               #{lot}
             </div>
           ) : null;

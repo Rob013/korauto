@@ -445,7 +445,7 @@ const CarCard = ({
           
           if (statusBadge.show) {
             return (
-              <div className={`absolute top-2 right-2 ${statusBadge.className} px-3 py-1 rounded text-xs font-bold shadow-lg z-10`}>
+              <div className={`absolute top-1.5 right-1.5 ${statusBadge.className} px-2 py-0.5 rounded-md text-xs font-medium shadow-sm z-10`}>
                 {statusBadge.text}
               </div>
             );
@@ -453,8 +453,8 @@ const CarCard = ({
           
           // Show lot number if no status badge and lot exists
           return lot ? (
-            <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-semibold">
-              Kodi #{lot}
+            <div className="absolute top-1.5 right-1.5 bg-primary/90 text-primary-foreground px-1.5 py-0.5 rounded-md text-xs font-medium backdrop-blur-sm">
+              #{lot}
             </div>
           ) : null;
         })()}
