@@ -13,8 +13,6 @@ import { LoadingFallback } from "./components/LoadingFallback";
 // Lazy load all pages for better code splitting
 const Index = lazy(() => import("./pages/Index"));
 const Catalog = lazy(() => import("./pages/Catalog"));
-const NewCatalog = lazy(() => import("./pages/NewCatalog"));
-const EnhancedCatalogPage = lazy(() => import("./pages/EnhancedCatalogPage"));
 const CarDetails = lazy(() => import("./pages/CarDetails"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AuthPage = lazy(() => import("./pages/AuthPage"));
@@ -136,18 +134,6 @@ const App = () => {
                   <Catalog />
                 </Suspense>
               </ErrorBoundary>
-            } />
-            <Route path="/catalog-new" element={
-              <ErrorBoundary>
-                <Suspense fallback={<LoadingFallback />}>
-                  <NewCatalog />
-                </Suspense>
-              </ErrorBoundary>
-            } />
-            <Route path="/catalog-enhanced" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <EnhancedCatalogPage />
-              </Suspense>
             } />
             <Route path="/car/:id" element={
               <Suspense fallback={<PageSkeleton />}>

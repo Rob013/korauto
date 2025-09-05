@@ -253,11 +253,20 @@ export async function fetchCarsWithKeyset(params: CarsApiParams): Promise<CarsAp
   }
 }
 
-// Generate fallback data when API is unavailable
 function generateFallbackCarsResponse(params: CarsApiParams): CarsApiResponse {
   const { limit = 24, sort = 'price_asc' } = params;
   
   console.log('🔄 Generating fallback cars data...');
+  
+  // Real car images from the lovable-uploads directory
+  const carImages = [
+    '/lovable-uploads/91efade6-53ff-4c15-ae10-6ac8f338c2b9.png',
+    '/lovable-uploads/fb2b9889-d3da-4280-a77b-7567f307aed5.png',
+    '/lovable-uploads/3657dff4-7afd-45bb-9f8a-8d3f4ba8d7b4.png',
+    '/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png',
+    '/lovable-uploads/7a3e2aa4-2a3b-4320-b33c-72d3d7721cfd.png',
+    '/lovable-uploads/3094fd63-7a92-4497-8103-e166b6b09f70.png'
+  ];
   
   // Create comprehensive fallback cars
   const fallbackCars: Car[] = Array.from({ length: 500 }, (_, index) => {
@@ -271,6 +280,7 @@ function generateFallbackCarsResponse(params: CarsApiParams): CarsApiResponse {
     const model = models[index % models.length];
     const year = 2015 + (index % 9);
     const basePrice = 15000 + (index * 347) % 50000; // More varied pricing
+    const imageUrl = carImages[index % carImages.length];
     
     return {
       id: `fallback-${index + 1}`,
@@ -285,8 +295,8 @@ function generateFallbackCarsResponse(params: CarsApiParams): CarsApiResponse {
       transmission: transmissions[index % transmissions.length],
       color: colors[index % colors.length],
       location: 'Seoul, South Korea',
-      image_url: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400',
-      images: ['https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400'],
+      image_url: imageUrl,
+      images: [imageUrl],
       title: `${year} ${make} ${model}`,
       created_at: new Date(Date.now() - index * 60000).toISOString()
     };
