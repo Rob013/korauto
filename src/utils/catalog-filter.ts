@@ -19,6 +19,7 @@ export interface APIFilters {
   fuel_type?: string;
   transmission?: string;
   body_type?: string;
+  drive_type?: string;
   odometer_from_km?: string;
   odometer_to_km?: string;
   from_year?: string;
@@ -28,6 +29,18 @@ export interface APIFilters {
   search?: string;
   seats_count?: string;
   max_accidents?: string;
+  min_accidents?: string;
+  engine_displacement_from?: string;
+  engine_displacement_to?: string;
+  registration_type?: string;
+  certification?: string[];
+  is_certified?: string;
+  has_warranty?: string;
+  service_history?: string;
+  location_distance?: string;
+  location_city?: string;
+  is_imported?: string;
+  keys_available?: string;
   per_page?: string;
   sort_by?: string;
   sort_direction?: string;

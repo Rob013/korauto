@@ -86,43 +86,66 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     setError(null);
 
     try {
-      // Generate mock car data for testing since the database may not have the correct structure
-      const mockCars: Car[] = [
-        {
-          id: '1',
-          make: 'BMW',
-          model: 'M3',
-          year: 2022,
-          price: 67300,
-          mileage: 25000,
-          image_url: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800',
-          source_api: 'auctionapis',
-          status: 'active'
-        },
-        {
-          id: '2',
-          make: 'Mercedes-Benz',
-          model: 'C-Class',
-          year: 2021,
-          price: 47300,
-          mileage: 30000,
-          image_url: 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800',
-          source_api: 'auctionapis',
-          status: 'active'
-        },
-        // Add more mock cars as needed
-      ];
+      // Use real API call through Supabase edge function
+      const { data, error } = await supabase.functions.invoke('cars-search', {
+        body: {
+          page,
+          pageSize: limit,
+          filters: filters || {},
+          mode: 'full'
+        }
+      });
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      if (page === 1) {
-        setCars(mockCars);
-      } else {
-        setCars(prev => [...prev, ...mockCars]);
+      if (error) {
+        throw new Error(error.message || 'Failed to fetch cars');
       }
-      
-      setTotalCount(mockCars.length);
+
+      if (data && data.cars) {
+        // Transform the API response to match our Car interface
+        const transformedCars: Car[] = data.cars.map((car: any) => ({
+          id: car.id?.toString() || car.lot_number || Math.random().toString(),
+          external_id: car.lot_number,
+          make: car.make || 'Unknown',
+          model: car.model || 'Unknown', 
+          year: car.year || 0,
+          price: car.price_eur || car.buy_now || car.final_bid || 0,
+          mileage: car.mileage_km || car.odometer?.km || 0,
+          title: car.title || `${car.make} ${car.model} ${car.year}`,
+          vin: car.vin,
+          color: car.color,
+          fuel: car.fuel_type,
+          transmission: car.transmission,
+          condition: car.condition,
+          location: car.location,
+          lot_number: car.lot_number,
+          current_bid: car.current_bid,
+          buy_now_price: car.buy_now || car.buy_now_price,
+          final_bid: car.final_bid,
+          sale_date: car.sale_date,
+          image_url: car.thumbnail || car.images?.normal?.[0] || car.image_url,
+          images: JSON.stringify(car.images || {}),
+          source_api: 'auctionapis',
+          domain_name: car.domain_name,
+          status: car.status || 'active',
+          is_live: car.is_live,
+          keys_available: car.keys_available,
+          created_at: car.listed_at || car.created_at,
+          updated_at: car.updated_at,
+          last_synced_at: new Date().toISOString()
+        }));
+
+        if (page === 1) {
+          setCars(transformedCars);
+        } else {
+          setCars(prev => [...prev, ...transformedCars]);
+        }
+        
+        setTotalCount(data.total || transformedCars.length);
+      } else {
+        // If no cars data, set empty array
+        setCars([]);
+        setTotalCount(0);
+      }
     } catch (err) {
       console.error('Error fetching cars:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch cars');

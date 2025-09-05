@@ -21,7 +21,21 @@ import {
   DollarSign,
   Cog
 } from "lucide-react";
-import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS, BODY_TYPE_OPTIONS } from '@/constants/carOptions';
+import { 
+  COLOR_OPTIONS, 
+  FUEL_TYPE_OPTIONS, 
+  TRANSMISSION_OPTIONS, 
+  BODY_TYPE_OPTIONS, 
+  DRIVE_TYPE_OPTIONS,
+  ENGINE_DISPLACEMENT_OPTIONS,
+  SEATS_COUNT_OPTIONS,
+  ACCIDENT_HISTORY_OPTIONS,
+  REGISTRATION_TYPE_OPTIONS,
+  CERTIFICATION_OPTIONS,
+  PRICE_RANGE_PRESETS,
+  MILEAGE_RANGE_PRESETS,
+  YEAR_RANGE_PRESETS
+} from '@/constants/carOptions';
 import {
   APIFilters,
   sortManufacturers,
@@ -51,6 +65,12 @@ interface FilterCounts {
   colors: { [key: string]: number };
   fuelTypes: { [key: string]: number };
   transmissions: { [key: string]: number };
+  bodyTypes: { [key: string]: number };
+  driveTypes: { [key: string]: number };
+  seatsCount: { [key: string]: number };
+  accidentHistory: { [key: string]: number };
+  registrationType: { [key: string]: number };
+  certification: { [key: string]: number };
   years: { [key: string]: number };
 }
 
