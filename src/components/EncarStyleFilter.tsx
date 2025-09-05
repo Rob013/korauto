@@ -24,7 +24,13 @@ import {
   AlertTriangle,
   Award,
   Shield,
-  Gauge
+  Gauge,
+  Users,
+  Zap,
+  ShieldCheck,
+  FileText,
+  Star,
+  TrendingUp
 } from "lucide-react";
 import { 
   COLOR_OPTIONS, 
@@ -266,40 +272,45 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   if (compact) {
     return (
       <div className="space-y-2 h-full flex flex-col">
-        <div className="flex items-center justify-between flex-shrink-0">
-          <h3 className="text-sm font-semibold">Kërko Makinat</h3>
-          <div className="flex items-center gap-1">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onClearFilters}
-              className="text-muted-foreground hover:text-destructive flex items-center gap-1 h-6 px-1.5"
-            >
-              <X className="h-3 w-3" />
-              <span className="text-xs">Pastro</span>
-            </Button>
-            {onCloseFilter && (
+        {/* Enhanced header with Korean automotive style */}
+        <div className="filter-header bg-gradient-to-r from-primary to-primary/90 text-primary-foreground p-3 -mx-2 -mt-2 mb-3 rounded-t flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4" />
+              <h3 className="text-sm font-semibold">Filtrat e Kërkimit</h3>
+            </div>
+            <div className="flex items-center gap-1">
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => {
-                  console.log("EncarStyleFilter close button clicked");
-                  onCloseFilter();
-                  // Force close the filter panel if parent handlers don't work
-                  setTimeout(() => {
-                    const filterPanel = document.querySelector('[data-filter-panel]');
-                    if (filterPanel) {
-                      (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
-                    }
-                  }, 100);
-                }}
-                className="text-muted-foreground hover:text-foreground flex items-center gap-1 h-6 px-1.5"
-                title="Mbyll filtrat"
+                onClick={onClearFilters}
+                className="h-6 px-2 hover:bg-primary-foreground/20 text-primary-foreground text-xs"
               >
-                <X className="h-3 w-3" />
-                <span className="text-xs">Mbyll</span>
+                <X className="h-3 w-3 mr-1" />
+                Pastro
               </Button>
-            )}
+              {onCloseFilter && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => {
+                    console.log("EncarStyleFilter close button clicked");
+                    onCloseFilter();
+                    // Force close the filter panel if parent handlers don't work
+                    setTimeout(() => {
+                      const filterPanel = document.querySelector('[data-filter-panel]');
+                      if (filterPanel) {
+                        (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
+                      }
+                    }, 100);
+                  }}
+                  className="h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground"
+                  title="Mbyll filtrat"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
         
@@ -413,12 +424,37 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
             </div>
           </div>
 
-          {/* Price Range */}
+          {/* Price Range with Presets */}
           <div className="space-y-1 filter-section">
             <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
               <DollarSign className="h-2.5 w-2.5" />
               Çmimi (EUR)
             </Label>
+            
+            {/* Price Range Presets */}
+            <div className="grid grid-cols-2 gap-1 mb-2">
+              {PRICE_RANGE_PRESETS.slice(0, 4).map((preset) => (
+                <Button
+                  key={preset.label}
+                  variant={
+                    filters.buy_now_price_from === preset.min.toString() && 
+                    filters.buy_now_price_to === (preset.max === 999999 ? '' : preset.max.toString())
+                      ? "default" 
+                      : "outline"
+                  }
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={() => {
+                    updateFilter('buy_now_price_from', preset.min.toString());
+                    updateFilter('buy_now_price_to', preset.max === 999999 ? '' : preset.max.toString());
+                  }}
+                  title={`Quick filter: ${preset.label}`}
+                >
+                  {preset.label.replace('€', '').replace(',000', 'K')}
+                </Button>
+              ))}
+            </div>
+            
             <div className="grid grid-cols-2 gap-1.5">
               <Input
                 type="number"
@@ -437,30 +473,255 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
             </div>
           </div>
 
-          {/* Additional Filters Toggle */}
-          <Button
-            variant="ghost"
-            onClick={() => toggleSection('more')}
-            className="w-full justify-between text-xs h-7"
-          >
-            Më Shumë Filtra
-            {expandedSections.includes('more') ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-          </Button>
+          {/* Advanced Filters Toggle - Korean style */}
+          <div className="border-t pt-2">
+            <Button
+              variant="ghost"
+              onClick={() => toggleSection('more')}
+              className="w-full justify-between text-xs h-8 bg-gradient-to-r from-primary/5 to-primary/10 hover:from-primary/10 hover:to-primary/20 border border-primary/20"
+            >
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-3 w-3" />
+                <span className="font-medium">Filtra të Avancuar</span>
+                <span className="text-xs text-muted-foreground">(Motor, Karburanti, Historia)</span>
+              </div>
+              {expandedSections.includes('more') ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            </Button>
+          </div>
 
           {expandedSections.includes('more') && (
-            <div className="space-y-2 pt-2 border-t">
-              {/* Grade/Engine and Trim Level first */}
-              <div className="space-y-2">
-                <div className="space-y-1 filter-section">
-                  <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-                    <Cog className="h-2.5 w-2.5" />
-                    Grada/Motori
-                  </Label>
+            <div className="space-y-3 pt-2 border-t">
+              {/* Color & Style Section */}
+              <div className="space-y-2 p-2 bg-muted/30 rounded">
+                <div className="flex items-center gap-1.5">
+                  <Palette className="h-3 w-3 text-primary" />
+                  <Label className="text-xs font-semibold text-primary">Pamja & Stili</Label>
+                </div>
+                
+                <div className="space-y-1">
+                  <Label className="filter-label text-xs font-medium">Ngjyra</Label>
+                  <AdaptiveSelect 
+                    value={filters.color || 'all'} 
+                    onValueChange={(value) => updateFilter('color', value)}
+                    placeholder="Çdo ngjyrë"
+                    className="filter-control h-8 text-xs"
+                    options={[
+                      ...(isStrictMode && filters.color ? [] : [{ value: 'all', label: 'Çdo ngjyrë' }]),
+                      ...Object.entries(COLOR_OPTIONS).map(([name, id]) => ({
+                        value: id.toString(),
+                        label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
+                      }))
+                    ]}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="filter-label text-xs font-medium">Lloji i Trupit</Label>
+                  <AdaptiveSelect 
+                    value={filters.body_type || 'all'} 
+                    onValueChange={(value) => updateFilter('body_type', value)}
+                    placeholder="Çdo tip"
+                    className="filter-control h-8 text-xs"
+                    options={[
+                      { value: 'all', label: 'Çdo tip' },
+                      ...Object.entries(BODY_TYPE_OPTIONS).map(([name, id]) => ({
+                        value: id.toString(),
+                        label: name.charAt(0).toUpperCase() + name.slice(1)
+                      }))
+                    ]}
+                  />
+                </div>
+              </div>
+
+              {/* Engine & Performance Section */}
+              <div className="space-y-2 p-2 bg-muted/30 rounded">
+                <div className="flex items-center gap-1.5">
+                  <Gauge className="h-3 w-3 text-primary" />
+                  <Label className="text-xs font-semibold text-primary">Motori & Performanca</Label>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="filter-label text-xs font-medium">Karburanti</Label>
+                  <AdaptiveSelect 
+                    value={filters.fuel_type || 'all'} 
+                    onValueChange={(value) => updateFilter('fuel_type', value)}
+                    placeholder="Çdo tip"
+                    className="filter-control h-8 text-xs"
+                    options={[
+                      ...(isStrictMode && filters.fuel_type ? [] : [{ value: 'all', label: 'Çdo tip' }]),
+                      ...Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => ({
+                        value: id.toString(),
+                        label: name.charAt(0).toUpperCase() + name.slice(1)
+                      }))
+                    ]}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="filter-label text-xs font-medium">Transmisioni</Label>
+                  <AdaptiveSelect 
+                    value={filters.transmission || 'all'} 
+                    onValueChange={(value) => updateFilter('transmission', value)}
+                    placeholder="Çdo tip"
+                    className="filter-control h-8 text-xs"
+                    options={[
+                      ...(isStrictMode && filters.transmission ? [] : [{ value: 'all', label: 'Çdo tip' }]),
+                      ...Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => ({
+                        value: id.toString(),
+                        label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
+                      }))
+                    ]}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="filter-label text-xs font-medium">Sistemi i Ngarjës</Label>
+                  <AdaptiveSelect 
+                    value={filters.drive_type || 'all'} 
+                    onValueChange={(value) => updateFilter('drive_type', value)}
+                    placeholder="Çdo tip"
+                    className="filter-control h-8 text-xs"
+                    options={[
+                      { value: 'all', label: 'Çdo tip' },
+                      ...Object.entries(DRIVE_TYPE_OPTIONS).map(([name, id]) => ({
+                        value: id.toString(),
+                        label: name === 'fwd' ? 'Përpara' : 
+                              name === 'rwd' ? 'Prapa' : 
+                              name === 'awd' ? 'Të gjitha rrotat' : 
+                              name === '4wd' ? '4x4' : name.toUpperCase()
+                      }))
+                    ]}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="filter-label text-xs font-medium">Vëllimi i Motorit</Label>
+                  <AdaptiveSelect 
+                    value={filters.engine_displacement || 'all'} 
+                    onValueChange={(value) => updateFilter('engine_displacement', value)}
+                    placeholder="Çdo madhësi"
+                    className="filter-control h-8 text-xs"
+                    options={[
+                      { value: 'all', label: 'Çdo madhësi' },
+                      ...Object.entries(ENGINE_DISPLACEMENT_OPTIONS).map(([range, _]) => ({
+                        value: range,
+                        label: `${range}L`
+                      }))
+                    ]}
+                  />
+                </div>
+              </div>
+
+              {/* Features & Comfort Section */}
+              <div className="space-y-2 p-2 bg-muted/30 rounded">
+                <div className="flex items-center gap-1.5">
+                  <Users className="h-3 w-3 text-primary" />
+                  <Label className="text-xs font-semibold text-primary">Karakteristikat & Komfori</Label>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="filter-label text-xs font-medium">Numri i Vendeve</Label>
+                  <AdaptiveSelect 
+                    value={filters.seats_count || 'all'} 
+                    onValueChange={(value) => updateFilter('seats_count', value)}
+                    placeholder="Çdo numër"
+                    className="filter-control h-8 text-xs"
+                    options={[
+                      { value: 'all', label: 'Çdo numër' },
+                      ...Object.entries(SEATS_COUNT_OPTIONS).map(([label, count]) => ({
+                        value: count.toString(),
+                        label: `${label} ${label === '9+' ? 'ose më shumë' : 'vende'}`
+                      }))
+                    ]}
+                  />
+                </div>
+              </div>
+
+              {/* Condition & History Section */}
+              <div className="space-y-2 p-2 bg-muted/30 rounded">
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck className="h-3 w-3 text-primary" />
+                  <Label className="text-xs font-semibold text-primary">Gjendja & Historia</Label>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="filter-label text-xs font-medium">Historia e Aksidenteve</Label>
+                  <AdaptiveSelect 
+                    value={filters.accident_history || 'all'} 
+                    onValueChange={(value) => updateFilter('accident_history', value)}
+                    placeholder="Çdo gjendje"
+                    className="filter-control h-8 text-xs"
+                    options={[
+                      { value: 'all', label: 'Çdo gjendje' },
+                      ...Object.entries(ACCIDENT_HISTORY_OPTIONS).map(([name, id]) => ({
+                        value: id.toString(),
+                        label: name === 'no_accident' ? 'Pa aksidente' :
+                              name === '1_minor' ? '1 aksident i vogël' :
+                              name === '2_minor' ? '2 aksidente të vogla' :
+                              name === '3_plus' ? '3+ aksidente' :
+                              name === 'major_accident' ? 'Aksident i madh' : name
+                      }))
+                    ]}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="filter-label text-xs font-medium">Lloji i Regjistrimit</Label>
+                  <AdaptiveSelect 
+                    value={filters.registration_type || 'all'} 
+                    onValueChange={(value) => updateFilter('registration_type', value)}
+                    placeholder="Çdo tip"
+                    className="filter-control h-8 text-xs"
+                    options={[
+                      { value: 'all', label: 'Çdo tip' },
+                      ...Object.entries(REGISTRATION_TYPE_OPTIONS).map(([name, id]) => ({
+                        value: id.toString(),
+                        label: name === 'personal' ? 'Personal' :
+                              name === 'commercial' ? 'Komercial' :
+                              name === 'lease' ? 'Qira' :
+                              name === 'rental' ? 'Rentuar' :
+                              name === 'government' ? 'Qeveritar' :
+                              name === 'taxi' ? 'Taksi' : name
+                      }))
+                    ]}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="filter-label text-xs font-medium">Certifikim</Label>
+                  <AdaptiveSelect 
+                    value={filters.certification || 'all'} 
+                    onValueChange={(value) => updateFilter('certification', value)}
+                    placeholder="Çdo tip"
+                    className="filter-control h-8 text-xs"
+                    options={[
+                      { value: 'all', label: 'Çdo tip' },
+                      ...Object.entries(CERTIFICATION_OPTIONS).map(([name, id]) => ({
+                        value: id.toString(),
+                        label: name === 'manufacturer_certified' ? 'I certifikuar nga prodhuesi' :
+                              name === 'dealer_certified' ? 'I certifikuar nga shitësi' :
+                              name === 'inspection_passed' ? 'I inspektuar' :
+                              name === 'warranty_included' ? 'Me garanci' :
+                              name === 'service_history' ? 'Me histori shërbimi' : name
+                      }))
+                    ]}
+                  />
+                </div>
+              </div>
+
+              {/* Advanced Specifications */}
+              <div className="space-y-2 p-2 bg-muted/30 rounded">
+                <div className="flex items-center gap-1.5">
+                  <FileText className="h-3 w-3 text-primary" />
+                  <Label className="text-xs font-semibold text-primary">Specifikime të Avancuara</Label>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="filter-label text-xs font-medium">Grada/Motori</Label>
                   {filters.model_id && filters.model_id !== 'all' ? (
                     <MultiSelect
                       value={Array.isArray(filters.grade_iaai) ? filters.grade_iaai : filters.grade_iaai ? [filters.grade_iaai] : []}
                       onValueChange={(selectedGrades) => {
-                        // Convert back to the expected format - using comma-separated string for API compatibility
                         const gradeValue = selectedGrades.length > 0 ? selectedGrades.join(',') : undefined;
                         updateFilter('grade_iaai', gradeValue);
                       }}
@@ -492,11 +753,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   )}
                 </div>
 
-                <div className="space-y-1 filter-section">
-                  <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-                    <Cog className="h-2.5 w-2.5" />
-                    Niveli i Pajisjes
-                  </Label>
+                <div className="space-y-1">
+                  <Label className="filter-label text-xs font-medium">Niveli i Pajisjes</Label>
                   <AdaptiveSelect 
                     value={filters.trim_level || 'all'} 
                     onValueChange={(value) => updateFilter('trim_level', value)}
@@ -513,112 +771,54 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   />
                 </div>
 
-                 <div className="space-y-1 filter-section">
-                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-                     <Palette className="h-2.5 w-2.5" />
-                     Ngjyra
-                   </Label>
-                   <AdaptiveSelect 
-                     value={filters.color || 'all'} 
-                     onValueChange={(value) => updateFilter('color', value)}
-                     placeholder="Çdo ngjyrë"
-                     className="filter-control h-8 text-xs"
-                     options={[
-                       // In strict mode, show "Any color" only when no specific color is selected or not in strict mode
-                       ...(isStrictMode && filters.color ? [] : [{ value: 'all', label: 'Çdo ngjyrë' }]),
-                       ...Object.entries(COLOR_OPTIONS).map(([name, id]) => ({
-                         value: id.toString(),
-                         label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
-                       }))
-                     ]}
-                   />
-                 </div>
-
-                 <div className="space-y-1 filter-section">
-                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-                     <Fuel className="h-2.5 w-2.5" />
-                     Karburanti
-                   </Label>
-                   <AdaptiveSelect 
-                     value={filters.fuel_type || 'all'} 
-                     onValueChange={(value) => updateFilter('fuel_type', value)}
-                     placeholder="Çdo tip"
-                     className="filter-control h-8 text-xs"
-                     options={[
-                       // In strict mode, show "Any type" only when no specific fuel type is selected or not in strict mode
-                       ...(isStrictMode && filters.fuel_type ? [] : [{ value: 'all', label: 'Çdo tip' }]),
-                       ...Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => ({
-                         value: id.toString(),
-                         label: name.charAt(0).toUpperCase() + name.slice(1)
-                       }))
-                     ]}
-                   />
-                 </div>
-
-                 <div className="space-y-1 filter-section">
-                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-                     <Settings className="h-2.5 w-2.5" />
-                     Transmisioni
-                   </Label>
-                   <AdaptiveSelect 
-                     value={filters.transmission || 'all'} 
-                     onValueChange={(value) => updateFilter('transmission', value)}
-                     placeholder="Çdo tip"
-                     className="filter-control h-8 text-xs"
-                     options={[
-                       // In strict mode, show "Any type" only when no specific transmission is selected or not in strict mode
-                       ...(isStrictMode && filters.transmission ? [] : [{ value: 'all', label: 'Çdo tip' }]),
-                       ...Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => ({
-                         value: id.toString(),
-                         label: name.charAt(0).toUpperCase() + name.slice(1)
-                       }))
-                     ]}
-                   />
-                 </div>
-
-                 <div className="space-y-1 filter-section">
-                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-                     <Car className="h-2.5 w-2.5" />
-                     Lloji i Trupit
-                   </Label>
-                   <AdaptiveSelect 
-                     value={filters.body_type || 'all'} 
-                     onValueChange={(value) => updateFilter('body_type', value)}
-                     placeholder="Çdo tip"
-                     className="filter-control h-8 text-xs"
-                     options={[
-                       { value: 'all', label: 'Çdo tip' },
-                       ...Object.entries(BODY_TYPE_OPTIONS).map(([name, id]) => ({
-                         value: id.toString(),
-                         label: name.charAt(0).toUpperCase() + name.slice(1)
-                       }))
-                     ]}
-                   />
-                 </div>
-
-                 {/* Mileage */}
-                 <div className="space-y-1 filter-section">
-                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-                     <MapPin className="h-2.5 w-2.5" />
-                     Kilometrazhi (km)
-                   </Label>
-                   <div className="grid grid-cols-2 gap-1.5">
-                     <Input
-                       type="number"
-                       placeholder="Nga"
-                       value={filters.odometer_from_km || ''}
-                       onChange={(e) => updateFilter('odometer_from_km', e.target.value)}
-                       className="filter-control h-8 text-xs"
-                     />
-                     <Input
-                       type="number"
-                       placeholder="Deri"
-                       value={filters.odometer_to_km || ''}
-                       onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
-                       className="filter-control h-8 text-xs"
-                     />
-                   </div>
-                 </div>
+                {/* Mileage with Presets */}
+                <div className="space-y-1">
+                  <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+                    <MapPin className="h-2.5 w-2.5" />
+                    Kilometrazhi (km)
+                  </Label>
+                  
+                  {/* Mileage Presets */}
+                  <div className="grid grid-cols-2 gap-1 mb-2">
+                    {MILEAGE_RANGE_PRESETS.slice(0, 4).map((preset) => (
+                      <Button
+                        key={preset.label}
+                        variant={
+                          filters.odometer_from_km === preset.min.toString() && 
+                          filters.odometer_to_km === (preset.max === 999999 ? '' : preset.max.toString())
+                            ? "default" 
+                            : "outline"
+                        }
+                        size="sm"
+                        className="h-6 px-2 text-xs"
+                        onClick={() => {
+                          updateFilter('odometer_from_km', preset.min.toString());
+                          updateFilter('odometer_to_km', preset.max === 999999 ? '' : preset.max.toString());
+                        }}
+                        title={`Quick filter: ${preset.label}`}
+                      >
+                        {preset.label.replace(' km', '').replace(',000', 'K')}
+                      </Button>
+                    ))}
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <Input
+                      type="number"
+                      placeholder="Nga"
+                      value={filters.odometer_from_km || ''}
+                      onChange={(e) => updateFilter('odometer_from_km', e.target.value)}
+                      className="filter-control h-8 text-xs"
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Deri"
+                      value={filters.odometer_to_km || ''}
+                      onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
+                      className="filter-control h-8 text-xs"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           )}
