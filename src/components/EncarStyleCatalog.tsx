@@ -28,10 +28,12 @@ import {
   Share2,
   Phone,
   Eye,
-  Car
+  Car,
+  Award
 } from 'lucide-react';
 import { fetchCarsWithKeyset, SortOption as CarsApiSortOption, CarFilters } from '@/services/carsApi';
 import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
+import { useSecureAuctionAPI } from '@/hooks/useSecureAuctionAPI';
 
 interface EncarStyleCatalogProps {
   highlightCarId?: string | null;
@@ -60,6 +62,12 @@ const BODY_TYPES = ['Sedan', 'SUV', 'Hatchback', 'Wagon', 'Coupe', 'Convertible'
 export const EncarStyleCatalog = ({ highlightCarId, className = '' }: EncarStyleCatalogProps) => {
   const { toast } = useToast();
   const { convertUSDtoEUR } = useCurrencyAPI();
+  const { 
+    fetchManufacturers, 
+    fetchModels, 
+    fetchGrades, 
+    fetchTrimLevels 
+  } = useSecureAuctionAPI();
   
   // State for cars and pagination
   const [cars, setCars] = useState<any[]>([]);
@@ -79,6 +87,10 @@ export const EncarStyleCatalog = ({ highlightCarId, className = '' }: EncarStyle
     priceRange?: [number, number];
     yearRange?: [number, number];
     mileageRange?: [number, number];
+    manufacturerId?: string;
+    modelId?: string;
+    selectedGrades?: string[];
+    selectedTrims?: string[];
   }>({
     priceRange: [5000, 100000],
     yearRange: [2000, 2024],
@@ -87,6 +99,96 @@ export const EncarStyleCatalog = ({ highlightCarId, className = '' }: EncarStyle
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMakes, setSelectedMakes] = useState<string[]>([]);
+  
+  // API data state
+  const [manufacturers, setManufacturers] = useState<any[]>([]);
+  const [models, setModels] = useState<any[]>([]);
+  const [grades, setGrades] = useState<any[]>([]);
+  const [trimLevels, setTrimLevels] = useState<any[]>([]);
+  const [loadingManufacturers, setLoadingManufacturers] = useState(false);
+  const [loadingModels, setLoadingModels] = useState(false);
+  const [loadingGrades, setLoadingGrades] = useState(false);
+  const [loadingTrims, setLoadingTrims] = useState(false);
+
+  
+  // Load manufacturers on component mount
+  useEffect(() => {
+    const loadManufacturers = async () => {
+      setLoadingManufacturers(true);
+      try {
+        const data = await fetchManufacturers();
+        setManufacturers(data);
+      } catch (err) {
+        console.error('Failed to load manufacturers:', err);
+      } finally {
+        setLoadingManufacturers(false);
+      }
+    };
+    loadManufacturers();
+  }, [fetchManufacturers]);
+
+  // Load models when manufacturer changes
+  useEffect(() => {
+    if (filters.manufacturerId) {
+      const loadModels = async () => {
+        setLoadingModels(true);
+        try {
+          const data = await fetchModels(filters.manufacturerId);
+          setModels(data);
+        } catch (err) {
+          console.error('Failed to load models:', err);
+          setModels([]);
+        } finally {
+          setLoadingModels(false);
+        }
+      };
+      loadModels();
+    } else {
+      setModels([]);
+    }
+  }, [filters.manufacturerId, fetchModels]);
+
+  // Load grades when manufacturer or model changes
+  useEffect(() => {
+    if (filters.manufacturerId) {
+      const loadGrades = async () => {
+        setLoadingGrades(true);
+        try {
+          const data = await fetchGrades(filters.manufacturerId, filters.modelId);
+          setGrades(data);
+        } catch (err) {
+          console.error('Failed to load grades:', err);
+          setGrades([]);
+        } finally {
+          setLoadingGrades(false);
+        }
+      };
+      loadGrades();
+    } else {
+      setGrades([]);
+    }
+  }, [filters.manufacturerId, filters.modelId, fetchGrades]);
+
+  // Load trim levels when manufacturer or model changes
+  useEffect(() => {
+    if (filters.manufacturerId) {
+      const loadTrims = async () => {
+        setLoadingTrims(true);
+        try {
+          const data = await fetchTrimLevels(filters.manufacturerId, filters.modelId);
+          setTrimLevels(data);
+        } catch (err) {
+          console.error('Failed to load trim levels:', err);
+          setTrimLevels([]);
+        } finally {
+          setLoadingTrims(false);
+        }
+      };
+      loadTrims();
+    } else {
+      setTrimLevels([]);
+    }
+  }, [filters.manufacturerId, filters.modelId, fetchTrimLevels]);
 
   // Fetch cars with current filters and sort
   const fetchCars = useCallback(async (resetList = false, cursor?: string) => {
@@ -109,6 +211,10 @@ export const EncarStyleCatalog = ({ highlightCarId, className = '' }: EncarStyle
         priceMax: filters.priceRange?.[1]?.toString(),
         yearMin: filters.yearRange?.[0]?.toString(),
         yearMax: filters.yearRange?.[1]?.toString(),
+        manufacturerId: filters.manufacturerId,
+        modelId: filters.modelId,
+        grades: filters.selectedGrades?.length ? filters.selectedGrades.join(',') : undefined,
+        trims: filters.selectedTrims?.length ? filters.selectedTrims.join(',') : undefined
       };
 
       const response = await fetchCarsWithKeyset({
@@ -171,7 +277,11 @@ export const EncarStyleCatalog = ({ highlightCarId, className = '' }: EncarStyle
     setFilters({
       priceRange: [5000, 100000],
       yearRange: [2000, 2024],
-      mileageRange: [0, 300000]
+      mileageRange: [0, 300000],
+      manufacturerId: undefined,
+      modelId: undefined,
+      selectedGrades: [],
+      selectedTrims: []
     });
     setSearchTerm('');
     setSelectedMakes([]);
@@ -232,7 +342,10 @@ export const EncarStyleCatalog = ({ highlightCarId, className = '' }: EncarStyle
                 )}
               </div>
               {(selectedMakes.length > 0 || searchTerm || 
-                filters.make || filters.model || filters.fuel) && (
+                filters.make || filters.model || filters.fuel ||
+                filters.manufacturerId || filters.modelId ||
+                (filters.selectedGrades && filters.selectedGrades.length > 0) ||
+                (filters.selectedTrims && filters.selectedTrims.length > 0)) && (
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -289,9 +402,19 @@ export const EncarStyleCatalog = ({ highlightCarId, className = '' }: EncarStyle
               >
                 <Filter className="h-4 w-4" />
                 Filters
-                {(selectedMakes.length > 0 || searchTerm) && (
+                {(selectedMakes.length > 0 || searchTerm ||
+                  filters.manufacturerId || filters.modelId ||
+                  (filters.selectedGrades && filters.selectedGrades.length > 0) ||
+                  (filters.selectedTrims && filters.selectedTrims.length > 0)) && (
                   <Badge variant="secondary" className="ml-1">
-                    {selectedMakes.length + (searchTerm ? 1 : 0)}
+                    {[
+                      selectedMakes.length,
+                      searchTerm ? 1 : 0,
+                      filters.manufacturerId ? 1 : 0,
+                      filters.modelId ? 1 : 0,
+                      filters.selectedGrades?.length || 0,
+                      filters.selectedTrims?.length || 0
+                    ].reduce((a, b) => a + b, 0)}
                   </Badge>
                 )}
               </Button>
@@ -305,6 +428,158 @@ export const EncarStyleCatalog = ({ highlightCarId, className = '' }: EncarStyle
           {/* Filters Sidebar - Encar Style */}
           {showFilters && (
             <div className="w-80 space-y-6">
+              {/* Brand/Manufacturer */}
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="font-semibold mb-4 flex items-center gap-2">
+                    <Car className="h-4 w-4" />
+                    Brand
+                  </h3>
+                  <Select 
+                    value={filters.manufacturerId || 'all'} 
+                    onValueChange={(value) => setFilters(prev => ({ 
+                      ...prev, 
+                      manufacturerId: value === 'all' ? undefined : value,
+                      modelId: undefined, // Reset model when brand changes
+                      selectedGrades: [],
+                      selectedTrims: []
+                    }))}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder={loadingManufacturers ? "Loading brands..." : "Select Brand"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Brands</SelectItem>
+                      {manufacturers.map((manufacturer) => (
+                        <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
+                          <div className="flex items-center gap-2">
+                            {manufacturer.image && (
+                              <img 
+                                src={manufacturer.image} 
+                                alt={manufacturer.name} 
+                                className="w-4 h-4 object-contain" 
+                              />
+                            )}
+                            <span>{manufacturer.name} ({manufacturer.cars_qty || 0})</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </CardContent>
+              </Card>
+
+              {/* Model */}
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="font-semibold mb-4 flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    Model
+                  </h3>
+                  <Select 
+                    value={filters.modelId || 'all'} 
+                    onValueChange={(value) => setFilters(prev => ({ 
+                      ...prev, 
+                      modelId: value === 'all' ? undefined : value,
+                      selectedGrades: [],
+                      selectedTrims: []
+                    }))}
+                    disabled={!filters.manufacturerId || loadingModels}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder={
+                        !filters.manufacturerId ? "Select brand first" :
+                        loadingModels ? "Loading models..." : 
+                        "Select Model"
+                      } />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Models</SelectItem>
+                      {models.map((model) => (
+                        <SelectItem key={model.id} value={model.id.toString()}>
+                          {model.name} ({model.cars_qty || 0})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </CardContent>
+              </Card>
+
+              {/* Grade */}
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="font-semibold mb-4 flex items-center gap-2">
+                    <Award className="h-4 w-4" />
+                    Grade
+                  </h3>
+                  {!filters.manufacturerId ? (
+                    <div className="text-sm text-muted-foreground">Select brand first</div>
+                  ) : loadingGrades ? (
+                    <div className="text-sm text-muted-foreground">Loading grades...</div>
+                  ) : grades.length === 0 ? (
+                    <div className="text-sm text-muted-foreground">No grades available</div>
+                  ) : (
+                    <div className="space-y-3 max-h-48 overflow-y-auto">
+                      {grades.map((grade) => (
+                        <div key={grade.value} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`grade-${grade.value}`}
+                            checked={filters.selectedGrades?.includes(grade.value) || false}
+                            onCheckedChange={(checked) => {
+                              const currentGrades = filters.selectedGrades || [];
+                              const newGrades = checked 
+                                ? [...currentGrades, grade.value]
+                                : currentGrades.filter(g => g !== grade.value);
+                              setFilters(prev => ({ ...prev, selectedGrades: newGrades }));
+                            }}
+                          />
+                          <label htmlFor={`grade-${grade.value}`} className="text-sm font-medium cursor-pointer">
+                            {grade.label} {grade.count ? `(${grade.count})` : ''}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Trim Level */}
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="font-semibold mb-4 flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    Trim Level
+                  </h3>
+                  {!filters.manufacturerId ? (
+                    <div className="text-sm text-muted-foreground">Select brand first</div>
+                  ) : loadingTrims ? (
+                    <div className="text-sm text-muted-foreground">Loading trim levels...</div>
+                  ) : trimLevels.length === 0 ? (
+                    <div className="text-sm text-muted-foreground">No trim levels available</div>
+                  ) : (
+                    <div className="space-y-3 max-h-48 overflow-y-auto">
+                      {trimLevels.map((trim) => (
+                        <div key={trim.value} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`trim-${trim.value}`}
+                            checked={filters.selectedTrims?.includes(trim.value) || false}
+                            onCheckedChange={(checked) => {
+                              const currentTrims = filters.selectedTrims || [];
+                              const newTrims = checked 
+                                ? [...currentTrims, trim.value]
+                                : currentTrims.filter(t => t !== trim.value);
+                              setFilters(prev => ({ ...prev, selectedTrims: newTrims }));
+                            }}
+                          />
+                          <label htmlFor={`trim-${trim.value}`} className="text-sm font-medium cursor-pointer">
+                            {trim.label} {trim.count ? `(${trim.count})` : ''}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
               {/* Price Range */}
               <Card>
                 <CardContent className="p-6">
@@ -491,8 +766,26 @@ export const EncarStyleCatalog = ({ highlightCarId, className = '' }: EncarStyle
 const CarCard = ({ car, convertUSDtoEUR }: { car: any; convertUSDtoEUR: (amount: number) => number }) => {
   const price = convertUSDtoEUR(car.price_cents ? Math.round(car.price_cents / 100) : car.price || 25000);
   
+  const handleCardClick = () => {
+    // Navigate to car details page using lot number or id
+    const carId = car.lot_number || car.id;
+    window.location.href = `/car/${carId}`;
+  };
+
+  const handleViewDetails = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    handleCardClick();
+  };
+
+  const handleContact = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const message = `Hello! I'm interested in the ${car.year} ${car.make} ${car.model}. Could you provide more information?`;
+    const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+  
   return (
-    <Card className="group hover:shadow-lg transition-all duration-200 cursor-pointer">
+    <Card className="group hover:shadow-lg transition-all duration-200 cursor-pointer" onClick={handleCardClick}>
       <div className="relative">
         <div className="aspect-[4/3] overflow-hidden rounded-t-lg">
           <img
@@ -502,10 +795,10 @@ const CarCard = ({ car, convertUSDtoEUR }: { car: any; convertUSDtoEUR: (amount:
           />
         </div>
         <div className="absolute top-2 right-2 flex gap-2">
-          <Button size="sm" variant="secondary" className="h-8 w-8 p-0">
+          <Button size="sm" variant="secondary" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
             <Heart className="h-4 w-4" />
           </Button>
-          <Button size="sm" variant="secondary" className="h-8 w-8 p-0">
+          <Button size="sm" variant="secondary" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
             <Share2 className="h-4 w-4" />
           </Button>
         </div>
@@ -551,11 +844,11 @@ const CarCard = ({ car, convertUSDtoEUR }: { car: any; convertUSDtoEUR: (amount:
         </div>
         
         <div className="flex gap-2 mt-4">
-          <Button className="flex-1" size="sm">
+          <Button className="flex-1" size="sm" onClick={handleViewDetails}>
             <Eye className="h-4 w-4 mr-2" />
             View Details
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleContact}>
             <Phone className="h-4 w-4 mr-2" />
             Contact
           </Button>
@@ -569,8 +862,26 @@ const CarCard = ({ car, convertUSDtoEUR }: { car: any; convertUSDtoEUR: (amount:
 const CarListItem = ({ car, convertUSDtoEUR }: { car: any; convertUSDtoEUR: (amount: number) => number }) => {
   const price = convertUSDtoEUR(car.price_cents ? Math.round(car.price_cents / 100) : car.price || 25000);
   
+  const handleCardClick = () => {
+    // Navigate to car details page using lot number or id
+    const carId = car.lot_number || car.id;
+    window.location.href = `/car/${carId}`;
+  };
+
+  const handleViewDetails = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    handleCardClick();
+  };
+
+  const handleContact = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const message = `Hello! I'm interested in the ${car.year} ${car.make} ${car.model}. Could you provide more information?`;
+    const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+  
   return (
-    <Card className="group hover:shadow-md transition-all duration-200 cursor-pointer">
+    <Card className="group hover:shadow-md transition-all duration-200 cursor-pointer" onClick={handleCardClick}>
       <CardContent className="p-4">
         <div className="flex gap-4">
           <div className="w-48 h-36 flex-shrink-0">
@@ -592,10 +903,10 @@ const CarListItem = ({ car, convertUSDtoEUR }: { car: any; convertUSDtoEUR: (amo
                 </p>
               </div>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" onClick={(e) => e.stopPropagation()}>
                   <Heart className="h-4 w-4" />
                 </Button>
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" onClick={(e) => e.stopPropagation()}>
                   <Share2 className="h-4 w-4" />
                 </Button>
               </div>
@@ -628,11 +939,11 @@ const CarListItem = ({ car, convertUSDtoEUR }: { car: any; convertUSDtoEUR: (amo
             )}
             
             <div className="flex gap-2">
-              <Button size="sm">
+              <Button size="sm" onClick={handleViewDetails}>
                 <Eye className="h-4 w-4 mr-2" />
                 View Details
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={handleContact}>
                 <Phone className="h-4 w-4 mr-2" />
                 Contact Dealer
               </Button>

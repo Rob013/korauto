@@ -497,20 +497,40 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     <Cog className="h-2.5 w-2.5" />
                     Niveli i Pajisjes
                   </Label>
-                  <AdaptiveSelect 
-                    value={filters.trim_level || 'all'} 
-                    onValueChange={(value) => updateFilter('trim_level', value)}
-                    disabled={!filters.manufacturer_id}
-                    placeholder={filters.manufacturer_id ? "Të gjithë nivelet e pajisjes" : "Zgjidhni markën së pari"}
-                    className="filter-control h-8 text-xs"
-                    options={[
-                      { value: 'all', label: 'Të gjithë nivelet e pajisjes' },
-                      ...trimLevels.map((trim) => ({
+                  {filters.model_id && filters.model_id !== 'all' ? (
+                    <MultiSelect
+                      value={Array.isArray(filters.trim_level) ? filters.trim_level : filters.trim_level ? [filters.trim_level] : []}
+                      onValueChange={(selectedTrimLevels) => {
+                        // Convert back to the expected format - using comma-separated string for API compatibility
+                        const trimValue = selectedTrimLevels.length > 0 ? selectedTrimLevels.join(',') : undefined;
+                        updateFilter('trim_level', trimValue);
+                      }}
+                      disabled={!filters.manufacturer_id}
+                      placeholder={filters.manufacturer_id ? "Zgjidhni nivelet e pajisjes" : "Zgjidhni markën së pari"}
+                      className="filter-control h-8 text-xs"
+                      options={trimLevels.map((trim) => ({
                         value: trim.value,
-                        label: `${trim.label}${trim.count ? ` (${trim.count})` : ''}`
-                      }))
-                    ]}
-                  />
+                        label: trim.label,
+                        count: trim.count
+                      }))}
+                      maxDisplayed={2}
+                    />
+                  ) : (
+                    <AdaptiveSelect 
+                      value={filters.trim_level || 'all'} 
+                      onValueChange={(value) => updateFilter('trim_level', value)}
+                      disabled={!filters.manufacturer_id}
+                      placeholder={filters.manufacturer_id ? "Të gjithë nivelet e pajisjes" : "Zgjidhni markën së pari"}
+                      className="filter-control h-8 text-xs"
+                      options={[
+                        { value: 'all', label: 'Të gjithë nivelet e pajisjes' },
+                        ...trimLevels.map((trim) => ({
+                          value: trim.value,
+                          label: `${trim.label}${trim.count ? ` (${trim.count})` : ''}`
+                        }))
+                      ]}
+                    />
+                  )}
                 </div>
 
                  <div className="space-y-1 filter-section">
@@ -881,6 +901,78 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   }))
                 ]}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Grada/Motori</Label>
+              {filters.model_id && filters.model_id !== 'all' ? (
+                <MultiSelect
+                  value={Array.isArray(filters.grade_iaai) ? filters.grade_iaai : filters.grade_iaai ? [filters.grade_iaai] : []}
+                  onValueChange={(selectedGrades) => {
+                    const gradeValue = selectedGrades.length > 0 ? selectedGrades.join(',') : undefined;
+                    updateFilter('grade_iaai', gradeValue);
+                  }}
+                  disabled={!filters.manufacturer_id}
+                  placeholder={filters.manufacturer_id ? "Zgjidhni gradat" : "Zgjidhni markën së pari"}
+                  className="h-10"
+                  options={grades.map((grade) => ({
+                    value: grade.value,
+                    label: grade.label,
+                    count: grade.count
+                  }))}
+                  maxDisplayed={2}
+                />
+              ) : (
+                <AdaptiveSelect 
+                  value={filters.grade_iaai || 'all'} 
+                  onValueChange={(value) => updateFilter('grade_iaai', value)}
+                  disabled={!filters.manufacturer_id}
+                  placeholder={filters.manufacturer_id ? "Të gjitha gradat" : "Zgjidhni markën së pari"}
+                  options={[
+                    { value: 'all', label: 'Të gjitha gradat' },
+                    ...grades.map((grade) => ({
+                      value: grade.value,
+                      label: `${grade.label}${grade.count ? ` (${grade.count})` : ''}`
+                    }))
+                  ]}
+                />
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Niveli i Pajisjes</Label>
+              {filters.model_id && filters.model_id !== 'all' ? (
+                <MultiSelect
+                  value={Array.isArray(filters.trim_level) ? filters.trim_level : filters.trim_level ? [filters.trim_level] : []}
+                  onValueChange={(selectedTrimLevels) => {
+                    const trimValue = selectedTrimLevels.length > 0 ? selectedTrimLevels.join(',') : undefined;
+                    updateFilter('trim_level', trimValue);
+                  }}
+                  disabled={!filters.manufacturer_id}
+                  placeholder={filters.manufacturer_id ? "Zgjidhni nivelet e pajisjes" : "Zgjidhni markën së pari"}
+                  className="h-10"
+                  options={trimLevels.map((trim) => ({
+                    value: trim.value,
+                    label: trim.label,
+                    count: trim.count
+                  }))}
+                  maxDisplayed={2}
+                />
+              ) : (
+                <AdaptiveSelect 
+                  value={filters.trim_level || 'all'} 
+                  onValueChange={(value) => updateFilter('trim_level', value)}
+                  disabled={!filters.manufacturer_id}
+                  placeholder={filters.manufacturer_id ? "Të gjithë nivelet e pajisjes" : "Zgjidhni markën së pari"}
+                  options={[
+                    { value: 'all', label: 'Të gjithë nivelet e pajisjes' },
+                    ...trimLevels.map((trim) => ({
+                      value: trim.value,
+                      label: `${trim.label}${trim.count ? ` (${trim.count})` : ''}`
+                    }))
+                  ]}
+                />
+              )}
             </div>
           </div>
         )}
