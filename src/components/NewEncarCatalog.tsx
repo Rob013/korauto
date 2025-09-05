@@ -23,7 +23,7 @@ import { useCarsResults, useCarsFacets, useCarsSearchPrefetch } from '@/hooks/us
 import { CarsGrid } from '@/components/results/CarsGrid';
 import { Facet } from '@/components/filters/Facet';
 import { RangeFacet } from '@/components/filters/RangeFacet';
-import { SearchReq, SortOption, FACET_FIELDS } from '@/lib/search/types';
+import { SearchReq, SortOption, FACET_FIELDS, DEFAULT_SORT, DEFAULT_PAGE_SIZE } from '@/lib/search/types';
 
 interface NewEncarCatalogProps {
   highlightCarId?: string | null;
@@ -47,30 +47,57 @@ export const NewEncarCatalog = ({ highlightCarId, className = '' }: NewEncarCata
   
   // Get store state and actions
   const store = useFilterStore();
-  const { searchRequest, hasActiveFilters, activeFilterCount } = useFilterStoreSelectors();
+  const selectors = useFilterStoreSelectors();
   
   // Local state for UI
   const [filtersVisible, setFiltersVisible] = useState(true);
-  const [searchInputValue, setSearchInputValue] = useState(store.query);
+  const [searchInputValue, setSearchInputValue] = useState(store?.query || '');
 
   // Update search input when store query changes
   useEffect(() => {
-    setSearchInputValue(store.query);
-  }, [store.query]);
+    if (store?.query !== undefined) {
+      setSearchInputValue(store.query);
+    }
+  }, [store?.query]);
 
-  // Build search requests
-  const resultsRequest = useMemo((): SearchReq => ({
-    ...searchRequest(),
-    mode: 'results',
-  }), [searchRequest]);
+  // Build search requests with safe initialization checks
+  const resultsRequest = useMemo((): SearchReq => {
+    // Only build request if store is initialized to prevent TDZ errors
+    if (!isInitialized || !selectors) {
+      return {
+        mode: 'results',
+        page: 1,
+        pageSize: DEFAULT_PAGE_SIZE,
+        sort: DEFAULT_SORT,
+      };
+    }
+    
+    return {
+      ...selectors.searchRequest(),
+      mode: 'results',
+    };
+  }, [selectors, isInitialized]);
 
-  const facetsRequest = useMemo((): SearchReq => ({
-    ...searchRequest(),
-    mode: 'facets',
-    facets: [...FACET_FIELDS],
-    page: 1,
-    pageSize: 1,
-  }), [searchRequest]);
+  const facetsRequest = useMemo((): SearchReq => {
+    // Only build request if store is initialized to prevent TDZ errors
+    if (!isInitialized || !selectors) {
+      return {
+        mode: 'facets',
+        facets: [...FACET_FIELDS],
+        page: 1,
+        pageSize: 1,
+        sort: DEFAULT_SORT,
+      };
+    }
+    
+    return {
+      ...selectors.searchRequest(),
+      mode: 'facets',
+      facets: [...FACET_FIELDS],
+      page: 1,
+      pageSize: 1,
+    };
+  }, [selectors, isInitialized]);
 
   // Fetch data with two-phase approach
   const resultsQuery = useCarsResults(resultsRequest, { 
@@ -90,6 +117,8 @@ export const NewEncarCatalog = ({ highlightCarId, className = '' }: NewEncarCata
   // Handle search input change (debounced)
   const handleSearchChange = useCallback((value: string) => {
     setSearchInputValue(value);
+    if (!store) return; // Guard against uninitialized store
+    
     const timeoutId = setTimeout(() => {
       store.setQuery(value);
     }, 300);
@@ -99,16 +128,22 @@ export const NewEncarCatalog = ({ highlightCarId, className = '' }: NewEncarCata
   // Handle search submit
   const handleSearchSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
+    if (!store) return; // Guard against uninitialized store
+    
     store.setQuery(searchInputValue);
   }, [store, searchInputValue]);
 
   // Handle filter changes
   const handleFilterChange = useCallback((field: keyof SearchReq['filters'], value: any) => {
+    if (!store) return; // Guard against uninitialized store
+    
     store.setFilter(field, value);
   }, [store]);
 
   // Handle sort change
   const handleSortChange = useCallback((sortString: string) => {
+    if (!store) return; // Guard against uninitialized store
+    
     const [field, dir] = sortString.split(':');
     if (field && dir) {
       store.setSort({ field: field as any, dir: dir as 'asc' | 'desc' });
@@ -117,6 +152,8 @@ export const NewEncarCatalog = ({ highlightCarId, className = '' }: NewEncarCata
 
   // Handle pagination
   const handlePageChange = useCallback((newPage: number) => {
+    if (!store) return; // Guard against uninitialized store
+    
     store.setPage(newPage);
   }, [store]);
 
@@ -147,13 +184,22 @@ export const NewEncarCatalog = ({ highlightCarId, className = '' }: NewEncarCata
 
   // Calculate pagination info
   const totalResults = resultsQuery.data?.total || 0;
-  const totalPages = Math.ceil(totalResults / store.pageSize);
-  const hasNextPage = store.page < totalPages;
-  const hasPrevPage = store.page > 1;
+  const totalPages = Math.ceil(totalResults / (store?.pageSize || DEFAULT_PAGE_SIZE));
+  const currentPage = store?.page || 1;
+  const hasNextPage = currentPage < totalPages;
+  const hasPrevPage = currentPage > 1;
 
   // Loading states
   const isLoading = resultsQuery.isLoading || !isInitialized;
   const isFacetsLoading = facetsQuery.isLoading;
+
+  // Safe access to store properties with fallbacks
+  const currentSort = store?.sort || DEFAULT_SORT;
+  const currentFilters = store?.filters || {};
+  
+  // Safe selector access
+  const hasActiveFilters = selectors?.hasActiveFilters?.() || false;
+  const activeFilterCount = selectors?.activeFilterCount?.() || 0;
 
   // Format price for range facet
   const formatPrice = useCallback((value: number) => {
@@ -209,16 +255,16 @@ export const NewEncarCatalog = ({ highlightCarId, className = '' }: NewEncarCata
               >
                 <SlidersHorizontal className="h-4 w-4" />
                 Filters
-                {activeFilterCount() > 0 && (
+                {activeFilterCount > 0 && (
                   <Badge variant="secondary" className="ml-1">
-                    {activeFilterCount()}
+                    {activeFilterCount}
                   </Badge>
                 )}
               </Button>
 
               {/* Sort */}
               <Select 
-                value={`${store.sort.field}:${store.sort.dir}`}
+                value={`${currentSort.field}:${currentSort.dir}`}
                 onValueChange={handleSortChange}
               >
                 <SelectTrigger className="w-48">
@@ -238,11 +284,12 @@ export const NewEncarCatalog = ({ highlightCarId, className = '' }: NewEncarCata
               </Select>
 
               {/* Clear all filters */}
-              {hasActiveFilters() && (
+              {hasActiveFilters && (
                 <Button
                   variant="outline"
-                  onClick={store.clearFilters}
+                  onClick={store?.clearFilters}
                   className="flex items-center gap-2"
+                  disabled={!store}
                 >
                   <X className="h-4 w-4" />
                   Clear All
@@ -266,7 +313,7 @@ export const NewEncarCatalog = ({ highlightCarId, className = '' }: NewEncarCata
                     title="Make"
                     field="make"
                     facetCounts={facetsQuery.data?.facets?.make}
-                    selectedValues={store.filters.make || []}
+                    selectedValues={currentFilters.make || []}
                     onSelectionChange={(values) => handleFilterChange('make', values.length > 0 ? values : undefined)}
                     disabled={isFacetsLoading}
                   />
@@ -276,7 +323,7 @@ export const NewEncarCatalog = ({ highlightCarId, className = '' }: NewEncarCata
                     title="Model"
                     field="model"
                     facetCounts={facetsQuery.data?.facets?.model}
-                    selectedValues={store.filters.model || []}
+                    selectedValues={currentFilters.model || []}
                     onSelectionChange={(values) => handleFilterChange('model', values.length > 0 ? values : undefined)}
                     disabled={isFacetsLoading}
                   />
@@ -287,7 +334,7 @@ export const NewEncarCatalog = ({ highlightCarId, className = '' }: NewEncarCata
                     field="year"
                     min={1990}
                     max={new Date().getFullYear()}
-                    selectedRange={store.filters.year}
+                    selectedRange={currentFilters.year}
                     onRangeChange={(range) => handleFilterChange('year', range)}
                     disabled={isFacetsLoading}
                   />
@@ -299,7 +346,7 @@ export const NewEncarCatalog = ({ highlightCarId, className = '' }: NewEncarCata
                     min={1000}
                     max={200000}
                     step={1000}
-                    selectedRange={store.filters.price_eur}
+                    selectedRange={currentFilters.price_eur}
                     onRangeChange={(range) => handleFilterChange('price_eur', range)}
                     formatValue={formatPrice}
                     disabled={isFacetsLoading}
@@ -312,7 +359,7 @@ export const NewEncarCatalog = ({ highlightCarId, className = '' }: NewEncarCata
                     min={0}
                     max={300000}
                     step={5000}
-                    selectedRange={store.filters.mileage_km}
+                    selectedRange={currentFilters.mileage_km}
                     onRangeChange={(range) => handleFilterChange('mileage_km', range)}
                     formatValue={formatMileage}
                     disabled={isFacetsLoading}
@@ -323,7 +370,7 @@ export const NewEncarCatalog = ({ highlightCarId, className = '' }: NewEncarCata
                     title="Fuel Type"
                     field="fuel"
                     facetCounts={facetsQuery.data?.facets?.fuel}
-                    selectedValues={store.filters.fuel || []}
+                    selectedValues={currentFilters.fuel || []}
                     onSelectionChange={(values) => handleFilterChange('fuel', values.length > 0 ? values : undefined)}
                     disabled={isFacetsLoading}
                   />
@@ -333,7 +380,7 @@ export const NewEncarCatalog = ({ highlightCarId, className = '' }: NewEncarCata
                     title="Transmission"
                     field="transmission"
                     facetCounts={facetsQuery.data?.facets?.transmission}
-                    selectedValues={store.filters.transmission || []}
+                    selectedValues={currentFilters.transmission || []}
                     onSelectionChange={(values) => handleFilterChange('transmission', values.length > 0 ? values : undefined)}
                     disabled={isFacetsLoading}
                   />
@@ -343,7 +390,7 @@ export const NewEncarCatalog = ({ highlightCarId, className = '' }: NewEncarCata
                     title="Body Type"
                     field="body"
                     facetCounts={facetsQuery.data?.facets?.body}
-                    selectedValues={store.filters.body || []}
+                    selectedValues={currentFilters.body || []}
                     onSelectionChange={(values) => handleFilterChange('body', values.length > 0 ? values : undefined)}
                     disabled={isFacetsLoading}
                   />
@@ -370,24 +417,24 @@ export const NewEncarCatalog = ({ highlightCarId, className = '' }: NewEncarCata
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handlePageChange(store.page - 1)}
+                    onClick={() => handlePageChange(currentPage - 1)}
                     disabled={!hasPrevPage || isLoading}
-                    onMouseEnter={() => hasPrevPage && handlePrefetchPage(store.page - 1)}
+                    onMouseEnter={() => hasPrevPage && handlePrefetchPage(currentPage - 1)}
                   >
                     <ChevronLeft className="h-4 w-4" />
                     Previous
                   </Button>
                   
                   <span className="text-sm px-2">
-                    Page {store.page} of {totalPages}
+                    Page {currentPage} of {totalPages}
                   </span>
                   
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handlePageChange(store.page + 1)}
+                    onClick={() => handlePageChange(currentPage + 1)}
                     disabled={!hasNextPage || isLoading}
-                    onMouseEnter={() => hasNextPage && handlePrefetchPage(store.page + 1)}
+                    onMouseEnter={() => hasNextPage && handlePrefetchPage(currentPage + 1)}
                   >
                     Next
                     <ChevronRight className="h-4 w-4" />
