@@ -94,6 +94,7 @@ interface EncarStyleFilterProps {
   loadingCounts?: boolean;
   onFetchGrades?: (manufacturerId?: string, modelId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
   onFetchTrimLevels?: (manufacturerId?: string, modelId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
+  fetchFilterCounts?: (filters: APIFilters, manufacturers: Manufacturer[]) => Promise<FilterCounts>;
   isHomepage?: boolean;
   compact?: boolean;
   onSearchCars?: () => void;
@@ -114,6 +115,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   onToggleAdvanced,
   onFetchGrades,
   onFetchTrimLevels,
+  fetchFilterCounts,
   isHomepage = false,
   compact = false,
   onSearchCars,
@@ -208,13 +210,13 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
   // Update filters when new filter counts are available
   useEffect(() => {
-    if (filterCounts && manufacturers.length > 0) {
+    if (filterCounts && manufacturers.length > 0 && fetchFilterCounts) {
       // Fetch updated filter counts when manufacturers change
       fetchFilterCounts({}, manufacturers).catch(error => {
         console.warn('Failed to update filter counts:', error);
       });
     }
-  }, [manufacturers.length]);
+  }, [filterCounts, manufacturers.length, fetchFilterCounts]);
 
   // Load filter counts on component mount and when base filters change
   useEffect(() => {

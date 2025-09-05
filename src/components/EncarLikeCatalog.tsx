@@ -169,7 +169,8 @@ export const EncarLikeCatalog = ({ highlightCarId, className = '' }: EncarLikeCa
     models: realModels,
     fetchCars: fetchApiCars,
     fetchManufacturers,
-    fetchModels
+    fetchModels,
+    fetchFilterCounts
   } = useSecureAuctionAPI();
 
   // Update URL parameters whenever state changes
@@ -545,6 +546,7 @@ export const EncarLikeCatalog = ({ highlightCarId, className = '' }: EncarLikeCa
                   // Handle model change
                   console.log('Model changed:', modelId);
                 }}
+                fetchFilterCounts={fetchFilterCounts}
                 compact={false}
                 isHomepage={false}
               />
