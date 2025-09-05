@@ -23,7 +23,7 @@ import { useCarsResults, useCarsFacets, useCarsSearchPrefetch } from '@/hooks/us
 import { CarsGrid } from '@/components/results/CarsGrid';
 import { Facet } from '@/components/filters/Facet';
 import { RangeFacet } from '@/components/filters/RangeFacet';
-import { SearchReq, SortOption, FACET_FIELDS } from '@/lib/search/types';
+import { SearchReq, SortOption, FACET_FIELDS, DEFAULT_SORT, DEFAULT_PAGE_SIZE } from '@/lib/search/types';
 
 interface NewEncarCatalogProps {
   highlightCarId?: string | null;
