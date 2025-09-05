@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -60,17 +61,53 @@ const BODY_TYPES = ['Sedan', 'SUV', 'Hatchback', 'Wagon', 'Coupe', 'Convertible'
 export const EncarStyleCatalog = ({ highlightCarId, className = '' }: EncarStyleCatalogProps) => {
   const { toast } = useToast();
   const { convertUSDtoEUR } = useCurrencyAPI();
+  const [searchParams, setSearchParams] = useSearchParams();
   
   // State for cars and pagination
   const [cars, setCars] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
-  const [sortBy, setSortBy] = useState<CarsApiSortOption>('created_desc');
-  const [showFilters, setShowFilters] = useState(true);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [nextCursor, setNextCursor] = useState<string | undefined>();
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  
+  // Initialize state from URL parameters
+  const initializeFromURL = useCallback(() => {
+    const sortFromURL = searchParams.get('sort') as CarsApiSortOption || 'created_desc';
+    const searchFromURL = searchParams.get('search') || '';
+    const makesFromURL = searchParams.get('makes')?.split(',').filter(Boolean) || [];
+    const priceMinFromURL = parseInt(searchParams.get('priceMin') || '5000');
+    const priceMaxFromURL = parseInt(searchParams.get('priceMax') || '100000');
+    const yearMinFromURL = parseInt(searchParams.get('yearMin') || '2000');
+    const yearMaxFromURL = parseInt(searchParams.get('yearMax') || '2024');
+    const mileageMinFromURL = parseInt(searchParams.get('mileageMin') || '0');
+    const mileageMaxFromURL = parseInt(searchParams.get('mileageMax') || '300000');
+    const fuelFromURL = searchParams.get('fuel') || undefined;
+    const transmissionFromURL = searchParams.get('transmission') || undefined;
+    const bodyTypeFromURL = searchParams.get('bodyType') || undefined;
+    const viewModeFromURL = (searchParams.get('view') as 'grid' | 'list') || 'grid';
+    const showFiltersFromURL = searchParams.get('showFilters') !== 'false';
+
+    return {
+      sortBy: sortFromURL,
+      searchTerm: searchFromURL,
+      selectedMakes: makesFromURL,
+      priceRange: [priceMinFromURL, priceMaxFromURL] as [number, number],
+      yearRange: [yearMinFromURL, yearMaxFromURL] as [number, number],
+      mileageRange: [mileageMinFromURL, mileageMaxFromURL] as [number, number],
+      fuel: fuelFromURL,
+      transmission: transmissionFromURL,
+      bodyType: bodyTypeFromURL,
+      viewMode: viewModeFromURL,
+      showFilters: showFiltersFromURL
+    };
+  }, [searchParams]);
+
+  // Initialize state from URL on component mount
+  const urlState = initializeFromURL();
+  const [sortBy, setSortBy] = useState<CarsApiSortOption>(urlState.sortBy);
+  const [showFilters, setShowFilters] = useState(urlState.showFilters);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(urlState.viewMode);
   
   // Filter state
   const [filters, setFilters] = useState<CarFilters & {
@@ -80,13 +117,46 @@ export const EncarStyleCatalog = ({ highlightCarId, className = '' }: EncarStyle
     yearRange?: [number, number];
     mileageRange?: [number, number];
   }>({
-    priceRange: [5000, 100000],
-    yearRange: [2000, 2024],
-    mileageRange: [0, 300000]
+    priceRange: urlState.priceRange,
+    yearRange: urlState.yearRange,
+    mileageRange: urlState.mileageRange,
+    fuel: urlState.fuel,
+    transmission: urlState.transmission,
+    bodyType: urlState.bodyType
   });
   
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedMakes, setSelectedMakes] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState(urlState.searchTerm);
+  const [selectedMakes, setSelectedMakes] = useState<string[]>(urlState.selectedMakes);
+
+  // Update URL parameters whenever state changes
+  const updateURLParams = useCallback(() => {
+    const params = new URLSearchParams();
+    
+    if (sortBy !== 'created_desc') params.set('sort', sortBy);
+    if (searchTerm) params.set('search', searchTerm);
+    if (selectedMakes.length > 0) params.set('makes', selectedMakes.join(','));
+    if (filters.priceRange?.[0] !== 5000) params.set('priceMin', filters.priceRange[0].toString());
+    if (filters.priceRange?.[1] !== 100000) params.set('priceMax', filters.priceRange[1].toString());
+    if (filters.yearRange?.[0] !== 2000) params.set('yearMin', filters.yearRange[0].toString());
+    if (filters.yearRange?.[1] !== 2024) params.set('yearMax', filters.yearRange[1].toString());
+    if (filters.mileageRange?.[0] !== 0) params.set('mileageMin', filters.mileageRange[0].toString());
+    if (filters.mileageRange?.[1] !== 300000) params.set('mileageMax', filters.mileageRange[1].toString());
+    if (filters.fuel) params.set('fuel', filters.fuel);
+    if (filters.transmission) params.set('transmission', filters.transmission);
+    if (filters.bodyType) params.set('bodyType', filters.bodyType);
+    if (viewMode !== 'grid') params.set('view', viewMode);
+    if (!showFilters) params.set('showFilters', 'false');
+    
+    setSearchParams(params, { replace: true });
+  }, [sortBy, searchTerm, selectedMakes, filters, viewMode, showFilters, setSearchParams]);
+
+  // Update URL parameters whenever state changes (debounced)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      updateURLParams();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [updateURLParams]);
 
   // Fetch cars with current filters and sort
   const fetchCars = useCallback(async (resetList = false, cursor?: string) => {
