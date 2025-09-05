@@ -149,16 +149,11 @@ const ApiInfoDashboard = () => {
           <div>
             <h4 className="font-medium text-sm mb-2">Columns:</h4>
             <div className="flex flex-wrap gap-1">
-              {dataInfo.columns.slice(0, 8).map((column) => (
+              {dataInfo.columns.map((column) => (
                 <Badge key={column} variant="secondary" className="text-xs">
                   {column}
                 </Badge>
               ))}
-              {dataInfo.columns.length > 8 && (
-                <Badge variant="outline" className="text-xs">
-                  +{dataInfo.columns.length - 8} more
-                </Badge>
-              )}
             </div>
           </div>
         </div>
