@@ -7,7 +7,8 @@ import { lazy, Suspense, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InstallPrompt } from "./components/InstallPrompt";
 import { useResourcePreloader } from "./hooks/useResourcePreloader";
-import { AccessibilityEnhancer } from "./utils/accessibilityEnhancer";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { LoadingFallback } from "./components/LoadingFallback";
 
 // Lazy load all pages for better code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -110,15 +111,10 @@ const App = () => {
   // Initialize resource preloading for better performance
   const { preloadRouteResources } = useResourcePreloader();
 
-  // Initialize accessibility enhancements
+  // Initialize accessibility enhancements (removed for now)
   useEffect(() => {
-    const enhancer = AccessibilityEnhancer.getInstance();
-    enhancer.init();
-    enhancer.addSkipLinks();
-    
-    return () => {
-      enhancer.destroy();
-    };
+    // Skip accessibility enhancements for now to avoid import issues
+    console.log('App initialized');
   }, []);
 
   return (
@@ -134,14 +130,18 @@ const App = () => {
               </Suspense>
             } />
             <Route path="/catalog" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <Catalog />
-              </Suspense>
+              <ErrorBoundary>
+                <Suspense fallback={<LoadingFallback />}>
+                  <Catalog />
+                </Suspense>
+              </ErrorBoundary>
             } />
             <Route path="/catalog-new" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <NewCatalog />
-              </Suspense>
+              <ErrorBoundary>
+                <Suspense fallback={<LoadingFallback />}>
+                  <NewCatalog />
+                </Suspense>
+              </ErrorBoundary>
             } />
             <Route path="/catalog-enhanced" element={
               <Suspense fallback={<PageSkeleton />}>

@@ -113,45 +113,61 @@ const fetchCars = async (
   }
 };
 
-// Fallback function using existing mock data logic
-const fetchCarsFallback = async (
-  params: ReturnType<typeof buildQueryParams>,
-  signal?: AbortSignal
-): Promise<CarsResponse> => {
-  console.info('🔄 Creating fallback cars for development/testing');
-  
-  // Create simple fallback cars without complex imports
-  const fallbackCars: Car[] = Array.from({ length: 500 }, (_, index) => ({
-    id: `fallback-${index + 1}`,
-    make: ['Toyota', 'Honda', 'BMW', 'Mercedes-Benz', 'Audi'][index % 5],
-    model: ['Camry', 'Civic', 'X3', 'C-Class', 'A4'][index % 5],
-    year: 2015 + (index % 9),
-    price: Math.round(15000 + Math.random() * 40000),
-    mileage: Math.round(20000 + Math.random() * 150000),
-    fuel: ['Gasoline', 'Diesel', 'Hybrid', 'Electric'][index % 4],
-    transmission: ['Automatic', 'Manual', 'CVT'][index % 3],
-    bodyType: 'Sedan',
-    color: ['Black', 'White', 'Silver', 'Blue', 'Red'][index % 5],
-    location: 'Seoul',
-    images: ['https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400']
-  }));
-  
-  console.info('✅ Generated 500 mock cars for fallback');
-  
-  const pageSize = parseInt(params.pageSize || '20');
-  const page = parseInt(params.page || '1');
-  const startIndex = (page - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedCars = fallbackCars.slice(startIndex, endIndex);
-  
-  return {
-    cars: paginatedCars,
-    total: fallbackCars.length,
-    page: page,
-    totalPages: Math.ceil(fallbackCars.length / pageSize),
-    hasMore: endIndex < fallbackCars.length
+  // Fallback function using existing mock data logic
+  const fetchCarsFallback = async (
+    params: ReturnType<typeof buildQueryParams>,
+    signal?: AbortSignal
+  ): Promise<CarsResponse> => {
+    console.info('🔄 Using fallback cars for development/testing');
+    
+    // Simple fallback cars without complex imports
+    const fallbackCars: Car[] = Array.from({ length: 200 }, (_, index) => ({
+      id: `fallback-${index + 1}`,
+      make: ['Toyota', 'Honda', 'BMW', 'Mercedes-Benz', 'Audi', 'Volkswagen', 'Hyundai', 'Kia'][index % 8],
+      model: ['Camry', 'Civic', 'X3', 'C-Class', 'A4', 'Golf', 'Elantra', 'Sorento'][index % 8],
+      year: 2015 + (index % 9),
+      price: Math.round(15000 + (index * 567) % 50000),
+      mileage: Math.round(20000 + (index * 1234) % 150000),
+      fuel: ['Gasoline', 'Diesel', 'Hybrid', 'Electric'][index % 4],
+      transmission: ['Automatic', 'Manual', 'CVT'][index % 3],
+      bodyType: 'Sedan',
+      color: ['Black', 'White', 'Silver', 'Blue', 'Red', 'Gray'][index % 6],
+      location: 'Seoul',
+      images: ['https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400']
+    }));
+    
+    // Apply basic sorting
+    const sortedCars = [...fallbackCars].sort((a, b) => {
+      switch (params.sort) {
+        case 'price_asc':
+          return a.price - b.price;
+        case 'price_desc':
+          return b.price - a.price;
+        case 'year_desc':
+          return b.year - a.year;
+        case 'year_asc':
+          return a.year - b.year;
+        default:
+          return a.price - b.price;
+      }
+    });
+    
+    console.info('✅ Generated fallback cars with sorting');
+    
+    const pageSize = parseInt(params.pageSize || '20');
+    const page = parseInt(params.page || '1');
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedCars = sortedCars.slice(startIndex, endIndex);
+    
+    return {
+      cars: paginatedCars,
+      total: sortedCars.length,
+      page: page,
+      totalPages: Math.ceil(sortedCars.length / pageSize),
+      hasMore: endIndex < sortedCars.length
+    };
   };
-};
 
 // Mock API function for models
 const fetchModels = async (brandId: string, signal?: AbortSignal): Promise<Model[]> => {

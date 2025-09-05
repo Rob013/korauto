@@ -135,21 +135,23 @@ const CatalogContent: React.FC = () => {
   const [showFilters, setShowFilters] = useState(true);
   const [filterPanelCollapsed, setFilterPanelCollapsed] = useState(false);
 
-  // Track page view
+  // Track page view (simplified - avoid repeated calls)
   useEffect(() => {
-    const activeFiltersCount = Object.keys(filters).filter(key => 
-      filters[key as keyof typeof filters] !== undefined && 
-      key !== 'page' && 
-      key !== 'pageSize' && 
-      key !== 'sort'
-    ).length;
+    const timeoutId = setTimeout(() => {
+      trackPageView(undefined, { 
+        page_type: 'new_catalog',
+        total_cars: total || 0,
+        active_filters: Object.keys(filters).filter(key => 
+          filters[key as keyof typeof filters] !== undefined && 
+          key !== 'page' && 
+          key !== 'pageSize' && 
+          key !== 'sort'
+        ).length
+      });
+    }, 2000); // Longer delay to prevent spam
 
-    trackPageView(undefined, { 
-      page_type: 'new_catalog',
-      total_cars: total,
-      active_filters: activeFiltersCount
-    });
-  }, [total]); // Only track when total changes, not filters
+    return () => clearTimeout(timeoutId);
+  }, [total]); // Only track when total changes
 
   // Update filters data with models from query
   const filtersData = {

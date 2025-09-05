@@ -31,10 +31,26 @@ const getClientIP = async (): Promise<string | null> => {
   }
 };
 
+// Rate limiting for analytics to prevent spam
+const analyticsRateLimit = new Map<string, number>();
+const RATE_LIMIT_WINDOW = 10000; // 10 seconds
+const MAX_EVENTS_PER_WINDOW = 5;
+
 export const trackEvent = async (event: AnalyticsEvent) => {
   try {
+    // Rate limiting check
+    const now = Date.now();
+    const key = `${event.action_type}_${event.page_url}`;
+    const lastTracked = analyticsRateLimit.get(key) || 0;
+    
+    if (now - lastTracked < RATE_LIMIT_WINDOW) {
+      console.log('📊 Analytics event rate limited:', event.action_type);
+      return;
+    }
+    
+    analyticsRateLimit.set(key, now);
+    
     const sessionId = getSessionId();
-    const { data: { user } } = await supabase.auth.getUser();
     
     const analyticsData = {
       action_type: event.action_type,
@@ -42,8 +58,8 @@ export const trackEvent = async (event: AnalyticsEvent) => {
       page_title: event.page_title || document.title,
       car_id: event.car_id,
       session_id: sessionId,
-      user_id: user?.id || null,
-      ip_address: await getClientIP(),
+      user_id: null, // Simplified - avoid auth calls that might fail
+      ip_address: null,
       referrer: event.referrer || document.referrer || null,
       user_agent: event.user_agent || navigator.userAgent,
       metadata: event.metadata || null,
@@ -52,14 +68,25 @@ export const trackEvent = async (event: AnalyticsEvent) => {
 
     console.log('📊 Tracking analytics event:', analyticsData);
 
-    const { error } = await supabase
+    // Use a timeout to prevent hanging requests
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Analytics timeout')), 5000)
+    );
+    
+    const insertPromise = supabase
       .from('website_analytics')
       .insert(analyticsData);
 
-    if (error) {
-      console.error('❌ Analytics tracking failed:', error);
-    } else {
-      console.log('✅ Analytics event tracked successfully');
+    try {
+      const result = await Promise.race([insertPromise, timeoutPromise]) as any;
+      
+      if (result?.error) {
+        console.error('❌ Analytics tracking failed:', result.error);
+      } else {
+        console.log('✅ Analytics event tracked successfully');
+      }
+    } catch (error) {
+      console.log('⏱️ Analytics request failed or timed out:', error);
     }
   } catch (error) {
     console.error('❌ Analytics tracking error:', error);

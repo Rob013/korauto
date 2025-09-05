@@ -118,18 +118,22 @@ const CatalogContent: React.FC = () => {
   const [showFilters, setShowFilters] = useState(true);
   const [filterPanelCollapsed, setFilterPanelCollapsed] = useState(false);
 
-  // Track page view
+  // Track page view (with throttling)
   useEffect(() => {
-    trackPageView(undefined, { 
-      page_type: 'catalog',
-      total_cars: total,
-      highlighted_car: highlightCarId,
-      active_filters: Object.keys(filters).filter(key => 
-        filters[key as keyof typeof filters] !== undefined && 
-        filters[key as keyof typeof filters] !== ''
-      ).length
-    });
-  }, [total, highlightCarId, filters]);
+    const timeoutId = setTimeout(() => {
+      trackPageView(undefined, { 
+        page_type: 'catalog',
+        total_cars: total,
+        highlighted_car: highlightCarId,
+        active_filters: Object.keys(filters).filter(key => 
+          filters[key as keyof typeof filters] !== undefined && 
+          filters[key as keyof typeof filters] !== ''
+        ).length
+      });
+    }, 1000); // Delay to prevent spam
+
+    return () => clearTimeout(timeoutId);
+  }, [total]); // Only track when total changes, not filters
 
   // Handle sort change
   const handleSortChange = (newSort: string) => {
