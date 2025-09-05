@@ -8,27 +8,7 @@ export interface CarFilters {
   yearMax?: string;
   priceMin?: string;
   priceMax?: string;
-  mileageMin?: string;
-  mileageMax?: string;
   fuel?: string;
-  transmission?: string;
-  bodyType?: string;
-  driveType?: string;
-  color?: string;
-  seatsCount?: string;
-  maxAccidents?: string;
-  minAccidents?: string;
-  engineDisplacementMin?: string;
-  engineDisplacementMax?: string;
-  registrationType?: string;
-  certification?: string[];
-  isCertified?: string;
-  hasWarranty?: string;
-  serviceHistory?: string;
-  locationDistance?: string;
-  locationCity?: string;
-  isImported?: string;
-  keysAvailable?: string;
   search?: string;
 }
 
@@ -181,21 +161,9 @@ export async function fetchCarsWithKeyset(params: CarsApiParams): Promise<CarsAp
   const rpcFilters = { ...filters };
 
   try {
-    console.log('🔄 Attempting to fetch cars from Supabase...');
-    
-    // Use Promise.race to timeout requests
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Request timeout')), 8000)
-    );
-
     // Get total count (for pagination info)
-    const countPromise = supabase
+    const { data: totalCount, error: countError } = await supabase
       .rpc('cars_filtered_count', { p_filters: rpcFilters });
-
-    const { data: totalCount, error: countError } = await Promise.race([
-      countPromise,
-      timeoutPromise
-    ]) as any;
 
     if (countError) {
       console.error('Error getting car count:', countError);
@@ -203,7 +171,7 @@ export async function fetchCarsWithKeyset(params: CarsApiParams): Promise<CarsAp
     }
 
     // Get paginated results using keyset pagination
-    const carsPromise = supabase
+    const { data: cars, error: carsError } = await supabase
       .rpc('cars_keyset_page', {
         p_filters: rpcFilters,
         p_sort_field: sortField,
@@ -213,18 +181,12 @@ export async function fetchCarsWithKeyset(params: CarsApiParams): Promise<CarsAp
         p_limit: limit
       });
 
-    const { data: cars, error: carsError } = await Promise.race([
-      carsPromise,
-      timeoutPromise
-    ]) as any;
-
     if (carsError) {
-      console.error('Error fetching cars with keyset pagination:', carsError);
+      console.error('Error fetching cars:', carsError);
       throw carsError;
     }
 
     const items = cars || [];
-    console.log('✅ Successfully fetched', items.length, 'cars from Supabase');
     
     // Create next cursor if we have a full page (indicating more data)
     let nextCursor: string | undefined;
@@ -266,93 +228,9 @@ export async function fetchCarsWithKeyset(params: CarsApiParams): Promise<CarsAp
     };
 
   } catch (error) {
-    console.error('❌ Supabase API failed, using fallback data:', error);
-    
-    // Return fallback data instead of throwing
-    return generateFallbackCarsResponse(params);
+    console.error('Error in fetchCarsWithKeyset:', error);
+    throw error;
   }
-}
-
-function generateFallbackCarsResponse(params: CarsApiParams): CarsApiResponse {
-  const { limit = 24, sort = 'price_asc' } = params;
-  
-  console.log('🔄 Generating fallback cars data...');
-  
-  // Real car images from the lovable-uploads directory
-  const carImages = [
-    '/lovable-uploads/91efade6-53ff-4c15-ae10-6ac8f338c2b9.png',
-    '/lovable-uploads/fb2b9889-d3da-4280-a77b-7567f307aed5.png',
-    '/lovable-uploads/3657dff4-7afd-45bb-9f8a-8d3f4ba8d7b4.png',
-    '/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png',
-    '/lovable-uploads/7a3e2aa4-2a3b-4320-b33c-72d3d7721cfd.png',
-    '/lovable-uploads/3094fd63-7a92-4497-8103-e166b6b09f70.png'
-  ];
-  
-  // Create comprehensive fallback cars
-  const fallbackCars: Car[] = Array.from({ length: 500 }, (_, index) => {
-    const makes = ['Toyota', 'Honda', 'BMW', 'Mercedes-Benz', 'Audi', 'Volkswagen', 'Hyundai', 'Kia', 'Nissan', 'Ford'];
-    const models = ['Camry', 'Civic', 'X3', 'C-Class', 'A4', 'Golf', 'Elantra', 'Sorento', 'Altima', 'Focus'];
-    const colors = ['Black', 'White', 'Silver', 'Blue', 'Red', 'Gray', 'Green', 'Brown'];
-    const fuels = ['Gasoline', 'Diesel', 'Hybrid', 'Electric'];
-    const transmissions = ['Automatic', 'Manual', 'CVT'];
-    
-    const make = makes[index % makes.length];
-    const model = models[index % models.length];
-    const year = 2015 + (index % 9);
-    const basePrice = 15000 + (index * 347) % 50000; // More varied pricing
-    const imageUrl = carImages[index % carImages.length];
-    
-    return {
-      id: `fallback-${index + 1}`,
-      make,
-      model,
-      year,
-      price: basePrice,
-      price_cents: basePrice * 100,
-      rank_score: Math.random() * 100,
-      mileage: 20000 + (index * 1234) % 200000,
-      fuel: fuels[index % fuels.length],
-      transmission: transmissions[index % transmissions.length],
-      color: colors[index % colors.length],
-      location: 'Seoul, South Korea',
-      image_url: imageUrl,
-      images: [imageUrl],
-      title: `${year} ${make} ${model}`,
-      created_at: new Date(Date.now() - index * 60000).toISOString()
-    };
-  });
-  
-  // Apply sorting
-  const sortedCars = [...fallbackCars].sort((a, b) => {
-    switch (sort) {
-      case 'price_asc':
-        return a.price - b.price;
-      case 'price_desc':
-        return b.price - a.price;
-      case 'year_desc':
-        return b.year - a.year;
-      case 'year_asc':
-        return a.year - b.year;
-      case 'mileage_asc':
-        return (a.mileage || 0) - (b.mileage || 0);
-      case 'mileage_desc':
-        return (b.mileage || 0) - (a.mileage || 0);
-      default:
-        return a.price - b.price;
-    }
-  });
-  
-  // Apply pagination
-  const startIndex = 0; // For keyset, always start from beginning
-  const paginatedCars = sortedCars.slice(startIndex, startIndex + limit);
-  
-  console.log('✅ Generated', paginatedCars.length, 'fallback cars');
-  
-  return {
-    items: paginatedCars,
-    nextCursor: paginatedCars.length === limit ? 'has_more' : undefined,
-    total: fallbackCars.length
-  };
 }
 
 // Compatibility function that matches the expected API format for GET /api/cars
@@ -366,30 +244,7 @@ export async function fetchCarsApi(searchParams: URLSearchParams): Promise<CarsA
   if (searchParams.has('yearMax')) filters.yearMax = searchParams.get('yearMax')!;
   if (searchParams.has('priceMin')) filters.priceMin = searchParams.get('priceMin')!;
   if (searchParams.has('priceMax')) filters.priceMax = searchParams.get('priceMax')!;
-  if (searchParams.has('mileageMin')) filters.mileageMin = searchParams.get('mileageMin')!;
-  if (searchParams.has('mileageMax')) filters.mileageMax = searchParams.get('mileageMax')!;
   if (searchParams.has('fuel')) filters.fuel = searchParams.get('fuel')!;
-  if (searchParams.has('transmission')) filters.transmission = searchParams.get('transmission')!;
-  if (searchParams.has('bodyType')) filters.bodyType = searchParams.get('bodyType')!;
-  if (searchParams.has('driveType')) filters.driveType = searchParams.get('driveType')!;
-  if (searchParams.has('color')) filters.color = searchParams.get('color')!;
-  if (searchParams.has('seatsCount')) filters.seatsCount = searchParams.get('seatsCount')!;
-  if (searchParams.has('maxAccidents')) filters.maxAccidents = searchParams.get('maxAccidents')!;
-  if (searchParams.has('minAccidents')) filters.minAccidents = searchParams.get('minAccidents')!;
-  if (searchParams.has('engineDisplacementMin')) filters.engineDisplacementMin = searchParams.get('engineDisplacementMin')!;
-  if (searchParams.has('engineDisplacementMax')) filters.engineDisplacementMax = searchParams.get('engineDisplacementMax')!;
-  if (searchParams.has('registrationType')) filters.registrationType = searchParams.get('registrationType')!;
-  if (searchParams.has('certification')) {
-    const certifications = searchParams.get('certification')!.split(',');
-    filters.certification = certifications;
-  }
-  if (searchParams.has('isCertified')) filters.isCertified = searchParams.get('isCertified')!;
-  if (searchParams.has('hasWarranty')) filters.hasWarranty = searchParams.get('hasWarranty')!;
-  if (searchParams.has('serviceHistory')) filters.serviceHistory = searchParams.get('serviceHistory')!;
-  if (searchParams.has('locationDistance')) filters.locationDistance = searchParams.get('locationDistance')!;
-  if (searchParams.has('locationCity')) filters.locationCity = searchParams.get('locationCity')!;
-  if (searchParams.has('isImported')) filters.isImported = searchParams.get('isImported')!;
-  if (searchParams.has('keysAvailable')) filters.keysAvailable = searchParams.get('keysAvailable')!;
   if (searchParams.has('search')) filters.search = searchParams.get('search')!;
 
   const sort = (searchParams.get('sort') as SortOption | FrontendSortOption) || 'price_asc';

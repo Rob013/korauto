@@ -1,13 +1,12 @@
-import { useEffect, useState, useCallback, memo, useMemo, Suspense, lazy, startTransition } from "react";
+import { useEffect, useState, useCallback, memo, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
-import { trackPageView, trackFavorite } from "@/utils/analytics";
+import { trackPageView, trackCarView, trackFavorite } from "@/utils/analytics";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { QuickLoadingState, CarDetailsErrorBoundary } from "@/components/CarDetailsLoadingStates";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
 import {
   ArrowLeft,
@@ -46,39 +45,68 @@ import {
 import { ImageZoom } from "@/components/ImageZoom";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
-import { useCarDetails } from "@/hooks/useCarDetails";
-import { useCarDetailsPerformance } from "@/hooks/useCarDetailsPerformance";
+import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
 import { useImageSwipe } from "@/hooks/useImageSwipe";
-
-// Lazy load heavy components for better performance
-const CarInspectionDiagram = lazy(() => import("@/components/CarInspectionDiagram"));
-
-// Type definitions for car and lot data
-interface CarDataType {
-  transmission?: { name: string };
-  fuel?: { name: string };
-  color?: { name: string };
-  engine?: { name: string };
+import { fallbackCars } from "@/data/fallbackData";
+interface CarDetails {
+  id: string;
+  make: string;
+  model: string;
+  year: number;
+  price: number;
+  image?: string;
+  vin?: string;
+  mileage?: string;
+  transmission?: string;
+  fuel?: string;
+  color?: string;
+  condition?: string;
+  lot?: string;
+  title?: string;
+  images?: string[];
+  odometer?: {
+    km: number;
+    mi: number;
+    status: {
+      name: string;
+    };
+  };
+  engine?: {
+    name: string;
+  };
   cylinders?: number;
-  drive_wheel?: { name: string };
-}
-
-interface LotDataType {
+  drive_wheel?: {
+    name: string;
+  };
+  body_type?: {
+    name: string;
+  };
+  damage?: {
+    main: string | null;
+    second: string | null;
+  };
   keys_available?: boolean;
   airbags?: string;
-}
-
-interface CarOptions {
-  standard?: (string | number)[];
-  choice?: (string | number)[];
-  tuning?: (string | number)[];
-}
-
-interface ConvertedOptions {
-  standard: string[];
-  choice: string[];
-  tuning: string[];
+  grade_iaai?: string;
+  seller?: string;
+  seller_type?: string;
+  sale_date?: string;
+  bid?: number;
+  buy_now?: number;
+  final_bid?: number;
+  features?: string[];
+  safety_features?: string[];
+  comfort_features?: string[];
+  performance_rating?: number;
+  popularity_score?: number;
+  // Enhanced API data
+  insurance?: any;
+  insurance_v2?: any;
+  location?: any;
+  inspect?: any;
+  details?: any;
+  lots?: any[];
 }
 
 // Equipment Options Section Component with Show More functionality
@@ -344,6 +372,9 @@ const CarDetails = memo(() => {
   const { toast } = useToast();
   const { goBack, restorePageState, pageState } = useNavigation();
   const { convertUSDtoEUR, processFloodDamageText } = useCurrencyAPI();
+  const [car, setCar] = useState<CarDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -351,70 +382,12 @@ const CarDetails = memo(() => {
   const [showInspectionReport, setShowInspectionReport] = useState(false);
   const [hasAutoExpanded, setHasAutoExpanded] = useState(false);
   const [showEngineSection, setShowEngineSection] = useState(false);
+  const [isPlaceholderImage, setIsPlaceholderImage] = useState(false);
 
-  // Extract features from car data - using useCallback to prevent infinite loops
-  const getCarFeatures = useCallback((carData: CarDataType, lot: LotDataType): string[] => {
-    const features = [];
-    if (carData.transmission?.name)
-      features.push(`Transmisioni: ${carData.transmission.name}`);
-    if (carData.fuel?.name) features.push(`Karburanti: ${carData.fuel.name}`);
-    if (carData.color?.name) features.push(`Ngjyra: ${carData.color.name}`);
-    if (carData.engine?.name) features.push(`Motori: ${carData.engine.name}`);
-    if (carData.cylinders) features.push(`${carData.cylinders} Cilindra`);
-    if (carData.drive_wheel?.name)
-      features.push(`Tërheqje: ${carData.drive_wheel.name}`);
-    if (lot?.keys_available) features.push("Çelësat të Disponueshëm");
-
-    // Add basic features if list is empty
-    if (features.length === 0) {
-      return [
-        "Klimatizimi",
-        "Dritaret Elektrike",
-        "Mbyllja Qendrore",
-        "Frena ABS",
-      ];
-    }
-    return features;
-  }, []);
-
-  const getSafetyFeatures = useCallback((carData: CarDataType, lot: LotDataType): string[] => {
-    const safety = [];
-    if (lot?.airbags) safety.push(`Sistemi i Airbag-ëve: ${lot.airbags}`);
-    if (carData.transmission?.name === "automatic")
-      safety.push("ABS Sistemi i Frënimit");
-    safety.push("Sistemi i Stabilitetit Elektronik");
-    if (lot?.keys_available) safety.push("Sistemi i Sigurisë");
-
-    // Add default safety features
-    return safety.length > 0
-      ? safety
-      : ["ABS Sistemi i Frënimit", "Airbag Sistemi", "Mbyllja Qendrore"];
-  }, []);
-
-  const getComfortFeatures = useCallback((carData: CarDataType, lot: LotDataType): string[] => {
-    const comfort = [];
-    if (carData.transmission?.name === "automatic")
-      comfort.push("Transmisioni Automatik");
-    comfort.push("Klimatizimi");
-    comfort.push("Dritaret Elektrike");
-    comfort.push("Pasqyrat Elektrike");
-    return comfort;
-  }, []);
-
-  // Use the optimized car details hook
-  const { car, loading, error, refetch } = useCarDetails(lot, {
-    convertUSDtoEUR,
-    getCarFeatures,
-    getSafetyFeatures,
-    getComfortFeatures,
-  });
-
-  // Add performance optimizations
-  useCarDetailsPerformance(car, {
-    enableImagePreloading: true,
-    preloadThumbnails: true,
-    enableCaching: true,
-  });
+  // Reset placeholder state when image selection changes
+  useEffect(() => {
+    setIsPlaceholderImage(false);
+  }, [selectedImageIndex]);
 
   // Auto-expand detailed info if car has rich data (only once)
   useEffect(() => {
@@ -513,7 +486,7 @@ const CarDetails = memo(() => {
   };
 
   // Convert option numbers to feature names
-  const convertOptionsToNames = (options: CarOptions | null | undefined): ConvertedOptions => {
+  const convertOptionsToNames = (options: any): any => {
     console.log("🔧 Converting options:", options);
     if (!options)
       return {
@@ -521,7 +494,7 @@ const CarDetails = memo(() => {
         choice: [],
         tuning: [],
       };
-    const result: ConvertedOptions = {
+    const result: any = {
       standard: [],
       choice: [],
       tuning: [],
@@ -529,7 +502,7 @@ const CarDetails = memo(() => {
 
     // Process standard equipment
     if (options.standard && Array.isArray(options.standard)) {
-      result.standard = options.standard.map((option: string | number) => {
+      result.standard = options.standard.map((option: any) => {
         const optionStr = option.toString().trim();
         const mapped = FEATURE_MAPPING[optionStr] || `Pajisje ${optionStr}`;
         console.log(`📝 Mapping: ${optionStr} → ${mapped}`);
@@ -539,7 +512,7 @@ const CarDetails = memo(() => {
 
     // Process optional equipment
     if (options.choice && Array.isArray(options.choice)) {
-      result.choice = options.choice.map((option: string | number) => {
+      result.choice = options.choice.map((option: any) => {
         const optionStr = option.toString().trim();
         const mapped = FEATURE_MAPPING[optionStr] || `Opsion ${optionStr}`;
         return mapped;
@@ -548,7 +521,7 @@ const CarDetails = memo(() => {
 
     // Process tuning/modifications
     if (options.tuning && Array.isArray(options.tuning)) {
-      result.tuning = options.tuning.map((option: string | number) => {
+      result.tuning = options.tuning.map((option: any) => {
         const optionStr = option.toString().trim();
         const mapped = FEATURE_MAPPING[optionStr] || `Modifikim ${optionStr}`;
         return mapped;
@@ -556,6 +529,53 @@ const CarDetails = memo(() => {
     }
 
     return result;
+  };
+
+  // Extract features from car data
+  const getCarFeatures = (carData: any, lot: any): string[] => {
+    const features = [];
+    if (carData.transmission?.name)
+      features.push(`Transmisioni: ${carData.transmission.name}`);
+    if (carData.fuel?.name) features.push(`Karburanti: ${carData.fuel.name}`);
+    if (carData.color?.name) features.push(`Ngjyra: ${carData.color.name}`);
+    if (carData.engine?.name) features.push(`Motori: ${carData.engine.name}`);
+    if (carData.cylinders) features.push(`${carData.cylinders} Cilindra`);
+    if (carData.drive_wheel?.name)
+      features.push(`Tërheqje: ${carData.drive_wheel.name}`);
+    if (lot?.keys_available) features.push("Çelësat të Disponueshëm");
+
+    // Add basic features if list is empty
+    if (features.length === 0) {
+      return [
+        "Klimatizimi",
+        "Dritaret Elektrike",
+        "Mbyllja Qendrore",
+        "Frena ABS",
+      ];
+    }
+    return features;
+  };
+  const getSafetyFeatures = (carData: any, lot: any): string[] => {
+    const safety = [];
+    if (lot?.airbags) safety.push(`Sistemi i Airbag-ëve: ${lot.airbags}`);
+    if (carData.transmission?.name === "automatic")
+      safety.push("ABS Sistemi i Frënimit");
+    safety.push("Sistemi i Stabilitetit Elektronik");
+    if (lot?.keys_available) safety.push("Sistemi i Sigurisë");
+
+    // Add default safety features
+    return safety.length > 0
+      ? safety
+      : ["ABS Sistemi i Frënimit", "Airbag Sistemi", "Mbyllja Qendrore"];
+  };
+  const getComfortFeatures = (carData: any, lot: any): string[] => {
+    const comfort = [];
+    if (carData.transmission?.name === "automatic")
+      comfort.push("Transmisioni Automatik");
+    comfort.push("Klimatizimi");
+    comfort.push("Dritaret Elektrike");
+    comfort.push("Pasqyrat Elektrike");
+    return comfort;
   };
 
   // Check admin status
@@ -575,7 +595,357 @@ const CarDetails = memo(() => {
     };
     checkAdminStatus();
   }, []);
+  useEffect(() => {
+    let isMounted = true;
+    const fetchCarDetails = async () => {
+      if (!lot) return;
+      try {
+        // Try to fetch from cache using OR condition for all possible matches
+        console.log("Searching for car with lot:", lot);
+        const { data: cachedCar, error: cacheError } = await supabase
+          .from("cars_cache")
+          .select("*")
+          .or(`id.eq.${lot},api_id.eq.${lot},lot_number.eq.${lot}`)
+          .maybeSingle();
+        console.log("Cache query result:", {
+          cachedCar,
+          cacheError,
+        });
+        if (!cacheError && cachedCar && isMounted) {
+          console.log("Found car in cache:", cachedCar);
 
+          // Transform cached car data to CarDetails format
+          const carData =
+            typeof cachedCar.car_data === "string"
+              ? JSON.parse(cachedCar.car_data)
+              : cachedCar.car_data;
+          const lotData =
+            typeof cachedCar.lot_data === "string"
+              ? JSON.parse(cachedCar.lot_data || "{}")
+              : cachedCar.lot_data || {};
+          const images =
+            typeof cachedCar.images === "string"
+              ? JSON.parse(cachedCar.images || "[]")
+              : cachedCar.images || [];
+          const basePrice =
+            cachedCar.price || lotData.buy_now || lotData.final_bid || 25000;
+          const price = convertUSDtoEUR(Math.round(basePrice + 2200));
+          const transformedCar: CarDetails = {
+            id: cachedCar.id,
+            make: cachedCar.make || "Unknown",
+            model: cachedCar.model || "Unknown",
+            year: cachedCar.year || 2020,
+            price,
+            image: images[0] || "/placeholder.svg",
+            images: images || [],
+            vin: cachedCar.vin || carData.vin,
+            mileage:
+              cachedCar.mileage ||
+              (lotData.odometer?.km
+                ? `${lotData.odometer.km.toLocaleString()} km`
+                : undefined),
+            transmission: cachedCar.transmission || carData.transmission?.name,
+            fuel: cachedCar.fuel || carData.fuel?.name,
+            color: cachedCar.color || carData.color?.name,
+            condition:
+              cachedCar.condition ||
+              lotData.condition?.name?.replace(
+                "run_and_drives",
+                "Good Condition"
+              ),
+            lot: cachedCar.lot_number || lotData.lot,
+            title: `${cachedCar.year} ${cachedCar.make} ${cachedCar.model}`,
+            odometer: lotData.odometer,
+            engine: carData.engine,
+            cylinders: carData.cylinders,
+            drive_wheel: carData.drive_wheel,
+            body_type: carData.body_type,
+            damage: lotData.damage,
+            keys_available: lotData.keys_available,
+            airbags: lotData.airbags,
+            grade_iaai: lotData.grade_iaai,
+            seller: lotData.seller,
+            seller_type: lotData.seller_type,
+            sale_date: lotData.sale_date,
+            bid: lotData.bid,
+            buy_now: lotData.buy_now,
+            final_bid: lotData.final_bid,
+            features: getCarFeatures(carData, lotData),
+            safety_features: getSafetyFeatures(carData, lotData),
+            comfort_features: getComfortFeatures(carData, lotData),
+            performance_rating: 4.5,
+            popularity_score: 85,
+            // Enhanced API data
+            insurance: lotData.insurance,
+            insurance_v2: lotData.insurance_v2,
+            location: lotData.location,
+            inspect: lotData.inspect,
+            details: lotData.details,
+          };
+          setCar(transformedCar);
+          setLoading(false);
+
+          // Track car view analytics
+          trackCarView(cachedCar.id || cachedCar.api_id, transformedCar);
+          return;
+        }
+
+        // If not found in cache, try Supabase edge function with lot number search
+        try {
+          const secureResponse = await fetch(
+            `https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/secure-cars-api`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0eXlpcWlta3lzbWpuYW9jc3dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0MzkxMzQsImV4cCI6MjA2OTAxNTEzNH0.lyRCHiShhW4wrGHL3G7pK5JBUHNAtgSUQACVOBGRpL8`,
+              },
+              body: JSON.stringify({
+                endpoint: "search-lot",
+                lotNumber: lot,
+              }),
+            }
+          );
+
+          if (secureResponse.ok) {
+            const carData = await secureResponse.json();
+
+            if (carData && carData.lots && carData.lots[0] && isMounted) {
+              const lotData = carData.lots[0];
+              const basePrice =
+                lotData.buy_now ?? lotData.final_bid ?? lotData.price ?? 25000;
+              const price = convertUSDtoEUR(Math.round(basePrice + 2200));
+              const transformedCar: CarDetails = {
+                id: carData.id?.toString() || lotData.lot,
+                make: carData.manufacturer?.name || "Unknown",
+                model: carData.model?.name || "Unknown",
+                year: carData.year || 2020,
+                price,
+                image: lotData.images?.normal?.[0] || lotData.images?.big?.[0],
+                images: lotData.images?.normal || lotData.images?.big || [],
+                vin: carData.vin,
+                mileage: lotData.odometer?.km
+                  ? `${lotData.odometer.km.toLocaleString()} km`
+                  : undefined,
+                transmission: carData.transmission?.name,
+                fuel: carData.fuel?.name,
+                color: carData.color?.name,
+                condition: lotData.condition?.name?.replace(
+                  "run_and_drives",
+                  "Good Condition"
+                ),
+                lot: lotData.lot,
+                title: lotData.title || carData.title,
+                odometer: lotData.odometer,
+                engine: carData.engine,
+                cylinders: carData.cylinders,
+                drive_wheel: carData.drive_wheel,
+                body_type: carData.body_type,
+                damage: lotData.damage,
+                keys_available: lotData.keys_available,
+                airbags: lotData.airbags,
+                grade_iaai: lotData.grade_iaai,
+                seller: lotData.seller,
+                seller_type: lotData.seller_type,
+                sale_date: lotData.sale_date,
+                bid: lotData.bid,
+                buy_now: lotData.buy_now,
+                final_bid: lotData.final_bid,
+                features: getCarFeatures(carData, lotData),
+                safety_features: getSafetyFeatures(carData, lotData),
+                comfort_features: getComfortFeatures(carData, lotData),
+                performance_rating: 4.5,
+                popularity_score: 85,
+                insurance: lotData.insurance,
+                insurance_v2: lotData.insurance_v2,
+                location: lotData.location,
+                inspect: lotData.inspect,
+                details: lotData.details,
+              };
+              setCar(transformedCar);
+              setLoading(false);
+
+              trackCarView(carData.id || lot, transformedCar);
+              return;
+            }
+          } else {
+            // Handle specific error cases from edge function
+            const errorData = await secureResponse.json().catch(() => ({}));
+            if (
+              secureResponse.status === 404 ||
+              errorData.error?.includes("404")
+            ) {
+              setError(
+                `Car with ID ${lot} is not available in our database. This car may have been sold or removed from the auction.`
+              );
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (edgeFunctionError) {
+          console.log("Edge function failed:", edgeFunctionError);
+        }
+
+        // If edge function fails, try external API with both lot ID and as lot number
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        // Try to fetch by lot ID first, then by lot number if that fails
+        let response;
+        try {
+          response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
+            headers: {
+              accept: "*/*",
+              "x-api-key": API_KEY,
+            },
+            signal: controller.signal,
+          });
+        } catch (firstAttemptError) {
+          // If first attempt fails, try searching by lot number
+          console.log("First API attempt failed, trying as lot number...");
+          response = await fetch(`${API_BASE_URL}/search?lot_number=${lot}`, {
+            headers: {
+              accept: "*/*",
+              "x-api-key": API_KEY,
+            },
+            signal: controller.signal,
+          });
+        }
+        clearTimeout(timeoutId);
+        if (!response.ok) {
+          throw new Error(
+            `API returned ${response.status}: ${response.statusText}`
+          );
+        }
+        const data = await response.json();
+        if (!isMounted) return;
+        const carData = data.data;
+        const lotData = carData.lots?.[0];
+        if (!lotData) throw new Error("Missing lot data");
+        const basePrice =
+          lotData.buy_now ?? lotData.final_bid ?? lotData.price ?? 25000;
+        const price = convertUSDtoEUR(Math.round(basePrice + 2200));
+        const transformedCar: CarDetails = {
+          id: carData.id?.toString() || lotData.lot,
+          make: carData.manufacturer?.name || "Unknown",
+          model: carData.model?.name || "Unknown",
+          year: carData.year || 2020,
+          price,
+          image: lotData.images?.normal?.[0] || lotData.images?.big?.[0],
+          images: lotData.images?.normal || lotData.images?.big || [],
+          vin: carData.vin,
+          mileage: lotData.odometer?.km
+            ? `${lotData.odometer.km.toLocaleString()} km`
+            : undefined,
+          transmission: carData.transmission?.name,
+          fuel: carData.fuel?.name,
+          color: carData.color?.name,
+          condition: lotData.condition?.name?.replace(
+            "run_and_drives",
+            "Good Condition"
+          ),
+          lot: lotData.lot,
+          title: lotData.title || carData.title,
+          odometer: lotData.odometer,
+          engine: carData.engine,
+          cylinders: carData.cylinders,
+          drive_wheel: carData.drive_wheel,
+          body_type: carData.body_type,
+          damage: lotData.damage,
+          keys_available: lotData.keys_available,
+          airbags: lotData.airbags,
+          grade_iaai: lotData.grade_iaai,
+          seller: lotData.seller,
+          seller_type: lotData.seller_type,
+          sale_date: lotData.sale_date,
+          bid: lotData.bid,
+          buy_now: lotData.buy_now,
+          final_bid: lotData.final_bid,
+          features: getCarFeatures(carData, lotData),
+          safety_features: getSafetyFeatures(carData, lotData),
+          comfort_features: getComfortFeatures(carData, lotData),
+          performance_rating: 4.5,
+          popularity_score: 85,
+          // Enhanced API data
+          insurance: lotData.insurance,
+          insurance_v2: lotData.insurance_v2,
+          location: lotData.location,
+          inspect: lotData.inspect,
+          details: lotData.details,
+        };
+        setCar(transformedCar);
+        setLoading(false);
+
+        // Track car view analytics
+        trackCarView(lot, transformedCar);
+      } catch (apiError) {
+        console.error("Failed to fetch car data:", apiError);
+        if (isMounted) {
+          // Try to find the car in fallback data as a last resort
+          const fallbackCar = fallbackCars.find(
+            car => car.id === lot || car.lot_number === lot
+          );
+          
+          if (fallbackCar && fallbackCar.lots?.[0]) {
+            console.log("Using fallback car data for:", lot);
+            const lotData = fallbackCar.lots[0];
+            const basePrice = lotData.buy_now || fallbackCar.price || 25000;
+            const price = convertUSDtoEUR(Math.round(basePrice + 2200));
+            
+            const transformedCar: CarDetails = {
+              id: fallbackCar.id,
+              make: fallbackCar.manufacturer?.name || "Unknown",
+              model: fallbackCar.model?.name || "Unknown",
+              year: fallbackCar.year || 2020,
+              price,
+              image: lotData.images?.normal?.[0] || lotData.images?.big?.[0] || "/placeholder.svg",
+              images: lotData.images?.normal || lotData.images?.big || [],
+              vin: fallbackCar.vin,
+              mileage: lotData.odometer?.km
+                ? `${lotData.odometer.km.toLocaleString()} km`
+                : undefined,
+              transmission: fallbackCar.transmission?.name,
+              fuel: fallbackCar.fuel?.name,
+              color: fallbackCar.color?.name,
+              condition: "Good Condition",
+              lot: fallbackCar.lot_number,
+              title: fallbackCar.title,
+              odometer: lotData.odometer ? {
+                km: lotData.odometer.km,
+                mi: Math.round(lotData.odometer.km * 0.621371),
+                status: { name: "Verified" }
+              } : undefined,
+              features: fallbackCar.features || [],
+              safety_features: ["ABS", "Airbags", "Stability Control"],
+              comfort_features: ["Air Conditioning", "Power Windows"],
+              performance_rating: 4.5,
+              popularity_score: 85,
+            };
+            
+            setCar(transformedCar);
+            setLoading(false);
+            return;
+          }
+          
+          // If no fallback data found, show appropriate error message
+          const errorMessage = apiError instanceof Error 
+            ? (apiError.message.includes("Failed to fetch") 
+              ? "Unable to connect to the server. Please check your internet connection and try again."
+              : apiError.message.includes("404") 
+              ? `Car with ID ${lot} is not available. This car may have been sold or removed.`
+              : "Car not found")
+            : "Car not found";
+            
+          setError(errorMessage);
+          setLoading(false);
+        }
+      }
+    };
+    fetchCarDetails();
+    return () => {
+      isMounted = false;
+    };
+  }, [lot, convertUSDtoEUR]);
   const handleContactWhatsApp = useCallback(() => {
     const currentUrl = window.location.href;
     const message = `Përshëndetje! Jam i interesuar për ${car?.year} ${
@@ -643,15 +1013,52 @@ const CarDetails = memo(() => {
   // Preload important images
   useImagePreload(car?.image);
   if (loading) {
-    return <QuickLoadingState />;
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container-responsive py-8">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-muted rounded w-32"></div>
+            <div className="h-64 bg-muted rounded"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="h-6 bg-muted rounded w-3/4"></div>
+                <div className="h-4 bg-muted rounded w-1/2"></div>
+                <div className="h-32 bg-muted rounded"></div>
+              </div>
+              <div className="space-y-4">
+                <div className="h-6 bg-muted rounded w-1/2"></div>
+                <div className="h-24 bg-muted rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
-  
   if (error || !car) {
     return (
-      <CarDetailsErrorBoundary 
-        error={error || "Makina që po kërkoni nuk mund të gjindet në bazën tonë të të dhënave."} 
-        onRetry={refetch}
-      />
+      <div className="min-h-screen bg-background">
+        <div className="container-responsive py-8">
+          <Button
+            variant="outline"
+            onClick={() => navigate("/")}
+            className="mb-6"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Kryefaqja
+          </Button>
+          <div className="text-center py-12">
+            <AlertTriangle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-foreground mb-2">
+              Makina Nuk u Gjet
+            </h1>
+            <p className="text-muted-foreground">
+              Makina që po kërkoni nuk mund të gjindet në bazën tonë të të
+              dhënave.
+            </p>
+          </div>
+        </div>
+      </div>
     );
   }
   
@@ -738,12 +1145,20 @@ const CarDetails = memo(() => {
                     <img
                       src={images[selectedImageIndex]}
                       alt={`${car.year} ${car.make} ${car.model}`}
-                      className="w-full h-full transition-transform duration-300 hover:scale-105 object-contain"
+                      className={`w-full h-full transition-transform duration-300 hover:scale-105 ${
+                        isPlaceholderImage 
+                          ? "object-cover" // Use object-cover for placeholder to fill container properly on mobile
+                          : "object-contain" // Use object-contain for real images to show full image
+                      }`}
                       onError={(e) => {
                         e.currentTarget.src = "/placeholder.svg";
+                        setIsPlaceholderImage(true);
                       }}
-                      onLoad={() => {
-                        // Image loaded successfully - no state change needed
+                      onLoad={(e) => {
+                        // Reset placeholder state when a real image loads successfully
+                        if (!e.currentTarget.src.includes("/placeholder.svg")) {
+                          setIsPlaceholderImage(false);
+                        }
                       }}
                     />
                   ) : (
@@ -1069,7 +1484,7 @@ const CarDetails = memo(() => {
                           Detaje të Veturës
                         </h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {car.details?.engine_volume && (
+                          {car.details.engine_volume && (
                             <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                               <span className="text-sm text-foreground font-medium">
                                 Vëllimi i Motorit:
@@ -1079,7 +1494,7 @@ const CarDetails = memo(() => {
                               </span>
                             </div>
                           )}
-                          {car.details?.seats_count && (
+                          {car.details.seats_count && (
                             <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                               <span className="text-sm text-foreground font-medium">Numri i Vendeve:</span>
                               <span className="text-sm font-medium text-muted-foreground">
@@ -1087,7 +1502,7 @@ const CarDetails = memo(() => {
                               </span>
                             </div>
                           )}
-                          {car.details?.badge && (
+                          {car.details.badge && (
                             <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                               <span className="text-sm text-foreground font-medium">Versioni:</span>
                               <span className="text-sm font-medium text-muted-foreground">
@@ -1095,7 +1510,7 @@ const CarDetails = memo(() => {
                               </span>
                             </div>
                           )}
-                          {car.details?.sell_type && (
+                          {car.details.sell_type && (
                             <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                               <span className="text-sm text-foreground font-medium">Lloji i Shitjes:</span>
                               <span className="text-sm font-medium text-muted-foreground capitalize">
@@ -1195,7 +1610,7 @@ const CarDetails = memo(() => {
                                   {!showEngineSection && (
                                     <div className="flex items-center gap-2 justify-center">
                                       <div className="flex gap-1">
-                                        {Object.entries(car.details?.inspect?.inner || {}).slice(0, 3).map(([key, value], index) => {
+                                        {Object.entries(car.details.inspect.inner).slice(0, 3).map(([key, value], index) => {
                                           const isGood = value === "goodness" || value === "proper" || value === "doesn't exist";
                                           return (
                                             <div
@@ -1205,9 +1620,9 @@ const CarDetails = memo(() => {
                                             />
                                           );
                                         })}
-                                        {Object.entries(car.details?.inspect?.inner || {}).length > 3 && (
+                                        {Object.entries(car.details.inspect.inner).length > 3 && (
                                           <span className="text-xs text-muted-foreground ml-1">
-                                            +{Object.entries(car.details?.inspect?.inner || {}).length - 3}
+                                            +{Object.entries(car.details.inspect.inner).length - 3}
                                           </span>
                                         )}
                                       </div>
@@ -1229,7 +1644,7 @@ const CarDetails = memo(() => {
                                   <div className="flex items-center gap-2 flex-shrink-0">
                                     {!showEngineSection && (
                                       <div className="flex gap-1">
-                                        {Object.entries(car.details?.inspect?.inner || {}).slice(0, 3).map(([key, value], index) => {
+                                        {Object.entries(car.details.inspect.inner).slice(0, 3).map(([key, value], index) => {
                                           const isGood = value === "goodness" || value === "proper" || value === "doesn't exist";
                                           return (
                                             <div
@@ -1239,9 +1654,9 @@ const CarDetails = memo(() => {
                                             />
                                           );
                                         })}
-                                        {Object.entries(car.details?.inspect?.inner || {}).length > 3 && (
+                                        {Object.entries(car.details.inspect.inner).length > 3 && (
                                           <span className="text-xs text-muted-foreground ml-1">
-                                            +{Object.entries(car.details?.inspect?.inner || {}).length - 3}
+                                            +{Object.entries(car.details.inspect.inner).length - 3}
                                           </span>
                                         )}
                                       </div>
@@ -1258,8 +1673,8 @@ const CarDetails = memo(() => {
                               {showEngineSection && (
                                 <div className="px-3 pb-3 space-y-2 animate-fade-in">
                                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                                    {Object.entries(car.details?.inspect?.inner || {}).map(
-                                      ([key, value]: [string, string | number]) => {
+                                    {Object.entries(car.details.inspect.inner).map(
+                                      ([key, value]: [string, any]) => {
                                         const isGood =
                                           value === "goodness" ||
                                           value === "proper" ||
@@ -1296,7 +1711,7 @@ const CarDetails = memo(() => {
                                                 "goodness",
                                                 "proper", 
                                                 "doesn't exist",
-                                              ].includes(String(value)) && `⚠ ${value}`}
+                                              ].includes(value) && `⚠ ${value}`}
                                             </Badge>
                                           </div>
                                         );
@@ -1321,7 +1736,7 @@ const CarDetails = memo(() => {
                                 </div>
                               </div>
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                {car.details?.insurance?.car_info && (
+                                {car.details.insurance.car_info && (
                                   <>
                                     <div className="p-4 bg-card rounded-lg border border-green-500/20 hover:shadow-md transition-shadow">
                                       <div className="flex items-center gap-2 mb-2">
@@ -1331,7 +1746,7 @@ const CarDetails = memo(() => {
                                         </span>
                                       </div>
                                       <p className="text-sm text-muted-foreground">
-                                        {car.details?.insurance?.car_info?.accident_history}
+                                        {car.details.insurance.car_info.accident_history}
                                       </p>
                                     </div>
                                     <div className="p-4 bg-card rounded-lg border border-green-500/20 hover:shadow-md transition-shadow">
@@ -1342,7 +1757,7 @@ const CarDetails = memo(() => {
                                         </span>
                                       </div>
                                       <p className="text-sm text-muted-foreground">
-                                        {car.details?.insurance?.car_info?.repair_count}
+                                        {car.details.insurance.car_info.repair_count}
                                       </p>
                                     </div>
                                     <div className="p-4 bg-card rounded-lg border border-green-500/20 hover:shadow-md transition-shadow">
@@ -1353,7 +1768,7 @@ const CarDetails = memo(() => {
                                         </span>
                                       </div>
                                       <p className="text-sm text-muted-foreground">
-                                        {car.details?.insurance?.car_info?.total_loss}
+                                        {car.details.insurance.car_info.total_loss}
                                       </p>
                                     </div>
                                     <div className="p-4 bg-card rounded-lg border border-green-500/20 hover:shadow-md transition-shadow">
@@ -1364,7 +1779,7 @@ const CarDetails = memo(() => {
                                         </span>
                                       </div>
                                       <p className="text-sm text-muted-foreground">
-                                        {processFloodDamageText(car.details?.insurance?.car_info?.flood_damage)}
+                                        {processFloodDamageText(car.details.insurance.car_info.flood_damage)}
                                       </p>
                                     </div>
                                   </>
@@ -1418,7 +1833,7 @@ const CarDetails = memo(() => {
 
                           {/* Owner History */}
                           {car.details?.insurance?.owner_changes &&
-                            car.details?.insurance?.owner_changes.length > 0 && (
+                            car.details.insurance.owner_changes.length > 0 && (
                               <div className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200 inspection-section-black">
                                 <div className="flex items-center gap-3 mb-6">
                                   <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center">
@@ -1430,7 +1845,7 @@ const CarDetails = memo(() => {
                                   </div>
                                 </div>
                                 <div className="space-y-3">
-                                  {car.details?.insurance?.owner_changes?.map(
+                                  {car.details.insurance.owner_changes.map(
                                     (change: any, index: number) => (
                                       <div
                                         key={index}
@@ -1463,7 +1878,7 @@ const CarDetails = memo(() => {
 
                           {/* Visual Inspection Diagram */}
                           {car.details?.inspect_outer &&
-                            car.details?.inspect_outer.length > 0 && (
+                            car.details.inspect_outer.length > 0 && (
                               <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200 inspection-section-black">
                                 <div className="flex items-center gap-3 mb-4">
                                   <div className="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center">
@@ -1474,22 +1889,16 @@ const CarDetails = memo(() => {
                                     <p className="text-muted-foreground text-xs inspection-subtext-black">Gjendja vizuale e pjesëve të jashtme</p>
                                   </div>
                                 </div>
-                                <Suspense fallback={
-                                  <div className="h-48 bg-muted/20 rounded-lg animate-pulse flex items-center justify-center">
-                                    <div className="text-muted-foreground">Loading inspection diagram...</div>
-                                  </div>
-                                }>
-                                  <CarInspectionDiagram
-                                    inspectionData={car.details?.inspect_outer}
-                                    className="mt-3"
-                                  />
-                                </Suspense>
+                                <CarInspectionDiagram
+                                  inspectionData={car.details.inspect_outer}
+                                  className="mt-3"
+                                />
                               </div>
                             )}
 
                           {/* Maintenance History */}
                           {car.details?.maintenance_history &&
-                            car.details?.maintenance_history.length > 0 && (
+                            car.details.maintenance_history.length > 0 && (
                               <div className="p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl border border-yellow-200 inspection-section-black">
                                 <div className="flex items-center gap-3 mb-6">
                                   <div className="w-12 h-12 bg-yellow-600 rounded-lg flex items-center justify-center">
@@ -1501,7 +1910,7 @@ const CarDetails = memo(() => {
                                   </div>
                                 </div>
                                 <div className="space-y-3">
-                                  {car.details?.maintenance_history?.map(
+                                  {car.details.maintenance_history.map(
                                     (record: any, index: number) => (
                                       <div
                                         key={index}
@@ -1548,7 +1957,7 @@ const CarDetails = memo(() => {
 
                     {car.details?.options && (
                       <EquipmentOptionsSection
-                        options={convertOptionsToNames(car.details?.options)}
+                        options={convertOptionsToNames(car.details.options)}
                         features={car.features}
                         safetyFeatures={car.safety_features}
                         comfortFeatures={car.comfort_features}

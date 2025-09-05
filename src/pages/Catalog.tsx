@@ -1,32 +1,15 @@
-import React, { lazy, Suspense } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Skeleton } from '@/components/ui/skeleton';
-import EncarLikeCatalog from '@/components/EncarLikeCatalog';
+import { useEffect, lazy, Suspense } from "react";
+import { useSearchParams } from "react-router-dom";
+import { trackPageView } from "@/utils/analytics";
+import Header from "@/components/Header";
+import EncarCatalog from "@/components/EncarCatalog";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const Header = lazy(() => import('@/components/Header'));
-const Footer = lazy(() => import('@/components/Footer'));
-
-// Create a separate QueryClient for the catalog
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 45000, // 45 seconds
-      refetchOnWindowFocus: false,
-      retry: (failureCount, error) => {
-        // Don't retry aborted requests
-        if (error instanceof Error && error.name === 'AbortError') {
-          return false;
-        }
-        return failureCount < 2;
-      },
-    },
-  },
-});
+const Footer = lazy(() => import("@/components/Footer"));
 
 const FooterSkeleton = () => (
   <footer className="bg-card">
-    <div className="container mx-auto px-4 py-8">
+    <div className="container-responsive py-8">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         {[...Array(4)].map((_, i) => (
           <div key={i} className="space-y-3">
@@ -43,30 +26,26 @@ const FooterSkeleton = () => (
   </footer>
 );
 
-const CatalogContent: React.FC = () => {
+const Catalog = () => {
   const [searchParams] = useSearchParams();
   const highlightCarId = searchParams.get('highlight');
-  
+
+  useEffect(() => {
+    // Track catalog page view
+    trackPageView(undefined, { 
+      page_type: 'catalog',
+      highlighted_car: highlightCarId 
+    });
+  }, [highlightCarId]);
+
   return (
     <div className="min-h-screen bg-background">
-      <Suspense fallback={<div className="h-16 bg-background" />}>
-        <Header />
-      </Suspense>
-      
-      <EncarLikeCatalog highlightCarId={highlightCarId} />
-
+      <Header />
+      <EncarCatalog highlightCarId={highlightCarId} />
       <Suspense fallback={<FooterSkeleton />}>
         <Footer />
       </Suspense>
     </div>
-  );
-};
-
-const Catalog = () => {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <CatalogContent />
-    </QueryClientProvider>
   );
 };
 

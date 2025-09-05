@@ -5,13 +5,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// High-performance API rate limiting and retry configuration
-const RATE_LIMIT_DELAY = 2000 // Reduced to 2 seconds for faster throughput
-const MAX_RETRIES = 5 // More retries for reliability
-const BACKOFF_MULTIPLIER = 1.5 // Gentler backoff
-const PAGE_SIZE = 200 // Larger pages for fewer requests
-const REQUEST_TIMEOUT = 45000 // Longer timeout for larger requests
-const MAX_PAGES = 500 // Higher safety limit for full syncs
+// API rate limiting and retry configuration - Updated for correct endpoint
+const RATE_LIMIT_DELAY = 8000 // Reduced to 8 seconds between requests
+const MAX_RETRIES = 3
+const BACKOFF_MULTIPLIER = 2
+const PAGE_SIZE = 100 // Updated from 1000 to 100 as specified
+const REQUEST_TIMEOUT = 30000
+const MAX_PAGES = 100 // Safety limit
 
 // Helper function for API requests with retry logic
 async function makeApiRequest(url: string, retryCount = 0): Promise<any> {
@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Create new sync record with estimated totals
+    // Create new sync record
     const { data: syncRecord, error: syncError } = await supabase
       .from('sync_status')
       .insert({
@@ -144,9 +144,8 @@ Deno.serve(async (req) => {
         status: 'running',
         started_at: new Date().toISOString(),
         current_page: 1,
-        total_pages: syncType === 'full' ? 500 : 50, // Better initial estimates
+        total_pages: 1,
         records_processed: 0,
-        total_records: syncType === 'full' ? 100000 : 10000, // Better initial estimates
         cars_processed: 0,
         archived_lots_processed: 0,
         last_activity_at: new Date().toISOString()
@@ -176,10 +175,9 @@ Deno.serve(async (req) => {
         baseUrl += `&minutes=${minutes}`
       }
 
-      // Handle pagination for cars with better estimates
+      // Handle pagination for cars
       let currentPage = 1
       let hasMorePages = true
-      const estimatedTotalPages = syncType === 'full' ? 500 : 50 // Initial estimate
       
       while (hasMorePages && currentPage <= MAX_PAGES) {
         const pageUrl = `${baseUrl}&page=${currentPage}`
@@ -272,20 +270,13 @@ Deno.serve(async (req) => {
           // Update pagination logic
           hasMorePages = carsArray.length >= PAGE_SIZE
           
-          // Real-time progress updates with better estimates
-          const estimatedTotalRecords = Math.max(
-            syncRecord.total_records || 0,
-            totalCarsProcessed * (estimatedTotalPages / Math.max(currentPage, 1))
-          );
-          
+          // Update progress in database
           await supabase
             .from('sync_status')
             .update({
               current_page: currentPage,
-              total_pages: hasMorePages ? Math.max(currentPage + 1, estimatedTotalPages) : currentPage,
+              total_pages: hasMorePages ? currentPage + 1 : currentPage,
               cars_processed: totalCarsProcessed,
-              records_processed: totalCarsProcessed + totalArchivedProcessed,
-              total_records: estimatedTotalRecords,
               last_activity_at: new Date().toISOString(),
               last_cars_sync_at: new Date().toISOString()
             })
@@ -293,7 +284,7 @@ Deno.serve(async (req) => {
 
           currentPage++
           
-          // Optimized delay between pages for high throughput
+          // Proper delay between pages to prevent rate limiting
           await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY))
 
         } catch (pageError) {

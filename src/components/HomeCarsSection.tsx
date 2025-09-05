@@ -62,7 +62,6 @@ const HomeCarsSection = memo(() => {
   } = useSecureAuctionAPI();
   const { convertUSDtoEUR } = useCurrencyAPI();
   const [sortBy, setSortBy] = useState<SortOption>("popular");
-  const [hasUserSelectedSort, setHasUserSelectedSort] = useState(false);
   const [showAllCars, setShowAllCars] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -292,31 +291,27 @@ const HomeCarsSection = memo(() => {
   // Apply daily rotating cars when no filters are applied, showing 50 cars same as catalog
   const dailyRotatingCars = useDailyRotatingCars(carsForSorting, hasFilters, 50);
 
-  // Always apply sorting to cars for sorting
-  const sortedCars = useSortedCars(carsForSorting, sortBy);
-  
-  // Use sorted cars when user has explicitly selected a sort option or when filters are applied
+  // Use daily rotating cars when no filters, otherwise use sorted cars
   const carsToDisplay = useMemo(() => {
-    if (hasUserSelectedSort || hasFilters) {
-      // When user has selected sorting or filters are applied, use sorted cars
-      return sortedCars;
+    if (!hasFilters) {
+      return dailyRotatingCars;
     }
-    // When no explicit sort selection and no filters, use daily rotating cars
-    return dailyRotatingCars;
-  }, [hasUserSelectedSort, hasFilters, dailyRotatingCars, sortedCars]);
+    // When filters are applied, use sorted cars
+    return useSortedCars(carsForSorting, sortBy);
+  }, [hasFilters, dailyRotatingCars, carsForSorting, sortBy]);
 
   // Show 50 cars by default (daily rotation) to match catalog
   const defaultDisplayCount = 50;
 
   // Memoize displayed cars to prevent unnecessary re-renders
   const displayedCars = useMemo(() => {
-    if (!hasUserSelectedSort && !hasFilters) {
-      // When no explicit sort selection and no filters, show all daily rotating cars (already limited to 50)
+    if (!hasFilters) {
+      // When no filters, show all daily rotating cars (already limited to 50)
       return showAllCars ? carsToDisplay : carsToDisplay.slice(0, defaultDisplayCount);
     }
-    // When sorting or filters are applied, use the slice logic
+    // When filters are applied, use the slice logic
     return showAllCars ? carsToDisplay : carsToDisplay.slice(0, defaultDisplayCount);
-  }, [showAllCars, carsToDisplay, defaultDisplayCount, hasUserSelectedSort, hasFilters]);
+  }, [showAllCars, carsToDisplay, defaultDisplayCount, hasFilters]);
 
   // Preload first 6 car images for better initial loading performance
   useEffect(() => {
@@ -562,7 +557,6 @@ const HomeCarsSection = memo(() => {
               onModelChange={handleModelChange}
               onFetchGrades={fetchGrades}
               onFetchTrimLevels={fetchTrimLevels}
-              fetchFilterCounts={fetchFilterCounts}
               isHomepage={true}
               onSearchCars={handleSearchCars}
             />
@@ -583,10 +577,7 @@ const HomeCarsSection = memo(() => {
           <div className="flex justify-end">
             <Select
               value={sortBy}
-              onValueChange={(value: SortOption) => {
-                setSortBy(value);
-                setHasUserSelectedSort(true);
-              }}
+              onValueChange={(value: SortOption) => setSortBy(value)}
             >
               <SelectTrigger className="w-48">
                 <ArrowUpDown className="h-3 w-3 mr-2" />

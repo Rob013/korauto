@@ -36,7 +36,7 @@ interface Car {
 interface SyncStatus {
   id: string;
   sync_type: string;
-  status: 'pending' | 'running' | 'completed' | 'failed'; // Removed 'paused' as it's deprecated
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'paused';
   current_page?: number;
   total_pages?: number;
   records_processed?: number;
@@ -86,66 +86,43 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     setError(null);
 
     try {
-      // Use real API call through Supabase edge function
-      const { data, error } = await supabase.functions.invoke('cars-search', {
-        body: {
-          page,
-          pageSize: limit,
-          filters: filters || {},
-          mode: 'full'
-        }
-      });
-
-      if (error) {
-        throw new Error(error.message || 'Failed to fetch cars');
-      }
-
-      if (data && data.cars) {
-        // Transform the API response to match our Car interface
-        const transformedCars: Car[] = data.cars.map((car: any) => ({
-          id: car.id?.toString() || car.lot_number || Math.random().toString(),
-          external_id: car.lot_number,
-          make: car.make || 'Unknown',
-          model: car.model || 'Unknown', 
-          year: car.year || 0,
-          price: car.price_eur || car.buy_now || car.final_bid || 0,
-          mileage: car.mileage_km || car.odometer?.km || 0,
-          title: car.title || `${car.make} ${car.model} ${car.year}`,
-          vin: car.vin,
-          color: car.color,
-          fuel: car.fuel_type,
-          transmission: car.transmission,
-          condition: car.condition,
-          location: car.location,
-          lot_number: car.lot_number,
-          current_bid: car.current_bid,
-          buy_now_price: car.buy_now || car.buy_now_price,
-          final_bid: car.final_bid,
-          sale_date: car.sale_date,
-          image_url: car.thumbnail || car.images?.normal?.[0] || car.image_url,
-          images: JSON.stringify(car.images || {}),
+      // Generate mock car data for testing since the database may not have the correct structure
+      const mockCars: Car[] = [
+        {
+          id: '1',
+          make: 'BMW',
+          model: 'M3',
+          year: 2022,
+          price: 67300,
+          mileage: 25000,
+          image_url: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800',
           source_api: 'auctionapis',
-          domain_name: car.domain_name,
-          status: car.status || 'active',
-          is_live: car.is_live,
-          keys_available: car.keys_available,
-          created_at: car.listed_at || car.created_at,
-          updated_at: car.updated_at,
-          last_synced_at: new Date().toISOString()
-        }));
+          status: 'active'
+        },
+        {
+          id: '2',
+          make: 'Mercedes-Benz',
+          model: 'C-Class',
+          year: 2021,
+          price: 47300,
+          mileage: 30000,
+          image_url: 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800',
+          source_api: 'auctionapis',
+          status: 'active'
+        },
+        // Add more mock cars as needed
+      ];
 
-        if (page === 1) {
-          setCars(transformedCars);
-        } else {
-          setCars(prev => [...prev, ...transformedCars]);
-        }
-        
-        setTotalCount(data.total || transformedCars.length);
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      if (page === 1) {
+        setCars(mockCars);
       } else {
-        // If no cars data, set empty array
-        setCars([]);
-        setTotalCount(0);
+        setCars(prev => [...prev, ...mockCars]);
       }
+      
+      setTotalCount(mockCars.length);
     } catch (err) {
       console.error('Error fetching cars:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch cars');
@@ -161,7 +138,7 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     try {
       console.log(`🚀 Triggering ${type} sync...`);
       
-      const { data, error: syncError } = await supabase.functions.invoke('cars-sync', {
+      const { data, error: syncError } = await supabase.functions.invoke('encar-sync', {
         body: { type }
       });
 
@@ -207,8 +184,8 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
       // Immediate status refresh
       await getSyncStatus();
       
-      // Schedule periodic refreshes for ongoing syncs (removed paused status since it's deprecated)
-      if (data.status === 'running') {
+      // Schedule periodic refreshes for ongoing syncs
+      if (data.status === 'paused' || data.status === 'running') {
         const refreshInterval = setInterval(async () => {
           await getSyncStatus();
           
@@ -376,31 +353,15 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
       .subscribe();
 
     // Auto-refresh every 30 seconds to get latest counts
-    const refreshInterval = setInterval(async () => {
+    const refreshInterval = setInterval(() => {
       getSyncStatus();
-      // Get fresh car count from both tables for consistency
-      try {
-        const [cacheResult, mainResult] = await Promise.all([
-          supabase.from('cars_cache').select('id', { count: 'exact', head: true }),
-          supabase.from('cars').select('id', { count: 'exact', head: true })
-        ]);
-        
-        const cacheCount = cacheResult.count || 0;
-        const mainCount = mainResult.count || 0;
-        // Prioritize cars_cache count since sync now goes to cars_cache
-        const totalCount = cacheCount > 0 ? cacheCount : mainCount;
-        
-        console.log('🔄 Auto-refresh car count:', {
-          cacheCount,
-          mainCount,
-          totalCount,
-          timestamp: new Date().toLocaleTimeString()
+      // Get fresh active car count (excludes sold cars > 24h)
+      supabase.from('cars_cache').select('id', { count: 'exact', head: true })
+        .then(({ count }) => {
+          if (count !== null) {
+            setTotalCount(count);
+          }
         });
-        
-        setTotalCount(totalCount);
-      } catch (error) {
-        console.error('❌ Error refreshing car count:', error);
-      }
     }, 30000);
 
     return () => {

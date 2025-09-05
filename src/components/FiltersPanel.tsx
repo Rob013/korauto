@@ -5,7 +5,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { 
   X, 
   Search, 
@@ -18,11 +17,7 @@ import {
   Fuel, 
   Palette, 
   MapPin,
-  Filter,
-  Shield,
-  Camera,
-  Award,
-  AlertTriangle
+  Filter
 } from 'lucide-react';
 import { FilterState } from '@/hooks/useFiltersFromUrl';
 import { validateFilters } from '@/utils/buildQueryParams';
@@ -36,18 +31,9 @@ interface FiltersData {
   bodyTypes: Array<{ id: string; name: string; count?: number }>;
   colors: Array<{ id: string; name: string; count?: number }>;
   locations: Array<{ id: string; name: string; count?: number }>;
-  
-  // Enhanced filter data for old layout
-  conditions: Array<{ id: string; name: string; count?: number }>;
-  saleStatuses: Array<{ id: string; name: string; count?: number }>;
-  drivetrains: Array<{ id: string; name: string; count?: number }>;
-  doorCounts: Array<{ id: string; name: string; count?: number }>;
-  
-  // Range data
   yearRange: { min: number; max: number };
   priceRange: { min: number; max: number };
   mileageRange: { min: number; max: number };
-  engineSizeRange: { min: number; max: number }; // New range for engine size
 }
 
 interface FiltersPanelProps {
@@ -89,10 +75,6 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   const [yearRange, setYearRange] = useState([filters.yearMin || data.yearRange.min, filters.yearMax || data.yearRange.max]);
   const [priceRange, setPriceRange] = useState([filters.priceMin || data.priceRange.min, filters.priceMax || data.priceRange.max]);
   const [mileageRange, setMileageRange] = useState([filters.mileageMin || data.mileageRange.min, filters.mileageMax || data.mileageRange.max]);
-  const [engineSizeRange, setEngineSizeRange] = useState([
-    filters.engineSizeMin || data.engineSizeRange?.min || 1.0, 
-    filters.engineSizeMax || data.engineSizeRange?.max || 6.0
-  ]);
   const [expandedSections, setExpandedSections] = useState<string[]>(['basic']);
 
   // Debounce search term with 250ms delay as specified
@@ -109,7 +91,6 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   const debouncedYearRange = useDebounce(yearRange, 250);
   const debouncedPriceRange = useDebounce(priceRange, 250);
   const debouncedMileageRange = useDebounce(mileageRange, 250);
-  const debouncedEngineSizeRange = useDebounce(engineSizeRange, 250);
 
   useEffect(() => {
     if (debouncedYearRange[0] !== filters.yearMin || debouncedYearRange[1] !== filters.yearMax) {
@@ -137,15 +118,6 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       });
     }
   }, [debouncedMileageRange, filters.mileageMin, filters.mileageMax, data.mileageRange, onFiltersChange]);
-
-  useEffect(() => {
-    if (data.engineSizeRange && (debouncedEngineSizeRange[0] !== filters.engineSizeMin || debouncedEngineSizeRange[1] !== filters.engineSizeMax)) {
-      onFiltersChange({
-        engineSizeMin: debouncedEngineSizeRange[0] !== data.engineSizeRange.min ? debouncedEngineSizeRange[0] : undefined,
-        engineSizeMax: debouncedEngineSizeRange[1] !== data.engineSizeRange.max ? debouncedEngineSizeRange[1] : undefined,
-      });
-    }
-  }, [debouncedEngineSizeRange, filters.engineSizeMin, filters.engineSizeMax, data.engineSizeRange, onFiltersChange]);
 
   // Get available models based on selected brand
   const availableModels = useMemo(() => {
@@ -247,48 +219,47 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   };
 
   return (
-    <div className={cn('space-y-2 sm:space-y-3 lg:space-y-4', className)}>
-      {/* Header with active filters count - Enhanced mobile responsiveness */}
-      <div className="flex items-center justify-between gap-2 p-2 sm:p-0">
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
-          <h3 className="text-sm sm:text-base lg:text-lg font-semibold truncate">Filtrat e Kërkimit</h3>
+    <div className={cn('space-y-4', className)}>
+      {/* Header with active filters count */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Filter className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-semibold">Filtrat e Kërkimit</h3>
         </div>
-        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2">
           {activeFiltersCount > 0 && (
-            <Badge variant="secondary" className="text-xs px-1.5 py-0.5 sm:px-2 sm:py-1">{activeFiltersCount}</Badge>
+            <Badge variant="secondary">{activeFiltersCount}</Badge>
           )}
-          <Button variant="outline" size="sm" onClick={onClearFilters} className="text-xs sm:text-sm px-2 sm:px-3 h-8 sm:h-9 touch-target">
-            <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-            <span className="hidden xs:inline">Pastro të gjitha</span>
-            <span className="xs:hidden">Pastro</span>
+          <Button variant="outline" size="sm" onClick={onClearFilters}>
+            <X className="h-3 w-3 mr-1" />
+            Pastro të gjitha
           </Button>
         </div>
       </div>
 
-      {/* Selected filters chips - Enhanced mobile responsiveness */}
+      {/* Selected filters chips */}
       {selectedFilters.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 sm:gap-2 max-h-16 sm:max-h-20 lg:max-h-none overflow-y-auto p-1 sm:p-0">
+        <div className="flex flex-wrap gap-2">
           {selectedFilters.map((chip) => (
-            <Badge key={chip.key} variant="default" className="flex items-center gap-1 text-xs sm:text-sm px-2 py-1 max-w-[140px] sm:max-w-[180px] lg:max-w-none touch-target">
-              <span className="truncate">{chip.label}: {chip.value}</span>
+            <Badge key={chip.key} variant="default" className="flex items-center gap-1">
+              <span className="text-xs">{chip.label}: {chip.value}</span>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-auto w-auto p-0.5 hover:bg-transparent ml-1 touch-target rounded-full"
+                className="h-auto w-auto p-0 hover:bg-transparent"
                 onClick={() => removeFilter(chip.key)}
               >
-                <X className="h-3 w-3 flex-shrink-0" />
+                <X className="h-3 w-3" />
               </Button>
             </Badge>
           ))}
         </div>
       )}
 
-      {/* Search - Enhanced mobile experience */}
-      <div className="space-y-1.5 sm:space-y-2 p-2 sm:p-0">
-        <Label htmlFor="search" className="flex items-center gap-2 text-sm sm:text-base font-medium">
-          <Search className="h-3 w-3 sm:h-4 sm:w-4" />
+      {/* Search */}
+      <div className="space-y-2">
+        <Label htmlFor="search" className="flex items-center gap-2">
+          <Search className="h-4 w-4" />
           Kërko
         </Label>
         <div className="relative">
@@ -299,40 +270,40 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
             placeholder="Kërko makinat..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 h-10 sm:h-11 text-sm sm:text-base touch-target"
+            className="pl-10"
           />
         </div>
       </div>
 
-      {/* Basic Filters Section - Enhanced mobile layout */}
-      <div className="space-y-2 sm:space-y-3">
+      {/* Basic Filters Section */}
+      <div className="space-y-3">
         <Button
           variant="ghost"
           onClick={() => toggleSection('basic')}
-          className="w-full justify-between p-3 h-auto hover:bg-muted/50 touch-target"
+          className="w-full justify-between p-2 h-auto"
         >
           <div className="flex items-center gap-2">
-            <Car className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-            <span className="font-medium text-sm sm:text-base">Filtrat Bazë</span>
+            <Car className="h-4 w-4 text-primary" />
+            <span className="font-medium">Filtrat Bazë</span>
           </div>
           {expandedSections.includes('basic') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
 
         {expandedSections.includes('basic') && (
-          <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-muted/30 rounded-lg">
-            {/* Brand - Enhanced touch target */}
+          <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
+            {/* Brand */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-sm sm:text-base font-medium">
+              <Label className="flex items-center gap-2">
                 <Car className="h-4 w-4" />
                 Marka
               </Label>
               <Select value={filters.brand || ''} onValueChange={handleBrandChange}>
-                <SelectTrigger className="h-10 sm:h-11 touch-target">
+                <SelectTrigger>
                   <SelectValue placeholder="Zgjidhni markën" />
                 </SelectTrigger>
                 <SelectContent>
                   {data.brands.map((brand) => (
-                    <SelectItem key={brand.id} value={brand.id} className="touch-target">
+                    <SelectItem key={brand.id} value={brand.id}>
                       {brand.name} {brand.count && `(${brand.count})`}
                     </SelectItem>
                   ))}
@@ -340,71 +311,14 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
               </Select>
             </div>
 
-            {/* Model (dependent on brand) - Enhanced touch target */}
+            {/* Model (dependent on brand) */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-sm sm:text-base font-medium">
+              <Label className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
                 Modeli
               </Label>
               <Select 
                 value={filters.model || ''} 
-                onValueChange={(value) => onFiltersChange({ model: value })}
-                disabled={!filters.brand}
-              >
-                <SelectTrigger className="h-10 sm:h-11 touch-target">
-                  <SelectValue placeholder={filters.brand ? "Zgjidhni modelin" : "Zgjidhni markën së pari"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableModels.map((model) => (
-                    <SelectItem key={model.id} value={model.id} className="touch-target">
-                      {model.name} {model.count && `(${model.count})`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Fuel Type - Enhanced with API counts */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-sm sm:text-base font-medium">
-                <Fuel className="h-4 w-4" />
-                Karburanti
-              </Label>
-              <Select value={filters.fuel || ''} onValueChange={(value) => onFiltersChange({ fuel: value })}>
-                <SelectTrigger className="h-10 sm:h-11 touch-target">
-                  <SelectValue placeholder="Zgjidhni karburantin" />
-                </SelectTrigger>
-                <SelectContent>
-                  {data.fuelTypes.map((fuel) => (
-                    <SelectItem key={fuel.id} value={fuel.id} className="touch-target">
-                      {fuel.name} {fuel.count && `(${fuel.count})`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Transmission - Enhanced with API counts */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-sm sm:text-base font-medium">
-                <Settings className="h-4 w-4" />
-                Transmisioni
-              </Label>
-              <Select value={filters.transmission || ''} onValueChange={(value) => onFiltersChange({ transmission: value })}>
-                <SelectTrigger className="h-10 sm:h-11 touch-target">
-                  <SelectValue placeholder="Zgjidhni transmisionin" />
-                </SelectTrigger>
-                <SelectContent>
-                  {data.transmissions.map((transmission) => (
-                    <SelectItem key={transmission.id} value={transmission.id} className="touch-target">
-                      {transmission.name} {transmission.count && `(${transmission.count})`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        )}
                 onValueChange={(value) => onFiltersChange({ model: value })}
                 disabled={!filters.brand || availableModels.length === 0}
               >
@@ -604,183 +518,6 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            {/* Enhanced Filters for Old Layout */}
-            
-            {/* Car Condition */}
-            {data.conditions && data.conditions.length > 0 && (
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  Gjendja
-                </Label>
-                <Select value={filters.condition || ''} onValueChange={(value) => onFiltersChange({ condition: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Zgjidhni gjendjen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {data.conditions.map((condition) => (
-                      <SelectItem key={condition.id} value={condition.id}>
-                        {condition.name} {condition.count && `(${condition.count})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Sale Status */}
-            {data.saleStatuses && data.saleStatuses.length > 0 && (
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4" />
-                  Statusi i Shitjes
-                </Label>
-                <Select value={filters.saleStatus || ''} onValueChange={(value) => onFiltersChange({ saleStatus: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Zgjidhni statusin" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {data.saleStatuses.map((status) => (
-                      <SelectItem key={status.id} value={status.id}>
-                        {status.name} {status.count && `(${status.count})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Drivetrain */}
-            {data.drivetrains && data.drivetrains.length > 0 && (
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  Sistemi i Nxitjes
-                </Label>
-                <Select value={filters.drivetrain || ''} onValueChange={(value) => onFiltersChange({ drivetrain: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Zgjidhni sistemin" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {data.drivetrains.map((drivetrain) => (
-                      <SelectItem key={drivetrain.id} value={drivetrain.id}>
-                        {drivetrain.name} {drivetrain.count && `(${drivetrain.count})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Doors Count */}
-            {data.doorCounts && data.doorCounts.length > 0 && (
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Car className="h-4 w-4" />
-                  Numri i Dyerve
-                </Label>
-                <Select value={filters.doors || ''} onValueChange={(value) => onFiltersChange({ doors: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Zgjidhni numrin e dyerve" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {data.doorCounts.map((door) => (
-                      <SelectItem key={door.id} value={door.id}>
-                        {door.name} {door.count && `(${door.count})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Engine Size Range */}
-            {data.engineSizeRange && (
-              <div className="space-y-3">
-                <Label className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  Vëllimi i Motorrit (L)
-                </Label>
-                <div className="px-2">
-                  <Slider
-                    value={engineSizeRange}
-                    onValueChange={setEngineSizeRange}
-                    min={data.engineSizeRange.min}
-                    max={data.engineSizeRange.max}
-                    step={0.1}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-sm text-muted-foreground mt-1">
-                    <span>{engineSizeRange[0].toFixed(1)}L</span>
-                    <span>{engineSizeRange[1].toFixed(1)}L</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Boolean Filters */}
-            <div className="space-y-3 border-t pt-3">
-              <Label className="text-sm font-medium text-foreground">Filtrat e Përshtatur</Label>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="hasImages"
-                  checked={filters.hasImages || false}
-                  onCheckedChange={(checked) => onFiltersChange({ hasImages: checked ? true : undefined })}
-                />
-                <Label htmlFor="hasImages" className="flex items-center gap-2 text-sm cursor-pointer">
-                  <Camera className="h-4 w-4" />
-                  Vetëm me fotografi
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="isCertified"
-                  checked={filters.isCertified || false}
-                  onCheckedChange={(checked) => onFiltersChange({ isCertified: checked ? true : undefined })}
-                />
-                <Label htmlFor="isCertified" className="flex items-center gap-2 text-sm cursor-pointer">
-                  <Award className="h-4 w-4" />
-                  Vetëm të certifikuara
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="noAccidents"
-                  checked={filters.noAccidents || false}
-                  onCheckedChange={(checked) => onFiltersChange({ noAccidents: checked ? true : undefined })}
-                />
-                <Label htmlFor="noAccidents" className="flex items-center gap-2 text-sm cursor-pointer">
-                  <Shield className="h-4 w-4" />
-                  Pa aksidente
-                </Label>
-              </div>
-            </div>
-
-            {/* Accident Count Filter */}
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" />
-                Maksimum {filters.accidentCountMax || 0} aksidente
-              </Label>
-              <div className="px-2">
-                <Slider
-                  value={[filters.accidentCountMax || 0]}
-                  onValueChange={([value]) => onFiltersChange({ accidentCountMax: value })}
-                  min={0}
-                  max={10}
-                  step={1}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-sm text-muted-foreground mt-1">
-                  <span>0 aksidente</span>
-                  <span>10+ aksidente</span>
-                </div>
-              </div>
             </div>
           </div>
         )}

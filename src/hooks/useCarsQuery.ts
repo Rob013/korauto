@@ -76,8 +76,6 @@ const fetchCars = async (
   signal?: AbortSignal,
   cursor?: string
 ): Promise<CarsResponse> => {
-  console.log('🔄 Fetching cars with params:', params);
-  
   try {
     const apiResponse = await fetchCarsWithKeyset({
       filters: {
@@ -99,8 +97,6 @@ const fetchCars = async (
     const pageSize = parseInt(params.pageSize || '24');
     const currentPage = parseInt(params.page || '1');
 
-    console.log('✅ Successfully fetched', convertedCars.length, 'cars from API');
-
     return {
       cars: convertedCars,
       total: apiResponse.total,
@@ -110,79 +106,115 @@ const fetchCars = async (
       nextCursor: apiResponse.nextCursor
     };
   } catch (error) {
-    console.error('❌ API failed, using fallback data:', error);
+    console.error('Error fetching cars with keyset pagination:', error);
     
-    // Use fallback data if API fails
+    // Fallback to mock data if API fails
     return fetchCarsFallback(params, signal);
   }
 };
 
-  // Fallback function using existing mock data logic
-  const fetchCarsFallback = async (
-    params: ReturnType<typeof buildQueryParams>,
-    signal?: AbortSignal
-  ): Promise<CarsResponse> => {
-    console.info('🔄 Using fallback cars for development/testing');
+// Fallback function using existing mock data logic
+const fetchCarsFallback = async (
+  params: ReturnType<typeof buildQueryParams>,
+  signal?: AbortSignal
+): Promise<CarsResponse> => {
+  // When no brand filter is applied, use the same secure auction API data as homepage
+  if (!params.brand || params.brand === '' || params.brand === 'all') {
+    const { createFallbackCars } = await import('@/hooks/useSecureAuctionAPI');
     
-    // Simple fallback cars without complex imports
-    const fallbackCars: Car[] = Array.from({ length: 200 }, (_, index) => ({
-      id: `fallback-${index + 1}`,
-      make: ['Toyota', 'Honda', 'BMW', 'Mercedes-Benz', 'Audi', 'Volkswagen', 'Hyundai', 'Kia'][index % 8],
-      model: ['Camry', 'Civic', 'X3', 'C-Class', 'A4', 'Golf', 'Elantra', 'Sorento'][index % 8],
-      year: 2015 + (index % 9),
-      price: Math.round(15000 + (index * 567) % 50000),
-      mileage: Math.round(20000 + (index * 1234) % 150000),
-      fuel: ['Gasoline', 'Diesel', 'Hybrid', 'Electric'][index % 4],
-      transmission: ['Automatic', 'Manual', 'CVT'][index % 3],
-      bodyType: 'Sedan',
-      color: ['Black', 'White', 'Silver', 'Blue', 'Red', 'Gray'][index % 6],
-      location: 'Seoul',
-      images: ['https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400']
-    }));
+    // Get cars from secure auction API (same as homepage)
+    const allCars = createFallbackCars({});
     
-    // Apply basic sorting
-    const sortedCars = [...fallbackCars].sort((a, b) => {
-      switch (params.sort) {
-        case 'price_asc':
-          return a.price - b.price;
-        case 'price_desc':
-          return b.price - a.price;
-        case 'year_desc':
-          return b.year - a.year;
-        case 'year_asc':
-          return a.year - b.year;
-        default:
-          return a.price - b.price;
+    // Apply daily rotation logic (same as homepage)
+    const hasFilters = Object.entries(params).some(([key, value]) => 
+      value && value !== '' && key !== 'page' && key !== 'pageSize' && key !== 'sort'
+    );
+    
+    const dailyRotatingCars = (() => {
+      if (hasFilters || allCars.length === 0) {
+        return allCars;
       }
-    });
+
+      // Get day of month as seed for daily rotation (same logic as homepage)
+      const today = new Date();
+      const dayOfMonth = today.getDate();
+      const month = today.getMonth() + 1;
+      const dailySeed = dayOfMonth * 100 + month;
+
+      // Filter available cars
+      const availableCars = allCars.filter(
+        (car) =>
+          car.manufacturer?.name && 
+          car.lots?.[0]?.images?.normal?.[0]
+      );
+
+      // Seeded random function
+      const seededRandom = (seed: number) => {
+        const x = Math.sin(seed) * 10000;
+        return x - Math.floor(x);
+      };
+
+      // Shuffle with seed
+      const shuffleWithSeed = (array: any[], seed: number) => {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(seededRandom(seed + i) * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+      };
+
+      return shuffleWithSeed(availableCars, dailySeed).slice(0, 50);
+    })();
     
-    console.info('✅ Generated fallback cars with sorting');
+    // Convert to the expected format
+    const convertedCars = dailyRotatingCars.map(car => ({
+      id: car.id?.toString() || '',
+      make: car.manufacturer?.name || '',
+      model: car.model?.name || '',
+      year: car.year || 2020,
+      price: Math.round((car.lots?.[0]?.buy_now || 25000) + 2200), // Add fees like homepage
+      mileage: car.lots?.[0]?.odometer?.km,
+      fuel: car.fuel?.name,
+      transmission: car.transmission?.name,
+      bodyType: car.body_type || 'Sedan',
+      color: car.color?.name,
+      location: car.location || 'Seoul',
+      images: car.lots?.[0]?.images?.normal || []
+    }));
     
     const pageSize = parseInt(params.pageSize || '20');
     const page = parseInt(params.page || '1');
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    const paginatedCars = sortedCars.slice(startIndex, endIndex);
+    const paginatedCars = convertedCars.slice(startIndex, endIndex);
     
     return {
       cars: paginatedCars,
-      total: sortedCars.length,
+      total: convertedCars.length,
       page: page,
-      totalPages: Math.ceil(sortedCars.length / pageSize),
-      hasMore: endIndex < sortedCars.length
+      totalPages: Math.ceil(convertedCars.length / pageSize),
+      hasMore: endIndex < convertedCars.length
     };
+  }
+  
+  // For brand-specific filters, use mock data
+  const { mockFetchCars } = await import('@/utils/mockCarsData');
+  const mockResponse = await mockFetchCars(params, signal);
+  
+  return {
+    cars: mockResponse.cars,
+    total: mockResponse.total,
+    page: mockResponse.page,
+    totalPages: mockResponse.totalPages,
+    hasMore: mockResponse.hasMore
   };
+};
 
 // Mock API function for models
 const fetchModels = async (brandId: string, signal?: AbortSignal): Promise<Model[]> => {
-  // Simple mock models without dynamic imports
-  const mockModels: Record<string, string[]> = {
-    Toyota: ['Camry', 'Corolla', 'RAV4', 'Prius', 'Highlander'],
-    Honda: ['Civic', 'Accord', 'CR-V', 'Pilot', 'Fit'],
-    BMW: ['3 Series', '5 Series', 'X3', 'X5', 'i3'],
-    'Mercedes-Benz': ['C-Class', 'E-Class', 'GLC', 'GLE', 'A-Class'],
-    Audi: ['A3', 'A4', 'Q5', 'Q7', 'e-tron']
-  };
+  // Use mock data for development/testing
+  const { carModels } = await import('@/utils/mockCarsData');
   
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 200));
@@ -192,13 +224,28 @@ const fetchModels = async (brandId: string, signal?: AbortSignal): Promise<Model
   }
   
   const brandName = brandId.charAt(0).toUpperCase() + brandId.slice(1);
-  const models = mockModels[brandName] || [];
+  const models = (carModels as any)[brandName] || [];
   
   return models.map((model: string, index: number) => ({
     id: model.toLowerCase().replace(/\s+/g, '-'),
     name: model,
     brandId: brandId
   }));
+  
+  /* Original API call - uncomment when API is available
+  const response = await fetch(`/api/models?brand=${brandId}`, {
+    signal,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch models: ${response.statusText}`);
+  }
+
+  return response.json();
+  */
 };
 
 export const useCarsQuery = (filters: FilterState) => {

@@ -69,22 +69,6 @@ function buildFilter(filters: any): Record<string, any> {
     apiFilters.transmission = filters.transmission[0];
   }
   
-  if (filters.bodyType?.length) {
-    apiFilters.body_type = filters.bodyType[0];
-  }
-  
-  if (filters.driveType?.length) {
-    apiFilters.drive_type = filters.driveType[0];
-  }
-  
-  if (filters.color?.length) {
-    apiFilters.color = filters.color[0];
-  }
-  
-  if (filters.seatsCount?.length) {
-    apiFilters.seats_count = filters.seatsCount[0];
-  }
-  
   if (filters.year) {
     if (filters.year.min) apiFilters.from_year = filters.year.min.toString();
     if (filters.year.max) apiFilters.to_year = filters.year.max.toString();
@@ -98,52 +82,6 @@ function buildFilter(filters: any): Record<string, any> {
   if (filters.mileage_km) {
     if (filters.mileage_km.min) apiFilters.odometer_from_km = filters.mileage_km.min.toString();
     if (filters.mileage_km.max) apiFilters.odometer_to_km = filters.mileage_km.max.toString();
-  }
-  
-  if (filters.engineDisplacement) {
-    if (filters.engineDisplacement.min) apiFilters.engine_displacement_from = filters.engineDisplacement.min.toString();
-    if (filters.engineDisplacement.max) apiFilters.engine_displacement_to = filters.engineDisplacement.max.toString();
-  }
-  
-  if (filters.accidents) {
-    if (filters.accidents.max) apiFilters.max_accidents = filters.accidents.max.toString();
-    if (filters.accidents.min) apiFilters.min_accidents = filters.accidents.min.toString();
-  }
-  
-  if (filters.registrationType?.length) {
-    apiFilters.registration_type = filters.registrationType[0];
-  }
-  
-  if (filters.certification?.length) {
-    apiFilters.certification = filters.certification.join(',');
-  }
-  
-  if (filters.isCertified !== undefined) {
-    apiFilters.is_certified = filters.isCertified.toString();
-  }
-  
-  if (filters.hasWarranty !== undefined) {
-    apiFilters.has_warranty = filters.hasWarranty.toString();
-  }
-  
-  if (filters.serviceHistory !== undefined) {
-    apiFilters.service_history = filters.serviceHistory.toString();
-  }
-  
-  if (filters.isImported !== undefined) {
-    apiFilters.is_imported = filters.isImported.toString();
-  }
-  
-  if (filters.keysAvailable !== undefined) {
-    apiFilters.keys_available = filters.keysAvailable.toString();
-  }
-  
-  if (filters.locationCity) {
-    apiFilters.location_city = filters.locationCity;
-  }
-  
-  if (filters.locationDistance) {
-    apiFilters.location_distance = filters.locationDistance.toString();
   }
   
   return apiFilters;

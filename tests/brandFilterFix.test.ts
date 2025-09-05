@@ -43,20 +43,19 @@ describe('Brand Filter Test Car Fix', () => {
       if (car.images?.normal) {
         car.images.normal.forEach((image: string) => {
           expect(image).not.toContain('-demo.jpg');
-          expect(image).not.toContain('placeholder');
         });
       }
     });
   });
 
-  it('should use real car images instead of demo images', () => {
-    // Test that fallback cars use real car images from lovable-uploads
+  it('should use placeholder images instead of demo images', () => {
+    // Test that fallback cars use placeholder images
     const filters = {};
     const result = createFallbackCars(filters);
     
     result.forEach(car => {
       if (car.images?.normal && car.images.normal.length > 0) {
-        expect(car.images.normal[0]).toMatch(/\/lovable-uploads\/.*\.png$/);
+        expect(car.images.normal[0]).toBe('/images/car-placeholder.jpg');
       }
     });
   });

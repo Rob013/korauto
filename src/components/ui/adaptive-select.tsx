@@ -132,22 +132,10 @@ const NativeSelect: React.FC<AdaptiveSelectProps> = ({
   className,
   options
 }) => {
-  // Trigger global sorting on change
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedValue = e.target.value;
-    onValueChange(selectedValue);
-    
-    // If this is a sort operation, trigger global car fetching
-    if (selectedValue && ['price_asc', 'price_desc', 'year_asc', 'year_desc', 'mileage_asc', 'mileage_desc', 'make_asc', 'make_desc', 'model_asc', 'model_desc'].includes(selectedValue)) {
-      console.log(`🚀 Triggering global car fetch and sort: ${selectedValue}`);
-      // The global sorting will be handled by the parent component
-    }
-  };
-
   return (
     <select
       value={value || ''}
-      onChange={handleChange}
+      onChange={(e) => onValueChange(e.target.value)}
       disabled={disabled}
       className={cn(
         "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
@@ -310,12 +298,6 @@ const CustomSelect: React.FC<AdaptiveSelectProps> = ({
     }
     onValueChange(optionValue);
     setIsOpen(false);
-    
-    // If this is a sort operation, trigger global car fetching
-    if (optionValue && ['price_asc', 'price_desc', 'year_asc', 'year_desc', 'mileage_asc', 'mileage_desc', 'make_asc', 'make_desc', 'model_asc', 'model_desc'].includes(optionValue)) {
-      console.log(`🚀 Triggering global car fetch and sort: ${optionValue}`);
-      // The global sorting will be handled by the parent component
-    }
   };
 
   return (

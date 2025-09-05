@@ -9,13 +9,17 @@ export const isTestCar = (car: any): boolean => {
   // Check for test car indicators in title
   const title = car.title?.toLowerCase() || '';
   const testPatterns = [
-    'gjenarta',      // Specific test manufacturer mentioned in requirements
+    'gjenarta',
+    'elite',
     'test',
     'sample',
     'demo',
     'placeholder',
     'emergency-',
-    'nis2005',       // Specific code pattern
+    'nis2005', // Specific code pattern
+    'altima', // Remove all Altimas as they seem to be test data
+    'code ',   // Any car with "code" in title
+    'lot ',    // Any car with "lot" in title pattern
   ];
   
   if (testPatterns.some(pattern => title.includes(pattern))) {
@@ -26,14 +30,34 @@ export const isTestCar = (car: any): boolean => {
   const make = car.manufacturer?.name?.toLowerCase() || '';
   const model = car.model?.name?.toLowerCase() || '';
   
-  // Filter out suspicious makes/models - specifically target test manufacturers
-  const testManufacturers = ['gjenarta', 'test', 'demo', 'sample', 'placeholder'];
-  if (testManufacturers.includes(make) || testManufacturers.includes(model)) {
+  // Filter out suspicious makes/models
+  if (make.includes('test') || model.includes('test') || 
+      make.includes('demo') || model.includes('demo') ||
+      make.includes('sample') || model.includes('sample')) {
+    return true;
+  }
+  
+  // Check for cars without proper images
+  const lot = car.lots?.[0];
+  const hasImages = lot?.images?.normal?.length > 0 || lot?.images?.big?.length > 0;
+  if (!hasImages) {
+    return true; // Remove cars without images
+  }
+  
+  // Check for unrealistic pricing (too high or too low)
+  const price = lot?.buy_now || 0;
+  if (price < 1000 || price > 500000) {
     return true;
   }
   
   // Check for missing essential data
   if (!car.manufacturer?.name || !car.model?.name || !car.year) {
+    return true;
+  }
+  
+  // Check for suspicious VIN patterns
+  const vin = car.vin?.toLowerCase() || '';
+  if (vin.includes('test') || vin.includes('demo') || vin.length < 10) {
     return true;
   }
   

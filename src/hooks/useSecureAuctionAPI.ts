@@ -1,5 +1,5 @@
 //@ts-nocheck
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { findGenerationYears } from "@/data/generationYears";
 import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from '../utils/grade-categorization';
@@ -26,17 +26,6 @@ const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => P
 // Create fallback car data for testing when API is not available
 export const createFallbackCars = (filters: any = {}): any[] => {
   console.log(`🔄 Creating fallback cars for development/testing`);
-  
-  // If a specific brand is selected (not 'all' or empty), don't show fallback cars
-  // This prevents showing test/fallback cars when users filter by specific brands
-  if (filters.manufacturer_id && 
-      filters.manufacturer_id !== 'all' && 
-      filters.manufacturer_id !== '' &&
-      filters.manufacturer_id !== undefined &&
-      filters.manufacturer_id !== null) {
-    console.log(`❌ Brand filter applied (${filters.manufacturer_id}), not showing fallback cars to avoid confusion`);
-    return [];
-  }
   
   // Generate mock cars for pagination testing
   const mockCars = [];
@@ -68,15 +57,7 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       lots: [{
         buy_now: 20000 + (i * 100),
         images: {
-          normal: [
-            // Use local car images from the public directory
-            `/lovable-uploads/${['91efade6-53ff-4c15-ae10-6ac8f338c2b9.png', 
-                              'fb2b9889-d3da-4280-a77b-7567f307aed5.png',
-                              '3657dff4-7afd-45bb-9f8a-8d3f4ba8d7b4.png',
-                              'd1ff645d-f293-44ab-b806-ae5eb2483633.png',
-                              '7a3e2aa4-2a3b-4320-b33c-72d3d7721cfd.png',
-                              '3094fd63-7a92-4497-8103-e166b6b09f70.png'][i % 6]}`
-          ]
+          normal: [`https://picsum.photos/400/300?random=${i}`]
         },
         odometer: { km: 50000 + (i * 1000) }
       }],
@@ -731,7 +712,7 @@ export const useSecureAuctionAPI = () => {
     }
   };
 
-  const fetchCars = useCallback(async (
+  const fetchCars = async (
     page: number = 1,
     newFilters: APIFilters = filters,
     resetList: boolean = true
@@ -935,7 +916,7 @@ export const useSecureAuctionAPI = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  };
 
   const fetchManufacturers = async (): Promise<Manufacturer[]> => {
     try {
@@ -1193,102 +1174,17 @@ export const useSecureAuctionAPI = () => {
     currentFilters: APIFilters = {},
     manufacturersList: any[] = []
   ) => {
+    // Mock implementation for backward compatibility
     console.log("📊 fetchFilterCounts called with filters:", currentFilters);
-    
-    try {
-      // Create base API filters for counting
-      const baseFilters = {
-        ...currentFilters,
-        per_page: "1", // We only need count data, not actual cars
-        simple_paginate: "1",
-      };
-
-      // Get manufacturer counts if manufacturers list is provided
-      const manufacturerCounts: { [key: string]: number } = {};
-      if (manufacturersList && manufacturersList.length > 0) {
-        for (const manufacturer of manufacturersList.slice(0, 20)) { // Limit to top 20 for performance
-          try {
-            const response = await makeSecureAPICall('/api/cars', {
-              ...baseFilters,
-              manufacturer_id: manufacturer.id.toString()
-            });
-            
-            if (response?.meta?.total) {
-              manufacturerCounts[manufacturer.id.toString()] = response.meta.total;
-            }
-          } catch (error) {
-            console.warn(`Failed to get count for manufacturer ${manufacturer.name}:`, error);
-          }
-        }
-      }
-
-      // Get fuel type counts
-      const fuelTypes = ['diesel', 'gasoline', 'hybrid', 'electric', 'gas', 'lpg'];
-      const fuelTypeCounts: { [key: string]: number } = {};
-      
-      for (const fuelType of fuelTypes) {
-        try {
-          const response = await makeSecureAPICall('/api/cars', {
-            ...baseFilters,
-            fuel_type: fuelType
-          });
-          
-          if (response?.meta?.total) {
-            fuelTypeCounts[fuelType] = response.meta.total;
-          }
-        } catch (error) {
-          console.warn(`Failed to get count for fuel type ${fuelType}:`, error);
-        }
-      }
-
-      // Get transmission counts
-      const transmissions = ['automatic', 'manual', 'cvt'];
-      const transmissionCounts: { [key: string]: number } = {};
-      
-      for (const transmission of transmissions) {
-        try {
-          const response = await makeSecureAPICall('/api/cars', {
-            ...baseFilters,
-            transmission_type: transmission
-          });
-          
-          if (response?.meta?.total) {
-            transmissionCounts[transmission] = response.meta.total;
-          }
-        } catch (error) {
-          console.warn(`Failed to get count for transmission ${transmission}:`, error);
-        }
-      }
-
-      console.log("✅ Filter counts fetched successfully:", {
-        manufacturers: Object.keys(manufacturerCounts).length,
-        fuelTypes: Object.keys(fuelTypeCounts).length,
-        transmissions: Object.keys(transmissionCounts).length
-      });
-
-      return {
-        manufacturers: manufacturerCounts,
-        models: {}, // Models are handled dynamically when manufacturer is selected
-        generations: {}, // Generations are handled dynamically when model is selected
-        colors: {}, // Colors require special handling
-        fuelTypes: fuelTypeCounts,
-        transmissions: transmissionCounts,
-        years: {}, // Year ranges are handled separately
-      };
-    } catch (error) {
-      console.error("❌ Error fetching filter counts:", error);
-      
-      // Return empty counts on error
-      return {
-        manufacturers: {},
-        models: {},
-        generations: {},
-        colors: {},
-        fuelTypes: {},
-        transmissions: {},
-        years: {},
-      };
-    }
+    return {
+      manufacturers: {},
+      models: {},
+      generations: {},
+      colors: {},
+      fuelTypes: {},
+      transmissions: {},
+      years: {},
+    };
   };
 
   const fetchCarCounts = async (

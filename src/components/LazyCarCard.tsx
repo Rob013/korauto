@@ -3,10 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
-import { Car, Gauge, Settings, Fuel, Palette, Shield, Heart, Camera } from "lucide-react";
+import { Car, Gauge, Settings, Fuel, Palette, Shield, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { OptimizedCarImage } from "@/components/OptimizedCarImage";
 
 interface LazyCarCardProps {
   id: string;
@@ -27,8 +26,6 @@ interface LazyCarCardProps {
   status?: number;
   sale_status?: string;
   final_price?: number;
-  location?: string; // Add location prop
-  drivetrain?: string; // Add drivetrain prop
   insurance_v2?: {
     accidentCnt?: number;
   };
@@ -57,8 +54,6 @@ const LazyCarCard = memo(({
   title,
   status,
   sale_status,
-  location, // Add location
-  drivetrain, // Add drivetrain
   insurance_v2,
   details,
   is_archived,
@@ -70,6 +65,7 @@ const LazyCarCard = memo(({
   const { toast } = useToast();
   const [isFavorite, setIsFavorite] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [isIntersecting, setIsIntersecting] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -282,76 +278,118 @@ const LazyCarCard = memo(({
   return (
     <div 
       ref={cardRef}
-      className="bg-white border border-gray-200 rounded-lg overflow-hidden cursor-pointer group hover:shadow-lg transition-shadow duration-200 h-full flex flex-col"
+      className="glass-card overflow-hidden cursor-pointer group touch-manipulation mobile-card-compact rounded-lg card-touch-effect"
       onClick={handleCardClick}
     >
-      {/* Image Section - Fixed Height */}
-      <div className="relative h-48 bg-gray-100 overflow-hidden">
-        <OptimizedCarImage
-          images={images && images.length > 0 ? images : undefined}
-          image={image}
-          alt={`${year} ${make} ${model}`}
-          className="w-full h-full object-cover"
-          fallbackIcon={<Car className="h-16 w-16 text-gray-400" />}
-        />
-        
-        {/* Favorite Heart Icon - Top Right */}
-        <button
-          onClick={handleFavoriteToggle}
-          className="absolute top-3 right-3 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors z-10"
-        >
-          <Heart className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} />
-        </button>
-
-        {/* Status Badge */}
-        {(status === 3 || sale_status === 'sold') && (
-          <div className="absolute top-3 left-3 bg-red-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg z-10">
-            SOLD
+      <div className="relative h-40 sm:h-52 lg:h-56 bg-muted overflow-hidden">
+        {/* Always show single image - swipe functionality removed from car cards */}
+        {(image || (images && images.length > 0)) ? (
+          <img 
+            src={image || images?.[0]} 
+            alt={`${year} ${make} ${model}`} 
+            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+            onLoad={() => setImageLoaded(true)}
+            onError={(e) => {
+              e.currentTarget.src = "/placeholder.svg";
+              setImageLoaded(true);
+            }}
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-muted">
+            <Car className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
           </div>
+        )}
+        
+        
+        {/* Status Badge - More compact on mobile */}
+        {(status === 3 || sale_status === 'sold') ? (
+          <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-red-600 text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded text-xs font-bold shadow-lg z-10">
+            SOLD OUT
+          </div>
+        ) : (
+          lot && (
+            <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-primary text-primary-foreground px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs font-semibold">
+              #{lot}
+            </div>
+          )
+        )}
+
+        {/* Favorite Button */}
+        {user && (
+          <button
+            onClick={handleFavoriteToggle}
+            className="absolute top-1 sm:top-2 left-1 sm:left-2 p-1.5 sm:p-2 bg-black/50 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+          >
+            <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+          </button>
         )}
       </div>
       
-      {/* Details Section - Flexible Height */}
-      <div className="p-4 flex-1 flex flex-col">
-        {/* Title */}
-        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1">
-          {year} {make} {model}
-        </h3>
+      <div className="p-2 sm:p-3 lg:p-4">
+        <div className="mb-1.5 sm:mb-2">
+          <h3 className="card-title text-sm sm:text-base lg:text-lg font-semibold text-foreground line-clamp-2">
+            {year} {make} {model}
+          </h3>
+          {title && title !== `${make} ${model}` && (
+            <p className="text-xs text-muted-foreground mb-1 line-clamp-1">{title}</p>
+          )}
+        </div>
 
-        {/* Key Specs */}
-        <div className="space-y-1 mb-3 text-sm text-gray-600">
-          {fuel && (
-            <div className="flex items-center gap-2">
-              <Fuel className="h-4 w-4 text-gray-400 flex-shrink-0" />
-              <span className="capitalize">{fuel}</span>
+        {/* Vehicle Info - More compact */}
+        <div className="space-y-0.5 sm:space-y-1 mb-2 sm:mb-3 card-details text-xs">
+          {mileage && (
+            <div className="flex items-center gap-1">
+              <Gauge className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
+              <span className="truncate">{mileage}</span>
             </div>
           )}
           {transmission && (
-            <div className="flex items-center gap-2">
-              <Settings className="h-4 w-4 text-gray-400 flex-shrink-0" />
-              <span className="capitalize">{transmission}</span>
+            <div className="flex items-center gap-1">
+              <Settings className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
+              <span className="capitalize truncate">{transmission}</span>
             </div>
           )}
-          {mileage && (
-            <div className="flex items-center gap-2">
-              <Gauge className="h-4 w-4 text-gray-400 flex-shrink-0" />
-              <span>{mileage}</span>
+          {fuel && (
+            <div className="flex items-center gap-1">
+              <Fuel className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
+              <span className="capitalize truncate">{fuel}</span>
             </div>
           )}
-          <div className="flex items-center gap-2">
-            <svg className="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <span className="text-sm">{location || "Prishtinë, Kosovo"}</span>
-          </div>
+          {color && (
+            <div className="flex items-center gap-1">
+              <Palette className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
+              <span className="capitalize truncate">{color}</span>
+            </div>
+          )}
         </div>
 
-        {/* Price - At Bottom */}
-        <div className="mt-auto">
-          <div className="text-2xl font-bold text-gray-900">
-            €{price.toLocaleString()}
+        {/* Status Indicators - More compact */}
+        {insurance_v2?.accidentCnt === 0 && (
+          <div className="mb-1.5 sm:mb-2">
+            <Badge variant="secondary" className="text-xs px-1.5 sm:px-2 py-0">
+              <Shield className="h-2 w-2 mr-1" />
+              Clean Record
+            </Badge>
           </div>
+        )}
+
+        {/* Pricing - More compact */}
+        <div className="flex flex-col gap-0.5 sm:gap-1 mb-1.5 sm:mb-2">
+          <span className="card-price text-base sm:text-lg lg:text-xl font-bold text-primary">
+            €{price.toLocaleString()}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            Deri ne portin e Durresit
+          </span>
+        </div>
+
+        <div className="text-center">
+          <p className="text-xs text-muted-foreground">
+            KORAUTO
+          </p>
         </div>
       </div>
     </div>

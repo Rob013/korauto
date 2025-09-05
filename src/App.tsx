@@ -7,12 +7,12 @@ import { lazy, Suspense, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InstallPrompt } from "./components/InstallPrompt";
 import { useResourcePreloader } from "./hooks/useResourcePreloader";
-import { ErrorBoundary } from "./components/ErrorBoundary";
-import { LoadingFallback } from "./components/LoadingFallback";
+import { AccessibilityEnhancer } from "./utils/accessibilityEnhancer";
 
 // Lazy load all pages for better code splitting
 const Index = lazy(() => import("./pages/Index"));
 const Catalog = lazy(() => import("./pages/Catalog"));
+const NewCatalog = lazy(() => import("./pages/NewCatalog"));
 const CarDetails = lazy(() => import("./pages/CarDetails"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AuthPage = lazy(() => import("./pages/AuthPage"));
@@ -28,7 +28,6 @@ const DiagramDemo = lazy(() => import("./pages/DiagramDemo"));
 const AdminCarSearchDemo = lazy(() => import("./pages/AdminCarSearchDemo"));
 const PerformanceDashboard = lazy(() => import("./components/PerformanceDashboard"));
 const AuditTestPage = lazy(() => import("./pages/AuditTestPage"));
-const SyncDemo = lazy(() => import("./pages/SyncDemo"));
 
 // Lazy load admin components for better code splitting
 const AdminSyncDashboard = lazy(() => import("./components/AdminSyncDashboard"));
@@ -106,14 +105,18 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-  console.log('🚀 App component initializing...');
-  
   // Initialize resource preloading for better performance
   const { preloadRouteResources } = useResourcePreloader();
 
-  // Simple initialization without external dependencies
+  // Initialize accessibility enhancements
   useEffect(() => {
-    console.log('✅ App initialized successfully');
+    const enhancer = AccessibilityEnhancer.getInstance();
+    enhancer.init();
+    enhancer.addSkipLinks();
+    
+    return () => {
+      enhancer.destroy();
+    };
   }, []);
 
   return (
@@ -129,11 +132,14 @@ const App = () => {
               </Suspense>
             } />
             <Route path="/catalog" element={
-              <ErrorBoundary>
-                <Suspense fallback={<LoadingFallback />}>
-                  <Catalog />
-                </Suspense>
-              </ErrorBoundary>
+              <Suspense fallback={<PageSkeleton />}>
+                <Catalog />
+              </Suspense>
+            } />
+            <Route path="/catalog-new" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <NewCatalog />
+              </Suspense>
             } />
             <Route path="/car/:id" element={
               <Suspense fallback={<PageSkeleton />}>
@@ -209,11 +215,6 @@ const App = () => {
             <Route path="/audit-test" element={
               <Suspense fallback={<PageSkeleton />}>
                 <AuditTestPage />
-              </Suspense>
-            } />
-            <Route path="/sync-demo" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <SyncDemo />
               </Suspense>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

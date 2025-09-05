@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Car, ExternalLink, Loader2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
 
 interface CarSearchResult {
   id: string;
@@ -50,7 +49,6 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const { toast } = useToast();
-  const { convertUSDtoEUR } = useCurrencyAPI();
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -135,7 +133,7 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
             model: car.model,
             vin: car.vin,
             lot_number: car.lot_number || lot?.lot,
-            price: car.price || (lot?.buy_now ? convertUSDtoEUR(Math.round(lot.buy_now + 2200)) : undefined),
+            price: car.price || (lot?.buy_now ? Math.round(lot.buy_now + 2200) : undefined),
             image: lot?.images?.normal?.[0] || lot?.images?.big?.[0],
             mileage: car.mileage || (lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined),
             fuel: car.fuel || carData?.fuel?.name,
@@ -248,7 +246,7 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
                   model: car.model?.name || car.model || 'Unknown',
                   vin: car.vin,
                   lot_number: car.lot_number || lot?.lot,
-                  price: lot?.buy_now ? convertUSDtoEUR(Math.round(lot.buy_now + 2200)) : undefined,
+                  price: lot?.buy_now ? Math.round(lot.buy_now + 2200) : undefined,
                   image: lot?.images?.normal?.[0] || lot?.images?.big?.[0],
                   mileage: lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined,
                   fuel: car.fuel?.name,
