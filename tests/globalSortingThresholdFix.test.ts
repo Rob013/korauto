@@ -8,28 +8,30 @@ describe('Global Sorting Threshold Fix', () => {
     globalSortingService = new GlobalSortingService();
   });
 
-  it('should use consistent threshold between service and components', () => {
-    // Test the default threshold from the service
-    const defaultThreshold = 30; // Default value from globalSortingService.ts line 104
+  it('should use lowered threshold to enable global sorting for smaller datasets', () => {
+    // Test the new lowered threshold from the service
+    const defaultThreshold = 5; // Updated value to solve problem statement
     
-    // Test cases around the threshold
-    expect(globalSortingService.shouldUseGlobalSorting(25)).toBe(false); // Below threshold
-    expect(globalSortingService.shouldUseGlobalSorting(30)).toBe(false); // At threshold
-    expect(globalSortingService.shouldUseGlobalSorting(31)).toBe(true);  // Above threshold
+    // Test cases around the new threshold
+    expect(globalSortingService.shouldUseGlobalSorting(3)).toBe(false);  // Below threshold
+    expect(globalSortingService.shouldUseGlobalSorting(5)).toBe(false);  // At threshold
+    expect(globalSortingService.shouldUseGlobalSorting(6)).toBe(true);   // Above threshold
+    expect(globalSortingService.shouldUseGlobalSorting(15)).toBe(true);  // Small dataset that should now work
+    expect(globalSortingService.shouldUseGlobalSorting(25)).toBe(true);  // Previously problematic case
     expect(globalSortingService.shouldUseGlobalSorting(50)).toBe(true);  // Well above threshold
     expect(globalSortingService.shouldUseGlobalSorting(100)).toBe(true); // Large dataset
   });
 
-  it('should handle edge case between 31-50 cars correctly', () => {
-    // This test ensures the fix for the threshold inconsistency
-    // Previously: service said "use global sorting" (>30) but component said "let hook handle it" (<=50)
+  it('should solve problem statement for typical small-to-medium datasets', () => {
+    // This test ensures users get global sorting when they expect it
+    // Problem statement: "When user selects sorting - call all api data and sort all of them"
     
-    const edgeCaseCounts = [31, 35, 40, 45, 50];
+    const typicalCaseCounts = [6, 10, 15, 20, 25, 35, 45];
     
-    edgeCaseCounts.forEach(count => {
+    typicalCaseCounts.forEach(count => {
       const shouldUseGlobal = globalSortingService.shouldUseGlobalSorting(count);
       expect(shouldUseGlobal).toBe(true);
-      console.log(`✅ ${count} cars: Global sorting = ${shouldUseGlobal}`);
+      console.log(`✅ ${count} cars: Global sorting = ${shouldUseGlobal} (was previously false for ${count <= 30 ? 'this case' : 'smaller cases'})`);
     });
   });
 
