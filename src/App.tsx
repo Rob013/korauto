@@ -29,7 +29,6 @@ const AdminCarSearchDemo = lazy(() => import("./pages/AdminCarSearchDemo"));
 const PerformanceDashboard = lazy(() => import("./components/PerformanceDashboard"));
 const AuditTestPage = lazy(() => import("./pages/AuditTestPage"));
 const ApiInfoDemo = lazy(() => import("./components/ApiInfoDemo"));
-const StatusDemoPage = lazy(() => import("./pages/StatusDemoPage"));
 
 // Lazy load admin components for better code splitting
 const AdminSyncDashboard = lazy(() => import("./components/AdminSyncDashboard"));
@@ -196,11 +195,6 @@ const App = () => {
             <Route path="/diagram-demo" element={
               <Suspense fallback={<PageSkeleton />}>
                 <DiagramDemo />
-              </Suspense>
-            } />
-            <Route path="/status-demo" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <StatusDemoPage />
               </Suspense>
             } />
 // Remove the demo route since it was just for testing

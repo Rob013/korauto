@@ -100,17 +100,9 @@ export class GlobalSortingService {
 
   /**
    * Validates if a global sort is needed
-   * When users explicitly select sorting, use global sorting even for small datasets
-   * to ensure consistent behavior across all pages as expected by users
+   * Lowered threshold to ensure users get global sorting when they select sorting options
    */
-  shouldUseGlobalSorting(totalCars: number, threshold: number = 5, userExplicitlySelectedSort: boolean = false): boolean {
-    // If user explicitly selected sorting, use global sorting for any dataset > 1 car
-    // This ensures their sorting choice works across all pages as they expect
-    if (userExplicitlySelectedSort) {
-      return totalCars > 1; // Only skip global sorting for single-car datasets
-    }
-    
-    // For default/automatic sorting, use the original threshold
+  shouldUseGlobalSorting(totalCars: number, threshold: number = 5): boolean {
     return totalCars > threshold;
   }
 

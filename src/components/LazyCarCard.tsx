@@ -6,7 +6,6 @@ import { useNavigation } from "@/contexts/NavigationContext";
 import { Car, Gauge, Settings, Fuel, Palette, Shield, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { getCarStatus, shouldHideSoldCar, getLocalizedStatusLabel } from "@/utils/carStatus";
 
 interface LazyCarCardProps {
   id: string;
@@ -70,20 +69,34 @@ const LazyCarCard = memo(({
   const [isIntersecting, setIsIntersecting] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  // Use the new status utility functions
-  const statusInfo = getCarStatus({
-    status,
-    sale_status,
-    is_archived,
-    archived_at,
-    archive_reason
-  });
+  // Simplified logic: trust the database filtering, only hide in clear edge cases
+  const shouldHideSoldCar = () => {
+    // Only hide if it's definitively a sold car that's clearly old
+    if (is_archived && archived_at && archive_reason === 'sold') {
+      try {
+        const archivedTime = new Date(archived_at);
+        
+        // Check if date is valid
+        if (isNaN(archivedTime.getTime())) {
+          return true; // Hide cars with invalid dates as safety measure
+        }
+        
+        const now = new Date();
+        const hoursSinceArchived = (now.getTime() - archivedTime.getTime()) / (1000 * 60 * 60);
+        
+        // Only hide if clearly over 24 hours (with small buffer for timing differences)
+        return hoursSinceArchived > 24.5; // 30-minute buffer to account for timing differences
+      } catch (error) {
+        // In case of any error, hide the car as a safety measure
+        return true;
+      }
+    }
+    
+    // Default: show the car (trust database filtering)
+    return false;
+  };
 
-  const hideSoldCar = shouldHideSoldCar({
-    is_archived,
-    archived_at,
-    archive_reason
-  });
+  const hideSoldCar = shouldHideSoldCar();
 
   // Intersection Observer for lazy loading
   useEffect(() => {
@@ -292,9 +305,9 @@ const LazyCarCard = memo(({
         
         
         {/* Status Badge - More compact on mobile */}
-        {statusInfo.shouldShow ? (
-          <div className={`absolute top-1 sm:top-2 right-1 sm:right-2 px-2 sm:px-3 py-0.5 sm:py-1 rounded text-xs font-bold shadow-lg z-10 ${statusInfo.colorClass}`}>
-            {getLocalizedStatusLabel(statusInfo.status, 'en')}
+        {(status === 3 || sale_status === 'sold') ? (
+          <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-red-600 text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded text-xs font-bold shadow-lg z-10">
+            SOLD OUT
           </div>
         ) : (
           lot && (

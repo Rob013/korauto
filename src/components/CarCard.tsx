@@ -31,7 +31,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { OptimizedImage } from "@/components/OptimizedImage";
-import { getCarStatus, shouldHideSoldCar, getLocalizedStatusLabel } from "@/utils/carStatus";
 interface CarCardProps {
   id: string;
   make: string;
@@ -269,20 +268,34 @@ const CarCard = ({
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Use the new status utility functions
-  const statusInfo = getCarStatus({
-    status,
-    sale_status,
-    is_archived,
-    archived_at,
-    archive_reason
-  });
+  // Simplified logic: trust the database filtering, only hide in clear edge cases
+  const shouldHideSoldCar = () => {
+    // Only hide if it's definitively a sold car that's clearly old
+    if (is_archived && archived_at && archive_reason === 'sold') {
+      try {
+        const archivedTime = new Date(archived_at);
+        
+        // Check if date is valid
+        if (isNaN(archivedTime.getTime())) {
+          return true; // Hide cars with invalid dates as safety measure
+        }
+        
+        const now = new Date();
+        const hoursSinceArchived = (now.getTime() - archivedTime.getTime()) / (1000 * 60 * 60);
+        
+        // Only hide if clearly over 24 hours (with small buffer for timing differences)
+        return hoursSinceArchived > 24.5; // 30-minute buffer to account for timing differences
+      } catch (error) {
+        // In case of any error, hide the car as a safety measure
+        return true;
+      }
+    }
+    
+    // Default: show the car (trust database filtering)
+    return false;
+  };
 
-  const hideSoldCar = shouldHideSoldCar({
-    is_archived,
-    archived_at,
-    archive_reason
-  });
+  const hideSoldCar = shouldHideSoldCar();
 
   useEffect(() => {
     const getUser = async () => {
@@ -425,10 +438,10 @@ const CarCard = ({
             <Car className="h-16 w-16 text-muted-foreground" />
           </div>
         )}
-        {/* Status Badge - Takes priority over lot number */}
-        {statusInfo.shouldShow ? (
-          <div className={`absolute top-2 right-2 px-3 py-1 rounded text-xs font-bold shadow-lg z-10 ${statusInfo.colorClass}`}>
-            {getLocalizedStatusLabel(statusInfo.status, 'sq')}
+        {/* Sold Out Badge - Takes priority over lot number */}
+        {status === 3 || sale_status === "sold" ? (
+          <div className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded text-xs font-bold shadow-lg z-10">
+            E SHITUR
           </div>
         ) : (
           lot && (

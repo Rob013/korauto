@@ -102,38 +102,29 @@ export const useFilterStore = create<FilterState & FilterActions>((set, get) => 
 export const useFilterStoreSelectors = () => {
   const state = useFilterStore();
   
-  // Add safety checks to prevent TDZ errors during initialization
-  const safeState = {
-    query: state?.query || '',
-    filters: state?.filters || {},
-    sort: state?.sort || initialState.sort,
-    page: state?.page || 1,
-    pageSize: state?.pageSize || initialState.pageSize,
-  };
-  
   return {
     // Complete search request object
     searchRequest: (): SearchReq => ({
-      q: safeState.query || undefined,
-      filters: Object.keys(safeState.filters).length > 0 ? safeState.filters : undefined,
-      sort: safeState.sort,
-      page: safeState.page,
-      pageSize: safeState.pageSize,
+      q: state.query || undefined,
+      filters: Object.keys(state.filters).length > 0 ? state.filters : undefined,
+      sort: state.sort,
+      page: state.page,
+      pageSize: state.pageSize,
     }),
     
     // Check if any filters are active
     hasActiveFilters: (): boolean => {
-      return Object.keys(safeState.filters).length > 0 || Boolean(safeState.query);
+      return Object.keys(state.filters).length > 0 || Boolean(state.query);
     },
     
     // Get current filter count
     activeFilterCount: (): number => {
-      return Object.keys(safeState.filters).length + (safeState.query ? 1 : 0);
+      return Object.keys(state.filters).length + (state.query ? 1 : 0);
     },
     
     // Check if specific filter is active
     isFilterActive: (key: keyof SearchReq['filters']): boolean => {
-      const value = safeState.filters[key];
+      const value = state.filters[key];
       return value !== undefined && value !== null && 
              (!Array.isArray(value) || value.length > 0);
     },
