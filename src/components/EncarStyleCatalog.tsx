@@ -5,8 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Search, 
@@ -32,6 +30,9 @@ import {
 } from 'lucide-react';
 import { fetchCarsWithKeyset, SortOption as CarsApiSortOption, CarFilters } from '@/services/carsApi';
 import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
+import EncarStyleFilter from '@/components/EncarStyleFilter';
+import { MobileFilterUX } from '@/components/mobile-filter-ux';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface EncarStyleCatalogProps {
   highlightCarId?: string | null;
@@ -53,13 +54,10 @@ const POPULAR_MAKES = [
   'Hyundai', 'Kia', 'Nissan', 'Ford', 'Mazda', 'Lexus'
 ];
 
-const FUEL_TYPES = ['Gasoline', 'Diesel', 'Hybrid', 'Electric', 'LPG'];
-const TRANSMISSIONS = ['Manual', 'Automatic', 'CVT'];
-const BODY_TYPES = ['Sedan', 'SUV', 'Hatchback', 'Wagon', 'Coupe', 'Convertible', 'Pickup'];
-
 export const EncarStyleCatalog = ({ highlightCarId, className = '' }: EncarStyleCatalogProps) => {
   const { toast } = useToast();
   const { convertUSDtoEUR } = useCurrencyAPI();
+  const isMobile = useIsMobile();
   
   // State for cars and pagination
   const [cars, setCars] = useState<any[]>([]);
@@ -67,24 +65,13 @@ export const EncarStyleCatalog = ({ highlightCarId, className = '' }: EncarStyle
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const [sortBy, setSortBy] = useState<CarsApiSortOption>('created_desc');
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(!isMobile); // Close filters by default on mobile
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [nextCursor, setNextCursor] = useState<string | undefined>();
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   
-  // Filter state
-  const [filters, setFilters] = useState<CarFilters & {
-    bodyType?: string;
-    transmission?: string;
-    priceRange?: [number, number];
-    yearRange?: [number, number];
-    mileageRange?: [number, number];
-  }>({
-    priceRange: [5000, 100000],
-    yearRange: [2000, 2024],
-    mileageRange: [0, 300000]
-  });
-  
+  // Filter state - simplified to work with EncarStyleFilter
+  const [filters, setFilters] = useState<any>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMakes, setSelectedMakes] = useState<string[]>([]);
 
@@ -168,14 +155,34 @@ export const EncarStyleCatalog = ({ highlightCarId, className = '' }: EncarStyle
   };
 
   const clearAllFilters = () => {
-    setFilters({
-      priceRange: [5000, 100000],
-      yearRange: [2000, 2024],
-      mileageRange: [0, 300000]
-    });
+    setFilters({});
     setSearchTerm('');
     setSelectedMakes([]);
   };
+
+  const toggleFilters = () => {
+    setShowFilters(!showFilters);
+  };
+
+  const handleFiltersChange = (newFilters: any) => {
+    setFilters(newFilters);
+  };
+
+  const handleSearchCars = () => {
+    // Trigger a new search with current filters
+    fetchCars(true);
+  };
+
+  const handleCloseFilter = () => {
+    setShowFilters(false);
+  };
+
+  // Count selected filters for mobile UI
+  const selectedFiltersCount = Object.keys(filters).filter(key => filters[key] && filters[key] !== '').length + 
+                               selectedMakes.length + 
+                               (searchTerm ? 1 : 0);
+
+  const hasSelectedCategories = selectedFiltersCount > 0;
 
   return (
     <div className={`min-h-screen bg-background ${className}`}>
@@ -281,20 +288,42 @@ export const EncarStyleCatalog = ({ highlightCarId, className = '' }: EncarStyle
                 </SelectContent>
               </Select>
 
-              {/* Filters Toggle */}
-              <Button
-                variant="outline"
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2"
-              >
-                <Filter className="h-4 w-4" />
-                Filters
-                {(selectedMakes.length > 0 || searchTerm) && (
-                  <Badge variant="secondary" className="ml-1">
-                    {selectedMakes.length + (searchTerm ? 1 : 0)}
-                  </Badge>
-                )}
-              </Button>
+              {/* Filters Toggle - Enhanced for Mobile */}
+              {isMobile ? (
+                <MobileFilterUX
+                  showFilters={showFilters}
+                  onToggleFilters={toggleFilters}
+                  onClearFilters={clearAllFilters}
+                  onSearchCars={handleSearchCars}
+                  hasSelectedCategories={hasSelectedCategories}
+                  selectedFiltersCount={selectedFiltersCount}
+                >
+                  <EncarStyleFilter
+                    filters={filters}
+                    manufacturers={[]} // You may want to pass real manufacturers data
+                    models={[]}
+                    onFiltersChange={handleFiltersChange}
+                    onClearFilters={clearAllFilters}
+                    onSearchCars={handleSearchCars}
+                    onCloseFilter={handleCloseFilter}
+                    compact={true}
+                  />
+                </MobileFilterUX>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={toggleFilters}
+                  className="flex items-center gap-2"
+                >
+                  <Filter className="h-4 w-4" />
+                  Filters
+                  {hasSelectedCategories && (
+                    <Badge variant="secondary" className="ml-1">
+                      {selectedFiltersCount}
+                    </Badge>
+                  )}
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -302,119 +331,18 @@ export const EncarStyleCatalog = ({ highlightCarId, className = '' }: EncarStyle
 
       <div className="container mx-auto px-4">
         <div className="flex gap-6 py-6">
-          {/* Filters Sidebar - Encar Style */}
-          {showFilters && (
-            <div className="w-80 space-y-6">
-              {/* Price Range */}
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-4">Price Range</h3>
-                  <div className="space-y-4">
-                    <Slider
-                      value={filters.priceRange || [5000, 100000]}
-                      onValueChange={(value) => setFilters(prev => ({ ...prev, priceRange: value as [number, number] }))}
-                      max={200000}
-                      min={1000}
-                      step={1000}
-                      className="w-full"
-                    />
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>€{filters.priceRange?.[0]?.toLocaleString()}</span>
-                      <span>€{filters.priceRange?.[1]?.toLocaleString()}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Year Range */}
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-4">Year</h3>
-                  <div className="space-y-4">
-                    <Slider
-                      value={filters.yearRange || [2000, 2024]}
-                      onValueChange={(value) => setFilters(prev => ({ ...prev, yearRange: value as [number, number] }))}
-                      max={2024}
-                      min={1990}
-                      step={1}
-                      className="w-full"
-                    />
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>{filters.yearRange?.[0]}</span>
-                      <span>{filters.yearRange?.[1]}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Fuel Type */}
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-4">Fuel Type</h3>
-                  <div className="space-y-3">
-                    {FUEL_TYPES.map((fuel) => (
-                      <div key={fuel} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={fuel}
-                          checked={filters.fuel === fuel}
-                          onCheckedChange={(checked) => 
-                            setFilters(prev => ({ ...prev, fuel: checked ? fuel : undefined }))
-                          }
-                        />
-                        <label htmlFor={fuel} className="text-sm font-medium cursor-pointer">
-                          {fuel}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Transmission */}
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-4">Transmission</h3>
-                  <div className="space-y-3">
-                    {TRANSMISSIONS.map((trans) => (
-                      <div key={trans} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={trans}
-                          checked={filters.transmission === trans}
-                          onCheckedChange={(checked) => 
-                            setFilters(prev => ({ ...prev, transmission: checked ? trans : undefined }))
-                          }
-                        />
-                        <label htmlFor={trans} className="text-sm font-medium cursor-pointer">
-                          {trans}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Body Type */}
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-4">Body Type</h3>
-                  <div className="space-y-3">
-                    {BODY_TYPES.map((body) => (
-                      <div key={body} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={body}
-                          checked={filters.bodyType === body}
-                          onCheckedChange={(checked) => 
-                            setFilters(prev => ({ ...prev, bodyType: checked ? body : undefined }))
-                          }
-                        />
-                        <label htmlFor={body} className="text-sm font-medium cursor-pointer">
-                          {body}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+          {/* Enhanced Filters Sidebar - Encar Style */}
+          {showFilters && !isMobile && (
+            <div className="w-80">
+              <EncarStyleFilter
+                filters={filters}
+                manufacturers={[]} // You may want to pass real manufacturers data
+                models={[]}
+                onFiltersChange={handleFiltersChange}
+                onClearFilters={clearAllFilters}
+                onSearchCars={handleSearchCars}
+                compact={true}
+              />
             </div>
           )}
 
