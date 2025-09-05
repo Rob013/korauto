@@ -28,6 +28,7 @@ const DiagramDemo = lazy(() => import("./pages/DiagramDemo"));
 const AdminCarSearchDemo = lazy(() => import("./pages/AdminCarSearchDemo"));
 const PerformanceDashboard = lazy(() => import("./components/PerformanceDashboard"));
 const AuditTestPage = lazy(() => import("./pages/AuditTestPage"));
+const ApiInfoDemo = lazy(() => import("./components/ApiInfoDemo"));
 
 // Lazy load admin components for better code splitting
 const AdminSyncDashboard = lazy(() => import("./components/AdminSyncDashboard"));
@@ -215,6 +216,11 @@ const App = () => {
             <Route path="/audit-test" element={
               <Suspense fallback={<PageSkeleton />}>
                 <AuditTestPage />
+              </Suspense>
+            } />
+            <Route path="/api-info-demo" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <ApiInfoDemo />
               </Suspense>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
