@@ -6,6 +6,7 @@ import { useNavigation } from "@/contexts/NavigationContext";
 import { Car, Gauge, Settings, Fuel, Palette, Shield, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getStatusBadgeConfig } from "@/utils/statusBadgeUtils";
 
 interface LazyCarCardProps {
   id: string;
@@ -305,17 +306,24 @@ const LazyCarCard = memo(({
         
         
         {/* Status Badge - More compact on mobile */}
-        {(status === 3 || sale_status === 'sold') ? (
-          <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-red-600 text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded text-xs font-bold shadow-lg z-10">
-            SOLD OUT
-          </div>
-        ) : (
-          lot && (
+        {(() => {
+          const statusBadge = getStatusBadgeConfig({ status, sale_status });
+          
+          if (statusBadge.show) {
+            return (
+              <div className={`absolute top-1 sm:top-2 right-1 sm:right-2 ${statusBadge.className} px-2 sm:px-3 py-0.5 sm:py-1 rounded text-xs font-bold shadow-lg z-10`}>
+                {statusBadge.text}
+              </div>
+            );
+          }
+          
+          // Show lot number if no status badge and lot exists
+          return lot ? (
             <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-primary text-primary-foreground px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs font-semibold">
               #{lot}
             </div>
-          )
-        )}
+          ) : null;
+        })()}
 
         {/* Favorite Button */}
         {user && (
