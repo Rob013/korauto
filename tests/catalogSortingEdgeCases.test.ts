@@ -103,7 +103,7 @@ describe('Catalog Sorting Edge Cases', () => {
       
       // Sort cars based on sortBy
       if (state.sortBy === 'price_asc') {
-        allCars.sort((a, b) => (a.lots[0].buy_now + 2200) - (b.lots[0].buy_now + 2200));
+        allCars.sort((a, b) => (a.lots[0].buy_now) - (b.lots[0].buy_now));
       }
       
       state.allCarsForSorting = allCars;
@@ -125,8 +125,8 @@ describe('Catalog Sorting Edge Cases', () => {
     
     // Step 3: Verify sorting is correct
     for (let i = 1; i < state.allCarsForSorting.length; i++) {
-      const prevPrice = state.allCarsForSorting[i-1].lots[0].buy_now + 2200;
-      const currPrice = state.allCarsForSorting[i].lots[0].buy_now + 2200;
+      const prevPrice = state.allCarsForSorting[i-1].lots[0].buy_now;
+      const currPrice = state.allCarsForSorting[i].lots[0].buy_now;
       expect(currPrice).toBeGreaterThanOrEqual(prevPrice);
     }
     
@@ -139,8 +139,8 @@ describe('Catalog Sorting Edge Cases', () => {
     expect(carsForPage2.length).toBe(50);
     
     // Verify price order across pages
-    const lastPriceOfPage1 = carsForPage1[carsForPage1.length - 1].lots[0].buy_now + 2200;
-    const firstPriceOfPage2 = carsForPage2[0].lots[0].buy_now + 2200;
+    const lastPriceOfPage1 = carsForPage1[carsForPage1.length - 1].lots[0].buy_now;
+    const firstPriceOfPage2 = carsForPage2[0].lots[0].buy_now;
     expect(firstPriceOfPage2).toBeGreaterThanOrEqual(lastPriceOfPage1);
     
     console.log('✅ State transition test passed - global sorting working correctly');
@@ -168,18 +168,18 @@ describe('Catalog Sorting Edge Cases', () => {
     // Current problematic behavior: sort only first page
     const firstPageOnly = unsortedCars.slice(0, 50);
     const sortedFirstPageOnly = [...firstPageOnly].sort((a, b) => 
-      (a.lots[0].buy_now + 2200) - (b.lots[0].buy_now + 2200)
+      (a.lots[0].buy_now) - (b.lots[0].buy_now)
     );
     
     // Correct behavior: sort all cars globally
     const globalSorted = [...unsortedCars].sort((a, b) => 
-      (a.lots[0].buy_now + 2200) - (b.lots[0].buy_now + 2200)
+      (a.lots[0].buy_now) - (b.lots[0].buy_now)
     );
     
     // Problem validation: cheapest from first page only vs global cheapest
-    const cheapestFirstPageOnly = sortedFirstPageOnly[0].lots[0].buy_now + 2200;
-    const cheapestGlobal = globalSorted[0].lots[0].buy_now + 2200;
-    const mostExpensiveGlobal = globalSorted[globalSorted.length - 1].lots[0].buy_now + 2200;
+    const cheapestFirstPageOnly = sortedFirstPageOnly[0].lots[0].buy_now;
+    const cheapestGlobal = globalSorted[0].lots[0].buy_now;
+    const mostExpensiveGlobal = globalSorted[globalSorted.length - 1].lots[0].buy_now;
     
     // The global cheapest should be different (likely cheaper) than the first-page-only cheapest
     expect(cheapestGlobal).toBeLessThanOrEqual(cheapestFirstPageOnly);
@@ -192,11 +192,11 @@ describe('Catalog Sorting Edge Cases', () => {
     const lastPage = globalSorted.slice((totalPages - 1) * pageSize);
     
     // Validation: lowest prices should be on first page
-    const page1Prices = page1.map(car => car.lots[0].buy_now + 2200);
+    const page1Prices = page1.map(car => car.lots[0].buy_now);
     expect(page1Prices).toContain(cheapestGlobal);
     
     // Validation: highest prices should be on last page
-    const lastPagePrices = lastPage.map(car => car.lots[0].buy_now + 2200);
+    const lastPagePrices = lastPage.map(car => car.lots[0].buy_now);
     expect(lastPagePrices).toContain(mostExpensiveGlobal);
     
     console.log(`✅ Problem scenario validated:`);

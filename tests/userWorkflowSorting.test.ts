@@ -35,7 +35,7 @@ describe('User Workflow Sorting - End to End Test', () => {
     // Step 2: User sorts by "Price: Low to High"
     // This is what SHOULD happen: globally sort all 554 cars
     const globalSortedCars = [...filteredCars].sort((a, b) => 
-      (a.lots[0].buy_now + 2200) - (b.lots[0].buy_now + 2200)
+      a.lots[0].buy_now - b.lots[0].buy_now
     );
     
     // Step 3: Pagination should work on globally sorted results
@@ -49,33 +49,33 @@ describe('User Workflow Sorting - End to End Test', () => {
     
     // Step 4: Verify expected behavior
     console.log(`Total pages: ${totalPages}`);
-    console.log(`Page 1 cheapest: €${(page1[0].lots[0].buy_now + 2200).toFixed(0)}`);
-    console.log(`Page 1 most expensive: €${(page1[page1.length - 1].lots[0].buy_now + 2200).toFixed(0)}`);
-    console.log(`Last page cheapest: €${(lastPage[0].lots[0].buy_now + 2200).toFixed(0)}`);
-    console.log(`Last page most expensive: €${(lastPage[lastPage.length - 1].lots[0].buy_now + 2200).toFixed(0)}`);
+    console.log(`Page 1 cheapest: €${page1[0].lots[0].buy_now.toFixed(0)}`);
+    console.log(`Page 1 most expensive: €${page1[page1.length - 1].lots[0].buy_now.toFixed(0)}`);
+    console.log(`Last page cheapest: €${lastPage[0].lots[0].buy_now.toFixed(0)}`);
+    console.log(`Last page most expensive: €${lastPage[lastPage.length - 1].lots[0].buy_now.toFixed(0)}`);
     
     // VALIDATION: Lowest price should be on first page, highest on last page
-    const lowestPrice = Math.min(...globalSortedCars.map(car => car.lots[0].buy_now + 2200));
-    const highestPrice = Math.max(...globalSortedCars.map(car => car.lots[0].buy_now + 2200));
+    const lowestPrice = Math.min(...globalSortedCars.map(car => car.lots[0].buy_now));
+    const highestPrice = Math.max(...globalSortedCars.map(car => car.lots[0].buy_now));
     
     // Lowest price car should be on page 1
-    const page1Prices = page1.map(car => car.lots[0].buy_now + 2200);
+    const page1Prices = page1.map(car => car.lots[0].buy_now);
     expect(page1Prices).toContain(lowestPrice);
     
     // Highest price car should be on last page
-    const lastPagePrices = lastPage.map(car => car.lots[0].buy_now + 2200);
+    const lastPagePrices = lastPage.map(car => car.lots[0].buy_now);
     expect(lastPagePrices).toContain(highestPrice);
     
     // Verify sorting order across pages
     for (let i = 1; i < globalSortedCars.length; i++) {
-      const prevPrice = globalSortedCars[i-1].lots[0].buy_now + 2200;
-      const currPrice = globalSortedCars[i].lots[0].buy_now + 2200;
+      const prevPrice = globalSortedCars[i-1].lots[0].buy_now;
+      const currPrice = globalSortedCars[i].lots[0].buy_now;
       expect(currPrice).toBeGreaterThanOrEqual(prevPrice);
     }
     
     // Verify page boundaries
-    const lastPriceOfPage1 = page1[page1.length - 1].lots[0].buy_now + 2200;
-    const firstPriceOfPage2 = page2[0].lots[0].buy_now + 2200;
+    const lastPriceOfPage1 = page1[page1.length - 1].lots[0].buy_now;
+    const firstPriceOfPage2 = page2[0].lots[0].buy_now;
     expect(firstPriceOfPage2).toBeGreaterThanOrEqual(lastPriceOfPage1);
   });
 
@@ -101,10 +101,10 @@ describe('User Workflow Sorting - End to End Test', () => {
       // Sort all cars globally
       const sorted = [...mockCars].sort((a, b) => {
         if (sortBy === 'price_asc') {
-          return (a.lots[0].buy_now + 2200) - (b.lots[0].buy_now + 2200);
+          return a.lots[0].buy_now - b.lots[0].buy_now;
         }
         if (sortBy === 'price_desc') {
-          return (b.lots[0].buy_now + 2200) - (a.lots[0].buy_now + 2200);
+          return b.lots[0].buy_now - a.lots[0].buy_now;
         }
         return 0; // default
       });
@@ -148,8 +148,8 @@ describe('User Workflow Sorting - End to End Test', () => {
     
     // Verify sorting is correct
     for (let i = 1; i < allCarsForSorting.length; i++) {
-      const prevPrice = allCarsForSorting[i-1].lots[0].buy_now + 2200;
-      const currPrice = allCarsForSorting[i].lots[0].buy_now + 2200;
+      const prevPrice = allCarsForSorting[i-1].lots[0].buy_now;
+      const currPrice = allCarsForSorting[i].lots[0].buy_now;
       expect(currPrice).toBeGreaterThanOrEqual(prevPrice);
     }
     
@@ -162,11 +162,11 @@ describe('User Workflow Sorting - End to End Test', () => {
     expect(lastPage).toHaveLength(4);
     
     // Verify lowest on first page, highest on last page
-    const globalLowest = Math.min(...allCarsForSorting.map(car => car.lots[0].buy_now + 2200));
-    const globalHighest = Math.max(...allCarsForSorting.map(car => car.lots[0].buy_now + 2200));
+    const globalLowest = Math.min(...allCarsForSorting.map(car => car.lots[0].buy_now));
+    const globalHighest = Math.max(...allCarsForSorting.map(car => car.lots[0].buy_now));
     
-    const page1Prices = page1.map(car => car.lots[0].buy_now + 2200);
-    const lastPagePrices = lastPage.map(car => car.lots[0].buy_now + 2200);
+    const page1Prices = page1.map(car => car.lots[0].buy_now);
+    const lastPagePrices = lastPage.map(car => car.lots[0].buy_now);
     
     expect(page1Prices).toContain(globalLowest);
     expect(lastPagePrices).toContain(globalHighest);
