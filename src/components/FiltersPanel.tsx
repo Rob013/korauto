@@ -247,58 +247,59 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   };
 
   return (
-    <div className={cn('space-y-4', className)}>
-      {/* Header with active filters count */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Filter className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-semibold">Filtrat e Kërkimit</h3>
+    <div className={cn('space-y-3 sm:space-y-4', className)}>
+      {/* Header with active filters count - Optimized for mobile */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+          <h3 className="text-sm sm:text-lg font-semibold truncate">Filtrat e Kërkimit</h3>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           {activeFiltersCount > 0 && (
-            <Badge variant="secondary">{activeFiltersCount}</Badge>
+            <Badge variant="secondary" className="text-xs px-1.5 py-0.5">{activeFiltersCount}</Badge>
           )}
-          <Button variant="outline" size="sm" onClick={onClearFilters}>
+          <Button variant="outline" size="sm" onClick={onClearFilters} className="text-xs sm:text-sm px-2 sm:px-3 h-7 sm:h-8">
             <X className="h-3 w-3 mr-1" />
-            Pastro të gjitha
+            <span className="hidden xs:inline">Pastro të gjitha</span>
+            <span className="xs:hidden">Pastro</span>
           </Button>
         </div>
       </div>
 
-      {/* Selected filters chips */}
+      {/* Selected filters chips - Optimized for mobile */}
       {selectedFilters.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1 sm:gap-2 max-h-20 sm:max-h-none overflow-y-auto">
           {selectedFilters.map((chip) => (
-            <Badge key={chip.key} variant="default" className="flex items-center gap-1">
-              <span className="text-xs">{chip.label}: {chip.value}</span>
+            <Badge key={chip.key} variant="default" className="flex items-center gap-1 text-xs px-2 py-1 max-w-[150px] sm:max-w-none">
+              <span className="truncate">{chip.label}: {chip.value}</span>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-auto w-auto p-0 hover:bg-transparent"
+                className="h-auto w-auto p-0 hover:bg-transparent ml-1"
                 onClick={() => removeFilter(chip.key)}
               >
-                <X className="h-3 w-3" />
+                <X className="h-3 w-3 flex-shrink-0" />
               </Button>
             </Badge>
           ))}
         </div>
       )}
 
-      {/* Search */}
-      <div className="space-y-2">
-        <Label htmlFor="search" className="flex items-center gap-2">
-          <Search className="h-4 w-4" />
+      {/* Search - Mobile optimized */}
+      <div className="space-y-1 sm:space-y-2">
+        <Label htmlFor="search" className="flex items-center gap-2 text-sm sm:text-base">
+          <Search className="h-3 w-3 sm:h-4 sm:w-4" />
           Kërko
         </Label>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-2 sm:left-3 top-1/2 h-3 w-3 sm:h-4 sm:w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             id="search"
             type="text"
             placeholder="Kërko makinat..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-8 sm:pl-10 h-8 sm:h-10 text-sm"
           />
         </div>
       </div>
