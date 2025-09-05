@@ -3,30 +3,7 @@
  * High-performance sorting with stable comparators and NULLS LAST behavior
  */
 
-// LeanCar interface moved here to avoid circular dependency
-export interface LeanCar {
-  id: string;
-  price: number;
-  year: number;
-  mileage?: number;
-  make: string;
-  model: string;
-  thumbnail?: string;
-}
-
-export type SortKey = 
-  | 'price_asc' | 'price_desc'
-  | 'year_asc' | 'year_desc'
-  | 'mileage_asc' | 'mileage_desc'
-  | 'make_asc' | 'make_desc'
-  | 'model_asc' | 'model_desc';
-
-export interface SortedResult {
-  items: LeanCar[];
-  total: number;
-  sortKey: SortKey;
-  duration: number;
-}
+import { LeanCar, SortKey, SortedResult } from '../types/cars';
 
 export interface PaginatedResult {
   items: LeanCar[];
@@ -37,6 +14,9 @@ export interface PaginatedResult {
   hasPrev: boolean;
   hasNext: boolean;
 }
+
+// Re-export types for backwards compatibility
+export type { LeanCar, SortKey, SortedResult } from '../types/cars';
 
 // Constants for null handling
 const POSITIVE_INFINITY = Number.MAX_SAFE_INTEGER;

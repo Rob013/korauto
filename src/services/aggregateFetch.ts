@@ -4,8 +4,7 @@
  */
 
 import { fetchCarsWithKeyset, CarsApiResponse, CarsApiParams, Car } from './carsApi';
-
-import { LeanCar } from './globalSort';
+import { LeanCar } from '../types/cars';
 
 export interface AggregateParams extends Omit<CarsApiParams, 'cursor' | 'limit'> {
   pageSize?: number;

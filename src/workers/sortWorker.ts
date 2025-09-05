@@ -4,7 +4,7 @@
  */
 
 import { globalSort } from '../services/globalSort';
-import type { LeanCar, SortKey, SortedResult } from '../services/globalSort';
+import type { LeanCar, SortKey, SortedResult } from '../types/cars';
 
 export interface WorkerMessage {
   type: 'sort' | 'terminate';
