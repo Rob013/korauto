@@ -42,7 +42,10 @@ const Header = () => {
         <div className="flex h-14 sm:h-16 items-center justify-between px-3 sm:px-4">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 group min-w-0 focus:outline-none focus:ring-2 focus:ring-primary rounded-lg" aria-label="KORAUTO kryefaqja">
-            <div className="rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-300 flex-shrink-0 hover-lift-gentle">
+            <div 
+              className="rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-300 flex-shrink-0 hover-lift-gentle"
+              aria-label="KORAUTO company logo"
+            >
               <img 
                 src="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png" 
                 alt="KORAUTO Logo - Makina nga Koreja e Jugut" 
