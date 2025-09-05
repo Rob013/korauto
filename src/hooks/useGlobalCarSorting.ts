@@ -26,6 +26,7 @@ interface UseGlobalCarSortingOptions {
   carsPerPage?: number;
   enableCaching?: boolean;
   validationEnabled?: boolean;
+  hasUserSelectedSort?: boolean; // Track if user explicitly selected sorting
 }
 
 interface UseGlobalCarSortingReturn {
@@ -59,7 +60,8 @@ export const useGlobalCarSorting = ({
   totalCount,
   carsPerPage = 50,
   enableCaching = true,
-  validationEnabled = false
+  validationEnabled = false,
+  hasUserSelectedSort = false
 }: UseGlobalCarSortingOptions): UseGlobalCarSortingReturn => {
   
   console.warn('⚠️ useGlobalCarSorting is deprecated. Use fetchCarsWithKeyset from @/services/carsApi instead.');
@@ -88,8 +90,8 @@ export const useGlobalCarSorting = ({
    * Determines if global sorting should be used
    */
   const shouldUseGlobalSorting = useCallback((): boolean => {
-    return sortingService.current.shouldUseGlobalSorting(totalCount);
-  }, [totalCount]);
+    return sortingService.current.shouldUseGlobalSorting(totalCount, 5, hasUserSelectedSort);
+  }, [totalCount, hasUserSelectedSort]);
 
   /**
    * Checks if global sorting is ready to use
