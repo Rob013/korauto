@@ -307,7 +307,15 @@ const LazyCarCard = memo(({
         {/* Status Badge - More compact on mobile */}
         {(status === 3 || sale_status === 'sold') ? (
           <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-red-600 text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded text-xs font-bold shadow-lg z-10">
-            SOLD OUT
+            SOLD
+          </div>
+        ) : sale_status === 'reserved' ? (
+          <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-orange-600 text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded text-xs font-bold shadow-lg z-10">
+            RESERVED
+          </div>
+        ) : (status === 2 || sale_status === 'pending') ? (
+          <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-yellow-600 text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded text-xs font-bold shadow-lg z-10">
+            PENDING
           </div>
         ) : (
           lot && (

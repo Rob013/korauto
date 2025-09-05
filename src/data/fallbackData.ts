@@ -56,7 +56,7 @@ export const fallbackCars = [
         big: ["/images/placeholder-car.jpg"]
       },
       lot: "FB002",
-      status: 1
+      status: 3
     }],
     location: "Prishtinë, Kosovo",
     features: ["All-Wheel Drive", "CVT Transmission", "Excellent Condition"],
@@ -64,7 +64,8 @@ export const fallbackCars = [
     seats_count: 5,
     accidents_count: 0,
     inspection_available: true,
-    status: "1"
+    status: "3",
+    sale_status: "sold"
   },
   {
     id: "fb-car-3",
@@ -89,7 +90,7 @@ export const fallbackCars = [
         big: ["/images/placeholder-car.jpg"]
       },
       lot: "FB003",
-      status: 1
+      status: 2
     }],
     location: "Prishtinë, Kosovo",
     features: ["Limited Edition", "Leather Seats", "Panoramic Sunroof"],
@@ -97,7 +98,42 @@ export const fallbackCars = [
     seats_count: 5,
     accidents_count: 1,
     inspection_available: true,
-    status: "1"
+    status: "2",
+    sale_status: "pending"
+  },
+  {
+    id: "fb-car-4",
+    title: "2023 Kia Sorento SX",
+    manufacturer: { name: "Kia" }, 
+    model: { name: "Sorento" },
+    year: 2023,
+    price: 35000,
+    currency: "USD",
+    odometer: 15000,
+    fuel: { name: "Gasoline" },
+    transmission: { name: "Automatic" },
+    color: { name: "Blue" },
+    grade: "4.7",
+    vin: "5XYP34HC5PG123789",
+    lot_number: "FB004",
+    lots: [{
+      buy_now: 35000,
+      odometer: { km: 15000 },
+      images: {
+        normal: ["/images/placeholder-car.jpg"],
+        big: ["/images/placeholder-car.jpg"]
+      },
+      lot: "FB004",
+      status: 1
+    }],
+    location: "Prishtinë, Kosovo",
+    features: ["SX Package", "Turbo Engine", "Premium Interior"],
+    is_premium: true,
+    seats_count: 7,
+    accidents_count: 0,
+    inspection_available: true,
+    status: "1",
+    sale_status: "reserved"
   }
 ];
 

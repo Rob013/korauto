@@ -438,10 +438,18 @@ const CarCard = ({
             <Car className="h-16 w-16 text-muted-foreground" />
           </div>
         )}
-        {/* Sold Out Badge - Takes priority over lot number */}
-        {status === 3 || sale_status === "sold" ? (
+        {/* Status Badge - Takes priority over lot number */}
+        {(status === 3 || sale_status === 'sold') ? (
           <div className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded text-xs font-bold shadow-lg z-10">
-            E SHITUR
+            SOLD
+          </div>
+        ) : sale_status === 'reserved' ? (
+          <div className="absolute top-2 right-2 bg-orange-600 text-white px-3 py-1 rounded text-xs font-bold shadow-lg z-10">
+            RESERVED
+          </div>
+        ) : (status === 2 || sale_status === 'pending') ? (
+          <div className="absolute top-2 right-2 bg-yellow-600 text-white px-3 py-1 rounded text-xs font-bold shadow-lg z-10">
+            PENDING
           </div>
         ) : (
           lot && (
