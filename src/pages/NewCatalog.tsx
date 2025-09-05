@@ -137,17 +137,19 @@ const CatalogContent: React.FC = () => {
 
   // Track page view
   useEffect(() => {
+    const activeFiltersCount = Object.keys(filters).filter(key => 
+      filters[key as keyof typeof filters] !== undefined && 
+      key !== 'page' && 
+      key !== 'pageSize' && 
+      key !== 'sort'
+    ).length;
+
     trackPageView(undefined, { 
       page_type: 'new_catalog',
       total_cars: total,
-      active_filters: Object.keys(filters).filter(key => 
-        filters[key as keyof typeof filters] !== undefined && 
-        key !== 'page' && 
-        key !== 'pageSize' && 
-        key !== 'sort'
-      ).length
+      active_filters: activeFiltersCount
     });
-  }, [total, filters]);
+  }, [total]); // Only track when total changes, not filters
 
   // Update filters data with models from query
   const filtersData = {

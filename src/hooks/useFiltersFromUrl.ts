@@ -90,27 +90,62 @@ export const useFiltersFromUrl = () => {
 
   // Update filters in URL
   const updateFilters = useCallback((newFilters: Partial<FilterState>, options?: { replace?: boolean }) => {
-    const updatedFilters = { ...filters, ...newFilters };
-    
-    // Remove undefined/null values
-    const cleanFilters = Object.entries(updatedFilters).reduce((acc, [key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        acc[key] = value.toString();
-      }
-      return acc;
-    }, {} as Record<string, string>);
+    setSearchParams(prevParams => {
+      const currentFilters = {
+        brand: prevParams.get('brand') || undefined,
+        model: prevParams.get('model') || undefined,
+        fuel: prevParams.get('fuel') || undefined,
+        transmission: prevParams.get('transmission') || undefined,
+        bodyType: prevParams.get('bodyType') || undefined,
+        color: prevParams.get('color') || undefined,
+        location: prevParams.get('location') || undefined,
+        condition: prevParams.get('condition') || undefined,
+        saleStatus: prevParams.get('saleStatus') || undefined,
+        drivetrain: prevParams.get('drivetrain') || undefined,
+        doors: prevParams.get('doors') || undefined,
+        yearMin: prevParams.get('yearMin') ? parseInt(prevParams.get('yearMin')!) : undefined,
+        yearMax: prevParams.get('yearMax') ? parseInt(prevParams.get('yearMax')!) : undefined,
+        priceMin: prevParams.get('priceMin') ? parseInt(prevParams.get('priceMin')!) : undefined,
+        priceMax: prevParams.get('priceMax') ? parseInt(prevParams.get('priceMax')!) : undefined,
+        mileageMin: prevParams.get('mileageMin') ? parseInt(prevParams.get('mileageMin')!) : undefined,
+        mileageMax: prevParams.get('mileageMax') ? parseInt(prevParams.get('mileageMax')!) : undefined,
+        engineSizeMin: prevParams.get('engineSizeMin') ? parseFloat(prevParams.get('engineSizeMin')!) : undefined,
+        engineSizeMax: prevParams.get('engineSizeMax') ? parseFloat(prevParams.get('engineSizeMax')!) : undefined,
+        accidentCountMax: prevParams.get('accidentCountMax') ? parseInt(prevParams.get('accidentCountMax')!) : undefined,
+        hasImages: prevParams.get('hasImages') === 'true' ? true : undefined,
+        isCertified: prevParams.get('isCertified') === 'true' ? true : undefined,
+        noAccidents: prevParams.get('noAccidents') === 'true' ? true : undefined,
+        page: prevParams.get('page') ? parseInt(prevParams.get('page')!) : 1,
+        pageSize: prevParams.get('pageSize') ? parseInt(prevParams.get('pageSize')!) : 20,
+        sort: prevParams.get('sort') || 'price_asc',
+        search: prevParams.get('search') || undefined,
+      };
 
-    // Always include page (default to 1) and sort (default)
-    if (!cleanFilters.page) cleanFilters.page = '1';
-    if (!cleanFilters.sort) cleanFilters.sort = 'price_asc';
+      const updatedFilters = { ...currentFilters, ...newFilters };
+      
+      // Remove undefined/null values
+      const cleanFilters = Object.entries(updatedFilters).reduce((acc, [key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          acc[key] = value.toString();
+        }
+        return acc;
+      }, {} as Record<string, string>);
 
-    setSearchParams(cleanFilters, { replace: options?.replace });
-  }, [filters, setSearchParams]);
+      // Always include page (default to 1) and sort (default)
+      if (!cleanFilters.page) cleanFilters.page = '1';
+      if (!cleanFilters.sort) cleanFilters.sort = 'price_asc';
+
+      return cleanFilters;
+    }, { replace: options?.replace });
+  }, [setSearchParams]);
 
   // Clear all filters except page and sort
   const clearFilters = useCallback(() => {
-    setSearchParams({ page: '1', sort: filters.sort || 'price_asc' });
-  }, [setSearchParams, filters.sort]);
+    setSearchParams(prevParams => {
+      const currentSort = prevParams.get('sort') || 'price_asc';
+      return { page: '1', sort: currentSort };
+    });
+  }, [setSearchParams]);
 
   // Update single filter
   const updateFilter = useCallback((key: keyof FilterState, value: any) => {
