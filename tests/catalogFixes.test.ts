@@ -53,7 +53,7 @@ describe('Catalog Fixes Validation', () => {
     const allCars = createFallbackCars({});
     
     // Test price sorting
-    const carPrices = allCars.map(car => (car.lots?.[0]?.buy_now || 0) + 2200);
+    const carPrices = allCars.map(car => car.lots?.[0]?.buy_now || 0);
     const sortedPricesAsc = [...carPrices].sort((a, b) => a - b);
     const sortedPricesDesc = [...carPrices].sort((a, b) => b - a);
     
@@ -83,7 +83,7 @@ describe('Catalog Fixes Validation', () => {
     
     if (mercedesCars.length > 0) {
       // Test that global sorting would work on all Mercedes cars
-      const mercedesPrices = mercedesCars.map(car => (car.lots?.[0]?.buy_now || 0) + 2200);
+      const mercedesPrices = mercedesCars.map(car => car.lots?.[0]?.buy_now || 0);
       const sortedAsc = [...mercedesPrices].sort((a, b) => a - b);
       
       // Verify sorting works correctly

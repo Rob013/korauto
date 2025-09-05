@@ -231,7 +231,7 @@ const AdminDashboard = () => {
           make: car.make,
           model: car.model,
           year: car.year,
-          price: lot?.buy_now ? Math.round(lot.buy_now + 2200) : undefined,
+          price: lot?.buy_now ? Math.round(lot.buy_now) : undefined,
           image: lot?.images?.normal?.[0] || lot?.images?.big?.[0],
           vin: car.vin,
           mileage: lot?.odometer?.km
