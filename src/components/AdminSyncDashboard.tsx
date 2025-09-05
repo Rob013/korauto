@@ -11,7 +11,8 @@ export default function AdminSyncDashboard() {
     syncStatus,
     totalCount,
     triggerSync,
-    getSyncStatus
+    getSyncStatus,
+    cleanupSoldCars
   } = useEncarAPI();
   const {
     toast
@@ -134,6 +135,23 @@ export default function AdminSyncDashboard() {
       });
     }
   };
+
+  const handleCleanupSoldCars = async () => {
+    try {
+      const result = await cleanupSoldCars();
+      toast({
+        title: "🧹 Sold Cars Cleanup Complete",
+        description: `Removed ${result.removed_cars_count} cars that were sold over 24 hours ago`
+      });
+    } catch (error) {
+      toast({
+        title: "Cleanup Failed",
+        description: error instanceof Error ? error.message : "Failed to cleanup sold cars",
+        variant: "destructive"
+      });
+    }
+  };
+
   const getStatusIcon = (status?: string) => {
     switch (status) {
       case 'completed':
@@ -188,14 +206,60 @@ export default function AdminSyncDashboard() {
 
       {/* Control Panel */}
       <Card>
-        
-        
+        <CardHeader>
+          <CardTitle className="text-base sm:text-lg">Quick Actions</CardTitle>
+          <CardDescription>Manage sync operations and data cleanup</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+            <Button
+              onClick={handleFullSync}
+              className="gap-1 sm:gap-2"
+              size="sm"
+            >
+              <Database className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="text-xs sm:text-sm">Full Sync</span>
+            </Button>
+            
+            <Button
+              onClick={handleTestSync}
+              disabled={testInProgress}
+              variant="outline"
+              className="gap-1 sm:gap-2"
+              size="sm"
+            >
+              {testInProgress ? (
+                <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+              ) : (
+                <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
+              )}
+              <span className="text-xs sm:text-sm">
+                {testInProgress ? 'Syncing...' : 'Incremental'}
+              </span>
+            </Button>
+
+            <Button
+              onClick={handleCleanupSoldCars}
+              variant="outline"
+              className="gap-1 sm:gap-2"
+              size="sm"
+            >
+              <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="text-xs sm:text-sm">Cleanup Sold</span>
+            </Button>
+
+            <Button
+              onClick={handleForceStopSync}
+              variant="destructive"
+              className="gap-1 sm:gap-2"
+              size="sm"
+            >
+              <StopCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="text-xs sm:text-sm">Stop Sync</span>
+            </Button>
+          </div>
+        </CardContent>
       </Card>
 
-      {/* System Improvements */}
-      <Card>
-        
-        
-      </Card>
     </div>;
 }
