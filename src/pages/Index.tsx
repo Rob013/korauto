@@ -73,18 +73,21 @@ const Index = () => {
       {/* Header loads immediately for navigation */}
       <Header />
       
-      {/* Lazy load other sections with optimized skeletons */}
-      <Suspense fallback={<HomeSectionSkeleton />}>
-        <HomeSection />
-      </Suspense>
-      
-      <Suspense fallback={<CarsSectionSkeleton />}>
-        <HomeCarsSection />
-      </Suspense>
-      
-      <Suspense fallback={<SectionSkeleton />}>
-        <ContactSection />
-      </Suspense>
+      {/* Main content with proper landmark */}
+      <main id="main">
+        {/* Lazy load other sections with optimized skeletons */}
+        <Suspense fallback={<HomeSectionSkeleton />}>
+          <HomeSection />
+        </Suspense>
+        
+        <Suspense fallback={<CarsSectionSkeleton />}>
+          <HomeCarsSection />
+        </Suspense>
+        
+        <Suspense fallback={<SectionSkeleton />}>
+          <ContactSection />
+        </Suspense>
+      </main>
       
       <Suspense fallback={<div className="h-64 bg-muted/20" />}>
         <Footer />
