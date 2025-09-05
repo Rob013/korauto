@@ -33,6 +33,8 @@ import {
 } from 'lucide-react';
 import { fetchCarsWithKeyset, SortOption as CarsApiSortOption, CarFilters } from '@/services/carsApi';
 import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
+import EncarStyleFilter from '@/components/EncarStyleFilter';
+import { APIFilters } from '@/utils/catalog-filter';
 
 interface Car {
   id: string;
@@ -142,6 +144,41 @@ export const EncarLikeCatalog = ({ highlightCarId, className = '' }: EncarLikeCa
   
   const [searchTerm, setSearchTerm] = useState(urlState.searchTerm);
   const [selectedMakes, setSelectedMakes] = useState<string[]>(urlState.selectedMakes);
+
+  // Enhanced filter state for EncarStyleFilter
+  const [apiFilters, setApiFilters] = useState<APIFilters>({
+    manufacturer_id: undefined,
+    model_id: undefined,
+    fuel_type: urlState.fuel,
+    transmission: urlState.transmission,
+    body_type: urlState.bodyType,
+    buy_now_price_from: urlState.priceRange[0]?.toString(),
+    buy_now_price_to: urlState.priceRange[1]?.toString(),
+    from_year: urlState.yearRange[0]?.toString(),
+    to_year: urlState.yearRange[1]?.toString(),
+    odometer_from_km: urlState.mileageRange[0]?.toString(),
+    odometer_to_km: urlState.mileageRange[1]?.toString(),
+  });
+
+  // Mock manufacturers data for EncarStyleFilter (this would normally come from API)
+  const mockManufacturers = [
+    { id: 1, name: 'Toyota', cars_qty: 45 },
+    { id: 2, name: 'Honda', cars_qty: 32 },
+    { id: 3, name: 'BMW', cars_qty: 28 },
+    { id: 4, name: 'Mercedes-Benz', cars_qty: 25 },
+    { id: 5, name: 'Audi', cars_qty: 22 },
+    { id: 6, name: 'Volkswagen', cars_qty: 18 },
+    { id: 7, name: 'Hyundai', cars_qty: 35 },
+    { id: 8, name: 'Kia', cars_qty: 30 },
+  ];
+
+  // Mock models data (this would normally come from API based on selected manufacturer)
+  const mockModels = [
+    { id: 1, name: 'Camry', cars_qty: 15 },
+    { id: 2, name: 'Corolla', cars_qty: 12 },
+    { id: 3, name: 'RAV4', cars_qty: 10 },
+    { id: 4, name: 'Prius', cars_qty: 8 },
+  ];
 
   // Update URL parameters whenever state changes
   const updateURLParams = useCallback(() => {
@@ -403,122 +440,47 @@ export const EncarLikeCatalog = ({ highlightCarId, className = '' }: EncarLikeCa
 
       <div className="container mx-auto px-4">
         <div className="flex gap-6 py-6">
-          {/* Enhanced Filters Sidebar - Encar Style with Brand Colors */}
+          {/* Enhanced Filters Sidebar - Encar Style */}
           {showFilters && (
-            <div className="w-80 space-y-6">
-              {/* Price Range with Brand Colors */}
-              <Card className="border-border/50 shadow-lg">
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-4 text-foreground">Price Range</h3>
-                  <div className="space-y-4">
-                    <Slider
-                      value={filters.priceRange || [5000, 100000]}
-                      onValueChange={(value) => setFilters(prev => ({ ...prev, priceRange: value as [number, number] }))}
-                      max={200000}
-                      min={1000}
-                      step={1000}
-                      className="w-full [&>.relative]:bg-secondary [&_[role=slider]]:bg-primary [&_[role=slider]]:border-primary"
-                    />
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span className="bg-secondary px-2 py-1 rounded font-medium">€{filters.priceRange?.[0]?.toLocaleString()}</span>
-                      <span className="bg-secondary px-2 py-1 rounded font-medium">€{filters.priceRange?.[1]?.toLocaleString()}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Year Range with Brand Colors */}
-              <Card className="border-border/50 shadow-lg">
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-4 text-foreground">Year</h3>
-                  <div className="space-y-4">
-                    <Slider
-                      value={filters.yearRange || [2000, 2024]}
-                      onValueChange={(value) => setFilters(prev => ({ ...prev, yearRange: value as [number, number] }))}
-                      max={2024}
-                      min={1990}
-                      step={1}
-                      className="w-full [&>.relative]:bg-secondary [&_[role=slider]]:bg-primary [&_[role=slider]]:border-primary"
-                    />
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span className="bg-secondary px-2 py-1 rounded font-medium">{filters.yearRange?.[0]}</span>
-                      <span className="bg-secondary px-2 py-1 rounded font-medium">{filters.yearRange?.[1]}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Fuel Type with Brand Colors */}
-              <Card className="border-border/50 shadow-lg">
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-4 text-foreground">Fuel Type</h3>
-                  <div className="space-y-3">
-                    {FUEL_TYPES.map((fuel) => (
-                      <div key={fuel} className="flex items-center space-x-3 group">
-                        <Checkbox
-                          id={fuel}
-                          checked={filters.fuel === fuel}
-                          onCheckedChange={(checked) => 
-                            setFilters(prev => ({ ...prev, fuel: checked ? fuel : undefined }))
-                          }
-                          className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                        />
-                        <label htmlFor={fuel} className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors">
-                          {fuel}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Transmission with Brand Colors */}
-              <Card className="border-border/50 shadow-lg">
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-4 text-foreground">Transmission</h3>
-                  <div className="space-y-3">
-                    {TRANSMISSIONS.map((trans) => (
-                      <div key={trans} className="flex items-center space-x-3 group">
-                        <Checkbox
-                          id={trans}
-                          checked={filters.transmission === trans}
-                          onCheckedChange={(checked) => 
-                            setFilters(prev => ({ ...prev, transmission: checked ? trans : undefined }))
-                          }
-                          className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                        />
-                        <label htmlFor={trans} className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors">
-                          {trans}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Body Type with Brand Colors */}
-              <Card className="border-border/50 shadow-lg">
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-4 text-foreground">Body Type</h3>
-                  <div className="space-y-3">
-                    {BODY_TYPES.map((body) => (
-                      <div key={body} className="flex items-center space-x-3 group">
-                        <Checkbox
-                          id={body}
-                          checked={filters.bodyType === body}
-                          onCheckedChange={(checked) => 
-                            setFilters(prev => ({ ...prev, bodyType: checked ? body : undefined }))
-                          }
-                          className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                        />
-                        <label htmlFor={body} className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors">
-                          {body}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="w-80">
+              <EncarStyleFilter
+                filters={apiFilters}
+                manufacturers={mockManufacturers}
+                models={mockModels}
+                onFiltersChange={(newFilters) => {
+                  setApiFilters(newFilters);
+                  // Sync with legacy filter state for backward compatibility
+                  setFilters(prev => ({
+                    ...prev,
+                    fuel: newFilters.fuel_type,
+                    transmission: newFilters.transmission,
+                    bodyType: newFilters.body_type,
+                    priceRange: newFilters.buy_now_price_from && newFilters.buy_now_price_to
+                      ? [parseInt(newFilters.buy_now_price_from), parseInt(newFilters.buy_now_price_to)]
+                      : prev.priceRange,
+                    yearRange: newFilters.from_year && newFilters.to_year
+                      ? [parseInt(newFilters.from_year), parseInt(newFilters.to_year)]
+                      : prev.yearRange,
+                    mileageRange: newFilters.odometer_from_km && newFilters.odometer_to_km
+                      ? [parseInt(newFilters.odometer_from_km), parseInt(newFilters.odometer_to_km)]
+                      : prev.mileageRange,
+                  }));
+                }}
+                onClearFilters={() => {
+                  setApiFilters({});
+                  clearAllFilters();
+                }}
+                onManufacturerChange={(manufacturerId) => {
+                  // Handle manufacturer change
+                  console.log('Manufacturer changed:', manufacturerId);
+                }}
+                onModelChange={(modelId) => {
+                  // Handle model change
+                  console.log('Model changed:', modelId);
+                }}
+                compact={false}
+                isHomepage={false}
+              />
             </div>
           )}
 
