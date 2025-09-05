@@ -206,31 +206,24 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   // Prioritized manufacturer sorting using utility
   const sortedManufacturers = useMemo(() => sortManufacturers(manufacturers), [manufacturers]);
 
-  // Fetch grades when filters change - with debouncing to prevent excessive calls
+  // Update filters when new filter counts are available
   useEffect(() => {
-    if (filters.manufacturer_id && onFetchGrades) {
-      // Debounce to prevent rapid consecutive calls when switching brands
-      const timeoutId = setTimeout(() => {
-        setIsLoadingGrades(true);
-        onFetchGrades(filters.manufacturer_id, filters.model_id)
-          .then(gradesData => {
-            if (Array.isArray(gradesData)) {
-              setGrades(gradesData);
-            }
-            setIsLoadingGrades(false);
-          })
-          .catch((err) => {
-            console.error('Grade fetch error:', err);
-            setIsLoadingGrades(false);
-          });
-      }, 300); // 300ms debounce delay
-
-      return () => clearTimeout(timeoutId);
-    } else {
-      setGrades([]);
-      setIsLoadingGrades(false);
+    if (filterCounts && manufacturers.length > 0) {
+      // Fetch updated filter counts when manufacturers change
+      fetchFilterCounts({}, manufacturers).catch(error => {
+        console.warn('Failed to update filter counts:', error);
+      });
     }
-  }, [filters.manufacturer_id, filters.model_id, onFetchGrades]);
+  }, [manufacturers.length]);
+
+  // Load filter counts on component mount and when base filters change
+  useEffect(() => {
+    if (manufacturers.length > 0 && fetchFilterCounts) {
+      fetchFilterCounts(filters, manufacturers).catch(error => {
+        console.warn('Failed to load initial filter counts:', error);
+      });
+    }
+  }, [manufacturers.length, filters.manufacturer_id, fetchFilterCounts]);
 
   // Fetch trim levels when filters change - with debouncing to prevent excessive calls
   useEffect(() => {
@@ -322,14 +315,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 ...(isStrictMode && filters.manufacturer_id ? [] : [{ value: 'all', label: 'Të gjitha markat' }]),
                 ...sortedManufacturers.map((manufacturer) => ({
                   value: manufacturer.id.toString(),
-                  label: (
-                    <div className="flex items-center gap-1.5">
-                      {(manufacturer as any).image && (
-                        <img src={(manufacturer as any).image} alt={manufacturer.name} className="w-3 h-3 object-contain" />
-                      )}
-                      <span className="text-xs">{manufacturer.name} ({manufacturer.cars_qty})</span>
-                    </div>
-                  )
+                  label: `${manufacturer.name} ${manufacturer.cars_qty ? `(${manufacturer.cars_qty})` : ''}`.trim()
                 }))
               ]}
             />
@@ -548,10 +534,13 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                      options={[
                        // In strict mode, show "Any type" only when no specific fuel type is selected or not in strict mode
                        ...(isStrictMode && filters.fuel_type ? [] : [{ value: 'all', label: 'Çdo tip' }]),
-                       ...Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => ({
-                         value: id.toString(),
-                         label: name.charAt(0).toUpperCase() + name.slice(1)
-                       }))
+                       ...Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => {
+                         const count = filterCounts?.fuelTypes?.[name] || 0;
+                         return {
+                           value: id.toString(),
+                           label: `${name.charAt(0).toUpperCase() + name.slice(1)}${count > 0 ? ` (${count})` : ''}`
+                         };
+                       })
                      ]}
                    />
                  </div>
@@ -569,10 +558,13 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                      options={[
                        // In strict mode, show "Any type" only when no specific transmission is selected or not in strict mode
                        ...(isStrictMode && filters.transmission ? [] : [{ value: 'all', label: 'Çdo tip' }]),
-                       ...Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => ({
-                         value: id.toString(),
-                         label: name.charAt(0).toUpperCase() + name.slice(1)
-                       }))
+                       ...Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => {
+                         const count = filterCounts?.transmissions?.[name] || 0;
+                         return {
+                           value: id.toString(),
+                           label: `${name.charAt(0).toUpperCase() + name.slice(1)}${count > 0 ? ` (${count})` : ''}`
+                         };
+                       })
                      ]}
                    />
                  </div>

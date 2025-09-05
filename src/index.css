@@ -883,10 +883,24 @@ All colors MUST be HSL.
     padding-right: max(12px, env(safe-area-inset-right));
   }
 
-  /* Better touch targets - More compact */
+  /* Better touch targets - Mobile optimized */
   button, [role="button"] {
-    min-height: 40px;
-    min-width: 40px;
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .touch-target {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+
+  /* Safe area support for modern devices */
+  .safe-area-inset-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   /* Enhanced filter button visibility */
@@ -931,47 +945,59 @@ All colors MUST be HSL.
     justify-content: center;
   }
 
-  /* Ensure filter content is properly scrollable - More compact */
+  /* Ensure filter content is properly scrollable with better spacing */
   .mobile-filter-content {
-    height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 80px);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
-  /* Compact filter panel styles */
+  /* Enhanced filter panel styles for better mobile UX */
   .mobile-filter-compact {
-    padding: 8px 12px;
+    padding: 12px 16px;
   }
 
   .mobile-filter-compact .filter-section {
-    margin-bottom: 12px;
+    margin-bottom: 20px;
+    padding: 16px;
+    background: hsl(var(--card));
+    border-radius: 12px;
+    border: 1px solid hsl(var(--border));
   }
 
   .mobile-filter-compact .filter-label {
-    font-size: 12px;
-    margin-bottom: 4px;
-    font-weight: 500;
+    font-size: 14px;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: hsl(var(--foreground));
   }
 
   .mobile-filter-compact .filter-control {
-    height: 36px;
-    font-size: 13px;
-    padding: 8px 12px;
+    height: 44px;
+    font-size: 14px;
+    padding: 12px 16px;
+    border-radius: 8px;
   }
 
   .mobile-filter-compact .filter-header {
-    padding: 8px 12px;
-    font-size: 14px;
+    padding: 12px 16px;
+    font-size: 16px;
+    font-weight: 600;
   }
 
   .mobile-filter-compact .year-buttons {
-    gap: 4px;
+    gap: 8px;
+    display: flex;
+    flex-wrap: wrap;
   }
 
   .mobile-filter-compact .year-buttons button {
-    padding: 4px 8px;
-    font-size: 11px;
-    min-height: 28px;
+    padding: 8px 12px;
+    font-size: 13px;
+    min-height: 44px;
+    min-width: 60px;
+    border-radius: 8px;
   }
 }
 
@@ -1017,35 +1043,37 @@ All colors MUST be HSL.
     line-height: 1.1;
   }
 
-  /* Ultra compact filter styles for smallest screens */
+  /* Ultra compact filter styles for smallest screens - still accessible */
   .mobile-filter-compact {
-    padding: 6px 8px;
+    padding: 10px 12px;
   }
 
   .mobile-filter-compact .filter-section {
-    margin-bottom: 8px;
+    margin-bottom: 16px;
+    padding: 12px;
   }
 
   .mobile-filter-compact .filter-label {
-    font-size: 11px;
-    margin-bottom: 3px;
+    font-size: 13px;
+    margin-bottom: 6px;
   }
 
   .mobile-filter-compact .filter-control {
-    height: 32px;
-    font-size: 12px;
-    padding: 6px 10px;
+    height: 42px;
+    font-size: 13px;
+    padding: 10px 14px;
   }
 
   .mobile-filter-compact .filter-header {
-    padding: 6px 8px;
-    font-size: 13px;
+    padding: 10px 12px;
+    font-size: 15px;
   }
 
   .mobile-filter-compact .year-buttons button {
-    padding: 3px 6px;
-    font-size: 10px;
-    min-height: 24px;
+    padding: 6px 10px;
+    font-size: 12px;
+    min-height: 40px;
+    min-width: 50px;
   }
 }
 
