@@ -259,12 +259,3 @@ export class AccessibilityEnhancer {
     }
   }
 }
-
-// Auto-initialize when script loads
-if (typeof window !== 'undefined') {
-  document.addEventListener('DOMContentLoaded', () => {
-    const enhancer = AccessibilityEnhancer.getInstance();
-    enhancer.init();
-    enhancer.addSkipLinks();
-  });
-}

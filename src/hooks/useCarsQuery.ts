@@ -76,6 +76,8 @@ const fetchCars = async (
   signal?: AbortSignal,
   cursor?: string
 ): Promise<CarsResponse> => {
+  console.log('🔄 Fetching cars with params:', params);
+  
   try {
     const apiResponse = await fetchCarsWithKeyset({
       filters: {
@@ -97,6 +99,8 @@ const fetchCars = async (
     const pageSize = parseInt(params.pageSize || '24');
     const currentPage = parseInt(params.page || '1');
 
+    console.log('✅ Successfully fetched', convertedCars.length, 'cars from API');
+
     return {
       cars: convertedCars,
       total: apiResponse.total,
@@ -106,9 +110,9 @@ const fetchCars = async (
       nextCursor: apiResponse.nextCursor
     };
   } catch (error) {
-    console.error('Error fetching cars with keyset pagination:', error);
+    console.error('❌ API failed, using fallback data:', error);
     
-    // Fallback to mock data if API fails
+    // Use fallback data if API fails
     return fetchCarsFallback(params, signal);
   }
 };

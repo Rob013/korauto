@@ -108,13 +108,14 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
+  console.log('🚀 App component initializing...');
+  
   // Initialize resource preloading for better performance
   const { preloadRouteResources } = useResourcePreloader();
 
-  // Initialize accessibility enhancements (removed for now)
+  // Simple initialization without external dependencies
   useEffect(() => {
-    // Skip accessibility enhancements for now to avoid import issues
-    console.log('App initialized');
+    console.log('✅ App initialized successfully');
   }, []);
 
   return (
