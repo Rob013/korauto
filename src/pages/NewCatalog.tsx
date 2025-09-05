@@ -395,13 +395,15 @@ const CatalogContent: React.FC = () => {
             {/* Cars List */}
             <CarsList
               cars={cars}
-              isLoading={isLoading}
-              error={error}
+              total={total}
+              totalPages={Math.ceil(total / 20)}
               hasMore={hasMore}
-              onLoadMore={handleLoadMore}
-              onCarClick={handleCarClick}
-              totalCount={total}
-              activeFiltersCount={activeFiltersCount}
+              isLoading={isLoading}
+              isFetching={isLoading}
+              error={error}
+              filters={{}}
+              prefetchNextPage={handleLoadMore}
+              highlightCarId={null}
             />
           </div>
         </div>
