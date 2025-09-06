@@ -27,6 +27,15 @@
 const AUTH_ENABLED = false; // Set to true via environment variable when ready
 const AUTH_COOKIE_NAME = 'my_session'; // Change to match your auth cookie name
 
+// CIG Shipping API Configuration
+const CIG_ENDPOINT = 'https://cigshipping.com/Home/cargo.html'; // Main endpoint
+const CIG_API_ENDPOINT = 'https://cigshipping.com/api/cargo/search'; // API endpoint if discovered
+const USE_POST = false; // Set to true if CIG uses POST requests
+const RATE_LIMIT_PER_MINUTE = 60; // Rate limit per IP per minute
+
+// Rate limiting storage (in-memory for this worker)
+const rateLimitStore = new Map();
+
 // CORS headers for cross-origin requests
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,6 +43,62 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Max-Age': '86400',
 };
+
+/**
+ * Check rate limit for IP address
+ */
+function checkRateLimit(clientIP) {
+  const now = Date.now();
+  const windowStart = Math.floor(now / 60000) * 60000; // 1-minute window
+  
+  if (!rateLimitStore.has(clientIP)) {
+    rateLimitStore.set(clientIP, { count: 1, window: windowStart });
+    return { allowed: true, remaining: RATE_LIMIT_PER_MINUTE - 1 };
+  }
+  
+  const record = rateLimitStore.get(clientIP);
+  
+  // Reset if new window
+  if (record.window !== windowStart) {
+    rateLimitStore.set(clientIP, { count: 1, window: windowStart });
+    return { allowed: true, remaining: RATE_LIMIT_PER_MINUTE - 1 };
+  }
+  
+  // Check if limit exceeded
+  if (record.count >= RATE_LIMIT_PER_MINUTE) {
+    return { allowed: false, remaining: 0 };
+  }
+  
+  // Increment count
+  record.count++;
+  return { allowed: true, remaining: RATE_LIMIT_PER_MINUTE - record.count };
+}
+
+/**
+ * Build form data for CIG shipping request
+ */
+function buildForm(query) {
+  // Parse query to extract chassis/VIN and year if provided
+  const formData = new FormData();
+  
+  // Check if query contains year pattern (4 digits)
+  const yearMatch = query.match(/\b(19|20)\d{2}\b/);
+  const year = yearMatch ? yearMatch[0] : '';
+  
+  // Remove year from chassis if found
+  const chassis = query.replace(/\b(19|20)\d{2}\b/, '').trim();
+  
+  if (USE_POST) {
+    // For POST requests - adjust field names based on actual CIG form
+    formData.append('CHASSIS', chassis.toUpperCase());
+    if (year) {
+      formData.append('YEAR', year);
+    }
+    formData.append('searchType', 'cargo');
+  }
+  
+  return { chassis, year, formData };
+}
 
 // Main worker handler
 export default {
@@ -61,6 +126,28 @@ export default {
           {
             status: 405,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+
+      // Rate limiting
+      const clientIP = request.headers.get('CF-Connecting-IP') || 
+                      request.headers.get('X-Forwarded-For') || 
+                      '127.0.0.1';
+      
+      const rateLimit = checkRateLimit(clientIP);
+      if (!rateLimit.allowed) {
+        return new Response(
+          JSON.stringify({ error: 'Rate limit exceeded. Please try again in a minute.' }),
+          {
+            status: 429,
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json',
+              'X-RateLimit-Limit': RATE_LIMIT_PER_MINUTE.toString(),
+              'X-RateLimit-Remaining': '0',
+              'Retry-After': '60'
+            }
           }
         );
       }
@@ -120,12 +207,20 @@ export default {
 
       // Fetch tracking data from CIG Shipping
       const trackingData = await fetchTrackingData(trimmedQuery);
+      
+      // Convert to widget format
+      const widgetResponse = formatAsWidget(trackingData, trimmedQuery);
 
       return new Response(
-        JSON.stringify(trackingData),
+        JSON.stringify(widgetResponse),
         {
           status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'X-RateLimit-Limit': RATE_LIMIT_PER_MINUTE.toString(),
+            'X-RateLimit-Remaining': rateLimit.remaining.toString()
+          }
         }
       );
 
@@ -190,39 +285,86 @@ function checkAuthentication(request) {
  * Fetch and parse tracking data from CIG Shipping website
  */
 async function fetchTrackingData(query) {
-  const cigUrl = `https://cigshipping.com/Home/cargo.html?keyword=${encodeURIComponent(query)}`;
+  const { chassis, year } = buildForm(query);
+  let cigUrl;
+  
+  if (USE_POST) {
+    // Use POST endpoint if configured
+    cigUrl = CIG_API_ENDPOINT;
+  } else {
+    // Use GET endpoint with parameters
+    cigUrl = `${CIG_ENDPOINT}?keyword=${encodeURIComponent(query)}`;
+    if (chassis && year) {
+      cigUrl = `${CIG_ENDPOINT}?chassis=${encodeURIComponent(chassis)}&year=${year}`;
+    }
+  }
   
   try {
-    // Fetch with desktop user agent
-    const response = await fetch(cigUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-        'Accept-Encoding': 'gzip, deflate',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
-      }
-    });
+    let response;
+    
+    if (USE_POST) {
+      const { formData } = buildForm(query);
+      
+      response = await fetch(cigUrl, {
+        method: 'POST',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'application/json, text/html, */*',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'X-Requested-With': 'XMLHttpRequest',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        },
+        body: formData
+      });
+    } else {
+      // Fetch with desktop user agent
+      response = await fetch(cigUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Accept-Encoding': 'gzip, deflate',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+    }
 
     if (!response.ok) {
       throw new Error(`CIG Shipping request failed: ${response.status}`);
     }
 
-    const html = await response.text();
+    let rows = [];
+    let html = '';
+    const contentType = response.headers.get('content-type') || '';
     
-    // Parse the HTML to extract table rows
-    const rows = parseTrackingTable(html);
-    
-    // If parsing finds zero rows, try alternate endpoint
-    let finalRows = rows;
-    if (rows.length === 0) {
-      const alternateRows = await tryAlternateEndpoint(query);
-      finalRows = alternateRows;
+    if (contentType.includes('application/json')) {
+      // Handle JSON response
+      const data = await response.json();
+      rows = parseAPIResponse(data);
+    } else {
+      // Handle HTML response
+      html = await response.text();
+      
+      // Parse the HTML to extract table rows
+      rows = parseTrackingTable(html);
+      
+      // If parsing finds zero rows, try alternate endpoint
+      if (rows.length === 0) {
+        const alternateRows = await tryAlternateEndpoint(query);
+        rows = alternateRows;
+      }
+      
+      // Extract and add metadata from HTML
+      const metadata = extractMetadata(html);
+      if (Object.keys(metadata).length > 0) {
+        rows.unshift({ ...metadata, type: 'metadata' });
+      }
     }
     
     // Dedupe near-identical rows
-    const deduped = deduplicateRows(finalRows);
+    const deduped = deduplicateRows(rows);
     
     return {
       query,
@@ -684,23 +826,361 @@ function parseAlternativeStructures(html) {
 }
 
 /**
+ * Format tracking data as CIG shipping widget
+ */
+function formatAsWidget(trackingData, originalQuery) {
+  const { chassis, year } = buildForm(originalQuery);
+  
+  // Extract metadata from the first row if it exists
+  const metadata = trackingData.rows.find(row => row.type === 'metadata') || {};
+  
+  // Determine overall shipping status based on events
+  const events = trackingData.rows.filter(row => row.type !== 'metadata');
+  const overallStatus = determineShippingStatus(events);
+  
+  // Create shipping status steps
+  const shippingSteps = [
+    { name: "In Port", active: hasEventType(events, ['port', 'arrived']) },
+    { name: "Vessel Fixed", active: hasEventType(events, ['vessel', 'fixed', 'assigned']) },
+    { name: "Shipment Ready", active: hasEventType(events, ['ready', 'prepared']) },
+    { name: "Loaded", active: hasEventType(events, ['loaded', 'onboard']) },
+    { name: "Arrival", active: hasEventType(events, ['arrival', 'discharged', 'delivered']) }
+  ];
+  
+  return {
+    query: {
+      chassis: chassis || originalQuery,
+      ...(year && { year })
+    },
+    result: {
+      shipper: metadata.shipper || null,
+      model_year: metadata.model || null,
+      chassis: metadata.chassis || chassis || originalQuery,
+      vessel: metadata.vesselName || findLatestVessel(events),
+      pol: metadata.portOfLoading || findPortOfLoading(events),
+      on_board: metadata.onBoard || findOnBoardDate(events),
+      port: metadata.portOfDischarge || findPortOfDischarge(events),
+      eta: metadata.estimatedArrival || findETA(events)
+    },
+    shipping_status: {
+      overall: overallStatus,
+      steps: shippingSteps
+    },
+    source: "cigshipping.com",
+    last_updated: new Date().toISOString(),
+    // Keep original data for backwards compatibility
+    rows: trackingData.rows
+  };
+}
+
+/**
+ * Determine overall shipping status from events
+ */
+function determineShippingStatus(events) {
+  if (hasEventType(events, ['delivered', 'discharged', 'arrived'])) {
+    return "Delivered";
+  } else if (hasEventType(events, ['loaded', 'onboard'])) {
+    return "Loaded";
+  } else if (hasEventType(events, ['vessel', 'fixed'])) {
+    return "Vessel Fixed";
+  } else if (hasEventType(events, ['ready', 'prepared'])) {
+    return "Ready";
+  } else if (hasEventType(events, ['port'])) {
+    return "In Port";
+  }
+  return "Processing";
+}
+
+/**
+ * Check if events contain any of the specified types
+ */
+function hasEventType(events, types) {
+  return events.some(event => {
+    const eventText = (event.event || event.status || '').toLowerCase();
+    return types.some(type => eventText.includes(type));
+  });
+}
+
+/**
+ * Find the latest vessel name from events
+ */
+function findLatestVessel(events) {
+  for (let i = events.length - 1; i >= 0; i--) {
+    if (events[i].vessel) {
+      return events[i].vessel;
+    }
+  }
+  return null;
+}
+
+/**
+ * Find port of loading from events
+ */
+function findPortOfLoading(events) {
+  const loadingEvent = events.find(event => {
+    const eventText = (event.event || event.status || '').toLowerCase();
+    return eventText.includes('loaded') || eventText.includes('departure');
+  });
+  return loadingEvent?.location || null;
+}
+
+/**
+ * Find port of discharge from events
+ */
+function findPortOfDischarge(events) {
+  const dischargeEvent = events.find(event => {
+    const eventText = (event.event || event.status || '').toLowerCase();
+    return eventText.includes('arrival') || eventText.includes('discharge');
+  });
+  return dischargeEvent?.location || null;
+}
+
+/**
+ * Find on board date from events
+ */
+function findOnBoardDate(events) {
+  const onBoardEvent = events.find(event => {
+    const eventText = (event.event || event.status || '').toLowerCase();
+    return eventText.includes('loaded') || eventText.includes('onboard');
+  });
+  return onBoardEvent?.date || null;
+}
+
+/**
+ * Find ETA from events
+ */
+function findETA(events) {
+  const etaEvent = events.find(event => {
+    const eventText = (event.event || event.status || '').toLowerCase();
+    return eventText.includes('eta') || eventText.includes('arrival');
+  });
+  return etaEvent?.date || null;
+}
+
+/**
  * Try alternate endpoint when main parsing fails
- * Placeholder: if the page actually uses another internal endpoint (JSON or POST), fill this later
+ * Updated to use proper API endpoint with form data
  */
 async function tryAlternateEndpoint(query) {
-  // TODO: Discover the real internal endpoint via DevTools
-  // For now, return empty rows as placeholder
   console.log('tryAlternateEndpoint called for query:', query);
   
-  // PLACEHOLDER: When you discover the real endpoint via DevTools:
-  // 1. Open https://cigshipping.com/Home/cargo.html in browser
-  // 2. Open DevTools → Network tab
-  // 3. Search a real VIN/B/L number
-  // 4. Find the request that returns actual data (might be JSON or POST)
-  // 5. Update this function to call that endpoint
-  // 6. Map the JSON response fields to {date, event, location, vessel}
+  try {
+    const { chassis, year, formData } = buildForm(query);
+    
+    if (USE_POST) {
+      // Try POST request to API endpoint
+      const response = await fetch(CIG_API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'application/json, text/plain, */*',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'X-Requested-With': 'XMLHttpRequest',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        },
+        body: formData
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return parseAPIResponse(data);
+      }
+    }
+    
+    // Fallback: Try GET with specific selectors
+    const cigUrl = `${CIG_ENDPOINT}?chassis=${encodeURIComponent(chassis)}${year ? `&year=${year}` : ''}`;
+    const response = await fetch(cigUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    });
+    
+    if (response.ok) {
+      const html = await response.text();
+      return parseWithSpecificSelectors(html);
+    }
+    
+  } catch (error) {
+    console.error('Error in tryAlternateEndpoint:', error);
+  }
   
   return [];
+}
+
+/**
+ * Parse API JSON response to tracking format
+ */
+function parseAPIResponse(data) {
+  const rows = [];
+  
+  if (data.results && Array.isArray(data.results)) {
+    data.results.forEach(result => {
+      rows.push({
+        date: result.date,
+        event: result.event || result.status,
+        location: result.location,
+        vessel: result.vessel,
+        type: 'event'
+      });
+    });
+  }
+  
+  return rows;
+}
+
+/**
+ * Parse HTML using specific selectors for better reliability
+ */
+function parseWithSpecificSelectors(html) {
+  const rows = [];
+  
+  try {
+    // Look for specific table or div containers with IDs/classes
+    // These selectors should be updated based on actual CIG site inspection
+    const patterns = [
+      // Look for search results table
+      /<table[^>]*id=["']?searchResult["']?[^>]*>(.*?)<\/table>/gis,
+      /<div[^>]*class=["'][^"']*result[^"']*["'][^>]*>(.*?)<\/div>/gis,
+      // Look for status container
+      /<div[^>]*class=["'][^"']*status-wrap["'][^>]*>(.*?)<\/div>/gis,
+      /<ul[^>]*class=["'][^"']*status[^"']*["'][^>]*>(.*?)<\/ul>/gis
+    ];
+    
+    for (const pattern of patterns) {
+      let match;
+      while ((match = pattern.exec(html)) !== null) {
+        const content = match[1];
+        
+        // Parse table rows
+        if (pattern.source.includes('table')) {
+          const tableRows = parseTableRows(content);
+          rows.push(...tableRows);
+        }
+        // Parse list items for status
+        else if (pattern.source.includes('ul')) {
+          const statusItems = parseStatusList(content);
+          rows.push(...statusItems);
+        }
+        // Parse div content
+        else {
+          const divRows = parseDivContent(content);
+          rows.push(...divRows);
+        }
+      }
+    }
+    
+  } catch (error) {
+    console.error('Error parsing with specific selectors:', error);
+  }
+  
+  return rows;
+}
+
+/**
+ * Parse table rows with enhanced logic
+ */
+function parseTableRows(tableContent) {
+  const rows = [];
+  const rowRegex = /<tr[^>]*>(.*?)<\/tr>/gis;
+  
+  let match;
+  while ((match = rowRegex.exec(tableContent)) !== null) {
+    const cells = extractTableCells(match[1]);
+    if (cells.length >= 2) {
+      const row = mapCellsToRow(cells);
+      if (row) {
+        rows.push({ ...row, type: 'event' });
+      }
+    }
+  }
+  
+  return rows;
+}
+
+/**
+ * Parse status list items
+ */
+function parseStatusList(listContent) {
+  const rows = [];
+  const itemRegex = /<li[^>]*class=["'][^"']*\bon\b[^"']*["'][^>]*>(.*?)<\/li>/gis;
+  
+  let match;
+  while ((match = itemRegex.exec(listContent)) !== null) {
+    const itemText = match[1]
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    if (itemText) {
+      rows.push({
+        event: itemText,
+        date: null,
+        location: null,
+        vessel: null,
+        type: 'status'
+      });
+    }
+  }
+  
+  return rows;
+}
+
+/**
+ * Parse div content for tracking information
+ */
+function parseDivContent(divContent) {
+  const rows = [];
+  
+  // Look for structured data in divs
+  const dataRegex = /<div[^>]*class=["'][^"']*track[^"']*["'][^>]*>(.*?)<\/div>/gis;
+  
+  let match;
+  while ((match = dataRegex.exec(divContent)) !== null) {
+    const content = match[1]
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    if (content.length > 10) {
+      rows.push({
+        event: content,
+        date: null,
+        location: null,
+        vessel: null,
+        type: 'event'
+      });
+    }
+  }
+  
+  return rows;
+}
+
+/**
+ * Extract cells from table row HTML
+ */
+function extractTableCells(rowHtml) {
+  const cells = [];
+  const cellRegex = /<t[dh][^>]*>(.*?)<\/t[dh]>/gis;
+  
+  let match;
+  while ((match = cellRegex.exec(rowHtml)) !== null) {
+    const cellText = match[1]
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    if (cellText) {
+      cells.push(cellText);
+    }
+  }
+  
+  return cells;
 }
 
 /**
