@@ -16,7 +16,7 @@ const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 export const useCurrencyAPI = () => {
   const [exchangeRate, setExchangeRate] = useState<ExchangeRate>({
-    rate: 0.92, // Default fallback rate USD to EUR
+    rate: 0.85, // Default fallback rate USD to EUR (updated to current market rate)
     lastUpdated: new Date().toISOString(),
   });
   const [loading, setLoading] = useState(false);
@@ -66,7 +66,28 @@ export const useCurrencyAPI = () => {
         return;
       }
 
-      // Fetch from API
+      // Try to fetch current rate from daily sync file
+      try {
+        const currentRateResponse = await fetch('/current-exchange-rate.json');
+        if (currentRateResponse.ok) {
+          const dailyRate = await currentRateResponse.json();
+          if (dailyRate && dailyRate.rate && dailyRate.lastUpdated) {
+            console.log('📊 Using daily synced exchange rate:', dailyRate.rate);
+            const syncedRate: ExchangeRate = {
+              rate: dailyRate.rate,
+              lastUpdated: dailyRate.lastUpdated,
+            };
+            setExchangeRate(syncedRate);
+            setCachedRate(syncedRate);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (dailyRateError) {
+        console.log('ℹ️ Daily rate file not available, fetching from API');
+      }
+
+      // Fetch from API as fallback
       const response = await fetch(
         "https://api.currencyapi.com/v3/latest?apikey=cur_live_SqgABFxnWHPaJjbRVJQdOLJpYkgCiJgQkIdvVFN6&currencies=EUR&base_currency=USD"
       );
