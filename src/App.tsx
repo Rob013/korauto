@@ -23,6 +23,7 @@ const InspectionServices = lazy(() => import("./pages/InspectionServices"));
 const MyAccount = lazy(() => import("./pages/MyAccount"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Contacts = lazy(() => import("./pages/Contacts"));
+const ShipmentTracking = lazy(() => import("./pages/ShipmentTracking"));
 const ComponentDemo = lazy(() => import("./pages/ComponentDemo"));
 const DiagramDemo = lazy(() => import("./pages/DiagramDemo"));
 // Removed demo import - was only for testing layout improvements
@@ -187,6 +188,11 @@ const App = () => {
             <Route path="/contacts" element={
               <Suspense fallback={<PageSkeleton />}>
                 <Contacts />
+              </Suspense>
+            } />
+            <Route path="/tracking" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <ShipmentTracking />
               </Suspense>
             } />
             <Route path="/demo" element={

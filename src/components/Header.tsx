@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Car, Heart, Menu, X, User } from "lucide-react";
+import { Car, Heart, Menu, X, User, Ship } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -84,6 +84,16 @@ const Header = () => {
             >
               Kontaktet
             </Link>
+            {user && (
+              <Link 
+                to="/tracking" 
+                className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
+                aria-label="Gjurmoni ngarkesën tuaj"
+              >
+                <Ship className="h-4 w-4" />
+                Gjurmimi
+              </Link>
+            )}
             <Link 
               to="/favorites" 
               className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
@@ -170,6 +180,18 @@ const Header = () => {
               >
                 Kontaktet
               </Link>
+
+              {user && (
+                <Link 
+                  to="/tracking" 
+                  className="flex items-center gap-2 text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  aria-label="Gjurmoni ngarkesën tuaj"
+                >
+                  <Ship className="h-4 w-4" />
+                  Gjurmimi
+                </Link>
+              )}
 
               <Link 
                 to="/favorites" 
