@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { InstallPrompt } from "./components/InstallPrompt";
 import { useResourcePreloader } from "./hooks/useResourcePreloader";
 import { AccessibilityEnhancer } from "./utils/accessibilityEnhancer";
+import { StatusRefreshProvider } from "./components/StatusRefreshProvider";
 
 // Lazy load all pages for better code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -122,10 +123,11 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+      <StatusRefreshProvider intervalHours={6} enabled={true}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
           <Routes>
             <Route path="/" element={
               <Suspense fallback={<PageSkeleton />}>
@@ -233,6 +235,7 @@ const App = () => {
         </BrowserRouter>
         <InstallPrompt />
       </TooltipProvider>
+      </StatusRefreshProvider>
     </QueryClientProvider>
   );
 };
