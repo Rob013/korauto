@@ -33,19 +33,19 @@ export const useCachedCars = () => {
   const fetchCachedCars = async () => {
     try {
       const { data, error } = await supabase
-        .from('active_cars')
+        .from('cars_cache')
         .select('*')
         .order('updated_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching active cars:', error);
+        console.error('Error fetching cached cars:', error);
         setError(error.message);
       } else {
         setCachedCars(data || []);
       }
     } catch (err) {
-      console.error('Failed to fetch active cars:', err);
-      setError('Failed to fetch active cars');
+      console.error('Failed to fetch cached cars:', err);
+      setError('Failed to fetch cached cars');
     }
   };
 

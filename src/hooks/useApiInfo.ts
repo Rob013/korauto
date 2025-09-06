@@ -147,25 +147,14 @@ export const useApiInfo = () => {
         }
       ];
 
-      // Get database table information
-      let tablesData = [];
-      try {
-        const { data, error } = await supabase
-          .rpc('get_table_info');
-        if (!error && data) {
-          tablesData = data;
-        }
-      } catch (err) {
-        console.warn('Could not fetch table info via RPC, using alternative method');
-        // Alternative method - just use known tables
-        tablesData = [
-          { table_name: 'cars' },
-          { table_name: 'active_cars' },
-          { table_name: 'user_favorites' },
-          { table_name: 'inspection_requests' },
-          { table_name: 'sync_status' }
-        ];
-      }
+      // Get database table information - use known tables
+      const tablesData = [
+        { table_name: 'cars' },
+        { table_name: 'cars_cache' },
+        { table_name: 'favorite_cars' },
+        { table_name: 'inspection_requests' },
+        { table_name: 'sync_status' }
+      ];
 
       // Get car data statistics
       let carsCount = 0;
@@ -183,11 +172,11 @@ export const useApiInfo = () => {
 
       try {
         const { count } = await supabase
-          .from('active_cars')
+          .from('cars_cache')
           .select('*', { count: 'exact', head: true });
         activeViewCount = count || 0;
       } catch (err) {
-        console.warn('Could not fetch active cars count:', err);
+        console.warn('Could not fetch cars_cache count:', err);
       }
 
       try {
@@ -216,11 +205,11 @@ export const useApiInfo = () => {
           description: 'Main cars table with all vehicle data'
         },
         {
-          tableName: 'active_cars',
+          tableName: 'cars_cache',
           recordCount: activeViewCount || 0,
           lastUpdated: new Date().toISOString(),
-          columns: ['Same as cars table'],
-          description: 'View of active cars (excludes sold cars > 24h)'
+          columns: ['Same as cars table plus cached data'],
+          description: 'Cached cars data with enhanced search capabilities'
         }
       ];
 

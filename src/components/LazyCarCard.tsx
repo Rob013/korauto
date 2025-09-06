@@ -55,6 +55,7 @@ const LazyCarCard = memo(({
   title,
   status,
   sale_status,
+  final_price,
   insurance_v2,
   details,
   is_archived,
@@ -384,10 +385,10 @@ const LazyCarCard = memo(({
           </div>
         )}
 
-        {/* Pricing - More compact */}
+        {/* Pricing - Use final_price if available, otherwise use price */}
         <div className="flex flex-col gap-0.5 sm:gap-1 mb-1.5 sm:mb-2">
           <span className="card-price text-base sm:text-lg lg:text-xl font-bold text-primary">
-            €{price.toLocaleString()}
+            €{(final_price || price).toLocaleString()}
           </span>
           <span className="text-xs text-muted-foreground">
             Deri ne portin e Durresit

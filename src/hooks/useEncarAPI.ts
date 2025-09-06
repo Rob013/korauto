@@ -87,11 +87,11 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     setError(null);
 
     try {
-      console.log(`📊 Fetching cars from active_cars view - Page ${page}, Limit ${limit}`);
+      console.log(`📊 Fetching cars from cars_cache table - Page ${page}, Limit ${limit}`);
       
-      // Build query for active cars (excludes sold cars > 24h)
+      // Build query for cached cars
       let query = supabase
-        .from('active_cars')
+        .from('cars_cache')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -130,17 +130,39 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
         throw error;
       }
 
-      console.log(`✅ Fetched ${data?.length || 0} active cars from database`);
+      console.log(`✅ Fetched ${data?.length || 0} cached cars from database`);
+
+      // Transform the data to match Car interface
+      const transformedData = (data || []).map(item => ({
+        id: item.id,
+        external_id: item.api_id,
+        make: item.make,
+        model: item.model,
+        year: item.year,
+        price: item.price || 0,
+        mileage: typeof item.mileage === 'string' ? parseInt(item.mileage) || 0 : (item.mileage || 0),
+        title: `${item.year} ${item.make} ${item.model}`,
+        vin: item.vin,
+        color: item.color,
+        fuel: item.fuel,
+        transmission: item.transmission,
+        condition: item.condition,
+        lot_number: item.lot_number,
+        images: JSON.stringify(item.images || []),
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        last_synced_at: item.last_api_sync
+      }));
 
       if (page === 1) {
-        setCars(data || []);
+        setCars(transformedData);
       } else {
-        setCars(prev => [...prev, ...(data || [])]);
+        setCars(prev => [...prev, ...transformedData]);
       }
       
-      // Get total count of active cars for pagination
+      // Get total count of cached cars for pagination
       const { count } = await supabase
-        .from('active_cars')
+        .from('cars_cache')
         .select('id', { count: 'exact', head: true });
       
       if (count !== null) {
@@ -265,7 +287,10 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     try {
       console.log('🧹 Triggering sold car cleanup...');
       
-      const { data, error } = await supabase.rpc('remove_old_sold_cars');
+      // Use a generic function call for now - this would need to be implemented
+      const { data, error } = await supabase.functions.invoke('cars-sync', {
+        body: { action: 'cleanup_sold' }
+      });
 
       if (error) {
         console.error('❌ Error running sold car cleanup:', error);
@@ -401,8 +426,8 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     // Auto-refresh every 30 seconds to get latest counts
     const refreshInterval = setInterval(() => {
       getSyncStatus();
-      // Get fresh active car count (excludes sold cars > 24h) using active_cars view
-      supabase.from('active_cars').select('id', { count: 'exact', head: true })
+      // Get fresh cached car count using cars_cache table
+      supabase.from('cars_cache').select('id', { count: 'exact', head: true })
         .then(({ count }) => {
           if (count !== null) {
             setTotalCount(count);

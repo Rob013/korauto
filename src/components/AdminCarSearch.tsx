@@ -79,14 +79,14 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
       const searchQueries = [
         // Exact matches (highest priority)
         supabase
-          .from('active_cars')
+          .from('cars_cache')
           .select('api_id, make, model, year, vin, lot_number, car_data, price, mileage, color, fuel, transmission')
           .or(`api_id.eq.${term},lot_number.eq.${term},vin.eq.${term}`)
           .limit(5),
         
         // Partial matches with ilike (secondary priority)
         supabase
-          .from('active_cars')
+          .from('cars_cache')
           .select('api_id, make, model, year, vin, lot_number, car_data, price, mileage, color, fuel, transmission')
           .or(`api_id.ilike.%${term}%,vin.ilike.%${term}%,lot_number.ilike.%${term}%`)
           .limit(8),
@@ -94,7 +94,7 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
         // Additional broad search including make/model if term is longer
         ...(term.length >= 4 ? [
           supabase
-            .from('active_cars')
+            .from('cars_cache')
             .select('api_id, make, model, year, vin, lot_number, car_data, price, mileage, color, fuel, transmission')
             .or(`make.ilike.%${term}%,model.ilike.%${term}%`)
             .limit(5)

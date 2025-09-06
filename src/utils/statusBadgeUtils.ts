@@ -15,7 +15,7 @@ export interface CarStatus {
 
 /**
  * Determines the appropriate status badge configuration based on car status
- * @param carStatus - Object containing status and sale_status properties
+ * @param carStatus - Object containing status and sale_status properties  
  * @returns StatusBadgeConfig object with text, className, and show properties
  */
 export function getStatusBadgeConfig(carStatus: CarStatus): StatusBadgeConfig {
@@ -30,7 +30,7 @@ export function getStatusBadgeConfig(carStatus: CarStatus): StatusBadgeConfig {
   if (numericStatus === 3 || sale_status === 'sold') {
     return {
       text: 'SOLD',
-      className: 'bg-red-600 text-white',
+      className: 'bg-red-600 text-white border-red-700',
       show: true
     };
   }
@@ -39,7 +39,7 @@ export function getStatusBadgeConfig(carStatus: CarStatus): StatusBadgeConfig {
   if (sale_status === 'reserved') {
     return {
       text: 'RESERVED',
-      className: 'bg-orange-500 text-white',
+      className: 'bg-orange-600 text-white border-orange-700',
       show: true
     };
   }
@@ -48,7 +48,7 @@ export function getStatusBadgeConfig(carStatus: CarStatus): StatusBadgeConfig {
   if (numericStatus === 2 || sale_status === 'pending') {
     return {
       text: 'PENDING',
-      className: 'bg-yellow-500 text-black',
+      className: 'bg-yellow-600 text-black border-yellow-700',
       show: true
     };
   }
