@@ -93,6 +93,18 @@ function renderMetadataCard(metadata) {
     if (metadata.portOfDischarge) {
         fields.push(`<div class="metadata-field"><strong>Port of Discharge:</strong> ${escapeHtml(metadata.portOfDischarge)}</div>`);
     }
+    if (metadata.shipper) {
+        fields.push(`<div class="metadata-field"><strong>Shipper:</strong> ${escapeHtml(metadata.shipper)}</div>`);
+    }
+    if (metadata.model) {
+        fields.push(`<div class="metadata-field"><strong>Model (Year):</strong> ${escapeHtml(metadata.model)}</div>`);
+    }
+    if (metadata.chassis) {
+        fields.push(`<div class="metadata-field"><strong>Chassis:</strong> ${escapeHtml(metadata.chassis)}</div>`);
+    }
+    if (metadata.onBoard) {
+        fields.push(`<div class="metadata-field"><strong>On Board:</strong> ${escapeHtml(metadata.onBoard)}</div>`);
+    }
     if (metadata.estimatedArrival) {
         fields.push(`<div class="metadata-field"><strong>Estimated Arrival:</strong> ${escapeHtml(metadata.estimatedArrival)}</div>`);
     }

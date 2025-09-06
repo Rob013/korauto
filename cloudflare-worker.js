@@ -384,6 +384,74 @@ function extractTrackingMetadata(html) {
       }
     }
     
+    // Extract shipper information
+    const shipperPatterns = [
+      /<[^>]*>Shipper[:\s]*([^<]+)<\/[^>]*>/gi,
+      /Shipper[:\s]*([^<\n\r]+)/gi,
+      /SHIPPER[:\s]*([^<\n\r]+)/gi,
+      /발송인[:\s]*([^<\n\r]+)/gi, // Korean for shipper
+      /수출자[:\s]*([^<\n\r]+)/gi  // Korean for exporter
+    ];
+    
+    for (const pattern of shipperPatterns) {
+      const match = html.match(pattern);
+      if (match && match[1]) {
+        metadata.shipper = match[1].trim();
+        break;
+      }
+    }
+    
+    // Extract model/year information
+    const modelPatterns = [
+      /<[^>]*>Model\s*\(Year\)[:\s]*([^<]+)<\/[^>]*>/gi,
+      /Model\s*\(Year\)[:\s]*([^<\n\r]+)/gi,
+      /MODEL\(YEAR\)[:\s]*([^<\n\r]+)/gi,
+      /<[^>]*>Model[:\s]*([^<]+)<\/[^>]*>/gi,
+      /Model[:\s]*([A-Z0-9\s\-\(\)]+)/gi
+    ];
+    
+    for (const pattern of modelPatterns) {
+      const match = html.match(pattern);
+      if (match && match[1]) {
+        metadata.model = match[1].trim();
+        break;
+      }
+    }
+    
+    // Extract chassis number
+    const chassisPatterns = [
+      /<[^>]*>Chassis[:\s]*([^<]+)<\/[^>]*>/gi,
+      /Chassis[:\s]*([A-Z0-9]+)/gi,
+      /CHASSIS[:\s]*([A-Z0-9]+)/gi,
+      /VIN[:\s]*([A-Z0-9]{17})/gi, // Standard VIN format
+      /차대번호[:\s]*([A-Z0-9]+)/gi // Korean for chassis number
+    ];
+    
+    for (const pattern of chassisPatterns) {
+      const match = html.match(pattern);
+      if (match && match[1]) {
+        metadata.chassis = match[1].trim();
+        break;
+      }
+    }
+    
+    // Extract on board date
+    const onBoardPatterns = [
+      /<[^>]*>On\s+Board[:\s]*([^<]+)<\/[^>]*>/gi,
+      /On\s+Board[:\s]*([^<\n\r]+)/gi,
+      /ON\s+BOARD[:\s]*([^<\n\r]+)/gi,
+      /선적일[:\s]*([^<\n\r]+)/gi, // Korean for loading date
+      /적재일[:\s]*([^<\n\r]+)/gi  // Korean for loading date
+    ];
+    
+    for (const pattern of onBoardPatterns) {
+      const match = html.match(pattern);
+      if (match && match[1]) {
+        metadata.onBoard = match[1].trim();
+        break;
+      }
+    }
+    
   } catch (error) {
     console.error('Error extracting metadata:', error);
   }

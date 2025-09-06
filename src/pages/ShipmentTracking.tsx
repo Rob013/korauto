@@ -52,36 +52,42 @@ const ShipmentTracking = () => {
     setHasSearched(true);
 
     try {
-      // Simulate API call - replace with actual tracking service
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Call the CIG shipping API through our worker
+      const response = await fetch(`/api/cig-track?q=${encodeURIComponent(trackingNumber)}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
+      // Convert the API response to our expected format
+      const convertedResults = data.rows.map((row: any, index: number) => ({
+        id: index.toString(),
+        type: row.type,
+        status: row.status || row.event || 'Update',
+        location: row.location,
+        date: row.date,
+        vessel: row.vessel,
+        containerNumber: row.containerNumber,
+        description: row.event || row.status,
+        estimatedDelivery: row.estimatedArrival,
+        // Include all metadata fields
+        ...row
+      }));
 
-      // Mock results for demonstration
-      const mockResults = [
-        {
-          id: "1",
-          status: "In Transit",
-          location: "Port of Hamburg, Germany",
-          date: "2024-01-15",
-          description: "Shipment departed from origin port",
-          estimatedDelivery: "2024-01-25",
-        },
-        {
-          id: "2", 
-          status: "Processing",
-          location: "Corauto Processing Center",
-          date: "2024-01-10",
-          description: "Vehicle inspection completed",
-          estimatedDelivery: "2024-01-25",
-        },
-      ];
-
-      setResults(mockResults);
+      setResults(convertedResults);
       
       toast({
         title: "Sukses",
-        description: `U gjetën ${mockResults.length} rezultate për ${trackingNumber}`,
+        description: `U gjetën ${convertedResults.length} rezultate për ${trackingNumber}`,
       });
     } catch (error) {
+      console.error('Tracking error:', error);
       toast({
         title: "Gabim",
         description: "Nuk u arrit të gjurmojmë ngarkesën. Provoni përsëri.",
@@ -218,6 +224,26 @@ const ShipmentTracking = () => {
                                 {metadata.portOfDischarge && (
                                   <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
                                     <strong>Porti i Shkarkimit:</strong> {metadata.portOfDischarge}
+                                  </div>
+                                )}
+                                {metadata.shipper && (
+                                  <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
+                                    <strong>Dërguesi:</strong> {metadata.shipper}
+                                  </div>
+                                )}
+                                {metadata.model && (
+                                  <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
+                                    <strong>Modeli (Viti):</strong> {metadata.model}
+                                  </div>
+                                )}
+                                {metadata.chassis && (
+                                  <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
+                                    <strong>Numri i Shasisë:</strong> {metadata.chassis}
+                                  </div>
+                                )}
+                                {metadata.onBoard && (
+                                  <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
+                                    <strong>Në Anije:</strong> {metadata.onBoard}
                                   </div>
                                 )}
                                 {metadata.estimatedArrival && (
