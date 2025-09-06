@@ -81,8 +81,34 @@ export default {
         );
       }
 
+      const trimmedQuery = query.trim();
+      
+      // Basic validation for query format
+      if (trimmedQuery.length < 5) {
+        return new Response(
+          JSON.stringify({ error: 'Query too short. Please enter a valid VIN (17 characters) or B/L number (at least 5 characters)' }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+
+      // If it looks like a VIN, validate VIN format
+      if (trimmedQuery.length === 17) {
+        if (!isVINLike(trimmedQuery)) {
+          return new Response(
+            JSON.stringify({ error: 'Invalid VIN format. VIN must be 17 characters (A-Z, 0-9, no I, O, Q)' }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          );
+        }
+      }
+
       // Fetch tracking data from CIG Shipping
-      const trackingData = await fetchTrackingData(query.trim());
+      const trackingData = await fetchTrackingData(trimmedQuery);
 
       return new Response(
         JSON.stringify(trackingData),
@@ -418,13 +444,16 @@ function extractTrackingMetadata(html) {
       }
     }
     
-    // Extract chassis number
+    // Extract chassis/VIN number (enhanced for VIN tracking)
     const chassisPatterns = [
       /<[^>]*>Chassis[:\s]*([^<]+)<\/[^>]*>/gi,
       /Chassis[:\s]*([A-Z0-9]+)/gi,
       /CHASSIS[:\s]*([A-Z0-9]+)/gi,
-      /VIN[:\s]*([A-Z0-9]{17})/gi, // Standard VIN format
-      /차대번호[:\s]*([A-Z0-9]+)/gi // Korean for chassis number
+      /VIN[:\s]*([A-HJ-NPR-Z0-9]{17})/gi, // Standard VIN format (no I, O, Q)
+      /VIN[:\s]*([A-Z0-9]{17})/gi, // Fallback VIN format
+      /Vehicle\s+Identification\s+Number[:\s]*([A-HJ-NPR-Z0-9]{17})/gi,
+      /차대번호[:\s]*([A-Z0-9]+)/gi, // Korean for chassis number
+      /([A-HJ-NPR-Z0-9]{17})/g // Look for any 17-character VIN pattern in the text
     ];
     
     for (const pattern of chassisPatterns) {
@@ -479,6 +508,10 @@ function mapCellsToRow(cells) {
     else if (isContainerNumber(cell)) {
       row.containerNumber = cell;
     }
+    // Try to identify VIN numbers
+    else if (isVINLike(cell)) {
+      row.chassis = cell; // Store VIN as chassis
+    }
     // Try to identify vessel/ship names
     else if (isVesselLike(cell)) {
       row.vessel = cell;
@@ -503,6 +536,15 @@ function mapCellsToRow(cells) {
   }
   
   return null;
+}
+
+/**
+ * Check if text looks like a VIN (Vehicle Identification Number)
+ */
+function isVINLike(text) {
+  // Standard VIN: 17 characters, no I, O, Q
+  const vinPattern = /^[A-HJ-NPR-Z0-9]{17}$/i;
+  return vinPattern.test(text.replace(/\s/g, ''));
 }
 
 /**

@@ -48,12 +48,31 @@ const ShipmentTracking = () => {
       return;
     }
 
+    const trimmedQuery = trackingNumber.trim();
+    
+    // Validate VIN format if it looks like a VIN (17 characters)
+    if (trimmedQuery.length === 17 && !/^[A-HJ-NPR-Z0-9]{17}$/i.test(trimmedQuery)) {
+      toast({
+        title: "Gabim",
+        description: "Format i pavlefshëm VIN. VIN duhet të ketë 17 karaktere (A-Z, 0-9, jo I, O, Q)",
+        variant: "destructive",
+      });
+      return;
+    } else if (trimmedQuery.length < 5) {
+      toast({
+        title: "Gabim", 
+        description: "Numri i gjurmimit është shumë i shkurtër. Futni një VIN të vlefshëm (17 karaktere) ose numër B/L (të paktën 5 karaktere)",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     setHasSearched(true);
 
     try {
       // Call the CIG shipping API through our worker
-      const response = await fetch(`/api/cig-track?q=${encodeURIComponent(trackingNumber)}`);
+      const response = await fetch(`/api/cig-track?q=${encodeURIComponent(trimmedQuery)}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -141,12 +160,12 @@ const ShipmentTracking = () => {
               <form onSubmit={handleTrackingSubmit} className="space-y-4">
                 <div>
                   <label htmlFor="tracking-input" className="block text-sm font-medium mb-2">
-                    Shkruani VIN ose numrin e Bill of Lading (B/L):
+                    Shkruani VIN (17 karaktere) ose numrin e Bill of Lading (B/L):
                   </label>
                   <Input
                     id="tracking-input"
                     type="text"
-                    placeholder="P.sh. WBABC123456789 ose BL-2024-001"
+                    placeholder="P.sh. WBABC123456789ABC (VIN 17 kar.) ose BL-2024-001"
                     value={trackingNumber}
                     onChange={(e) => setTrackingNumber(e.target.value)}
                     className="w-full"
@@ -238,7 +257,7 @@ const ShipmentTracking = () => {
                                 )}
                                 {metadata.chassis && (
                                   <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong>Numri i Shasisë:</strong> {metadata.chassis}
+                                    <strong>VIN/Numri i Shasisë:</strong> {metadata.chassis}
                                   </div>
                                 )}
                                 {metadata.onBoard && (

@@ -205,6 +205,18 @@ export function submitTracking(event) {
         return;
     }
     
+    // Validate VIN format if it looks like a VIN (17 characters, alphanumeric)
+    if (query.length === 17 && /^[A-HJ-NPR-Z0-9]{17}$/i.test(query)) {
+        // Valid VIN format - proceed with tracking
+        console.log('Tracking VIN:', query);
+    } else if (query.length > 5) {
+        // Assume it's a B/L number or container number
+        console.log('Tracking B/L or container number:', query);
+    } else {
+        showStatus('Please enter a valid VIN (17 characters) or B/L number', 'error');
+        return;
+    }
+    
     // Show loading state
     showStatus('Searching...', 'loading');
     
@@ -218,57 +230,7 @@ export function submitTracking(event) {
     submitBtn.disabled = true;
     submitBtn.textContent = 'Searching...';
     
-    // Call tracking API
-    // For demonstration: show mock data for specific test VIN
-    if (query === 'KLACD266DFB048651') {
-        const mockData = {
-            query: query,
-            rows: [
-                {
-                    type: 'metadata',
-                    containerNumber: 'ABCD1234567',
-                    billOfLading: 'BL-CGSH2024-1234',
-                    vesselName: 'MV SANG SHIN V.2508',
-                    voyageNumber: 'V2508',
-                    shipper: '주식회사 싼카',
-                    model: 'CAPTIVA',
-                    chassis: 'KLACD266DFB048651',
-                    onBoard: '2025-08-06',
-                    shippingLine: 'CIG Shipping',
-                    portOfLoading: 'INCHEON, KOREA',
-                    portOfDischarge: 'DURRES, ALBANIA',
-                    estimatedArrival: '2025-09-11'
-                },
-                {
-                    event: 'Container Loaded',
-                    date: '2025-08-06',
-                    location: 'INCHEON PORT, KOREA',
-                    vessel: 'MV SANG SHIN V.2508',
-                    status: 'Loaded'
-                },
-                {
-                    event: 'Vessel Departure',
-                    date: '2025-08-07',
-                    location: 'INCHEON PORT, KOREA',
-                    vessel: 'MV SANG SHIN V.2508',
-                    status: 'Departed'
-                },
-                {
-                    event: 'In Transit',
-                    date: '2025-08-15',
-                    location: 'Mediterranean Sea',
-                    vessel: 'MV SANG SHIN V.2508',
-                    status: 'In Transit'
-                }
-            ]
-        };
-        
-        // Simulate API delay
-        setTimeout(() => {
-            handleTrackingSuccess(mockData, submitBtn, originalText);
-        }, 1000);
-        return;
-    }
+    // Call tracking API - always fetch from real website
     
     fetch(`/api/cig-track?q=${encodeURIComponent(query)}`)
         .then(response => {
