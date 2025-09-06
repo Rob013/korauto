@@ -217,24 +217,24 @@ const ShipmentTracking = () => {
       
       <div className="container mx-auto container-responsive px-2 sm:px-4 py-4 sm:py-8">
         <div className="max-w-4xl mx-auto">
-          {/* Page Header - Compact for mobile */}
-          <div className="flex items-center gap-2 sm:gap-4 mb-4 sm:mb-8">
+          {/* Page Header - Ultra Compact for mobile */}
+          <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-6 tracking-page-header">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate(-1)}
-              className="flex items-center gap-1 sm:gap-2 min-w-0"
+              className="flex items-center gap-1 min-w-0 tracking-button-compact"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Back</span>
             </Button>
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                <Ship className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                <Ship className="h-3 w-3 sm:h-4 sm:w-4 text-primary-foreground" />
               </div>
               <div className="min-w-0">
-                <h1 className="text-lg sm:text-2xl font-bold text-foreground leading-tight">Shipment Tracking</h1>
-                <p className="text-xs sm:text-sm text-muted-foreground mobile-text-optimize">
+                <h1 className="text-base sm:text-xl font-bold text-foreground leading-tight">Shipment Tracking</h1>
+                <p className="text-xs text-muted-foreground mobile-text-optimize">
                   Track your vehicle during transport
                 </p>
               </div>
@@ -242,17 +242,17 @@ const ShipmentTracking = () => {
           </div>
 
           {/* Tracking Form - Compact for mobile */}
-          <Card className="mb-4 sm:mb-8">
-            <CardHeader className="pb-3 sm:pb-6">
-              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <Card className="mb-3 sm:mb-6 tracking-card-ultra-compact">
+            <CardHeader className="pb-2 sm:pb-4">
+              <CardTitle className="flex items-center gap-2 text-sm sm:text-lg">
                 <Package className="h-4 w-4 sm:h-5 sm:w-5" />
                 Track Shipment
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
-              <form onSubmit={handleTrackingSubmit} className="space-y-3 sm:space-y-4">
+              <form onSubmit={handleTrackingSubmit} className="space-y-2 sm:space-y-4">
                 <div>
-                  <label htmlFor="tracking-input" className="block text-xs sm:text-sm font-medium mb-1 sm:mb-2 mobile-text-optimize">
+                  <label htmlFor="tracking-input" className="block text-xs sm:text-sm font-medium mb-1 mobile-text-optimize">
                     Enter VIN (17 characters) or Bill of Lading (B/L) number:
                   </label>
                   <Input
@@ -261,19 +261,19 @@ const ShipmentTracking = () => {
                     placeholder="e.g. WBABC123456789ABC (VIN) or BL-2024-001"
                     value={trackingNumber}
                     onChange={(e) => setTrackingNumber(e.target.value)}
-                    className="w-full text-sm mobile-text-optimize"
+                    className="w-full text-sm mobile-text-optimize tracking-input-compact"
                     disabled={loading}
                   />
                 </div>
-                <Button type="submit" disabled={loading} className="w-full sm:w-auto mobile-text-optimize">
+                <Button type="submit" disabled={loading} className="w-full sm:w-auto mobile-text-optimize tracking-button-compact">
                   {loading ? (
                     <>
-                      <Search className="h-4 w-4 mr-2 animate-spin" />
+                      <Search className="h-3 w-3 sm:h-4 sm:w-4 mr-2 animate-spin" />
                       Tracking...
                     </>
                   ) : (
                     <>
-                      <Search className="h-4 w-4 mr-2" />
+                      <Search className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                       Track Shipment
                     </>
                   )}
@@ -284,83 +284,78 @@ const ShipmentTracking = () => {
 
           {/* Results - Compact layout for mobile */}
           {hasSearched && (
-            <div className="space-y-3 sm:space-y-6">
+            <div className="space-y-2 sm:space-y-4">
               {results.length > 0 ? (
                 <>
-                  <h2 className="text-lg sm:text-xl font-semibold text-foreground mobile-text-optimize">
+                  <h2 className="text-base sm:text-xl font-semibold text-foreground mobile-text-optimize">
                     Tracking Results for: {trackingNumber}
                   </h2>
-                  <div className="space-y-3 sm:space-y-4">
-                    {/* Shipment Metadata Card - Compact */}
+                  <div className="space-y-2 sm:space-y-3">
+                    {/* Shipment Metadata Card - Ultra Compact */}
                     {results.some(r => r.type === 'metadata') && (
-                      <Card className="border-l-4 border-l-blue-500">
-                        <CardHeader className="pb-3 sm:pb-6">
-                          <CardTitle className="flex items-center gap-2 text-base sm:text-lg mobile-text-optimize">
+                      <Card className="border-l-4 border-l-blue-500 tracking-card-ultra-compact">
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2 text-sm sm:text-lg mobile-text-optimize">
                             📋 Shipment Information
                           </CardTitle>
                         </CardHeader>
-                        <CardContent className="pt-0">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
+                        <CardContent>
+                          <div className="tracking-metadata-two-col">
                             {results.filter(r => r.type === 'metadata').map((metadata) => (
-                              <div key="metadata" className="space-y-2 sm:space-y-3">
+                              <div key="metadata" className="col-span-2 space-y-1">
                                 {metadata.containerNumber && (
-                                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong className="mobile-text-optimize">Container Number:</strong> {metadata.containerNumber}
+                                  <div className="tracking-metadata-horizontal text-blue-700">
+                                    <strong>Container:</strong> <span>{metadata.containerNumber}</span>
                                   </div>
                                 )}
                                 {metadata.billOfLading && (
-                                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong className="mobile-text-optimize">Bill of Lading:</strong> {metadata.billOfLading}
+                                  <div className="tracking-metadata-horizontal text-blue-700">
+                                    <strong>B/L:</strong> <span>{metadata.billOfLading}</span>
                                   </div>
                                 )}
                                 {metadata.vesselName && (
-                                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong className="mobile-text-optimize">Vessel:</strong> {metadata.vesselName}
-                                  </div>
-                                )}
-                                {metadata.voyageNumber && (
-                                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong className="mobile-text-optimize">Voyage:</strong> {metadata.voyageNumber}
+                                  <div className="tracking-metadata-horizontal text-blue-700">
+                                    <strong>Vessel:</strong> <span>{metadata.vesselName}</span>
                                   </div>
                                 )}
                                 {metadata.shippingLine && (
-                                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong className="mobile-text-optimize">Shipping Line:</strong> {metadata.shippingLine}
+                                  <div className="tracking-metadata-horizontal text-blue-700">
+                                    <strong>Shipping Line:</strong> <span>{metadata.shippingLine}</span>
                                   </div>
                                 )}
                                 {metadata.portOfLoading && (
-                                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong className="mobile-text-optimize">Loading Port:</strong> {metadata.portOfLoading}
+                                  <div className="tracking-metadata-horizontal text-blue-700">
+                                    <strong>Loading Port:</strong> <span>{metadata.portOfLoading}</span>
                                   </div>
                                 )}
                                 {metadata.portOfDischarge && (
-                                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong className="mobile-text-optimize">Discharge Port:</strong> {metadata.portOfDischarge}
+                                  <div className="tracking-metadata-horizontal text-blue-700">
+                                    <strong>Discharge Port:</strong> <span>{metadata.portOfDischarge}</span>
                                   </div>
                                 )}
                                 {metadata.shipper && (
-                                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong className="mobile-text-optimize">Shipper:</strong> {metadata.shipper}
+                                  <div className="tracking-metadata-horizontal text-blue-700">
+                                    <strong>Shipper:</strong> <span>{metadata.shipper}</span>
                                   </div>
                                 )}
                                 {metadata.model && (
-                                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong className="mobile-text-optimize">Model (Year):</strong> {metadata.model}
+                                  <div className="tracking-metadata-horizontal text-blue-700">
+                                    <strong>Model (Year):</strong> <span>{metadata.model}</span>
                                   </div>
                                 )}
                                 {metadata.chassis && (
-                                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong className="mobile-text-optimize">VIN/Chassis:</strong> {metadata.chassis}
+                                  <div className="tracking-metadata-horizontal text-blue-700">
+                                    <strong>VIN/Chassis:</strong> <span>{metadata.chassis}</span>
                                   </div>
                                 )}
                                 {metadata.onBoard && (
-                                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong className="mobile-text-optimize">On Board:</strong> {metadata.onBoard}
+                                  <div className="tracking-metadata-horizontal text-blue-700">
+                                    <strong>On Board:</strong> <span>{metadata.onBoard}</span>
                                   </div>
                                 )}
                                 {metadata.estimatedArrival && (
-                                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong className="mobile-text-optimize">Expected Arrival:</strong> {metadata.estimatedArrival}
+                                  <div className="tracking-metadata-horizontal text-blue-700">
+                                    <strong>Expected Arrival:</strong> <span>{metadata.estimatedArrival}</span>
                                   </div>
                                 )}
                               </div>
@@ -370,59 +365,59 @@ const ShipmentTracking = () => {
                       </Card>
                     )}
                     
-                    {/* Shipping Status Progress - Compact */}
+                    {/* Shipping Status Progress - Ultra Compact */}
                     {widgetData?.shipping_status && (
-                      <Card className="border-l-4 border-l-purple-500">
-                        <CardHeader className="pb-3 sm:pb-6">
-                          <CardTitle className="flex items-center gap-2 text-base sm:text-lg mobile-text-optimize">
+                      <Card className="border-l-4 border-l-purple-500 tracking-card-ultra-compact">
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2 text-sm sm:text-lg mobile-text-optimize">
                             🚢 Transport Status
                           </CardTitle>
                         </CardHeader>
-                        <CardContent className="pt-0">
-                          <div className="space-y-3 sm:space-y-4">
-                            <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-purple-500">
-                              <strong className="mobile-text-optimize">Current Status:</strong> {widgetData.shipping_status.overall}
+                        <CardContent>
+                          <div className="space-y-2">
+                            <div className="tracking-metadata-horizontal text-purple-700">
+                              <strong>Current Status:</strong> <span>{widgetData.shipping_status.overall}</span>
                             </div>
                             
-                            <div className="space-y-2">
-                              <strong className="mobile-text-optimize">Transport Progress:</strong>
-                              <div className="space-y-1 sm:space-y-2">
+                            <div className="space-y-1">
+                              <strong className="text-xs mobile-text-optimize">Transport Progress:</strong>
+                              <div className="space-y-1">
                                 {widgetData.shipping_status.steps.map((step: any, index: number) => (
                                   <div 
                                     key={index} 
-                                    className={`flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 rounded text-sm mobile-text-optimize ${
+                                    className={`tracking-status-step-compact flex items-center gap-2 p-1 rounded text-xs ${
                                       step.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'
                                     }`}
                                   >
-                                    <div className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full flex-shrink-0 ${
+                                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
                                       step.active ? 'bg-green-500' : 'bg-gray-300'
                                     }`} />
                                     <span className={step.active ? 'font-medium' : ''}>{step.name}</span>
-                                    {step.active && <span className="text-xs sm:text-sm">✓</span>}
+                                    {step.active && <span className="text-xs">✓</span>}
                                   </div>
                                 ))}
                               </div>
                             </div>
                             
                             {widgetData.result && (
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 pt-3 border-t">
+                              <div className="tracking-event-horizontal pt-2 border-t">
                                 {widgetData.result.pol && (
-                                  <div className="p-2 bg-blue-50 rounded mobile-text-optimize">
-                                    <strong>Loading Port:</strong> {widgetData.result.pol}
+                                  <div className="text-blue-700">
+                                    <strong>Loading:</strong> {widgetData.result.pol}
                                   </div>
                                 )}
                                 {widgetData.result.port && (
-                                  <div className="p-2 bg-blue-50 rounded mobile-text-optimize">
-                                    <strong>Destination Port:</strong> {widgetData.result.port}
+                                  <div className="text-blue-700">
+                                    <strong>Destination:</strong> {widgetData.result.port}
                                   </div>
                                 )}
                                 {widgetData.result.vessel && (
-                                  <div className="p-2 bg-blue-50 rounded mobile-text-optimize">
+                                  <div className="text-blue-700">
                                     <strong>Vessel:</strong> {widgetData.result.vessel}
                                   </div>
                                 )}
                                 {widgetData.result.eta && (
-                                  <div className="p-2 bg-blue-50 rounded mobile-text-optimize">
+                                  <div className="text-blue-700">
                                     <strong>ETA:</strong> {widgetData.result.eta}
                                   </div>
                                 )}
@@ -437,49 +432,45 @@ const ShipmentTracking = () => {
                       </Card>
                     )}
                     
-                    {/* Tracking Events - Compact */}
+                    {/* Tracking Events - Ultra Compact */}
                     {results.filter(r => r.type !== 'metadata').map((result) => (
-                      <Card key={result.id} className="border-l-4 border-l-green-500">
-                        <CardHeader className="pb-3 sm:pb-6">
-                          <CardTitle className="flex items-center gap-2 text-base sm:text-lg mobile-text-optimize">
+                      <Card key={result.id} className="border-l-4 border-l-green-500 tracking-card-ultra-compact">
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2 text-sm sm:text-lg mobile-text-optimize">
                             {getStatusIcon(result.status)} {result.status}
                           </CardTitle>
                         </CardHeader>
-                        <CardContent className="pt-0">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+                        <CardContent>
+                          <div className="tracking-event-horizontal">
                             {result.date && (
-                              <div className="p-2 sm:p-3 bg-muted/50 rounded-lg">
-                                <strong className="mobile-text-optimize">Date:</strong> {result.date}
+                              <div className="text-green-700">
+                                <strong>Date:</strong> {result.date}
                               </div>
                             )}
                             {result.location && (
-                              <div className="p-2 sm:p-3 bg-muted/50 rounded-lg">
-                                <strong className="mobile-text-optimize">Location:</strong> {result.location}
+                              <div className="text-green-700">
+                                <strong>Location:</strong> {result.location}
                               </div>
                             )}
                             {result.vessel && (
-                              <div className="p-2 sm:p-3 bg-muted/50 rounded-lg">
-                                <strong className="mobile-text-optimize">Vessel:</strong> {result.vessel}
+                              <div className="text-green-700">
+                                <strong>Vessel:</strong> {result.vessel}
                               </div>
                             )}
                             {result.containerNumber && (
-                              <div className="p-2 sm:p-3 bg-muted/50 rounded-lg">
-                                <strong className="mobile-text-optimize">Container:</strong> {result.containerNumber}
+                              <div className="text-green-700">
+                                <strong>Container:</strong> {result.containerNumber}
                               </div>
                             )}
                           </div>
                           {result.description && (
-                            <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-muted/30 rounded-lg">
-                              <p className="text-sm text-muted-foreground mobile-text-optimize">
-                                {result.description}
-                              </p>
+                            <div className="mt-2 p-2 bg-muted/30 rounded text-xs text-muted-foreground mobile-text-optimize">
+                              {result.description}
                             </div>
                           )}
                           {result.estimatedDelivery && (
-                            <div className="mt-3 sm:mt-4 bg-blue-50 rounded-lg p-2 sm:p-3">
-                              <p className="text-sm text-foreground mobile-text-optimize">
-                                <strong>Expected Delivery Date:</strong> {result.estimatedDelivery}
-                              </p>
+                            <div className="mt-2 bg-blue-50 rounded p-2 text-xs text-foreground mobile-text-optimize">
+                              <strong>Expected Delivery:</strong> {result.estimatedDelivery}
                             </div>
                           )}
                         </CardContent>
@@ -488,21 +479,21 @@ const ShipmentTracking = () => {
                   </div>
                 </>
               ) : (
-                <Card>
-                  <CardContent className="py-6 sm:py-8 text-center">
-                    <div className="space-y-3 sm:space-y-4">
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-muted rounded-full flex items-center justify-center mx-auto">
-                        <Package className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
+                <Card className="tracking-card-ultra-compact">
+                  <CardContent className="py-4 sm:py-6 text-center">
+                    <div className="space-y-2 sm:space-y-3">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-muted rounded-full flex items-center justify-center mx-auto">
+                        <Package className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
                       </div>
                       <div>
-                        <h3 className="font-medium text-foreground mb-2 mobile-text-optimize">
+                        <h3 className="font-medium text-foreground mb-1 text-sm mobile-text-optimize">
                           No results found
                         </h3>
-                        <p className="text-sm text-muted-foreground mobile-text-optimize">
+                        <p className="text-xs text-muted-foreground mobile-text-optimize">
                           No tracking information found for: {trackingNumber}
                         </p>
-                        <p className="text-sm text-muted-foreground mt-2 mobile-text-optimize">
-                          Please verify the tracking number is correct or contact our team.
+                        <p className="text-xs text-muted-foreground mt-1 mobile-text-optimize">
+                          Please verify the tracking number or contact our team.
                         </p>
                       </div>
                     </div>
@@ -512,19 +503,19 @@ const ShipmentTracking = () => {
             </div>
           )}
 
-          {/* Alternative CIG Shipping Section - Compact */}
-          <Card className="mt-6 sm:mt-8">
-            <CardHeader className="pb-3 sm:pb-6">
-              <CardTitle className="text-base sm:text-lg mobile-text-optimize">Alternative: CIG Shipping Direct</CardTitle>
+          {/* Alternative CIG Shipping Section - Ultra Compact */}
+          <Card className="mt-4 sm:mt-6 tracking-card-ultra-compact">
+            <CardHeader>
+              <CardTitle className="text-sm sm:text-lg mobile-text-optimize">Alternative: CIG Shipping Direct</CardTitle>
             </CardHeader>
-            <CardContent className="pt-0">
-              <p className="text-muted-foreground mb-3 sm:mb-4 text-sm mobile-text-optimize">
+            <CardContent>
+              <p className="text-muted-foreground mb-2 sm:mb-3 text-xs mobile-text-optimize">
                 You can also use the CIG Shipping website for detailed tracking:
               </p>
               <Button
                 variant="outline"
                 onClick={() => window.open('https://cigshipping.com/Home/en/cargo.html', '_blank')}
-                className="w-full sm:w-auto mobile-text-optimize"
+                className="w-full sm:w-auto mobile-text-optimize tracking-button-compact"
               >
                 Open CIG Shipping
               </Button>
