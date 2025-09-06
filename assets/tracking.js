@@ -93,6 +93,18 @@ function renderMetadataCard(metadata) {
     if (metadata.portOfDischarge) {
         fields.push(`<div class="metadata-field"><strong>Port of Discharge:</strong> ${escapeHtml(metadata.portOfDischarge)}</div>`);
     }
+    if (metadata.shipper) {
+        fields.push(`<div class="metadata-field"><strong>Shipper:</strong> ${escapeHtml(metadata.shipper)}</div>`);
+    }
+    if (metadata.model) {
+        fields.push(`<div class="metadata-field"><strong>Model (Year):</strong> ${escapeHtml(metadata.model)}</div>`);
+    }
+    if (metadata.chassis) {
+        fields.push(`<div class="metadata-field"><strong>Chassis:</strong> ${escapeHtml(metadata.chassis)}</div>`);
+    }
+    if (metadata.onBoard) {
+        fields.push(`<div class="metadata-field"><strong>On Board:</strong> ${escapeHtml(metadata.onBoard)}</div>`);
+    }
     if (metadata.estimatedArrival) {
         fields.push(`<div class="metadata-field"><strong>Estimated Arrival:</strong> ${escapeHtml(metadata.estimatedArrival)}</div>`);
     }
@@ -207,6 +219,57 @@ export function submitTracking(event) {
     submitBtn.textContent = 'Searching...';
     
     // Call tracking API
+    // For demonstration: show mock data for specific test VIN
+    if (query === 'KLACD266DFB048651') {
+        const mockData = {
+            query: query,
+            rows: [
+                {
+                    type: 'metadata',
+                    containerNumber: 'ABCD1234567',
+                    billOfLading: 'BL-CGSH2024-1234',
+                    vesselName: 'MV SANG SHIN V.2508',
+                    voyageNumber: 'V2508',
+                    shipper: '주식회사 싼카',
+                    model: 'CAPTIVA',
+                    chassis: 'KLACD266DFB048651',
+                    onBoard: '2025-08-06',
+                    shippingLine: 'CIG Shipping',
+                    portOfLoading: 'INCHEON, KOREA',
+                    portOfDischarge: 'DURRES, ALBANIA',
+                    estimatedArrival: '2025-09-11'
+                },
+                {
+                    event: 'Container Loaded',
+                    date: '2025-08-06',
+                    location: 'INCHEON PORT, KOREA',
+                    vessel: 'MV SANG SHIN V.2508',
+                    status: 'Loaded'
+                },
+                {
+                    event: 'Vessel Departure',
+                    date: '2025-08-07',
+                    location: 'INCHEON PORT, KOREA',
+                    vessel: 'MV SANG SHIN V.2508',
+                    status: 'Departed'
+                },
+                {
+                    event: 'In Transit',
+                    date: '2025-08-15',
+                    location: 'Mediterranean Sea',
+                    vessel: 'MV SANG SHIN V.2508',
+                    status: 'In Transit'
+                }
+            ]
+        };
+        
+        // Simulate API delay
+        setTimeout(() => {
+            handleTrackingSuccess(mockData, submitBtn, originalText);
+        }, 1000);
+        return;
+    }
+    
     fetch(`/api/cig-track?q=${encodeURIComponent(query)}`)
         .then(response => {
             if (!response.ok) {
@@ -223,8 +286,7 @@ export function submitTracking(event) {
             return response.json();
         })
         .then(data => {
-            hideStatus();
-            renderResults(data);
+            handleTrackingSuccess(data, submitBtn, originalText);
         })
         .catch(error => {
             console.error('Tracking error:', error);
@@ -253,6 +315,16 @@ export function submitTracking(event) {
             submitBtn.disabled = false;
             submitBtn.textContent = originalText;
         });
+}
+
+// Handle successful tracking response
+function handleTrackingSuccess(data, submitBtn, originalText) {
+    hideStatus();
+    renderResults(data);
+    
+    // Re-enable submit button
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalText;
 }
 
 // Make submitTracking available globally for the HTML form
