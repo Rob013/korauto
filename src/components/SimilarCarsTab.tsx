@@ -4,7 +4,7 @@ import { ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSecureAuctionAPI } from '@/hooks/useSecureAuctionAPI';
 import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
-import { hasRealPricing, calculateFinalPriceEUR } from '@/utils/carPricing';
+import { hasRealPricing, calculateFinalPriceEUR, filterCarsWithBuyNowPricing } from '@/utils/carPricing';
 import CarCard from './CarCard';
 
 interface SimilarCarsTabProps {
@@ -45,12 +45,12 @@ const SimilarCarsTab = ({ carMake, carModel, currentCarId }: SimilarCarsTabProps
   }, [carMake, carModel, fetchCars, fetchManufacturers]);
 
   useEffect(() => {
-    // Filter cars to show same brand, exclude current car, and only include cars with real pricing
+    // Filter cars to show same brand, exclude current car, and only include cars with buy_now pricing
     const filtered = cars
       .filter(car => 
         car.manufacturer?.name?.toLowerCase() === carMake.toLowerCase() &&
         car.id !== currentCarId &&
-        hasRealPricing(car)
+        car.lots?.[0]?.buy_now && car.lots[0].buy_now > 0
       )
       .slice(0, 4); // Show max 4 similar cars
 
@@ -89,7 +89,8 @@ const SimilarCarsTab = ({ carMake, carModel, currentCarId }: SimilarCarsTabProps
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {similarCars.map((car) => {
               const lot = car.lots?.[0];
-              const usdPrice = lot?.buy_now ?? lot?.final_bid ?? lot?.price ?? 25000;
+              // Only use buy_now price, no fallbacks  
+              const usdPrice = lot?.buy_now;
               const price = calculateFinalPriceEUR(usdPrice, exchangeRate.rate);
               
               return (

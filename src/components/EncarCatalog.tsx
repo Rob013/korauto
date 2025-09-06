@@ -55,7 +55,7 @@ import { useGlobalCarSorting } from "@/hooks/useGlobalCarSorting";
 // for consistent backend sorting like NewCatalog.tsx
 import { CarWithRank } from "@/utils/chronologicalRanking";
 import { filterOutTestCars } from "@/utils/testCarFilter";
-import { calculateFinalPriceEUR } from "@/utils/carPricing";
+import { calculateFinalPriceEUR, filterCarsWithBuyNowPricing } from "@/utils/carPricing";
 import { fallbackCars } from "@/data/fallbackData";
 
 interface EncarCatalogProps {
@@ -1368,9 +1368,16 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     : 'lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7'
                 } ${isFilterLoading ? 'opacity-50' : ''}`}
               >
-                {carsToDisplay.map((car: CarWithRank | any) => {
+                {carsToDisplay
+                  .filter(car => {
+                    // Only show cars with buy_now pricing
+                    const lot = car.lots?.[0];
+                    return lot?.buy_now && lot.buy_now > 0;
+                  })
+                  .map((car: CarWithRank | any) => {
                   const lot = car.lots?.[0];
-                  const usdPrice = lot?.buy_now ?? lot?.final_bid ?? lot?.price ?? 25000;
+                  // Only use buy_now price, no fallbacks
+                  const usdPrice = lot?.buy_now;
                   const price = calculateFinalPriceEUR(usdPrice, exchangeRate.rate);
                   const lotNumber = car.lot_number || lot?.lot || "";
 
