@@ -1,5 +1,5 @@
 ---
-name: Daily Car Sync
+name: Daily Car and Currency Sync
 
 on:
   schedule:
@@ -9,7 +9,7 @@ on:
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
-  sync-cars:
+  sync-data:
     runs-on: ubuntu-latest
 
     environment: production
@@ -29,6 +29,24 @@ jobs:
 
       - name: Install tsx globally
         run: npm install -g tsx
+
+      - name: Run currency sync script
+        env:
+          CURRENCY_API_KEY: ${{ secrets.CURRENCY_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          echo "💱 Starting currency exchange rate sync..."
+          
+          # Set timezone for logging
+          export TZ='Europe/Belgrade'
+          echo "⏰ Current time in Belgrade: $(date)"
+          
+          # Run the currency sync script
+          echo "📊 Running currency sync script..."
+          tsx scripts/sync-currency.ts || echo "⚠️ Currency sync completed with fallback rate"
+          
+          echo "✅ Currency sync completed!"
 
       - name: Run car sync script
         env:

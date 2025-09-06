@@ -37,10 +37,10 @@ export const calculateFinalPriceEUR = (basePriceUSD: number, usdToEurRate: numbe
 
 /**
  * Check if a calculated price is the default fallback price
- * Default is 25000 USD converted to EUR + markup (25000 * 0.92 + 2200 = 25200 EUR)
+ * Default is 25000 USD converted to EUR + markup (25000 * 0.85 + 2200 = 23450 EUR)
  */
 export const isDefaultPrice = (priceEUR: number): boolean => {
-  return priceEUR === 25200; // 25000 USD * 0.92 + 2200 EUR markup
+  return priceEUR === 23450; // 25000 USD * 0.85 + 2200 EUR markup
 };
 
 /**
