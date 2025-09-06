@@ -385,10 +385,10 @@ const LazyCarCard = memo(({
           </div>
         )}
 
-        {/* Pricing - Use final_price if available, otherwise use price */}
+        {/* Pricing - Match car details page exactly */}
         <div className="flex flex-col gap-0.5 sm:gap-1 mb-1.5 sm:mb-2">
           <span className="card-price text-base sm:text-lg lg:text-xl font-bold text-primary">
-            €{(final_price || price).toLocaleString()}
+            €{price.toLocaleString()}
           </span>
           <span className="text-xs text-muted-foreground">
             Deri ne portin e Durresit
