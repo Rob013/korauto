@@ -51,20 +51,20 @@
         
         .container {
             max-width: 800px;
-            margin: 2rem auto;
+            margin: 1rem auto;
             padding: 0 1rem;
         }
         
         .tracking-form {
             background: white;
-            padding: 2rem;
+            padding: 1.5rem;
             border-radius: 12px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
         
         .form-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }
         
         .form-group label {
@@ -72,6 +72,7 @@
             margin-bottom: 0.5rem;
             font-weight: 500;
             color: #2c3e50;
+            font-size: 0.9rem;
         }
         
         .form-group input {
@@ -98,6 +99,7 @@
             font-size: 1rem;
             font-weight: 500;
             transition: background 0.3s;
+            width: 100%;
         }
         
         .submit-btn:hover {
@@ -116,6 +118,7 @@
             text-align: center;
             font-weight: 500;
             display: none;
+            font-size: 0.9rem;
         }
         
         #status.loading {
@@ -141,12 +144,12 @@
         }
         
         .tracking-header {
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
         
         .tracking-header h3 {
             color: #2c3e50;
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             margin-bottom: 0.5rem;
         }
 
@@ -174,7 +177,7 @@
 
         .card-header {
             background: #f8f9fa;
-            padding: 1rem;
+            padding: 0.75rem 1rem;
             border-bottom: 1px solid #e9ecef;
         }
 
@@ -186,48 +189,50 @@
             font-weight: 600;
             color: #667eea;
             margin-bottom: 0.5rem;
-            font-size: 1.1rem;
+            font-size: 1rem;
         }
         
         .metadata-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.75rem;
         }
         
         .metadata-field {
-            padding: 0.75rem;
+            padding: 0.5rem 0.75rem;
             background: #f8f9fa;
             border-radius: 6px;
             border-left: 3px solid #667eea;
+            font-size: 0.85rem;
         }
 
         .event-details {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 0.5rem;
             color: #6c757d;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
         
         .event-details > div {
-            padding: 0.5rem;
+            padding: 0.4rem 0.6rem;
             background: #f8f9fa;
             border-radius: 4px;
         }
         
         .fallback-section {
-            margin-top: 2rem;
+            margin-top: 1.5rem;
         }
         
         .fallback-section summary {
             background: white;
-            padding: 1rem;
+            padding: 0.75rem 1rem;
             border-radius: 8px;
             cursor: pointer;
             font-weight: 500;
             color: #2c3e50;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            font-size: 0.9rem;
         }
         
         .fallback-section[open] summary {
@@ -247,21 +252,156 @@
             border: none;
         }
         
+        /* Mobile optimizations */
         @media (max-width: 768px) {
             .header {
-                padding: 1rem;
+                padding: 0.75rem 1rem;
+                flex-direction: row;
+                gap: 1rem;
             }
             
             .header h1 {
-                font-size: 1.25rem;
+                font-size: 1.1rem;
+            }
+            
+            .logout-btn {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.85rem;
             }
             
             .container {
-                margin: 1rem auto;
+                margin: 0.75rem auto;
+                padding: 0 0.75rem;
             }
             
             .tracking-form {
-                padding: 1.5rem;
+                padding: 1rem;
+                margin-bottom: 1rem;
+            }
+            
+            .form-group {
+                margin-bottom: 0.75rem;
+            }
+            
+            .form-group label {
+                font-size: 0.85rem;
+                margin-bottom: 0.4rem;
+            }
+            
+            .form-group input {
+                padding: 0.6rem;
+                font-size: 0.9rem;
+            }
+            
+            .submit-btn {
+                padding: 0.6rem 1.5rem;
+                font-size: 0.9rem;
+            }
+            
+            #status {
+                margin: 0.75rem 0;
+                padding: 0.75rem;
+                font-size: 0.85rem;
+            }
+            
+            .tracking-header {
+                margin-bottom: 1rem;
+            }
+            
+            .tracking-header h3 {
+                font-size: 1.1rem;
+            }
+            
+            .result-card {
+                margin-bottom: 0.75rem;
+            }
+            
+            .card-header {
+                padding: 0.6rem 0.75rem;
+            }
+            
+            .card-body {
+                padding: 0.75rem;
+            }
+            
+            .event-status {
+                font-size: 0.9rem;
+                margin-bottom: 0.4rem;
+            }
+            
+            .metadata-grid {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+            
+            .metadata-field {
+                padding: 0.4rem 0.6rem;
+                font-size: 0.8rem;
+            }
+            
+            .event-details {
+                grid-template-columns: 1fr;
+                gap: 0.4rem;
+                font-size: 0.8rem;
+            }
+            
+            .event-details > div {
+                padding: 0.35rem 0.5rem;
+            }
+            
+            .fallback-section {
+                margin-top: 1rem;
+            }
+            
+            .fallback-section summary {
+                padding: 0.6rem 0.75rem;
+                font-size: 0.85rem;
+            }
+            
+            .fallback-content iframe {
+                height: 400px;
+            }
+        }
+        
+        /* Extra small mobile devices */
+        @media (max-width: 375px) {
+            .header {
+                padding: 0.5rem 0.75rem;
+            }
+            
+            .header h1 {
+                font-size: 1rem;
+            }
+            
+            .container {
+                padding: 0 0.5rem;
+            }
+            
+            .tracking-form {
+                padding: 0.75rem;
+            }
+            
+            .form-group input {
+                padding: 0.5rem;
+                font-size: 0.85rem;
+            }
+            
+            .submit-btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.85rem;
+            }
+            
+            .metadata-field {
+                padding: 0.35rem 0.5rem;
+                font-size: 0.75rem;
+            }
+            
+            .event-details {
+                font-size: 0.75rem;
+            }
+            
+            .event-details > div {
+                padding: 0.3rem 0.4rem;
             }
         }
     </style>

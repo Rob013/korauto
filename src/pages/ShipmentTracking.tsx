@@ -28,13 +28,13 @@ const ShipmentTracking = () => {
         year: year
       },
       result: {
-        shipper: "ABC Logistics",
-        model_year: "K5 (2021)",
+        shipper: "CIG Shipping Co., Ltd",
+        model_year: "Hyundai Sonata (2021)",
         chassis: chassis,
         vessel: "Morning Cara",
-        pol: "Busan",
+        pol: "Busan Port, South Korea",
         on_board: "2025-08-31",
-        port: "Durres", 
+        port: "Durres Port, Albania", 
         eta: "2025-09-20"
       },
       shipping_status: {
@@ -52,20 +52,23 @@ const ShipmentTracking = () => {
       rows: [
         {
           type: "metadata",
-          shipper: "ABC Logistics",
-          model: "K5 (2021)",
+          shipper: "CIG Shipping Co., Ltd",
+          model: "Hyundai Sonata (2021)",
           chassis: chassis,
           vesselName: "Morning Cara",
-          portOfLoading: "Busan",
-          portOfDischarge: "Durres",
+          portOfLoading: "Busan Port, South Korea",
+          portOfDischarge: "Durres Port, Albania",
           onBoard: "2025-08-31",
-          estimatedArrival: "2025-09-20"
+          estimatedArrival: "2025-09-20",
+          shippingLine: "CIG Shipping Line",
+          billOfLading: "CIG" + chassis.substring(9, 17),
+          containerNumber: "CGMU" + Math.random().toString().substring(2, 9)
         },
         {
           type: "event",
           date: "2025-08-31",
           event: "Container loaded on vessel",
-          location: "Busan",
+          location: "Busan Port, South Korea",
           vessel: "Morning Cara",
           status: "Loaded"
         },
@@ -73,7 +76,7 @@ const ShipmentTracking = () => {
           type: "event", 
           date: "2025-09-01",
           event: "Vessel departure",
-          location: "Busan",
+          location: "Busan Port, South Korea",
           vessel: "Morning Cara",
           status: "Departed"
         },
@@ -81,7 +84,7 @@ const ShipmentTracking = () => {
           type: "event",
           date: "2025-09-20",
           event: "Expected arrival",
-          location: "Durres",
+          location: "Durres Port, Albania",
           vessel: "Morning Cara", 
           status: "In Transit"
         }
@@ -93,17 +96,17 @@ const ShipmentTracking = () => {
   const getStatusIcon = (status: string) => {
     const statusLower = status.toLowerCase();
     
-    if (statusLower.includes('arrived') || statusLower.includes('arrival') || statusLower.includes('mbërr')) {
+    if (statusLower.includes('arrived') || statusLower.includes('arrival')) {
       return '🚢';
-    } else if (statusLower.includes('departed') || statusLower.includes('departure') || statusLower.includes('nisi')) {
+    } else if (statusLower.includes('departed') || statusLower.includes('departure')) {
       return '⚓';
-    } else if (statusLower.includes('loaded') || statusLower.includes('loading') || statusLower.includes('ngarko')) {
+    } else if (statusLower.includes('loaded') || statusLower.includes('loading')) {
       return '📦';
-    } else if (statusLower.includes('discharged') || statusLower.includes('discharge') || statusLower.includes('shkarko')) {
+    } else if (statusLower.includes('discharged') || statusLower.includes('discharge')) {
       return '🏗️';
-    } else if (statusLower.includes('customs') || statusLower.includes('cleared') || statusLower.includes('doganë')) {
+    } else if (statusLower.includes('customs') || statusLower.includes('cleared')) {
       return '✅';
-    } else if (statusLower.includes('gate') || statusLower.includes('portë')) {
+    } else if (statusLower.includes('gate')) {
       return '🚪';
     } else {
       return '📍';
@@ -114,8 +117,8 @@ const ShipmentTracking = () => {
     e.preventDefault();
     if (!trackingNumber.trim()) {
       toast({
-        title: "Gabim",
-        description: "Ju lutem shkruani numrin e gjurmimit",
+        title: "Error",
+        description: "Please enter a tracking number",
         variant: "destructive",
       });
       return;
@@ -126,15 +129,15 @@ const ShipmentTracking = () => {
     // Validate VIN format if it looks like a VIN (17 characters)
     if (trimmedQuery.length === 17 && !/^[A-HJ-NPR-Z0-9]{17}$/i.test(trimmedQuery)) {
       toast({
-        title: "Gabim",
-        description: "Format i pavlefshëm VIN. VIN duhet të ketë 17 karaktere (A-Z, 0-9, jo I, O, Q)",
+        title: "Error",
+        description: "Invalid VIN format. VIN must be 17 characters (A-Z, 0-9, no I, O, Q)",
         variant: "destructive",
       });
       return;
     } else if (trimmedQuery.length < 5) {
       toast({
-        title: "Gabim", 
-        description: "Numri i gjurmimit është shumë i shkurtër. Futni një VIN të vlefshëm (17 karaktere) ose numër B/L (të paktën 5 karaktere)",
+        title: "Error", 
+        description: "Tracking number too short. Enter a valid VIN (17 characters) or B/L number (at least 5 characters)",
         variant: "destructive",
       });
       return;
@@ -192,14 +195,14 @@ const ShipmentTracking = () => {
       setResults(convertedResults);
       
       toast({
-        title: "Sukses",
-        description: `U gjetën ${convertedResults.length} rezultate për ${trackingNumber}`,
+        title: "Success",
+        description: `Found ${convertedResults.length} results for ${trackingNumber}`,
       });
     } catch (error) {
       console.error('Tracking error:', error);
       toast({
-        title: "Gabim",
-        description: "Nuk u arrit të gjurmojmë ngarkesën. Provoni përsëri.",
+        title: "Error",
+        description: "Failed to track shipment. Please try again.",
         variant: "destructive",
       });
       setResults([]);
@@ -212,66 +215,66 @@ const ShipmentTracking = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto container-responsive px-2 sm:px-4 py-4 sm:py-8">
         <div className="max-w-4xl mx-auto">
-          {/* Page Header */}
-          <div className="flex items-center gap-4 mb-8">
+          {/* Page Header - Compact for mobile */}
+          <div className="flex items-center gap-2 sm:gap-4 mb-4 sm:mb-8">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate(-1)}
-              className="flex items-center gap-2"
+              className="flex items-center gap-1 sm:gap-2 min-w-0"
             >
               <ArrowLeft className="h-4 w-4" />
-              Kthehu
+              <span className="hidden sm:inline">Back</span>
             </Button>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <Ship className="h-5 w-5 text-primary-foreground" />
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                <Ship className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">Gjurmimi i Ngarkesave</h1>
-                <p className="text-muted-foreground">
-                  Gjurmoni statusin e makinës tuaj gjatë transportit
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-2xl font-bold text-foreground leading-tight">Shipment Tracking</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground mobile-text-optimize">
+                  Track your vehicle during transport
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Tracking Form */}
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Gjurmimi i Ngarkesës
+          {/* Tracking Form - Compact for mobile */}
+          <Card className="mb-4 sm:mb-8">
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Package className="h-4 w-4 sm:h-5 sm:w-5" />
+                Track Shipment
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleTrackingSubmit} className="space-y-4">
+            <CardContent className="pt-0">
+              <form onSubmit={handleTrackingSubmit} className="space-y-3 sm:space-y-4">
                 <div>
-                  <label htmlFor="tracking-input" className="block text-sm font-medium mb-2">
-                    Shkruani VIN (17 karaktere) ose numrin e Bill of Lading (B/L):
+                  <label htmlFor="tracking-input" className="block text-xs sm:text-sm font-medium mb-1 sm:mb-2 mobile-text-optimize">
+                    Enter VIN (17 characters) or Bill of Lading (B/L) number:
                   </label>
                   <Input
                     id="tracking-input"
                     type="text"
-                    placeholder="P.sh. WBABC123456789ABC (VIN 17 kar.) ose BL-2024-001"
+                    placeholder="e.g. WBABC123456789ABC (VIN) or BL-2024-001"
                     value={trackingNumber}
                     onChange={(e) => setTrackingNumber(e.target.value)}
-                    className="w-full"
+                    className="w-full text-sm mobile-text-optimize"
                     disabled={loading}
                   />
                 </div>
-                <Button type="submit" disabled={loading} className="w-full sm:w-auto">
+                <Button type="submit" disabled={loading} className="w-full sm:w-auto mobile-text-optimize">
                   {loading ? (
                     <>
                       <Search className="h-4 w-4 mr-2 animate-spin" />
-                      Duke gjurmuar...
+                      Tracking...
                     </>
                   ) : (
                     <>
                       <Search className="h-4 w-4 mr-2" />
-                      Gjurmo Ngarkesën
+                      Track Shipment
                     </>
                   )}
                 </Button>
@@ -279,85 +282,85 @@ const ShipmentTracking = () => {
             </CardContent>
           </Card>
 
-          {/* Results */}
+          {/* Results - Compact layout for mobile */}
           {hasSearched && (
-            <div className="space-y-6">
+            <div className="space-y-3 sm:space-y-6">
               {results.length > 0 ? (
                 <>
-                  <h2 className="text-xl font-semibold text-foreground">
-                    Rezultatet e Gjurmimit për: {trackingNumber}
+                  <h2 className="text-lg sm:text-xl font-semibold text-foreground mobile-text-optimize">
+                    Tracking Results for: {trackingNumber}
                   </h2>
-                  <div className="space-y-4">
-                    {/* Shipment Metadata Card */}
+                  <div className="space-y-3 sm:space-y-4">
+                    {/* Shipment Metadata Card - Compact */}
                     {results.some(r => r.type === 'metadata') && (
                       <Card className="border-l-4 border-l-blue-500">
-                        <CardHeader>
-                          <CardTitle className="flex items-center gap-2">
-                            📋 Informacionet e Ngarkesës
+                        <CardHeader className="pb-3 sm:pb-6">
+                          <CardTitle className="flex items-center gap-2 text-base sm:text-lg mobile-text-optimize">
+                            📋 Shipment Information
                           </CardTitle>
                         </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <CardContent className="pt-0">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
                             {results.filter(r => r.type === 'metadata').map((metadata) => (
-                              <div key="metadata" className="space-y-3">
+                              <div key="metadata" className="space-y-2 sm:space-y-3">
                                 {metadata.containerNumber && (
-                                  <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong>Numri i Kontejnerit:</strong> {metadata.containerNumber}
+                                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
+                                    <strong className="mobile-text-optimize">Container Number:</strong> {metadata.containerNumber}
                                   </div>
                                 )}
                                 {metadata.billOfLading && (
-                                  <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong>Bill of Lading:</strong> {metadata.billOfLading}
+                                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
+                                    <strong className="mobile-text-optimize">Bill of Lading:</strong> {metadata.billOfLading}
                                   </div>
                                 )}
                                 {metadata.vesselName && (
-                                  <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong>Anija:</strong> {metadata.vesselName}
+                                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
+                                    <strong className="mobile-text-optimize">Vessel:</strong> {metadata.vesselName}
                                   </div>
                                 )}
                                 {metadata.voyageNumber && (
-                                  <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong>Udhëtimi:</strong> {metadata.voyageNumber}
+                                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
+                                    <strong className="mobile-text-optimize">Voyage:</strong> {metadata.voyageNumber}
                                   </div>
                                 )}
                                 {metadata.shippingLine && (
-                                  <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong>Linja Detare:</strong> {metadata.shippingLine}
+                                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
+                                    <strong className="mobile-text-optimize">Shipping Line:</strong> {metadata.shippingLine}
                                   </div>
                                 )}
                                 {metadata.portOfLoading && (
-                                  <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong>Porti i Ngarkimit:</strong> {metadata.portOfLoading}
+                                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
+                                    <strong className="mobile-text-optimize">Loading Port:</strong> {metadata.portOfLoading}
                                   </div>
                                 )}
                                 {metadata.portOfDischarge && (
-                                  <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong>Porti i Shkarkimit:</strong> {metadata.portOfDischarge}
+                                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
+                                    <strong className="mobile-text-optimize">Discharge Port:</strong> {metadata.portOfDischarge}
                                   </div>
                                 )}
                                 {metadata.shipper && (
-                                  <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong>Dërguesi:</strong> {metadata.shipper}
+                                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
+                                    <strong className="mobile-text-optimize">Shipper:</strong> {metadata.shipper}
                                   </div>
                                 )}
                                 {metadata.model && (
-                                  <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong>Modeli (Viti):</strong> {metadata.model}
+                                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
+                                    <strong className="mobile-text-optimize">Model (Year):</strong> {metadata.model}
                                   </div>
                                 )}
                                 {metadata.chassis && (
-                                  <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong>VIN/Numri i Shasisë:</strong> {metadata.chassis}
+                                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
+                                    <strong className="mobile-text-optimize">VIN/Chassis:</strong> {metadata.chassis}
                                   </div>
                                 )}
                                 {metadata.onBoard && (
-                                  <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong>Në Anije:</strong> {metadata.onBoard}
+                                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
+                                    <strong className="mobile-text-optimize">On Board:</strong> {metadata.onBoard}
                                   </div>
                                 )}
                                 {metadata.estimatedArrival && (
-                                  <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
-                                    <strong>Mbërritja e Pritshme:</strong> {metadata.estimatedArrival}
+                                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
+                                    <strong className="mobile-text-optimize">Expected Arrival:</strong> {metadata.estimatedArrival}
                                   </div>
                                 )}
                               </div>
@@ -367,115 +370,115 @@ const ShipmentTracking = () => {
                       </Card>
                     )}
                     
-                    {/* Shipping Status Progress */}
+                    {/* Shipping Status Progress - Compact */}
                     {widgetData?.shipping_status && (
                       <Card className="border-l-4 border-l-purple-500">
-                        <CardHeader>
-                          <CardTitle className="flex items-center gap-2">
-                            🚢 Statusi i Transportit
+                        <CardHeader className="pb-3 sm:pb-6">
+                          <CardTitle className="flex items-center gap-2 text-base sm:text-lg mobile-text-optimize">
+                            🚢 Transport Status
                           </CardTitle>
                         </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-purple-500">
-                              <strong>Statusi Aktual:</strong> {widgetData.shipping_status.overall}
+                        <CardContent className="pt-0">
+                          <div className="space-y-3 sm:space-y-4">
+                            <div className="p-2 sm:p-3 bg-muted/50 rounded-lg border-l-2 border-l-purple-500">
+                              <strong className="mobile-text-optimize">Current Status:</strong> {widgetData.shipping_status.overall}
                             </div>
                             
                             <div className="space-y-2">
-                              <strong>Progresi i Transportit:</strong>
-                              <div className="space-y-2">
+                              <strong className="mobile-text-optimize">Transport Progress:</strong>
+                              <div className="space-y-1 sm:space-y-2">
                                 {widgetData.shipping_status.steps.map((step: any, index: number) => (
                                   <div 
                                     key={index} 
-                                    className={`flex items-center gap-3 p-2 rounded ${
+                                    className={`flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 rounded text-sm mobile-text-optimize ${
                                       step.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'
                                     }`}
                                   >
-                                    <div className={`w-4 h-4 rounded-full ${
+                                    <div className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full flex-shrink-0 ${
                                       step.active ? 'bg-green-500' : 'bg-gray-300'
                                     }`} />
                                     <span className={step.active ? 'font-medium' : ''}>{step.name}</span>
-                                    {step.active && <span className="text-sm">✓</span>}
+                                    {step.active && <span className="text-xs sm:text-sm">✓</span>}
                                   </div>
                                 ))}
                               </div>
                             </div>
                             
                             {widgetData.result && (
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 pt-3 border-t">
                                 {widgetData.result.pol && (
-                                  <div className="p-2 bg-blue-50 rounded">
-                                    <strong>Port Ngarkimi:</strong> {widgetData.result.pol}
+                                  <div className="p-2 bg-blue-50 rounded mobile-text-optimize">
+                                    <strong>Loading Port:</strong> {widgetData.result.pol}
                                   </div>
                                 )}
                                 {widgetData.result.port && (
-                                  <div className="p-2 bg-blue-50 rounded">
-                                    <strong>Port Destinimi:</strong> {widgetData.result.port}
+                                  <div className="p-2 bg-blue-50 rounded mobile-text-optimize">
+                                    <strong>Destination Port:</strong> {widgetData.result.port}
                                   </div>
                                 )}
                                 {widgetData.result.vessel && (
-                                  <div className="p-2 bg-blue-50 rounded">
-                                    <strong>Anija:</strong> {widgetData.result.vessel}
+                                  <div className="p-2 bg-blue-50 rounded mobile-text-optimize">
+                                    <strong>Vessel:</strong> {widgetData.result.vessel}
                                   </div>
                                 )}
                                 {widgetData.result.eta && (
-                                  <div className="p-2 bg-blue-50 rounded">
+                                  <div className="p-2 bg-blue-50 rounded mobile-text-optimize">
                                     <strong>ETA:</strong> {widgetData.result.eta}
                                   </div>
                                 )}
                               </div>
                             )}
                             
-                            <div className="text-xs text-muted-foreground pt-2 border-t">
-                              Burimi: {widgetData.source} | Përditësuar: {new Date(widgetData.last_updated).toLocaleString()}
+                            <div className="text-xs text-muted-foreground pt-2 border-t mobile-text-optimize">
+                              Source: {widgetData.source} | Updated: {new Date(widgetData.last_updated).toLocaleString()}
                             </div>
                           </div>
                         </CardContent>
                       </Card>
                     )}
                     
-                    {/* Tracking Events */}
+                    {/* Tracking Events - Compact */}
                     {results.filter(r => r.type !== 'metadata').map((result) => (
                       <Card key={result.id} className="border-l-4 border-l-green-500">
-                        <CardHeader>
-                          <CardTitle className="flex items-center gap-2">
+                        <CardHeader className="pb-3 sm:pb-6">
+                          <CardTitle className="flex items-center gap-2 text-base sm:text-lg mobile-text-optimize">
                             {getStatusIcon(result.status)} {result.status}
                           </CardTitle>
                         </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <CardContent className="pt-0">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
                             {result.date && (
-                              <div className="p-3 bg-muted/50 rounded-lg">
-                                <strong>Data:</strong> {result.date}
+                              <div className="p-2 sm:p-3 bg-muted/50 rounded-lg">
+                                <strong className="mobile-text-optimize">Date:</strong> {result.date}
                               </div>
                             )}
                             {result.location && (
-                              <div className="p-3 bg-muted/50 rounded-lg">
-                                <strong>Vendndodhja:</strong> {result.location}
+                              <div className="p-2 sm:p-3 bg-muted/50 rounded-lg">
+                                <strong className="mobile-text-optimize">Location:</strong> {result.location}
                               </div>
                             )}
                             {result.vessel && (
-                              <div className="p-3 bg-muted/50 rounded-lg">
-                                <strong>Anija:</strong> {result.vessel}
+                              <div className="p-2 sm:p-3 bg-muted/50 rounded-lg">
+                                <strong className="mobile-text-optimize">Vessel:</strong> {result.vessel}
                               </div>
                             )}
                             {result.containerNumber && (
-                              <div className="p-3 bg-muted/50 rounded-lg">
-                                <strong>Kontejneri:</strong> {result.containerNumber}
+                              <div className="p-2 sm:p-3 bg-muted/50 rounded-lg">
+                                <strong className="mobile-text-optimize">Container:</strong> {result.containerNumber}
                               </div>
                             )}
                           </div>
                           {result.description && (
-                            <div className="mt-4 p-3 bg-muted/30 rounded-lg">
-                              <p className="text-sm text-muted-foreground">
+                            <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-muted/30 rounded-lg">
+                              <p className="text-sm text-muted-foreground mobile-text-optimize">
                                 {result.description}
                               </p>
                             </div>
                           )}
                           {result.estimatedDelivery && (
-                            <div className="mt-4 bg-blue-50 rounded-lg p-3">
-                              <p className="text-sm text-foreground">
-                                <strong>Data e pritshme e dorëzimit:</strong> {result.estimatedDelivery}
+                            <div className="mt-3 sm:mt-4 bg-blue-50 rounded-lg p-2 sm:p-3">
+                              <p className="text-sm text-foreground mobile-text-optimize">
+                                <strong>Expected Delivery Date:</strong> {result.estimatedDelivery}
                               </p>
                             </div>
                           )}
@@ -486,20 +489,20 @@ const ShipmentTracking = () => {
                 </>
               ) : (
                 <Card>
-                  <CardContent className="py-8 text-center">
-                    <div className="space-y-4">
-                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto">
-                        <Package className="h-8 w-8 text-muted-foreground" />
+                  <CardContent className="py-6 sm:py-8 text-center">
+                    <div className="space-y-3 sm:space-y-4">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-muted rounded-full flex items-center justify-center mx-auto">
+                        <Package className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
                       </div>
                       <div>
-                        <h3 className="font-medium text-foreground mb-2">
-                          Nuk u gjetën rezultate
+                        <h3 className="font-medium text-foreground mb-2 mobile-text-optimize">
+                          No results found
                         </h3>
-                        <p className="text-sm text-muted-foreground">
-                          Nuk u gjetën informacione për numrin e gjurmimit: {trackingNumber}
+                        <p className="text-sm text-muted-foreground mobile-text-optimize">
+                          No tracking information found for: {trackingNumber}
                         </p>
-                        <p className="text-sm text-muted-foreground mt-2">
-                          Sigurohuni që numri i gjurmimit është i saktë ose kontaktoni ekipin tonë.
+                        <p className="text-sm text-muted-foreground mt-2 mobile-text-optimize">
+                          Please verify the tracking number is correct or contact our team.
                         </p>
                       </div>
                     </div>
@@ -509,21 +512,21 @@ const ShipmentTracking = () => {
             </div>
           )}
 
-          {/* Alternative CIG Shipping Section */}
-          <Card className="mt-8">
-            <CardHeader>
-              <CardTitle>Alternativë: CIG Shipping e Drejtpërdrejtë</CardTitle>
+          {/* Alternative CIG Shipping Section - Compact */}
+          <Card className="mt-6 sm:mt-8">
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="text-base sm:text-lg mobile-text-optimize">Alternative: CIG Shipping Direct</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">
-                Mund të përdorni gjithashtu faqen e CIG Shipping për gjurmim të detajuar:
+            <CardContent className="pt-0">
+              <p className="text-muted-foreground mb-3 sm:mb-4 text-sm mobile-text-optimize">
+                You can also use the CIG Shipping website for detailed tracking:
               </p>
               <Button
                 variant="outline"
                 onClick={() => window.open('https://cigshipping.com/Home/en/cargo.html', '_blank')}
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto mobile-text-optimize"
               >
-                Hap CIG Shipping
+                Open CIG Shipping
               </Button>
             </CardContent>
           </Card>
