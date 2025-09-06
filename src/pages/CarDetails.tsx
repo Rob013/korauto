@@ -969,7 +969,7 @@ const CarDetails = memo(() => {
       car?.make
     } ${
       car?.model
-    } (€${car?.price.toLocaleString()}) - Kodi #${car?.lot || lot}. A mund të më jepni më shumë informacion? ${currentUrl}`;
+    } (€${car?.price.toLocaleString()}) - ${car?.lot || lot}. A mund të më jepni më shumë informacion? ${currentUrl}`;
     const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(
       message
     )}`;
@@ -1229,7 +1229,7 @@ const CarDetails = memo(() => {
                   
                   {car.lot && (
                     <Badge className="absolute top-2 right-2 bg-primary/90 backdrop-blur-sm text-primary-foreground px-2 py-1 text-xs font-medium shadow-lg">
-                      Lot #{car.lot}
+                      {car.lot}
                     </Badge>
                   )}
                   {/* Zoom icon */}
