@@ -617,8 +617,9 @@ const HomeCarsSection = memo(() => {
             <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0 ${isInView ? 'stagger-animation' : ''}`}>
               {displayedCars.map((car) => {
                 const lot = car.lots?.[0];
-                const usdPrice = lot?.buy_now || 25000;
-                const price = calculateFinalPriceEUR(usdPrice, exchangeRate.rate);
+                // Use same price calculation logic as CarDetails page
+                const basePrice = lot?.buy_now ?? lot?.final_bid ?? lot?.price ?? 25000;
+                const price = calculateFinalPriceEUR(basePrice, exchangeRate.rate);
                 return (
                   <LazyCarCard
                     key={car.id}

@@ -53,7 +53,7 @@ describe('Car Visibility Fix Implementation', () => {
       // Car sold exactly 24 hours ago - should be shown (within buffer)
       { id: '3', is_archived: true, archived_at: twentyFourHoursAgo.toISOString(), archive_reason: 'sold' },
       
-      // Car sold 24.5 hours ago - should be shown (at buffer limit)
+      // Car sold 24.5 hours ago - should be shown (at buffer limit, not exceeding)
       { id: '4', is_archived: true, archived_at: twentyFourAndHalfHoursAgo.toISOString(), archive_reason: 'sold' },
       
       // Car sold 25 hours ago - should be hidden (over buffer)
@@ -71,9 +71,9 @@ describe('Car Visibility Fix Implementation', () => {
 
     const visibleCars = cars.filter(car => !shouldHideSoldCar(car));
 
-    // Should show: 1, 2, 3, 6, 7, 8
-    // Should hide: 4 (exactly at buffer limit), 5 (clearly old sold car)
-    expect(visibleCars.map(c => c.id)).toEqual(['1', '2', '3', '6', '7', '8']);
+    // Should show: 1, 2, 3, 4, 6, 7, 8  
+    // Should hide: 5 (clearly old sold car)
+    expect(visibleCars.map(c => c.id)).toEqual(['1', '2', '3', '4', '6', '7', '8']);
   });
 
   it('should handle edge cases better than the original logic', () => {

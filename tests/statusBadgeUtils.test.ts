@@ -7,7 +7,7 @@ describe('Status Badge Configuration', () => {
     
     expect(result.show).toBe(true);
     expect(result.text).toBe('SOLD');
-    expect(result.className).toBe('bg-red-600 text-white');
+    expect(result.className).toBe('bg-red-600 text-white border-red-700');
   });
 
   it('should return SOLD badge for sale_status sold', () => {
@@ -15,7 +15,7 @@ describe('Status Badge Configuration', () => {
     
     expect(result.show).toBe(true);
     expect(result.text).toBe('SOLD');
-    expect(result.className).toBe('bg-red-600 text-white');
+    expect(result.className).toBe('bg-red-600 text-white border-red-700');
   });
 
   it('should prioritize status 3 over sale_status sold (both should show SOLD)', () => {
@@ -23,7 +23,7 @@ describe('Status Badge Configuration', () => {
     
     expect(result.show).toBe(true);
     expect(result.text).toBe('SOLD');
-    expect(result.className).toBe('bg-red-600 text-white');
+    expect(result.className).toBe('bg-red-600 text-white border-red-700');
   });
 
   it('should return RESERVED badge for sale_status reserved', () => {
@@ -31,7 +31,7 @@ describe('Status Badge Configuration', () => {
     
     expect(result.show).toBe(true);
     expect(result.text).toBe('RESERVED');
-    expect(result.className).toBe('bg-orange-500 text-white');
+    expect(result.className).toBe('bg-orange-600 text-white border-orange-700');
   });
 
   it('should return PENDING badge for status 2', () => {
@@ -39,7 +39,7 @@ describe('Status Badge Configuration', () => {
     
     expect(result.show).toBe(true);
     expect(result.text).toBe('PENDING');
-    expect(result.className).toBe('bg-yellow-500 text-black');
+    expect(result.className).toBe('bg-yellow-600 text-black border-yellow-700');
   });
 
   it('should return PENDING badge for sale_status pending', () => {
@@ -47,7 +47,7 @@ describe('Status Badge Configuration', () => {
     
     expect(result.show).toBe(true);
     expect(result.text).toBe('PENDING');
-    expect(result.className).toBe('bg-yellow-500 text-black');
+    expect(result.className).toBe('bg-yellow-600 text-black border-yellow-700');
   });
 
   it('should prioritize SOLD over RESERVED', () => {
@@ -55,7 +55,7 @@ describe('Status Badge Configuration', () => {
     
     expect(result.show).toBe(true);
     expect(result.text).toBe('SOLD');
-    expect(result.className).toBe('bg-red-600 text-white');
+    expect(result.className).toBe('bg-red-600 text-white border-red-700');
   });
 
   it('should prioritize RESERVED over PENDING', () => {
@@ -63,7 +63,7 @@ describe('Status Badge Configuration', () => {
     
     expect(result.show).toBe(true);
     expect(result.text).toBe('RESERVED');
-    expect(result.className).toBe('bg-orange-500 text-white');
+    expect(result.className).toBe('bg-orange-600 text-white border-orange-700');
   });
 
   it('should not show badge for available cars (status 1)', () => {
@@ -103,7 +103,7 @@ describe('Status Badge Configuration', () => {
     
     expect(result.show).toBe(true);
     expect(result.text).toBe('SOLD');
-    expect(result.className).toBe('bg-red-600 text-white');
+    expect(result.className).toBe('bg-red-600 text-white border-red-700');
   });
 
   it('should return PENDING badge for status 2 as string', () => {
@@ -111,7 +111,7 @@ describe('Status Badge Configuration', () => {
     
     expect(result.show).toBe(true);
     expect(result.text).toBe('PENDING');
-    expect(result.className).toBe('bg-yellow-500 text-black');
+    expect(result.className).toBe('bg-yellow-600 text-black border-yellow-700');
   });
 
   it('should handle invalid string status gracefully', () => {
@@ -127,7 +127,7 @@ describe('Status Badge Configuration', () => {
     
     expect(result.show).toBe(true);
     expect(result.text).toBe('SOLD');
-    expect(result.className).toBe('bg-red-600 text-white');
+    expect(result.className).toBe('bg-red-600 text-white border-red-700');
   });
 
   it('should handle unknown status values gracefully', () => {

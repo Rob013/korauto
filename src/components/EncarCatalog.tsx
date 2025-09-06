@@ -1370,8 +1370,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               >
                 {carsToDisplay.map((car: CarWithRank | any) => {
                   const lot = car.lots?.[0];
-                  const usdPrice = lot?.buy_now || 25000;
-                  const price = calculateFinalPriceEUR(usdPrice, exchangeRate.rate);
+                  // Use same price calculation logic as CarDetails page
+                  const basePrice = lot?.buy_now ?? lot?.final_bid ?? lot?.price ?? 25000;
+                  const price = calculateFinalPriceEUR(basePrice, exchangeRate.rate);
                   const lotNumber = car.lot_number || lot?.lot || "";
 
                   return (

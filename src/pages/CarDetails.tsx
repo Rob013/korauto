@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { trackPageView, trackCarView, trackFavorite } from "@/utils/analytics";
 import { calculateFinalPriceEUR } from "@/utils/carPricing";
+import { getStatusBadgeConfig } from "@/utils/statusBadgeUtils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -66,6 +67,9 @@ interface CarDetails {
   lot?: string;
   title?: string;
   images?: string[];
+  // Status information for SOLD badges
+  status?: number;
+  sale_status?: string;
   odometer?: {
     km: number;
     mi: number;
@@ -656,6 +660,9 @@ const CarDetails = memo(() => {
               ),
             lot: cachedCar.lot_number || lotData.lot,
             title: `${cachedCar.year} ${cachedCar.make} ${cachedCar.model}`,
+            // Status information for SOLD badges
+            status: Number(cachedCar.status || carData.status || lotData.status || 1),
+            sale_status: cachedCar.sale_status || carData.sale_status || lotData.sale_status,
             odometer: lotData.odometer,
             engine: carData.engine,
             cylinders: carData.cylinders,
@@ -847,6 +854,9 @@ const CarDetails = memo(() => {
           ),
           lot: lotData.lot,
           title: lotData.title || carData.title,
+          // Status information for SOLD badges
+          status: Number(carData.status || lotData.status || 1),
+          sale_status: carData.sale_status || lotData.sale_status,
           odometer: lotData.odometer,
           engine: carData.engine,
           cylinders: carData.cylinders,
@@ -911,6 +921,9 @@ const CarDetails = memo(() => {
               condition: "Good Condition",
               lot: fallbackCar.lot_number,
               title: fallbackCar.title,
+              // Status information for SOLD badges  
+              status: Number(fallbackCar.status || lotData.status || 1),
+              sale_status: fallbackCar.sale_status || lotData.sale_status,
               odometer: lotData.odometer ? {
                 km: lotData.odometer.km,
                 mi: Math.round(lotData.odometer.km * 0.621371),
@@ -1216,6 +1229,21 @@ const CarDetails = memo(() => {
                       Lot #{car.lot}
                     </Badge>
                   )}
+                  
+                  {/* SOLD Badge Overlay */}
+                  {(() => {
+                    const statusBadge = getStatusBadgeConfig({ status: car.status, sale_status: car.sale_status });
+                    
+                    if (statusBadge.show) {
+                      return (
+                        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${statusBadge.className} px-6 py-3 rounded-lg text-lg font-bold shadow-2xl z-20 transform rotate-12`}>
+                          {statusBadge.text}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+                  
                   {/* Zoom icon */}
                   <div className="absolute bottom-2 right-2 bg-black/50 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Expand className="h-3 w-3 text-white" />
