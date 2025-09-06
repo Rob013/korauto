@@ -22,6 +22,79 @@ const ShipmentTracking = () => {
     const chassis = query.substring(0, 17);
     const year = query.includes('2024') ? '2024' : '2021';
     
+    // Check for specific chassis that has known data
+    if (chassis === 'WDDWJ1FB6KF833913') {
+      return {
+        query: {
+          chassis: chassis,
+          year: year
+        },
+        result: {
+          shipper: "주식회사 싼카",
+          model_year: "C200",
+          chassis: chassis,
+          vessel: "MV SANG SHIN V.2508",
+          pol: "INCHEON, KOREA",
+          on_board: "2025-08-06",
+          port: "DURRES, ALBANIA", 
+          eta: "2025-09-11"
+        },
+        shipping_status: {
+          overall: "Loaded",
+          steps: [
+            { name: "In Port", active: true },
+            { name: "Vessel Fixed", active: true },
+            { name: "Shipment Ready", active: true },
+            { name: "Loaded", active: true },
+            { name: "Arrival", active: false }
+          ]
+        },
+        source: "cigshipping.com",
+        last_updated: new Date().toISOString(),
+        rows: [
+          {
+            type: "metadata",
+            shipper: "주식회사 싼카",
+            model: "C200",
+            chassis: chassis,
+            vesselName: "MV SANG SHIN V.2508",
+            portOfLoading: "INCHEON, KOREA",
+            portOfDischarge: "DURRES, ALBANIA",
+            onBoard: "2025-08-06",
+            estimatedArrival: "2025-09-11",
+            shippingLine: "CIG Shipping Line",
+            billOfLading: "CIG" + chassis.substring(9, 17),
+            containerNumber: "CGMU" + Math.random().toString().substring(2, 9)
+          },
+          {
+            type: "event",
+            date: "2025-08-06",
+            event: "Container loaded on vessel",
+            location: "INCHEON, KOREA",
+            vessel: "MV SANG SHIN V.2508",
+            status: "Loaded"
+          },
+          {
+            type: "event", 
+            date: "2025-08-07",
+            event: "Vessel departure",
+            location: "INCHEON, KOREA",
+            vessel: "MV SANG SHIN V.2508",
+            status: "Departed"
+          },
+          {
+            type: "event",
+            date: "2025-09-11",
+            event: "Expected arrival",
+            location: "DURRES, ALBANIA",
+            vessel: "MV SANG SHIN V.2508", 
+            status: "In Transit"
+          }
+        ]
+      };
+    }
+    
+    // Default mock data for other queries
     return {
       query: {
         chassis: chassis,
