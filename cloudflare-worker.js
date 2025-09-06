@@ -240,12 +240,155 @@ function parseTrackingTable(html) {
       rows.push(...parseAlternativeStructures(html));
     }
 
+    // Extract additional metadata from the page
+    const metadata = extractTrackingMetadata(html);
+    
+    // If we have metadata, add it as the first "row"
+    if (metadata && Object.keys(metadata).length > 0) {
+      rows.unshift({
+        type: 'metadata',
+        ...metadata
+      });
+    }
+
   } catch (error) {
     console.error('Error parsing tracking table:', error);
     // Return empty array on parsing errors
   }
   
   return rows;
+}
+
+/**
+ * Extract comprehensive tracking metadata from HTML page
+ */
+function extractTrackingMetadata(html) {
+  const metadata = {};
+  
+  try {
+    // Extract container number
+    const containerPatterns = [
+      /<[^>]*>Container\s*(?:No\.?|Number)?[:\s]*([A-Z]{4}\d{7})<\/[^>]*>/gi,
+      /Container[:\s]*([A-Z]{4}\d{7})/gi,
+      /([A-Z]{4}\d{7})/g // Standard container number format
+    ];
+    
+    for (const pattern of containerPatterns) {
+      const match = html.match(pattern);
+      if (match && match[1]) {
+        metadata.containerNumber = match[1];
+        break;
+      }
+    }
+    
+    // Extract B/L (Bill of Lading) number
+    const blPatterns = [
+      /<[^>]*>B\/L\s*(?:No\.?|Number)?[:\s]*([A-Z0-9\-]+)<\/[^>]*>/gi,
+      /B\/L[:\s]*([A-Z0-9\-]{6,})/gi,
+      /Bill\s+of\s+Lading[:\s]*([A-Z0-9\-]+)/gi
+    ];
+    
+    for (const pattern of blPatterns) {
+      const match = html.match(pattern);
+      if (match && match[1]) {
+        metadata.billOfLading = match[1];
+        break;
+      }
+    }
+    
+    // Extract vessel name (more comprehensive)
+    const vesselPatterns = [
+      /<[^>]*>Vessel[:\s]*([^<]+)<\/[^>]*>/gi,
+      /Vessel[:\s]*([A-Z\s\-]+(?:VESSEL|SHIP|EXPRESS|LINE|STAR|OCEAN|SEA))/gi,
+      /Ship[:\s]*([^<\n\r]+)/gi
+    ];
+    
+    for (const pattern of vesselPatterns) {
+      const match = html.match(pattern);
+      if (match && match[1]) {
+        metadata.vesselName = match[1].trim();
+        break;
+      }
+    }
+    
+    // Extract voyage number
+    const voyagePatterns = [
+      /<[^>]*>Voyage[:\s]*([A-Z0-9\-]+)<\/[^>]*>/gi,
+      /Voyage[:\s]*([A-Z0-9\-]+)/gi
+    ];
+    
+    for (const pattern of voyagePatterns) {
+      const match = html.match(pattern);
+      if (match && match[1]) {
+        metadata.voyageNumber = match[1];
+        break;
+      }
+    }
+    
+    // Extract port of loading
+    const polPatterns = [
+      /<[^>]*>Port\s+of\s+Loading[:\s]*([^<]+)<\/[^>]*>/gi,
+      /POL[:\s]*([^<\n\r]+)/gi,
+      /Loading\s+Port[:\s]*([^<\n\r]+)/gi
+    ];
+    
+    for (const pattern of polPatterns) {
+      const match = html.match(pattern);
+      if (match && match[1]) {
+        metadata.portOfLoading = match[1].trim();
+        break;
+      }
+    }
+    
+    // Extract port of discharge
+    const podPatterns = [
+      /<[^>]*>Port\s+of\s+Discharge[:\s]*([^<]+)<\/[^>]*>/gi,
+      /POD[:\s]*([^<\n\r]+)/gi,
+      /Discharge\s+Port[:\s]*([^<\n\r]+)/gi
+    ];
+    
+    for (const pattern of podPatterns) {
+      const match = html.match(pattern);
+      if (match && match[1]) {
+        metadata.portOfDischarge = match[1].trim();
+        break;
+      }
+    }
+    
+    // Extract estimated arrival date
+    const etaPatterns = [
+      /<[^>]*>ETA[:\s]*([^<]+)<\/[^>]*>/gi,
+      /Estimated\s+Arrival[:\s]*([^<\n\r]+)/gi,
+      /ETA[:\s]*(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})/gi
+    ];
+    
+    for (const pattern of etaPatterns) {
+      const match = html.match(pattern);
+      if (match && match[1]) {
+        metadata.estimatedArrival = match[1].trim();
+        break;
+      }
+    }
+    
+    // Extract shipping line
+    const linePatterns = [
+      /<[^>]*>Shipping\s+Line[:\s]*([^<]+)<\/[^>]*>/gi,
+      /Line[:\s]*([A-Z\s]+(?:LINE|SHIPPING|LOGISTICS))/gi
+    ];
+    
+    for (const pattern of linePatterns) {
+      const match = html.match(pattern);
+      if (match && match[1]) {
+        metadata.shippingLine = match[1].trim();
+        break;
+      }
+    }
+    
+  } catch (error) {
+    console.error('Error extracting metadata:', error);
+  }
+  
+  return metadata;
 }
 
 /**
@@ -264,6 +407,10 @@ function mapCellsToRow(cells) {
     if (isDateLike(cell)) {
       row.date = cell;
     }
+    // Try to identify container numbers
+    else if (isContainerNumber(cell)) {
+      row.containerNumber = cell;
+    }
     // Try to identify vessel/ship names
     else if (isVesselLike(cell)) {
       row.vessel = cell;
@@ -272,6 +419,10 @@ function mapCellsToRow(cells) {
     else if (isLocationLike(cell)) {
       row.location = cell;
     }
+    // Try to identify status/event descriptions
+    else if (isStatusLike(cell)) {
+      row.status = cell;
+    }
     // Everything else goes to event
     else if (!row.event && cell.length > 0) {
       row.event = cell;
@@ -279,11 +430,41 @@ function mapCellsToRow(cells) {
   }
   
   // Only return row if it has some meaningful content
-  if (row.date || row.event || row.location || row.vessel) {
+  if (row.date || row.event || row.location || row.vessel || row.status || row.containerNumber) {
     return row;
   }
   
   return null;
+}
+
+/**
+ * Check if text looks like a container number
+ */
+function isContainerNumber(text) {
+  // Standard container number format: 4 letters + 7 digits
+  const containerPattern = /^[A-Z]{4}\d{7}$/;
+  return containerPattern.test(text.replace(/\s/g, ''));
+}
+
+/**
+ * Check if text looks like a status/event description
+ */
+function isStatusLike(text) {
+  const statusPatterns = [
+    /arrived/i,
+    /departed/i,
+    /loaded/i,
+    /discharged/i,
+    /customs/i,
+    /gate\s+(in|out)/i,
+    /vessel\s+arrival/i,
+    /vessel\s+departure/i,
+    /container\s+(loaded|discharged)/i,
+    /released/i,
+    /cleared/i
+  ];
+  
+  return statusPatterns.some(pattern => pattern.test(text));
 }
 
 /**
@@ -327,7 +508,16 @@ function isLocationLike(text) {
     /korea/i,
     /busan/i,
     /incheon/i,
+    /seoul/i,
+    /china/i,
+    /japan/i,
+    /usa/i,
+    /europe/i,
     /\w+,\s*\w+/, // City, Country format
+    /\w+\s+port/i,
+    /\w+\s+terminal/i,
+    /pier\s+\d+/i,
+    /berth\s+\d+/i
   ];
   
   return locationPatterns.some(pattern => pattern.test(text));

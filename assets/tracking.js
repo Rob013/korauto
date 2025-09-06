@@ -43,26 +43,133 @@ function renderResults(data) {
         return;
     }
 
-    const cardsHtml = data.rows.map((row, index) => `
-        <div class="result-card">
+    let cardsHtml = '';
+    
+    // Check if first row is metadata
+    let startIndex = 0;
+    if (data.rows[0] && data.rows[0].type === 'metadata') {
+        const metadata = data.rows[0];
+        cardsHtml += renderMetadataCard(metadata);
+        startIndex = 1;
+    }
+    
+    // Render tracking events
+    const eventCards = data.rows.slice(startIndex).map((row, index) => {
+        return renderTrackingEventCard(row, index);
+    }).join('');
+
+    resultsEl.innerHTML = `
+        <div class="tracking-header">
+            <h3>Tracking Results for: ${escapeHtml(data.query)}</h3>
+        </div>
+        ${cardsHtml}
+        ${eventCards}
+    `;
+    resultsEl.style.display = 'block';
+}
+
+// Render metadata card with comprehensive shipment information
+function renderMetadataCard(metadata) {
+    const fields = [];
+    
+    if (metadata.containerNumber) {
+        fields.push(`<div class="metadata-field"><strong>Container Number:</strong> ${escapeHtml(metadata.containerNumber)}</div>`);
+    }
+    if (metadata.billOfLading) {
+        fields.push(`<div class="metadata-field"><strong>Bill of Lading:</strong> ${escapeHtml(metadata.billOfLading)}</div>`);
+    }
+    if (metadata.vesselName) {
+        fields.push(`<div class="metadata-field"><strong>Vessel:</strong> ${escapeHtml(metadata.vesselName)}</div>`);
+    }
+    if (metadata.voyageNumber) {
+        fields.push(`<div class="metadata-field"><strong>Voyage:</strong> ${escapeHtml(metadata.voyageNumber)}</div>`);
+    }
+    if (metadata.shippingLine) {
+        fields.push(`<div class="metadata-field"><strong>Shipping Line:</strong> ${escapeHtml(metadata.shippingLine)}</div>`);
+    }
+    if (metadata.portOfLoading) {
+        fields.push(`<div class="metadata-field"><strong>Port of Loading:</strong> ${escapeHtml(metadata.portOfLoading)}</div>`);
+    }
+    if (metadata.portOfDischarge) {
+        fields.push(`<div class="metadata-field"><strong>Port of Discharge:</strong> ${escapeHtml(metadata.portOfDischarge)}</div>`);
+    }
+    if (metadata.estimatedArrival) {
+        fields.push(`<div class="metadata-field"><strong>Estimated Arrival:</strong> ${escapeHtml(metadata.estimatedArrival)}</div>`);
+    }
+    
+    if (fields.length === 0) {
+        return '';
+    }
+    
+    return `
+        <div class="result-card metadata-card">
             <div class="card-header">
-                <div class="event-status">${escapeHtml(row.event || 'Status Update')}</div>
+                <div class="event-status">📋 Shipment Information</div>
             </div>
             <div class="card-body">
-                <div class="event-details">
-                    ${row.date ? `<div><strong>Date:</strong> ${escapeHtml(row.date)}</div>` : ''}
-                    ${row.location ? `<div><strong>Location:</strong> ${escapeHtml(row.location)}</div>` : ''}
-                    ${row.vessel ? `<div><strong>Vessel:</strong> ${escapeHtml(row.vessel)}</div>` : ''}
+                <div class="metadata-grid">
+                    ${fields.join('')}
                 </div>
             </div>
         </div>
-    `).join('');
-
-    resultsEl.innerHTML = `
-        <h3 style="color: #2c3e50; margin-bottom: 1rem;">Tracking Results for: ${escapeHtml(data.query)}</h3>
-        ${cardsHtml}
     `;
-    resultsEl.style.display = 'block';
+}
+
+// Render individual tracking event card
+function renderTrackingEventCard(row, index) {
+    const fields = [];
+    
+    if (row.date) {
+        fields.push(`<div><strong>Date:</strong> ${escapeHtml(row.date)}</div>`);
+    }
+    if (row.location) {
+        fields.push(`<div><strong>Location:</strong> ${escapeHtml(row.location)}</div>`);
+    }
+    if (row.vessel) {
+        fields.push(`<div><strong>Vessel:</strong> ${escapeHtml(row.vessel)}</div>`);
+    }
+    if (row.containerNumber) {
+        fields.push(`<div><strong>Container:</strong> ${escapeHtml(row.containerNumber)}</div>`);
+    }
+    if (row.status) {
+        fields.push(`<div><strong>Status:</strong> ${escapeHtml(row.status)}</div>`);
+    }
+    
+    const statusIcon = getStatusIcon(row.event || row.status || 'Update');
+    
+    return `
+        <div class="result-card tracking-event-card">
+            <div class="card-header">
+                <div class="event-status">${statusIcon} ${escapeHtml(row.event || row.status || 'Status Update')}</div>
+            </div>
+            <div class="card-body">
+                <div class="event-details">
+                    ${fields.join('')}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Get appropriate icon for status
+function getStatusIcon(status) {
+    const statusLower = status.toLowerCase();
+    
+    if (statusLower.includes('arrived') || statusLower.includes('arrival')) {
+        return '🚢';
+    } else if (statusLower.includes('departed') || statusLower.includes('departure')) {
+        return '⚓';
+    } else if (statusLower.includes('loaded') || statusLower.includes('loading')) {
+        return '📦';
+    } else if (statusLower.includes('discharged') || statusLower.includes('discharge')) {
+        return '🏗️';
+    } else if (statusLower.includes('customs') || statusLower.includes('cleared')) {
+        return '✅';
+    } else if (statusLower.includes('gate')) {
+        return '🚪';
+    } else {
+        return '📍';
+    }
 }
 
 // Escape HTML to prevent XSS

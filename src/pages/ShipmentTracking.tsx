@@ -16,6 +16,27 @@ const ShipmentTracking = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Helper function to get appropriate icon for status
+  const getStatusIcon = (status: string) => {
+    const statusLower = status.toLowerCase();
+    
+    if (statusLower.includes('arrived') || statusLower.includes('arrival') || statusLower.includes('mbërr')) {
+      return '🚢';
+    } else if (statusLower.includes('departed') || statusLower.includes('departure') || statusLower.includes('nisi')) {
+      return '⚓';
+    } else if (statusLower.includes('loaded') || statusLower.includes('loading') || statusLower.includes('ngarko')) {
+      return '📦';
+    } else if (statusLower.includes('discharged') || statusLower.includes('discharge') || statusLower.includes('shkarko')) {
+      return '🏗️';
+    } else if (statusLower.includes('customs') || statusLower.includes('cleared') || statusLower.includes('doganë')) {
+      return '✅';
+    } else if (statusLower.includes('gate') || statusLower.includes('portë')) {
+      return '🚪';
+    } else {
+      return '📍';
+    }
+  };
+
   const handleTrackingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!trackingNumber.trim()) {
@@ -152,36 +173,110 @@ const ShipmentTracking = () => {
                     Rezultatet e Gjurmimit për: {trackingNumber}
                   </h2>
                   <div className="space-y-4">
-                    {results.map((result) => (
-                      <Card key={result.id}>
-                        <CardContent className="pt-6">
-                          <div className="space-y-4">
-                            <div className="flex items-start justify-between">
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="secondary" className="font-medium">
-                                    {result.status}
-                                  </Badge>
-                                  <span className="text-sm text-muted-foreground">
-                                    {result.date}
-                                  </span>
-                                </div>
-                                <h3 className="font-medium text-foreground">
-                                  {result.location}
-                                </h3>
-                                <p className="text-sm text-muted-foreground">
-                                  {result.description}
-                                </p>
+                    {/* Shipment Metadata Card */}
+                    {results.some(r => r.type === 'metadata') && (
+                      <Card className="border-l-4 border-l-blue-500">
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            📋 Informacionet e Ngarkesës
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {results.filter(r => r.type === 'metadata').map((metadata) => (
+                              <div key="metadata" className="space-y-3">
+                                {metadata.containerNumber && (
+                                  <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
+                                    <strong>Numri i Kontejnerit:</strong> {metadata.containerNumber}
+                                  </div>
+                                )}
+                                {metadata.billOfLading && (
+                                  <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
+                                    <strong>Bill of Lading:</strong> {metadata.billOfLading}
+                                  </div>
+                                )}
+                                {metadata.vesselName && (
+                                  <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
+                                    <strong>Anija:</strong> {metadata.vesselName}
+                                  </div>
+                                )}
+                                {metadata.voyageNumber && (
+                                  <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
+                                    <strong>Udhëtimi:</strong> {metadata.voyageNumber}
+                                  </div>
+                                )}
+                                {metadata.shippingLine && (
+                                  <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
+                                    <strong>Linja Detare:</strong> {metadata.shippingLine}
+                                  </div>
+                                )}
+                                {metadata.portOfLoading && (
+                                  <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
+                                    <strong>Porti i Ngarkimit:</strong> {metadata.portOfLoading}
+                                  </div>
+                                )}
+                                {metadata.portOfDischarge && (
+                                  <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
+                                    <strong>Porti i Shkarkimit:</strong> {metadata.portOfDischarge}
+                                  </div>
+                                )}
+                                {metadata.estimatedArrival && (
+                                  <div className="p-3 bg-muted/50 rounded-lg border-l-2 border-l-blue-500">
+                                    <strong>Mbërritja e Pritshme:</strong> {metadata.estimatedArrival}
+                                  </div>
+                                )}
                               </div>
-                            </div>
-                            {result.estimatedDelivery && (
-                              <div className="bg-muted/50 rounded-lg p-3">
-                                <p className="text-sm text-foreground">
-                                  <strong>Data e pritshme e dorëzimit:</strong> {result.estimatedDelivery}
-                                </p>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                    
+                    {/* Tracking Events */}
+                    {results.filter(r => r.type !== 'metadata').map((result) => (
+                      <Card key={result.id} className="border-l-4 border-l-green-500">
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            {getStatusIcon(result.status)} {result.status}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {result.date && (
+                              <div className="p-3 bg-muted/50 rounded-lg">
+                                <strong>Data:</strong> {result.date}
+                              </div>
+                            )}
+                            {result.location && (
+                              <div className="p-3 bg-muted/50 rounded-lg">
+                                <strong>Vendndodhja:</strong> {result.location}
+                              </div>
+                            )}
+                            {result.vessel && (
+                              <div className="p-3 bg-muted/50 rounded-lg">
+                                <strong>Anija:</strong> {result.vessel}
+                              </div>
+                            )}
+                            {result.containerNumber && (
+                              <div className="p-3 bg-muted/50 rounded-lg">
+                                <strong>Kontejneri:</strong> {result.containerNumber}
                               </div>
                             )}
                           </div>
+                          {result.description && (
+                            <div className="mt-4 p-3 bg-muted/30 rounded-lg">
+                              <p className="text-sm text-muted-foreground">
+                                {result.description}
+                              </p>
+                            </div>
+                          )}
+                          {result.estimatedDelivery && (
+                            <div className="mt-4 bg-blue-50 rounded-lg p-3">
+                              <p className="text-sm text-foreground">
+                                <strong>Data e pritshme e dorëzimit:</strong> {result.estimatedDelivery}
+                              </p>
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
                     ))}
