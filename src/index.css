@@ -1284,6 +1284,68 @@ All colors MUST be HSL.
     height: auto;
     min-height: 36px;
   }
+
+  /* Ultra-compact metadata fields for horizontal layouts */
+  .tracking-metadata-horizontal {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    margin-bottom: 4px;
+    font-size: 12px;
+    line-height: 1.2;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 6px;
+    border-left: 2px solid currentColor;
+  }
+
+  .tracking-metadata-horizontal strong {
+    flex-shrink: 0;
+    min-width: fit-content;
+    font-size: 11px;
+    opacity: 0.8;
+  }
+
+  .tracking-metadata-horizontal span {
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+  }
+
+  /* Compact card layouts */
+  .tracking-card-ultra-compact {
+    margin-bottom: 8px;
+  }
+
+  .tracking-card-ultra-compact .card-header {
+    padding: 8px 12px 4px;
+  }
+
+  .tracking-card-ultra-compact .card-content {
+    padding: 0 12px 8px;
+  }
+
+  /* Horizontal grid for tracking events */
+  .tracking-event-horizontal {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 6px;
+  }
+
+  .tracking-event-horizontal > div {
+    padding: 4px 8px;
+    font-size: 11px;
+    line-height: 1.2;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 4px;
+  }
+
+  /* Two-column metadata layout */
+  .tracking-metadata-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
 }
 
 /* Extra compact styles for very small screens */
@@ -1346,6 +1408,35 @@ All colors MUST be HSL.
     padding: 6px 10px;
     font-size: 13px;
     min-height: 32px;
+  }
+
+  /* Ultra-compact styles for very small screens */
+  .tracking-metadata-horizontal {
+    padding: 4px 8px;
+    margin-bottom: 3px;
+    font-size: 11px;
+    gap: 6px;
+  }
+
+  .tracking-metadata-horizontal strong {
+    font-size: 10px;
+  }
+
+  .tracking-card-ultra-compact .card-header {
+    padding: 6px 10px 3px;
+  }
+
+  .tracking-card-ultra-compact .card-content {
+    padding: 0 10px 6px;
+  }
+
+  .tracking-event-horizontal > div {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+
+  .tracking-metadata-two-col {
+    gap: 4px;
   }
 }
 
