@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { writeFileSync, unlinkSync, existsSync } from 'fs';
+import { writeFileSync, unlinkSync, existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 
 // Mock the currency sync functionality
@@ -35,7 +35,7 @@ describe('Currency Sync Functionality', () => {
       expect(existsSync(testExchangeRateFile)).toBe(true);
       
       // Read and parse the file
-      const fileContent = require('fs').readFileSync(testExchangeRateFile, 'utf8');
+      const fileContent = readFileSync(testExchangeRateFile, 'utf8');
       const parsedRate = JSON.parse(fileContent);
       
       expect(parsedRate).toEqual(mockExchangeRate);
@@ -52,7 +52,7 @@ describe('Currency Sync Functionality', () => {
 
       writeFileSync(testExchangeRateFile, JSON.stringify(fallbackRate, null, 2), 'utf8');
 
-      const fileContent = require('fs').readFileSync(testExchangeRateFile, 'utf8');
+      const fileContent = readFileSync(testExchangeRateFile, 'utf8');
       const parsedRate = JSON.parse(fileContent);
       
       expect(parsedRate.rate).toBe(0.85);
