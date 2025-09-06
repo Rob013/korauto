@@ -6,6 +6,17 @@
  * 2. Set up route: /api/cig-track* -> this worker
  * 3. Optionally configure AUTH_ENABLED environment variable
  * 
+ * ROUTE BINDING:
+ * - In Cloudflare Workers dashboard, go to your worker's settings
+ * - Add a route pattern: yoursite.com/api/cig-track* -> this worker
+ * - Or use wrangler.toml with: route = "/api/cig-track*"
+ * 
+ * ENDPOINT DISCOVERY:
+ * - Open https://cigshipping.com/Home/cargo.html in DevTools
+ * - Go to Network tab, search a real VIN/B/L, find the request that returns data
+ * - If it's not ?keyword=, update tryAlternateEndpoint(q) with that URL/method/body
+ * - Map JSON fields to {date,event,location,vessel}
+ * 
  * AUTH INTEGRATION POINTS:
  * - Set AUTH_ENABLED = "true" in worker environment to enable auth
  * - Customize cookie name in AUTH_COOKIE_NAME if needed
@@ -73,7 +84,7 @@ export default {
       const query = url.searchParams.get('q');
       if (!query || query.trim().length === 0) {
         return new Response(
-          JSON.stringify({ error: 'Missing query parameter "q"' }),
+          JSON.stringify({ error: 'Missing q' }),
           {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -179,7 +190,7 @@ function checkAuthentication(request) {
  * Fetch and parse tracking data from CIG Shipping website
  */
 async function fetchTrackingData(query) {
-  const cigUrl = `https://cigshipping.com/Home/en/cargo.html?keyword=${encodeURIComponent(query)}`;
+  const cigUrl = `https://cigshipping.com/Home/cargo.html?keyword=${encodeURIComponent(query)}`;
   
   try {
     // Fetch with desktop user agent
@@ -203,8 +214,15 @@ async function fetchTrackingData(query) {
     // Parse the HTML to extract table rows
     const rows = parseTrackingTable(html);
     
+    // If parsing finds zero rows, try alternate endpoint
+    let finalRows = rows;
+    if (rows.length === 0) {
+      const alternateRows = await tryAlternateEndpoint(query);
+      finalRows = alternateRows;
+    }
+    
     // Dedupe near-identical rows
-    const deduped = deduplicateRows(rows);
+    const deduped = deduplicateRows(finalRows);
     
     return {
       query,
@@ -663,6 +681,26 @@ function parseAlternativeStructures(html) {
   }
   
   return rows;
+}
+
+/**
+ * Try alternate endpoint when main parsing fails
+ * Placeholder: if the page actually uses another internal endpoint (JSON or POST), fill this later
+ */
+async function tryAlternateEndpoint(query) {
+  // TODO: Discover the real internal endpoint via DevTools
+  // For now, return empty rows as placeholder
+  console.log('tryAlternateEndpoint called for query:', query);
+  
+  // PLACEHOLDER: When you discover the real endpoint via DevTools:
+  // 1. Open https://cigshipping.com/Home/cargo.html in browser
+  // 2. Open DevTools → Network tab
+  // 3. Search a real VIN/B/L number
+  // 4. Find the request that returns actual data (might be JSON or POST)
+  // 5. Update this function to call that endpoint
+  // 6. Map the JSON response fields to {date, event, location, vessel}
+  
+  return [];
 }
 
 /**

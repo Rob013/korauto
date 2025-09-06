@@ -277,7 +277,7 @@
     <div class="container">
         <!-- Tracking Form -->
         <div class="tracking-form">
-            <form name="q" onsubmit="submitTracking(event)">
+            <form id="trackForm" onsubmit="submitTracking(event)">
                 <div class="form-group">
                     <label for="tracking-input">Enter VIN (17 characters) or Bill of Lading (B/L) Number:</label>
                     <input 
@@ -303,8 +303,10 @@
             <summary>Alternative: Use CIG Shipping Direct Search</summary>
             <div class="fallback-content">
                 <iframe 
-                    src="https://cigshipping.com/Home/en/cargo.html"
+                    src="https://cigshipping.com/Home/cargo.html"
                     title="CIG Shipping Cargo Tracking"
+                    style="width:100%;min-height:900px;border:0"
+                    referrerpolicy="no-referrer"
                     loading="lazy">
                 </iframe>
             </div>

@@ -35,7 +35,7 @@ function renderResults(data) {
             <div class="result-card">
                 <div class="card-body">
                     <div class="event-status">No updates found</div>
-                    <p>No tracking information was found for "${data.query}". Please check your VIN or B/L number and try again.</p>
+                    <p>No results found for ${escapeHtml(data.query)}.</p>
                 </div>
             </div>
         `;
@@ -198,12 +198,21 @@ export function submitTracking(event) {
     
     const form = event.target;
     const formData = new FormData(form);
-    const query = formData.get('q')?.trim();
+    let query = formData.get('q')?.trim();
     
     if (!query) {
         showStatus('Please enter a VIN or B/L number', 'error');
         return;
     }
+    
+    // Preprocessing: uppercase if length >= 10 (VINs), collapse internal spaces
+    if (query.length >= 10) {
+        query = query.toUpperCase();
+    }
+    // Collapse internal spaces
+    query = query.replace(/\s+/g, ' ').trim();
+    
+    console.debug('Sent query:', query);
     
     // Validate VIN format if it looks like a VIN (17 characters, alphanumeric)
     if (query.length === 17 && /^[A-HJ-NPR-Z0-9]{17}$/i.test(query)) {
@@ -248,6 +257,7 @@ export function submitTracking(event) {
             return response.json();
         })
         .then(data => {
+            console.debug('Response length:', data.rows ? data.rows.length : 0);
             handleTrackingSuccess(data, submitBtn, originalText);
         })
         .catch(error => {
@@ -294,7 +304,7 @@ window.submitTracking = submitTracking;
 
 // Auto-focus on the input field when page loads
 document.addEventListener('DOMContentLoaded', function() {
-    const input = document.getElementById('tracking-input');
+    const input = document.querySelector('#trackForm input[name="q"]');
     if (input) {
         input.focus();
     }
