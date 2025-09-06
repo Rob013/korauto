@@ -52,7 +52,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { useGlobalCarSorting } from "@/hooks/useGlobalCarSorting";
 // TODO: Migrate this component to use useCarsQuery and fetchCarsWithKeyset 
-// for consistent backend sorting like NewCatalog.tsx
+// for consistent backend sorting
 import { CarWithRank } from "@/utils/chronologicalRanking";
 import { filterOutTestCars } from "@/utils/testCarFilter";
 import { calculateFinalPriceEUR, filterCarsWithBuyNowPricing } from "@/utils/carPricing";
