@@ -502,14 +502,14 @@ function createMockWidgetData(query) {
             year: year
         },
         result: {
-            shipper: "CIG Shipping Co., Ltd",
-            model_year: "Hyundai Sonata (2021)",
+            shipper: "주식회사 싼카",
+            model_year: "C200",
             chassis: chassis,
-            vessel: "Morning Cara",
-            pol: "Busan Port, South Korea",
-            on_board: "2025-08-31",
+            vessel: "MV SANG SHIN V.2508",
+            pol: "INCHEON, KOREA",
+            on_board: "2025-08-06",
             port: "Durres Port, Albania", 
-            eta: "2025-09-20"
+            eta: "2025-09-11"
         },
         shipping_status: {
             overall: "Loaded",
@@ -526,40 +526,40 @@ function createMockWidgetData(query) {
         rows: [
             {
                 type: "metadata",
-                shipper: "CIG Shipping Co., Ltd",
-                model: "Hyundai Sonata (2021)",
+                shipper: "주식회사 싼카",
+                model: "C200",
                 chassis: chassis,
-                vesselName: "Morning Cara",
-                portOfLoading: "Busan Port, South Korea",
+                vesselName: "MV SANG SHIN V.2508",
+                portOfLoading: "INCHEON, KOREA",
                 portOfDischarge: "Durres Port, Albania",
-                onBoard: "2025-08-31",
-                estimatedArrival: "2025-09-20",
+                onBoard: "2025-08-06",
+                estimatedArrival: "2025-09-11",
                 shippingLine: "CIG Shipping Line",
                 billOfLading: "CIG" + chassis.substring(9, 17),
                 containerNumber: "CGMU" + Math.random().toString().substring(2, 9)
             },
             {
                 type: "event",
-                date: "2025-08-31",
+                date: "2025-08-06",
                 event: "Container loaded on vessel",
-                location: "Busan Port, South Korea",
-                vessel: "Morning Cara",
+                location: "INCHEON, KOREA",
+                vessel: "MV SANG SHIN V.2508",
                 status: "Loaded"
             },
             {
                 type: "event", 
-                date: "2025-09-01",
+                date: "2025-08-07",
                 event: "Vessel departure",
-                location: "Busan Port, South Korea",
-                vessel: "Morning Cara",
+                location: "INCHEON, KOREA",
+                vessel: "MV SANG SHIN V.2508",
                 status: "Departed"
             },
             {
                 type: "event",
-                date: "2025-09-20",
+                date: "2025-09-11",
                 event: "Expected arrival",
                 location: "Durres Port, Albania",
-                vessel: "Morning Cara", 
+                vessel: "MV SANG SHIN V.2508", 
                 status: "In Transit"
             }
         ]
