@@ -23,10 +23,7 @@ const MyAccount = lazy(() => import("./pages/MyAccount"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Contacts = lazy(() => import("./pages/Contacts"));
 const ShipmentTracking = lazy(() => import("./pages/ShipmentTracking"));
-const ComponentDemo = lazy(() => import("./pages/ComponentDemo"));
-const DiagramDemo = lazy(() => import("./pages/DiagramDemo"));
-// Removed demo import - was only for testing layout improvements
-const AdminCarSearchDemo = lazy(() => import("./pages/AdminCarSearchDemo"));
+// Demo imports removed - no longer needed
 const PerformanceDashboard = lazy(() => import("./components/PerformanceDashboard"));
 const AuditTestPage = lazy(() => import("./pages/AuditTestPage"));
 const ApiInfoDemo = lazy(() => import("./components/ApiInfoDemo"));
@@ -189,22 +186,7 @@ const App = () => {
                 <ShipmentTracking />
               </Suspense>
             } />
-            <Route path="/demo" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <ComponentDemo />
-              </Suspense>
-            } />
-            <Route path="/diagram-demo" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <DiagramDemo />
-              </Suspense>
-            } />
-// Remove the demo route since it was just for testing
-            <Route path="/admin-search-demo" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <AdminCarSearchDemo />
-              </Suspense>
-            } />
+            {/* Demo routes removed - no longer needed */}
             <Route path="/performance" element={
               <Suspense fallback={<PageSkeleton />}>
                 <PerformanceDashboard />
