@@ -53,10 +53,10 @@ export function getStatusBadgeConfig(carStatus: CarStatus): StatusBadgeConfig {
     };
   }
 
-  // ✅ AVAILABLE - No badge shown for available cars (default state)
+  // ✅ AVAILABLE - White background with black text for available cars (default state)
   return {
-    text: '',
-    className: '',
-    show: false
+    text: 'AVAILABLE',
+    className: 'bg-white text-black border-gray-300',
+    show: true
   };
 }
