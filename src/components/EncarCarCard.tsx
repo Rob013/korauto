@@ -238,7 +238,7 @@ const EncarCarCard = ({
         {/* Lot number */}
         {lot && (
           <div className="absolute bottom-3 left-3 bg-primary/90 text-white text-xs px-3 py-1 rounded-full font-semibold backdrop-blur-sm">
-            Lot #{lot}
+            {lot}
           </div>
         )}
       </div>

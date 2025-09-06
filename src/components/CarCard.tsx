@@ -454,7 +454,7 @@ const CarCard = ({
           // Show lot number if no status badge and lot exists
           return lot ? (
             <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-semibold">
-              Kodi #{lot}
+              {lot}
             </div>
           ) : null;
         })()}
