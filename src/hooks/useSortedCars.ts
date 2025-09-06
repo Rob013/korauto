@@ -140,7 +140,7 @@ export const useSortedCars = (cars: FlexibleCar[], sortBy: SortOption) => {
   }, [cars, sortBy]);
 };
 
-// EncarCatalog-specific sort options that match NewEncarCatalog exactly
+// EncarCatalog-specific sort options
 export const getEncarSortOptions = () => [
   { value: 'recently_added', label: 'Recently Added' },
   { value: 'oldest_first', label: 'Oldest First' },
