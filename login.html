@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - KORAUTO</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+        
+        .login-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .login-container h1 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+        }
+        
+        .login-container p {
+            color: #6c757d;
+            margin-bottom: 2rem;
+            line-height: 1.5;
+        }
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: background 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            margin: 0.5rem;
+        }
+        
+        .btn:hover {
+            background: #5a67d8;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>Login Required</h1>
+        <p>You need to be logged in to access the tracking page. Please log in with your KORAUTO account.</p>
+        
+        <!-- NOTE: Replace these buttons with your actual login integration -->
+        <a href="#" class="btn" onclick="handleLogin()">Log In</a>
+        <a href="/" class="btn btn-secondary">Back to Home</a>
+        
+        <script>
+            // AUTH INTEGRATION POINT: Replace this with your actual login flow
+            function handleLogin() {
+                // TODO: Implement your login logic here
+                // This could redirect to your OAuth provider, show a login form, etc.
+                alert('Connect this to your existing login system (Lovable AI + GitHub)');
+                
+                // Example redirect to your actual login page:
+                // window.location.href = '/auth';
+            }
+        </script>
+    </div>
+</body>
+</html>
