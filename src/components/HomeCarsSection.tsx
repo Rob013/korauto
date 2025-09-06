@@ -23,7 +23,7 @@ import { ArrowUpDown } from "lucide-react";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
 import { useDailyRotatingCars } from "@/hooks/useDailyRotatingCars";
 import { filterOutTestCars } from "@/utils/testCarFilter";
-import { calculateFinalPriceEUR } from "@/utils/carPricing";
+import { calculateFinalPriceEUR, filterCarsWithBuyNowPricing } from "@/utils/carPricing";
 import { fallbackCars, fallbackManufacturers } from "@/data/fallbackData";
 
 interface APIFilters {
@@ -615,9 +615,16 @@ const HomeCarsSection = memo(() => {
         ) : (
           <>
             <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0 ${isInView ? 'stagger-animation' : ''}`}>
-              {displayedCars.map((car) => {
+              {displayedCars
+                .filter(car => {
+                  // Only show cars with buy_now pricing
+                  const lot = car.lots?.[0];
+                  return lot?.buy_now && lot.buy_now > 0;
+                })
+                .map((car) => {
                 const lot = car.lots?.[0];
-                const usdPrice = lot?.buy_now ?? lot?.final_bid ?? lot?.price ?? 25000;
+                // Only use buy_now price, no fallbacks
+                const usdPrice = lot?.buy_now;
                 const price = calculateFinalPriceEUR(usdPrice, exchangeRate.rate);
                 return (
                   <LazyCarCard

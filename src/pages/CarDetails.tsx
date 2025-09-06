@@ -628,8 +628,12 @@ const CarDetails = memo(() => {
             typeof cachedCar.images === "string"
               ? JSON.parse(cachedCar.images || "[]")
               : cachedCar.images || [];
-          const basePrice =
-            cachedCar.price || lotData.buy_now || lotData.final_bid || 25000;
+          const basePrice = lotData.buy_now || cachedCar.price;
+          if (!basePrice) {
+            console.log("Car doesn't have buy_now pricing, redirecting to catalog");
+            navigate('/catalog');
+            return;
+          }
           const price = calculateFinalPriceEUR(basePrice, exchangeRate.rate);
           const transformedCar: CarDetails = {
             id: cachedCar.id,
@@ -713,8 +717,12 @@ const CarDetails = memo(() => {
 
             if (carData && carData.lots && carData.lots[0] && isMounted) {
               const lotData = carData.lots[0];
-              const basePrice =
-                lotData.buy_now ?? lotData.final_bid ?? lotData.price ?? 25000;
+              const basePrice = lotData.buy_now;
+              if (!basePrice) {
+                console.log("Car doesn't have buy_now pricing, redirecting to catalog");
+                navigate('/catalog');
+                return;
+              }
               const price = calculateFinalPriceEUR(basePrice, exchangeRate.rate);
               const transformedCar: CarDetails = {
                 id: carData.id?.toString() || lotData.lot,
@@ -823,8 +831,12 @@ const CarDetails = memo(() => {
         const carData = data.data;
         const lotData = carData.lots?.[0];
         if (!lotData) throw new Error("Missing lot data");
-        const basePrice =
-          lotData.buy_now ?? lotData.final_bid ?? lotData.price ?? 25000;
+        const basePrice = lotData.buy_now;
+        if (!basePrice) {
+          console.log("Car doesn't have buy_now pricing, redirecting to catalog");
+          navigate('/catalog');
+          return;
+        }
         const price = calculateFinalPriceEUR(basePrice, exchangeRate.rate);
         const transformedCar: CarDetails = {
           id: carData.id?.toString() || lotData.lot,
@@ -890,7 +902,11 @@ const CarDetails = memo(() => {
           if (fallbackCar && fallbackCar.lots?.[0]) {
             console.log("Using fallback car data for:", lot);
             const lotData = fallbackCar.lots[0];
-            const basePrice = lotData.buy_now || fallbackCar.price || 25000;
+            const basePrice = lotData.buy_now || fallbackCar.price;
+            if (!basePrice) {
+              console.log("Fallback car doesn't have buy_now pricing, showing error");
+              throw new Error("Car pricing not available");
+            }
             const price = calculateFinalPriceEUR(basePrice, exchangeRate.rate);
             
             const transformedCar: CarDetails = {

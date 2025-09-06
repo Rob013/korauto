@@ -42,3 +42,25 @@ export const calculateFinalPriceEUR = (basePriceUSD: number, usdToEurRate: numbe
 export const isDefaultPrice = (priceEUR: number): boolean => {
   return priceEUR === 23000; // 25000 USD * 0.92
 };
+
+/**
+ * Check if a car has buy_now pricing specifically (not fallback prices)
+ * Only cars with real buy_now prices should be displayed
+ */
+export const hasBuyNowPricing = (car: any): boolean => {
+  // Check if car has lots with buy_now pricing data
+  if (car.lots && Array.isArray(car.lots) && car.lots.length > 0) {
+    const lot = car.lots[0];
+    return !!(lot.buy_now && lot.buy_now > 0);
+  }
+  
+  // Check direct buy_now field (for cached cars or different data structures)
+  return !!(car.buy_now && car.buy_now > 0);
+};
+
+/**
+ * Filter out cars that don't have buy_now pricing data
+ */
+export const filterCarsWithBuyNowPricing = <T>(cars: T[]): T[] => {
+  return cars.filter(hasBuyNowPricing);
+};
