@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { UserPlus, LogIn, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -13,6 +14,7 @@ const AuthPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [showResendConfirmation, setShowResendConfirmation] = useState(false);
@@ -91,6 +93,15 @@ const AuthPage = () => {
     setShowResendConfirmation(false);
 
     try {
+      // Update Supabase client configuration based on remember me
+      const clientConfig = {
+        auth: {
+          storage: localStorage,
+          persistSession: rememberMe,
+          autoRefreshToken: rememberMe,
+        }
+      };
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -110,9 +121,18 @@ const AuthPage = () => {
         throw new Error('Ju lutemi konfirmoni emailin tuaj përpara se të hyni.');
       }
 
+      // Store remember me preference
+      if (rememberMe) {
+        localStorage.setItem('rememberMe', 'true');
+      } else {
+        localStorage.removeItem('rememberMe');
+        // For sessions that should not be remembered, we'll use sessionStorage
+        sessionStorage.setItem('tempSession', 'true');
+      }
+
       toast({
         title: "Mirë se erdhët përsëri!",
-        description: "Hyrja u krye me sukses.",
+        description: rememberMe ? "Ju do të mbeteni të lidhur." : "Hyrja u krye me sukses.",
       });
       
       // Check if user is admin or specific email and redirect accordingly
@@ -254,6 +274,19 @@ const AuthPage = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="remember-me" 
+                    checked={rememberMe}
+                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                  />
+                  <label 
+                    htmlFor="remember-me" 
+                    className="text-sm text-muted-foreground cursor-pointer select-none"
+                  >
+                    Më mbaj të lidhur (Mos më kërko të hyj përsëri)
+                  </label>
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   <LogIn className="h-4 w-4 mr-2" />

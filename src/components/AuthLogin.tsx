@@ -4,6 +4,7 @@ import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Lock, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -11,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 const AuthLogin = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -42,9 +44,18 @@ const AuthLogin = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
         throw new Error('Access denied: Admin privileges required');
       }
 
+      // Store remember me preference
+      if (rememberMe) {
+        localStorage.setItem('rememberMe', 'true');
+      } else {
+        localStorage.removeItem('rememberMe');
+        // For sessions that should not be remembered, we'll use sessionStorage
+        sessionStorage.setItem('tempSession', 'true');
+      }
+
       toast({
         title: "Welcome Admin!",
-        description: "Successfully logged in to admin dashboard",
+        description: rememberMe ? "Successfully logged in. You will stay logged in." : "Successfully logged in to admin dashboard",
       });
 
       // Redirect admin users to dashboard
@@ -93,6 +104,19 @@ const AuthLogin = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="admin-remember-me" 
+                checked={rememberMe}
+                onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+              />
+              <label 
+                htmlFor="admin-remember-me" 
+                className="text-sm text-muted-foreground cursor-pointer select-none"
+              >
+                Remember me (Stay logged in)
+              </label>
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Logging in..." : "Login"}
