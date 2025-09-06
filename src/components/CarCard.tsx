@@ -445,7 +445,7 @@ const CarCard = ({
           
           if (statusBadge.show) {
             return (
-              <div className={`absolute top-2 right-2 ${statusBadge.className} px-3 py-1 rounded text-xs font-bold shadow-lg z-10`}>
+              <div className={`absolute top-2 left-2 ${statusBadge.className} px-3 py-1 rounded text-xs font-bold shadow-lg z-10`}>
                 {statusBadge.text}
               </div>
             );

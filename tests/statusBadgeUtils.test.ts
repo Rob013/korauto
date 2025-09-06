@@ -66,36 +66,36 @@ describe('Status Badge Configuration', () => {
     expect(result.className).toBe('bg-orange-600 text-white border-orange-700');
   });
 
-  it('should not show badge for available cars (status 1)', () => {
+  it('should show AVAILABLE badge for available cars (status 1)', () => {
     const result = getStatusBadgeConfig({ status: 1 });
     
-    expect(result.show).toBe(false);
-    expect(result.text).toBe('');
-    expect(result.className).toBe('');
+    expect(result.show).toBe(true);
+    expect(result.text).toBe('AVAILABLE');
+    expect(result.className).toBe('bg-white text-black border-gray-300');
   });
 
-  it('should not show badge for active sale_status', () => {
+  it('should show AVAILABLE badge for active sale_status', () => {
     const result = getStatusBadgeConfig({ sale_status: 'active' });
     
-    expect(result.show).toBe(false);
-    expect(result.text).toBe('');
-    expect(result.className).toBe('');
+    expect(result.show).toBe(true);
+    expect(result.text).toBe('AVAILABLE');
+    expect(result.className).toBe('bg-white text-black border-gray-300');
   });
 
-  it('should not show badge when no status is provided', () => {
+  it('should show AVAILABLE badge when no status is provided', () => {
     const result = getStatusBadgeConfig({});
     
-    expect(result.show).toBe(false);
-    expect(result.text).toBe('');
-    expect(result.className).toBe('');
+    expect(result.show).toBe(true);
+    expect(result.text).toBe('AVAILABLE');
+    expect(result.className).toBe('bg-white text-black border-gray-300');
   });
 
-  it('should handle undefined values gracefully', () => {
+  it('should show AVAILABLE badge for undefined values', () => {
     const result = getStatusBadgeConfig({ status: undefined, sale_status: undefined });
     
-    expect(result.show).toBe(false);
-    expect(result.text).toBe('');
-    expect(result.className).toBe('');
+    expect(result.show).toBe(true);
+    expect(result.text).toBe('AVAILABLE');
+    expect(result.className).toBe('bg-white text-black border-gray-300');
   });
 
   it('should return SOLD badge for status 3 as string', () => {
@@ -114,12 +114,12 @@ describe('Status Badge Configuration', () => {
     expect(result.className).toBe('bg-yellow-600 text-black border-yellow-700');
   });
 
-  it('should handle invalid string status gracefully', () => {
+  it('should show AVAILABLE badge for invalid string status', () => {
     const result = getStatusBadgeConfig({ status: 'invalid' });
     
-    expect(result.show).toBe(false);
-    expect(result.text).toBe('');
-    expect(result.className).toBe('');
+    expect(result.show).toBe(true);
+    expect(result.text).toBe('AVAILABLE');
+    expect(result.className).toBe('bg-white text-black border-gray-300');
   });
 
   it('should prioritize numeric status over string sale_status', () => {
@@ -130,11 +130,11 @@ describe('Status Badge Configuration', () => {
     expect(result.className).toBe('bg-red-600 text-white border-red-700');
   });
 
-  it('should handle unknown status values gracefully', () => {
+  it('should show AVAILABLE badge for unknown status values', () => {
     const result = getStatusBadgeConfig({ status: 999, sale_status: 'unknown' });
     
-    expect(result.show).toBe(false);
-    expect(result.text).toBe('');
-    expect(result.className).toBe('');
+    expect(result.show).toBe(true);
+    expect(result.text).toBe('AVAILABLE');
+    expect(result.className).toBe('bg-white text-black border-gray-300');
   });
 });
