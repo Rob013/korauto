@@ -89,7 +89,7 @@ const SimilarCarsTab = ({ carMake, carModel, currentCarId }: SimilarCarsTabProps
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {similarCars.map((car) => {
               const lot = car.lots?.[0];
-              const usdPrice = lot?.buy_now || 25000;
+              const usdPrice = lot?.buy_now ?? lot?.final_bid ?? lot?.price ?? 25000;
               const price = calculateFinalPriceEUR(usdPrice, exchangeRate.rate);
               
               return (
