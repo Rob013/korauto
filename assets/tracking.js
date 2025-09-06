@@ -502,13 +502,13 @@ function createMockWidgetData(query) {
             year: year
         },
         result: {
-            shipper: "ABC Logistics",
-            model_year: "K5 (2021)",
+            shipper: "CIG Shipping Co., Ltd",
+            model_year: "Hyundai Sonata (2021)",
             chassis: chassis,
             vessel: "Morning Cara",
-            pol: "Busan",
+            pol: "Busan Port, South Korea",
             on_board: "2025-08-31",
-            port: "Durres", 
+            port: "Durres Port, Albania", 
             eta: "2025-09-20"
         },
         shipping_status: {
@@ -526,20 +526,23 @@ function createMockWidgetData(query) {
         rows: [
             {
                 type: "metadata",
-                shipper: "ABC Logistics",
-                model: "K5 (2021)",
+                shipper: "CIG Shipping Co., Ltd",
+                model: "Hyundai Sonata (2021)",
                 chassis: chassis,
                 vesselName: "Morning Cara",
-                portOfLoading: "Busan",
-                portOfDischarge: "Durres",
+                portOfLoading: "Busan Port, South Korea",
+                portOfDischarge: "Durres Port, Albania",
                 onBoard: "2025-08-31",
-                estimatedArrival: "2025-09-20"
+                estimatedArrival: "2025-09-20",
+                shippingLine: "CIG Shipping Line",
+                billOfLading: "CIG" + chassis.substring(9, 17),
+                containerNumber: "CGMU" + Math.random().toString().substring(2, 9)
             },
             {
                 type: "event",
                 date: "2025-08-31",
                 event: "Container loaded on vessel",
-                location: "Busan",
+                location: "Busan Port, South Korea",
                 vessel: "Morning Cara",
                 status: "Loaded"
             },
@@ -547,7 +550,7 @@ function createMockWidgetData(query) {
                 type: "event", 
                 date: "2025-09-01",
                 event: "Vessel departure",
-                location: "Busan",
+                location: "Busan Port, South Korea",
                 vessel: "Morning Cara",
                 status: "Departed"
             },
@@ -555,7 +558,7 @@ function createMockWidgetData(query) {
                 type: "event",
                 date: "2025-09-20",
                 event: "Expected arrival",
-                location: "Durres",
+                location: "Durres Port, Albania",
                 vessel: "Morning Cara", 
                 status: "In Transit"
             }
