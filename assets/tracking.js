@@ -420,23 +420,16 @@ export function submitTracking(event) {
                 } else if (response.status >= 500) {
                     throw new Error('Service temporarily unavailable. Please try again later.');
                 } else {
-                    // For development demo - create mock widget data
-                    console.log('Using mock data for development demo (non-ok response)');
-                    const mockData = createMockWidgetData(query);
-                    handleTrackingSuccess(mockData, submitBtn, originalText);
-                    return null; // Signal to skip further processing
+                    throw new Error(`Tracking service error (${response.status}). Please try again later.`);
                 }
             }
             return response.json().catch(parseError => {
-                // If JSON parsing fails, use mock data for demo
-                console.log('JSON parse failed, using mock data for demo');
-                const mockData = createMockWidgetData(query);
-                handleTrackingSuccess(mockData, submitBtn, originalText);
-                return null; // Signal to skip further processing
+                console.error('Failed to parse JSON response:', parseError);
+                throw new Error('Invalid response format from tracking service.');
             });
         })
         .then(data => {
-            if (data) { // Only process if we have real data (not when using mock)
+            if (data) {
                 console.debug('Response length:', data.rows ? data.rows.length : 0);
                 handleTrackingSuccess(data, submitBtn, originalText);
             }
