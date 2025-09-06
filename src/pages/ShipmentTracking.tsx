@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Ship, Package, Search, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
+import ResultSelectionModal from "@/components/ResultSelectionModal";
 
 const ShipmentTracking = () => {
   const [trackingNumber, setTrackingNumber] = useState("");
@@ -14,6 +15,8 @@ const ShipmentTracking = () => {
   const [results, setResults] = useState<any[]>([]);
   const [widgetData, setWidgetData] = useState<any>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [multipleResults, setMultipleResults] = useState<any[]>([]);
+  const [showResultModal, setShowResultModal] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -90,6 +93,34 @@ const ShipmentTracking = () => {
         }
       ]
     };
+  };
+
+  const handleResultSelection = (selectedResult: any) => {
+    // Store the selected result as widget data
+    setWidgetData(selectedResult);
+    
+    // Convert the selected result to the expected format
+    const rowsData = selectedResult.rows || [];
+    const convertedResults = rowsData.map((row: any, index: number) => ({
+      id: index.toString(),
+      type: row.type,
+      status: row.status || row.event || 'Update',
+      location: row.location,
+      date: row.date,
+      vessel: row.vessel,
+      containerNumber: row.containerNumber,
+      description: row.event || row.status,
+      estimatedDelivery: row.estimatedArrival,
+      // Include all metadata fields
+      ...row
+    }));
+
+    setResults(convertedResults);
+    
+    toast({
+      title: "Result Selected",
+      description: `Showing tracking details for selected shipment`,
+    });
   };
 
   // Helper function to get appropriate icon for status
@@ -173,31 +204,46 @@ const ShipmentTracking = () => {
         }
       }
       
-      // Store widget data if available
-      setWidgetData(data);
-      
-      // Convert the API response to our expected format (backwards compatibility)
-      const rowsData = data.rows || [];
-      const convertedResults = rowsData.map((row: any, index: number) => ({
-        id: index.toString(),
-        type: row.type,
-        status: row.status || row.event || 'Update',
-        location: row.location,
-        date: row.date,
-        vessel: row.vessel,
-        containerNumber: row.containerNumber,
-        description: row.event || row.status,
-        estimatedDelivery: row.estimatedArrival,
-        // Include all metadata fields
-        ...row
-      }));
+      // Check if we have multiple results to show modal
+      if (data.multipleResults && data.results && data.results.length > 1) {
+        // We have multiple results - show selection modal
+        setMultipleResults(data.results);
+        setShowResultModal(true);
+        
+        toast({
+          title: "Multiple Results Found",
+          description: `Found ${data.results.length} shipments for ${trackingNumber}. Please select one.`,
+        });
+      } else {
+        // Single result or no multiple results flag - handle normally
+        const resultData = data.results && data.results.length > 0 ? data.results[0] : data;
+        
+        // Store widget data if available
+        setWidgetData(resultData);
+        
+        // Convert the API response to our expected format (backwards compatibility)
+        const rowsData = resultData.rows || [];
+        const convertedResults = rowsData.map((row: any, index: number) => ({
+          id: index.toString(),
+          type: row.type,
+          status: row.status || row.event || 'Update',
+          location: row.location,
+          date: row.date,
+          vessel: row.vessel,
+          containerNumber: row.containerNumber,
+          description: row.event || row.status,
+          estimatedDelivery: row.estimatedArrival,
+          // Include all metadata fields
+          ...row
+        }));
 
-      setResults(convertedResults);
-      
-      toast({
-        title: "Success",
-        description: `Found ${convertedResults.length} results for ${trackingNumber}`,
-      });
+        setResults(convertedResults);
+        
+        toast({
+          title: "Success",
+          description: `Found ${convertedResults.length} results for ${trackingNumber}`,
+        });
+      }
     } catch (error) {
       console.error('Tracking error:', error);
       toast({
