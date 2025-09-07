@@ -364,7 +364,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Internal function to actually apply filters - now using utilities
   const applyFiltersInternal = useCallback((newFilters: APIFilters) => {
     setFilters(newFilters);
-    setCurrentPage(1); // Reset to first page when filters change
+    // Note: No pagination reset needed for infinite scroll
     
     // Reset global sorting when filters change
     clearGlobalSorting();
@@ -486,40 +486,40 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   //   console.log(`📄 Navigated to page ${page} of ${totalPages} with filters:`, filtersWithPagination);
   // }, [filters, fetchCars, setSearchParams, addPaginationToFilters, totalPages]);
 
-  // Function to fetch and display all cars
-  const handleShowAllCars = useCallback(async () => {
-    if (showAllCars) {
-      // If already showing all cars, switch back to pagination
-      setShowAllCars(false);
-      setAllCarsData([]);
-      setCurrentPage(1);
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      console.log(`🔄 Fetching all cars with current filters...`);
-      const allCars = await fetchAllCars(filters);
-      
-      // Apply the same client-side filtering as the current filtered cars
-      const filteredAllCars = allCars.filter((car: any) => {
-        return matchesGradeFilter(car, filters.grade_iaai);
-      });
-      
-      setAllCarsData(filteredAllCars);
-      setShowAllCars(true);
-      console.log(`✅ Loaded ${filteredAllCars.length} cars for "Show All" view`);
-    } catch (error) {
-      console.error('❌ Error fetching all cars:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load all cars. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [showAllCars, filters, fetchAllCars, toast]);
+  // Commented out - not needed since we always show all cars in infinite scroll
+  // const handleShowAllCars = useCallback(async () => {
+  //   if (showAllCars) {
+  //     // If already showing all cars, switch back to pagination
+  //     setShowAllCars(false);
+  //     setAllCarsData([]);
+  //     setCurrentPage(1);
+  //     return;
+  //   }
+  //
+  //   setIsLoading(true);
+  //   try {
+  //     console.log(`🔄 Fetching all cars with current filters...`);
+  //     const allCars = await fetchAllCars(filters);
+  //     
+  //     // Apply the same client-side filtering as the current filtered cars
+  //     const filteredAllCars = allCars.filter((car: any) => {
+  //       return matchesGradeFilter(car, filters.grade_iaai);
+  //     });
+  //     
+  //     setAllCarsData(filteredAllCars);
+  //     setShowAllCars(true);
+  //     console.log(`✅ Loaded ${filteredAllCars.length} cars for "Show All" view`);
+  //   } catch (error) {
+  //     console.error('❌ Error fetching all cars:', error);
+  //     toast({
+  //       title: "Error",
+  //       description: "Failed to load all cars. Please try again.",
+  //       variant: "destructive",
+  //     });
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // }, [showAllCars, filters, fetchAllCars, toast]);
 
   // Function to fetch all cars for sorting across all pages
   const fetchAllCarsForSorting = useCallback(async () => {
@@ -564,18 +564,18 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       // setAllCarsForSorting(filteredAllCars); // Handled by global sorting hook
       lastSortParamsRef.current = sortKey;
       
-      // Check if current page is beyond available pages and reset to page 1 if needed
-      const maxPages = Math.ceil(filteredAllCars.length / 50);
-      if (currentPage > maxPages && maxPages > 0) {
-        console.log(`📄 Resetting page from ${currentPage} to 1 (max available: ${maxPages})`);
-        setCurrentPage(1);
-        // Update URL to reflect page reset
-        const currentParams = Object.fromEntries(searchParams.entries());
-        currentParams.page = '1';
-        setSearchParams(currentParams);
-      }
+      // Removed pagination check - not needed for infinite scroll
+      // const maxPages = Math.ceil(filteredAllCars.length / 50);
+      // if (currentPage > maxPages && maxPages > 0) {
+      //   console.log(`📄 Resetting page from ${currentPage} to 1 (max available: ${maxPages})`);
+      //   setCurrentPage(1);
+      //   // Update URL to reflect page reset
+      //   const currentParams = Object.fromEntries(searchParams.entries());
+      //   currentParams.page = '1';
+      //   setSearchParams(currentParams);
+      // }
       
-      console.log(`✅ Global sorting: Loaded ${filteredAllCars.length} cars for sorting across ${maxPages} pages`);
+      console.log(`✅ Global sorting: Loaded ${filteredAllCars.length} cars for infinite scroll`);
     } catch (err) {
       console.error('❌ Error fetching all cars for global sorting:', err);
       // setIsSortingGlobal(false); // Handled by global sorting hook
@@ -908,17 +908,17 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     loadInitialCounts();
   }, [manufacturers.length]); // Only run when manufacturers are first loaded
 
-  // Calculate total pages based on actual total count
-  useEffect(() => {
-    if (totalCount > 0) {
-      const calculatedPages = Math.ceil(totalCount / 50);
-      setTotalPages(calculatedPages);
-      console.log(`📊 Calculated pagination: ${totalCount} cars across ${calculatedPages} pages (50 cars per page)`);
-    } else {
-      setTotalPages(0);
-      console.log(`📊 No cars available: ${totalCount} cars, 0 pages`);
-    }
-  }, [totalCount]); // Update when totalCount changes
+  // Removed pagination calculation - not needed for infinite scroll
+  // useEffect(() => {
+  //   if (totalCount > 0) {
+  //     const calculatedPages = Math.ceil(totalCount / 50);
+  //     setTotalPages(calculatedPages);
+  //     console.log(`📊 Calculated pagination: ${totalCount} cars across ${calculatedPages} pages (50 cars per page)`);
+  //   } else {
+  //     setTotalPages(0);
+  //     console.log(`📊 No cars available: ${totalCount} cars, 0 pages`);
+  //   }
+  // }, [totalCount]); // Update when totalCount changes
 
   // Initialize global sorting when sortBy changes or totalCount becomes available
   useEffect(() => {
@@ -1255,14 +1255,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     onValueChange={(value: SortOption) => {
                       setSortBy(value);
                       setHasUserSelectedSort(true); // Mark that user has explicitly chosen a sort option
-                      // Reset to page 1 when sort changes to show users the first page of newly sorted results
-                      setCurrentPage(1);
-                      // Update URL to reflect page reset
-                      const currentParams = Object.fromEntries(searchParams.entries());
-                      currentParams.page = '1';
-                      setSearchParams(currentParams);
-                      // Note: Global sorting initialization is handled by the useEffect that watches sortBy changes
-                      // This prevents duplicate calls and ensures proper state management
+                      // Note: No pagination reset needed for infinite scroll
+                      // Global sorting works across all cars without pagination
                     }}
                     placeholder="Sort"
                     className="w-24 sm:w-32 h-7 text-xs pl-6"
