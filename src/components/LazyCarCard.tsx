@@ -309,7 +309,7 @@ const LazyCarCard = memo(({
         {/* Lot Number Badge */}
         {lot && (
           <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-primary text-primary-foreground px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs font-semibold">
-            {lot}
+            {lot.replace(/^LOT/i, '')}
           </div>
         )}
 
