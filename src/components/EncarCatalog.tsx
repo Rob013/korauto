@@ -110,13 +110,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [sortBy, setSortBy] = useState<SortOption>("recently_added");
   const [hasUserSelectedSort, setHasUserSelectedSort] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
-  // Pagination state set to defaults for infinite scroll compatibility
-  const currentPage = 1; // Always page 1 for infinite scroll
-  const totalPages = 1; // Always 1 page since we show all cars
-  const loadedPages = 1; // Always 1 page loaded
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [isFilterLoading, setIsFilterLoading] = useState(false);
-  const [showAllCars, setShowAllCars] = useState(true); // Always show all cars - infinite scroll
+  const [showAllCars, setShowAllCars] = useState(false); // New state for showing all cars
   const [allCarsData, setAllCarsData] = useState<any[]>([]); // Store all cars when fetched
   const isMobile = useIsMobile();
   
@@ -283,6 +281,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [filterCounts, setFilterCounts] = useState<any>(null);
   const [loadingCounts, setLoadingCounts] = useState(false);
   const [highlightedCarId, setHighlightedCarId] = useState<string | null>(null);
+  const [loadedPages, setLoadedPages] = useState(1);
   const [isRestoringState, setIsRestoringState] = useState(false);
 
   // Ref for the main container to handle scroll restoration
@@ -364,7 +363,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Internal function to actually apply filters - now using utilities
   const applyFiltersInternal = useCallback((newFilters: APIFilters) => {
     setFilters(newFilters);
-    // Note: No pagination reset needed for infinite scroll
+    setCurrentPage(1); // Reset to first page when filters change
     
     // Reset global sorting when filters change
     clearGlobalSorting();
@@ -405,8 +404,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Set filter loading state immediately for better UX
     setIsFilterLoading(true);
     
-    // Keep showing all cars mode - don't reset to pagination
-    // setShowAllCars remains true for infinite scroll
+    // Reset "Show All" mode when filters change
+    setShowAllCars(false);
+    setAllCarsData([]);
     
     // Update UI immediately for responsiveness
     setFilters(newFilters);
@@ -414,44 +414,43 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Clear global sorting when filters change
     clearGlobalSorting();
     
-    // Always fetch ALL cars for infinite scroll
-    try {
-      console.log(`🔄 Fetching all cars with new filters for infinite scroll...`);
-      const allCars = await fetchAllCars(newFilters);
+    // Check if this is a year range change - use optimized filtering for better UX - using utility
+    const isYearChange = isYearRangeChange(newFilters, filters);
+    
+    if (isYearChange) {
+      console.log('🚀 Using optimized year filtering for instant response');
       
-      // Apply the same client-side filtering as the current filtered cars
-      const filteredAllCars = allCars.filter((car: any) => {
-        return matchesGradeFilter(car, newFilters.grade_iaai);
-      });
+      // Use optimized year filtering for instant feedback
+      const result = await handleOptimizedYearFilter(
+        newFilters.from_year, 
+        newFilters.to_year, 
+        newFilters
+      );
       
-      setAllCarsData(filteredAllCars);
-      console.log(`✅ Loaded ${filteredAllCars.length} cars for infinite scroll view`);
-    } catch (error) {
-      console.error('❌ Error fetching all cars:', error);
-    } finally {
-      setIsFilterLoading(false);
+      // If we got instant results, temporarily show them
+      if (result && result.data.length > 0) {
+        setCars(result.data);
+        setTotalCount(result.totalCount);
+      }
+    } else {
+      // Clear previous data immediately to show loading state for non-year filters
+      setCars([]);
+      
+      // Apply other filters with debouncing to reduce API calls
+      debouncedApplyFilters(newFilters);
     }
-  }, [fetchAllCars, clearGlobalSorting]);
+  }, [debouncedApplyFilters, handleOptimizedYearFilter, filters, setCars, setFilters, setTotalCount, clearGlobalSorting]);
 
-  const handleClearFilters = useCallback(async () => {
+  const handleClearFilters = useCallback(() => {
     setFilters({});
     setSearchTerm("");
+    setLoadedPages(1);
     setModels([]);
     setGenerations([]);
     setHasUserSelectedSort(false); // Reset to allow daily rotating cars again
-    
-    // Load all cars without filters for infinite scroll
-    try {
-      console.log(`🔄 Loading all cars (no filters) for infinite scroll...`);
-      const allCars = await fetchAllCars({});
-      setAllCarsData(allCars);
-      console.log(`✅ Loaded ${allCars.length} cars for infinite scroll view`);
-    } catch (error) {
-      console.error('❌ Error fetching all cars:', error);
-    }
-    
+    fetchCars(1, {}, true);
     setSearchParams({});
-  }, [fetchAllCars, setSearchParams]);
+  }, [fetchCars, setSearchParams]);
 
   const handleSearch = useCallback(() => {
     const newFilters = {
@@ -461,65 +460,64 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     handleFiltersChange(newFilters);
   }, [filters, searchTerm, handleFiltersChange]);
 
-  // Commented out pagination function - not needed for infinite scroll
-  // const handlePageChange = useCallback((page: number) => {
-  //   // Validate page number
-  //   if (page < 1 || page > totalPages) {
-  //     console.log(`⚠️ Invalid page number: ${page}. Must be between 1 and ${totalPages}`);
-  //     return;
-  //   }
-  //   
-  //   setCurrentPage(page);
-  //   
-  //   // Fetch cars for the specific page with proper API pagination
-  //   const filtersWithPagination = addPaginationToFilters(filters, 50, page);
-  //   fetchCars(page, filtersWithPagination, true); // Reset list for new page
-  //   
-  //   // Update URL with new page
-  //   const currentParams = Object.fromEntries(searchParams.entries());
-  //   currentParams.page = page.toString();
-  //   setSearchParams(currentParams);
-  //   
-  //   // Scroll to top when changing pages
-  //   window.scrollTo({ top: 0, behavior: 'smooth' });
-  //   
-  //   console.log(`📄 Navigated to page ${page} of ${totalPages} with filters:`, filtersWithPagination);
-  // }, [filters, fetchCars, setSearchParams, addPaginationToFilters, totalPages]);
+  const handlePageChange = useCallback((page: number) => {
+    // Validate page number
+    if (page < 1 || page > totalPages) {
+      console.log(`⚠️ Invalid page number: ${page}. Must be between 1 and ${totalPages}`);
+      return;
+    }
+    
+    setCurrentPage(page);
+    
+    // Fetch cars for the specific page with proper API pagination
+    const filtersWithPagination = addPaginationToFilters(filters, 50, page);
+    fetchCars(page, filtersWithPagination, true); // Reset list for new page
+    
+    // Update URL with new page
+    const currentParams = Object.fromEntries(searchParams.entries());
+    currentParams.page = page.toString();
+    setSearchParams(currentParams);
+    
+    // Scroll to top when changing pages
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    console.log(`📄 Navigated to page ${page} of ${totalPages} with filters:`, filtersWithPagination);
+  }, [filters, fetchCars, setSearchParams, addPaginationToFilters, totalPages]);
 
-  // Commented out - not needed since we always show all cars in infinite scroll
-  // const handleShowAllCars = useCallback(async () => {
-  //   if (showAllCars) {
-  //     // If already showing all cars, switch back to pagination
-  //     setShowAllCars(false);
-  //     setAllCarsData([]);
-  //     setCurrentPage(1);
-  //     return;
-  //   }
-  //
-  //   setIsLoading(true);
-  //   try {
-  //     console.log(`🔄 Fetching all cars with current filters...`);
-  //     const allCars = await fetchAllCars(filters);
-  //     
-  //     // Apply the same client-side filtering as the current filtered cars
-  //     const filteredAllCars = allCars.filter((car: any) => {
-  //       return matchesGradeFilter(car, filters.grade_iaai);
-  //     });
-  //     
-  //     setAllCarsData(filteredAllCars);
-  //     setShowAllCars(true);
-  //     console.log(`✅ Loaded ${filteredAllCars.length} cars for "Show All" view`);
-  //   } catch (error) {
-  //     console.error('❌ Error fetching all cars:', error);
-  //     toast({
-  //       title: "Error",
-  //       description: "Failed to load all cars. Please try again.",
-  //       variant: "destructive",
-  //     });
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // }, [showAllCars, filters, fetchAllCars, toast]);
+  // Function to fetch and display all cars
+  const handleShowAllCars = useCallback(async () => {
+    if (showAllCars) {
+      // If already showing all cars, switch back to pagination
+      setShowAllCars(false);
+      setAllCarsData([]);
+      setCurrentPage(1);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      console.log(`🔄 Fetching all cars with current filters...`);
+      const allCars = await fetchAllCars(filters);
+      
+      // Apply the same client-side filtering as the current filtered cars
+      const filteredAllCars = allCars.filter((car: any) => {
+        return matchesGradeFilter(car, filters.grade_iaai);
+      });
+      
+      setAllCarsData(filteredAllCars);
+      setShowAllCars(true);
+      console.log(`✅ Loaded ${filteredAllCars.length} cars for "Show All" view`);
+    } catch (error) {
+      console.error('❌ Error fetching all cars:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load all cars. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [showAllCars, filters, fetchAllCars, toast]);
 
   // Function to fetch all cars for sorting across all pages
   const fetchAllCarsForSorting = useCallback(async () => {
@@ -564,18 +562,18 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       // setAllCarsForSorting(filteredAllCars); // Handled by global sorting hook
       lastSortParamsRef.current = sortKey;
       
-      // Removed pagination check - not needed for infinite scroll
-      // const maxPages = Math.ceil(filteredAllCars.length / 50);
-      // if (currentPage > maxPages && maxPages > 0) {
-      //   console.log(`📄 Resetting page from ${currentPage} to 1 (max available: ${maxPages})`);
-      //   setCurrentPage(1);
-      //   // Update URL to reflect page reset
-      //   const currentParams = Object.fromEntries(searchParams.entries());
-      //   currentParams.page = '1';
-      //   setSearchParams(currentParams);
-      // }
+      // Check if current page is beyond available pages and reset to page 1 if needed
+      const maxPages = Math.ceil(filteredAllCars.length / 50);
+      if (currentPage > maxPages && maxPages > 0) {
+        console.log(`📄 Resetting page from ${currentPage} to 1 (max available: ${maxPages})`);
+        setCurrentPage(1);
+        // Update URL to reflect page reset
+        const currentParams = Object.fromEntries(searchParams.entries());
+        currentParams.page = '1';
+        setSearchParams(currentParams);
+      }
       
-      console.log(`✅ Global sorting: Loaded ${filteredAllCars.length} cars for infinite scroll`);
+      console.log(`✅ Global sorting: Loaded ${filteredAllCars.length} cars for sorting across ${maxPages} pages`);
     } catch (err) {
       console.error('❌ Error fetching all cars for global sorting:', err);
       // setIsSortingGlobal(false); // Handled by global sorting hook
@@ -770,9 +768,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         setSearchTerm(urlFilters.search);
       }
 
-      // Set filters immediately for faster UI response (ignore pagination URL params)
+      // Set filters and pagination immediately for faster UI response
       setFilters(urlFilters);
-      // Note: Ignoring URL pagination params since we show all cars in infinite scroll
+      setLoadedPages(urlLoadedPages);
+      setCurrentPage(urlCurrentPage);
 
       try {
         // PERFORMANCE OPTIMIZATION: Load only essential data first
@@ -791,17 +790,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           }
         }
 
-        // Load ALL cars for infinite scroll - this is the most expensive operation
-        console.log(`🔄 Loading all cars with filters for infinite scroll...`);
-        const allCars = await fetchAllCars(urlFilters);
+        // Load cars last - this is the most expensive operation
+        const initialFilters = {
+          ...urlFilters,
+          per_page: "50",
+          page: urlCurrentPage.toString()
+        };
         
-        // Apply the same client-side filtering as the current filtered cars
-        const filteredAllCars = allCars.filter((car: any) => {
-          return matchesGradeFilter(car, urlFilters.grade_iaai);
-        });
-        
-        setAllCarsData(filteredAllCars);
-        console.log(`✅ Loaded ${filteredAllCars.length} cars for infinite scroll view`);
+        await fetchCars(urlCurrentPage, initialFilters, true);
 
       } catch (error) {
         console.error('Error loading initial data:', error);
@@ -908,17 +904,17 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     loadInitialCounts();
   }, [manufacturers.length]); // Only run when manufacturers are first loaded
 
-  // Removed pagination calculation - not needed for infinite scroll
-  // useEffect(() => {
-  //   if (totalCount > 0) {
-  //     const calculatedPages = Math.ceil(totalCount / 50);
-  //     setTotalPages(calculatedPages);
-  //     console.log(`📊 Calculated pagination: ${totalCount} cars across ${calculatedPages} pages (50 cars per page)`);
-  //   } else {
-  //     setTotalPages(0);
-  //     console.log(`📊 No cars available: ${totalCount} cars, 0 pages`);
-  //   }
-  // }, [totalCount]); // Update when totalCount changes
+  // Calculate total pages based on actual total count
+  useEffect(() => {
+    if (totalCount > 0) {
+      const calculatedPages = Math.ceil(totalCount / 50);
+      setTotalPages(calculatedPages);
+      console.log(`📊 Calculated pagination: ${totalCount} cars across ${calculatedPages} pages (50 cars per page)`);
+    } else {
+      setTotalPages(0);
+      console.log(`📊 No cars available: ${totalCount} cars, 0 pages`);
+    }
+  }, [totalCount]); // Update when totalCount changes
 
   // Initialize global sorting when sortBy changes or totalCount becomes available
   useEffect(() => {
@@ -1255,8 +1251,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     onValueChange={(value: SortOption) => {
                       setSortBy(value);
                       setHasUserSelectedSort(true); // Mark that user has explicitly chosen a sort option
-                      // Note: No pagination reset needed for infinite scroll
-                      // Global sorting works across all cars without pagination
+                      // Reset to page 1 when sort changes to show users the first page of newly sorted results
+                      setCurrentPage(1);
+                      // Update URL to reflect page reset
+                      const currentParams = Object.fromEntries(searchParams.entries());
+                      currentParams.page = '1';
+                      setSearchParams(currentParams);
+                      // Note: Global sorting initialization is handled by the useEffect that watches sortBy changes
+                      // This prevents duplicate calls and ensures proper state management
                     }}
                     placeholder="Sort"
                     className="w-24 sm:w-32 h-7 text-xs pl-6"
@@ -1275,7 +1277,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 Car Catalog
               </h1>
               <p className="text-muted-foreground text-xs sm:text-sm">
-                {carsToDisplay.length.toLocaleString()} cars shown • Infinite scroll
+                {totalCount.toLocaleString()} cars across {totalPages.toLocaleString()} pages • Page {currentPage} of {totalPages.toLocaleString()} • Showing {carsToDisplay.length} cars per page
 
                 {yearFilterProgress === 'instant' && (
                   <span className="ml-2 text-primary text-xs">⚡ Instant results</span>
@@ -1424,7 +1426,162 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 })}
               </div>
 
-              {/* Removed pagination controls - showing all cars in infinite scroll */}
+              {/* Pagination Controls - replace Load More button */}
+              {!showAllCars && totalPages > 1 && (
+                <div className="flex flex-col items-center py-8 space-y-4">
+                  {/* Page Info */}
+                  <div className="text-center text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages.toLocaleString()} • {carsToDisplay.length} cars shown
+                  </div>
+                  
+                  {/* Pagination Navigation */}
+                  <div className="flex items-center space-x-2">
+                    {/* First Page */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(1)}
+                      disabled={currentPage === 1 || loading}
+                      className="h-8 px-3"
+                    >
+                      First
+                    </Button>
+                    
+                    {/* Previous Page */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1 || loading}
+                      className="h-8 px-3"
+                    >
+                      Previous
+                    </Button>
+                    
+                    {/* Page Numbers */}
+                    <div className="flex space-x-1">
+                      {(() => {
+                        const maxVisible = 5;
+                        const half = Math.floor(maxVisible / 2);
+                        let start = Math.max(1, currentPage - half);
+                        let end = Math.min(totalPages, start + maxVisible - 1);
+                        
+                        // Adjust start if we're near the end
+                        if (end - start < maxVisible - 1) {
+                          start = Math.max(1, end - maxVisible + 1);
+                        }
+                        
+                        const pages = [];
+                        
+                        // Show first page if not in range
+                        if (start > 1) {
+                          pages.push(
+                            <Button
+                              key={1}
+                              variant={1 === currentPage ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => handlePageChange(1)}
+                              disabled={loading}
+                              className="h-8 px-3"
+                            >
+                              1
+                            </Button>
+                          );
+                          if (start > 2) {
+                            pages.push(
+                              <span key="ellipsis-start" className="px-2 text-muted-foreground">
+                                ...
+                              </span>
+                            );
+                          }
+                        }
+                        
+                        // Show page range
+                        for (let i = start; i <= end; i++) {
+                          pages.push(
+                            <Button
+                              key={i}
+                              variant={i === currentPage ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => handlePageChange(i)}
+                              disabled={loading}
+                              className="h-8 px-3"
+                            >
+                              {i.toLocaleString()}
+                            </Button>
+                          );
+                        }
+                        
+                        // Show last page if not in range
+                        if (end < totalPages) {
+                          if (end < totalPages - 1) {
+                            pages.push(
+                              <span key="ellipsis-end" className="px-2 text-muted-foreground">
+                                ...
+                              </span>
+                            );
+                          }
+                          pages.push(
+                            <Button
+                              key={totalPages}
+                              variant={totalPages === currentPage ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => handlePageChange(totalPages)}
+                              disabled={loading}
+                              className="h-8 px-3"
+                            >
+                              {totalPages.toLocaleString()}
+                            </Button>
+                          );
+                        }
+                        
+                        return pages;
+                      })()}
+                    </div>
+                    
+                    {/* Next Page */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages || loading}
+                      className="h-8 px-3"
+                    >
+                      Next
+                    </Button>
+                    
+                    {/* Last Page */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(totalPages)}
+                      disabled={currentPage === totalPages || loading}
+                      className="h-8 px-3"
+                    >
+                      Last
+                    </Button>
+                  </div>
+                  
+                  {/* Go to Page Input */}
+                  <div className="flex items-center space-x-2 text-sm">
+                    <span className="text-muted-foreground">Go to page:</span>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={totalPages}
+                      value={currentPage}
+                      onChange={(e) => {
+                        const page = parseInt(e.target.value);
+                        if (page >= 1 && page <= totalPages) {
+                          handlePageChange(page);
+                        }
+                      }}
+                      className="w-20 h-8 text-center"
+                    />
+                    <span className="text-muted-foreground">of {totalPages.toLocaleString()}</span>
+                  </div>
+                </div>
+              )}
               
               {/* Loading indicator for load more */}
               {loading && cars.length > 0 && (
