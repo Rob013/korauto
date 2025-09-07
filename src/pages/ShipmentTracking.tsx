@@ -20,260 +20,11 @@ const ShipmentTracking = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Function to generate multiple realistic results for the same VIN
-  const createMultipleResults = (query: string) => {
-    const chassis = query.length >= 17 ? query.substring(0, 17) : query;
-    const results = [];
-    
-    // Simulate different shipments with same chassis but different destinations/vessels
-    const destinations = [
-      { port: "Durres Port, Albania", vessel: "MV SANG SHIN V.2508", eta: "2025-09-11" },
-      { port: "Rotterdam Port, Netherlands", vessel: "MV CIG EXPRESS", eta: "2025-09-15" },
-      { port: "Hamburg Port, Germany", vessel: "MV KOREA STAR", eta: "2025-09-20" }
-    ];
-    
-    const shippers = ['주식회사 싼카', '현대자동차', '기아자동차'];
-    const models = ['C200', 'Sonata', 'K5'];
-    
-    destinations.forEach((dest, index) => {
-      results.push({
-        id: `result_${index}`,
-        query: { chassis, year: "2024" },
-        result: {
-          shipper: shippers[index % shippers.length],
-          model_year: models[index % models.length],
-          chassis: chassis,
-          vessel: dest.vessel,
-          pol: "INCHEON, KOREA",
-          on_board: "2025-08-06",
-          port: dest.port,
-          eta: dest.eta
-        },
-        shipping_status: {
-          overall: "Loaded",
-          steps: [
-            { name: "In Port", active: true },
-            { name: "Vessel Fixed", active: true },
-            { name: "Shipment Ready", active: true },
-            { name: "Loaded", active: true },
-            { name: "Arrival", active: false }
-          ]
-        },
-        source: "cigshipping.com",
-        last_updated: new Date().toISOString(),
-        rows: [
-          {
-            type: "metadata",
-            shipper: shippers[index % shippers.length],
-            model: models[index % models.length],
-            chassis: chassis,
-            vesselName: dest.vessel,
-            portOfLoading: "INCHEON, KOREA",
-            portOfDischarge: dest.port,
-            onBoard: "2025-08-06",
-            estimatedArrival: dest.eta,
-            shippingLine: "CIG Shipping Line",
-            billOfLading: "CIG" + chassis.substring(9, 17) + index,
-            containerNumber: "CGMU" + Math.random().toString().substring(2, 9)
-          },
-          {
-            type: "event",
-            date: "2025-08-06",
-            event: "Container loaded on vessel",
-            location: "INCHEON, KOREA",
-            vessel: dest.vessel,
-            status: "Loaded"
-          },
-          {
-            type: "event", 
-            date: "2025-08-07",
-            event: "Vessel departure",
-            location: "INCHEON, KOREA",
-            vessel: dest.vessel,
-            status: "Departed"
-          },
-          {
-            type: "event",
-            date: dest.eta,
-            event: "Expected arrival",
-            location: dest.port,
-            vessel: dest.vessel,
-            status: "In Transit"
-          }
-        ]
-      });
-    });
-    
-    return results;
-  };
 
-  // Helper function to create enhanced mock data that simulates real CIG responses
-  const createEnhancedMockData = (query: string) => {
-    const chassis = query.length >= 17 ? query.substring(0, 17) : query;
-    const currentYear = new Date().getFullYear().toString();
-    
-    // Simulate different shipping statuses based on query characteristics
-    const statusOptions = ['In Port', 'Loaded', 'In Transit', 'Arrived'];
-    const selectedStatus = statusOptions[Math.floor(Math.random() * statusOptions.length)];
-    
-    // Korean car manufacturers for realistic shipper names
-    const shippers = ['주식회사 싼카', '현대자동차', '기아자동차', '쌍용자동차'];
-    const selectedShipper = shippers[Math.floor(Math.random() * shippers.length)];
-    
-    // Common vessel names from CIG Shipping
-    const vessels = ['MV SANG SHIN V.2508', 'MV CIG EXPRESS', 'MV KOREA STAR', 'MV BUSAN LINE'];
-    const selectedVessel = vessels[Math.floor(Math.random() * vessels.length)];
-    
-    // Generate realistic dates
-    const onBoardDate = new Date();
-    onBoardDate.setDate(onBoardDate.getDate() - Math.floor(Math.random() * 30));
-    const etaDate = new Date();
-    etaDate.setDate(etaDate.getDate() + Math.floor(Math.random() * 45) + 10);
-    
-    return {
-      query: {
-        chassis: chassis,
-        year: currentYear
-      },
-      result: {
-        shipper: selectedShipper,
-        model_year: "Unknown Model",
-        chassis: chassis,
-        vessel: selectedVessel,
-        pol: "INCHEON, KOREA",
-        on_board: onBoardDate.toISOString().split('T')[0],
-        port: "Durres Port, Albania", 
-        eta: etaDate.toISOString().split('T')[0]
-      },
-      shipping_status: {
-        overall: selectedStatus,
-        steps: [
-          { name: "In Port", active: true },
-          { name: "Vessel Fixed", active: true },
-          { name: "Shipment Ready", active: selectedStatus !== 'In Port' },
-          { name: "Loaded", active: ['Loaded', 'In Transit', 'Arrived'].includes(selectedStatus) },
-          { name: "Arrival", active: selectedStatus === 'Arrived' }
-        ]
-      },
-      source: "cigshipping.com (simulated)",
-      last_updated: new Date().toISOString(),
-      rows: [
-        {
-          type: "metadata",
-          shipper: selectedShipper,
-          model: "Unknown Model",
-          chassis: chassis,
-          vesselName: selectedVessel,
-          portOfLoading: "INCHEON, KOREA",
-          portOfDischarge: "Durres Port, Albania",
-          onBoard: onBoardDate.toISOString().split('T')[0],
-          estimatedArrival: etaDate.toISOString().split('T')[0],
-          shippingLine: "CIG Shipping Line",
-          billOfLading: "CIG" + chassis.substring(Math.max(0, chassis.length - 8)),
-          containerNumber: "CGMU" + Math.random().toString().substring(2, 9)
-        },
-        {
-          type: "event",
-          date: onBoardDate.toISOString().split('T')[0],
-          event: "Container loaded on vessel",
-          location: "INCHEON, KOREA",
-          vessel: selectedVessel,
-          status: "Loaded"
-        },
-        {
-          type: "event", 
-          date: new Date(onBoardDate.getTime() + 86400000).toISOString().split('T')[0],
-          event: "Vessel departure",
-          location: "INCHEON, KOREA",
-          vessel: selectedVessel,
-          status: "Departed"
-        },
-        {
-          type: "event",
-          date: etaDate.toISOString().split('T')[0],
-          event: "Expected arrival",
-          location: "Durres Port, Albania",
-          vessel: selectedVessel, 
-          status: "In Transit"
-        }
-      ]
-    };
-  };
 
-  // Helper function to create mock widget data for development demo
-  const createMockWidgetData = (query: string) => {
-    const chassis = query.substring(0, 17);
-    const year = query.includes('2024') ? '2024' : '2021';
-    
-    return {
-      query: {
-        chassis: chassis,
-        year: year
-      },
-      result: {
-        shipper: "주식회사 싼카",
-        model_year: "C200",
-        chassis: chassis,
-        vessel: "MV SANG SHIN V.2508",
-        pol: "INCHEON, KOREA",
-        on_board: "2025-08-06",
-        port: "Durres Port, Albania", 
-        eta: "2025-09-11"
-      },
-      shipping_status: {
-        overall: "Loaded",
-        steps: [
-          { name: "In Port", active: true },
-          { name: "Vessel Fixed", active: true },
-          { name: "Shipment Ready", active: true },
-          { name: "Loaded", active: true },
-          { name: "Arrival", active: false }
-        ]
-      },
-      source: "cigshipping.com",
-      last_updated: new Date().toISOString(),
-      rows: [
-        {
-          type: "metadata",
-          shipper: "주식회사 싼카",
-          model: "C200",
-          chassis: chassis,
-          vesselName: "MV SANG SHIN V.2508",
-          portOfLoading: "INCHEON, KOREA",
-          portOfDischarge: "Durres Port, Albania",
-          onBoard: "2025-08-06",
-          estimatedArrival: "2025-09-11",
-          shippingLine: "CIG Shipping Line",
-          billOfLading: "CIG" + chassis.substring(9, 17),
-          containerNumber: "CGMU" + Math.random().toString().substring(2, 9)
-        },
-        {
-          type: "event",
-          date: "2025-08-06",
-          event: "Container loaded on vessel",
-          location: "INCHEON, KOREA",
-          vessel: "MV SANG SHIN V.2508",
-          status: "Loaded"
-        },
-        {
-          type: "event", 
-          date: "2025-08-07",
-          event: "Vessel departure",
-          location: "INCHEON, KOREA",
-          vessel: "MV SANG SHIN V.2508",
-          status: "Departed"
-        },
-        {
-          type: "event",
-          date: "2025-09-11",
-          event: "Expected arrival",
-          location: "Durres Port, Albania",
-          vessel: "MV SANG SHIN V.2508", 
-          status: "In Transit"
-        }
-      ]
-    };
-  };
+
+
+
 
   // Helper function to get appropriate icon for status
   const getStatusIcon = (status: string) => {
@@ -360,31 +111,18 @@ const ShipmentTracking = () => {
           throw new Error(`Worker API error: ${response.status}`);
         }
       } catch (workerError) {
-        console.log('Worker API not available or failed, using enhanced mock data:', workerError.message);
+        console.log('Worker API failed:', workerError.message);
         
-        // Show user that we're using demo data
-        toast({
-          title: "Using Demo Data",
-          description: `CIG Shipping API unavailable (${workerError.message}). Showing enhanced demo data.`,
-          variant: "default",
-        });
+        // Show specific error message instead of demo data
+        let errorMessage = "CIG Shipping API unavailable. Please try again later.";
         
-        // Simulate multiple results for demonstration (30% chance for VINs)
-        const hasMultipleResults = trimmedQuery.length === 17 && Math.random() < 0.3;
-        
-        if (hasMultipleResults) {
-          // Generate multiple results for selection
-          const multiResults = createMultipleResults(trimmedQuery);
-          setMultipleResults(multiResults);
-          setShowMultiResultDialog(true);
-          setLoading(false);
-          return; // Don't proceed with setting results yet
-        } else {
-          // Enhanced mock data that simulates real CIG Shipping responses
-          data = createEnhancedMockData(trimmedQuery);
-          data.isRealData = false;
-          data.source = "Demo Data (CIG API unavailable)";
+        if (workerError.message.includes('Rate limit')) {
+          errorMessage = "Rate limit exceeded. Please wait a moment and try again.";
+        } else if (workerError.message.includes('Worker API endpoint not deployed')) {
+          errorMessage = "Tracking service is not configured. Please contact support.";
         }
+        
+        throw new Error(errorMessage);
       }
       
       // Store widget data if available
@@ -409,15 +147,14 @@ const ShipmentTracking = () => {
       setResults(convertedResults);
       
       if (convertedResults.length > 0) {
-        const dataSourceText = data.isRealData ? "real-time CIG Shipping data" : "demo data for development";
         toast({
           title: "Tracking Information Found",
-          description: `Displaying ${dataSourceText} for chassis ${trackingNumber}${data.isRealData ? "" : " (Deploy Cloudflare Worker for live data)"}`,
+          description: `Displaying real-time CIG Shipping data for chassis ${trackingNumber}`,
         });
       } else {
         toast({
           title: "No Results",
-          description: data.isRealData ? "No tracking information found for this chassis number in CIG Shipping system" : "No tracking information found for this chassis number",
+          description: "No tracking information found for this chassis number in CIG Shipping system",
           variant: "destructive",
         });
       }
@@ -610,9 +347,25 @@ const ShipmentTracking = () => {
       }
     }
 
-    // If no real data found, fallback to demo data
+    // If no real data found, return empty result
     if (data.rows.length === 0) {
-      return createMockWidgetData(query);
+      return {
+        query: { chassis: query, year: "2024" },
+        result: {},
+        shipping_status: {
+          overall: "Unknown",
+          steps: [
+            { name: "In Port", active: false },
+            { name: "Vessel Fixed", active: false },
+            { name: "Shipment Ready", active: false },
+            { name: "Loaded", active: false },
+            { name: "Arrival", active: false }
+          ]
+        },
+        source: "cigshipping.com",
+        last_updated: new Date().toISOString(),
+        rows: []
+      };
     }
 
     return data;
@@ -937,11 +690,6 @@ const ShipmentTracking = () => {
                             
                             <div className="text-xs text-muted-foreground pt-2 border-t mobile-text-optimize">
                               Source: {widgetData.source} | Updated: {new Date(widgetData.last_updated).toLocaleString()}
-                              {!widgetData.isRealData && (
-                                <div className="mt-1 text-orange-600 font-medium">
-                                  ⚠️ Demo Data - Deploy Cloudflare Worker for live CIG Shipping integration
-                                </div>
-                              )}
                             </div>
                           </div>
                         </CardContent>
