@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 interface ExchangeRate {
   rate: number;
   lastUpdated: string;
+  source?: string;
 }
 
 interface CurrencyAPIResponse {
@@ -11,8 +12,17 @@ interface CurrencyAPIResponse {
   };
 }
 
+interface ExchangeRateAPIResponse {
+  base: string;
+  date: string;
+  rates: {
+    EUR: number;
+  };
+  provider: string;
+}
+
 const CACHE_KEY = "currency_cache_usd_eur";
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes for real-time updates
 
 export const useCurrencyAPI = () => {
   const [exchangeRate, setExchangeRate] = useState<ExchangeRate>({
@@ -76,6 +86,7 @@ export const useCurrencyAPI = () => {
             const syncedRate: ExchangeRate = {
               rate: dailyRate.rate,
               lastUpdated: dailyRate.lastUpdated,
+              source: dailyRate.source || 'daily-sync',
             };
             setExchangeRate(syncedRate);
             setCachedRate(syncedRate);
@@ -84,29 +95,60 @@ export const useCurrencyAPI = () => {
           }
         }
       } catch (dailyRateError) {
-        console.log('ℹ️ Daily rate file not available, fetching from API');
+        console.log('ℹ️ Daily rate file not available, fetching from real-time API');
       }
 
-      // Fetch from API as fallback
+      // Fetch from Google-sourced real-time API (exchangerate-api.com)
+      try {
+        console.log('🌐 Fetching real-time exchange rate from Google-sourced API');
+        const response = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
+
+        if (!response.ok) {
+          throw new Error(`Google-sourced API Error: ${response.status}`);
+        }
+
+        const data: ExchangeRateAPIResponse = await response.json();
+
+        if (!data.rates?.EUR) {
+          throw new Error("Invalid Google-sourced API response format");
+        }
+
+        const newRate: ExchangeRate = {
+          rate: data.rates.EUR,
+          lastUpdated: new Date().toISOString(),
+          source: 'google-sourced-realtime',
+        };
+
+        console.log('✅ Successfully fetched real-time rate from Google-sourced API:', newRate.rate);
+        setExchangeRate(newRate);
+        setCachedRate(newRate);
+        return;
+      } catch (googleSourcedError) {
+        console.log('⚠️ Google-sourced API failed, trying fallback:', googleSourcedError);
+      }
+
+      // Fallback to currencyapi.com
       const response = await fetch(
         "https://api.currencyapi.com/v3/latest?apikey=cur_live_SqgABFxnWHPaJjbRVJQdOLJpYkgCiJgQkIdvVFN6&currencies=EUR&base_currency=USD"
       );
 
       if (!response.ok) {
-        throw new Error(`API Error: ${response.status}`);
+        throw new Error(`Fallback API Error: ${response.status}`);
       }
 
       const data: CurrencyAPIResponse = await response.json();
 
       if (!data.data?.EUR) {
-        throw new Error("Invalid API response format");
+        throw new Error("Invalid fallback API response format");
       }
 
       const newRate: ExchangeRate = {
         rate: data.data.EUR,
         lastUpdated: new Date().toISOString(),
+        source: 'fallback-currencyapi',
       };
 
+      console.log('✅ Using fallback exchange rate:', newRate.rate);
       setExchangeRate(newRate);
       setCachedRate(newRate);
     } catch (err) {
@@ -171,5 +213,10 @@ export const useCurrencyAPI = () => {
     convertKRWtoEUR,
     processFloodDamageText,
     refreshRate: fetchExchangeRate,
+    forceRefresh: () => {
+      // Clear cache and fetch fresh rate
+      localStorage.removeItem(CACHE_KEY);
+      fetchExchangeRate();
+    },
   };
 };

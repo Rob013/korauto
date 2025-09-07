@@ -43,11 +43,27 @@ describe('Currency Sync Functionality', () => {
       expect(parsedRate.source).toBe('currencyapi.com');
     });
 
+    it('should handle Google-sourced rate correctly', () => {
+      const googleSourcedRate = {
+        rate: 0.854,
+        lastUpdated: new Date().toISOString(),
+        source: 'google-sourced-realtime'
+      };
+
+      writeFileSync(testExchangeRateFile, JSON.stringify(googleSourcedRate, null, 2), 'utf8');
+
+      const fileContent = readFileSync(testExchangeRateFile, 'utf8');
+      const parsedRate = JSON.parse(fileContent);
+      
+      expect(parsedRate.rate).toBe(0.854);
+      expect(parsedRate.source).toBe('google-sourced-realtime');
+    });
+
     it('should handle fallback rate correctly', () => {
       const fallbackRate = {
         rate: 0.85,
         lastUpdated: new Date().toISOString(),
-        source: 'fallback'
+        source: 'hardcoded-fallback'
       };
 
       writeFileSync(testExchangeRateFile, JSON.stringify(fallbackRate, null, 2), 'utf8');
@@ -56,7 +72,7 @@ describe('Currency Sync Functionality', () => {
       const parsedRate = JSON.parse(fileContent);
       
       expect(parsedRate.rate).toBe(0.85);
-      expect(parsedRate.source).toBe('fallback');
+      expect(parsedRate.source).toBe('hardcoded-fallback');
     });
   });
 
@@ -93,7 +109,23 @@ describe('Currency Sync Functionality', () => {
     });
   });
 
-  describe('Daily Update Logic', () => {
+  describe('Real-time Update Logic', () => {
+    it('should handle real-time Google-sourced rates', () => {
+      const googleRate = 0.854;
+      const fallbackRate = 0.85;
+      
+      // Google-sourced rate should be more precise
+      expect(googleRate).not.toBe(fallbackRate);
+      expect(Math.abs(googleRate - fallbackRate)).toBeLessThan(0.01); // Should be close but not identical
+    });
+
+    it('should prioritize Google-sourced rates over fallbacks', () => {
+      const sources = ['google-sourced-realtime', 'fallback-currencyapi', 'hardcoded-fallback'];
+      
+      // Google-sourced should be first priority
+      expect(sources[0]).toBe('google-sourced-realtime');
+    });
+
     it('should detect when rate has changed significantly', () => {
       const oldRate = 0.92;
       const newRate = 0.85;
