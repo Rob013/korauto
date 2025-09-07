@@ -448,6 +448,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setModels([]);
     setGenerations([]);
     setHasUserSelectedSort(false); // Reset to allow daily rotating cars again
+    setShowAllCars(false); // Reset show all cars state
+    setAllCarsData([]); // Clear all cars data
     fetchCars(1, {}, true);
     setSearchParams({});
   }, [fetchCars, setSearchParams]);
@@ -930,14 +932,23 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
   }, [sortBy, totalCount, shouldUseGlobalSorting, initializeGlobalSorting, clearGlobalSorting, hasUserSelectedSort]);
 
-  // Show cars without requiring brand and model selection
-  const shouldShowCars = true;
+  // Show cars only after selecting both brand and model
+  const shouldShowCars = !!(filters?.manufacturer_id && filters?.model_id);
 
   // Track when categories are selected 
   useEffect(() => {
     const hasCategories = filters?.manufacturer_id && filters?.model_id;
     setHasSelectedCategories(!!hasCategories);
   }, [filters?.manufacturer_id, filters?.model_id]);
+
+  // Auto-fetch all cars when both brand and model are selected
+  useEffect(() => {
+    const hasBothFilters = filters?.manufacturer_id && filters?.model_id;
+    if (hasBothFilters && !showAllCars) {
+      console.log('🎯 Both brand and model selected, auto-fetching all cars...');
+      handleShowAllCars();
+    }
+  }, [filters?.manufacturer_id, filters?.model_id, showAllCars, handleShowAllCars]);
 
   // Effect to highlight and scroll to specific car by lot number
   useEffect(() => {
