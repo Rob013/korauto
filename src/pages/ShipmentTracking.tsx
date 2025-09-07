@@ -17,6 +17,99 @@ const ShipmentTracking = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Helper function to create enhanced mock data that simulates real CIG responses
+  const createEnhancedMockData = (query: string) => {
+    const chassis = query.length >= 17 ? query.substring(0, 17) : query;
+    const currentYear = new Date().getFullYear().toString();
+    
+    // Simulate different shipping statuses based on query characteristics
+    const statusOptions = ['In Port', 'Loaded', 'In Transit', 'Arrived'];
+    const selectedStatus = statusOptions[Math.floor(Math.random() * statusOptions.length)];
+    
+    // Korean car manufacturers for realistic shipper names
+    const shippers = ['주식회사 싼카', '현대자동차', '기아자동차', '쌍용자동차'];
+    const selectedShipper = shippers[Math.floor(Math.random() * shippers.length)];
+    
+    // Common vessel names from CIG Shipping
+    const vessels = ['MV SANG SHIN V.2508', 'MV CIG EXPRESS', 'MV KOREA STAR', 'MV BUSAN LINE'];
+    const selectedVessel = vessels[Math.floor(Math.random() * vessels.length)];
+    
+    // Generate realistic dates
+    const onBoardDate = new Date();
+    onBoardDate.setDate(onBoardDate.getDate() - Math.floor(Math.random() * 30));
+    const etaDate = new Date();
+    etaDate.setDate(etaDate.getDate() + Math.floor(Math.random() * 45) + 10);
+    
+    return {
+      query: {
+        chassis: chassis,
+        year: currentYear
+      },
+      result: {
+        shipper: selectedShipper,
+        model_year: "Unknown Model",
+        chassis: chassis,
+        vessel: selectedVessel,
+        pol: "INCHEON, KOREA",
+        on_board: onBoardDate.toISOString().split('T')[0],
+        port: "Durres Port, Albania", 
+        eta: etaDate.toISOString().split('T')[0]
+      },
+      shipping_status: {
+        overall: selectedStatus,
+        steps: [
+          { name: "In Port", active: true },
+          { name: "Vessel Fixed", active: true },
+          { name: "Shipment Ready", active: selectedStatus !== 'In Port' },
+          { name: "Loaded", active: ['Loaded', 'In Transit', 'Arrived'].includes(selectedStatus) },
+          { name: "Arrival", active: selectedStatus === 'Arrived' }
+        ]
+      },
+      source: "cigshipping.com (simulated)",
+      last_updated: new Date().toISOString(),
+      rows: [
+        {
+          type: "metadata",
+          shipper: selectedShipper,
+          model: "Unknown Model",
+          chassis: chassis,
+          vesselName: selectedVessel,
+          portOfLoading: "INCHEON, KOREA",
+          portOfDischarge: "Durres Port, Albania",
+          onBoard: onBoardDate.toISOString().split('T')[0],
+          estimatedArrival: etaDate.toISOString().split('T')[0],
+          shippingLine: "CIG Shipping Line",
+          billOfLading: "CIG" + chassis.substring(Math.max(0, chassis.length - 8)),
+          containerNumber: "CGMU" + Math.random().toString().substring(2, 9)
+        },
+        {
+          type: "event",
+          date: onBoardDate.toISOString().split('T')[0],
+          event: "Container loaded on vessel",
+          location: "INCHEON, KOREA",
+          vessel: selectedVessel,
+          status: "Loaded"
+        },
+        {
+          type: "event", 
+          date: new Date(onBoardDate.getTime() + 86400000).toISOString().split('T')[0],
+          event: "Vessel departure",
+          location: "INCHEON, KOREA",
+          vessel: selectedVessel,
+          status: "Departed"
+        },
+        {
+          type: "event",
+          date: etaDate.toISOString().split('T')[0],
+          event: "Expected arrival",
+          location: "Durres Port, Albania",
+          vessel: selectedVessel, 
+          status: "In Transit"
+        }
+      ]
+    };
+  };
+
   // Helper function to create mock widget data for development demo
   const createMockWidgetData = (query: string) => {
     const chassis = query.substring(0, 17);
@@ -147,43 +240,30 @@ const ShipmentTracking = () => {
     setHasSearched(true);
 
     try {
-      // Try to fetch real data from CIG Shipping website directly
-      const cigResponse = await fetch(`https://cigshipping.com/Home/cargo.html?keyword=${encodeURIComponent(trimmedQuery)}`, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        }
-      });
-
+      // Note: Direct fetching from cigshipping.com is blocked by CORS policy
+      // We'll use our mock data to demonstrate the expected format
+      console.log('Simulating CIG Shipping lookup for:', trimmedQuery);
+      
       let data;
       
-      if (cigResponse.ok) {
-        const html = await cigResponse.text();
-        data = parseRealCIGData(html, trimmedQuery);
-      } else {
-        // Fallback to our worker API
+      // Try our worker API first (if available)
+      try {
         const response = await fetch(`/api/cig-track?q=${encodeURIComponent(trimmedQuery)}`);
         
-        if (!response.ok) {
-          // For development demo - show mock widget data when API is not available
-          if (trimmedQuery.length >= 5) {
-            data = createMockWidgetData(trimmedQuery);
-          } else {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        if (response.ok) {
+          data = await response.json();
+          
+          if (data.error) {
+            throw new Error(data.error);
           }
         } else {
-          try {
-            data = await response.json();
-            
-            if (data.error) {
-              throw new Error(data.error);
-            }
-          } catch (parseError) {
-            // If JSON parsing fails, use mock data for demo
-            console.log('JSON parse failed, using mock data for demo');
-            data = createMockWidgetData(trimmedQuery);
-          }
+          throw new Error(`Worker API not available: ${response.status}`);
         }
+      } catch (workerError) {
+        console.log('Worker API not available, using enhanced mock data:', workerError);
+        
+        // Enhanced mock data that simulates real CIG Shipping responses
+        data = createEnhancedMockData(trimmedQuery);
       }
       
       // Store widget data if available
@@ -209,8 +289,8 @@ const ShipmentTracking = () => {
       
       if (convertedResults.length > 0) {
         toast({
-          title: "Success",
-          description: `Found shipment information for chassis ${trackingNumber}`,
+          title: "Tracking Information Found",
+          description: `Displaying cargo tracking data for chassis ${trackingNumber} (Demo data - real integration requires server-side proxy due to CORS restrictions)`,
         });
       } else {
         toast({
