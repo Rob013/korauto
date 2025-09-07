@@ -344,13 +344,30 @@ const ShipmentTracking = () => {
           data = await response.json();
           
           if (data.error) {
+            console.warn('CIG Worker API returned error:', data.error);
             throw new Error(data.error);
           }
+          
+          // Mark data as real data from CIG Shipping
+          data.isRealData = true;
+          data.source = "CIG Shipping (Live Data)";
+          
+        } else if (response.status === 404) {
+          throw new Error('Worker API endpoint not deployed');
+        } else if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please try again in a moment.');
         } else {
-          throw new Error(`Worker API not available: ${response.status}`);
+          throw new Error(`Worker API error: ${response.status}`);
         }
       } catch (workerError) {
-        console.log('Worker API not available, using enhanced mock data:', workerError);
+        console.log('Worker API not available or failed, using enhanced mock data:', workerError.message);
+        
+        // Show user that we're using demo data
+        toast({
+          title: "Using Demo Data",
+          description: `CIG Shipping API unavailable (${workerError.message}). Showing enhanced demo data.`,
+          variant: "default",
+        });
         
         // Simulate multiple results for demonstration (30% chance for VINs)
         const hasMultipleResults = trimmedQuery.length === 17 && Math.random() < 0.3;
@@ -365,6 +382,8 @@ const ShipmentTracking = () => {
         } else {
           // Enhanced mock data that simulates real CIG Shipping responses
           data = createEnhancedMockData(trimmedQuery);
+          data.isRealData = false;
+          data.source = "Demo Data (CIG API unavailable)";
         }
       }
       
@@ -390,22 +409,39 @@ const ShipmentTracking = () => {
       setResults(convertedResults);
       
       if (convertedResults.length > 0) {
+        const dataSourceText = data.isRealData ? "real-time CIG Shipping data" : "demo data for development";
         toast({
           title: "Tracking Information Found",
-          description: `Displaying cargo tracking data for chassis ${trackingNumber} (Demo data - real integration requires server-side proxy due to CORS restrictions)`,
+          description: `Displaying ${dataSourceText} for chassis ${trackingNumber}${data.isRealData ? "" : " (Deploy Cloudflare Worker for live data)"}`,
         });
       } else {
         toast({
           title: "No Results",
-          description: "No tracking information found for this chassis number",
+          description: data.isRealData ? "No tracking information found for this chassis number in CIG Shipping system" : "No tracking information found for this chassis number",
           variant: "destructive",
         });
       }
     } catch (error) {
       console.error('Tracking error:', error);
+      
+      // Provide specific error messages based on the error type
+      let errorMessage = "Failed to track shipment. Please check the chassis number and try again.";
+      let errorTitle = "Error";
+      
+      if (error.message.includes('Rate limit')) {
+        errorTitle = "Rate Limited";
+        errorMessage = "Too many requests. Please wait a moment and try again.";
+      } else if (error.message.includes('network') || error.message.includes('fetch')) {
+        errorTitle = "Network Error";
+        errorMessage = "Unable to connect to tracking service. Please check your internet connection and try again.";
+      } else if (error.message.includes('Worker API')) {
+        errorTitle = "Service Configuration";
+        errorMessage = "Tracking service is not properly configured. Contact support if this issue persists.";
+      }
+      
       toast({
-        title: "Error",
-        description: "Failed to track shipment. Please check the chassis number and try again.",
+        title: errorTitle,
+        description: errorMessage,
         variant: "destructive",
       });
       setResults([]);
@@ -901,6 +937,11 @@ const ShipmentTracking = () => {
                             
                             <div className="text-xs text-muted-foreground pt-2 border-t mobile-text-optimize">
                               Source: {widgetData.source} | Updated: {new Date(widgetData.last_updated).toLocaleString()}
+                              {!widgetData.isRealData && (
+                                <div className="mt-1 text-orange-600 font-medium">
+                                  ⚠️ Demo Data - Deploy Cloudflare Worker for live CIG Shipping integration
+                                </div>
+                              )}
                             </div>
                           </div>
                         </CardContent>

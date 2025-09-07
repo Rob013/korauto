@@ -28,9 +28,10 @@ const AUTH_ENABLED = false; // Set to true via environment variable when ready
 const AUTH_COOKIE_NAME = 'my_session'; // Change to match your auth cookie name
 
 // CIG Shipping API Configuration
-const CIG_ENDPOINT = 'https://cigshipping.com/Home/cargo.html'; // Main endpoint
-const CIG_API_ENDPOINT = 'https://cigshipping.com/api/cargo/search'; // API endpoint if discovered
-const USE_POST = false; // Set to true if CIG uses POST requests
+// Note: Updated endpoints based on actual CIG Shipping website inspection
+const CIG_ENDPOINT = 'https://cigshipping.com/Home/cargo.html'; // Main cargo tracking page
+const CIG_API_ENDPOINT = 'https://cigshipping.com/Home/cargo.html'; // Main endpoint for queries
+const USE_POST = true; // CIG Shipping uses POST requests for cargo tracking
 const RATE_LIMIT_PER_MINUTE = 60; // Rate limit per IP per minute
 
 // Rate limiting storage (in-memory for this worker)
@@ -86,15 +87,29 @@ function buildForm(query) {
   const year = yearMatch ? yearMatch[0] : '';
   
   // Remove year from chassis if found
-  const chassis = query.replace(/\b(19|20)\d{2}\b/, '').trim();
+  let chassis = query.replace(/\b(19|20)\d{2}\b/, '').trim();
+  
+  // Clean up chassis - remove any extra whitespace and ensure uppercase
+  chassis = chassis.replace(/\s+/g, '').toUpperCase();
   
   if (USE_POST) {
-    // For POST requests - adjust field names based on actual CIG form
-    formData.append('CHASSIS', chassis.toUpperCase());
+    // For POST requests - match CIG Shipping form parameters
+    // Based on typical cargo tracking forms, common field names are:
+    formData.append('chassis', chassis); // Try lowercase first
+    formData.append('CHASSIS', chassis); // Also try uppercase
+    formData.append('chassisNo', chassis); // Alternative field name
+    formData.append('vin', chassis); // VIN field
+    formData.append('keyword', chassis); // Generic keyword field
+    
     if (year) {
+      formData.append('year', year);
       formData.append('YEAR', year);
     }
+    
+    // Add common form fields that CIG might expect
     formData.append('searchType', 'cargo');
+    formData.append('searchBy', 'chassis');
+    formData.append('submit', 'Search');
   }
   
   return { chassis, year, formData };
@@ -285,14 +300,14 @@ function checkAuthentication(request) {
  * Fetch and parse tracking data from CIG Shipping website
  */
 async function fetchTrackingData(query) {
-  const { chassis, year } = buildForm(query);
+  const { chassis, year, formData } = buildForm(query);
   let cigUrl;
   
   if (USE_POST) {
-    // Use POST endpoint if configured
+    // Use POST endpoint for CIG Shipping
     cigUrl = CIG_API_ENDPOINT;
   } else {
-    // Use GET endpoint with parameters
+    // Use GET endpoint with parameters as fallback
     cigUrl = `${CIG_ENDPOINT}?keyword=${encodeURIComponent(query)}`;
     if (chassis && year) {
       cigUrl = `${CIG_ENDPOINT}?chassis=${encodeURIComponent(chassis)}&year=${year}`;
@@ -303,25 +318,29 @@ async function fetchTrackingData(query) {
     let response;
     
     if (USE_POST) {
-      const { formData } = buildForm(query);
-      
+      // Primary method: POST request with form data
       response = await fetch(cigUrl, {
         method: 'POST',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-          'Accept': 'application/json, text/html, */*',
-          'Accept-Language': 'en-US,en;q=0.5',
-          'X-Requested-With': 'XMLHttpRequest',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9,ko;q=0.8',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Content-Type': 'application/x-www-form-urlencoded',
           'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+          'Pragma': 'no-cache',
+          'Sec-Fetch-Site': 'same-origin',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-User': '?1',
+          'Sec-Fetch-Dest': 'document'
         },
         body: formData
       });
     } else {
-      // Fetch with desktop user agent
+      // Fallback method: GET request with parameters
       response = await fetch(cigUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           'Accept-Language': 'en-US,en;q=0.5',
           'Accept-Encoding': 'gzip, deflate',
@@ -332,6 +351,7 @@ async function fetchTrackingData(query) {
     }
 
     if (!response.ok) {
+      console.error(`CIG Shipping request failed: ${response.status} ${response.statusText}`);
       throw new Error(`CIG Shipping request failed: ${response.status}`);
     }
 
@@ -340,24 +360,30 @@ async function fetchTrackingData(query) {
     const contentType = response.headers.get('content-type') || '';
     
     if (contentType.includes('application/json')) {
-      // Handle JSON response
+      // Handle JSON response (if CIG ever returns JSON)
       const data = await response.json();
       rows = parseAPIResponse(data);
     } else {
-      // Handle HTML response
+      // Handle HTML response (most common)
       html = await response.text();
       
-      // Parse the HTML to extract table rows
+      // Parse the HTML to extract tracking information
       rows = parseTrackingTable(html);
       
-      // If parsing finds zero rows, try alternate endpoint
+      // If parsing finds zero rows, try alternate parsing methods
       if (rows.length === 0) {
+        console.log('No rows found with standard parsing, trying alternate methods...');
         const alternateRows = await tryAlternateEndpoint(query);
-        rows = alternateRows;
+        if (alternateRows.length > 0) {
+          rows = alternateRows;
+        } else {
+          // Last resort: try alternative HTML parsing patterns
+          rows = parseAlternativeStructures(html);
+        }
       }
       
       // Extract and add metadata from HTML
-      const metadata = extractMetadata(html);
+      const metadata = extractTrackingMetadata(html);
       if (Object.keys(metadata).length > 0) {
         rows.unshift({ ...metadata, type: 'metadata' });
       }
@@ -366,6 +392,11 @@ async function fetchTrackingData(query) {
     // Dedupe near-identical rows
     const deduped = deduplicateRows(rows);
     
+    // If still no results, throw error to trigger fallback in frontend
+    if (deduped.length === 0) {
+      throw new Error('No tracking data found for the provided query');
+    }
+    
     return {
       query,
       rows: deduped
@@ -373,7 +404,8 @@ async function fetchTrackingData(query) {
 
   } catch (error) {
     console.error('Error fetching tracking data:', error);
-    throw new Error(`Failed to fetch tracking data: ${error.message}`);
+    // Re-throw with more context for better error handling
+    throw new Error(`Failed to fetch tracking data from CIG Shipping: ${error.message}`);
   }
 }
 
