@@ -217,15 +217,15 @@ const CarsList: React.FC<CarsListProps> = ({
     return { columnsPerRow, rowCount, cardWidth, cardHeight };
   }, [cars.length]);
 
-  // Prefetch next page when near bottom
-  const loadMoreRef = useLoadMoreObserver(
-    useCallback(() => {
-      if (hasMore && !isLoading) {
-        onLoadMore();
-      }
-    }, [hasMore, isLoading, onLoadMore]),
-    { rootMargin: '200px' } // Start loading 200px before reaching bottom
-  );
+  // Removed load more observer - showing all cars in infinite scroll
+  // const loadMoreRef = useLoadMoreObserver(
+  //   useCallback(() => {
+  //     if (hasMore && !isLoading) {
+  //       onLoadMore();
+  //     }
+  //   }, [hasMore, isLoading, onLoadMore]),
+  //   { rootMargin: '200px' } // Start loading 200px before reaching bottom
+  // );
 
   // Grid data for react-window
   const gridData = useMemo(() => ({
@@ -290,38 +290,7 @@ const CarsList: React.FC<CarsListProps> = ({
         </div>
       )}
 
-      {/* Load More Trigger (invisible, for intersection observer) */}
-      {hasMore && !isLoading && (
-        <div ref={loadMoreRef} className="h-1" />
-      )}
-
-      {/* Load More Button (visible backup) */}
-      {hasMore && !isLoading && cars.length > 0 && (
-        <div className="flex justify-center py-8">
-          <Button
-            onClick={onLoadMore}
-            variant="outline"
-            size="lg"
-            className="flex items-center gap-2"
-          >
-            {activeFiltersCount && activeFiltersCount > 0 ? (
-              <>
-                Load More Filtered Cars
-                <div className="text-xs text-muted-foreground ml-2">
-                  ({cars.length} of {totalCount ? totalCount.toLocaleString() : 'many'} shown)
-                </div>
-              </>
-            ) : (
-              <>
-                Load More Cars
-                <div className="text-xs text-muted-foreground ml-2">
-                  ({cars.length} of {totalCount ? totalCount.toLocaleString() : 'many'} shown)
-                </div>
-              </>
-            )}
-          </Button>
-        </div>
-      )}
+      {/* Removed Load More functionality - showing all cars in infinite scroll */}
 
       {/* Initial Loading Skeletons */}
       {isLoading && cars.length === 0 && (
