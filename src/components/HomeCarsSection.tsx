@@ -63,7 +63,7 @@ const HomeCarsSection = memo(() => {
   } = useSecureAuctionAPI();
   const { convertUSDtoEUR, exchangeRate } = useCurrencyAPI();
   const [sortBy, setSortBy] = useState<SortOption>("popular");
-  const [showAllCars, setShowAllCars] = useState(false);
+  const [showAllCars, setShowAllCars] = useState(true); // Always show all cars - infinite scroll
   const [showFilters, setShowFilters] = useState(false);
 
   const [filters, setFilters] = useState<APIFilters>({});
@@ -304,15 +304,11 @@ const HomeCarsSection = memo(() => {
   // Show 50 cars by default (daily rotation) to match catalog
   const defaultDisplayCount = 50;
 
-  // Memoize displayed cars to prevent unnecessary re-renders
+  // Memoize displayed cars to prevent unnecessary re-renders - always show all cars
   const displayedCars = useMemo(() => {
-    if (!hasFilters) {
-      // When no filters, show all daily rotating cars (already limited to 50)
-      return showAllCars ? carsToDisplay : carsToDisplay.slice(0, defaultDisplayCount);
-    }
-    // When filters are applied, use the slice logic
-    return showAllCars ? carsToDisplay : carsToDisplay.slice(0, defaultDisplayCount);
-  }, [showAllCars, carsToDisplay, defaultDisplayCount, hasFilters]);
+    // Always show all cars for infinite scroll - no pagination
+    return carsToDisplay;
+  }, [carsToDisplay]);
 
   // Preload first 6 car images for better initial loading performance
   useEffect(() => {
@@ -657,19 +653,7 @@ const HomeCarsSection = memo(() => {
               })}
             </div>
 
-            {/* Show More Button */}
-            <div className="text-center mt-8">
-              {carsToDisplay.length > defaultDisplayCount && !showAllCars && (
-                <Button
-                  onClick={() => setShowAllCars(true)}
-                  variant="outline"
-                  size="lg"
-                  className="btn-enhanced bg-card border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3"
-                >
-                  Shiko të gjitha ({carsToDisplay.length} makina)
-                </Button>
-              )}
-            </div>
+            {/* Removed Show More Button - always showing all cars in infinite scroll */}
           </>
         )}
       </div>
