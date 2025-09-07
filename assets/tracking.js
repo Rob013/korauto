@@ -408,8 +408,7 @@ export function submitTracking(event) {
     submitBtn.disabled = true;
     submitBtn.textContent = 'Searching...';
     
-    // Call tracking API - always fetch from real website
-    
+    // Call tracking API - only use real data from CIG Shipping
     fetch(`/api/cig-track?q=${encodeURIComponent(query)}`)
         .then(response => {
             if (!response.ok) {
@@ -417,29 +416,21 @@ export function submitTracking(event) {
                     throw new Error('Invalid tracking number format');
                 } else if (response.status === 401) {
                     throw new Error('Authentication required. Please log in again.');
+                } else if (response.status === 429) {
+                    throw new Error('Rate limit exceeded. Please try again in a moment.');
                 } else if (response.status >= 500) {
                     throw new Error('Service temporarily unavailable. Please try again later.');
                 } else {
-                    // For development demo - create mock widget data
-                    console.log('Using mock data for development demo (non-ok response)');
-                    const mockData = createMockWidgetData(query);
-                    handleTrackingSuccess(mockData, submitBtn, originalText);
-                    return null; // Signal to skip further processing
+                    throw new Error(`CIG Shipping API error: ${response.status}`);
                 }
             }
             return response.json().catch(parseError => {
-                // If JSON parsing fails, use mock data for demo
-                console.log('JSON parse failed, using mock data for demo');
-                const mockData = createMockWidgetData(query);
-                handleTrackingSuccess(mockData, submitBtn, originalText);
-                return null; // Signal to skip further processing
+                throw new Error('Invalid response from CIG Shipping API');
             });
         })
         .then(data => {
-            if (data) { // Only process if we have real data (not when using mock)
-                console.debug('Response length:', data.rows ? data.rows.length : 0);
-                handleTrackingSuccess(data, submitBtn, originalText);
-            }
+            console.debug('Response length:', data.rows ? data.rows.length : 0);
+            handleTrackingSuccess(data, submitBtn, originalText);
         })
         .catch(error => {
             console.error('Tracking error:', error);
@@ -491,77 +482,3 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Create mock widget data for development demo
-function createMockWidgetData(query) {
-    const chassis = query.substring(0, 17);
-    const year = query.includes('2024') ? '2024' : '2021';
-    
-    return {
-        query: {
-            chassis: chassis,
-            year: year
-        },
-        result: {
-            shipper: "주식회사 싼카",
-            model_year: "C200",
-            chassis: chassis,
-            vessel: "MV SANG SHIN V.2508",
-            pol: "INCHEON, KOREA",
-            on_board: "2025-08-06",
-            port: "Durres Port, Albania", 
-            eta: "2025-09-11"
-        },
-        shipping_status: {
-            overall: "Loaded",
-            steps: [
-                { name: "In Port", active: true },
-                { name: "Vessel Fixed", active: true },
-                { name: "Shipment Ready", active: true },
-                { name: "Loaded", active: true },
-                { name: "Arrival", active: false }
-            ]
-        },
-        source: "cigshipping.com",
-        last_updated: new Date().toISOString(),
-        rows: [
-            {
-                type: "metadata",
-                shipper: "주식회사 싼카",
-                model: "C200",
-                chassis: chassis,
-                vesselName: "MV SANG SHIN V.2508",
-                portOfLoading: "INCHEON, KOREA",
-                portOfDischarge: "Durres Port, Albania",
-                onBoard: "2025-08-06",
-                estimatedArrival: "2025-09-11",
-                shippingLine: "CIG Shipping Line",
-                billOfLading: "CIG" + chassis.substring(9, 17),
-                containerNumber: "CGMU" + Math.random().toString().substring(2, 9)
-            },
-            {
-                type: "event",
-                date: "2025-08-06",
-                event: "Container loaded on vessel",
-                location: "INCHEON, KOREA",
-                vessel: "MV SANG SHIN V.2508",
-                status: "Loaded"
-            },
-            {
-                type: "event", 
-                date: "2025-08-07",
-                event: "Vessel departure",
-                location: "INCHEON, KOREA",
-                vessel: "MV SANG SHIN V.2508",
-                status: "Departed"
-            },
-            {
-                type: "event",
-                date: "2025-09-11",
-                event: "Expected arrival",
-                location: "Durres Port, Albania",
-                vessel: "MV SANG SHIN V.2508", 
-                status: "In Transit"
-            }
-        ]
-    };
-}

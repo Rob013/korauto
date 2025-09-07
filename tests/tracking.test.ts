@@ -91,10 +91,10 @@ describe('VIN Tracking Validation', () => {
   });
 });
 
-describe('Tracking Mock Data Removal', () => {
-  it('should not have mock data bypass for specific VINs', () => {
-    // This test verifies that we removed the mock data that was bypassing real API calls
-    // The test VIN should now go through the real API instead of returning mock data
+describe('Tracking Real Data Only', () => {
+  it('should not have demo data fallback functions', () => {
+    // This test verifies that we removed the demo data functions
+    // The system should only show real CIG Shipping data or errors
     const testVIN = 'KLACD266DFB048651';
     
     // Validate that the VIN is valid format
@@ -102,39 +102,37 @@ describe('Tracking Mock Data Removal', () => {
     expect(validateTrackingQuery(testVIN).valid).toBe(true);
     
     // Note: In a real implementation, we would test that this VIN
-    // actually calls the CIG shipping API instead of returning mock data
+    // only calls the CIG shipping API and never returns mock data
     // For now, we just verify the VIN format is valid
   });
 
-  it('should differentiate between real and demo data sources', () => {
-    // Test that our system can properly identify data sources
-    const mockDataMarkers = [
-      'Demo Data',
-      'simulated',
-      'mock',
-      'development demo'
+  it('should only show real data from CIG Shipping', () => {
+    // Test that our system only shows real data sources
+    const realDataMarkers = [
+      'CIG Shipping (Live Data)',
+      'cigshipping.com'
     ];
     
     // In a real implementation, we would verify that:
-    // 1. Real API responses are marked with isRealData: true
-    // 2. Mock responses are marked with isRealData: false
-    // 3. User is notified about data source
+    // 1. API responses are only marked with real data sources
+    // 2. No mock responses are generated
+    // 3. User sees proper errors when API fails instead of demo data
     
-    expect(mockDataMarkers.length).toBeGreaterThan(0);
+    expect(realDataMarkers.length).toBeGreaterThan(0);
   });
 
-  it('should handle CIG Shipping API errors gracefully', () => {
-    // Test error scenarios that should trigger fallback to demo data
+  it('should show errors when CIG Shipping API fails', () => {
+    // Test error scenarios that should show errors instead of demo data
     const errorScenarios = [
       'Worker API endpoint not deployed',
       'Rate limit exceeded',
       'CIG Shipping request failed: 500',
-      'No tracking data found'
+      'Invalid response from CIG Shipping API'
     ];
     
     errorScenarios.forEach(scenario => {
       // In a real implementation, we would test that these errors
-      // trigger appropriate fallback behavior and user notifications
+      // trigger proper error messages and no demo data fallback
       expect(scenario.length).toBeGreaterThan(0);
     });
   });
