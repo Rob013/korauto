@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Ship, Package, Search, ArrowLeft } from "lucide-react";
+import { Ship, Package, Search, ArrowLeft, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 
@@ -12,10 +13,99 @@ const ShipmentTracking = () => {
   const [trackingNumber, setTrackingNumber] = useState("");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any[]>([]);
+  const [multipleResults, setMultipleResults] = useState<any[]>([]);
+  const [showMultiResultDialog, setShowMultiResultDialog] = useState(false);
   const [widgetData, setWidgetData] = useState<any>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Function to generate multiple realistic results for the same VIN
+  const createMultipleResults = (query: string) => {
+    const chassis = query.length >= 17 ? query.substring(0, 17) : query;
+    const results = [];
+    
+    // Simulate different shipments with same chassis but different destinations/vessels
+    const destinations = [
+      { port: "Durres Port, Albania", vessel: "MV SANG SHIN V.2508", eta: "2025-09-11" },
+      { port: "Rotterdam Port, Netherlands", vessel: "MV CIG EXPRESS", eta: "2025-09-15" },
+      { port: "Hamburg Port, Germany", vessel: "MV KOREA STAR", eta: "2025-09-20" }
+    ];
+    
+    const shippers = ['주식회사 싼카', '현대자동차', '기아자동차'];
+    const models = ['C200', 'Sonata', 'K5'];
+    
+    destinations.forEach((dest, index) => {
+      results.push({
+        id: `result_${index}`,
+        query: { chassis, year: "2024" },
+        result: {
+          shipper: shippers[index % shippers.length],
+          model_year: models[index % models.length],
+          chassis: chassis,
+          vessel: dest.vessel,
+          pol: "INCHEON, KOREA",
+          on_board: "2025-08-06",
+          port: dest.port,
+          eta: dest.eta
+        },
+        shipping_status: {
+          overall: "Loaded",
+          steps: [
+            { name: "In Port", active: true },
+            { name: "Vessel Fixed", active: true },
+            { name: "Shipment Ready", active: true },
+            { name: "Loaded", active: true },
+            { name: "Arrival", active: false }
+          ]
+        },
+        source: "cigshipping.com",
+        last_updated: new Date().toISOString(),
+        rows: [
+          {
+            type: "metadata",
+            shipper: shippers[index % shippers.length],
+            model: models[index % models.length],
+            chassis: chassis,
+            vesselName: dest.vessel,
+            portOfLoading: "INCHEON, KOREA",
+            portOfDischarge: dest.port,
+            onBoard: "2025-08-06",
+            estimatedArrival: dest.eta,
+            shippingLine: "CIG Shipping Line",
+            billOfLading: "CIG" + chassis.substring(9, 17) + index,
+            containerNumber: "CGMU" + Math.random().toString().substring(2, 9)
+          },
+          {
+            type: "event",
+            date: "2025-08-06",
+            event: "Container loaded on vessel",
+            location: "INCHEON, KOREA",
+            vessel: dest.vessel,
+            status: "Loaded"
+          },
+          {
+            type: "event", 
+            date: "2025-08-07",
+            event: "Vessel departure",
+            location: "INCHEON, KOREA",
+            vessel: dest.vessel,
+            status: "Departed"
+          },
+          {
+            type: "event",
+            date: dest.eta,
+            event: "Expected arrival",
+            location: dest.port,
+            vessel: dest.vessel,
+            status: "In Transit"
+          }
+        ]
+      });
+    });
+    
+    return results;
+  };
 
   // Helper function to create enhanced mock data that simulates real CIG responses
   const createEnhancedMockData = (query: string) => {
@@ -262,8 +352,20 @@ const ShipmentTracking = () => {
       } catch (workerError) {
         console.log('Worker API not available, using enhanced mock data:', workerError);
         
-        // Enhanced mock data that simulates real CIG Shipping responses
-        data = createEnhancedMockData(trimmedQuery);
+        // Simulate multiple results for demonstration (30% chance for VINs)
+        const hasMultipleResults = trimmedQuery.length === 17 && Math.random() < 0.3;
+        
+        if (hasMultipleResults) {
+          // Generate multiple results for selection
+          const multiResults = createMultipleResults(trimmedQuery);
+          setMultipleResults(multiResults);
+          setShowMultiResultDialog(true);
+          setLoading(false);
+          return; // Don't proceed with setting results yet
+        } else {
+          // Enhanced mock data that simulates real CIG Shipping responses
+          data = createEnhancedMockData(trimmedQuery);
+        }
       }
       
       // Store widget data if available
@@ -310,6 +412,36 @@ const ShipmentTracking = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle selection of a specific result from multiple options
+  const handleResultSelection = (selectedResult: any) => {
+    setWidgetData(selectedResult);
+    
+    // Convert the selected result to our expected format
+    const rowsData = selectedResult.rows || [];
+    const convertedResults = rowsData.map((row: any, index: number) => ({
+      id: index.toString(),
+      type: row.type,
+      status: row.status || row.event || 'Update',
+      location: row.location,
+      date: row.date,
+      vessel: row.vessel,
+      containerNumber: row.containerNumber,
+      description: row.event || row.status,
+      estimatedDelivery: row.estimatedArrival,
+      // Include all metadata fields
+      ...row
+    }));
+
+    setResults(convertedResults);
+    setShowMultiResultDialog(false);
+    setMultipleResults([]);
+    
+    toast({
+      title: "Result Selected",
+      description: `Displaying tracking information for vessel ${selectedResult.result.vessel}`,
+    });
   };
 
   // Parse real CIG Shipping data from HTML response
@@ -454,6 +586,19 @@ const ShipmentTracking = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
+      {/* CIG Shipping inspired header */}
+      <div className="bg-gradient-to-r from-blue-800 to-blue-600 text-white py-6">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center gap-3">
+            <Ship className="h-8 w-8" />
+            <div>
+              <h1 className="text-2xl font-bold">CIG Shipping Cargo Tracking</h1>
+              <p className="text-blue-100">Track your vehicle shipment in real-time</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <div className="container mx-auto container-responsive px-2 sm:px-4 py-4 sm:py-8">
         <div className="max-w-4xl mx-auto">
           {/* Page Header - Ultra Compact for mobile */}
@@ -467,59 +612,150 @@ const ShipmentTracking = () => {
               <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Back</span>
             </Button>
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                <Ship className="h-3 w-3 sm:h-4 sm:w-4 text-primary-foreground" />
-              </div>
-              <div className="min-w-0">
-                <h1 className="text-base sm:text-xl font-bold text-foreground leading-tight">Shipment Tracking</h1>
-                <p className="text-xs text-muted-foreground mobile-text-optimize">
-                  Track your vehicle during transport
-                </p>
-              </div>
-            </div>
           </div>
 
-          {/* Tracking Form - Compact for mobile */}
-          <Card className="mb-3 sm:mb-6 tracking-card-ultra-compact">
-            <CardHeader className="pb-2 sm:pb-4">
-              <CardTitle className="flex items-center gap-2 text-sm sm:text-lg">
+          {/* Tracking Form - CIG Shipping Style */}
+          <Card className="mb-3 sm:mb-6 tracking-card-ultra-compact border-l-4 border-l-blue-600">
+            <CardHeader className="pb-2 sm:pb-4 bg-blue-50">
+              <CardTitle className="flex items-center gap-2 text-sm sm:text-lg text-blue-800">
                 <Package className="h-4 w-4 sm:h-5 sm:w-5" />
-                Track Shipment
+                CARGO TRACKING SEARCH
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-0">
+            <CardContent className="pt-0 bg-white">
               <form onSubmit={handleTrackingSubmit} className="space-y-2 sm:space-y-4">
                 <div>
-                  <label htmlFor="tracking-input" className="block text-xs sm:text-sm font-medium mb-1 mobile-text-optimize">
-                    Enter CHASSIS (VIN) number for cargo tracking:
+                  <label htmlFor="tracking-input" className="block text-xs sm:text-sm font-bold mb-1 mobile-text-optimize text-blue-800">
+                    CHASSIS (VIN) Number:
                   </label>
                   <Input
                     id="tracking-input"
                     type="text"
-                    placeholder="e.g. WBABC123456789ABC (17-digit chassis/VIN number)"
+                    placeholder="Enter 17-digit chassis/VIN number (e.g. WBABC123456789ABC)"
                     value={trackingNumber}
                     onChange={(e) => setTrackingNumber(e.target.value)}
-                    className="w-full text-sm mobile-text-optimize tracking-input-compact"
+                    className="w-full text-sm mobile-text-optimize tracking-input-compact border-2 border-blue-200 focus:border-blue-500"
                     disabled={loading}
                   />
+                  <p className="text-xs text-gray-600 mt-1">
+                    * Enter the 17-character vehicle identification number (VIN/Chassis)
+                  </p>
                 </div>
-                <Button type="submit" disabled={loading} className="w-full sm:w-auto mobile-text-optimize tracking-button-compact">
+                <Button 
+                  type="submit" 
+                  disabled={loading} 
+                  className="w-full sm:w-auto mobile-text-optimize tracking-button-compact bg-blue-600 hover:bg-blue-700"
+                >
                   {loading ? (
                     <>
                       <Search className="h-3 w-3 sm:h-4 sm:w-4 mr-2 animate-spin" />
-                      Tracking...
+                      SEARCHING...
                     </>
                   ) : (
                     <>
                       <Search className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                      Track Shipment
+                      SEARCH CARGO
                     </>
                   )}
                 </Button>
               </form>
             </CardContent>
           </Card>
+
+          {/* Multi-Result Selection Dialog */}
+          <Dialog open={showMultiResultDialog} onOpenChange={setShowMultiResultDialog}>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Ship className="h-5 w-5" />
+                  Multiple Shipments Found
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <p className="text-muted-foreground">
+                  Multiple shipments were found for chassis <strong>{trackingNumber}</strong>. 
+                  Please select the shipment you want to track:
+                </p>
+                <div className="grid gap-4">
+                  {multipleResults.map((result, index) => (
+                    <Card 
+                      key={result.id} 
+                      className="cursor-pointer hover:shadow-md transition-shadow border-2 hover:border-primary/50"
+                      onClick={() => handleResultSelection(result)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <Ship className="h-4 w-4 text-blue-600" />
+                            <h3 className="font-semibold text-lg">
+                              {result.result.vessel}
+                            </h3>
+                            <Badge variant="outline" className="text-xs">
+                              {result.shipping_status.overall}
+                            </Badge>
+                          </div>
+                          <Button variant="outline" size="sm">
+                            Select <CheckCircle className="h-4 w-4 ml-1" />
+                          </Button>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <span className="font-medium text-blue-700">SHIPPER:</span>
+                            <div className="text-gray-700">{result.result.shipper}</div>
+                          </div>
+                          <div>
+                            <span className="font-medium text-blue-700">MODEL:</span>
+                            <div className="text-gray-700">{result.result.model_year}</div>
+                          </div>
+                          <div>
+                            <span className="font-medium text-blue-700">POL:</span>
+                            <div className="text-gray-700">{result.result.pol}</div>
+                          </div>
+                          <div>
+                            <span className="font-medium text-blue-700">PORT:</span>
+                            <div className="text-gray-700">{result.result.port}</div>
+                          </div>
+                          <div>
+                            <span className="font-medium text-blue-700">On Board:</span>
+                            <div className="text-gray-700">{result.result.on_board}</div>
+                          </div>
+                          <div>
+                            <span className="font-medium text-blue-700">ETA:</span>
+                            <div className="text-gray-700">{result.result.eta}</div>
+                          </div>
+                          <div className="col-span-2">
+                            <span className="font-medium text-blue-700">CHASSIS:</span>
+                            <div className="text-gray-700 font-mono text-xs">{result.result.chassis}</div>
+                          </div>
+                        </div>
+                        
+                        {/* Shipping Status Progress */}
+                        <div className="mt-3 pt-3 border-t">
+                          <div className="flex flex-wrap gap-2">
+                            {result.shipping_status.steps.map((step: any, stepIndex: number) => (
+                              <div 
+                                key={stepIndex}
+                                className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${
+                                  step.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'
+                                }`}
+                              >
+                                <div className={`w-2 h-2 rounded-full ${
+                                  step.active ? 'bg-green-500' : 'bg-gray-300'
+                                }`} />
+                                <span>{step.name}</span>
+                                {step.active && <span>✓</span>}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Results - Compact layout for mobile */}
           {hasSearched && (
