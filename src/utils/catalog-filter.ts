@@ -259,9 +259,14 @@ export const getFallbackGrades = (manufacturerId: string): Array<{ value: string
  */
 export const getManufacturerCategory = (manufacturerName: string): { priority: number; categoryName: string } => {
   const categories = {
+    popular: {
+      name: 'Popular Brands',
+      brands: ['Audi', 'Mercedes-Benz', 'Volkswagen', 'BMW', 'Renault', 'Peugeot', 'Volvo'],
+      priority: 0
+    },
     german: {
       name: 'German Brands',
-      brands: ['BMW', 'Mercedes-Benz', 'Audi', 'Volkswagen', 'Porsche', 'Opel'],
+      brands: ['Porsche', 'Opel'],
       priority: 1
     },
     korean: {
@@ -281,12 +286,12 @@ export const getManufacturerCategory = (manufacturerName: string): { priority: n
     },
     luxury: {
       name: 'Luxury/European Brands',
-      brands: ['Land Rover', 'Jaguar', 'Volvo', 'Ferrari', 'Lamborghini', 'Maserati', 'Bentley', 'Rolls-Royce', 'Aston Martin', 'McLaren', 'Mini'],
+      brands: ['Land Rover', 'Jaguar', 'Ferrari', 'Lamborghini', 'Maserati', 'Bentley', 'Rolls-Royce', 'Aston Martin', 'McLaren', 'Mini'],
       priority: 5
     },
     french: {
       name: 'French Brands',
-      brands: ['Peugeot', 'Renault', 'Citroën'],
+      brands: ['Citroën'],
       priority: 6
     },
     italian: {
@@ -306,8 +311,8 @@ export const getManufacturerCategory = (manufacturerName: string): { priority: n
   );
 
   return {
-    priority: categoryEntry?.priority || 999,
-    categoryName: categoryEntry?.name || 'Other Brands'
+    priority: categoryEntry ? categoryEntry.priority : 999,
+    categoryName: categoryEntry ? categoryEntry.name : 'Other Brands'
   };
 };
 

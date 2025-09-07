@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -21,6 +22,7 @@ import {
 } from 'lucide-react';
 import { FilterState } from '@/hooks/useFiltersFromUrl';
 import { validateFilters } from '@/utils/buildQueryParams';
+import { getManufacturerCategory } from '@/utils/catalog-filter';
 import { cn } from '@/lib/utils';
 
 interface FiltersData {
@@ -124,6 +126,23 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
     if (!filters.brand) return [];
     return data.models.filter(model => model.brandId === filters.brand);
   }, [data.models, filters.brand]);
+
+  // Group brands by priority for display
+  const groupedBrands = useMemo(() => {
+    const popularBrands: Array<{ id: string; name: string; count?: number }> = [];
+    const otherBrands: Array<{ id: string; name: string; count?: number }> = [];
+    
+    data.brands.forEach(brand => {
+      const category = getManufacturerCategory(brand.name);
+      if (category.priority === 0) { // Popular brands
+        popularBrands.push(brand);
+      } else {
+        otherBrands.push(brand);
+      }
+    });
+    
+    return { popularBrands, otherBrands };
+  }, [data.brands]);
 
   // Validate filters
   const validationErrors = useMemo(() => validateFilters(filters), [filters]);
@@ -302,7 +321,20 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                   <SelectValue placeholder="Zgjidhni markën" />
                 </SelectTrigger>
                 <SelectContent>
-                  {data.brands.map((brand) => (
+                  {/* Popular Brands */}
+                  {groupedBrands.popularBrands.map((brand) => (
+                    <SelectItem key={brand.id} value={brand.id}>
+                      {brand.name} {brand.count && `(${brand.count})`}
+                    </SelectItem>
+                  ))}
+                  
+                  {/* Separator */}
+                  {groupedBrands.popularBrands.length > 0 && groupedBrands.otherBrands.length > 0 && (
+                    <Separator className="my-1" />
+                  )}
+                  
+                  {/* Other Brands */}
+                  {groupedBrands.otherBrands.map((brand) => (
                     <SelectItem key={brand.id} value={brand.id}>
                       {brand.name} {brand.count && `(${brand.count})`}
                     </SelectItem>
