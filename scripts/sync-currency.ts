@@ -28,6 +28,11 @@ const REQUEST_TIMEOUT = 10000
 
 // Currency API configuration
 const CURRENCY_API_KEY = process.env.CURRENCY_API_KEY || 'cur_live_SqgABFxnWHPaJjbRVJQdOLJpYkgCiJgQkIdvVFN6'
+
+// Google-sourced real-time API (primary)
+const GOOGLE_SOURCED_API_URL = 'https://api.exchangerate-api.com/v4/latest/USD'
+
+// Fallback API
 const CURRENCY_API_URL = `https://api.currencyapi.com/v3/latest?apikey=${CURRENCY_API_KEY}&currencies=EUR&base_currency=USD`
 
 // Supabase configuration (for storing rates in database if needed)
@@ -49,13 +54,67 @@ interface CurrencyAPIResponse {
   };
 }
 
+interface GoogleSourcedAPIResponse {
+  base: string;
+  date: string;
+  rates: {
+    EUR: number;
+  };
+  provider: string;
+}
+
 // Initialize Supabase client if credentials are available
 let supabase: ReturnType<typeof createClient> | null = null
 if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
   supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 }
 
-// Helper function to make API requests with retry logic
+// Helper function to make API requests with retry logic - Google-sourced API
+async function fetchGoogleSourcedRate(retryCount = 0): Promise<GoogleSourcedAPIResponse> {
+  try {
+    console.log(`🌐 Fetching Google-sourced exchange rate (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`)
+    
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
+    
+    const response = await fetch(GOOGLE_SOURCED_API_URL, {
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'KorAuto-Currency-Sync/1.0'
+      }
+    })
+    
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      throw new Error(`Google-sourced API returned ${response.status}: ${response.statusText}`)
+    }
+
+    const data = await response.json() as GoogleSourcedAPIResponse
+
+    if (!data.rates?.EUR) {
+      throw new Error('Invalid Google-sourced API response format - missing EUR data')
+    }
+
+    console.log(`✅ Successfully fetched Google-sourced rate: 1 USD = ${data.rates.EUR} EUR`)
+    return data
+
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error(`❌ Error fetching Google-sourced rate (attempt ${retryCount + 1}):`, errorMessage)
+    
+    if (retryCount < MAX_RETRIES) {
+      console.log(`⏰ Retrying Google-sourced API in ${RETRY_DELAY}ms...`)
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY))
+      return fetchGoogleSourcedRate(retryCount + 1)
+    }
+    
+    throw new Error(`Failed to fetch Google-sourced rate after ${MAX_RETRIES + 1} attempts: ${errorMessage}`)
+  }
+}
+
+// Helper function to make API requests with retry logic - Fallback API
 async function fetchWithRetry(url: string, retryCount = 0): Promise<CurrencyAPIResponse> {
   try {
     console.log(`💱 Fetching exchange rate from API (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`)
@@ -170,13 +229,34 @@ async function syncExchangeRate(): Promise<void> {
       console.log(`📊 Current rate: 1 USD = ${currentRate.rate} EUR (last updated: ${currentRate.lastUpdated})`)
     }
 
-    // Fetch new rate from API
-    const apiResponse = await fetchWithRetry(CURRENCY_API_URL)
+    // Fetch new rate from Google-sourced API first
+    let newExchangeRate: ExchangeRate
     
-    const newExchangeRate: ExchangeRate = {
-      rate: apiResponse.data.EUR,
-      lastUpdated: new Date().toISOString(),
-      source: 'currencyapi.com'
+    try {
+      console.log('🎯 Attempting to fetch from Google-sourced real-time API...')
+      const googleResponse = await fetchGoogleSourcedRate()
+      
+      newExchangeRate = {
+        rate: googleResponse.rates.EUR,
+        lastUpdated: new Date().toISOString(),
+        source: 'google-sourced-realtime'
+      }
+      
+      console.log('🎉 Successfully using Google-sourced exchange rate!')
+    } catch (googleError) {
+      console.log('⚠️ Google-sourced API failed, falling back to currencyapi.com')
+      console.log('Google error:', googleError)
+      
+      // Fallback to currencyapi.com
+      const apiResponse = await fetchWithRetry(CURRENCY_API_URL)
+      
+      newExchangeRate = {
+        rate: apiResponse.data.EUR,
+        lastUpdated: new Date().toISOString(),
+        source: 'fallback-currencyapi'
+      }
+      
+      console.log('✅ Using fallback exchange rate from currencyapi.com')
     }
 
     // Check if rate has changed significantly
@@ -206,7 +286,7 @@ async function syncExchangeRate(): Promise<void> {
     const fallbackRate: ExchangeRate = {
       rate: 0.85, // Current market rate as fallback
       lastUpdated: new Date().toISOString(),
-      source: 'fallback'
+      source: 'hardcoded-fallback'
     }
     
     console.log('🔄 Using fallback exchange rate...')
