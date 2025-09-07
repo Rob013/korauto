@@ -1324,7 +1324,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           )}
 
           {/* No Results State */}
-          {shouldShowCars && !loading && !isRestoringState && !isFilterLoading && cars.length === 0 && (
+          {shouldShowCars && !loading && !isRestoringState && !isFilterLoading && carsToDisplay.length === 0 && (
             <div className="text-center py-12">
               <p className="text-muted-foreground">
                 No cars found matching your filters.
@@ -1347,7 +1347,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           )}
 
           {/* Cars Grid/List - Show cars without requiring filters */}
-          {shouldShowCars && cars.length > 0 && (
+          {shouldShowCars && carsToDisplay.length > 0 && (
             <div className="relative">
               {/* Loading Overlay for Cars Grid */}
               {isFilterLoading && (

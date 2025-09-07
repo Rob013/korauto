@@ -2020,19 +2020,25 @@ export const useSecureAuctionAPI = () => {
         }
       }
       
-      // Use fallback car data when API fails - but only if no specific brand filter is applied
-      if (newFilters.manufacturer_id && 
-          newFilters.manufacturer_id !== 'all' && 
-          newFilters.manufacturer_id !== '' &&
-          newFilters.manufacturer_id !== undefined &&
-          newFilters.manufacturer_id !== null) {
-        console.log("❌ API failed for brand-specific global sorting, not using fallback cars");
+      // Check if any meaningful filters are applied
+      const hasFilters = Object.keys(newFilters).some(key => {
+        const value = newFilters[key];
+        // Skip pagination and internal parameters
+        if (key === 'page' || key === 'per_page' || key === 'simple_paginate') {
+          return false;
+        }
+        // Check if filter has a meaningful value
+        return value && value !== 'all' && value !== '' && value !== undefined && value !== null;
+      });
+
+      if (hasFilters) {
+        console.log("❌ API failed for filtered global sorting, not using fallback cars");
         return [];
       }
       
-      // No fallback cars for global sorting - return empty array
-      console.log("❌ API failed for global sorting, returning empty array instead of fallback cars");
-      return [];
+      // No meaningful filters applied - use fallback cars when API fails
+      console.log("❌ API failed for unfiltered global sorting, using fallback cars");
+      return createFallbackCars(newFilters);
     }
   };
 
