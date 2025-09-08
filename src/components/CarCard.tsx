@@ -5,7 +5,7 @@ import { useNavigation } from "@/contexts/NavigationContext";
 
 // Utility function to format mileage consistently
 const formatMileage = (mileage: string | number | undefined): string | undefined => {
-  if (!mileage) return undefined;
+  if (mileage === undefined || mileage === null) return undefined;
   
   // If it's already a formatted string (contains 'km'), return as is
   if (typeof mileage === 'string' && mileage.includes('km')) {
@@ -14,7 +14,7 @@ const formatMileage = (mileage: string | number | undefined): string | undefined
   
   // If it's a number or numeric string, format it
   const numericMileage = typeof mileage === 'string' ? parseInt(mileage, 10) : mileage;
-  if (typeof numericMileage === 'number' && !isNaN(numericMileage) && numericMileage > 0) {
+  if (typeof numericMileage === 'number' && !isNaN(numericMileage) && numericMileage >= 0) {
     return `${numericMileage.toLocaleString()} km`;
   }
   
