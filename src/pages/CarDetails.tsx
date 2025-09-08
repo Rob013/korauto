@@ -3,6 +3,24 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { trackPageView, trackCarView, trackFavorite } from "@/utils/analytics";
 import { calculateFinalPriceEUR } from "@/utils/carPricing";
+
+// Utility function to format mileage consistently
+const formatMileage = (mileage: string | number | undefined): string | undefined => {
+  if (!mileage) return undefined;
+  
+  // If it's already a formatted string (contains 'km'), return as is
+  if (typeof mileage === 'string' && mileage.includes('km')) {
+    return mileage;
+  }
+  
+  // If it's a number or numeric string, format it
+  const numericMileage = typeof mileage === 'string' ? parseInt(mileage, 10) : mileage;
+  if (typeof numericMileage === 'number' && !isNaN(numericMileage) && numericMileage > 0) {
+    return `${numericMileage.toLocaleString()} km`;
+  }
+  
+  return undefined;
+};
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -1333,7 +1351,7 @@ const CarDetails = memo(() => {
                         <span className="font-medium text-foreground">Kilometrazh</span>
                       </div>
                       <span className="text-muted-foreground font-medium">
-                        {car.mileage}
+                        {formatMileage(car.mileage)}
                       </span>
                     </div>
                   )}
@@ -1969,7 +1987,7 @@ const CarDetails = memo(() => {
                                         </div>
                                         {record.mileage && (
                                           <span className="text-xs text-muted-foreground block mt-2">
-                                            Kilometrazh: {record.mileage}
+                                            Kilometrazh: {formatMileage(record.mileage)}
                                           </span>
                                         )}
                                       </div>

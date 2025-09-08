@@ -2,6 +2,24 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
+
+// Utility function to format mileage consistently
+const formatMileage = (mileage: string | number | undefined): string | undefined => {
+  if (!mileage) return undefined;
+  
+  // If it's already a formatted string (contains 'km'), return as is
+  if (typeof mileage === 'string' && mileage.includes('km')) {
+    return mileage;
+  }
+  
+  // If it's a number or numeric string, format it
+  const numericMileage = typeof mileage === 'string' ? parseInt(mileage, 10) : mileage;
+  if (typeof numericMileage === 'number' && !isNaN(numericMileage) && numericMileage > 0) {
+    return `${numericMileage.toLocaleString()} km`;
+  }
+  
+  return undefined;
+};
 import {
   Car,
   Search,
@@ -477,7 +495,7 @@ const CarCard = ({
           {mileage && (
             <div className="flex items-center gap-1">
               <Gauge className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="truncate text-muted-foreground">{mileage}</span>
+              <span className="truncate text-muted-foreground">{formatMileage(mileage)}</span>
             </div>
           )}
           {transmission && (
