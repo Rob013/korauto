@@ -1277,7 +1277,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 Car Catalog
               </h1>
               <p className="text-muted-foreground text-xs sm:text-sm">
-                {totalCount.toLocaleString()} cars across {totalPages.toLocaleString()} pages • Page {currentPage} of {totalPages.toLocaleString()} • Showing {carsToDisplay.length} cars per page
+                {totalCount.toLocaleString()} cars across {totalPages.toLocaleString()} pages • Page {currentPage} of {totalPages.toLocaleString()} • Showing 500 cars per page
 
                 {yearFilterProgress === 'instant' && (
                   <span className="ml-2 text-primary text-xs">⚡ Instant results</span>
