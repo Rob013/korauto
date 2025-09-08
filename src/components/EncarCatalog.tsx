@@ -932,7 +932,8 @@ const EncarCatalog = ({
       clearStateOnNavigation();
     };
   }, []);
-  return <div className="flex min-h-screen bg-background">
+  return <div className="flex justify-center min-h-screen bg-background">
+    <div className="flex w-full max-w-screen-2xl">
       {/* Collapsible Filter Sidebar - Optimized for mobile */}
       <div ref={filterPanelRef} data-filter-panel className={`
         fixed lg:relative z-40 glass-card transition-transform duration-300 ease-in-out
@@ -1024,7 +1025,7 @@ const EncarCatalog = ({
 
       {/* Main Content */}
       <div ref={mainContentRef} className={`flex-1 min-w-0 transition-all duration-300`}>
-        <div className="container-responsive py-3 sm:py-6 mobile-text-optimize">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3 sm:py-6 mobile-text-optimize">
           {/* Header Section - Mobile optimized */}
           <div className="flex flex-col gap-3 mb-4">
             {/* Mobile header - stacked layout */}
@@ -1289,6 +1290,7 @@ const EncarCatalog = ({
             </div>}
         </div>
       </div>
-    </div>;
+    </div>
+  </div>;
 };
 export default EncarCatalog;
