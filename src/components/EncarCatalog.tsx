@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -5,7 +6,19 @@ import { Input } from "@/components/ui/input";
 import { AdaptiveSelect } from "@/components/ui/adaptive-select";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigation } from "@/contexts/NavigationContext";
-import { Loader2, Search, ArrowLeft, ArrowUpDown, Car, Filter, X, PanelLeftOpen, PanelLeftClose, Lock, Unlock } from "lucide-react";
+import {
+  Loader2,
+  Search,
+  ArrowLeft,
+  ArrowUpDown,
+  Car,
+  Filter,
+  X,
+  PanelLeftOpen,
+  PanelLeftClose,
+  Lock,
+  Unlock,
+} from "lucide-react";
 import LoadingLogo from "@/components/LoadingLogo";
 import LazyCarCard from "@/components/LazyCarCard";
 import { useSecureAuctionAPI, createFallbackManufacturers } from "@/hooks/useSecureAuctionAPI";
@@ -16,9 +29,24 @@ import { useResourcePreloader } from "@/hooks/useResourcePreloader";
 import { debounce } from "@/utils/performance";
 import { useOptimizedYearFilter } from "@/hooks/useOptimizedYearFilter";
 import { useDailyRotatingCars } from "@/hooks/useDailyRotatingCars";
-import { APIFilters, extractGradesFromTitle, applyGradeFilter, matchesGradeFilter, normalizeFilters, filtersToURLParams, isYearRangeChange, addPaginationToFilters, debounce as catalogDebounce } from "@/utils/catalog-filter";
+import {
+  APIFilters,
+  extractGradesFromTitle,
+  applyGradeFilter,
+  matchesGradeFilter,
+  normalizeFilters,
+  filtersToURLParams,
+  isYearRangeChange,
+  addPaginationToFilters,
+  debounce as catalogDebounce
+} from "@/utils/catalog-filter";
+
 import { useSearchParams } from "react-router-dom";
-import { useSortedCars, getEncarSortOptions, SortOption } from "@/hooks/useSortedCars";
+import {
+  useSortedCars,
+  getEncarSortOptions,
+  SortOption,
+} from "@/hooks/useSortedCars";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,48 +57,37 @@ import { CarWithRank } from "@/utils/chronologicalRanking";
 import { filterOutTestCars } from "@/utils/testCarFilter";
 import { calculateFinalPriceEUR, filterCarsWithBuyNowPricing } from "@/utils/carPricing";
 import { fallbackCars } from "@/data/fallbackData";
+
 interface EncarCatalogProps {
   highlightCarId?: string | null;
 }
-const EncarCatalog = ({
-  highlightCarId
-}: EncarCatalogProps = {}) => {
-  const {
-    toast
-  } = useToast();
-  const {
-    restorePageState
-  } = useNavigation();
+
+const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
+  const { toast } = useToast();
+  const { restorePageState } = useNavigation();
   const {
     cars,
-    setCars,
-    // ✅ Import setCars
+    setCars, // ✅ Import setCars
     loading,
     error,
     totalCount,
-    setTotalCount,
-    // ✅ Import setTotalCount for optimized filtering
+    setTotalCount, // ✅ Import setTotalCount for optimized filtering
     hasMorePages,
     fetchCars,
-    fetchAllCars,
-    // ✅ Import new function for global sorting
+    fetchAllCars, // ✅ Import new function for global sorting
     filters,
     setFilters,
     fetchManufacturers,
     fetchModels,
     fetchGenerations,
-    fetchAllGenerationsForManufacturer,
-    // ✅ Import new function
+    fetchAllGenerationsForManufacturer, // ✅ Import new function
     fetchFilterCounts,
     fetchGrades,
     fetchTrimLevels,
-    loadMore
+    loadMore,
   } = useSecureAuctionAPI();
-  const {
-    convertUSDtoEUR,
-    exchangeRate
-  } = useCurrencyAPI();
-
+  const { convertUSDtoEUR, exchangeRate } = useCurrencyAPI();
+  
   // Global sorting hook
   const {
     globalSortingState,
@@ -79,7 +96,7 @@ const EncarCatalog = ({
     shouldUseGlobalSorting,
     isGlobalSortingReady,
     getPageInfo,
-    clearGlobalSorting
+    clearGlobalSorting,
   } = useGlobalCarSorting({
     fetchAllCars,
     currentCars: cars,
@@ -89,6 +106,7 @@ const EncarCatalog = ({
     enableCaching: true,
     validationEnabled: false
   });
+  
   const [sortBy, setSortBy] = useState<SortOption>("recently_added");
   const [hasUserSelectedSort, setHasUserSelectedSort] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -99,14 +117,14 @@ const EncarCatalog = ({
   const [showAllCars, setShowAllCars] = useState(false); // New state for showing all cars
   const [allCarsData, setAllCarsData] = useState<any[]>([]); // Store all cars when fetched
   const isMobile = useIsMobile();
-
+  
   // Initialize showFilters - always start closed, only open when user explicitly clicks filter button
   const [showFilters, setShowFilters] = useState(() => {
     // Always start with filters closed when navigating to catalog
     // This ensures filter panel is hidden after "Kthehu te Makinat" or any external navigation
     return false;
   });
-
+  
   // Track if user has explicitly closed the filter panel to prevent auto-reopening
   const [hasExplicitlyClosed, setHasExplicitlyClosed] = useState(() => {
     // Start as explicitly closed since we always begin with filters hidden
@@ -121,8 +139,9 @@ const EncarCatalog = ({
     }
     return false;
   });
+  
   const [hasSelectedCategories, setHasSelectedCategories] = useState(false);
-
+  
   // Use ref for tracking fetch progress to avoid triggering re-renders
   const fetchingSortRef = useRef(false);
   const lastSortParamsRef = useRef('');
@@ -134,43 +153,55 @@ const EncarCatalog = ({
   const isDefaultState = useMemo(() => {
     // Handle case where filters might be undefined during initial render
     if (!filters) return true;
-
+    
     // Default state means no meaningful filters are applied OR manufacturer is explicitly set to "all"
-    return (!filters.manufacturer_id || filters.manufacturer_id === 'all') && !filters.model_id && !filters.generation_id && !filters.color && !filters.fuel_type && !filters.transmission && !filters.body_type && !filters.odometer_from_km && !filters.odometer_to_km && !filters.from_year && !filters.to_year && !filters.buy_now_price_from && !filters.buy_now_price_to && !filters.search && !filters.seats_count && (!filters.grade_iaai || filters.grade_iaai === 'all');
+    return (!filters.manufacturer_id || filters.manufacturer_id === 'all') && 
+           !filters.model_id && 
+           !filters.generation_id &&
+           !filters.color &&
+           !filters.fuel_type &&
+           !filters.transmission &&
+           !filters.body_type &&
+           !filters.odometer_from_km &&
+           !filters.odometer_to_km &&
+           !filters.from_year &&
+           !filters.to_year &&
+           !filters.buy_now_price_from &&
+           !filters.buy_now_price_to &&
+           !filters.search &&
+           !filters.seats_count &&
+           (!filters.grade_iaai || filters.grade_iaai === 'all');
   }, [filters]);
 
   // Memoized client-side grade filtering for better performance - now using utility with fallback data
   const filteredCars = useMemo(() => {
     // Use fallback data when there's an error and no cars loaded
-    const sourceCars = error && cars.length === 0 ? fallbackCars : cars;
+    const sourceCars = (error && cars.length === 0) ? fallbackCars : cars;
     const cleanedCars = filterOutTestCars(sourceCars || []);
     return applyGradeFilter(cleanedCars, filters?.grade_iaai) || [];
   }, [cars, filters?.grade_iaai, error]);
-
+  
   // console.log(`📊 Filter Results: ${filteredCars.length} cars match (total loaded: ${cars.length}, total count from API: ${totalCount}, grade filter: ${filters.grade_iaai || 'none'})`);
 
   // Memoized cars for sorting to prevent unnecessary re-computations
   const carsForSorting = useMemo(() => {
-    return filteredCars.map(car => ({
+    return filteredCars.map((car) => ({
       ...car,
       status: String(car.status || ""),
       lot_number: String(car.lot_number || ""),
       cylinders: Number(car.cylinders || 0),
-      year: Number(car.year || 2000),
-      // Ensure year is a number for FlexibleCar interface
-      engine: {
-        name: car.engine?.name || "Unknown"
-      } // Ensure engine has required name property
+      year: Number(car.year || 2000), // Ensure year is a number for FlexibleCar interface
+      engine: { name: car.engine?.name || "Unknown" }, // Ensure engine has required name property
     }));
   }, [filteredCars]);
-
+  
   // Apply daily rotating cars when in default state, same as homepage
   const dailyRotatingCars = useDailyRotatingCars(carsForSorting, !isDefaultState, 50);
-
+  
   // Always call useSortedCars hook (hooks must be called unconditionally)
   const sortedResults = useSortedCars(carsForSorting, sortBy);
   const sortedAllCarsResults = useSortedCars(allCarsData, sortBy); // Add sorting for all cars data
-
+  
   // Memoized cars to display - uses global sorting when available
   const carsToDisplay = useMemo(() => {
     // Priority 0: Show all cars when user has selected "Show All" option
@@ -178,14 +209,14 @@ const EncarCatalog = ({
       console.log(`🌟 Showing all ${sortedAllCarsResults.length} cars (Show All mode active)`);
       return sortedAllCarsResults;
     }
-
+    
     // Priority 1: Global sorting (when available and dataset is large enough)
     if (isGlobalSortingReady() && shouldUseGlobalSorting()) {
       const rankedCarsForPage = getCarsForCurrentPage(currentPage);
       console.log(`🎯 Using globally sorted cars for page ${currentPage}: ${rankedCarsForPage.length} cars (${globalSortingState.currentSortBy} sort)`);
       return rankedCarsForPage;
     }
-
+    
     // Priority 2: Daily rotating cars (only for default state without user sort selection)
     if (isDefaultState && !hasUserSelectedSort && !shouldUseGlobalSorting()) {
       // For server-side pagination, use all daily rotating cars without client-side slicing
@@ -193,38 +224,60 @@ const EncarCatalog = ({
       console.log(`🎲 Using daily rotating cars for page ${currentPage}: ${dailyRotatingCars.length} cars (default state, no explicit sort, small dataset)`);
       return dailyRotatingCars;
     }
-
+    
     // Priority 3: Regular sorted cars (fallback)
     // For server-side pagination, use all sorted results without client-side slicing
     // Server already provides the correct page data
     console.log(`📄 Using regular sorted cars for page ${currentPage}: ${sortedResults.length} cars (fallback or loading state)`);
     return sortedResults;
-  }, [showAllCars, allCarsData, sortedAllCarsResults, sortBy, isGlobalSortingReady, shouldUseGlobalSorting, getCarsForCurrentPage, currentPage, globalSortingState.currentSortBy, isDefaultState, hasUserSelectedSort, dailyRotatingCars, sortedResults]);
+  }, [
+    showAllCars,
+    allCarsData,
+    sortedAllCarsResults,
+    sortBy,
+    isGlobalSortingReady, 
+    shouldUseGlobalSorting, 
+    getCarsForCurrentPage, 
+    currentPage,
+    globalSortingState.currentSortBy,
+    isDefaultState,
+    hasUserSelectedSort,
+    dailyRotatingCars,
+    sortedResults
+  ]);
+
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [manufacturers, setManufacturers] = useState<{
-    id: number;
-    name: string;
-    car_count?: number;
-    cars_qty?: number;
-    image?: string;
-  }[]>(createFallbackManufacturers()); // Initialize with fallback data immediately
+  const [manufacturers, setManufacturers] = useState<
+    {
+      id: number;
+      name: string;
+      car_count?: number;
+      cars_qty?: number;
+      image?: string;
+    }[]
+  >(createFallbackManufacturers()); // Initialize with fallback data immediately
 
-  const [models, setModels] = useState<{
-    id: number;
-    name: string;
-    car_count?: number;
-    cars_qty?: number;
-  }[]>([]);
-  const [generations, setGenerations] = useState<{
-    id: number;
-    name: string;
-    manufacturer_id?: number;
-    model_id?: number;
-    from_year?: number;
-    to_year?: number;
-    cars_qty?: number;
-  }[]>([]);
+  const [models, setModels] = useState<
+    {
+      id: number;
+      name: string;
+      car_count?: number;
+      cars_qty?: number;
+    }[]
+  >([]);
+
+  const [generations, setGenerations] = useState<
+    {
+      id: number;
+      name: string;
+      manufacturer_id?: number;
+      model_id?: number;
+      from_year?: number;
+      to_year?: number;
+      cars_qty?: number;
+    }[]
+  >([]);
   const [filterCounts, setFilterCounts] = useState<any>(null);
   const [loadingCounts, setLoadingCounts] = useState(false);
   const [highlightedCarId, setHighlightedCarId] = useState<string | null>(null);
@@ -244,7 +297,7 @@ const EncarCatalog = ({
     if (containerRef.current) {
       const scrollData = {
         scrollTop: window.scrollY,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
       sessionStorage.setItem(SCROLL_STORAGE_KEY, JSON.stringify(scrollData));
     }
@@ -255,29 +308,18 @@ const EncarCatalog = ({
     const savedData = sessionStorage.getItem(SCROLL_STORAGE_KEY);
     if (savedData) {
       try {
-        const {
-          scrollTop,
-          timestamp
-        } = JSON.parse(savedData);
-
+        const { scrollTop, timestamp } = JSON.parse(savedData);
+        
         // Only restore recent scroll positions (within 10 minutes)
         const isRecent = Date.now() - timestamp < 600000;
+        
         if (isRecent && scrollTop > 0) {
-          window.scrollTo({
-            top: scrollTop,
-            behavior: 'auto'
-          });
+          window.scrollTo({ top: scrollTop, behavior: 'auto' });
         } else {
-          window.scrollTo({
-            top: 0,
-            behavior: 'auto'
-          });
+          window.scrollTo({ top: 0, behavior: 'auto' });
         }
       } catch (error) {
-        window.scrollTo({
-          top: 0,
-          behavior: 'auto'
-        });
+        window.scrollTo({ top: 0, behavior: 'auto' });
       }
     }
   }, []);
@@ -289,6 +331,7 @@ const EncarCatalog = ({
       setHasExplicitlyClosed(false); // Reset explicit close flag when opening via swipe
     }
   }, [showFilters, isMobile, catalogLocked]);
+
   const handleSwipeLeftToCloseFilters = useCallback(() => {
     if (showFilters && isMobile && !catalogLocked) {
       setShowFilters(false);
@@ -306,8 +349,7 @@ const EncarCatalog = ({
   // Set up swipe gestures for main content (swipe right to show filters)
   useSwipeGesture(mainContentRef, {
     onSwipeRight: handleSwipeRightToShowFilters,
-    minSwipeDistance: 80,
-    // Require a more deliberate swipe
+    minSwipeDistance: 80, // Require a more deliberate swipe
     maxVerticalDistance: 120
   });
 
@@ -322,12 +364,13 @@ const EncarCatalog = ({
   const applyFiltersInternal = useCallback((newFilters: APIFilters) => {
     setFilters(newFilters);
     setCurrentPage(1); // Reset to first page when filters change
-
+    
     // Reset global sorting when filters change
     clearGlobalSorting();
-
+    
     // Use 50 cars per page for proper pagination
     const filtersWithPagination = addPaginationToFilters(newFilters, 50, 1);
+    
     fetchCars(1, filtersWithPagination, true);
 
     // Update URL with all non-empty filter values - now using utility
@@ -352,31 +395,38 @@ const EncarCatalog = ({
   });
 
   // Debounced version for performance - Reduced debounce time for year filters - using catalog utility
-  const debouncedApplyFilters = useCallback(catalogDebounce(applyFiltersInternal, 150),
-  // Reduced from 300ms for faster response
-  [applyFiltersInternal]);
+  const debouncedApplyFilters = useCallback(
+    catalogDebounce(applyFiltersInternal, 150), // Reduced from 300ms for faster response
+    [applyFiltersInternal]
+  );
+
   const handleFiltersChange = useCallback(async (newFilters: APIFilters) => {
     // Set filter loading state immediately for better UX
     setIsFilterLoading(true);
-
+    
     // Reset "Show All" mode when filters change
     setShowAllCars(false);
     setAllCarsData([]);
-
+    
     // Update UI immediately for responsiveness
     setFilters(newFilters);
-
+    
     // Clear global sorting when filters change
     clearGlobalSorting();
-
+    
     // Check if this is a year range change - use optimized filtering for better UX - using utility
     const isYearChange = isYearRangeChange(newFilters, filters);
+    
     if (isYearChange) {
       console.log('🚀 Using optimized year filtering for instant response');
-
+      
       // Use optimized year filtering for instant feedback
-      const result = await handleOptimizedYearFilter(newFilters.from_year, newFilters.to_year, newFilters);
-
+      const result = await handleOptimizedYearFilter(
+        newFilters.from_year, 
+        newFilters.to_year, 
+        newFilters
+      );
+      
       // If we got instant results, temporarily show them
       if (result && result.data.length > 0) {
         setCars(result.data);
@@ -385,11 +435,12 @@ const EncarCatalog = ({
     } else {
       // Clear previous data immediately to show loading state for non-year filters
       setCars([]);
-
+      
       // Apply other filters with debouncing to reduce API calls
       debouncedApplyFilters(newFilters);
     }
   }, [debouncedApplyFilters, handleOptimizedYearFilter, filters, setCars, setFilters, setTotalCount, clearGlobalSorting]);
+
   const handleClearFilters = useCallback(() => {
     setFilters({});
     setSearchTerm("");
@@ -400,35 +451,36 @@ const EncarCatalog = ({
     fetchCars(1, {}, true);
     setSearchParams({});
   }, [fetchCars, setSearchParams]);
+
   const handleSearch = useCallback(() => {
     const newFilters = {
       ...(filters || {}),
-      search: searchTerm.trim() || undefined
+      search: searchTerm.trim() || undefined,
     };
     handleFiltersChange(newFilters);
   }, [filters, searchTerm, handleFiltersChange]);
+
   const handlePageChange = useCallback((page: number) => {
     // Validate page number
     if (page < 1 || page > totalPages) {
       console.log(`⚠️ Invalid page number: ${page}. Must be between 1 and ${totalPages}`);
       return;
     }
+    
     setCurrentPage(page);
-
+    
     // Fetch cars for the specific page with proper API pagination
     const filtersWithPagination = addPaginationToFilters(filters, 50, page);
     fetchCars(page, filtersWithPagination, true); // Reset list for new page
-
+    
     // Update URL with new page
     const currentParams = Object.fromEntries(searchParams.entries());
     currentParams.page = page.toString();
     setSearchParams(currentParams);
-
+    
     // Scroll to top when changing pages
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
     console.log(`📄 Navigated to page ${page} of ${totalPages} with filters:`, filtersWithPagination);
   }, [filters, fetchCars, setSearchParams, addPaginationToFilters, totalPages]);
 
@@ -441,15 +493,17 @@ const EncarCatalog = ({
       setCurrentPage(1);
       return;
     }
+
     setIsLoading(true);
     try {
       console.log(`🔄 Fetching all cars with current filters...`);
       const allCars = await fetchAllCars(filters);
-
+      
       // Apply the same client-side filtering as the current filtered cars
       const filteredAllCars = allCars.filter((car: any) => {
         return matchesGradeFilter(car, filters.grade_iaai);
       });
+      
       setAllCarsData(filteredAllCars);
       setShowAllCars(true);
       console.log(`✅ Loaded ${filteredAllCars.length} cars for "Show All" view`);
@@ -458,7 +512,7 @@ const EncarCatalog = ({
       toast({
         title: "Error",
         description: "Failed to load all cars. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -469,6 +523,7 @@ const EncarCatalog = ({
   const fetchAllCarsForSorting = useCallback(async () => {
     // Create a unique key for current sort parameters to prevent duplicate calls
     const sortKey = `${totalCount}-${sortBy}-${filters.grade_iaai || ''}-${filters.manufacturer_id || ''}-${filters.model_id || ''}-${filters.generation_id || ''}-${filters.from_year || ''}-${filters.to_year || ''}`;
+    
     if (fetchingSortRef.current) {
       console.log(`⏳ Already fetching sort data, skipping duplicate request`);
       return;
@@ -479,6 +534,7 @@ const EncarCatalog = ({
       console.log(`✅ Using cached sort data for: ${sortKey}`);
       return;
     }
+
     if (!shouldUseGlobalSorting()) {
       // For small datasets, the global sorting hook handles this automatically
       console.log(`📝 Small dataset (${totalCount} cars), letting global sorting hook handle it`);
@@ -487,23 +543,25 @@ const EncarCatalog = ({
       lastSortParamsRef.current = sortKey;
       return;
     }
+    
     fetchingSortRef.current = true;
     // setIsSortingGlobal(true); // Handled by global sorting hook
     setIsLoading(true);
+    
     try {
       console.log(`🔄 Global sorting: Fetching all ${totalCount} cars for sorting across ${totalPages} pages`);
-
+      
       // Use the new fetchAllCars function to get all cars with current filters
       const allCars = await fetchAllCars(filters);
-
+      
       // Apply the same client-side filtering as the current filtered cars - using utility
       const filteredAllCars = allCars.filter((car: any) => {
         return matchesGradeFilter(car, filters.grade_iaai);
       });
-
+      
       // setAllCarsForSorting(filteredAllCars); // Handled by global sorting hook
       lastSortParamsRef.current = sortKey;
-
+      
       // Check if current page is beyond available pages and reset to page 1 if needed
       const maxPages = Math.ceil(filteredAllCars.length / 50);
       if (currentPage > maxPages && maxPages > 0) {
@@ -514,6 +572,7 @@ const EncarCatalog = ({
         currentParams.page = '1';
         setSearchParams(currentParams);
       }
+      
       console.log(`✅ Global sorting: Loaded ${filteredAllCars.length} cars for sorting across ${maxPages} pages`);
     } catch (err) {
       console.error('❌ Error fetching all cars for global sorting:', err);
@@ -523,19 +582,32 @@ const EncarCatalog = ({
       setIsLoading(false);
       fetchingSortRef.current = false;
     }
-  }, [totalCount, fetchAllCars, filters?.grade_iaai, filters?.manufacturer_id, filters?.model_id, filters?.generation_id, filters?.from_year, filters?.to_year, sortBy,
-  // Remove filteredCars from dependencies as it's computed and can cause infinite loops
-  // filteredCars,
-  totalPages || 0, currentPage, setSearchParams]);
+  }, [
+    totalCount, 
+    fetchAllCars, 
+    filters?.grade_iaai, 
+    filters?.manufacturer_id, 
+    filters?.model_id, 
+    filters?.generation_id, 
+    filters?.from_year, 
+    filters?.to_year, 
+    sortBy, 
+    // Remove filteredCars from dependencies as it's computed and can cause infinite loops
+    // filteredCars,
+    totalPages || 0, 
+    currentPage, 
+    setSearchParams
+  ]);
+
   const handleManufacturerChange = async (manufacturerId: string) => {
     console.log(`[handleManufacturerChange] Called with manufacturerId: ${manufacturerId}`);
-
+    
     // Prevent rapid consecutive calls by showing loading immediately
     setIsLoading(true);
     setIsFilterLoading(true);
     setModels([]);
     setGenerations([]);
-
+    
     // Create new filters immediately for faster UI response
     const newFilters: APIFilters = {
       manufacturer_id: manufacturerId,
@@ -552,30 +624,34 @@ const EncarCatalog = ({
       buy_now_price_from: filters.buy_now_price_from,
       buy_now_price_to: filters.buy_now_price_to,
       seats_count: filters.seats_count,
-      search: filters.search
+      search: filters.search,
     };
     setFilters(newFilters);
     setLoadedPages(1);
+    
     try {
       // Only fetch essential data - models and cars. Skip grades/trim levels to prevent excessive calls
       const promises = [];
+      
       if (manufacturerId) {
         console.log(`[handleManufacturerChange] Fetching models...`);
-        promises.push(fetchModels(manufacturerId).then(modelData => {
-          console.log(`[handleManufacturerChange] Received modelData:`, modelData);
-          console.log(`[handleManufacturerChange] Setting models to:`, modelData);
-          setModels(modelData);
-          return modelData;
-        }));
+        promises.push(
+          fetchModels(manufacturerId).then(modelData => {
+            console.log(`[handleManufacturerChange] Received modelData:`, modelData);
+            console.log(`[handleManufacturerChange] Setting models to:`, modelData);
+            setModels(modelData);
+            return modelData;
+          })
+        );
       }
-
+      
       // Fetch cars with new filters
-      promises.push(fetchCars(1, {
-        ...newFilters,
-        per_page: "50"
-      }, true));
+      promises.push(
+        fetchCars(1, { ...newFilters, per_page: "50" }, true)
+      );
+      
       await Promise.all(promises);
-
+      
       // Update URL after successful data fetch
       const paramsToSet: any = {};
       Object.entries(newFilters).forEach(([key, value]) => {
@@ -584,6 +660,7 @@ const EncarCatalog = ({
         }
       });
       setSearchParams(paramsToSet);
+      
     } catch (error) {
       console.error('[handleManufacturerChange] Error:', error);
       setModels([]);
@@ -598,43 +675,43 @@ const EncarCatalog = ({
   useEffect(() => {
     console.log(`[EncarCatalog] Models state updated:`, models);
   }, [models]);
+
   const handleModelChange = async (modelId: string) => {
     setIsLoading(true);
     setIsFilterLoading(true);
     setGenerations([]);
-
+    
     // Create new filters immediately for faster UI response
     const newFilters: APIFilters = {
       ...filters,
       model_id: modelId,
       generation_id: undefined,
-      grade_iaai: undefined
+      grade_iaai: undefined,
     };
     setFilters(newFilters);
     setLoadedPages(1);
+    
     try {
       if (!modelId) {
         // Fetch cars with cleared model filter
-        await fetchCars(1, {
-          ...newFilters,
-          per_page: "50"
-        }, true);
+        await fetchCars(1, { ...newFilters, per_page: "50" }, true);
         setIsLoading(false);
         setIsFilterLoading(false);
         return;
       }
-
+      
       // Fetch generations and cars in parallel for better performance
       // Removed duplicate car fetches to optimize performance
-      const promises = [fetchGenerations(modelId).then(generationData => {
-        setGenerations(generationData);
-        return generationData;
-      }), fetchCars(1, {
-        ...newFilters,
-        per_page: "50"
-      }, true)];
+      const promises = [
+        fetchGenerations(modelId).then(generationData => {
+          setGenerations(generationData);
+          return generationData;
+        }),
+        fetchCars(1, { ...newFilters, per_page: "50" }, true)
+      ];
+      
       await Promise.all(promises);
-
+      
       // Update URL after successful data fetch
       const paramsToSet: any = {};
       Object.entries(newFilters).forEach(([key, value]) => {
@@ -643,6 +720,7 @@ const EncarCatalog = ({
         }
       });
       setSearchParams(paramsToSet);
+      
     } catch (error) {
       console.error('[handleModelChange] Error:', error);
       setGenerations([]);
@@ -665,6 +743,7 @@ const EncarCatalog = ({
       const urlFilters: APIFilters = {};
       let urlLoadedPages = 1;
       let urlCurrentPage = 1;
+
       for (const [key, value] of searchParams.entries()) {
         if (key === "loadedPages") {
           urlLoadedPages = parseInt(value) || 1;
@@ -693,6 +772,7 @@ const EncarCatalog = ({
       setFilters(urlFilters);
       setLoadedPages(urlLoadedPages);
       setCurrentPage(urlCurrentPage);
+
       try {
         // PERFORMANCE OPTIMIZATION: Load only essential data first
         // Load manufacturers immediately (they're cached)
@@ -703,6 +783,7 @@ const EncarCatalog = ({
         if (urlFilters.manufacturer_id) {
           const modelsData = await fetchModels(urlFilters.manufacturer_id);
           setModels(modelsData);
+          
           if (urlFilters.model_id) {
             const generationsData = await fetchGenerations(urlFilters.model_id);
             setGenerations(generationsData);
@@ -715,7 +796,9 @@ const EncarCatalog = ({
           per_page: "50",
           page: urlCurrentPage.toString()
         };
+        
         await fetchCars(urlCurrentPage, initialFilters, true);
+
       } catch (error) {
         console.error('Error loading initial data:', error);
       } finally {
@@ -725,11 +808,8 @@ const EncarCatalog = ({
       // SIMPLIFIED SCROLL RESTORATION for better performance
       if (isFromHomepage) {
         // Always scroll to top when coming from homepage filters
-        window.scrollTo({
-          top: 0,
-          behavior: 'auto'
-        });
-
+        window.scrollTo({ top: 0, behavior: 'auto' });
+        
         // Remove the fromHomepage flag from URL without causing re-render
         const newSearchParams = new URLSearchParams(searchParams);
         newSearchParams.delete('fromHomepage');
@@ -743,14 +823,9 @@ const EncarCatalog = ({
             const savedData = sessionStorage.getItem(SCROLL_STORAGE_KEY);
             if (savedData) {
               try {
-                const {
-                  scrollTop
-                } = JSON.parse(savedData);
+                const { scrollTop } = JSON.parse(savedData);
                 if (scrollTop > 0) {
-                  window.scrollTo({
-                    top: scrollTop,
-                    behavior: 'auto'
-                  });
+                  window.scrollTo({ top: scrollTop, behavior: 'auto' });
                 }
               } catch (error) {
                 // Ignore scroll restoration errors
@@ -760,6 +835,7 @@ const EncarCatalog = ({
         }, 100); // Small delay to ensure DOM is ready
       }
     };
+
     loadInitialData();
   }, []); // Only run on mount
 
@@ -777,10 +853,10 @@ const EncarCatalog = ({
         saveScrollPosition();
       }, 500); // Increased debounce time for better performance
     };
+
     window.addEventListener("beforeunload", handleBeforeUnload);
-    window.addEventListener("scroll", handleScroll, {
-      passive: true
-    });
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
       window.removeEventListener("scroll", handleScroll);
@@ -812,8 +888,7 @@ const EncarCatalog = ({
   // OPTIMIZED: Load initial counts only once when manufacturers are first loaded
   useEffect(() => {
     const loadInitialCounts = async () => {
-      if (manufacturers.length > 0 && !filterCounts) {
-        // Only load if not already loaded
+      if (manufacturers.length > 0 && !filterCounts) { // Only load if not already loaded
         setLoadingCounts(true);
         try {
           const counts = await fetchFilterCounts({}, manufacturers);
@@ -825,6 +900,7 @@ const EncarCatalog = ({
         }
       }
     };
+
     loadInitialCounts();
   }, [manufacturers.length]); // Only run when manufacturers are first loaded
 
@@ -868,9 +944,14 @@ const EncarCatalog = ({
     if (highlightCarId && cars.length > 0) {
       setTimeout(() => {
         // Find the car by lot number or ID and scroll to it
-        const targetCar = cars.find(car => car.lot_number === highlightCarId || car.id === highlightCarId);
+        const targetCar = cars.find(
+          (car) =>
+            car.lot_number === highlightCarId || car.id === highlightCarId
+        );
+
         if (targetCar) {
-          const lotNumber = targetCar.lot_number || targetCar.lots?.[0]?.lot || "";
+          const lotNumber =
+            targetCar.lot_number || targetCar.lots?.[0]?.lot || "";
           setHighlightedCarId(lotNumber || targetCar.id);
 
           // Scroll to the car
@@ -878,7 +959,7 @@ const EncarCatalog = ({
           if (carElement) {
             carElement.scrollIntoView({
               behavior: "smooth",
-              block: "center"
+              block: "center",
             });
           }
 
@@ -921,21 +1002,28 @@ const EncarCatalog = ({
         sessionStorage.removeItem('mobile-filter-explicit-close');
       }
     };
+
     const clearStateOnUnload = () => {
       // Don't clear on beforeunload as it might interfere with new tab opening
       // The state will be useful for back navigation
     };
+
     window.addEventListener('beforeunload', clearStateOnUnload);
+    
     return () => {
       window.removeEventListener('beforeunload', clearStateOnUnload);
       // Clear state when navigating away from catalog page
       clearStateOnNavigation();
     };
   }, []);
-  return <div className="flex justify-center min-h-screen bg-background">
-    <div className="flex w-full max-w-screen-2xl">
+
+  return (
+    <div className="flex min-h-screen bg-background">
       {/* Collapsible Filter Sidebar - Optimized for mobile */}
-      <div ref={filterPanelRef} data-filter-panel className={`
+      <div 
+        ref={filterPanelRef}
+        data-filter-panel
+        className={`
         fixed lg:relative z-40 glass-card transition-transform duration-300 ease-in-out
         ${showFilters ? 'translate-x-0' : '-translate-x-full lg:hidden'}
         ${isMobile ? 'top-0 left-0 right-0 bottom-0 w-full h-dvh overflow-y-auto safe-area-inset rounded-none' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0 overflow-y-auto rounded-lg'} 
@@ -948,164 +1036,237 @@ const EncarCatalog = ({
               <h3 className={`font-semibold ${isMobile ? 'text-sm text-primary-foreground' : 'text-sm sm:text-base'}`}>
                 {isMobile ? 'Filtrat e Kërkimit' : 'Filters'}
               </h3>
-              {hasSelectedCategories && isMobile && <Badge variant="secondary" className="ml-2 bg-primary-foreground/20 text-primary-foreground text-xs px-1.5 py-0">
+              {hasSelectedCategories && isMobile && (
+                <Badge variant="secondary" className="ml-2 bg-primary-foreground/20 text-primary-foreground text-xs px-1.5 py-0">
                   {Object.values(filters).filter(Boolean).length} aktiv
-                </Badge>}
+                </Badge>
+              )}
             </div>
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" onClick={handleClearFilters} className={`lg:hidden flex items-center gap-1 ${isMobile ? 'h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground text-xs' : 'h-8 px-2'}`}>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleClearFilters}
+                className={`lg:hidden flex items-center gap-1 ${isMobile ? 'h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground text-xs' : 'h-8 px-2'}`}
+              >
                 <span className="text-xs">Clear</span>
               </Button>
               {/* Only show close button on mobile */}
-              {isMobile && <Button variant="ghost" size="sm" onClick={() => {
-              console.log("Close button clicked, isMobile:", isMobile);
-              setShowFilters(false);
-              setHasExplicitlyClosed(true); // Mark as explicitly closed
-            }} className="flex items-center gap-1 h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground" title="Mbyll filtrat">
+              {isMobile && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => {
+                    console.log("Close button clicked, isMobile:", isMobile);
+                    setShowFilters(false);
+                    setHasExplicitlyClosed(true); // Mark as explicitly closed
+                  }}
+                  className="flex items-center gap-1 h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground"
+                  title="Mbyll filtrat"
+                >
                   <X className="h-3 w-3" />
-                </Button>}
+                </Button>
+              )}
             </div>
           </div>
         </div>
         
         <div className={`flex-1 overflow-y-auto ${isMobile ? 'mobile-filter-content mobile-filter-compact' : 'p-3 sm:p-4'}`}>
           <div className={`${isMobile ? '' : ''}`}>
-            <EncarStyleFilter filters={filters} manufacturers={manufacturers.length > 0 ? manufacturers : createFallbackManufacturers()} models={models} filterCounts={filterCounts} loadingCounts={loadingCounts} onFiltersChange={handleFiltersChange} onClearFilters={handleClearFilters} onManufacturerChange={handleManufacturerChange} onModelChange={handleModelChange} showAdvanced={showAdvancedFilters} onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)} onFetchGrades={fetchGrades} onFetchTrimLevels={fetchTrimLevels} compact={true} onSearchCars={() => {
-            console.log("Search button clicked, isMobile:", isMobile);
-            // Apply search/filters
-            fetchCars(1, {
-              ...filters,
-              per_page: "50"
-            }, true);
-
-            // Force close filter panel on mobile (and desktop for consistency)
-            setShowFilters(false);
-            setHasExplicitlyClosed(true);
-
-            // Additional CSS force close as backup
-            setTimeout(() => {
-              const filterPanel = document.querySelector('[data-filter-panel]');
-              if (filterPanel) {
-                (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
-                (filterPanel as HTMLElement).style.visibility = 'hidden';
-              }
-            }, 100);
-          }} onCloseFilter={() => {
-            console.log("Close filter called, isMobile:", isMobile);
-            // Force close the filter panel regardless of mobile detection
-            setShowFilters(false);
-            setHasExplicitlyClosed(true);
-
-            // Additional CSS force close as backup
-            setTimeout(() => {
-              const filterPanel = document.querySelector('[data-filter-panel]');
-              if (filterPanel) {
-                (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
-                (filterPanel as HTMLElement).style.visibility = 'hidden';
-              }
-            }, 100);
-          }} />
+            <EncarStyleFilter
+            filters={filters}
+            manufacturers={manufacturers.length > 0 ? manufacturers : createFallbackManufacturers()}
+            models={models}
+            filterCounts={filterCounts}
+            loadingCounts={loadingCounts}
+            onFiltersChange={handleFiltersChange}
+            onClearFilters={handleClearFilters}
+            onManufacturerChange={handleManufacturerChange}
+            onModelChange={handleModelChange}
+            showAdvanced={showAdvancedFilters}
+            onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            onFetchGrades={fetchGrades}
+            onFetchTrimLevels={fetchTrimLevels}
+            compact={true}
+            onSearchCars={() => {
+              console.log("Search button clicked, isMobile:", isMobile);
+              // Apply search/filters
+              fetchCars(1, { ...filters, per_page: "50" }, true);
+              
+              // Force close filter panel on mobile (and desktop for consistency)
+              setShowFilters(false);
+              setHasExplicitlyClosed(true);
+              
+              // Additional CSS force close as backup
+              setTimeout(() => {
+                const filterPanel = document.querySelector('[data-filter-panel]');
+                if (filterPanel) {
+                  (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
+                  (filterPanel as HTMLElement).style.visibility = 'hidden';
+                }
+              }, 100);
+            }}
+            onCloseFilter={() => {
+              console.log("Close filter called, isMobile:", isMobile);
+              // Force close the filter panel regardless of mobile detection
+              setShowFilters(false);
+              setHasExplicitlyClosed(true);
+              
+              // Additional CSS force close as backup
+              setTimeout(() => {
+                const filterPanel = document.querySelector('[data-filter-panel]');
+                if (filterPanel) {
+                  (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
+                  (filterPanel as HTMLElement).style.visibility = 'hidden';
+                }
+              }, 100);
+            }}
+          />
           
           {/* Mobile Apply/Close Filters Button - Enhanced */}
-          {isMobile && <div className="mt-4 pt-3 border-t space-y-2 flex-shrink-0">
+          {isMobile && (
+            <div className="mt-4 pt-3 border-t space-y-2 flex-shrink-0">
               {/* Apply/Close button removed per Issue #3 */}
-            </div>}
+            </div>
+          )}
           </div>
         </div>
       </div>
 
       {/* Overlay for mobile - stronger backdrop on mobile */}
-      {showFilters && <div className={`fixed inset-0 z-30 lg:hidden transition-opacity duration-300 ${isMobile ? 'bg-black/70 backdrop-blur-md' : 'bg-black/50 backdrop-blur-sm'}`} onClick={() => {
-      // Only close on mobile via overlay click
-      if (isMobile) {
-        setShowFilters(false);
-        setHasExplicitlyClosed(true); // Mark as explicitly closed
-      }
-    }} />}
+      {showFilters && (
+        <div 
+          className={`fixed inset-0 z-30 lg:hidden transition-opacity duration-300 ${
+            isMobile ? 'bg-black/70 backdrop-blur-md' : 'bg-black/50 backdrop-blur-sm'
+          }`}
+          onClick={() => {
+            // Only close on mobile via overlay click
+            if (isMobile) {
+              setShowFilters(false);
+              setHasExplicitlyClosed(true); // Mark as explicitly closed
+            }
+          }}
+        />
+      )}
 
       {/* Main Content */}
       <div ref={mainContentRef} className={`flex-1 min-w-0 transition-all duration-300`}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3 sm:py-6 mobile-text-optimize">
+        <div className="container-responsive py-3 sm:py-6 mobile-text-optimize">
           {/* Header Section - Mobile optimized */}
           <div className="flex flex-col gap-3 mb-4">
             {/* Mobile header - stacked layout */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={() => window.history.back()} className="flex items-center gap-1 hover:bg-primary hover:text-primary-foreground transition-colors h-8 px-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => window.history.back()}
+                  className="flex items-center gap-1 hover:bg-primary hover:text-primary-foreground transition-colors h-8 px-2"
+                >
                   <ArrowLeft className="h-4 w-4" />
                   <span className="hidden xs:inline text-xs">Back</span>
                 </Button>
                 
                 {/* Filter Toggle Button - Enhanced mobile reliability */}
-              <Button variant="default" size="lg" onClick={e => {
-                // Prevent event bubbling and ensure click is processed
-                e.preventDefault();
-                e.stopPropagation();
-                console.log("Filter toggle clicked, current showFilters:", showFilters, "isMobile:", isMobile);
-                const newShowState = !showFilters;
-
-                // Force state update with callback to ensure it's applied
-                setShowFilters(newShowState);
-
-                // Update explicit close tracking
-                if (newShowState) {
-                  setHasExplicitlyClosed(false);
-                  console.log("Opening filters, reset explicit close flag");
-                } else {
-                  setHasExplicitlyClosed(true);
-                  console.log("Closing filters, set explicit close flag");
-                }
-
-                // On mobile, add additional DOM manipulation as backup
-                if (isMobile) {
-                  setTimeout(() => {
-                    const filterPanel = document.querySelector('[data-filter-panel]') as HTMLElement;
-                    if (filterPanel) {
-                      if (newShowState) {
-                        filterPanel.style.transform = 'translateX(0)';
-                        filterPanel.style.visibility = 'visible';
-                        console.log("Mobile: Forced filter panel to show");
-                      } else {
-                        filterPanel.style.transform = 'translateX(-100%)';
-                        filterPanel.style.visibility = 'hidden';
-                        console.log("Mobile: Forced filter panel to hide");
-                      }
-                    }
-                  }, 50); // Small delay to ensure state update has propagated
-                }
-              }} className="flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 transition-transform">
+<Button
+  variant="default"
+  size="lg"
+  onClick={(e) => {
+    // Prevent event bubbling and ensure click is processed
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log("Filter toggle clicked, current showFilters:", showFilters, "isMobile:", isMobile);
+    
+    const newShowState = !showFilters;
+    
+    // Force state update with callback to ensure it's applied
+    setShowFilters(newShowState);
+    
+    // Update explicit close tracking
+    if (newShowState) {
+      setHasExplicitlyClosed(false);
+      console.log("Opening filters, reset explicit close flag");
+    } else {
+      setHasExplicitlyClosed(true);
+      console.log("Closing filters, set explicit close flag");
+    }
+    
+    // On mobile, add additional DOM manipulation as backup
+    if (isMobile) {
+      setTimeout(() => {
+        const filterPanel = document.querySelector('[data-filter-panel]') as HTMLElement;
+        if (filterPanel) {
+          if (newShowState) {
+            filterPanel.style.transform = 'translateX(0)';
+            filterPanel.style.visibility = 'visible';
+            console.log("Mobile: Forced filter panel to show");
+          } else {
+            filterPanel.style.transform = 'translateX(-100%)';
+            filterPanel.style.visibility = 'hidden';
+            console.log("Mobile: Forced filter panel to hide");
+          }
+        }
+      }, 50); // Small delay to ensure state update has propagated
+    }
+  }}
+  className="flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 transition-transform"
+>
                   {showFilters ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
                   <span className="hidden xs:inline">{showFilters ? 'Fshih Filtrat' : 'Shfaq Filtrat'}</span>
                   <span className="xs:hidden">Filtrat</span>
-                  {hasSelectedCategories && !showFilters && <span className="ml-1 text-xs bg-primary-foreground/20 px-2 py-1 rounded-full animate-bounce">
+                  {hasSelectedCategories && !showFilters && (
+                    <span className="ml-1 text-xs bg-primary-foreground/20 px-2 py-1 rounded-full animate-bounce">
                       {Object.values(filters).filter(Boolean).length}
-                    </span>}
+                    </span>
+                  )}
                 </Button>
               </div>
               
                 {/* View mode and sort - mobile optimized */}
               <div className="flex gap-1 items-center">
                 {/* Catalog Lock Button - Only on mobile */}
-                {isMobile}
+                {isMobile && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCatalogLockToggle}
+                    className={`h-8 px-2 flex items-center gap-1 transition-colors ${
+                      catalogLocked 
+                        ? 'bg-orange-100 hover:bg-orange-200 border-orange-300 text-orange-700 dark:bg-orange-900/20 dark:hover:bg-orange-900/30 dark:border-orange-600 dark:text-orange-400' 
+                        : 'hover:bg-accent'
+                    }`}
+                    title={catalogLocked ? 'Unlock swipe gestures' : 'Lock to prevent accidental swipes'}
+                  >
+                    {catalogLocked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
+                    <span className="hidden sm:inline text-xs">{catalogLocked ? 'Locked' : 'Lock'}</span>
+                  </Button>
+                )}
                 
                 {/* Sort Control - smaller on mobile */}
                 <div className="relative">
                   <ArrowUpDown className="h-3 w-3 absolute left-2 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none" />
-                  <AdaptiveSelect value={sortBy} onValueChange={(value: SortOption) => {
-                  setSortBy(value);
-                  setHasUserSelectedSort(true); // Mark that user has explicitly chosen a sort option
-                  // Reset to page 1 when sort changes to show users the first page of newly sorted results
-                  setCurrentPage(1);
-                  // Update URL to reflect page reset
-                  const currentParams = Object.fromEntries(searchParams.entries());
-                  currentParams.page = '1';
-                  setSearchParams(currentParams);
-                  // Note: Global sorting initialization is handled by the useEffect that watches sortBy changes
-                  // This prevents duplicate calls and ensures proper state management
-                }} placeholder="Sort" className="w-24 sm:w-32 h-7 text-xs pl-6" options={getEncarSortOptions().map(option => ({
-                  value: option.value,
-                  label: option.label
-                }))} />
+                  <AdaptiveSelect
+                    value={sortBy}
+                    onValueChange={(value: SortOption) => {
+                      setSortBy(value);
+                      setHasUserSelectedSort(true); // Mark that user has explicitly chosen a sort option
+                      // Reset to page 1 when sort changes to show users the first page of newly sorted results
+                      setCurrentPage(1);
+                      // Update URL to reflect page reset
+                      const currentParams = Object.fromEntries(searchParams.entries());
+                      currentParams.page = '1';
+                      setSearchParams(currentParams);
+                      // Note: Global sorting initialization is handled by the useEffect that watches sortBy changes
+                      // This prevents duplicate calls and ensures proper state management
+                    }}
+                    placeholder="Sort"
+                    className="w-24 sm:w-32 h-7 text-xs pl-6"
+                    options={getEncarSortOptions().map((option) => ({
+                      value: option.value,
+                      label: option.label
+                    }))}
+                  />
                 </div>
               </div>
             </div>
@@ -1118,82 +1279,156 @@ const EncarCatalog = ({
               <p className="text-muted-foreground text-xs sm:text-sm">
                 {totalCount.toLocaleString()} cars across {totalPages.toLocaleString()} pages • Page {currentPage} of {totalPages.toLocaleString()} • Showing {carsToDisplay.length} cars per page
 
-                {yearFilterProgress === 'instant' && <span className="ml-2 text-primary text-xs">⚡ Instant results</span>}
-                {yearFilterProgress === 'loading' && <span className="ml-2 text-primary text-xs">🔄 Loading complete results...</span>}
+                {yearFilterProgress === 'instant' && (
+                  <span className="ml-2 text-primary text-xs">⚡ Instant results</span>
+                )}
+                {yearFilterProgress === 'loading' && (
+                  <span className="ml-2 text-primary text-xs">🔄 Loading complete results...</span>
+                )}
               </p>
             </div>
           </div>
 
           {/* Error State */}
-          {error && <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-8">
+          {error && (
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-8">
               <p className="text-destructive font-medium">Error: {error}</p>
-            </div>}
+            </div>
+          )}
 
           {/* Loading State */}
-          {loading && cars.length === 0 || isRestoringState || isFilterLoading ? <div className="flex flex-col items-center justify-center py-12 space-y-4">
+          {(loading && cars.length === 0) || isRestoringState || isFilterLoading ? (
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
               <LoadingLogo size="lg" />
               {/* No text needed - logo shows loading state */}
-            </div> : null}
+            </div>
+          ) : null}
 
           {/* No Selection State */}
-          {!shouldShowCars && !loading && !isRestoringState && <div className="text-center py-16">
+          {!shouldShowCars && !loading && !isRestoringState && (
+            <div className="text-center py-16">
               <div className="max-w-md mx-auto">
                 <Car className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Zgjidhni markën dhe modelin</h3>
                 <p className="text-muted-foreground mb-6">
                   Për të parë makinat, ju duhet të zgjidhni së paku markën dhe modelin e makinës.
                 </p>
-                <Button variant="outline" onClick={() => setShowFilters(true)} className="flex items-center gap-2 mx-auto">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowFilters(true)}
+                  className="flex items-center gap-2 mx-auto"
+                >
                   <Filter className="h-4 w-4" />
                   Open Filters
                 </Button>
               </div>
-            </div>}
+            </div>
+          )}
 
           {/* No Results State */}
-          {shouldShowCars && !loading && !isRestoringState && !isFilterLoading && cars.length === 0 && <div className="text-center py-12">
+          {shouldShowCars && !loading && !isRestoringState && !isFilterLoading && cars.length === 0 && (
+            <div className="text-center py-12">
               <p className="text-muted-foreground">
                 No cars found matching your filters.
               </p>
-              <Button variant="outline" onClick={handleClearFilters} className="mt-4">
+              <Button
+                variant="outline"
+                onClick={handleClearFilters}
+                className="mt-4"
+              >
                 Clear Filters
               </Button>
-            </div>}
+            </div>
+          )}
 
           {/* Filter Loading State */}
-          {isFilterLoading && cars.length === 0 && <div className="flex items-center justify-center py-12">
+          {isFilterLoading && cars.length === 0 && (
+            <div className="flex items-center justify-center py-12">
               <LoadingLogo size="lg" />
-            </div>}
+            </div>
+          )}
 
           {/* Cars Grid/List - Show cars without requiring filters */}
-          {shouldShowCars && cars.length > 0 && <div className="relative">
+          {shouldShowCars && cars.length > 0 && (
+            <div className="relative">
               {/* Loading Overlay for Cars Grid */}
-              {isFilterLoading && <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
+              {isFilterLoading && (
+                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
                   <div className="bg-card border border-border rounded-lg p-6 shadow-lg">
                     <LoadingLogo size="md" />
                   </div>
-                </div>}
+                </div>
+              )}
               
-              <div ref={containerRef} className={`grid mobile-car-grid-compact sm:mobile-car-grid gap-2 sm:gap-3 lg:gap-4 transition-all duration-300 ${showFilters ? 'lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' : 'lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7'} ${isFilterLoading ? 'opacity-50' : ''}`}>
-                {carsToDisplay.filter(car => {
-              // Only show cars with buy_now pricing
-              const lot = car.lots?.[0];
-              return lot?.buy_now && lot.buy_now > 0;
-            }).map((car: CarWithRank | any) => {
-              const lot = car.lots?.[0];
-              // Only use buy_now price, no fallbacks
-              const usdPrice = lot?.buy_now;
-              const price = calculateFinalPriceEUR(usdPrice, exchangeRate.rate);
-              const lotNumber = car.lot_number || lot?.lot || "";
-              return <div key={car.id} id={`car-${car.id}`} data-lot-id={`car-lot-${lotNumber}`} className={highlightedCarId === lotNumber || highlightedCarId === car.id ? "car-highlight" : ""}>
-                      <LazyCarCard id={car.id} make={car.manufacturer?.name || "Unknown"} model={car.model?.name || "Unknown"} year={car.year} price={price} image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]} images={[...(lot?.images?.normal || []), ...(lot?.images?.big || [])].filter(Boolean)} // Combine normal and big images, filter out undefined
-                vin={car.vin} mileage={lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined} transmission={car.transmission?.name} fuel={car.fuel?.name} color={car.color?.name} lot={car.lot_number || lot?.lot || ""} title={car.title || ""} status={Number(car.status || lot?.status || 1)} sale_status={car.sale_status || lot?.sale_status} final_price={car.final_price || lot?.final_price} insurance_v2={(lot as any)?.insurance_v2} details={(lot as any)?.details} />
-                    </div>;
-            })}
+              <div
+                ref={containerRef}
+                className={`grid mobile-car-grid-compact sm:mobile-car-grid gap-2 sm:gap-3 lg:gap-4 transition-all duration-300 ${
+                  showFilters 
+                    ? 'lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' 
+                    : 'lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7'
+                } ${isFilterLoading ? 'opacity-50' : ''}`}
+              >
+                {carsToDisplay
+                  .filter(car => {
+                    // Only show cars with buy_now pricing
+                    const lot = car.lots?.[0];
+                    return lot?.buy_now && lot.buy_now > 0;
+                  })
+                  .map((car: CarWithRank | any) => {
+                  const lot = car.lots?.[0];
+                  // Only use buy_now price, no fallbacks
+                  const usdPrice = lot?.buy_now;
+                  const price = calculateFinalPriceEUR(usdPrice, exchangeRate.rate);
+                  const lotNumber = car.lot_number || lot?.lot || "";
+
+                  return (
+                    <div
+                      key={car.id}
+                      id={`car-${car.id}`}
+                      data-lot-id={`car-lot-${lotNumber}`}
+                      className={
+                        highlightedCarId === lotNumber ||
+                        highlightedCarId === car.id
+                          ? "car-highlight"
+                          : ""
+                      }
+                    >
+                      <LazyCarCard
+                        id={car.id}
+                        make={car.manufacturer?.name || "Unknown"}
+                        model={car.model?.name || "Unknown"}
+                        year={car.year}
+                        price={price}
+                        image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]}
+                        images={[
+                          ...(lot?.images?.normal || []),
+                          ...(lot?.images?.big || [])
+                        ].filter(Boolean)} // Combine normal and big images, filter out undefined
+                        vin={car.vin}
+                        mileage={
+                          lot?.odometer?.km
+                            ? `${lot.odometer.km.toLocaleString()} km`
+                            : undefined
+                        }
+                        transmission={car.transmission?.name}
+                        fuel={car.fuel?.name}
+                        color={car.color?.name}
+                        lot={car.lot_number || lot?.lot || ""}
+                        title={car.title || ""}
+                        status={Number(car.status || lot?.status || 1)}
+                        sale_status={car.sale_status || lot?.sale_status}
+                        final_price={car.final_price || lot?.final_price}
+                        insurance_v2={(lot as any)?.insurance_v2}
+                        details={(lot as any)?.details}
+                      />
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Pagination Controls - replace Load More button */}
-              {!showAllCars && totalPages > 1 && <div className="flex flex-col items-center py-8 space-y-4">
+              {!showAllCars && totalPages > 1 && (
+                <div className="flex flex-col items-center py-8 space-y-4">
                   {/* Page Info */}
                   <div className="text-center text-sm text-muted-foreground">
                     Page {currentPage} of {totalPages.toLocaleString()} • {carsToDisplay.length} cars shown
@@ -1202,70 +1437,127 @@ const EncarCatalog = ({
                   {/* Pagination Navigation */}
                   <div className="flex items-center space-x-2">
                     {/* First Page */}
-                    <Button variant="outline" size="sm" onClick={() => handlePageChange(1)} disabled={currentPage === 1 || loading} className="h-8 px-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(1)}
+                      disabled={currentPage === 1 || loading}
+                      className="h-8 px-3"
+                    >
                       First
                     </Button>
                     
                     {/* Previous Page */}
-                    <Button variant="outline" size="sm" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1 || loading} className="h-8 px-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1 || loading}
+                      className="h-8 px-3"
+                    >
                       Previous
                     </Button>
                     
                     {/* Page Numbers */}
                     <div className="flex space-x-1">
                       {(() => {
-                  const maxVisible = 5;
-                  const half = Math.floor(maxVisible / 2);
-                  let start = Math.max(1, currentPage - half);
-                  let end = Math.min(totalPages, start + maxVisible - 1);
-
-                  // Adjust start if we're near the end
-                  if (end - start < maxVisible - 1) {
-                    start = Math.max(1, end - maxVisible + 1);
-                  }
-                  const pages = [];
-
-                  // Show first page if not in range
-                  if (start > 1) {
-                    pages.push(<Button key={1} variant={1 === currentPage ? "default" : "outline"} size="sm" onClick={() => handlePageChange(1)} disabled={loading} className="h-8 px-3">
+                        const maxVisible = 5;
+                        const half = Math.floor(maxVisible / 2);
+                        let start = Math.max(1, currentPage - half);
+                        let end = Math.min(totalPages, start + maxVisible - 1);
+                        
+                        // Adjust start if we're near the end
+                        if (end - start < maxVisible - 1) {
+                          start = Math.max(1, end - maxVisible + 1);
+                        }
+                        
+                        const pages = [];
+                        
+                        // Show first page if not in range
+                        if (start > 1) {
+                          pages.push(
+                            <Button
+                              key={1}
+                              variant={1 === currentPage ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => handlePageChange(1)}
+                              disabled={loading}
+                              className="h-8 px-3"
+                            >
                               1
-                            </Button>);
-                    if (start > 2) {
-                      pages.push(<span key="ellipsis-start" className="px-2 text-muted-foreground">
+                            </Button>
+                          );
+                          if (start > 2) {
+                            pages.push(
+                              <span key="ellipsis-start" className="px-2 text-muted-foreground">
                                 ...
-                              </span>);
-                    }
-                  }
-
-                  // Show page range
-                  for (let i = start; i <= end; i++) {
-                    pages.push(<Button key={i} variant={i === currentPage ? "default" : "outline"} size="sm" onClick={() => handlePageChange(i)} disabled={loading} className="h-8 px-3">
+                              </span>
+                            );
+                          }
+                        }
+                        
+                        // Show page range
+                        for (let i = start; i <= end; i++) {
+                          pages.push(
+                            <Button
+                              key={i}
+                              variant={i === currentPage ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => handlePageChange(i)}
+                              disabled={loading}
+                              className="h-8 px-3"
+                            >
                               {i.toLocaleString()}
-                            </Button>);
-                  }
-
-                  // Show last page if not in range
-                  if (end < totalPages) {
-                    if (end < totalPages - 1) {
-                      pages.push(<span key="ellipsis-end" className="px-2 text-muted-foreground">
+                            </Button>
+                          );
+                        }
+                        
+                        // Show last page if not in range
+                        if (end < totalPages) {
+                          if (end < totalPages - 1) {
+                            pages.push(
+                              <span key="ellipsis-end" className="px-2 text-muted-foreground">
                                 ...
-                              </span>);
-                    }
-                    pages.push(<Button key={totalPages} variant={totalPages === currentPage ? "default" : "outline"} size="sm" onClick={() => handlePageChange(totalPages)} disabled={loading} className="h-8 px-3">
+                              </span>
+                            );
+                          }
+                          pages.push(
+                            <Button
+                              key={totalPages}
+                              variant={totalPages === currentPage ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => handlePageChange(totalPages)}
+                              disabled={loading}
+                              className="h-8 px-3"
+                            >
                               {totalPages.toLocaleString()}
-                            </Button>);
-                  }
-                  return pages;
-                })()}
+                            </Button>
+                          );
+                        }
+                        
+                        return pages;
+                      })()}
                     </div>
                     
                     {/* Next Page */}
-                    <Button variant="outline" size="sm" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages || loading} className="h-8 px-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages || loading}
+                      className="h-8 px-3"
+                    >
                       Next
                     </Button>
                     
                     {/* Last Page */}
-                    <Button variant="outline" size="sm" onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages || loading} className="h-8 px-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(totalPages)}
+                      disabled={currentPage === totalPages || loading}
+                      className="h-8 px-3"
+                    >
                       Last
                     </Button>
                   </div>
@@ -1273,24 +1565,36 @@ const EncarCatalog = ({
                   {/* Go to Page Input */}
                   <div className="flex items-center space-x-2 text-sm">
                     <span className="text-muted-foreground">Go to page:</span>
-                    <Input type="number" min={1} max={totalPages} value={currentPage} onChange={e => {
-                const page = parseInt(e.target.value);
-                if (page >= 1 && page <= totalPages) {
-                  handlePageChange(page);
-                }
-              }} className="w-20 h-8 text-center" />
+                    <Input
+                      type="number"
+                      min={1}
+                      max={totalPages}
+                      value={currentPage}
+                      onChange={(e) => {
+                        const page = parseInt(e.target.value);
+                        if (page >= 1 && page <= totalPages) {
+                          handlePageChange(page);
+                        }
+                      }}
+                      className="w-20 h-8 text-center"
+                    />
                     <span className="text-muted-foreground">of {totalPages.toLocaleString()}</span>
                   </div>
-                </div>}
+                </div>
+              )}
               
               {/* Loading indicator for load more */}
-              {loading && cars.length > 0 && <div className="flex justify-center py-8">
+              {loading && cars.length > 0 && (
+                <div className="flex justify-center py-8">
                   <LoadingLogo size="md" />
-                </div>}
-            </div>}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
-  </div>;
+  );
 };
+
 export default EncarCatalog;
