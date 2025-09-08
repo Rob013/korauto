@@ -1085,7 +1085,7 @@ const CarDetails = memo(() => {
         {/* Header with Actions - Improved Mobile Layout */}
         <div className="flex flex-col gap-4 mb-6 md:mb-8">
           {/* Navigation Buttons */}
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          <div className="flex flex-row gap-2">
             <Button
               variant="outline"
               onClick={() => {
