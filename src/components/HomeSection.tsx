@@ -13,11 +13,7 @@ const HomeSection = () => {
           {/* Logo on Homepage */}
           <div className="mb-4">
             <div className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 mx-auto flex items-center justify-center mb-2 animate-scale-in hover-scale-gentle">
-              <img 
-                src="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png" 
-                alt="KORAUTO Logo" 
-                className="w-full h-full object-contain dark:invert transition-all duration-500 hover-lift-gentle" 
-              />
+              <img src="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png" alt="KORAUTO Logo" className="w-full h-full object-contain dark:invert transition-all duration-500 hover-lift-gentle" />
             </div>
           </div>
           
@@ -40,7 +36,7 @@ const HomeSection = () => {
           {/* Quick Stats */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-2xl mx-auto mt-8 stagger-animation">
             <div className="text-center modern-card p-6 hover-lift-gentle">
-              <div className="text-3xl md:text-4xl font-bold gradient-text mb-1">300+</div>
+              <div className="text-3xl md:text-4xl font-bold gradient-text mb-1">400+</div>
               <div className="text-sm text-muted-foreground">Makina të Shitura në Kosovë</div>
             </div>
             <div className="text-center modern-card p-6 hover-lift-gentle">
@@ -57,18 +53,15 @@ const HomeSection = () => {
 
       {/* Sleek arrows on the sides */}
       <div className="absolute left-4 top-1/2 transform -translate-y-1/2 hidden lg:block">
-        <ChevronDown 
-          className="w-8 h-8 text-primary/60 animate-bounce cursor-pointer hover:text-primary transition-colors duration-300 rotate-45"
-          onClick={() => document.getElementById('cars')?.scrollIntoView({ behavior: 'smooth' })}
-        />
+        <ChevronDown className="w-8 h-8 text-primary/60 animate-bounce cursor-pointer hover:text-primary transition-colors duration-300 rotate-45" onClick={() => document.getElementById('cars')?.scrollIntoView({
+        behavior: 'smooth'
+      })} />
       </div>
       <div className="absolute right-4 top-1/2 transform -translate-y-1/2 hidden lg:block">
-        <ChevronDown 
-          className="w-8 h-8 text-primary/60 animate-bounce cursor-pointer hover:text-primary transition-colors duration-300 -rotate-45"
-          onClick={() => document.getElementById('cars')?.scrollIntoView({ behavior: 'smooth' })}
-        />
+        <ChevronDown className="w-8 h-8 text-primary/60 animate-bounce cursor-pointer hover:text-primary transition-colors duration-300 -rotate-45" onClick={() => document.getElementById('cars')?.scrollIntoView({
+        behavior: 'smooth'
+      })} />
       </div>
-    </section>
+    </section>;
 };
-
 export default HomeSection;
