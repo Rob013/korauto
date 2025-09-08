@@ -38,7 +38,7 @@ const CarCard = memo(({ car, onCarClick, priority = false }: CarCardProps) => {
   };
 
   const formatMileage = (mileage: number) => {
-    return `${mileage.toLocaleString()} km`;
+    return `${mileage.toLocaleString('en-US')} km`;
   };
 
   const formatDate = (dateString: string) => {

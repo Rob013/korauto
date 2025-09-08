@@ -734,7 +734,7 @@ const CarDetails = memo(() => {
                 images: lotData.images?.normal || lotData.images?.big || [],
                 vin: carData.vin,
                 mileage: lotData.odometer?.km
-                  ? `${lotData.odometer.km.toLocaleString()} km`
+                  ? `${lotData.odometer.km.toLocaleString('en-US')} km`
                   : undefined,
                 transmission: carData.transmission?.name,
                 fuel: carData.fuel?.name,
@@ -848,7 +848,7 @@ const CarDetails = memo(() => {
           images: lotData.images?.normal || lotData.images?.big || [],
           vin: carData.vin,
           mileage: lotData.odometer?.km
-            ? `${lotData.odometer.km.toLocaleString()} km`
+            ? `${lotData.odometer.km.toLocaleString('en-US')} km`
             : undefined,
           transmission: carData.transmission?.name,
           fuel: carData.fuel?.name,
@@ -919,7 +919,7 @@ const CarDetails = memo(() => {
               images: lotData.images?.normal || lotData.images?.big || [],
               vin: fallbackCar.vin,
               mileage: lotData.odometer?.km
-                ? `${lotData.odometer.km.toLocaleString()} km`
+                ? `${lotData.odometer.km.toLocaleString('en-US')} km`
                 : undefined,
               transmission: fallbackCar.transmission?.name,
               fuel: fallbackCar.fuel?.name,

@@ -454,8 +454,8 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                   className="w-full"
                 />
                 <div className="flex justify-between text-sm text-muted-foreground mt-1">
-                  <span>{mileageRange[0].toLocaleString()} km</span>
-                  <span>{mileageRange[1].toLocaleString()} km</span>
+                  <span>{mileageRange[0].toLocaleString('en-US')} km</span>
+                  <span>{mileageRange[1].toLocaleString('en-US')} km</span>
                 </div>
               </div>
             </div>

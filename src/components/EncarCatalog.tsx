@@ -1407,7 +1407,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                         vin={car.vin}
                         mileage={
                           lot?.odometer?.km
-                            ? `${lot.odometer.km.toLocaleString()} km`
+                            ? `${lot.odometer.km.toLocaleString('en-US')} km`
                             : undefined
                         }
                         transmission={car.transmission?.name}

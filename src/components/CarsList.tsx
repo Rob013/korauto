@@ -85,7 +85,7 @@ const CarCard: React.FC<{ car: Car; onClick: () => void }> = React.memo(({ car, 
         
         <div className="text-sm text-muted-foreground space-y-1">
           {car.mileage && (
-            <p>{car.mileage.toLocaleString()} km</p>
+            <p>{car.mileage.toLocaleString('en-US')} km</p>
           )}
           {car.fuel && car.transmission && (
             <p>{car.fuel} • {car.transmission}</p>

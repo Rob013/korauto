@@ -513,7 +513,7 @@ const HomeCarsSection = memo(() => {
             // Only use buy_now price, no fallbacks
             const usdPrice = lot?.buy_now;
             const price = calculateFinalPriceEUR(usdPrice, exchangeRate.rate);
-            return <LazyCarCard key={car.id} id={car.id} make={car.manufacturer?.name || "Unknown"} model={car.model?.name || "Unknown"} year={car.year} price={price} image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]} vin={car.vin} mileage={lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined} transmission={car.transmission?.name} fuel={car.fuel?.name} color={car.color?.name} condition={car.condition?.replace("run_and_drives", "Good")} lot={car.lot_number || lot?.lot} title={car.title} status={Number(car.status || lot?.status || 1)} sale_status={car.sale_status || lot?.sale_status} final_price={car.final_price || lot?.final_price} insurance_v2={(lot as any)?.insurance_v2} details={(lot as any)?.details} />;
+            return <LazyCarCard key={car.id} id={car.id} make={car.manufacturer?.name || "Unknown"} model={car.model?.name || "Unknown"} year={car.year} price={price} image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]} vin={car.vin} mileage={lot?.odometer?.km ? `${lot.odometer.km.toLocaleString('en-US')} km` : undefined} transmission={car.transmission?.name} fuel={car.fuel?.name} color={car.color?.name} condition={car.condition?.replace("run_and_drives", "Good")} lot={car.lot_number || lot?.lot} title={car.title} status={Number(car.status || lot?.status || 1)} sale_status={car.sale_status || lot?.sale_status} final_price={car.final_price || lot?.final_price} insurance_v2={(lot as any)?.insurance_v2} details={(lot as any)?.details} />;
           })}
             </div>
 
