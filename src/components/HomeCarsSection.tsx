@@ -460,11 +460,7 @@ const HomeCarsSection = memo(() => {
             Makinat e Disponueshme
           </h2>
 
-          <div className="flex justify-center mt-4 sm:mt-6">
-            <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className="w-full sm:w-auto btn-enhanced border-primary text-primary hover:bg-primary hover:text-primary-foreground min-h-[44px]">
-              {showFilters ? "Fshih Filtrat" : "Shfaq Filtrat"}
-            </Button>
-          </div>
+          
         </div>
 
         {error && <div className="flex flex-col sm:flex-row items-start sm:items-center justify-center gap-2 mb-6 sm:mb-8 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg mx-2 sm:mx-0">
