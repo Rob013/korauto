@@ -102,7 +102,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     currentCars: cars,
     filters,
     totalCount,
-    carsPerPage: 50,
+    carsPerPage: 500,
     enableCaching: true,
     validationEnabled: false
   });
@@ -196,7 +196,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   }, [filteredCars]);
   
   // Apply daily rotating cars when in default state, same as homepage
-  const dailyRotatingCars = useDailyRotatingCars(carsForSorting, !isDefaultState, 50);
+  const dailyRotatingCars = useDailyRotatingCars(carsForSorting, !isDefaultState, 500);
   
   // Always call useSortedCars hook (hooks must be called unconditionally)
   const sortedResults = useSortedCars(carsForSorting, sortBy);
@@ -368,8 +368,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Reset global sorting when filters change
     clearGlobalSorting();
     
-    // Use 50 cars per page for proper pagination
-    const filtersWithPagination = addPaginationToFilters(newFilters, 50, 1);
+    // Use 500 cars per page for better performance
+    const filtersWithPagination = addPaginationToFilters(newFilters, 500, 1);
     
     fetchCars(1, filtersWithPagination, true);
 
@@ -470,7 +470,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setCurrentPage(page);
     
     // Fetch cars for the specific page with proper API pagination
-    const filtersWithPagination = addPaginationToFilters(filters, 50, page);
+    const filtersWithPagination = addPaginationToFilters(filters, 500, page);
     fetchCars(page, filtersWithPagination, true); // Reset list for new page
     
     // Update URL with new page
