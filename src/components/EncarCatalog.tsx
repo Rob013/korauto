@@ -1018,140 +1018,86 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Collapsible Filter Sidebar - Optimized for mobile */}
-      <div 
-        ref={filterPanelRef}
-        data-filter-panel
-        className={`
-        fixed lg:relative z-40 glass-card transition-transform duration-300 ease-in-out
-        ${showFilters ? 'translate-x-0' : '-translate-x-full lg:hidden'}
-        ${isMobile ? 'top-0 left-0 right-0 bottom-0 w-full h-dvh overflow-y-auto safe-area-inset rounded-none' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0 overflow-y-auto rounded-lg'} 
-        lg:shadow-none
-      `}>
-        <div className={`${isMobile ? 'mobile-filter-compact filter-header bg-primary text-primary-foreground' : 'p-3 sm:p-4 border-b flex-shrink-0'}`}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Filter className={`h-4 w-4 sm:h-5 sm:w-5 ${isMobile ? 'text-primary-foreground' : 'text-primary'}`} />
-              <h3 className={`font-semibold ${isMobile ? 'text-sm text-primary-foreground' : 'text-sm sm:text-base'}`}>
-                {isMobile ? 'Filtrat e Kërkimit' : 'Filters'}
-              </h3>
-              {hasSelectedCategories && isMobile && (
-                <Badge variant="secondary" className="ml-2 bg-primary-foreground/20 text-primary-foreground text-xs px-1.5 py-0">
-                  {Object.values(filters).filter(Boolean).length} aktiv
-                </Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-1">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleClearFilters}
-                className={`lg:hidden flex items-center gap-1 ${isMobile ? 'h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground text-xs' : 'h-8 px-2'}`}
-              >
-                <span className="text-xs">Clear</span>
-              </Button>
-              {/* Only show close button on mobile */}
-              {isMobile && (
+    <div className="min-h-screen bg-background">
+      {/* Full Page Filter Panel - Centered */}
+      {showFilters && (
+        <div 
+          ref={filterPanelRef}
+          data-filter-panel
+          className="fixed inset-0 z-40 bg-background/95 backdrop-blur-sm overflow-y-auto"
+        >
+          <div className="max-w-4xl mx-auto px-4 py-6">
+            <div className="bg-card rounded-lg shadow-lg border p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <Filter className="h-5 w-5 text-primary" />
+                <h3 className="text-xl font-semibold">Filtrat e Kërkimit</h3>
+                {hasSelectedCategories && (
+                  <Badge variant="secondary" className="ml-2">
+                    {Object.values(filters).filter(Boolean).length} aktiv
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleClearFilters}
+                  className="flex items-center gap-1"
+                >
+                  <X className="h-4 w-4" />
+                  <span>Pastro të gjitha</span>
+                </Button>
                 <Button 
                   variant="ghost" 
                   size="sm" 
                   onClick={() => {
-                    console.log("Close button clicked, isMobile:", isMobile);
                     setShowFilters(false);
-                    setHasExplicitlyClosed(true); // Mark as explicitly closed
+                    setHasExplicitlyClosed(true);
                   }}
-                  className="flex items-center gap-1 h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground"
+                  className="flex items-center gap-1"
                   title="Mbyll filtrat"
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-4 w-4" />
                 </Button>
-              )}
+              </div>
+            </div>
+            
+            <div className="space-y-6">
+              <EncarStyleFilter
+                filters={filters}
+                manufacturers={manufacturers.length > 0 ? manufacturers : createFallbackManufacturers()}
+                models={models}
+                filterCounts={filterCounts}
+                loadingCounts={loadingCounts}
+                onFiltersChange={handleFiltersChange}
+                onClearFilters={handleClearFilters}
+                onManufacturerChange={handleManufacturerChange}
+                onModelChange={handleModelChange}
+                showAdvanced={showAdvancedFilters}
+                onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                onFetchGrades={fetchGrades}
+                onFetchTrimLevels={fetchTrimLevels}
+                compact={false}
+                onSearchCars={() => {
+                  fetchCars(1, { ...filters, per_page: "500" }, true);
+                  setShowFilters(false);
+                  setHasExplicitlyClosed(true);
+                }}
+                onCloseFilter={() => {
+                  setShowFilters(false);
+                  setHasExplicitlyClosed(true);
+                }}
+              />
+            </div>
             </div>
           </div>
         </div>
-        
-        <div className={`flex-1 overflow-y-auto ${isMobile ? 'mobile-filter-content mobile-filter-compact' : 'p-3 sm:p-4'}`}>
-          <div className={`${isMobile ? '' : ''}`}>
-            <EncarStyleFilter
-            filters={filters}
-            manufacturers={manufacturers.length > 0 ? manufacturers : createFallbackManufacturers()}
-            models={models}
-            filterCounts={filterCounts}
-            loadingCounts={loadingCounts}
-            onFiltersChange={handleFiltersChange}
-            onClearFilters={handleClearFilters}
-            onManufacturerChange={handleManufacturerChange}
-            onModelChange={handleModelChange}
-            showAdvanced={showAdvancedFilters}
-            onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            onFetchGrades={fetchGrades}
-            onFetchTrimLevels={fetchTrimLevels}
-            compact={true}
-            onSearchCars={() => {
-              console.log("Search button clicked, isMobile:", isMobile);
-              // Apply search/filters
-              fetchCars(1, { ...filters, per_page: "50" }, true);
-              
-              // Force close filter panel on mobile (and desktop for consistency)
-              setShowFilters(false);
-              setHasExplicitlyClosed(true);
-              
-              // Additional CSS force close as backup
-              setTimeout(() => {
-                const filterPanel = document.querySelector('[data-filter-panel]');
-                if (filterPanel) {
-                  (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
-                  (filterPanel as HTMLElement).style.visibility = 'hidden';
-                }
-              }, 100);
-            }}
-            onCloseFilter={() => {
-              console.log("Close filter called, isMobile:", isMobile);
-              // Force close the filter panel regardless of mobile detection
-              setShowFilters(false);
-              setHasExplicitlyClosed(true);
-              
-              // Additional CSS force close as backup
-              setTimeout(() => {
-                const filterPanel = document.querySelector('[data-filter-panel]');
-                if (filterPanel) {
-                  (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
-                  (filterPanel as HTMLElement).style.visibility = 'hidden';
-                }
-              }, 100);
-            }}
-          />
-          
-          {/* Mobile Apply/Close Filters Button - Enhanced */}
-          {isMobile && (
-            <div className="mt-4 pt-3 border-t space-y-2 flex-shrink-0">
-              {/* Apply/Close button removed per Issue #3 */}
-            </div>
-          )}
-          </div>
-        </div>
-      </div>
-
-      {/* Overlay for mobile - stronger backdrop on mobile */}
-      {showFilters && (
-        <div 
-          className={`fixed inset-0 z-30 lg:hidden transition-opacity duration-300 ${
-            isMobile ? 'bg-black/70 backdrop-blur-md' : 'bg-black/50 backdrop-blur-sm'
-          }`}
-          onClick={() => {
-            // Only close on mobile via overlay click
-            if (isMobile) {
-              setShowFilters(false);
-              setHasExplicitlyClosed(true); // Mark as explicitly closed
-            }
-          }}
-        />
       )}
 
-      {/* Main Content */}
-      <div ref={mainContentRef} className={`flex-1 min-w-0 transition-all duration-300`}>
-        <div className="container-responsive py-3 sm:py-6 mobile-text-optimize">
+      {/* Main Content - Centered Layout */}
+      <div ref={mainContentRef} className="w-full">
+        <div className="max-w-7xl mx-auto px-4 py-3 sm:py-6">
           {/* Header Section - Mobile optimized */}
           <div className="flex flex-col gap-3 mb-4">
             {/* Mobile header - stacked layout */}
