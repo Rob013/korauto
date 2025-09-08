@@ -647,7 +647,7 @@ const CarDetails = memo(() => {
             mileage:
               cachedCar.mileage ||
               (lotData.odometer?.km
-                ? `${lotData.odometer.km.toLocaleString()} km`
+                ? `${lotData.odometer.km.toLocaleString('en-US')} km`
                 : undefined),
             transmission: cachedCar.transmission || carData.transmission?.name,
             fuel: cachedCar.fuel || carData.fuel?.name,

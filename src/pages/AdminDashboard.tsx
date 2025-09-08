@@ -236,7 +236,7 @@ const AdminDashboard = () => {
           image: lot?.images?.normal?.[0] || lot?.images?.big?.[0],
           vin: car.vin,
           mileage: lot?.odometer?.km
-            ? `${lot.odometer.km.toLocaleString()} km`
+            ? `${lot.odometer.km.toLocaleString('en-US')} km`
             : undefined,
           fuel: carData?.fuel?.name,
           transmission: carData?.transmission?.name,
@@ -622,7 +622,7 @@ const AdminDashboard = () => {
               lot?.buy_now?.toLocaleString() || "N/A"
             }`;
             const mileageInfo = lot?.odometer?.km
-              ? `| ${lot.odometer.km.toLocaleString()} km`
+              ? `| ${lot.odometer.km.toLocaleString('en-US')} km`
               : "";
 
             toast({

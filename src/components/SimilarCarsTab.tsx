@@ -104,7 +104,7 @@ const SimilarCarsTab = ({ carMake, carModel, currentCarId }: SimilarCarsTabProps
                   </div>
                   <div className="text-primary font-semibold">€{price.toLocaleString()}</div>
                   <div className="text-xs text-muted-foreground">
-                    {lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : 'Kilometrazhi i pa specifikuar'}
+                    {lot?.odometer?.km ? `${lot.odometer.km.toLocaleString('en-US')} km` : 'Kilometrazhi i pa specifikuar'}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">Klic për më shumë detaje</div>
                 </div>
