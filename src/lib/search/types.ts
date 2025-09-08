@@ -84,7 +84,7 @@ export const DEFAULT_SORT: SearchReq['sort'] = {
   dir: 'desc'
 };
 
-export const DEFAULT_PAGE_SIZE = 500;
+export const DEFAULT_PAGE_SIZE = 20;
 
 export const FACET_FIELDS = [
   'model',

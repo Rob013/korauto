@@ -102,7 +102,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     currentCars: cars,
     filters,
     totalCount,
-    carsPerPage: 500,
+    carsPerPage: 50,
     enableCaching: true,
     validationEnabled: false
   });
@@ -196,7 +196,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   }, [filteredCars]);
   
   // Apply daily rotating cars when in default state, same as homepage
-  const dailyRotatingCars = useDailyRotatingCars(carsForSorting, !isDefaultState, 500);
+  const dailyRotatingCars = useDailyRotatingCars(carsForSorting, !isDefaultState, 50);
   
   // Always call useSortedCars hook (hooks must be called unconditionally)
   const sortedResults = useSortedCars(carsForSorting, sortBy);
@@ -368,8 +368,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Reset global sorting when filters change
     clearGlobalSorting();
     
-    // Use 500 cars per page for better performance
-    const filtersWithPagination = addPaginationToFilters(newFilters, 500, 1);
+    // Use 50 cars per page for proper pagination
+    const filtersWithPagination = addPaginationToFilters(newFilters, 50, 1);
     
     fetchCars(1, filtersWithPagination, true);
 
@@ -470,7 +470,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setCurrentPage(page);
     
     // Fetch cars for the specific page with proper API pagination
-    const filtersWithPagination = addPaginationToFilters(filters, 500, page);
+    const filtersWithPagination = addPaginationToFilters(filters, 50, page);
     fetchCars(page, filtersWithPagination, true); // Reset list for new page
     
     // Update URL with new page
@@ -1277,7 +1277,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 Car Catalog
               </h1>
               <p className="text-muted-foreground text-xs sm:text-sm">
-                {totalCount.toLocaleString()} cars across {totalPages.toLocaleString()} pages • Page {currentPage} of {totalPages.toLocaleString()} • Showing 500 cars per page
+                {totalCount.toLocaleString()} cars across {totalPages.toLocaleString()} pages • Page {currentPage} of {totalPages.toLocaleString()} • Showing {carsToDisplay.length} cars per page
 
                 {yearFilterProgress === 'instant' && (
                   <span className="ml-2 text-primary text-xs">⚡ Instant results</span>
