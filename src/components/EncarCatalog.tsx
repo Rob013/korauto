@@ -368,8 +368,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Reset global sorting when filters change
     clearGlobalSorting();
     
-    // Use 50 cars per page for proper pagination
-    const filtersWithPagination = addPaginationToFilters(newFilters, 50, 1);
+    // Use 100 cars per page for proper pagination
+    const filtersWithPagination = addPaginationToFilters(newFilters, 100, 1);
     
     fetchCars(1, filtersWithPagination, true);
 
@@ -470,7 +470,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setCurrentPage(page);
     
     // Fetch cars for the specific page with proper API pagination
-    const filtersWithPagination = addPaginationToFilters(filters, 50, page);
+    const filtersWithPagination = addPaginationToFilters(filters, 100, page);
     fetchCars(page, filtersWithPagination, true); // Reset list for new page
     
     // Update URL with new page
@@ -563,7 +563,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       lastSortParamsRef.current = sortKey;
       
       // Check if current page is beyond available pages and reset to page 1 if needed
-      const maxPages = Math.ceil(filteredAllCars.length / 50);
+      const maxPages = Math.ceil(filteredAllCars.length / 100);
       if (currentPage > maxPages && maxPages > 0) {
         console.log(`📄 Resetting page from ${currentPage} to 1 (max available: ${maxPages})`);
         setCurrentPage(1);
@@ -907,9 +907,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Calculate total pages based on actual total count
   useEffect(() => {
     if (totalCount > 0) {
-      const calculatedPages = Math.ceil(totalCount / 50);
+      const calculatedPages = Math.ceil(totalCount / 100);
       setTotalPages(calculatedPages);
-      console.log(`📊 Calculated pagination: ${totalCount} cars across ${calculatedPages} pages (50 cars per page)`);
+      console.log(`📊 Calculated pagination: ${totalCount} cars across ${calculatedPages} pages (100 cars per page)`);
     } else {
       setTotalPages(0);
       console.log(`📊 No cars available: ${totalCount} cars, 0 pages`);

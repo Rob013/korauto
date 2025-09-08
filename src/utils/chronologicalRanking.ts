@@ -27,7 +27,7 @@ export interface ChronologicalRankingResult {
 export const applyChronologicalRanking = (
   cars: any[],
   sortBy: SortOption,
-  carsPerPage: number = 50
+  carsPerPage: number = 100
 ): ChronologicalRankingResult => {
   // Sort all cars first
   const sortedCars = sortCarsByOption(cars, sortBy);
@@ -63,7 +63,7 @@ export const applyChronologicalRanking = (
 export const getCarsForPage = (
   rankedCars: CarWithRank[],
   pageNumber: number,
-  carsPerPage: number = 50
+  carsPerPage: number = 100
 ): CarWithRank[] => {
   const startIndex = (pageNumber - 1) * carsPerPage;
   const endIndex = startIndex + carsPerPage;

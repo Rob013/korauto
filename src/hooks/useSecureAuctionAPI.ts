@@ -755,7 +755,7 @@ export const useSecureAuctionAPI = () => {
       const apiFilters = {
         ...newFilters,
         page: page.toString(),
-        per_page: newFilters.per_page || "50", // Show 50 cars per page
+        per_page: newFilters.per_page || "100", // Show 100 cars per page
         simple_paginate: "0",
       };
       
@@ -903,7 +903,7 @@ export const useSecureAuctionAPI = () => {
       }
       
       // Simulate pagination with fallback data
-      const pageSize = parseInt(newFilters.per_page || "50");
+      const pageSize = parseInt(newFilters.per_page || "100");
       const startIndex = (page - 1) * pageSize;
       const endIndex = startIndex + pageSize;
       const paginatedCars = fallbackCars.slice(startIndex, endIndex);

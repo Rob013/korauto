@@ -289,8 +289,8 @@ const HomeCarsSection = memo(() => {
               pendingFilters.seats_count);
   }, [pendingFilters]);
 
-  // Apply daily rotating cars when no filters are applied, showing 50 cars same as catalog
-  const dailyRotatingCars = useDailyRotatingCars(carsForSorting, hasFilters, 50);
+  // Apply daily rotating cars when no filters are applied, showing 100 cars same as catalog
+  const dailyRotatingCars = useDailyRotatingCars(carsForSorting, hasFilters, 100);
 
   // Use daily rotating cars when no filters, otherwise use sorted cars
   const carsToDisplay = useMemo(() => {
@@ -301,13 +301,13 @@ const HomeCarsSection = memo(() => {
     return useSortedCars(carsForSorting, sortBy);
   }, [hasFilters, dailyRotatingCars, carsForSorting, sortBy]);
 
-  // Show 50 cars by default (daily rotation) to match catalog
-  const defaultDisplayCount = 50;
+  // Show 100 cars by default (daily rotation) to match catalog
+  const defaultDisplayCount = 100;
 
   // Memoize displayed cars to prevent unnecessary re-renders
   const displayedCars = useMemo(() => {
     if (!hasFilters) {
-      // When no filters, show all daily rotating cars (already limited to 50)
+      // When no filters, show all daily rotating cars (already limited to 100)
       return showAllCars ? carsToDisplay : carsToDisplay.slice(0, defaultDisplayCount);
     }
     // When filters are applied, use the slice logic

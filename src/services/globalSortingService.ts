@@ -76,7 +76,7 @@ export class GlobalSortingService {
     allCars: any[],
     filters: APIFilters,
     sortBy: SortOption,
-    carsPerPage: number = 50
+    carsPerPage: number = 100
   ): Promise<ChronologicalRankingResult> {
     // Check cache first
     const cached = this.getCachedResult(filters, sortBy);
