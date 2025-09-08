@@ -45,7 +45,7 @@ describe('Catalog UI Pagination - Large Dataset Support', () => {
       expect(formattedNumber).toBe(expectedFormat);
       
       // Test status message formatting as it appears in EncarCatalog
-      const statusMessage = `${formattedNumber} cars total • Page 1 of ${Math.ceil(totalCars / 50)} • Showing 50 cars`;
+      const statusMessage = `${formattedNumber} cars total • Page 1 of ${Math.ceil(totalCars / 200)} • Showing 200 cars`;
       expect(statusMessage).toContain(expectedFormat);
     });
   });
@@ -58,18 +58,18 @@ describe('Catalog UI Pagination - Large Dataset Support', () => {
       // Simulate URL parameter handling
       const urlParams = new URLSearchParams();
       urlParams.set('page', pageNumber.toString());
-      urlParams.set('per_page', '50');
+      urlParams.set('per_page', '200');
       
       const pageFromUrl = parseInt(urlParams.get('page') || '1');
-      const perPageFromUrl = parseInt(urlParams.get('per_page') || '50');
+      const perPageFromUrl = parseInt(urlParams.get('per_page') || '200');
       
       expect(pageFromUrl).toBe(pageNumber);
-      expect(perPageFromUrl).toBe(50);
+      expect(perPageFromUrl).toBe(200);
       
       // Test URL string generation
       const urlString = urlParams.toString();
       expect(urlString).toContain(`page=${pageNumber}`);
-      expect(urlString).toContain('per_page=50');
+      expect(urlString).toContain('per_page=200');
     });
   });
 
@@ -100,41 +100,41 @@ describe('Catalog UI Pagination - Large Dataset Support', () => {
       {
         filter: 'Audi A5',
         totalCars: 187,
-        expectedPages: 4,
-        pageDistribution: [50, 50, 50, 37]
+        expectedPages: 1,
+        pageDistribution: [187]
       },
       {
         filter: 'BMW 3 Series',
         totalCars: 2456,
-        expectedPages: 50,
-        pageDistribution: [50, 50, 50, 50, 50] // First 5 pages all have 50
+        expectedPages: 13,
+        pageDistribution: [200, 200, 200, 200, 200] // First 5 pages all have 200
       },
       {
         filter: 'All Cars',
         totalCars: 180000,
-        expectedPages: 3600,
-        pageDistribution: [50, 50, 50, 50, 50] // All pages have 50
+        expectedPages: 900,
+        pageDistribution: [200, 200, 200, 200, 200] // All pages have 200
       }
     ];
 
     filterScenarios.forEach(({ filter, totalCars, expectedPages, pageDistribution }) => {
-      const calculatedPages = Math.ceil(totalCars / 50);
+      const calculatedPages = Math.ceil(totalCars / 200);
       expect(calculatedPages).toBe(expectedPages);
 
       // Test first few pages have correct distribution
       pageDistribution.forEach((expectedCarsOnPage, pageIndex) => {
         const pageNumber = pageIndex + 1;
-        const startIndex = (pageNumber - 1) * 50;
-        const endIndex = Math.min(pageNumber * 50, totalCars);
+        const startIndex = (pageNumber - 1) * 200;
+        const endIndex = Math.min(pageNumber * 200, totalCars);
         const carsOnPage = endIndex - startIndex;
         
         expect(carsOnPage).toBe(expectedCarsOnPage);
       });
 
       // Test last page specifically
-      const lastPageStartIndex = (expectedPages - 1) * 50;
+      const lastPageStartIndex = (expectedPages - 1) * 200;
       const lastPageCars = totalCars - lastPageStartIndex;
-      const expectedLastPageCars = totalCars % 50 || 50;
+      const expectedLastPageCars = totalCars % 200 || 200;
       
       expect(lastPageCars).toBe(expectedLastPageCars);
       
@@ -145,18 +145,18 @@ describe('Catalog UI Pagination - Large Dataset Support', () => {
   it('should support efficient pagination state management', () => {
     // Test that pagination state can be efficiently managed for large datasets
     const totalCars = 180000;
-    const totalPages = Math.ceil(totalCars / 50);
+    const totalPages = Math.ceil(totalCars / 200);
     let currentPage = 1;
     let loading = false;
     
     // Simulate pagination state changes
     const stateChanges = [
       { action: 'next', expectedPage: 2 },
-      { action: 'jump', targetPage: 1800, expectedPage: 1800 },
-      { action: 'next', expectedPage: 1801 },
-      { action: 'prev', expectedPage: 1800 },
-      { action: 'jump', targetPage: 3600, expectedPage: 3600 },
-      { action: 'prev', expectedPage: 3599 },
+      { action: 'jump', targetPage: 450, expectedPage: 450 },
+      { action: 'next', expectedPage: 451 },
+      { action: 'prev', expectedPage: 450 },
+      { action: 'jump', targetPage: 900, expectedPage: 900 },
+      { action: 'prev', expectedPage: 899 },
     ];
 
     stateChanges.forEach(({ action, targetPage, expectedPage }) => {
@@ -177,22 +177,22 @@ describe('Catalog UI Pagination - Large Dataset Support', () => {
   it('should calculate correct API parameters for any page', () => {
     // Test API parameter generation for various page scenarios
     const scenarios = [
-      { page: 1, totalCars: 187, expectedOffset: 0, expectedLimit: 50 },
-      { page: 4, totalCars: 187, expectedOffset: 150, expectedLimit: 50 },
-      { page: 1800, totalCars: 180000, expectedOffset: 89950, expectedLimit: 50 },
-      { page: 3600, totalCars: 180000, expectedOffset: 179950, expectedLimit: 50 },
+      { page: 1, totalCars: 187, expectedOffset: 0, expectedLimit: 200 },
+      { page: 1, totalCars: 187, expectedOffset: 0, expectedLimit: 200 },
+      { page: 450, totalCars: 180000, expectedOffset: 89800, expectedLimit: 200 },
+      { page: 900, totalCars: 180000, expectedOffset: 179800, expectedLimit: 200 },
     ];
 
     scenarios.forEach(({ page, totalCars, expectedOffset, expectedLimit }) => {
       // Simulate API parameter calculation as done in fetchCars
       const apiFilters = {
         page: page.toString(),
-        per_page: "50",
+        per_page: "200",
         simple_paginate: "0",
       };
 
       // Calculate offset for SQL queries
-      const offset = (page - 1) * 50;
+      const offset = (page - 1) * 200;
       
       expect(parseInt(apiFilters.page)).toBe(page);
       expect(parseInt(apiFilters.per_page)).toBe(expectedLimit);
@@ -200,11 +200,11 @@ describe('Catalog UI Pagination - Large Dataset Support', () => {
 
       // Verify the range of data this would fetch
       const startCarIndex = offset + 1;
-      const endCarIndex = Math.min(offset + 50, totalCars);
+      const endCarIndex = Math.min(offset + 200, totalCars);
       
       expect(startCarIndex).toBeGreaterThan(0);
       expect(endCarIndex).toBeLessThanOrEqual(totalCars);
-      expect(endCarIndex - startCarIndex + 1).toBeLessThanOrEqual(50);
+      expect(endCarIndex - startCarIndex + 1).toBeLessThanOrEqual(200);
     });
   });
 
@@ -214,15 +214,15 @@ describe('Catalog UI Pagination - Large Dataset Support', () => {
       { totalCars: 0, expectedPages: 0, shouldShowPagination: false },
       { totalCars: 1, expectedPages: 1, shouldShowPagination: false },
       { totalCars: 49, expectedPages: 1, shouldShowPagination: false },
-      { totalCars: 50, expectedPages: 1, shouldShowPagination: false },
-      { totalCars: 51, expectedPages: 2, shouldShowPagination: true },
-      { totalCars: 99, expectedPages: 2, shouldShowPagination: true },
-      { totalCars: 100, expectedPages: 2, shouldShowPagination: true },
-      { totalCars: 101, expectedPages: 3, shouldShowPagination: true },
+      { totalCars: 200, expectedPages: 1, shouldShowPagination: false },
+      { totalCars: 201, expectedPages: 2, shouldShowPagination: true },
+      { totalCars: 399, expectedPages: 2, shouldShowPagination: true },
+      { totalCars: 400, expectedPages: 2, shouldShowPagination: true },
+      { totalCars: 401, expectedPages: 3, shouldShowPagination: true },
     ];
 
     edgeCases.forEach(({ totalCars, expectedPages, shouldShowPagination }) => {
-      const calculatedPages = totalCars > 0 ? Math.ceil(totalCars / 50) : 0;
+      const calculatedPages = totalCars > 0 ? Math.ceil(totalCars / 200) : 0;
       const showPagination = calculatedPages > 1;
       
       expect(calculatedPages).toBe(expectedPages);
@@ -232,12 +232,12 @@ describe('Catalog UI Pagination - Large Dataset Support', () => {
 
   it('should maintain pagination state across filter changes', () => {
     // Test that pagination resets appropriately when filters change
-    let currentPage = 1800; // User is on page 1800
-    let totalPages = 3600;   // 180k cars
+    let currentPage = 450; // User is on page 450
+    let totalPages = 900;   // 180k cars
     
     // Simulate applying Audi A5 filter
     const newTotalCars = 187;
-    const newTotalPages = Math.ceil(newTotalCars / 50); // 4 pages
+    const newTotalPages = Math.ceil(newTotalCars / 200); // 1 page
     
     // Page should reset to 1 when filter changes reduce total pages
     if (currentPage > newTotalPages) {
@@ -245,12 +245,12 @@ describe('Catalog UI Pagination - Large Dataset Support', () => {
     }
     
     expect(currentPage).toBe(1);
-    expect(newTotalPages).toBe(4);
+    expect(newTotalPages).toBe(1);
     
     // Simulate removing filter to go back to all cars
-    const allCarsTotalPages = 3600;
+    const allCarsTotalPages = 900;
     // Page should stay at 1 when expanding dataset
     expect(currentPage).toBe(1);
-    expect(allCarsTotalPages).toBe(3600);
+    expect(allCarsTotalPages).toBe(900);
   });
 });

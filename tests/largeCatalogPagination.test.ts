@@ -125,35 +125,35 @@ describe('Large Catalog Pagination - 180,000+ Cars Handling', () => {
   it('should handle memory-efficient pagination for large datasets', () => {
     // Test that pagination doesn't try to load all cars at once for large datasets
     const totalCars = 180000;
-    const carsPerPage = 50;
-    const currentPage = 1800; // Middle page
+    const carsPerPage = 200;
+    const currentPage = 450; // Middle page
     
     // Only current page data should be loaded, not all 180k cars
     const pageStartIndex = (currentPage - 1) * carsPerPage;
     const pageEndIndex = currentPage * carsPerPage;
     
-    expect(pageStartIndex).toBe(89950);
+    expect(pageStartIndex).toBe(89800);
     expect(pageEndIndex).toBe(90000);
     
-    // Verify we only need to track 50 cars max per page load
+    // Verify we only need to track 200 cars max per page load
     const expectedCarsToLoad = Math.min(carsPerPage, totalCars - pageStartIndex);
-    expect(expectedCarsToLoad).toBe(50);
+    expect(expectedCarsToLoad).toBe(200);
   });
 
   it('should calculate correct page ranges for popular car models', () => {
     // Test realistic scenarios for popular car models
     const carModelScenarios = [
-      { model: 'BMW 3 Series', totalCars: 2456, expectedPages: 50, lastPageCars: 6 },
-      { model: 'Mercedes-Benz C-Class', totalCars: 1987, expectedPages: 40, lastPageCars: 37 },
-      { model: 'Audi A4', totalCars: 1543, expectedPages: 31, lastPageCars: 43 },
-      { model: 'Toyota Camry', totalCars: 3201, expectedPages: 65, lastPageCars: 1 },
-      { model: 'Honda Civic', totalCars: 2890, expectedPages: 58, lastPageCars: 40 },
-      { model: 'Hyundai Elantra', totalCars: 1256, expectedPages: 26, lastPageCars: 6 },
+      { model: 'BMW 3 Series', totalCars: 2456, expectedPages: 13, lastPageCars: 56 },
+      { model: 'Mercedes-Benz C-Class', totalCars: 1987, expectedPages: 10, lastPageCars: 187 },
+      { model: 'Audi A4', totalCars: 1543, expectedPages: 8, lastPageCars: 143 },
+      { model: 'Toyota Camry', totalCars: 3201, expectedPages: 17, lastPageCars: 1 },
+      { model: 'Honda Civic', totalCars: 2890, expectedPages: 15, lastPageCars: 90 },
+      { model: 'Hyundai Elantra', totalCars: 1256, expectedPages: 7, lastPageCars: 56 },
     ];
 
     carModelScenarios.forEach(({ model, totalCars, expectedPages, lastPageCars }) => {
-      const calculatedPages = Math.ceil(totalCars / 50);
-      const actualLastPageCars = totalCars % 50 || 50;
+      const calculatedPages = Math.ceil(totalCars / 200);
+      const actualLastPageCars = totalCars % 200 || 200;
       
       expect(calculatedPages).toBe(expectedPages);
       expect(actualLastPageCars).toBe(lastPageCars);
@@ -165,10 +165,10 @@ describe('Large Catalog Pagination - 180,000+ Cars Handling', () => {
   it('should validate API pagination parameters for large datasets', () => {
     // Test that API pagination parameters are correctly formatted
     const scenarios = [
-      { page: 1, perPage: 50, expectedOffset: 0 },
-      { page: 100, perPage: 50, expectedOffset: 4950 },
-      { page: 1800, perPage: 50, expectedOffset: 89950 },
-      { page: 3600, perPage: 50, expectedOffset: 179950 },
+      { page: 1, perPage: 200, expectedOffset: 0 },
+      { page: 100, perPage: 200, expectedOffset: 19800 },
+      { page: 450, perPage: 200, expectedOffset: 89800 },
+      { page: 900, perPage: 200, expectedOffset: 179800 },
     ];
 
     scenarios.forEach(({ page, perPage, expectedOffset }) => {
@@ -184,7 +184,7 @@ describe('Large Catalog Pagination - 180,000+ Cars Handling', () => {
       };
       
       expect(apiParams.page).toBe(page.toString());
-      expect(apiParams.per_page).toBe('50');
+      expect(apiParams.per_page).toBe('200');
       expect(apiParams.offset).toBe(expectedOffset.toString());
     });
   });
@@ -192,7 +192,7 @@ describe('Large Catalog Pagination - 180,000+ Cars Handling', () => {
   it('should handle concurrent page navigation without conflicts', () => {
     // Test that rapid page changes are handled correctly
     const totalPages = 3600;
-    const navigationSequence = [1, 50, 1800, 3599, 3600, 1, 2500];
+    const navigationSequence = [1, 50, 450, 899, 900, 1, 625];
     
     navigationSequence.forEach((targetPage, index) => {
       // Validate each page navigation
@@ -200,8 +200,8 @@ describe('Large Catalog Pagination - 180,000+ Cars Handling', () => {
       expect(targetPage).toBeLessThanOrEqual(totalPages);
       
       // Calculate what should be displayed
-      const startIndex = (targetPage - 1) * 50;
-      const endIndex = targetPage * 50;
+      const startIndex = (targetPage - 1) * 200;
+      const endIndex = targetPage * 200;
       
       expect(startIndex).toBeLessThan(180000);
       expect(endIndex).toBeLessThanOrEqual(180000);
@@ -218,9 +218,9 @@ describe('Large Catalog Pagination - 180,000+ Cars Handling', () => {
       const startTime = performance.now();
       
       // Perform pagination calculations
-      const offset = (pageNumber - 1) * 50;
-      const totalCars = pageNumber * 50;
-      const totalPages = Math.ceil(totalCars / 50);
+      const offset = (pageNumber - 1) * 200;
+      const totalCars = pageNumber * 200;
+      const totalPages = Math.ceil(totalCars / 200);
       const isFirstPage = pageNumber === 1;
       const isLastPage = pageNumber === totalPages;
       
@@ -228,7 +228,7 @@ describe('Large Catalog Pagination - 180,000+ Cars Handling', () => {
       const calculationTime = endTime - startTime;
       
       // Verify calculations are correct
-      expect(offset).toBe((pageNumber - 1) * 50);
+      expect(offset).toBe((pageNumber - 1) * 200);
       expect(totalPages).toBe(pageNumber);
       expect(isFirstPage).toBe(pageNumber === 1);
       expect(isLastPage).toBe(true);
