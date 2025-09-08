@@ -2,124 +2,103 @@ import { describe, it, expect } from 'vitest';
 
 describe('Large Catalog Pagination - 180,000+ Cars Handling', () => {
   
-  it('should correctly calculate pagination for 180,000+ cars across 3000+ pages', () => {
-    // Test the exact scenario from problem statement
+  it('should correctly calculate pagination for 180,000+ cars across 900 pages', () => {
+    // Test the exact scenario from problem statement with 200 cars per page
     const totalCars = 180000;
-    const carsPerPage = 50;
-    const expectedPages = Math.ceil(totalCars / carsPerPage); // Should be 3600 pages
+    const carsPerPage = 200;
+    const expectedPages = Math.ceil(totalCars / carsPerPage); // Should be 900 pages
     
-    expect(expectedPages).toBe(3600);
+    expect(expectedPages).toBe(900);
     
     // Verify page distribution
-    const fullPages = Math.floor(totalCars / carsPerPage); // 3600 full pages
+    const fullPages = Math.floor(totalCars / carsPerPage); // 900 full pages
     const remainingCars = totalCars % carsPerPage; // 0 cars remaining
     
-    expect(fullPages).toBe(3600);
+    expect(fullPages).toBe(900);
     expect(remainingCars).toBe(0);
     
     // Test pagination for first, middle, and last pages
     const firstPageStart = (1 - 1) * carsPerPage; // 0
-    const firstPageEnd = 1 * carsPerPage; // 50
+    const firstPageEnd = 1 * carsPerPage; // 200
     expect(firstPageStart).toBe(0);
-    expect(firstPageEnd).toBe(50);
+    expect(firstPageEnd).toBe(200);
     
-    const middlePage = 1800; // Page 1800
-    const middlePageStart = (middlePage - 1) * carsPerPage; // 89950
+    const middlePage = 450; // Page 450
+    const middlePageStart = (middlePage - 1) * carsPerPage; // 89800
     const middlePageEnd = middlePage * carsPerPage; // 90000
-    expect(middlePageStart).toBe(89950);
+    expect(middlePageStart).toBe(89800);
     expect(middlePageEnd).toBe(90000);
     
-    const lastPage = 3600;
-    const lastPageStart = (lastPage - 1) * carsPerPage; // 179950
+    const lastPage = 900;
+    const lastPageStart = (lastPage - 1) * carsPerPage; // 179800
     const lastPageEnd = lastPage * carsPerPage; // 180000
-    expect(lastPageStart).toBe(179950);
+    expect(lastPageStart).toBe(179800);
     expect(lastPageEnd).toBe(180000);
   });
 
-  it('should handle Audi A5 filter scenario - 187 cars across 4 pages', () => {
-    // Test the specific example from problem statement
+  it('should handle Audi A5 filter scenario - 187 cars on 1 page', () => {
+    // Test the specific example from problem statement with 200 cars per page
     const totalCars = 187;
-    const carsPerPage = 50;
-    const expectedPages = Math.ceil(totalCars / carsPerPage); // Should be 4 pages
+    const carsPerPage = 200;
+    const expectedPages = Math.ceil(totalCars / carsPerPage); // Should be 1 page
     
-    expect(expectedPages).toBe(4);
+    expect(expectedPages).toBe(1);
     
-    // Verify each page distribution
-    const page1Cars = Math.min(carsPerPage, totalCars - (1 - 1) * carsPerPage); // 50 cars
-    const page2Cars = Math.min(carsPerPage, totalCars - (2 - 1) * carsPerPage); // 50 cars  
-    const page3Cars = Math.min(carsPerPage, totalCars - (3 - 1) * carsPerPage); // 50 cars
-    const page4Cars = Math.min(carsPerPage, totalCars - (4 - 1) * carsPerPage); // 37 cars
+    // Verify page distribution - all cars fit on one page
+    const page1Cars = Math.min(carsPerPage, totalCars - (1 - 1) * carsPerPage); // 187 cars
     
-    expect(page1Cars).toBe(50);
-    expect(page2Cars).toBe(50);
-    expect(page3Cars).toBe(50);
-    expect(page4Cars).toBe(37);
+    expect(page1Cars).toBe(187);
     
     // Verify total adds up correctly
-    expect(page1Cars + page2Cars + page3Cars + page4Cars).toBe(187);
+    expect(page1Cars).toBe(187);
     
-    // Test array slicing for each page
+    // Test array slicing for the single page
     const allCars = Array.from({ length: 187 }, (_, i) => ({ id: i + 1, model: 'A5' }));
     
     const page1 = allCars.slice((1 - 1) * carsPerPage, 1 * carsPerPage);
-    const page2 = allCars.slice((2 - 1) * carsPerPage, 2 * carsPerPage);
-    const page3 = allCars.slice((3 - 1) * carsPerPage, 3 * carsPerPage);
-    const page4 = allCars.slice((4 - 1) * carsPerPage, 4 * carsPerPage);
     
-    expect(page1.length).toBe(50);
+    expect(page1.length).toBe(187);
     expect(page1[0].id).toBe(1);
-    expect(page1[49].id).toBe(50);
-    
-    expect(page2.length).toBe(50);
-    expect(page2[0].id).toBe(51);
-    expect(page2[49].id).toBe(100);
-    
-    expect(page3.length).toBe(50);
-    expect(page3[0].id).toBe(101);
-    expect(page3[49].id).toBe(150);
-    
-    expect(page4.length).toBe(37);
-    expect(page4[0].id).toBe(151);
-    expect(page4[36].id).toBe(187);
+    expect(page1[186].id).toBe(187);
   });
 
   it('should handle edge cases for large dataset pagination', () => {
     const testCases = [
-      // Exact multiples of 50
-      { totalCars: 50, expectedPages: 1, lastPageCars: 50 },
-      { totalCars: 100, expectedPages: 2, lastPageCars: 50 },
-      { totalCars: 1000, expectedPages: 20, lastPageCars: 50 },
-      { totalCars: 5000, expectedPages: 100, lastPageCars: 50 },
+      // Exact multiples of 200
+      { totalCars: 200, expectedPages: 1, lastPageCars: 200 },
+      { totalCars: 400, expectedPages: 2, lastPageCars: 200 },
+      { totalCars: 1000, expectedPages: 5, lastPageCars: 200 },
+      { totalCars: 5000, expectedPages: 25, lastPageCars: 200 },
       
       // Non-exact multiples
-      { totalCars: 51, expectedPages: 2, lastPageCars: 1 },
-      { totalCars: 149, expectedPages: 3, lastPageCars: 49 },
-      { totalCars: 2051, expectedPages: 42, lastPageCars: 1 },
-      { totalCars: 10001, expectedPages: 201, lastPageCars: 1 },
+      { totalCars: 201, expectedPages: 2, lastPageCars: 1 },
+      { totalCars: 399, expectedPages: 2, lastPageCars: 199 },
+      { totalCars: 2001, expectedPages: 11, lastPageCars: 1 },
+      { totalCars: 10001, expectedPages: 51, lastPageCars: 1 },
       
       // Large datasets
-      { totalCars: 25000, expectedPages: 500, lastPageCars: 50 },
-      { totalCars: 50000, expectedPages: 1000, lastPageCars: 50 },
-      { totalCars: 100000, expectedPages: 2000, lastPageCars: 50 },
-      { totalCars: 180000, expectedPages: 3600, lastPageCars: 50 },
-      { totalCars: 250000, expectedPages: 5000, lastPageCars: 50 },
+      { totalCars: 25000, expectedPages: 125, lastPageCars: 200 },
+      { totalCars: 50000, expectedPages: 250, lastPageCars: 200 },
+      { totalCars: 100000, expectedPages: 500, lastPageCars: 200 },
+      { totalCars: 180000, expectedPages: 900, lastPageCars: 200 },
+      { totalCars: 250000, expectedPages: 1250, lastPageCars: 200 },
       
       // Very large datasets with remainders
-      { totalCars: 180001, expectedPages: 3601, lastPageCars: 1 },
-      { totalCars: 199999, expectedPages: 4000, lastPageCars: 49 },
-      { totalCars: 299999, expectedPages: 6000, lastPageCars: 49 },
+      { totalCars: 180001, expectedPages: 901, lastPageCars: 1 },
+      { totalCars: 199999, expectedPages: 1000, lastPageCars: 199 },
+      { totalCars: 299999, expectedPages: 1500, lastPageCars: 199 },
     ];
 
     testCases.forEach(({ totalCars, expectedPages, lastPageCars }) => {
-      const calculatedPages = Math.ceil(totalCars / 50);
-      const actualLastPageCars = totalCars % 50 || 50;
+      const calculatedPages = Math.ceil(totalCars / 200);
+      const actualLastPageCars = totalCars % 200 || 200;
       
       expect(calculatedPages).toBe(expectedPages);
       expect(actualLastPageCars).toBe(lastPageCars);
       
-      // Verify that all pages except last have 50 cars
-      const fullPages = Math.floor(totalCars / 50);
-      expect(fullPages).toBe(expectedPages - (lastPageCars === 50 ? 0 : 1));
+      // Verify that all pages except last have 200 cars
+      const fullPages = Math.floor(totalCars / 200);
+      expect(fullPages).toBe(expectedPages - (lastPageCars === 200 ? 0 : 1));
     });
   });
 
