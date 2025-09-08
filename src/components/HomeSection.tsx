@@ -41,7 +41,7 @@ const HomeSection = () => {
             </div>
             <div className="text-center modern-card p-6 hover-lift-gentle">
               <div className="text-3xl md:text-4xl font-bold gradient-text mb-1">100%</div>
-              <div className="text-sm text-muted-foreground">Profesional</div>
+              <div className="text-sm text-muted-foreground">Garancion ne Motor, Transimison dhe KM</div>
             </div>
             <div className="text-center col-span-2 md:col-span-1 modern-card p-6 hover-lift-gentle">
               <div className="text-3xl md:text-4xl font-bold gradient-text mb-1">24/7</div>
