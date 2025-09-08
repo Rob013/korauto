@@ -102,7 +102,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     currentCars: cars,
     filters,
     totalCount,
-    carsPerPage: 50,
+    carsPerPage: 200,
     enableCaching: true,
     validationEnabled: false
   });
@@ -196,7 +196,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   }, [filteredCars]);
   
   // Apply daily rotating cars when in default state, same as homepage
-  const dailyRotatingCars = useDailyRotatingCars(carsForSorting, !isDefaultState, 50);
+  const dailyRotatingCars = useDailyRotatingCars(carsForSorting, !isDefaultState, 200);
   
   // Always call useSortedCars hook (hooks must be called unconditionally)
   const sortedResults = useSortedCars(carsForSorting, sortBy);
@@ -368,8 +368,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Reset global sorting when filters change
     clearGlobalSorting();
     
-    // Use 50 cars per page for proper pagination
-    const filtersWithPagination = addPaginationToFilters(newFilters, 50, 1);
+    // Use 200 cars per page for proper pagination
+    const filtersWithPagination = addPaginationToFilters(newFilters, 200, 1);
     
     fetchCars(1, filtersWithPagination, true);
 
@@ -470,7 +470,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setCurrentPage(page);
     
     // Fetch cars for the specific page with proper API pagination
-    const filtersWithPagination = addPaginationToFilters(filters, 50, page);
+    const filtersWithPagination = addPaginationToFilters(filters, 200, page);
     fetchCars(page, filtersWithPagination, true); // Reset list for new page
     
     // Update URL with new page
@@ -563,7 +563,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       lastSortParamsRef.current = sortKey;
       
       // Check if current page is beyond available pages and reset to page 1 if needed
-      const maxPages = Math.ceil(filteredAllCars.length / 50);
+      const maxPages = Math.ceil(filteredAllCars.length / 200);
       if (currentPage > maxPages && maxPages > 0) {
         console.log(`📄 Resetting page from ${currentPage} to 1 (max available: ${maxPages})`);
         setCurrentPage(1);
@@ -647,7 +647,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       
       // Fetch cars with new filters
       promises.push(
-        fetchCars(1, { ...newFilters, per_page: "50" }, true)
+        fetchCars(1, { ...newFilters, per_page: "200" }, true)
       );
       
       await Promise.all(promises);
@@ -694,7 +694,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     try {
       if (!modelId) {
         // Fetch cars with cleared model filter
-        await fetchCars(1, { ...newFilters, per_page: "50" }, true);
+        await fetchCars(1, { ...newFilters, per_page: "200" }, true);
         setIsLoading(false);
         setIsFilterLoading(false);
         return;
@@ -707,7 +707,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           setGenerations(generationData);
           return generationData;
         }),
-        fetchCars(1, { ...newFilters, per_page: "50" }, true)
+        fetchCars(1, { ...newFilters, per_page: "200" }, true)
       ];
       
       await Promise.all(promises);
@@ -793,7 +793,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         // Load cars last - this is the most expensive operation
         const initialFilters = {
           ...urlFilters,
-          per_page: "50",
+          per_page: "200",
           page: urlCurrentPage.toString()
         };
         
@@ -907,9 +907,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Calculate total pages based on actual total count
   useEffect(() => {
     if (totalCount > 0) {
-      const calculatedPages = Math.ceil(totalCount / 50);
+      const calculatedPages = Math.ceil(totalCount / 200);
       setTotalPages(calculatedPages);
-      console.log(`📊 Calculated pagination: ${totalCount} cars across ${calculatedPages} pages (50 cars per page)`);
+      console.log(`📊 Calculated pagination: ${totalCount} cars across ${calculatedPages} pages (200 cars per page)`);
     } else {
       setTotalPages(0);
       console.log(`📊 No cars available: ${totalCount} cars, 0 pages`);
@@ -1091,7 +1091,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             onSearchCars={() => {
               console.log("Search button clicked, isMobile:", isMobile);
               // Apply search/filters
-              fetchCars(1, { ...filters, per_page: "50" }, true);
+              fetchCars(1, { ...filters, per_page: "200" }, true);
               
               // Force close filter panel on mobile (and desktop for consistency)
               setShowFilters(false);
