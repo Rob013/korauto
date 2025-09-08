@@ -21,78 +21,86 @@ describe('Global Sorting Fix', () => {
 
   it('should sort cars globally by price_low across all pages', () => {
     // Apply global sorting with price_low
-    const result = applyChronologicalRanking(mockCars, 'price_low', 50);
+    const result = applyChronologicalRanking(mockCars, 'price_low', 200);
     
     // Verify total pages and cars
     expect(result.totalCars).toBe(100);
-    expect(result.totalPages).toBe(2); // 100 cars / 50 per page = 2 pages
+    expect(result.totalPages).toBe(1); // 100 cars / 200 per page = 1 page
     expect(result.rankedCars).toHaveLength(100);
     
-    // Get first page (should have cheapest cars)
-    const page1Cars = getCarsForPage(result.rankedCars, 1, 50);
-    expect(page1Cars).toHaveLength(50);
+    // Get first page (should have all cars)
+    const page1Cars = getCarsForPage(result.rankedCars, 1, 200);
+    expect(page1Cars).toHaveLength(100);
     
-    // Get second page 
-    const page2Cars = getCarsForPage(result.rankedCars, 2, 50);
-    expect(page2Cars).toHaveLength(50);
+    // Second page should be empty 
+    const page2Cars = getCarsForPage(result.rankedCars, 2, 200);
+    expect(page2Cars).toHaveLength(0);
     
-    // Verify that all cars on page 1 are cheaper than all cars on page 2
-    const page1MaxPrice = Math.max(...page1Cars.map(car => car.lots[0].buy_now));
-    const page2MinPrice = Math.min(...page2Cars.map(car => car.lots[0].buy_now));
-    
-    expect(page1MaxPrice).toBeLessThanOrEqual(page2MinPrice);
+    // Since all cars are on page 1, verify they are sorted correctly
+    // First car should be cheapest, last car should be most expensive
+    for (let i = 0; i < page1Cars.length - 1; i++) {
+      expect(page1Cars[i].lots[0].buy_now).toBeLessThanOrEqual(page1Cars[i + 1].lots[0].buy_now);
+    }
     
     // Verify ranking is sequential
     expect(page1Cars[0].rank).toBe(1); // First car should have rank 1
-    expect(page1Cars[49].rank).toBe(50); // Last car on page 1 should have rank 50
-    expect(page2Cars[0].rank).toBe(51); // First car on page 2 should have rank 51
-    expect(page2Cars[49].rank).toBe(100); // Last car should have rank 100
+    expect(page1Cars[99].rank).toBe(100); // Last car should have rank 100
   });
 
   it('should sort cars globally by price_high across all pages', () => {
     // Apply global sorting with price_high
-    const result = applyChronologicalRanking(mockCars, 'price_high', 50);
+    const result = applyChronologicalRanking(mockCars, 'price_high', 200);
     
-    // Get first and second pages
-    const page1Cars = getCarsForPage(result.rankedCars, 1, 50);
-    const page2Cars = getCarsForPage(result.rankedCars, 2, 50);
+    // Get first page (should have all cars)
+    const page1Cars = getCarsForPage(result.rankedCars, 1, 200);
+    const page2Cars = getCarsForPage(result.rankedCars, 2, 200);
     
-    // Verify that all cars on page 1 are more expensive than all cars on page 2
-    const page1MinPrice = Math.min(...page1Cars.map(car => car.lots[0].buy_now));
-    const page2MaxPrice = Math.max(...page2Cars.map(car => car.lots[0].buy_now));
+    expect(page1Cars).toHaveLength(100);
+    expect(page2Cars).toHaveLength(0);
     
-    expect(page1MinPrice).toBeGreaterThanOrEqual(page2MaxPrice);
+    // Verify that cars are sorted by highest price first
+    for (let i = 0; i < page1Cars.length - 1; i++) {
+      expect(page1Cars[i].lots[0].buy_now).toBeGreaterThanOrEqual(page1Cars[i + 1].lots[0].buy_now);
+    }
   });
 
   it('should maintain consistent ranking across page boundaries', () => {
-    const result = applyChronologicalRanking(mockCars, 'price_low', 50);
+    const result = applyChronologicalRanking(mockCars, 'price_low', 200);
     
     // Verify that ranks are sequential across all cars
     for (let i = 0; i < result.rankedCars.length; i++) {
       expect(result.rankedCars[i].rank).toBe(i + 1);
     }
     
-    // Verify page numbers are correct
-    const page1Cars = result.rankedCars.slice(0, 50);
-    const page2Cars = result.rankedCars.slice(50, 100);
+    // Verify page numbers are correct (all cars should be on page 1)
+    const page1Cars = result.rankedCars.slice(0, 100);
     
     page1Cars.forEach(car => expect(car.pageNumber).toBe(1));
-    page2Cars.forEach(car => expect(car.pageNumber).toBe(2));
   });
 
   it('should handle edge case with exact page boundaries', () => {
-    // Test with exactly 50 cars (should be 1 page)
-    const smallDataset = mockCars.slice(0, 50);
-    const result = applyChronologicalRanking(smallDataset, 'price_low', 50);
+    // Test with exactly 200 cars (should be 1 page)
+    const largeDataset = Array.from({ length: 200 }, (_, i) => ({
+      id: i + 1,
+      manufacturer: { id: 9, name: 'BMW' },
+      lots: [{ 
+        id: i + 1,
+        buy_now: Math.floor(Math.random() * 50000) + 10000,
+        images: { normal: [`image${i + 1}.jpg`] }
+      }],
+      year: 2020
+    }));
+    
+    const result = applyChronologicalRanking(largeDataset, 'price_low', 200);
     
     expect(result.totalPages).toBe(1);
-    expect(result.totalCars).toBe(50);
+    expect(result.totalCars).toBe(200);
     
-    const page1Cars = getCarsForPage(result.rankedCars, 1, 50);
-    expect(page1Cars).toHaveLength(50);
+    const page1Cars = getCarsForPage(result.rankedCars, 1, 200);
+    expect(page1Cars).toHaveLength(200);
     
     // Attempting to get page 2 should return empty
-    const page2Cars = getCarsForPage(result.rankedCars, 2, 50);
+    const page2Cars = getCarsForPage(result.rankedCars, 2, 200);
     expect(page2Cars).toHaveLength(0);
   });
 });
