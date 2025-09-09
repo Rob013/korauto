@@ -210,6 +210,43 @@ const EquipmentOptionsSection = memo(({
 });
 EquipmentOptionsSection.displayName = "EquipmentOptionsSection";
 const CarDetails = memo(() => {
+  // Translation functions for Albanian
+  const translateTransmission = (transmission: string): string => {
+    const transmissionMap: Record<string, string> = {
+      'automatic': 'automatik',
+      'manual': 'manual',
+      'cvt': 'CVT',
+      'semiautomatic': 'gjysëm automatik',
+      'automated manual': 'manual i automatizuar'
+    };
+    return transmissionMap[transmission?.toLowerCase()] || transmission;
+  };
+
+  const translateColor = (color: string): string => {
+    const colorMap: Record<string, string> = {
+      'black': 'zi',
+      'white': 'bardhë',
+      'grey': 'gri',
+      'gray': 'gri',
+      'red': 'kuq',
+      'blue': 'blu',
+      'silver': 'argjend',
+      'green': 'jeshil',
+      'yellow': 'verdh',
+      'brown': 'kafe',
+      'orange': 'portokalli',
+      'purple': 'vjollcë',
+      'pink': 'rozë',
+      'gold': 'ar',
+      'beige': 'bezhë',
+      'dark blue': 'blu i errët',
+      'light blue': 'blu i çelët',
+      'dark green': 'jeshil i errët',
+      'light green': 'jeshil i çelët'
+    };
+    return colorMap[color?.toLowerCase()] || color;
+  };
+
   const {
     id: lot
   } = useParams<{
@@ -1025,7 +1062,7 @@ const CarDetails = memo(() => {
                         <span className="font-medium text-foreground">Transmisioni</span>
                       </div>
                       <span className="text-muted-foreground font-medium capitalize">
-                        {car.transmission}
+                        {translateTransmission(car.transmission)}
                       </span>
                     </div>}
 
@@ -1045,7 +1082,7 @@ const CarDetails = memo(() => {
                         <span className="font-medium text-foreground">Ngjyra</span>
                       </div>
                       <span className="text-muted-foreground font-medium capitalize">
-                        {car.color}
+                        {translateColor(car.color)}
                       </span>
                     </div>}
 
