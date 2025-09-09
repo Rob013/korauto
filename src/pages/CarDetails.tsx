@@ -1082,9 +1082,9 @@ const CarDetails = memo(() => {
                       </>}
                     {/* Show indicators for available detailed data */}
                     {!showDetailedInfo && <div className="ml-2 flex gap-1">
-                        {car.details?.options && <div className="w-2 h-2 bg-green-500 rounded-full" title="Equipment & Options available" />}
-                        {car.insurance_v2 && <div className="w-2 h-2 bg-blue-500 rounded-full" title="Insurance report available" />}
-                        {(car.details?.inspect_outer || car.details?.inspect?.inner) && <div className="w-2 h-2 bg-purple-500 rounded-full" title="Inspection data available" />}
+                        {car.details?.options && <div className="w-2 h-2 bg-green-500 rounded-full" title="Pajisjet dhe Opsionet në dispozicion" />}
+                        {car.insurance_v2 && <div className="w-2 h-2 bg-blue-500 rounded-full" title="Raporti i sigurimeve në dispozicion" />}
+                        {(car.details?.inspect_outer || car.details?.inspect?.inner) && <div className="w-2 h-2 bg-purple-500 rounded-full" title="Të dhënat e inspektimit në dispozicion" />}
                       </div>}
                   </Button>
                 </div>
