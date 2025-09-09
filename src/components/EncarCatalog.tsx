@@ -346,6 +346,50 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     localStorage.setItem('catalog-lock-state', newLockState.toString());
   }, [catalogLocked]);
 
+  // Debounced filter toggle to prevent rapid clicking issues
+  const handleFilterToggle = useCallback(
+    debounce((e: React.MouseEvent) => {
+      // Prevent event bubbling and ensure click is processed
+      e.preventDefault();
+      e.stopPropagation();
+      
+      console.log("Filter toggle clicked, current showFilters:", showFilters, "isMobile:", isMobile);
+      
+      const newShowState = !showFilters;
+      
+      // Update state
+      setShowFilters(newShowState);
+      
+      // Update explicit close tracking
+      if (newShowState) {
+        setHasExplicitlyClosed(false);
+        console.log("Opening filters, reset explicit close flag");
+      } else {
+        setHasExplicitlyClosed(true);
+        console.log("Closing filters, set explicit close flag");
+      }
+      
+      // Use a single shorter timeout for DOM sync if needed (mobile only)
+      if (isMobile) {
+        setTimeout(() => {
+          const filterPanel = document.querySelector('[data-filter-panel]') as HTMLElement;
+          if (filterPanel) {
+            if (newShowState) {
+              filterPanel.style.transform = 'translateX(0)';
+              filterPanel.style.visibility = 'visible';
+              console.log("Mobile: Synced filter panel to show");
+            } else {
+              filterPanel.style.transform = 'translateX(-100%)';
+              filterPanel.style.visibility = 'hidden';
+              console.log("Mobile: Synced filter panel to hide");
+            }
+          }
+        }, 50); // Reduced from 100ms to 50ms to reduce race conditions
+      }
+    }, 250), // 250ms debounce to prevent rapid clicking
+    [showFilters, isMobile, setShowFilters, setHasExplicitlyClosed]
+  );
+
   // Set up swipe gestures for main content (swipe right to show filters)
   useSwipeGesture(mainContentRef, {
     onSwipeRight: handleSwipeRightToShowFilters,
@@ -1171,45 +1215,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 <Button
   variant="default"
   size="lg"
-  onClick={(e) => {
-    // Prevent event bubbling and ensure click is processed
-    e.preventDefault();
-    e.stopPropagation();
-    
-    console.log("Filter toggle clicked, current showFilters:", showFilters, "isMobile:", isMobile);
-    
-    const newShowState = !showFilters;
-    
-    // Force state update with callback to ensure it's applied
-    setShowFilters(newShowState);
-    
-    // Update explicit close tracking
-    if (newShowState) {
-      setHasExplicitlyClosed(false);
-      console.log("Opening filters, reset explicit close flag");
-    } else {
-      setHasExplicitlyClosed(true);
-      console.log("Closing filters, set explicit close flag");
-    }
-    
-    // On mobile, add additional DOM manipulation as backup
-    if (isMobile) {
-      setTimeout(() => {
-        const filterPanel = document.querySelector('[data-filter-panel]') as HTMLElement;
-        if (filterPanel) {
-          if (newShowState) {
-            filterPanel.style.transform = 'translateX(0)';
-            filterPanel.style.visibility = 'visible';
-            console.log("Mobile: Forced filter panel to show");
-          } else {
-            filterPanel.style.transform = 'translateX(-100%)';
-            filterPanel.style.visibility = 'hidden';
-            console.log("Mobile: Forced filter panel to hide");
-          }
-        }
-      }, 50); // Small delay to ensure state update has propagated
-    }
-  }}
+  onClick={handleFilterToggle}
   className="flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 transition-transform"
 >
                   {showFilters ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
