@@ -1015,7 +1015,7 @@ const CarDetails = memo(() => {
                         <span className="font-medium text-foreground">Kilometrazh</span>
                       </div>
                       <span className="text-muted-foreground font-medium">
-                        {car.mileage?.toLocaleString()}
+                        {car.mileage?.toLocaleString()}km
                       </span>
                     </div>}
 
