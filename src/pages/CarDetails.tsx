@@ -1089,7 +1089,7 @@ const CarDetails = memo(() => {
                   {car.vin && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-2">
                         <Hash className="h-4 w-4 text-primary flex-shrink-0" />
-                        <span className="font-medium text-foreground">VIN</span>
+                        <span className="font-medium text-foreground">Numri i shasisë</span>
                       </div>
                       <span className="text-muted-foreground font-medium font-mono text-sm">
                         {car.vin}
