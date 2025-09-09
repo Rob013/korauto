@@ -498,8 +498,9 @@ const CarDetails = memo(() => {
           const lotData = typeof cachedCar.lot_data === "string" ? JSON.parse(cachedCar.lot_data || "{}") : cachedCar.lot_data || {};
           const images = typeof cachedCar.images === "string" ? JSON.parse(cachedCar.images || "[]") : cachedCar.images || [];
           const basePrice = lotData.buy_now || cachedCar.price;
-          if (!basePrice) {
-            console.log("Car doesn't have buy_now pricing, redirecting to catalog");
+          // Enhanced validation to ensure consistent pricing
+          if (!basePrice || typeof basePrice !== 'number' || isNaN(basePrice) || basePrice <= 0) {
+            console.log("Car doesn't have valid buy_now pricing, redirecting to catalog. Price:", basePrice);
             navigate('/catalog');
             return;
           }
@@ -573,8 +574,9 @@ const CarDetails = memo(() => {
             if (carData && carData.lots && carData.lots[0] && isMounted) {
               const lotData = carData.lots[0];
               const basePrice = lotData.buy_now;
-              if (!basePrice) {
-                console.log("Car doesn't have buy_now pricing, redirecting to catalog");
+              // Enhanced validation to ensure consistent pricing
+              if (!basePrice || typeof basePrice !== 'number' || isNaN(basePrice) || basePrice <= 0) {
+                console.log("Car doesn't have valid buy_now pricing, redirecting to catalog. Price:", basePrice);
                 navigate('/catalog');
                 return;
               }
@@ -674,8 +676,9 @@ const CarDetails = memo(() => {
         const lotData = carData.lots?.[0];
         if (!lotData) throw new Error("Missing lot data");
         const basePrice = lotData.buy_now;
-        if (!basePrice) {
-          console.log("Car doesn't have buy_now pricing, redirecting to catalog");
+        // Enhanced validation to ensure consistent pricing
+        if (!basePrice || typeof basePrice !== 'number' || isNaN(basePrice) || basePrice <= 0) {
+          console.log("Car doesn't have valid buy_now pricing, redirecting to catalog. Price:", basePrice);
           navigate('/catalog');
           return;
         }
@@ -737,8 +740,9 @@ const CarDetails = memo(() => {
             console.log("Using fallback car data for:", lot);
             const lotData = fallbackCar.lots[0];
             const basePrice = lotData.buy_now || fallbackCar.price;
-            if (!basePrice) {
-              console.log("Fallback car doesn't have buy_now pricing, showing error");
+            // Enhanced validation to ensure consistent pricing
+            if (!basePrice || typeof basePrice !== 'number' || isNaN(basePrice) || basePrice <= 0) {
+              console.log("Fallback car doesn't have valid buy_now pricing, showing error. Price:", basePrice);
               throw new Error("Car pricing not available");
             }
             const price = calculateFinalPriceEUR(basePrice, exchangeRate.rate);

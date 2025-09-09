@@ -31,6 +31,15 @@ export const filterCarsWithRealPricing = <T>(cars: T[]): T[] => {
  * @returns Final price in EUR (base price converted + 2200 EUR markup)
  */
 export const calculateFinalPriceEUR = (basePriceUSD: number, usdToEurRate: number): number => {
+  // Validate inputs to ensure consistent pricing calculations
+  if (typeof basePriceUSD !== 'number' || isNaN(basePriceUSD) || basePriceUSD <= 0) {
+    throw new Error(`Invalid base price USD: ${basePriceUSD}. Must be a positive number.`);
+  }
+  
+  if (typeof usdToEurRate !== 'number' || isNaN(usdToEurRate) || usdToEurRate <= 0) {
+    throw new Error(`Invalid USD to EUR rate: ${usdToEurRate}. Must be a positive number.`);
+  }
+  
   const basePriceEUR = Math.round(basePriceUSD * usdToEurRate);
   return basePriceEUR + 2200; // Add 2200 EUR markup
 };
