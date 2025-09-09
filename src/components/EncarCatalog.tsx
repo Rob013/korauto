@@ -1070,10 +1070,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         className={`
         fixed lg:relative z-40 glass-card transition-transform duration-300 ease-in-out
         ${showFilters ? 'translate-x-0' : '-translate-x-full lg:hidden'}
-        ${isMobile ? 'top-0 left-0 right-0 bottom-0 w-full h-dvh overflow-y-auto safe-area-inset rounded-none' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0 overflow-y-auto rounded-lg'} 
+        ${isMobile ? 'mobile-filter-panel top-0 left-0 right-0 bottom-0 w-full rounded-none' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0 overflow-y-auto rounded-lg'} 
         lg:shadow-none
       `}>
-        <div className={`${isMobile ? 'mobile-filter-compact filter-header bg-primary text-primary-foreground' : 'p-3 sm:p-4 border-b flex-shrink-0'}`}>
+        <div className={`${isMobile ? 'mobile-filter-compact filter-header bg-primary text-primary-foreground safe-area-inset-top' : 'p-3 sm:p-4 border-b flex-shrink-0'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Filter className={`h-4 w-4 sm:h-5 sm:w-5 ${isMobile ? 'text-primary-foreground' : 'text-primary'}`} />
@@ -1115,7 +1115,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           </div>
         </div>
         
-        <div className={`flex-1 overflow-y-auto ${isMobile ? 'mobile-filter-content mobile-filter-compact' : 'p-3 sm:p-4'}`}>
+        <div className={`flex-1 overflow-y-auto ${isMobile ? 'mobile-filter-content mobile-filter-compact safe-area-inset-bottom safe-area-inset-left safe-area-inset-right' : 'p-3 sm:p-4'}`}>
           <div className={`${isMobile ? '' : ''}`}>
             <EncarStyleFilter
             filters={filters}
