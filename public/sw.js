@@ -1,7 +1,8 @@
 // Service Worker for caching API responses and static assets
-const CACHE_NAME = 'korauto-v1';
-const STATIC_CACHE_NAME = 'korauto-static-v1';
-const ASSETS_CACHE_NAME = 'korauto-assets-v1';
+const VERSION = new Date().getTime(); // Use timestamp for versioning
+const CACHE_NAME = `korauto-v${VERSION}`;
+const STATIC_CACHE_NAME = `korauto-static-v${VERSION}`;
+const ASSETS_CACHE_NAME = `korauto-assets-v${VERSION}`;
 
 // Static assets to cache
 const STATIC_ASSETS = [
@@ -102,6 +103,12 @@ self.addEventListener('fetch', (event) => {
   // Handle static assets
   if (STATIC_ASSETS.includes(url.pathname)) {
     event.respondWith(handleStaticRequest(request));
+    return;
+  }
+
+  // Handle HTML documents (network first to ensure latest version)
+  if (request.mode === 'navigate' || (request.method === 'GET' && request.headers.get('accept')?.includes('text/html'))) {
+    event.respondWith(handleHTMLRequest(request));
     return;
   }
 
@@ -256,6 +263,27 @@ async function handleFontRequest(request) {
     }
     return networkResponse;
   } catch (error) {
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    throw error;
+  }
+}
+
+// Handle HTML documents with network-first strategy
+async function handleHTMLRequest(request) {
+  try {
+    // Always try network first for HTML to ensure latest version
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch (error) {
+    // Fallback to cache if network fails
+    const cache = await caches.open(CACHE_NAME);
+    const cachedResponse = await cache.match(request);
     if (cachedResponse) {
       return cachedResponse;
     }
