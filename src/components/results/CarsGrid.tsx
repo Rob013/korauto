@@ -1,5 +1,5 @@
 import { memo, forwardRef, useCallback, useMemo } from 'react';
-import { FixedSizeGrid as Grid, GridChildComponentProps } from 'react-window';
+// import { FixedSizeGrid as Grid, GridChildComponentProps } from 'react-window'; // Temporarily disabled for performance optimization
 import { CarListing } from '@/lib/search/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -140,26 +140,15 @@ const CarCardSkeleton = memo(() => (
 
 CarCardSkeleton.displayName = 'CarCardSkeleton';
 
-// Grid item component
-const GridItem = memo(({ columnIndex, rowIndex, style, data }: GridChildComponentProps) => {
-  const { cars, onCarClick, columnCount, loading } = data;
-  const itemIndex = rowIndex * columnCount + columnIndex;
-  const car = cars[itemIndex];
-
-  // Priority loading for first row
-  const isPriority = rowIndex === 0;
-
+// Grid item component - simplified fallback
+const GridItem = memo(({ car, onCarClick, isPriority }: { car: any; onCarClick: any; isPriority: boolean }) => {
   return (
-    <div style={style} className="p-2">
-      {loading || !car ? (
-        <CarCardSkeleton />
-      ) : (
-        <CarCard 
-          car={car} 
-          onCarClick={onCarClick} 
-          priority={isPriority}
-        />
-      )}
+    <div className="p-2">
+      <CarCard 
+        car={car} 
+        onCarClick={onCarClick} 
+        priority={isPriority}
+      />
     </div>
   );
 });
@@ -171,100 +160,38 @@ export const CarsGrid = memo(({
   loading = false,
   onCarClick,
   className = '',
-  width,
-  height,
-  columnCount = 4,
-  rowHeight = 280,
-}: CarsGridProps) => {
-  // Calculate responsive column count based on width
-  const responsiveColumnCount = useMemo(() => {
-    if (width < 640) return 1; // Mobile
-    if (width < 1024) return 2; // Tablet
-    if (width < 1280) return 3; // Small desktop
-    return columnCount; // Large desktop
-  }, [width, columnCount]);
-
-  const columnWidth = useMemo(() => {
-    return Math.floor(width / responsiveColumnCount);
-  }, [width, responsiveColumnCount]);
-
-  // Calculate number of rows needed
-  const rowCount = useMemo(() => {
-    if (loading) {
-      // Show skeleton rows
-      return Math.ceil(responsiveColumnCount * 2);
-    }
-    return Math.ceil(cars.length / responsiveColumnCount);
-  }, [cars.length, responsiveColumnCount, loading]);
-
-  // Prepare data for grid items
-  const itemData = useMemo(() => ({
-    cars,
-    onCarClick,
-    columnCount: responsiveColumnCount,
-    loading,
-  }), [cars, onCarClick, responsiveColumnCount, loading]);
-
+}: Omit<CarsGridProps, 'width' | 'height'>) => {
   if (!loading && cars.length === 0) {
     return (
       <div className={`flex flex-col items-center justify-center py-12 ${className}`}>
         <Car className="h-12 w-12 text-muted-foreground mb-4" />
-        <h3 className="text-lg font-medium text-muted-foreground mb-2">
-          No cars found
-        </h3>
-        <p className="text-sm text-muted-foreground text-center max-w-md">
-          Try adjusting your filters or search criteria to find more results.
-        </p>
+        <h3 className="text-lg font-medium text-muted-foreground mb-2">No cars found</h3>
       </div>
     );
   }
 
   return (
-    <div className={className}>
-      <Grid
-        columnCount={responsiveColumnCount}
-        columnWidth={columnWidth}
-        height={height}
-        rowCount={rowCount}
-        rowHeight={rowHeight}
-        width={width}
-        itemData={itemData}
-        overscanRowCount={1}
-        overscanColumnCount={0}
-      >
-        {GridItem}
-      </Grid>
+    <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 ${className}`}>
+      {loading ? 
+        [...Array(12)].map((_, i) => <CarCardSkeleton key={i} />) :
+        cars.map((car) => (
+          <CarCard key={car.id} car={car} onCarClick={onCarClick} />
+        ))
+      }
     </div>
   );
 });
 
 CarsGrid.displayName = 'CarsGrid';
 
-// Higher-order component to handle container sizing
-export const ResponsiveCarsGrid = forwardRef<
-  HTMLDivElement,
-  Omit<CarsGridProps, 'width' | 'height'> & {
-    height?: number;
-    minHeight?: number;
-  }
->(({ height = 600, minHeight = 400, ...props }, ref) => {
-  return (
-    <div 
-      ref={ref}
-      className="w-full"
-      style={{ height: Math.max(height, minHeight) }}
-    >
-      <div className="w-full h-full">
-        {/* This would typically use a resize observer or similar to get actual dimensions */}
-        {/* For now, we'll use a simple approach */}
-        <CarsGrid
-          {...props}
-          width={1200} // This should be dynamically calculated
-          height={height}
-        />
+export const ResponsiveCarsGrid = forwardRef<HTMLDivElement, Omit<CarsGridProps, 'width' | 'height'>>(
+  (props, ref) => {
+    return (
+      <div ref={ref} className="w-full">
+        <CarsGrid {...props} />
       </div>
-    </div>
-  );
-});
+    );
+  }
+);
 
 ResponsiveCarsGrid.displayName = 'ResponsiveCarsGrid';

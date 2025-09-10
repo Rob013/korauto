@@ -4,6 +4,8 @@ import { RefreshCw, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
+import { logger } from '@/utils/performance-optimizer';
+
 export const CarsSyncButton = () => {
   const [syncing, setSyncing] = useState(false);
   const { toast } = useToast();
@@ -11,7 +13,7 @@ export const CarsSyncButton = () => {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      console.log('🚀 Starting cars sync...');
+      logger.log('🚀 Starting cars sync...');
       
       const { data, error } = await supabase.functions.invoke('cars-sync', {
         method: 'POST'
@@ -21,7 +23,7 @@ export const CarsSyncButton = () => {
         throw error;
       }
 
-      console.log('✅ Sync completed:', data);
+      logger.log('✅ Sync completed:', data);
       
       toast({
         title: "Sync Completed",
@@ -33,7 +35,7 @@ export const CarsSyncButton = () => {
       window.location.reload();
       
     } catch (error) {
-      console.error('❌ Sync failed:', error);
+      logger.error('❌ Sync failed:', error);
       toast({
         title: "Sync Failed",
         description: "Failed to sync cars from API. Please try again.",

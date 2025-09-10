@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useCallback, useMemo } from 'react';
-import { FixedSizeGrid as Grid } from 'react-window';
+// import { FixedSizeGrid as Grid } from 'react-window'; // Temporarily disabled for performance optimization
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
