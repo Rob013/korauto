@@ -13,7 +13,15 @@
     <link rel="dns-prefetch" href="https://iyezkczshcgbcgpswpyg.supabase.co">
     <link rel="dns-prefetch" href="https://korautoks.com">
     
-    <!-- Critical CSS will be inlined by Vite -->
+    <!-- Preload critical resources -->
+    <link rel="modulepreload" href="/src/main.tsx">
+    <style>
+      /* Critical CSS - Prevent FOUC */
+      html { font-family: system-ui, sans-serif; }
+      body { margin: 0; background: #ffffff; }
+      #root { min-height: 100vh; }
+      .dark body { background: #0a0a0a; }
+    </style>
     
     <!-- Favicon and Icons -->
     <link rel="icon" href="/lovable-uploads/7a3e2aa4-2a3b-4320-b33c-72d3d7721cfd.png" type="image/png">
