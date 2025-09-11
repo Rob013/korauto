@@ -169,9 +169,9 @@ const ApiInfoDashboard = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <header className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">API Information Dashboard</h2>
+          <h1 className="text-2xl font-bold tracking-tight">API Information Dashboard</h1>
           <p className="text-muted-foreground">
             Comprehensive overview of all available APIs, data sources, and mappings
           </p>
@@ -180,7 +180,7 @@ const ApiInfoDashboard = () => {
           <RefreshCw className="h-4 w-4 mr-2" />
           Refresh
         </Button>
-      </div>
+      </header>
 
       {/* Stats Overview */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
