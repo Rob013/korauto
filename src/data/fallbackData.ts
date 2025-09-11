@@ -19,8 +19,22 @@ export const fallbackCars = [
       buy_now: 32000,
       odometer: { km: 25000 },
       images: {
-        normal: ["/images/placeholder-car.jpg"],
-        big: ["/images/placeholder-car.jpg"]
+        normal: [
+          "/images/placeholder-car.jpg",
+          "https://picsum.photos/800/600?random=1",
+          "https://picsum.photos/800/600?random=2",
+          "https://picsum.photos/800/600?random=3",
+          "https://picsum.photos/800/600?random=4",
+          "https://picsum.photos/800/600?random=5"
+        ],
+        big: [
+          "/images/placeholder-car.jpg",
+          "https://picsum.photos/1200/900?random=1",
+          "https://picsum.photos/1200/900?random=2",
+          "https://picsum.photos/1200/900?random=3",
+          "https://picsum.photos/1200/900?random=4",
+          "https://picsum.photos/1200/900?random=5"
+        ]
       },
       lot: "FB001",
       status: 1
