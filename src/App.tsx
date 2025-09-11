@@ -125,99 +125,112 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-          <Routes>
-            <Route path="/" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <Index />
-              </Suspense>
-            } />
-            <Route path="/catalog" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <Catalog />
-              </Suspense>
-            } />
-            <Route path="/car/:id" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <CarDetails />
-              </Suspense>
-            } />
-            <Route path="/admin" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <AdminDashboard />
-              </Suspense>
-            } />
-            <Route path="/admin/sync" element={
-              <Suspense fallback={<AdminSyncSkeleton />}>
-                <AdminSyncDashboard />
-              </Suspense>
-            } />
-            <Route path="/auth" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <AuthPage />
-              </Suspense>
-            } />
-            <Route path="/auth/confirm" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <EmailConfirmationPage />
-              </Suspense>
-            } />
-            <Route path="/account" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <MyAccount />
-              </Suspense>
-            } />
-            <Route path="/favorites" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <FavoritesPage />
-              </Suspense>
-            } />
-            <Route path="/inspections" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <InspectionServices />
-              </Suspense>
-            } />
-            <Route path="/contacts" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <Contacts />
-              </Suspense>
-            } />
-            <Route path="/tracking" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <ShipmentTracking />
-              </Suspense>
-            } />
-            {/* Demo routes removed - no longer needed */}
-            <Route path="/performance" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <PerformanceDashboard />
-              </Suspense>
-            } />
-            <Route path="/cookie-management" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <CookieManagementDashboard />
-              </Suspense>
-            } />
-            <Route path="/audit-test" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <AuditTestPage />
-              </Suspense>
-            } />
-            <Route path="/api-info-demo" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <ApiInfoDemo />
-              </Suspense>
-            } />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <NotFound />
-              </Suspense>
-            } />
-          </Routes>
-        </BrowserRouter>
-        <InstallPrompt />
-      </TooltipProvider>
-      </StatusRefreshProvider>
+            <div className="min-h-screen flex flex-col">
+              <main role="main" className="flex-1">
+                <Routes>
+                  <Route path="/" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <Index />
+                    </Suspense>
+                  } />
+                  <Route path="/catalog" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <Catalog />
+                    </Suspense>
+                  } />
+                  <Route path="/car/:id" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <CarDetails />
+                    </Suspense>
+                  } />
+                  <Route path="/admin" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <AdminDashboard />
+                    </Suspense>
+                  } />
+                  <Route path="/admin/sync" element={
+                    <Suspense fallback={<AdminSyncSkeleton />}>
+                      <AdminSyncDashboard />
+                    </Suspense>
+                  } />
+                  <Route path="/auth" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <AuthPage />
+                    </Suspense>
+                  } />
+                  <Route path="/account" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <MyAccount />
+                    </Suspense>
+                  } />
+                  <Route path="/favorites" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <FavoritesPage />
+                    </Suspense>
+                  } />
+                  <Route path="/inspection-services" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <InspectionServices />
+                    </Suspense>
+                  } />
+                  <Route path="/contacts" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <Contacts />
+                    </Suspense>
+                  } />
+                  <Route path="/tracking" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <ShipmentTracking />
+                    </Suspense>
+                  } />
+                  <Route path="/email-confirmation" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <EmailConfirmationPage />
+                    </Suspense>
+                  } />
+                  <Route path="/demo" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <div>Demo page not available</div>
+                    </Suspense>
+                  } />
+                  <Route path="/performance" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <PerformanceDashboard />
+                    </Suspense>
+                  } />
+                  <Route path="/diagram-demo" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <div>Diagram demo not available</div>
+                    </Suspense>
+                  } />
+                  <Route path="/cookie-management" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <CookieManagementDashboard />
+                    </Suspense>
+                  } />
+                  <Route path="/audit-test" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <AuditTestPage />
+                    </Suspense>
+                  } />
+                  <Route path="/api-info-demo" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <ApiInfoDemo />
+                    </Suspense>
+                  } />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <NotFound />
+                    </Suspense>
+                  } />
+                </Routes>
+              </main>
+            </div>
+          </BrowserRouter>
+          <InstallPrompt />
+        </TooltipProvider>
+        </StatusRefreshProvider>
     </QueryClientProvider>
   );
 };
