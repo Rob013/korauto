@@ -221,7 +221,6 @@ const CarDetails = memo(() => {
     };
     return transmissionMap[transmission?.toLowerCase()] || transmission;
   };
-
   const translateColor = (color: string): string => {
     const colorMap: Record<string, string> = {
       'black': 'zi',
@@ -246,7 +245,6 @@ const CarDetails = memo(() => {
     };
     return colorMap[color?.toLowerCase()] || color;
   };
-
   const {
     id: lot
   } = useParams<{
@@ -849,7 +847,8 @@ const CarDetails = memo(() => {
     // Navigate to gallery page with images data
     navigate(`/car/${lot}/gallery`, {
       state: {
-        images: images.slice(0, 20), // Limit to 20 images as specified
+        images: images.slice(0, 20),
+        // Limit to 20 images as specified
         carMake: car?.make,
         carModel: car?.model,
         carYear: car?.year,
@@ -987,7 +986,9 @@ const CarDetails = memo(() => {
 
                   
                   {/* Mobile gallery counter with preview - MOBILE ONLY */}
-                  {images.length > 1 && <div className="mobile-gallery-counter md:hidden" onClick={handleGalleryClick} style={{cursor: 'pointer'}}>
+                  {images.length > 1 && <div className="mobile-gallery-counter md:hidden" onClick={handleGalleryClick} style={{
+                  cursor: 'pointer'
+                }}>
                     <div className="mobile-gallery-preview">
                       <img src={images[Math.min(selectedImageIndex, images.length - 1)]} alt="Preview" />
                     </div>
@@ -998,7 +999,7 @@ const CarDetails = memo(() => {
                   </div>}
                   
                   {/* Swipe hint for mobile */}
-                  {images.length > 1 && <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white text-xs bg-black/50 px-2 py-1 rounded sm:hidden">
+                  {images.length > 1 && <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white text-xs bg-black/50 rounded sm:hidden my-[26px] mx-0 px-0 py-0">
                       Swipe to see more photos
                     </div>}
                   
