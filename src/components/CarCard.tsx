@@ -412,20 +412,21 @@ const CarCard = ({
 
   return (
     <div
-      className="glass-card card-hover overflow-hidden cursor-pointer group touch-manipulation relative rounded-lg"
+      className="glass-card card-hover overflow-hidden cursor-pointer group touch-manipulation relative rounded-xl transition-all duration-300 hover:shadow-2xl hover:-translate-y-2"
       onClick={handleCardClick}
       style={{
-        // Prevent layout shifts by setting fixed dimensions
-        minHeight: '320px',
-        aspectRatio: '280/320'
+        // Prevent layout shifts by setting fixed dimensions - more compact
+        minHeight: '280px',
+        aspectRatio: '280/280'
       }}
     >
-      <div className="relative h-40 bg-muted overflow-hidden">
+      {/* Image section - more compact */}
+      <div className="relative h-32 bg-muted overflow-hidden">
         {image ? (
           <OptimizedImage
             src={image}
             alt={`${year} ${make} ${model}`}
-            className="w-full h-full group-hover:scale-110 transition-transform duration-500 ease-out"
+            className="w-full h-full group-hover:scale-110 transition-transform duration-500 ease-out object-cover"
             width={280}
             priority={false}
             enableLazyLoad={true}
@@ -434,9 +435,9 @@ const CarCard = ({
         ) : (
           <div 
             className="w-full h-full flex items-center justify-center bg-muted"
-            style={{ aspectRatio: '280/160' }}
+            style={{ aspectRatio: '280/128' }}
           >
-            <Car className="h-16 w-16 text-muted-foreground" />
+            <Car className="h-12 w-12 text-muted-foreground" />
           </div>
         )}
         {/* Status Badge - Takes priority over lot number */}
@@ -445,7 +446,7 @@ const CarCard = ({
           
           if (statusBadge.show) {
             return (
-              <div className={`absolute top-2 left-2 ${statusBadge.className} px-3 py-1 rounded text-xs font-bold shadow-lg z-10`}>
+              <div className={`absolute top-2 left-2 ${statusBadge.className} px-2 py-1 rounded-md text-xs font-medium shadow-lg z-10`}>
                 {statusBadge.text}
               </div>
             );
@@ -453,64 +454,69 @@ const CarCard = ({
           
           // Show lot number if no status badge and lot exists
           return lot ? (
-            <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-semibold">
-              Kodi #{lot}
+            <div className="absolute top-2 right-2 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-2 py-1 rounded-md text-xs font-medium shadow-md">
+              #{lot}
             </div>
           ) : null;
         })()}
       </div>
 
-      <div className="p-3 flex flex-col flex-1" style={{ minHeight: '160px' }}>
+      {/* Content section - more compact */}
+      <div className="p-3 flex flex-col flex-1" style={{ minHeight: '148px' }}>
+        {/* Title section - compact */}
         <div className="mb-2">
-          <h3 className="text-base font-semibold text-foreground line-clamp-1" style={{ minHeight: '1.5rem' }}>
+          <h3 className="text-sm font-semibold text-foreground line-clamp-2 leading-tight" style={{ minHeight: '2.5rem' }}>
             {year} {make} {model}
           </h3>
           {title && title !== `${make} ${model}` && (
-            <p className="text-xs text-muted-foreground line-clamp-1" style={{ minHeight: '1rem' }}>
+            <p className="text-xs text-muted-foreground line-clamp-1 mt-1" style={{ minHeight: '1rem' }}>
               {title}
             </p>
           )}
         </div>
 
-        {/* Compact Vehicle Info - Grid Layout with fixed heights */}
-        <div className="grid grid-cols-2 gap-2 mb-3 text-xs" style={{ minHeight: '3rem' }}>
+        {/* Compact Vehicle Info - Modern grid layout */}
+        <div className="grid grid-cols-2 gap-2 mb-3 text-xs" style={{ minHeight: '2.5rem' }}>
           {mileage && (
             <div className="flex items-center gap-1">
-              <Gauge className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="truncate text-muted-foreground">{mileage}</span>
+              <Gauge className="h-3 w-3 text-primary flex-shrink-0" />
+              <span className="truncate text-foreground font-medium">{mileage}</span>
             </div>
           )}
           {transmission && (
             <div className="flex items-center gap-1">
-              <Settings className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate text-muted-foreground">{transmission}</span>
+              <Settings className="h-3 w-3 text-primary flex-shrink-0" />
+              <span className="capitalize truncate text-foreground font-medium">{transmission}</span>
             </div>
           )}
           {fuel && (
             <div className="flex items-center gap-1">
-              <Fuel className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate text-muted-foreground">{fuel}</span>
+              <Fuel className="h-3 w-3 text-primary flex-shrink-0" />
+              <span className="capitalize truncate text-foreground font-medium">{fuel}</span>
             </div>
           )}
           {color && (
             <div className="flex items-center gap-1">
-              <Palette className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate text-muted-foreground">{color}</span>
+              <Palette className="h-3 w-3 text-primary flex-shrink-0" />
+              <span className="capitalize truncate text-foreground font-medium">{color}</span>
             </div>
           )}
         </div>
 
-        {/* Compact Pricing and Action - Push to bottom */}
+        {/* Compact Pricing and Action - Push to bottom with modern styling */}
         <div className="space-y-2 mt-auto">
           <div className="flex items-center justify-between">
-            <span className="text-lg font-bold text-primary">
-              €{price.toLocaleString()}
-            </span>
+            <div>
+              <span className="text-xl font-bold text-primary">
+                €{price.toLocaleString()}
+              </span>
+              <p className="text-xs text-muted-foreground font-medium">Deri në port</p>
+            </div>
             <Button
               size="sm"
               variant="ghost"
               onClick={handleFavoriteToggle}
-              className="h-8 w-8 p-0 hover:bg-muted touch-target interactive-element hover:scale-110 transition-all duration-200"
+              className="h-9 w-9 p-0 hover:bg-red-50 dark:hover:bg-red-950 touch-target interactive-element hover:scale-110 transition-all duration-200 rounded-full"
               style={{ minHeight: '44px', minWidth: '44px' }}
             >
               <Heart
@@ -520,11 +526,11 @@ const CarCard = ({
               />
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">Deri ne portin e Durresit</p>
         </div>
 
-        <div className="text-center pt-2 border-t border-border/50">
-          <p className="text-xs text-muted-foreground font-medium">KORAUTO</p>
+        {/* Modern brand footer */}
+        <div className="text-center pt-2 border-t border-border/30 mt-2">
+          <p className="text-xs text-muted-foreground font-semibold">KORAUTO</p>
         </div>
       </div>
     </div>

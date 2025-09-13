@@ -169,11 +169,11 @@ const EncarCarCard = ({
 
   return (
     <Card 
-      className="group cursor-pointer bg-white border border-gray-200 hover:border-primary/50 hover:shadow-xl transition-all duration-300 overflow-hidden rounded-xl"
+      className="group cursor-pointer bg-white dark:bg-card border border-gray-200 dark:border-border hover:border-primary/50 hover:shadow-2xl transition-all duration-300 overflow-hidden rounded-xl hover:-translate-y-1"
       onClick={handleCardClick}
     >
-      {/* Large Image Section - 60-70% of card height */}
-      <div className="relative h-56 bg-gray-100 overflow-hidden">
+      {/* Large Image Section - More compact height */}
+      <div className="relative h-44 bg-gray-100 dark:bg-muted overflow-hidden">
         {image ? (
           <img
             src={image}
@@ -184,26 +184,26 @@ const EncarCarCard = ({
             }}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-            <Car className="h-16 w-16 text-gray-400" />
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-muted dark:to-muted/50">
+            <Car className="h-12 w-12 text-gray-400 dark:text-muted-foreground" />
           </div>
         )}
 
-        {/* Modern Badges */}
+        {/* Modern Badges - Cleaner design */}
         <div className="absolute top-3 left-3 flex flex-col gap-2">
           {isNew && (
-            <Badge className="bg-red-600 text-white text-xs px-3 py-1 font-semibold shadow-lg">
+            <Badge className="bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1 font-medium shadow-lg">
               NEW
             </Badge>
           )}
           {isCertified && (
-            <Badge className="bg-blue-600 text-white text-xs px-3 py-1 font-semibold shadow-lg">
-              CERTIFIED
+            <Badge className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 font-medium shadow-lg">
+              CERT
             </Badge>
           )}
           {insurance_v2?.accidentCnt === 0 && (
-            <Badge className="bg-green-600 text-white text-xs px-3 py-1 font-semibold shadow-lg flex items-center gap-1">
-              <Shield className="h-3 w-3" />
+            <Badge className="bg-green-600 hover:bg-green-700 text-white text-xs px-2 py-1 font-medium shadow-lg flex items-center gap-1">
+              <Shield className="h-2.5 w-2.5" />
               CLEAN
             </Badge>
           )}
@@ -214,43 +214,43 @@ const EncarCarCard = ({
           <Button
             size="sm"
             variant="secondary"
-            className="h-9 w-9 p-0 bg-white/95 hover:bg-white shadow-lg backdrop-blur-sm"
+            className="h-8 w-8 p-0 bg-white/95 hover:bg-white shadow-lg backdrop-blur-sm rounded-full"
             onClick={handleLikeClick}
           >
-            <Heart className={`h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} />
+            <Heart className={`h-3 w-3 ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} />
           </Button>
           <Button
             size="sm"
             variant="secondary"
-            className="h-9 w-9 p-0 bg-white/95 hover:bg-white shadow-lg backdrop-blur-sm"
+            className="h-8 w-8 p-0 bg-white/95 hover:bg-white shadow-lg backdrop-blur-sm rounded-full"
             onClick={handleShareClick}
           >
-            <Share2 className="h-4 w-4 text-gray-600" />
+            <Share2 className="h-3 w-3 text-gray-600" />
           </Button>
         </div>
 
         {/* View count badge */}
-        <div className="absolute bottom-3 right-3 bg-black/70 text-white text-xs px-3 py-1 rounded-full flex items-center gap-1 backdrop-blur-sm">
+        <div className="absolute bottom-3 right-3 bg-black/70 text-white text-xs px-2 py-1 rounded-md flex items-center gap-1 backdrop-blur-sm">
           <Eye className="h-3 w-3" />
           <span>{Math.floor(Math.random() * 500) + 50}</span>
         </div>
 
         {/* Lot number */}
         {lot && (
-          <div className="absolute bottom-3 left-3 bg-primary/90 text-white text-xs px-3 py-1 rounded-full font-semibold backdrop-blur-sm">
-            Lot #{lot}
+          <div className="absolute bottom-3 left-3 bg-primary/90 text-white text-xs px-2 py-1 rounded-md font-medium backdrop-blur-sm">
+            #{lot}
           </div>
         )}
       </div>
 
-      <CardContent className="p-4">
-        {/* Car Title - More prominent */}
+      <CardContent className="p-3">
+        {/* Car Title - More compact */}
         <div className="mb-3">
-          <h3 className="font-bold text-gray-900 text-lg leading-tight mb-1">
+          <h3 className="font-bold text-gray-900 dark:text-foreground text-base leading-tight mb-1">
             {year} {typeof make === 'object' ? (make as any)?.name || '' : make || ''} {typeof model === 'object' ? (model as any)?.name || '' : model || ''}
           </h3>
           {location && (
-            <div className="flex items-center text-sm text-gray-500">
+            <div className="flex items-center text-sm text-gray-500 dark:text-muted-foreground">
               <MapPin className="h-3 w-3 mr-1" />
               {location}
             </div>
@@ -258,59 +258,59 @@ const EncarCarCard = ({
         </div>
 
         {/* Compact Specs Grid */}
-        <div className="grid grid-cols-2 gap-3 text-sm text-gray-600 mb-4">
+        <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 dark:text-muted-foreground mb-3">
           {mileage && (
             <div className="flex items-center gap-2">
-              <Gauge className="h-4 w-4 text-primary" />
+              <Gauge className="h-3 w-3 text-primary" />
               <span className="font-medium">{mileage}</span>
             </div>
           )}
           {fuel && (
             <div className="flex items-center gap-2">
-              <Fuel className="h-4 w-4 text-primary" />
+              <Fuel className="h-3 w-3 text-primary" />
               <span className="font-medium capitalize">{typeof fuel === 'object' ? (fuel as any)?.name || '' : fuel || ''}</span>
             </div>
           )}
           {transmission && (
             <div className="flex items-center gap-2">
-              <Settings className="h-4 w-4 text-primary" />
+              <Settings className="h-3 w-3 text-primary" />
               <span className="font-medium capitalize">{typeof transmission === 'object' ? (transmission as any)?.name || '' : transmission || ''}</span>
             </div>
           )}
           <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-primary" />
+            <Calendar className="h-3 w-3 text-primary" />
             <span className="font-medium">{year}</span>
           </div>
         </div>
 
-        {/* Price - More prominent */}
-        <div className="flex items-center justify-between mb-4">
+        {/* Price - More prominent and compact */}
+        <div className="flex items-center justify-between mb-3">
           <div>
-            <div className="text-2xl font-bold text-primary">
+            <div className="text-xl font-bold text-primary">
               {price ? (
                 <>€{price.toLocaleString()}</>
               ) : (
                 <span className="text-muted-foreground text-lg">Çmimi në kërkesë</span>
               )}
             </div>
-            <div className="text-xs text-gray-500 font-medium">
-              Çmimi KORAUTO
+            <div className="text-xs text-gray-500 dark:text-muted-foreground font-medium">
+              Deri në port
             </div>
           </div>
         </div>
 
-        {/* Modern Action buttons */}
-        <div className="flex gap-3">
+        {/* Compact Action buttons */}
+        <div className="flex gap-2">
           <InspectionRequestForm
             trigger={
               <Button 
                 size="sm"
-                className="flex-1 bg-primary hover:bg-primary/90 text-white font-semibold h-10 shadow-md hover:shadow-lg transition-all"
+                className="flex-1 bg-primary hover:bg-primary/90 text-white font-semibold h-9 shadow-md hover:shadow-lg transition-all rounded-lg"
                 onClick={(e) => e.stopPropagation()}
                 aria-label={`Kërkoni inspektim për ${year} ${make} ${model}`}
               >
-                <FileText className="h-4 w-4 mr-2" />
-                Inspektim €50
+                <FileText className="h-3 w-3 mr-2" />
+                Inspektim
               </Button>
             }
             carId={id}
@@ -321,11 +321,11 @@ const EncarCarCard = ({
           <Button
             variant="outline"
             size="sm"
-            className="flex-1 border-2 border-primary text-primary hover:bg-primary hover:text-white font-semibold h-10 transition-all"
+            className="flex-1 border-2 border-primary text-primary hover:bg-primary hover:text-white font-semibold h-9 transition-all rounded-lg"
             onClick={handleContactWhatsApp}
             aria-label={`Kontaktoni për më shumë informacion rreth ${year} ${make} ${model}`}
           >
-            <MessageCircle className="h-4 w-4 mr-2" />
+            <MessageCircle className="h-3 w-3 mr-2" />
             Kontakt
           </Button>
         </div>
