@@ -2030,9 +2030,11 @@ export const useSecureAuctionAPI = () => {
         return [];
       }
       
-      // No fallback cars for global sorting - return empty array
-      console.log("❌ API failed for global sorting, returning empty array instead of fallback cars");
-      return [];
+      // Use fallback cars for global sorting when API fails
+      console.log("❌ API failed for global sorting, using fallback cars");
+      const fallbackCars = createFallbackCars(newFilters);
+      console.log(`✅ Fallback Success - Created ${fallbackCars.length} fallback cars for global sorting`);
+      return fallbackCars;
     }
   };
 
