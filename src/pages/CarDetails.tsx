@@ -994,14 +994,11 @@ const CarDetails = memo(() => {
                     </div>
                     <div className="flex flex-col items-center text-center">
                       <span className="text-xs font-semibold">{selectedImageIndex + 1}/{Math.min(images.length, 20)}</span>
-                      <span className="text-[10px] opacity-80">Shiko të gjitha</span>
+                      <span className="text-[10px] opacity-80">Rrëshqit për më shumë foto</span>
                     </div>
                   </div>}
                   
-                  {/* Swipe hint for mobile */}
-                  {images.length > 1 && <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white text-xs bg-black/50 rounded sm:hidden my-[26px] mx-0 px-0 py-0">
-                      Swipe to see more photos
-                    </div>}
+                  {/* Swipe hint removed - now integrated into mobile gallery counter */}
                   
                   {car.lot && <Badge className="absolute top-2 right-2 bg-primary/90 backdrop-blur-sm text-primary-foreground px-2 py-1 text-xs font-medium shadow-lg">
                       Lot #{car.lot}
