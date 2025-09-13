@@ -984,17 +984,17 @@ const CarDetails = memo(() => {
                       </Button>
                     </>}
                   
-                  {/* Image counter for mobile and desktop - clickable */}
-                  {images.length > 1 && <div className="absolute top-2 left-2 bg-black/50 text-white text-sm px-2 py-1 rounded backdrop-blur-sm sm:block hover:bg-black/70 cursor-pointer transition-colors" onClick={handleGalleryClick} title="View all images">
-                      {selectedImageIndex + 1}/{images.length}
-                    </div>}
+
                   
                   {/* Mobile gallery counter with preview - MOBILE ONLY */}
                   {images.length > 1 && <div className="mobile-gallery-counter md:hidden" onClick={handleGalleryClick} style={{cursor: 'pointer'}}>
                     <div className="mobile-gallery-preview">
                       <img src={images[Math.min(selectedImageIndex, images.length - 1)]} alt="Preview" />
                     </div>
-                    <span>E{selectedImageIndex + 1}/{Math.min(images.length, 20)}</span>
+                    <div className="flex flex-col items-center text-center">
+                      <span className="text-xs font-semibold">{selectedImageIndex + 1}/{Math.min(images.length, 20)}</span>
+                      <span className="text-[10px] opacity-80">Shiko të gjitha</span>
+                    </div>
                   </div>}
                   
                   {/* Swipe hint for mobile */}
