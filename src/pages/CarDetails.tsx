@@ -17,6 +17,7 @@ import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
 import { useImageSwipe } from "@/hooks/useImageSwipe";
 import { fallbackCars } from "@/data/fallbackData";
+import { formatMileage } from "@/utils/mileageFormatter";
 interface CarDetails {
   id: string;
   make: string;
@@ -25,7 +26,7 @@ interface CarDetails {
   price: number;
   image?: string;
   vin?: string;
-  mileage?: string;
+  mileage?: number;
   transmission?: string;
   fuel?: string;
   color?: string;
@@ -511,7 +512,7 @@ const CarDetails = memo(() => {
             image: images[0] || "/placeholder.svg",
             images: images || [],
             vin: cachedCar.vin || carData.vin,
-            mileage: cachedCar.mileage || (lotData.odometer?.km ? `${lotData.odometer.km.toLocaleString()} km` : undefined),
+            mileage: cachedCar.mileage || lotData.odometer?.km,
             transmission: cachedCar.transmission || carData.transmission?.name,
             fuel: cachedCar.fuel || carData.fuel?.name,
             color: cachedCar.color || carData.color?.name,
@@ -586,7 +587,7 @@ const CarDetails = memo(() => {
                 image: lotData.images?.normal?.[0] || lotData.images?.big?.[0],
                 images: lotData.images?.normal || lotData.images?.big || [],
                 vin: carData.vin,
-                mileage: lotData.odometer?.km ? `${lotData.odometer.km.toLocaleString()} km` : undefined,
+                mileage: lotData.odometer?.km,
                 transmission: carData.transmission?.name,
                 fuel: carData.fuel?.name,
                 color: carData.color?.name,
@@ -687,7 +688,7 @@ const CarDetails = memo(() => {
           image: lotData.images?.normal?.[0] || lotData.images?.big?.[0],
           images: lotData.images?.normal || lotData.images?.big || [],
           vin: carData.vin,
-          mileage: lotData.odometer?.km ? `${lotData.odometer.km.toLocaleString()} km` : undefined,
+          mileage: lotData.odometer?.km,
           transmission: carData.transmission?.name,
           fuel: carData.fuel?.name,
           color: carData.color?.name,
@@ -749,7 +750,7 @@ const CarDetails = memo(() => {
               image: lotData.images?.normal?.[0] || lotData.images?.big?.[0] || "/placeholder.svg",
               images: lotData.images?.normal || lotData.images?.big || [],
               vin: fallbackCar.vin,
-              mileage: lotData.odometer?.km ? `${lotData.odometer.km.toLocaleString()} km` : undefined,
+              mileage: lotData.odometer?.km,
               transmission: fallbackCar.transmission?.name,
               fuel: fallbackCar.fuel?.name,
               color: fallbackCar.color?.name,
@@ -1022,7 +1023,7 @@ const CarDetails = memo(() => {
               <div className="car-details-row">
                 <span>{car.year.toString().slice(-2)}/{(car.year % 100).toString().padStart(2, '0')} type</span>
                 <span>•</span>
-                <span>{car.mileage || '144,378 km'}</span>
+                <span>{formatMileage(car.mileage) || '144,378 km'}</span>
                 <span>•</span>
                 <span>{car.fuel || 'Diesel'}</span>
                 <a href="#specifications" className="detail-link">In detail</a>
@@ -1091,7 +1092,7 @@ const CarDetails = memo(() => {
                         <span className="font-medium text-foreground text-xs sm:text-sm">Kilometrazh</span>
                       </div>
                       <span className="text-muted-foreground font-medium text-xs sm:text-sm">
-                        {car.mileage?.toLocaleString()}km
+                        {formatMileage(car.mileage)}
                       </span>
                     </div>}
 
