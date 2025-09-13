@@ -1,6 +1,5 @@
 // Comprehensive audit utility combining performance and layout checks
 import { PerformanceAuditor, PerformanceMetrics } from './performanceAudit';
-import { EnhancedAutoRepair, RepairResult } from './enhancedAutoRepair';
 
 export interface ComprehensiveAuditResults {
   performance: PerformanceMetrics;
@@ -8,8 +7,6 @@ export interface ComprehensiveAuditResults {
   accessibilityIssues: AlignmentIssue[];
   overallScore: number;
   recommendations: string[];
-  canAutoRepair: boolean;
-  autoRepairEstimate: number;
 }
 
 export interface LayoutIssue {
@@ -40,11 +37,9 @@ export interface AlignmentIssue {
 
 class ComprehensiveAuditor {
   private performanceAuditor: PerformanceAuditor;
-  private autoRepair: EnhancedAutoRepair;
 
   constructor() {
     this.performanceAuditor = new PerformanceAuditor();
-    this.autoRepair = new EnhancedAutoRepair();
   }
 
   /**
@@ -383,12 +378,6 @@ class ComprehensiveAuditor {
     const accessibilityScore = Math.max(0, 100 - (accessibilityIssues.length * 10));
     const overallScore = (performance.overallScore + layoutScore + accessibilityScore) / 3;
     
-    // Calculate auto-repair capabilities
-    const totalIssues = layoutIssues.length + accessibilityIssues.length;
-    const repairableIssues = this.countRepairableIssues(layoutIssues, accessibilityIssues);
-    const canAutoRepair = repairableIssues > 0;
-    const autoRepairEstimate = totalIssues > 0 ? Math.round((repairableIssues / totalIssues) * 100) : 100;
-    
     // Generate recommendations
     const recommendations = this.generateRecommendations(performance, layoutIssues, accessibilityIssues);
     
@@ -397,59 +386,12 @@ class ComprehensiveAuditor {
       layoutIssues,
       accessibilityIssues,
       overallScore,
-      recommendations,
-      canAutoRepair,
-      autoRepairEstimate
+      recommendations
     };
     
     console.log('📊 Comprehensive audit completed:', results);
     
     return results;
-  }
-
-  /**
-   * Apply automatic repairs to detected issues
-   */
-  public async applyAutomaticRepairs(results: ComprehensiveAuditResults): Promise<RepairResult> {
-    console.log('🔧 Starting automatic repairs...');
-    
-    const repairResult = await this.autoRepair.applyComprehensiveFixes(
-      results.layoutIssues,
-      results.accessibilityIssues
-    );
-    
-    console.log('✅ Automatic repairs completed:', repairResult);
-    
-    return repairResult;
-  }
-
-  /**
-   * Count how many issues can be automatically repaired
-   */
-  private countRepairableIssues(layoutIssues: LayoutIssue[], accessibilityIssues: AlignmentIssue[]): number {
-    const repairableTypes = [
-      'Missing alt text for accessibility',
-      'Button too small for touch interaction',
-      'Missing ARIA label on interactive element',
-      'Form input without associated label',
-      'Link without descriptive text',
-      'Missing focus outline',
-      'Poor color contrast',
-      'Image aspect ratio distortion',
-      'Element extends beyond viewport width',
-      'Missing dimensions causing potential layout shifts',
-      'Text content overflows container',
-      'Fixed pixel width may break responsive design',
-      'Extremely high z-index may cause stacking issues',
-      'Loading logo is not properly centered',
-      'Inconsistent spacing between card elements',
-      'Video without captions or subtitles',
-      'Table without proper headers',
-      'Improper heading hierarchy'
-    ];
-    
-    const allIssues = [...layoutIssues, ...accessibilityIssues];
-    return allIssues.filter(issue => repairableTypes.includes(issue.issue)).length;
   }
 
   private generateRecommendations(
