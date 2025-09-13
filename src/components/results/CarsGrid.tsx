@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Car, Calendar, Gauge } from 'lucide-react';
+import { formatMileage } from '@/utils/mileageFormatter';
 
 interface CarsGridProps {
   cars: CarListing[];
@@ -35,10 +36,6 @@ const CarCard = memo(({ car, onCarClick, priority = false }: CarCardProps) => {
       currency: 'EUR',
       maximumFractionDigits: 0,
     }).format(price);
-  };
-
-  const formatMileage = (mileage: number) => {
-    return `${mileage.toLocaleString()} km`;
   };
 
   const formatDate = (dateString: string) => {
@@ -105,7 +102,7 @@ const CarCard = memo(({ car, onCarClick, priority = false }: CarCardProps) => {
           <div className="space-y-1 text-xs text-muted-foreground">
             <div className="flex items-center gap-1">
               <Gauge className="h-3 w-3" />
-              <span>{formatMileage(car.mileage_km)}</span>
+              <span>{formatMileage(car.mileage_km) || '0 km'}</span>
             </div>
             
             <div className="flex items-center gap-1">

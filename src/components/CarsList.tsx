@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import LoadingLogo from "@/components/LoadingLogo";
+import { formatMileage } from '@/utils/mileageFormatter';
 
 interface Car {
   id: string;
@@ -85,7 +86,7 @@ const CarCard: React.FC<{ car: Car; onClick: () => void }> = React.memo(({ car, 
         
         <div className="text-sm text-muted-foreground space-y-1">
           {car.mileage && (
-            <p>{car.mileage.toLocaleString()} km</p>
+            <p>{formatMileage(car.mileage)}</p>
           )}
           {car.fuel && car.transmission && (
             <p>{car.fuel} • {car.transmission}</p>
