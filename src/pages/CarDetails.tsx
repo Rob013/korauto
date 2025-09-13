@@ -843,6 +843,27 @@ const CarDetails = memo(() => {
     });
   }, [isLiked, toast]);
 
+  // Handler for opening gallery images in new tabs (mobile only)
+  const handleGalleryClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Open each gallery image in a new tab, limited to 20 as specified
+    images.slice(0, 20).forEach((image, index) => {
+      // Add a small delay between opening tabs to avoid browser blocking
+      setTimeout(() => {
+        const link = document.createElement('a');
+        link.href = image;
+        link.target = '_blank';
+        link.rel = 'noopener,noreferrer';
+        // Add data-fancybox attribute for potential lightbox integration
+        link.setAttribute('data-fancybox', 'gallery');
+        link.setAttribute('data-caption', `Image ${index + 1} of ${Math.min(images.length, 20)}`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }, index * 100); // 100ms delay between each tab
+    });
+  }, [images]);
+
   // Preload important images
   useImagePreload(car?.image);
   if (loading) {
@@ -937,7 +958,7 @@ const CarDetails = memo(() => {
             {/* Compact Main Image */}
             <Card className="glass-card border-0 shadow-2xl overflow-hidden rounded-xl">
               <CardContent className="p-0">
-                <div ref={imageContainerRef} className="relative h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] xl:h-[700px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer" onClick={() => setIsImageZoomOpen(true)}>
+                <div ref={imageContainerRef} className="car-details-hero relative h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] xl:h-[700px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer" onClick={() => setIsImageZoomOpen(true)} data-fancybox="gallery">
                   {images.length > 0 ? <img src={images[selectedImageIndex]} alt={`${car.year} ${car.make} ${car.model}`} className={`w-full h-full transition-transform duration-300 hover:scale-105 ${isPlaceholderImage ? "object-cover" // Use object-cover for placeholder to fill container properly on mobile
                 : "object-contain" // Use object-contain for real images to show full image
                 }`} onError={e => {
@@ -970,9 +991,17 @@ const CarDetails = memo(() => {
                     </>}
                   
                   {/* Image counter for mobile */}
-                  {images.length > 1 && <div className="absolute top-2 left-2 bg-black/50 text-white text-sm px-2 py-1 rounded backdrop-blur-sm">
+                  {images.length > 1 && <div className="absolute top-2 left-2 bg-black/50 text-white text-sm px-2 py-1 rounded backdrop-blur-sm sm:block">
                       {selectedImageIndex + 1}/{images.length}
                     </div>}
+                  
+                  {/* Mobile gallery counter with preview - MOBILE ONLY */}
+                  {images.length > 1 && <div className="mobile-gallery-counter md:hidden" onClick={handleGalleryClick} style={{cursor: 'pointer'}}>
+                    <div className="mobile-gallery-preview">
+                      <img src={images[Math.min(selectedImageIndex, images.length - 1)]} alt="Preview" />
+                    </div>
+                    <span>E{selectedImageIndex + 1}/{Math.min(images.length, 20)}</span>
+                  </div>}
                   
                   {/* Swipe hint for mobile */}
                   {images.length > 1 && <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white text-xs bg-black/50 px-2 py-1 rounded sm:hidden">
@@ -990,8 +1019,23 @@ const CarDetails = memo(() => {
               </CardContent>
             </Card>
 
-            {/* Enhanced Image Thumbnails - Better Mobile Layout */}
-            {images.length > 1 && <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-16 gap-2">
+            {/* Mobile Car Title and Details - MOBILE ONLY */}
+            <div className="md:hidden">
+              <h1 className="car-details-title">
+                {car.year} {car.make} {car.model} {car.title && car.title !== `${car.year} ${car.make} ${car.model}` ? car.title : "Grand Chic"}
+              </h1>
+              <div className="car-details-row">
+                <span>{car.year.toString().slice(-2)}/{(car.year % 100).toString().padStart(2, '0')} type</span>
+                <span>•</span>
+                <span>{car.mileage || '144,378 km'}</span>
+                <span>•</span>
+                <span>{car.fuel || 'Diesel'}</span>
+                <a href="#specifications" className="detail-link">In detail</a>
+              </div>
+            </div>
+
+            {/* Enhanced Image Thumbnails - Better Mobile Layout - HIDDEN ON MOBILE */}
+            {images.length > 1 && <div className="car-details-thumbnails hidden md:grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-16 gap-2">
                 {images.slice(0, 24).map((image, index) => <button key={index} onClick={() => setSelectedImageIndex(index)} aria-label={`Shiko imazhin ${index + 1} nga ${images.length}`} className={`relative h-12 sm:h-14 md:h-16 bg-muted rounded-md overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${selectedImageIndex === index ? "border-primary shadow-md ring-2 ring-primary/50" : "border-transparent hover:border-primary/50"}`}>
                     <img src={image} alt={`View ${index + 1}`} className="w-full h-full object-cover" onError={e => {
                 e.currentTarget.src = "/placeholder.svg";
@@ -1000,7 +1044,7 @@ const CarDetails = memo(() => {
               </div>}
 
             {/* Enhanced Vehicle Specifications */}
-            <Card className="glass-card border-0 shadow-xl rounded-xl">
+            <Card id="specifications" className="glass-card border-0 shadow-xl rounded-xl">
               <CardContent className="p-4">
                 <div className="flex flex-col gap-3 mb-4">
                   <h3 className="text-lg font-bold flex items-center text-foreground">
