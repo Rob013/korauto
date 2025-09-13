@@ -37,7 +37,7 @@ const SearchReqSchema = z.object({
     dir: z.enum(['asc', 'desc']),
   }).optional(),
   page: z.number().int().min(1).default(1),
-  pageSize: z.number().int().min(1).max(100).default(20),
+  pageSize: z.number().int().min(1).max(200).default(50),
   mode: z.enum(['full', 'results', 'facets']).default('full'),
   facets: z.array(z.string()).optional(),
 });

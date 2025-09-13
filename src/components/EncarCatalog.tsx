@@ -1368,10 +1368,12 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               
               <div
                 ref={containerRef}
-                className={`grid mobile-car-grid-compact sm:mobile-car-grid gap-2 sm:gap-3 lg:gap-4 transition-all duration-300 ${
-                  showFilters 
-                    ? 'lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' 
-                    : 'lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7'
+                className={`grid gap-2 sm:gap-3 lg:gap-4 transition-all duration-300 ${
+                  isMobile 
+                    ? 'mobile-car-grid-compact px-1 sm:px-2' 
+                    : showFilters 
+                      ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' 
+                      : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
                 } ${isFilterLoading ? 'opacity-50' : ''}`}
               >
                 {carsToDisplay
