@@ -716,31 +716,31 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-background">
       <div className="container max-w-7xl mx-auto p-3 sm:p-4 lg:p-6">
         {/* Compact Header */}
-         <header className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
-           <div className="flex-1 min-w-0">
-             <h1 className="text-xl sm:text-2xl font-bold truncate">Admin Dashboard</h1>
-             <p className="text-xs sm:text-sm text-muted-foreground truncate">{user.email}</p>
-             <div className="mt-2">
-               <CarsSyncButton />
-             </div>
-           </div>
-           <nav className="flex flex-wrap gap-2 shrink-0" role="navigation" aria-label="Admin dashboard actions">
-             <Button variant="outline" size="sm" onClick={() => navigate("/")}>
-               <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
-               <span className="hidden sm:inline">Home</span>
-             </Button>
-             <Button variant="outline" size="sm" onClick={handleLogout}>
-               <LogOut className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
-               <span className="hidden sm:inline">Logout</span>
-             </Button>
-             <Button size="sm" onClick={fetchData} disabled={loading}>
-               <RefreshCw
-                 className={`h-3 w-3 sm:h-4 sm:w-4 ${loading ? "animate-spin" : ""} sm:mr-1`}
-               />
-               <span className="hidden sm:inline">Refresh</span>
-             </Button>
-           </nav>
-         </header>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold truncate">Admin Dashboard</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground truncate">{user.email}</p>
+            <div className="mt-2">
+              <CarsSyncButton />
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2 shrink-0">
+            <Button variant="outline" size="sm" onClick={() => navigate("/")}>
+              <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Home</span>
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleLogout}>
+              <LogOut className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Logout</span>
+            </Button>
+            <Button size="sm" onClick={fetchData} disabled={loading}>
+              <RefreshCw
+                className={`h-3 w-3 sm:h-4 sm:w-4 ${loading ? "animate-spin" : ""} sm:mr-1`}
+              />
+              <span className="hidden sm:inline">Refresh</span>
+            </Button>
+          </div>
+        </div>
 
         {/* Car Search Section */}
         <div className="mb-6">

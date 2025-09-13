@@ -174,15 +174,13 @@ export default function AdminSyncDashboard() {
     return Math.min(processed / syncStatus.total_records * 100, 100);
   };
   return <div className="space-y-3 sm:space-y-4">
-      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Sync Dashboard</h1>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Sync Dashboard</h2>
         <Button variant="outline" size="sm" onClick={getSyncStatus}>
           <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
           <span className="hidden sm:inline">Refresh</span>
         </Button>
-      </header>
+      </div>
 
       {/* System Status Cards */}
       <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">

@@ -17,12 +17,10 @@
     <link rel="modulepreload" href="/src/main.tsx">
     <style>
       /* Critical CSS - Prevent FOUC */
-      html { font-family: system-ui, sans-serif; overflow-x: hidden; }
-      body { margin: 0; padding: 0; background: #ffffff; width: 100vw; max-width: 100%; box-sizing: border-box; }
-      #root { min-height: 100vh; width: 100%; max-width: 100%; overflow-x: hidden; }
+      html { font-family: system-ui, sans-serif; }
+      body { margin: 0; background: #ffffff; }
+      #root { min-height: 100vh; }
       .dark body { background: #0a0a0a; }
-      * { box-sizing: border-box; }
-      .fixed { max-width: 100vw; }
     </style>
     
     <!-- Favicon and Icons -->
@@ -70,7 +68,7 @@
   </head>
 
   <body>
-    <div id="root" role="application" aria-label="KORAUTO Application"></div>
+    <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
