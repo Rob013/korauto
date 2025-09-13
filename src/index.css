@@ -498,13 +498,13 @@ All colors MUST be HSL.
     }
   }
 
-  /* Fix for Albanian inspection texts in dark mode - should be black */
+  /* Fix for Albanian inspection texts in dark mode - ensure good contrast */
   .dark .inspection-text-black {
-    color: #000000 !important;
+    color: var(--background) !important;
   }
 
   .dark .inspection-subtext-black {
-    color: #000000 !important;
+    color: var(--background) !important;
   }
 
   /* Ensure normal colors in light mode */
@@ -873,14 +873,14 @@ All colors MUST be HSL.
   .car-details-title {
     font-size: 24px !important;
     font-weight: bold !important;
-    color: black !important;
+    color: var(--foreground) !important;
     margin: 16px 0 8px 0;
     text-align: left;
   }
 
   .car-details-row {
     font-size: 16px !important;
-    color: #6b7280 !important;
+    color: var(--muted-foreground) !important;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1319,7 +1319,7 @@ All colors MUST be HSL.
   .car-details-title {
     font-size: 24px !important;
     font-weight: bold !important;
-    color: #000000 !important;
+    color: var(--foreground) !important;
     margin: 16px 0 8px 0 !important;
     line-height: 1.3 !important;
   }
@@ -1327,7 +1327,7 @@ All colors MUST be HSL.
   /* Detail row styling */
   .car-details-row {
     font-size: 16px !important;
-    color: #666666 !important;
+    color: var(--muted-foreground) !important;
     margin-bottom: 16px !important;
     display: flex !important;
     align-items: center !important;
@@ -1336,7 +1336,7 @@ All colors MUST be HSL.
   }
 
   .car-details-row .detail-link {
-    color: #007bff !important;
+    color: hsl(var(--primary)) !important;
     text-decoration: none !important;
     font-weight: 500 !important;
     margin-left: auto !important;
@@ -1368,12 +1368,12 @@ All colors MUST be HSL.
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* Black background sections for inspection reports */
+/* Dark/Light mode compatible background sections for inspection reports */
 .inspection-section-black {
-  background: #000000 !important;
+  background: var(--card) !important;
   background-image: none !important;
-  color: #ffffff !important;
-  border-color: #333333 !important;
+  color: var(--card-foreground) !important;
+  border: 1px solid var(--border) !important;
 }
 
 /* Mobile-optimized tracking page styles */
@@ -1637,23 +1637,23 @@ All colors MUST be HSL.
   border-color: #333333 !important;
 }
 
-/* Ensure button styling remains readable in black sections */
+/* Ensure button styling remains readable in inspection sections */
 .inspection-section-black .bg-primary {
-  background-color: #ffffff !important;
-  color: #000000 !important;
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
 }
 
 .inspection-section-black .text-primary {
-  color: #ffffff !important;
+  color: var(--primary) !important;
 }
 
-/* Icon containers in black sections */
+/* Icon containers in inspection sections */
 .inspection-section-black .bg-blue-600,
 .inspection-section-black .bg-green-600,
 .inspection-section-black .bg-orange-600,
 .inspection-section-black .bg-purple-600,
 .inspection-section-black .bg-yellow-600 {
-  background-color: #ffffff !important;
+  background-color: var(--muted) !important;
 }
 
 .inspection-section-black .bg-blue-600 svg,
@@ -1661,7 +1661,7 @@ All colors MUST be HSL.
 .inspection-section-black .bg-orange-600 svg,
 .inspection-section-black .bg-purple-600 svg,
 .inspection-section-black .bg-yellow-600 svg {
-  color: #000000 !important;
+  color: var(--muted-foreground) !important;
 }
 
 /* Mobile-safe utility classes to prevent horizontal overflow */
