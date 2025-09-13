@@ -283,18 +283,18 @@ const LazyCarCard = memo(({
   return (
     <div 
       ref={cardRef}
-      className={`glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-lg card-touch-effect ${
+      className={`glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] ${
         viewMode === 'list' 
-          ? 'flex flex-row items-start gap-4 p-4 mobile-card-compact' 
-          : 'mobile-card-compact'
+          ? 'flex flex-row items-start gap-3 p-3 mobile-card-compact' 
+          : 'mobile-card-compact compact-modern-card'
       }`}
       onClick={handleCardClick}
     >
       {/* Image Section */}
-      <div className={`relative bg-muted overflow-hidden flex-shrink-0 ${
+      <div className={`relative bg-muted overflow-hidden flex-shrink-0 rounded-lg ${
         viewMode === 'list' 
-          ? 'w-32 h-24 sm:w-40 sm:h-28 lg:w-48 lg:h-32' 
-          : 'h-40 sm:h-52 lg:h-56'
+          ? 'w-28 h-20 sm:w-36 sm:h-24 lg:w-44 lg:h-28' 
+          : 'h-32 sm:h-40 lg:h-44'
       }`}>
         {/* Always show single image - swipe functionality removed from car cards */}
         {(image || (images && images.length > 0)) ? (
@@ -319,7 +319,7 @@ const LazyCarCard = memo(({
         
         {/* Lot Number Badge */}
         {lot && (
-          <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-primary text-primary-foreground px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs font-semibold">
+          <div className="absolute top-1 right-1 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-2 py-0.5 rounded-md text-xs font-bold shadow-md backdrop-blur-sm">
             {lot}
           </div>
         )}
@@ -328,51 +328,51 @@ const LazyCarCard = memo(({
         {user && (
           <button
             onClick={handleFavoriteToggle}
-            className="absolute top-1 sm:top-2 left-1 sm:left-2 p-1.5 sm:p-2 bg-black/50 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+            className="absolute top-1 left-1 p-1.5 bg-black/60 backdrop-blur-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 z-10 hover:bg-black/80"
           >
-            <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+            <Heart className={`h-3.5 w-3.5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
           </button>
         )}
       </div>
       
       {/* Content Section */}
-      <div className={`${viewMode === 'list' ? 'flex-1 min-w-0' : 'p-2 sm:p-3 lg:p-4'}`}>
-        <div className="mb-1.5 sm:mb-2">
-          <h3 className="card-title text-sm sm:text-base lg:text-lg font-semibold text-foreground line-clamp-2">
+      <div className={`${viewMode === 'list' ? 'flex-1 min-w-0' : 'p-2 sm:p-3'}`}>
+        <div className="mb-1.5">
+          <h3 className="card-title text-sm sm:text-base font-bold text-foreground line-clamp-2 leading-tight">
             {year} {make} {model}
           </h3>
           {title && title !== `${make} ${model}` && (
-            <p className="text-xs text-muted-foreground mb-1 line-clamp-1">{title}</p>
+            <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{title}</p>
           )}
         </div>
 
-        {/* Vehicle Info - Layout changes for list vs grid */}
-        <div className={`mb-2 sm:mb-3 card-details text-xs ${
+        {/* Vehicle Info - More compact layout */}
+        <div className={`mb-2 text-xs space-y-0.5 ${
           viewMode === 'list' 
-            ? 'grid grid-cols-2 gap-x-4 gap-y-1' 
-            : 'space-y-0.5 sm:space-y-1'
+            ? 'grid grid-cols-2 gap-x-3 gap-y-0.5' 
+            : 'space-y-0.5'
         }`}>
           {mileage && (
-            <div className="flex items-center gap-1">
-              <Gauge className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
-              <span className="truncate">{mileage}</span>
+            <div className="flex items-center gap-1.5">
+              <Gauge className="h-2.5 w-2.5 text-muted-foreground flex-shrink-0" />
+              <span className="truncate font-medium">{mileage}</span>
             </div>
           )}
           {transmission && (
-            <div className="flex items-center gap-1">
-              <Settings className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
+            <div className="flex items-center gap-1.5">
+              <Settings className="h-2.5 w-2.5 text-muted-foreground flex-shrink-0" />
               <span className="capitalize truncate">{transmission}</span>
             </div>
           )}
           {fuel && (
-            <div className="flex items-center gap-1">
-              <Fuel className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
+            <div className="flex items-center gap-1.5">
+              <Fuel className="h-2.5 w-2.5 text-muted-foreground flex-shrink-0" />
               <span className="capitalize truncate">{fuel}</span>
             </div>
           )}
           {color && (
-            <div className="flex items-center gap-1">
-              <Palette className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
+            <div className="flex items-center gap-1.5">
+              <Palette className="h-2.5 w-2.5 text-muted-foreground flex-shrink-0" />
               <span className="capitalize truncate">{color}</span>
             </div>
           )}
@@ -380,31 +380,33 @@ const LazyCarCard = memo(({
 
         {/* Status Indicators - More compact */}
         {insurance_v2?.accidentCnt === 0 && (
-          <div className="mb-1.5 sm:mb-2">
-            <Badge variant="secondary" className="text-xs px-1.5 sm:px-2 py-0">
+          <div className="mb-1.5">
+            <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-green-50 text-green-700 border-green-200">
               <Shield className="h-2 w-2 mr-1" />
               Clean Record
             </Badge>
           </div>
         )}
 
-        {/* Pricing Section */}
-        <div className={`${viewMode === 'list' ? 'flex flex-col items-end' : 'flex flex-col gap-0.5 sm:gap-1 mb-1.5 sm:mb-2'}`}>
-          <span className="card-price text-base sm:text-lg lg:text-xl font-bold text-primary">
-            €{price.toLocaleString()}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            Deri ne portin e Durresit
-          </span>
-        </div>
-
-        {viewMode === 'grid' && (
+        {/* Pricing Section - Compact but prominent */}
+        <div className={`${viewMode === 'list' ? 'flex flex-col items-end justify-center' : 'mt-2'}`}>
           <div className="text-center">
-            <p className="text-xs text-muted-foreground">
-              KORAUTO
-            </p>
+            <span className="card-price text-lg sm:text-xl font-bold text-primary block">
+              €{price.toLocaleString()}
+            </span>
+            <span className="text-xs text-muted-foreground block mt-0.5">
+              Deri ne portin e Durresit
+            </span>
           </div>
-        )}
+          
+          {viewMode === 'grid' && (
+            <div className="text-center mt-1">
+              <p className="text-xs text-muted-foreground font-medium">
+                KORAUTO
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
