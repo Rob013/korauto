@@ -955,43 +955,40 @@ const CarDetails = memo(() => {
         <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
           {/* Left Column - Images and Gallery */}
           <div className="lg:col-span-2 xl:col-span-3 space-y-4">
-            {/* Compact Main Image */}
+            {/* Enhanced Main Image with Better Animations */}
             <Card className="glass-card border-0 shadow-2xl overflow-hidden rounded-xl">
               <CardContent className="p-0">
-                <div ref={imageContainerRef} className="car-details-hero relative h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] xl:h-[700px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer" onClick={() => setIsImageZoomOpen(true)} data-fancybox="gallery">
-                  {images.length > 0 ? <img src={images[selectedImageIndex]} alt={`${car.year} ${car.make} ${car.model}`} className={`w-full h-full transition-transform duration-300 hover:scale-105 ${isPlaceholderImage ? "object-cover" // Use object-cover for placeholder to fill container properly on mobile
-                : "object-contain" // Use object-contain for real images to show full image
-                }`} onError={e => {
+                <div ref={imageContainerRef} className="car-image-hero relative h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] xl:h-[700px] group cursor-pointer" onClick={() => setIsImageZoomOpen(true)} data-fancybox="gallery">
+                  {images.length > 0 ? <img src={images[selectedImageIndex]} alt={`${car.year} ${car.make} ${car.model}`} className={`car-image-fade-in w-full h-full ${isPlaceholderImage ? "object-cover" : "object-contain"}`} onError={e => {
                   e.currentTarget.src = "/placeholder.svg";
                   setIsPlaceholderImage(true);
                 }} onLoad={e => {
-                  // Reset placeholder state when a real image loads successfully
                   if (!e.currentTarget.src.includes("/placeholder.svg")) {
                     setIsPlaceholderImage(false);
                   }
-                }} /> : <div className="w-full h-full flex items-center justify-center">
-                      <Car className="h-16 w-16 text-muted-foreground" />
+                }} /> : <div className="car-image-loading w-full h-full flex items-center justify-center">
+                      <Car className="h-16 w-16 text-muted-foreground animate-pulse" />
                     </div>}
                   
-                  {/* Navigation arrows for swipe - only show if multiple images */}
+                  {/* Enhanced Navigation Arrows */}
                   {images.length > 1 && <>
-                      <Button variant="ghost" size="sm" className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 hover:bg-black/70 text-white rounded-full w-10 h-10 p-0 hidden sm:flex z-10" onClick={e => {
+                      <button className="car-nav-arrow left hidden sm:flex" onClick={e => {
                     e.stopPropagation();
                     goToPrevious();
                   }}>
                         <ChevronLeft className="h-5 w-5" />
-                      </Button>
+                      </button>
                       
-                      <Button variant="ghost" size="sm" className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 hover:bg-black/70 text-white rounded-full w-10 h-10 p-0 hidden sm:flex z-10" onClick={e => {
+                      <button className="car-nav-arrow right hidden sm:flex" onClick={e => {
                     e.stopPropagation();
                     goToNext();
                   }}>
                         <ChevronRight className="h-5 w-5" />
-                      </Button>
+                      </button>
                     </>}
                   
-                  {/* Image counter for mobile */}
-                  {images.length > 1 && <div className="absolute top-2 left-2 bg-black/50 text-white text-sm px-2 py-1 rounded backdrop-blur-sm sm:block">
+                  {/* Enhanced Image Counter */}
+                  {images.length > 1 && <div className="car-image-counter">
                       {selectedImageIndex + 1}/{images.length}
                     </div>}
                   
@@ -1008,12 +1005,14 @@ const CarDetails = memo(() => {
                       Swipe to see more photos
                     </div>}
                   
-                  {car.lot && <Badge className="absolute top-2 right-2 bg-primary/90 backdrop-blur-sm text-primary-foreground px-2 py-1 text-xs font-medium shadow-lg">
+                  {/* Enhanced Lot Badge */}
+                  {car.lot && <div className="car-lot-badge">
                       Lot #{car.lot}
-                    </Badge>}
-                  {/* Zoom icon */}
-                  <div className="absolute bottom-2 right-2 bg-black/50 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Expand className="h-3 w-3 text-white" />
+                    </div>}
+                    
+                  {/* Enhanced Zoom Icon */}
+                  <div className="car-zoom-icon">
+                    <Expand className="h-4 w-4" />
                   </div>
                 </div>
               </CardContent>
@@ -1034,12 +1033,13 @@ const CarDetails = memo(() => {
               </div>
             </div>
 
-            {/* Enhanced Image Thumbnails - Better Mobile Layout - HIDDEN ON MOBILE */}
-            {images.length > 1 && <div className="car-details-thumbnails hidden md:grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-16 gap-2">
-                {images.slice(0, 24).map((image, index) => <button key={index} onClick={() => setSelectedImageIndex(index)} aria-label={`Shiko imazhin ${index + 1} nga ${images.length}`} className={`relative h-12 sm:h-14 md:h-16 bg-muted rounded-md overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${selectedImageIndex === index ? "border-primary shadow-md ring-2 ring-primary/50" : "border-transparent hover:border-primary/50"}`}>
+            {/* Enhanced Image Thumbnails with Better Alignment - HIDDEN ON MOBILE */}
+            {images.length > 1 && <div className="hidden md:grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-16 gap-3 p-2">
+                {images.slice(0, 24).map((image, index) => <button key={index} onClick={() => setSelectedImageIndex(index)} aria-label={`Shiko imazhin ${index + 1} nga ${images.length}`} className={`car-thumbnail relative h-16 sm:h-18 md:h-20 bg-muted overflow-hidden ${selectedImageIndex === index ? "selected" : ""}`}>
                     <img src={image} alt={`View ${index + 1}`} className="w-full h-full object-cover" onError={e => {
                 e.currentTarget.src = "/placeholder.svg";
               }} />
+              {selectedImageIndex === index && <div className="absolute inset-0 border-2 border-primary rounded-lg pointer-events-none" />}
                   </button>)}
               </div>}
 

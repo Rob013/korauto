@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 interface UseImageSwipeOptions {
   images: string[];
@@ -10,25 +10,42 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
-  const goToNext = () => {
+  const goToNext = useCallback(() => {
+    if (isTransitioning) return;
+    
+    setIsTransitioning(true);
     const nextIndex = currentIndex < images.length - 1 ? currentIndex + 1 : 0;
     setCurrentIndex(nextIndex);
     onImageChange?.(nextIndex);
-  };
+    
+    // Reset transition state after animation completes
+    setTimeout(() => setIsTransitioning(false), 600);
+  }, [currentIndex, images.length, onImageChange, isTransitioning]);
 
-  const goToPrevious = () => {
+  const goToPrevious = useCallback(() => {
+    if (isTransitioning) return;
+    
+    setIsTransitioning(true);
     const prevIndex = currentIndex > 0 ? currentIndex - 1 : images.length - 1;
     setCurrentIndex(prevIndex);
     onImageChange?.(prevIndex);
-  };
+    
+    // Reset transition state after animation completes
+    setTimeout(() => setIsTransitioning(false), 600);
+  }, [currentIndex, images.length, onImageChange, isTransitioning]);
 
-  const goToIndex = (index: number) => {
-    if (index >= 0 && index < images.length) {
+  const goToIndex = useCallback((index: number) => {
+    if (index >= 0 && index < images.length && !isTransitioning) {
+      setIsTransitioning(true);
       setCurrentIndex(index);
       onImageChange?.(index);
+      
+      // Reset transition state after animation completes
+      setTimeout(() => setIsTransitioning(false), 600);
     }
-  };
+  }, [images.length, onImageChange, isTransitioning]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -51,7 +68,7 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
       const swipeThreshold = 50;
       const deltaX = touchStartX.current - touchEndX.current;
 
-      if (Math.abs(deltaX) > swipeThreshold) {
+      if (Math.abs(deltaX) > swipeThreshold && !isTransitioning) {
         if (deltaX > 0) {
           // Swipe left - go to next image
           goToNext();
@@ -72,7 +89,7 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
       container.removeEventListener('touchmove', handleTouchMove);
       container.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [currentIndex, images.length]);
+  }, [goToNext, goToPrevious, isTransitioning]);
 
   return {
     currentIndex,
@@ -83,5 +100,6 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
     currentImage: images[currentIndex],
     hasNext: currentIndex < images.length - 1,
     hasPrevious: currentIndex > 0,
+    isTransitioning,
   };
 };

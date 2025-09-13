@@ -62,7 +62,7 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="absolute top-4 right-4 z-50 bg-black/50 hover:bg-black/70 text-white"
+            className="absolute top-4 right-4 z-50 bg-black/50 hover:bg-black/70 text-white transition-all duration-300 hover:scale-110"
           >
             <X className="h-6 w-6" />
           </Button>
@@ -75,7 +75,7 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
                 size="icon"
                 onClick={handlePrevImage}
                 disabled={currentIndex === 0}
-                className="absolute left-4 top-1/2 transform -translate-y-1/2 z-50 bg-black/50 hover:bg-black/70 text-white disabled:opacity-30"
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 z-50 bg-black/50 hover:bg-black/70 text-white disabled:opacity-30 transition-all duration-300 hover:scale-110 disabled:hover:scale-100"
               >
                 <ChevronLeft className="h-8 w-8" />
               </Button>
@@ -84,7 +84,7 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
                 size="icon"
                 onClick={handleNextImage}
                 disabled={currentIndex === images.length - 1}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 z-50 bg-black/50 hover:bg-black/70 text-white disabled:opacity-30"
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 z-50 bg-black/50 hover:bg-black/70 text-white disabled:opacity-30 transition-all duration-300 hover:scale-110 disabled:hover:scale-100"
               >
                 <ChevronRight className="h-8 w-8" />
               </Button>
@@ -92,12 +92,12 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
           )}
 
           {/* Controls */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50 flex gap-2 bg-black/50 rounded-lg p-2">
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50 flex gap-2 bg-black/50 rounded-lg p-2 backdrop-blur-md">
             <Button
               variant="ghost"
               size="icon"
               onClick={handleZoomOut}
-              className="text-white hover:bg-white/20"
+              className="text-white hover:bg-white/20 transition-all duration-300 hover:scale-110"
             >
               <ZoomOut className="h-5 w-5" />
             </Button>
@@ -105,7 +105,7 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
               variant="ghost"
               size="icon"
               onClick={handleZoomIn}
-              className="text-white hover:bg-white/20"
+              className="text-white hover:bg-white/20 transition-all duration-300 hover:scale-110"
             >
               <ZoomIn className="h-5 w-5" />
             </Button>
@@ -113,14 +113,14 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
               variant="ghost"
               size="icon"
               onClick={handleRotate}
-              className="text-white hover:bg-white/20"
+              className="text-white hover:bg-white/20 transition-all duration-300 hover:scale-110"
             >
               <RotateCw className="h-5 w-5" />
             </Button>
             <Button
               variant="ghost"
               onClick={handleReset}
-              className="text-white hover:bg-white/20 px-3"
+              className="text-white hover:bg-white/20 px-3 transition-all duration-300 hover:scale-105"
             >
               Reset
             </Button>
@@ -130,17 +130,18 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
           <img
             src={src}
             alt={alt}
-            className="max-w-full max-h-full object-contain transition-transform duration-200"
+            className="max-w-full max-h-full object-contain transition-all duration-500 ease-out"
             style={{
               transform: `scale(${zoom}) rotate(${rotation}deg)`,
+              filter: 'drop-shadow(0 0 20px rgba(0, 0, 0, 0.5))'
             }}
           />
 
           {/* Image counter and zoom indicator */}
-          <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-2 rounded flex flex-col gap-1 text-sm">
-            <div>{Math.round(zoom * 100)}%</div>
+          <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-2 rounded flex flex-col gap-1 text-sm backdrop-blur-md">
+            <div className="font-medium">{Math.round(zoom * 100)}%</div>
             {images.length > 1 && (
-              <div>{currentIndex + 1} / {images.length}</div>
+              <div className="text-xs opacity-80">{currentIndex + 1} / {images.length}</div>
             )}
           </div>
         </div>
