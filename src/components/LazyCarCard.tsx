@@ -37,6 +37,8 @@ interface LazyCarCardProps {
   is_archived?: boolean;
   archived_at?: string;
   archive_reason?: string;
+  // View mode prop
+  viewMode?: 'grid' | 'list';
 }
 
 const LazyCarCard = memo(({
@@ -60,7 +62,8 @@ const LazyCarCard = memo(({
   details,
   is_archived,
   archived_at,
-  archive_reason
+  archive_reason,
+  viewMode = 'grid' // Default to grid view
 }: LazyCarCardProps) => {
   const navigate = useNavigate();
   const { setCompletePageState } = useNavigation();
@@ -280,10 +283,19 @@ const LazyCarCard = memo(({
   return (
     <div 
       ref={cardRef}
-      className="glass-card overflow-hidden cursor-pointer group touch-manipulation mobile-card-compact rounded-lg card-touch-effect"
+      className={`glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-lg card-touch-effect ${
+        viewMode === 'list' 
+          ? 'flex flex-row items-start gap-4 p-4 mobile-card-compact' 
+          : 'mobile-card-compact'
+      }`}
       onClick={handleCardClick}
     >
-      <div className="relative h-40 sm:h-52 lg:h-56 bg-muted overflow-hidden">
+      {/* Image Section */}
+      <div className={`relative bg-muted overflow-hidden flex-shrink-0 ${
+        viewMode === 'list' 
+          ? 'w-32 h-24 sm:w-40 sm:h-28 lg:w-48 lg:h-32' 
+          : 'h-40 sm:h-52 lg:h-56'
+      }`}>
         {/* Always show single image - swipe functionality removed from car cards */}
         {(image || (images && images.length > 0)) ? (
           <img 
@@ -305,7 +317,6 @@ const LazyCarCard = memo(({
           </div>
         )}
         
-        
         {/* Lot Number Badge */}
         {lot && (
           <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-primary text-primary-foreground px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs font-semibold">
@@ -324,7 +335,8 @@ const LazyCarCard = memo(({
         )}
       </div>
       
-      <div className="p-2 sm:p-3 lg:p-4">
+      {/* Content Section */}
+      <div className={`${viewMode === 'list' ? 'flex-1 min-w-0' : 'p-2 sm:p-3 lg:p-4'}`}>
         <div className="mb-1.5 sm:mb-2">
           <h3 className="card-title text-sm sm:text-base lg:text-lg font-semibold text-foreground line-clamp-2">
             {year} {make} {model}
@@ -334,8 +346,12 @@ const LazyCarCard = memo(({
           )}
         </div>
 
-        {/* Vehicle Info - More compact */}
-        <div className="space-y-0.5 sm:space-y-1 mb-2 sm:mb-3 card-details text-xs">
+        {/* Vehicle Info - Layout changes for list vs grid */}
+        <div className={`mb-2 sm:mb-3 card-details text-xs ${
+          viewMode === 'list' 
+            ? 'grid grid-cols-2 gap-x-4 gap-y-1' 
+            : 'space-y-0.5 sm:space-y-1'
+        }`}>
           {mileage && (
             <div className="flex items-center gap-1">
               <Gauge className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
@@ -372,8 +388,8 @@ const LazyCarCard = memo(({
           </div>
         )}
 
-        {/* Pricing - Match car details page exactly */}
-        <div className="flex flex-col gap-0.5 sm:gap-1 mb-1.5 sm:mb-2">
+        {/* Pricing Section */}
+        <div className={`${viewMode === 'list' ? 'flex flex-col items-end' : 'flex flex-col gap-0.5 sm:gap-1 mb-1.5 sm:mb-2'}`}>
           <span className="card-price text-base sm:text-lg lg:text-xl font-bold text-primary">
             €{price.toLocaleString()}
           </span>
@@ -382,11 +398,13 @@ const LazyCarCard = memo(({
           </span>
         </div>
 
-        <div className="text-center">
-          <p className="text-xs text-muted-foreground">
-            KORAUTO
-          </p>
-        </div>
+        {viewMode === 'grid' && (
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground">
+              KORAUTO
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
