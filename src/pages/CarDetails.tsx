@@ -843,26 +843,20 @@ const CarDetails = memo(() => {
     });
   }, [isLiked, toast]);
 
-  // Handler for opening gallery images in new tabs (mobile only)
+  // Handler for opening gallery images in a new page
   const handleGalleryClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    // Open each gallery image in a new tab, limited to 20 as specified
-    images.slice(0, 20).forEach((image, index) => {
-      // Add a small delay between opening tabs to avoid browser blocking
-      setTimeout(() => {
-        const link = document.createElement('a');
-        link.href = image;
-        link.target = '_blank';
-        link.rel = 'noopener,noreferrer';
-        // Add data-fancybox attribute for potential lightbox integration
-        link.setAttribute('data-fancybox', 'gallery');
-        link.setAttribute('data-caption', `Image ${index + 1} of ${Math.min(images.length, 20)}`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }, index * 100); // 100ms delay between each tab
+    // Navigate to gallery page with images data
+    navigate(`/car/${lot}/gallery`, {
+      state: {
+        images: images.slice(0, 20), // Limit to 20 images as specified
+        carMake: car?.make,
+        carModel: car?.model,
+        carYear: car?.year,
+        carLot: car?.lot || lot
+      }
     });
-  }, [images]);
+  }, [images, navigate, lot, car]);
 
   // Preload important images
   useImagePreload(car?.image);
@@ -990,8 +984,8 @@ const CarDetails = memo(() => {
                       </Button>
                     </>}
                   
-                  {/* Image counter for mobile */}
-                  {images.length > 1 && <div className="absolute top-2 left-2 bg-black/50 text-white text-sm px-2 py-1 rounded backdrop-blur-sm sm:block">
+                  {/* Image counter for mobile and desktop - clickable */}
+                  {images.length > 1 && <div className="absolute top-2 left-2 bg-black/50 text-white text-sm px-2 py-1 rounded backdrop-blur-sm sm:block hover:bg-black/70 cursor-pointer transition-colors" onClick={handleGalleryClick} title="View all images">
                       {selectedImageIndex + 1}/{images.length}
                     </div>}
                   
