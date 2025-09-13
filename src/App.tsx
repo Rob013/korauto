@@ -14,6 +14,7 @@ import { StatusRefreshProvider } from "./components/StatusRefreshProvider";
 const Index = lazy(() => import("./pages/Index"));
 const Catalog = lazy(() => import("./pages/Catalog"));
 const CarDetails = lazy(() => import("./pages/CarDetails"));
+const CarGallery = lazy(() => import("./pages/CarGallery"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AuthPage = lazy(() => import("./pages/AuthPage"));
 const EmailConfirmationPage = lazy(() => import("./pages/EmailConfirmationPage"));
@@ -139,6 +140,11 @@ const App = () => {
             <Route path="/car/:id" element={
               <Suspense fallback={<PageSkeleton />}>
                 <CarDetails />
+              </Suspense>
+            } />
+            <Route path="/car/:id/gallery" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <CarGallery />
               </Suspense>
             } />
             <Route path="/admin" element={
