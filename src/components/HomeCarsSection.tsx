@@ -289,9 +289,9 @@ const HomeCarsSection = memo(() => {
     const dayOfMonth = today.getDate(); // 1-31
     const dailyPage = (dayOfMonth - 1) % 10 + 1; // Cycle through pages 1-10
 
-    // Load initial data with 30 cars from daily page - optimized for faster loading
+    // Load initial data with 50 cars from daily page - increased for better visibility
     fetchCars(dailyPage, {
-      per_page: "30"
+      per_page: "50"
     }, true);
 
     // Load manufacturers with caching
@@ -503,7 +503,7 @@ const HomeCarsSection = memo(() => {
               Nuk ka makina të disponueshme.
             </p>
           </div> : <>
-            <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0 ${isInView ? 'stagger-animation' : ''}`}>
+            <div className={`grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0 mobile-card-container ${isInView ? 'stagger-animation' : ''}`}>
               {displayedCars.filter(car => {
             // Only show cars with buy_now pricing
             const lot = car.lots?.[0];

@@ -81,11 +81,11 @@ All colors MUST be HSL.
     --background: 0 0% 8%;
     --foreground: 0 0% 95%;
 
-    --card: 0 0% 10%;
-    --card-foreground: 0 0% 95%;
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 10%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 98%;
 
     --primary: 0 0% 95%;
     --primary-foreground: 0 0% 8%;
@@ -104,8 +104,8 @@ All colors MUST be HSL.
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 95%;
 
-    --border: 0 0% 20%;
-    --input: 0 0% 15%;
+    --border: 0 0% 18%;
+    --input: 0 0% 16%;
     --ring: 0 0% 80%;
 
     --inspection: 45 100% 50%;
@@ -1048,10 +1048,11 @@ All colors MUST be HSL.
     line-height: 1.4;
   }
 
-  /* Improved car grid layout - More compact for mobile */
+  /* Improved car grid layout - More responsive and consistent */
   .mobile-car-grid {
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 6px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 8px;
     width: 100%;
     max-width: 100vw;
     overflow-x: hidden;
@@ -1059,11 +1060,13 @@ All colors MUST be HSL.
   
   /* Extra compact layout for very small screens */
   .mobile-car-grid-compact {
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 4px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 6px;
     width: 100%;
     max-width: 100vw;
     overflow-x: hidden;
+    padding: 0 4px;
   }
 
   /* Better loading states */
@@ -1148,8 +1151,8 @@ All colors MUST be HSL.
   }
 
   .mobile-car-grid {
-    grid-template-columns: 1fr;
-    gap: 4px;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
     width: 100%;
     max-width: 100vw;
     overflow-x: hidden;
@@ -1157,8 +1160,8 @@ All colors MUST be HSL.
   
   /* Ultra compact for smallest devices */
   .mobile-car-grid-compact {
-    grid-template-columns: 1fr;
-    gap: 3px;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
     width: 100%;
     max-width: 100vw;
     overflow-x: hidden;
@@ -1683,6 +1686,56 @@ All colors MUST be HSL.
 .mobile-no-scroll {
   overflow-x: hidden;
   max-width: 100vw;
+}
+
+/* Better button alignment for mobile */
+.mobile-button-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 0 4px;
+}
+
+.mobile-button-compact {
+  min-height: 40px;
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+/* Improved mobile card spacing */
+.mobile-card-container {
+  padding: 2px;
+  width: 100%;
+}
+
+/* Enhanced mobile text readability */
+.mobile-text-enhanced {
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+}
+
+/* Mobile-specific color improvements for better contrast */
+@media (max-width: 768px) {
+  .dark .text-muted-foreground {
+    color: hsl(0 0% 85%) !important;
+  }
+  
+  .dark .border {
+    border-color: hsl(0 0% 25%) !important;
+  }
+  
+  .card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .dark .card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border-color: hsl(0 0% 22%) !important;
+  }
 }
 
 /* Responsive design fixes for audit compliance */
