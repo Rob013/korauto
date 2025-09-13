@@ -861,6 +861,75 @@ All colors MUST be HSL.
     width: 100%;
   }
 
+  /* Compact card grid for mobile */
+  .mobile-card-container {
+    gap: 8px !important;
+  }
+
+  .mobile-card-container .glass-card {
+    min-height: 280px;
+  }
+
+  /* Modern compact cards on mobile */
+  .compact-modern-card {
+    padding: 8px !important;
+    min-height: 270px;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  }
+
+  .dark .compact-modern-card {
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.05), 0 1px 3px rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  }
+
+  /* Mobile car details optimizations */
+  .mobile-specs-card {
+    margin-bottom: 16px !important;
+  }
+
+  .mobile-specs-card .card-content {
+    padding: 12px !important;
+  }
+
+  .mobile-spec-item {
+    min-height: 36px;
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+  }
+
+  .mobile-detailed-info-card {
+    margin-bottom: 16px !important;
+  }
+
+  .mobile-info-section {
+    padding: 12px !important;
+    border-radius: 12px !important;
+  }
+
+  .mobile-detail-item {
+    min-height: 32px;
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    font-size: 12px !important;
+  }
+
+  /* Mobile inspection sections */
+  .mobile-inspection-section {
+    border-radius: 12px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .mobile-inspection-section .inspection-text-black {
+    line-height: 1.2 !important;
+  }
+
+  .mobile-inspection-section .inspection-subtext-black {
+    line-height: 1.1 !important;
+    font-size: 10px !important;
+  }
+
   /* Car Details Mobile Layout */
   .car-details-hero {
     width: 90vw !important;
@@ -1210,6 +1279,17 @@ All colors MUST be HSL.
   .mobile-card-compact .card-details {
     font-size: 10px;
     line-height: 1.1;
+  }
+
+  /* Compact modern card styling */
+  .compact-modern-card {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.98);
+  }
+
+  .dark .compact-modern-card {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.98);
   }
 
   /* Ultra compact filter styles for smallest screens */

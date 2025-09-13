@@ -1038,99 +1038,99 @@ const CarDetails = memo(() => {
                   </button>)}
               </div>}
 
-            {/* Enhanced Vehicle Specifications */}
-            <Card id="specifications" className="glass-card border-0 shadow-xl rounded-xl">
-              <CardContent className="p-4">
-                <div className="flex flex-col gap-3 mb-4">
-                  <h3 className="text-lg font-bold flex items-center text-foreground">
-                    <Settings className="h-5 w-5 mr-2 text-primary" />
+            {/* Enhanced Vehicle Specifications - Mobile Optimized */}
+            <Card id="specifications" className="glass-card border-0 shadow-xl rounded-xl mobile-specs-card">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex flex-col gap-2 sm:gap-3 mb-3 sm:mb-4">
+                  <h3 className="text-base sm:text-lg font-bold flex items-center text-foreground">
+                    <Settings className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-primary" />
                     Specifikimet Teknike
                   </h3>
 
-                  {/* Enhanced Price and action buttons */}
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  {/* Enhanced Price and action buttons - Mobile First */}
+                  <div className="flex flex-col gap-2 sm:gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="text-center sm:text-left">
-                      <div className="text-2xl font-bold text-primary">
+                      <div className="text-xl sm:text-2xl font-bold text-primary">
                         €{car.price.toLocaleString()}
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-xs sm:text-sm text-muted-foreground">
                         +350€ deri në Prishtinë
                       </div>
                     </div>
-                    <InspectionRequestForm trigger={<Button size="default" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto">
-                          <FileText className="h-4 w-4 mr-2" />
+                    <InspectionRequestForm trigger={<Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto h-9 text-sm">
+                          <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                           Kërko Inspektim
                         </Button>} carId={car.id} carMake={car.make} carModel={car.model} carYear={car.year} />
                   </div>
                 </div>
 
-                {/* Enhanced Specifications Grid - Better Mobile Layout */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                {/* Enhanced Specifications Grid - Compact Mobile Layout */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
                   {/* Basic Info */}
-                  <div className="flex items-center justify-between p-3 bg-white/5 dark:bg-black/10 backdrop-blur-sm border border-white/10 dark:border-white/5 rounded-lg hover:bg-white/10 dark:hover:bg-black/15 transition-all duration-200">
-                    <div className="flex items-center gap-2">
-                      <Car className="h-4 w-4 text-primary flex-shrink-0" />
-                      <span className="font-medium text-foreground">Marka</span>
+                  <div className="flex items-center justify-between p-2 sm:p-3 bg-white/5 dark:bg-black/10 backdrop-blur-sm border border-white/10 dark:border-white/5 rounded-lg hover:bg-white/10 dark:hover:bg-black/15 transition-all duration-200 mobile-spec-item">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <Car className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                      <span className="font-medium text-foreground text-xs sm:text-sm">Marka</span>
                     </div>
-                    <span className="text-muted-foreground font-medium text-right">
+                    <span className="text-muted-foreground font-medium text-right text-xs sm:text-sm">
                       {car.make} {car.model}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between p-3 bg-white/5 dark:bg-black/10 backdrop-blur-sm border border-white/10 dark:border-white/5 rounded-lg hover:bg-white/10 dark:hover:bg-black/15 transition-all duration-200">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
-                      <span className="font-medium text-foreground">Viti</span>
+                  <div className="flex items-center justify-between p-2 sm:p-3 bg-white/5 dark:bg-black/10 backdrop-blur-sm border border-white/10 dark:border-white/5 rounded-lg hover:bg-white/10 dark:hover:bg-black/15 transition-all duration-200 mobile-spec-item">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                      <span className="font-medium text-foreground text-xs sm:text-sm">Viti</span>
                     </div>
-                    <span className="text-muted-foreground font-medium">{car.year}</span>
+                    <span className="text-muted-foreground font-medium text-xs sm:text-sm">{car.year}</span>
                   </div>
 
-                  {car.mileage && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-2">
-                        <Gauge className="h-4 w-4 text-primary flex-shrink-0" />
-                        <span className="font-medium text-foreground">Kilometrazh</span>
+                  {car.mileage && <div className="flex items-center justify-between p-2 sm:p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors mobile-spec-item">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <Gauge className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                        <span className="font-medium text-foreground text-xs sm:text-sm">Kilometrazh</span>
                       </div>
-                      <span className="text-muted-foreground font-medium">
+                      <span className="text-muted-foreground font-medium text-xs sm:text-sm">
                         {car.mileage?.toLocaleString()}km
                       </span>
                     </div>}
 
-                  {car.transmission && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-2">
-                        <Settings className="h-4 w-4 text-primary flex-shrink-0" />
-                        <span className="font-medium text-foreground">Transmisioni</span>
+                  {car.transmission && <div className="flex items-center justify-between p-2 sm:p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors mobile-spec-item">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <Settings className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                        <span className="font-medium text-foreground text-xs sm:text-sm">Transmisioni</span>
                       </div>
-                      <span className="text-muted-foreground font-medium capitalize">
+                      <span className="text-muted-foreground font-medium capitalize text-xs sm:text-sm">
                         {translateTransmission(car.transmission)}
                       </span>
                     </div>}
 
-                  {car.fuel && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-2">
-                        <Fuel className="h-4 w-4 text-primary flex-shrink-0" />
-                        <span className="font-medium text-foreground">Karburanti</span>
+                  {car.fuel && <div className="flex items-center justify-between p-2 sm:p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors mobile-spec-item">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <Fuel className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                        <span className="font-medium text-foreground text-xs sm:text-sm">Karburanti</span>
                       </div>
-                      <span className="text-muted-foreground font-medium capitalize">
+                      <span className="text-muted-foreground font-medium capitalize text-xs sm:text-sm">
                         {car.fuel}
                       </span>
                     </div>}
 
-                  {car.color && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-2">
-                        <Palette className="h-4 w-4 text-primary flex-shrink-0" />
-                        <span className="font-medium text-foreground">Ngjyra</span>
+                  {car.color && <div className="flex items-center justify-between p-2 sm:p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors mobile-spec-item">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <Palette className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                        <span className="font-medium text-foreground text-xs sm:text-sm">Ngjyra</span>
                       </div>
-                      <span className="text-muted-foreground font-medium capitalize">
+                      <span className="text-muted-foreground font-medium capitalize text-xs sm:text-sm">
                         {translateColor(car.color)}
                       </span>
                     </div>}
 
-                  {car.vin && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-2">
-                        <Hash className="h-4 w-4 text-primary flex-shrink-0" />
-                        <span className="font-medium text-foreground">Numri i shasisë</span>
+                  {car.vin && <div className="flex items-center justify-between p-2 sm:p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors mobile-spec-item">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <Hash className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                        <span className="font-medium text-foreground text-xs sm:text-sm">Numri i shasisë</span>
                       </div>
-                      <span className="text-muted-foreground font-medium font-mono text-sm">
+                      <span className="text-muted-foreground font-medium font-mono text-xs">
                         {car.vin}
                       </span>
                     </div>}
@@ -1139,45 +1139,45 @@ const CarDetails = memo(() => {
             </Card>
 
             {/* Enhanced Detailed Information Section */}
-            <Card className="glass-panel border-0 shadow-2xl rounded-xl">
-              <CardContent className="p-4 lg:p-6">
-                <div className="flex flex-col gap-3 mb-4">
-                  <h3 className="text-lg lg:text-xl font-bold flex items-center text-foreground">
-                    <Info className="h-5 w-5 lg:h-6 lg:w-6 mr-2 text-primary" />
+            <Card className="glass-panel border-0 shadow-2xl rounded-xl mobile-detailed-info-card">
+              <CardContent className="p-3 sm:p-4 lg:p-6">
+                <div className="flex flex-col gap-2 sm:gap-3 mb-3 sm:mb-4">
+                  <h3 className="text-base sm:text-lg lg:text-xl font-bold flex items-center text-foreground">
+                    <Info className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 mr-2 text-primary" />
                     Informacione të Detajuara
                   </h3>
-                  <Button variant="outline" size="default" onClick={() => {
+                  <Button variant="outline" size="sm" onClick={() => {
                   setShowDetailedInfo(!showDetailedInfo);
-                }} className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto">
+                }} className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto h-9 text-sm">
                     {showDetailedInfo ? <>
-                        <ChevronUp className="h-4 w-4 mr-2" />
+                        <ChevronUp className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                         Fshih Detajet
                       </> : <>
-                        <ChevronDown className="h-4 w-4 mr-2" />
+                        <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                         Shiko Detajet
                       </>}
                     {/* Show indicators for available detailed data */}
-                    {!showDetailedInfo && <div className="ml-2 flex gap-1">
-                        {car.details?.options && <div className="w-2 h-2 bg-green-500 rounded-full" title="Pajisjet dhe Opsionet në dispozicion" />}
-                        {car.insurance_v2 && <div className="w-2 h-2 bg-blue-500 rounded-full" title="Raporti i sigurimeve në dispozicion" />}
-                        {(car.details?.inspect_outer || car.details?.inspect?.inner) && <div className="w-2 h-2 bg-purple-500 rounded-full" title="Të dhënat e inspektimit në dispozicion" />}
+                    {!showDetailedInfo && <div className="ml-1 sm:ml-2 flex gap-0.5 sm:gap-1">
+                        {car.details?.options && <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full" title="Pajisjet dhe Opsionet në dispozicion" />}
+                        {car.insurance_v2 && <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full" title="Raporti i sigurimeve në dispozicion" />}
+                        {(car.details?.inspect_outer || car.details?.inspect?.inner) && <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-500 rounded-full" title="Të dhënat e inspektimit në dispozicion" />}
                       </div>}
                   </Button>
                 </div>
 
-                {showDetailedInfo && <div className="space-y-6 animate-in slide-in-from-top-2 duration-300">
-                    {/* Insurance & Safety Report */}
-                    {(car.insurance_v2 || car.inspect || car.insurance) && <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                        <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                          <Shield className="h-5 w-5" />
+                {showDetailedInfo && <div className="space-y-4 sm:space-y-6 animate-in slide-in-from-top-2 duration-300">
+                    {/* Insurance & Safety Report - Mobile Optimized */}
+                    {(car.insurance_v2 || car.inspect || car.insurance) && <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-muted/50 rounded-lg mobile-info-section">
+                        <h4 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
+                          <Shield className="h-4 w-4 sm:h-5 sm:w-5" />
                           Raporti i Sigurisë dhe Sigurimit
                         </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {car.insurance_v2?.accidentCnt !== undefined && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
-                              <span className="text-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+                          {car.insurance_v2?.accidentCnt !== undefined && <div className="flex items-center justify-between p-2 sm:p-3 bg-card border border-border rounded-lg mobile-detail-item">
+                              <span className="text-xs sm:text-sm font-medium">
                                 Historia e Aksidenteve:
                               </span>
-                              <Badge variant={car.insurance_v2.accidentCnt === 0 ? "secondary" : "destructive"}>
+                              <Badge variant={car.insurance_v2.accidentCnt === 0 ? "secondary" : "destructive"} className="text-xs">
                                 {car.insurance_v2.accidentCnt === 0 ? "E Pastër" : `${car.insurance_v2.accidentCnt} aksidente`}
                               </Badge>
                             </div>}
@@ -1274,30 +1274,30 @@ const CarDetails = memo(() => {
                         {/* Inspection Groups - Compact Modern Cards Layout */}
                         <div className="grid gap-4">
                           
-                          {/* Technical Inspection - Engine & Mechanical - Collapsible */}
-                          {car.details?.inspect?.inner && <div className="overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200 inspection-section-black">
-                              <Button onClick={() => setShowEngineSection(!showEngineSection)} variant="ghost" className="w-full p-3 md:p-4 h-auto group hover:bg-blue-100/50 transition-all duration-300">
+                          {/* Technical Inspection - Engine & Mechanical - Collapsible - Mobile Optimized */}
+                          {car.details?.inspect?.inner && <div className="overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200 inspection-section-black mobile-inspection-section">
+                              <Button onClick={() => setShowEngineSection(!showEngineSection)} variant="ghost" className="w-full p-2 sm:p-3 md:p-4 h-auto group hover:bg-blue-100/50 transition-all duration-300">
                                 {/* Mobile Layout: Stack vertically */}
-                                <div className="flex flex-col gap-2 w-full sm:hidden">
+                                <div className="flex flex-col gap-1.5 sm:gap-2 w-full sm:hidden">
                                   {/* Title row with icon and chevron */}
                                   <div className="flex items-center justify-between w-full">
-                                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                                      <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-700 transition-colors flex-shrink-0">
-                                        <Cog className="h-4 w-4 text-white" />
+                                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-700 transition-colors flex-shrink-0">
+                                        <Cog className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
                                       </div>
                                       <div className="text-left min-w-0 flex-1">
-                                        <h5 className="text-sm font-bold text-foreground inspection-text-black">Motori dhe Sistemi Mekanik</h5>
+                                        <h5 className="text-xs sm:text-sm font-bold text-foreground inspection-text-black">Motori dhe Sistemi Mekanik</h5>
                                         <p className="text-muted-foreground text-xs inspection-subtext-black">Kontrolli teknik i komponentëve kryesorë</p>
                                       </div>
                                     </div>
-                                    <ChevronDown className={`h-4 w-4 text-muted-foreground transition-all duration-300 flex-shrink-0 ${showEngineSection ? "rotate-180 text-primary" : ""}`} />
+                                    <ChevronDown className={`h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground transition-all duration-300 flex-shrink-0 ${showEngineSection ? "rotate-180 text-primary" : ""}`} />
                                   </div>
                                   {/* Status indicators row */}
-                                  {!showEngineSection && <div className="flex items-center gap-2 justify-center">
-                                      <div className="flex gap-1">
+                                  {!showEngineSection && <div className="flex items-center gap-1 sm:gap-2 justify-center">
+                                      <div className="flex gap-0.5 sm:gap-1">
                                         {Object.entries(car.details.inspect.inner).slice(0, 3).map(([key, value], index) => {
                                 const isGood = value === "goodness" || value === "proper" || value === "doesn't exist";
-                                return <div key={index} className={`w-2 h-2 rounded-full ${isGood ? 'bg-green-500' : 'bg-red-500'}`} title={`${key}: ${value}`} />;
+                                return <div key={index} className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isGood ? 'bg-green-500' : 'bg-red-500'}`} title={`${key}: ${value}`} />;
                               })}
                                         {Object.entries(car.details.inspect.inner).length > 3 && <span className="text-xs text-muted-foreground ml-1">
                                             +{Object.entries(car.details.inspect.inner).length - 3}
