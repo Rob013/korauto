@@ -336,9 +336,146 @@ All colors MUST be HSL.
     @apply min-h-[44px] min-w-[66px] px-3 py-2 text-sm;
   }
 
-  /* Card enhancements */
+  /* Compact card enhancements */
   .card-enhanced {
     @apply hover-lift border-0 shadow-lg hover:shadow-xl transition-all duration-300;
+  }
+
+  /* Modern compact card styling with better spacing */
+  .modern-card-compact {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px; /* Smaller radius */
+    box-shadow: 
+      0 3px 20px -6px rgba(0, 0, 0, 0.1),
+      0 2px 8px -4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark .modern-card-compact {
+    background: rgba(0, 0, 0, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .modern-card-compact:hover {
+    transform: translateY(-3px); /* Reduced from -4px */
+    box-shadow: 
+      0 16px 32px -10px rgba(0, 0, 0, 0.15),
+      0 6px 14px -6px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Compact specifications layout */
+  .specs-grid-compact {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.5rem;
+  }
+
+  @media (max-width: 640px) {
+    .specs-grid-compact {
+      grid-template-columns: 1fr;
+      gap: 0.375rem;
+    }
+  }
+
+  /* Compact detail rows */
+  .detail-row-compact {
+    padding: 0.5rem 0.75rem;
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+  }
+
+  .dark .detail-row-compact {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.06);
+  }
+
+  .detail-row-compact:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.12);
+  }
+
+  .dark .detail-row-compact:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  /* Compact button styles */
+  .btn-compact-modern {
+    @apply px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200;
+    min-height: 36px;
+    min-width: 36px;
+  }
+
+  .btn-compact-modern:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Compact badge styles */
+  .badge-compact {
+    @apply px-2 py-0.5 text-xs font-medium rounded-md;
+  }
+
+  /* Modern glass effect for compact cards */
+  .glass-compact {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 
+      0 6px 20px -6px rgba(0, 0, 0, 0.15),
+      0 2px 8px -2px rgba(0, 0, 0, 0.08);
+  }
+
+  .dark .glass-compact {
+    background: rgba(0, 0, 0, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 
+      0 6px 20px -6px rgba(255, 255, 255, 0.08),
+      0 2px 8px -2px rgba(255, 255, 255, 0.04);
+  }
+
+  /* Compact mobile text sizing */
+  .text-compact-mobile {
+    @apply text-xs sm:text-sm;
+  }
+
+  .text-compact-mobile-lg {
+    @apply text-sm sm:text-base;
+  }
+
+  /* Compact spacing utilities */
+  .space-compact > * + * {
+    margin-top: 0.5rem;
+  }
+
+  .space-compact-sm > * + * {
+    margin-top: 0.375rem;
+  }
+
+  /* Enhanced mobile-first grid for cards */
+  .cards-grid-compact {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+    gap: 0.75rem;
+  }
+
+  @media (max-width: 640px) {
+    .cards-grid-compact {
+      grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+      gap: 0.5rem;
+    }
+  }
+
+  @media (max-width: 375px) {
+    .cards-grid-compact {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.375rem;
+    }
   }
 
   /* Focus improvements for accessibility */
@@ -861,31 +998,32 @@ All colors MUST be HSL.
     width: 100%;
   }
 
-  /* Car Details Mobile Layout */
+  /* Car Details Mobile Layout - More compact */
   .car-details-hero {
     width: 90vw !important;
-    height: 50vh !important;
+    height: 45vh !important; /* Reduced from 50vh */
     margin: 0 auto;
     border: none !important;
     box-shadow: none !important;
   }
 
   .car-details-title {
-    font-size: 24px !important;
+    font-size: 22px !important; /* Reduced from 24px */
     font-weight: bold !important;
     color: var(--foreground) !important;
-    margin: 16px 0 8px 0;
+    margin: 12px 0 6px 0; /* Reduced margins */
     text-align: left;
+    line-height: 1.2 !important;
   }
 
   .car-details-row {
-    font-size: 16px !important;
+    font-size: 14px !important; /* Reduced from 16px */
     color: var(--muted-foreground) !important;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px; /* Reduced gap */
     flex-wrap: wrap;
-    margin-bottom: 16px;
+    margin-bottom: 12px; /* Reduced from 16px */
   }
 
   .detail-link {
@@ -904,21 +1042,21 @@ All colors MUST be HSL.
     display: none !important;
   }
 
-  /* Mobile gallery counter - positioned bottom-right of hero */
+  /* Mobile gallery counter - positioned bottom-right of hero - More compact */
   .mobile-gallery-counter {
     position: absolute !important;
-    bottom: 8px !important;
-    right: 8px !important;
-    background: rgba(0, 0, 0, 0.8) !important;
+    bottom: 6px !important; /* Reduced from 8px */
+    right: 6px !important; /* Reduced from 8px */
+    background: rgba(0, 0, 0, 0.85) !important; /* Darker background */
     color: white !important;
-    padding: 6px 10px !important;
-    border-radius: 8px !important;
-    font-size: 12px !important;
+    padding: 4px 8px !important; /* Reduced padding */
+    border-radius: 6px !important; /* Smaller radius */
+    font-size: 11px !important; /* Smaller font */
     font-weight: 500 !important;
     display: flex !important;
     align-items: center !important;
-    gap: 8px !important;
-    backdrop-filter: blur(6px) !important;
+    gap: 6px !important;
+    backdrop-filter: blur(8px) !important;
     z-index: 20 !important;
     transition: all 0.3s ease !important;
     transform: scale(1) !important;
@@ -932,9 +1070,9 @@ All colors MUST be HSL.
   }
 
   .mobile-gallery-preview {
-    width: 36px !important;
-    height: 36px !important;
-    border-radius: 6px !important;
+    width: 32px !important; /* Reduced from 36px */
+    height: 32px !important; /* Reduced from 36px */
+    border-radius: 4px !important; /* Smaller radius */
     overflow: hidden !important;
     display: flex !important;
     align-items: center !important;
@@ -1034,8 +1172,8 @@ All colors MUST be HSL.
 
   /* Optimized container spacing for mobile - More compact */
   .container-responsive {
-    padding-left: max(12px, env(safe-area-inset-left));
-    padding-right: max(12px, env(safe-area-inset-right));
+    padding-left: max(10px, env(safe-area-inset-left)); /* Reduced from 12px */
+    padding-right: max(10px, env(safe-area-inset-right)); /* Reduced from 12px */
     width: 100%;
     max-width: 100vw;
     overflow-x: hidden;
@@ -1043,14 +1181,14 @@ All colors MUST be HSL.
 
   /* Better touch targets - More compact */
   button, [role="button"] {
-    min-height: 40px;
-    min-width: 40px;
+    min-height: 38px; /* Reduced from 40px */
+    min-width: 38px; /* Reduced from 40px */
   }
 
   /* Enhanced filter button visibility */
   .mobile-filter-button {
     position: sticky;
-    top: 12px;
+    top: 10px; /* Reduced from 12px */
     z-index: 20;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   }
@@ -1065,15 +1203,15 @@ All colors MUST be HSL.
   .mobile-text-optimize {
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
-    font-size: clamp(13px, 3.5vw, 15px);
-    line-height: 1.4;
+    font-size: clamp(12px, 3.5vw, 14px); /* Reduced maximum size */
+    line-height: 1.35; /* Slightly reduced line height */
   }
 
   /* Improved car grid layout - More responsive and consistent */
   .mobile-car-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 8px;
+    gap: 6px; /* Reduced from 8px */
     width: 100%;
     max-width: 100vw;
     overflow-x: hidden;
@@ -1082,17 +1220,17 @@ All colors MUST be HSL.
   /* Extra compact layout for very small screens */
   .mobile-car-grid-compact {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(150px, 48vw), 1fr));
-    gap: 6px;
+    grid-template-columns: repeat(auto-fit, minmax(min(145px, 48vw), 1fr)); /* Slightly reduced */
+    gap: 4px; /* Reduced from 6px */
     width: 100%;
     max-width: 100vw;
     overflow-x: hidden;
-    padding: 0 4px;
+    padding: 0 2px; /* Reduced from 4px */
   }
 
   /* Better loading states */
   .mobile-loading {
-    min-height: 160px;
+    min-height: 140px; /* Reduced from 160px */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1100,45 +1238,45 @@ All colors MUST be HSL.
 
   /* Ensure filter content is properly scrollable - More compact */
   .mobile-filter-content {
-    height: calc(100dvh - 60px); /* Account for header height instead of safe areas */
+    height: calc(100dvh - 56px); /* Reduced header height */
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
 
   /* Compact filter panel styles */
   .mobile-filter-compact {
-    padding: 8px 12px;
+    padding: 6px 10px; /* Reduced from 8px 12px */
   }
 
   .mobile-filter-compact .filter-section {
-    margin-bottom: 12px;
+    margin-bottom: 10px; /* Reduced from 12px */
   }
 
   .mobile-filter-compact .filter-label {
-    font-size: 12px;
-    margin-bottom: 4px;
+    font-size: 11px; /* Reduced from 12px */
+    margin-bottom: 3px; /* Reduced from 4px */
     font-weight: 500;
   }
 
   .mobile-filter-compact .filter-control {
-    height: 36px;
-    font-size: 13px;
-    padding: 8px 12px;
+    height: 34px; /* Reduced from 36px */
+    font-size: 12px; /* Reduced from 13px */
+    padding: 6px 10px; /* Reduced from 8px 12px */
   }
 
   .mobile-filter-compact .filter-header {
-    padding: 8px 12px;
-    font-size: 14px;
+    padding: 6px 10px; /* Reduced from 8px 12px */
+    font-size: 13px; /* Reduced from 14px */
   }
 
   .mobile-filter-compact .year-buttons {
-    gap: 4px;
+    gap: 3px; /* Reduced from 4px */
   }
 
   .mobile-filter-compact .year-buttons button {
-    padding: 4px 8px;
-    font-size: 11px;
-    min-height: 28px;
+    padding: 3px 6px; /* Reduced from 4px 8px */
+    font-size: 10px; /* Reduced from 11px */
+    min-height: 26px; /* Reduced from 28px */
   }
 }
 

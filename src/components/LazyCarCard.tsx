@@ -283,25 +283,25 @@ const LazyCarCard = memo(({
   return (
     <div 
       ref={cardRef}
-      className={`glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-lg card-touch-effect ${
+      className={`glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-xl card-touch-effect transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
         viewMode === 'list' 
-          ? 'flex flex-row items-start gap-4 p-4 mobile-card-compact' 
+          ? 'flex flex-row items-start gap-3 p-3 mobile-card-compact' 
           : 'mobile-card-compact'
       }`}
       onClick={handleCardClick}
     >
-      {/* Image Section */}
-      <div className={`relative bg-muted overflow-hidden flex-shrink-0 ${
+      {/* Image Section - More compact */}
+      <div className={`relative bg-muted overflow-hidden flex-shrink-0 rounded-lg ${
         viewMode === 'list' 
-          ? 'w-32 h-24 sm:w-40 sm:h-28 lg:w-48 lg:h-32' 
-          : 'h-40 sm:h-52 lg:h-56'
+          ? 'w-28 h-20 sm:w-36 sm:h-24 lg:w-44 lg:h-28' 
+          : 'h-36 sm:h-44 lg:h-48'
       }`}>
         {/* Always show single image - swipe functionality removed from car cards */}
         {(image || (images && images.length > 0)) ? (
           <img 
             src={image || images?.[0]} 
             alt={`${year} ${make} ${model}`} 
-            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
+            className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
             onLoad={() => setImageLoaded(true)}
@@ -313,98 +313,101 @@ const LazyCarCard = memo(({
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-muted">
-            <Car className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
+            <Car className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground" />
           </div>
         )}
         
-        {/* Lot Number Badge */}
+        {/* Lot Number Badge - Modern style */}
         {lot && (
-          <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-primary text-primary-foreground px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs font-semibold">
+          <div className="absolute top-2 right-2 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-2 py-1 rounded-md text-xs font-medium shadow-md backdrop-blur-sm">
             {lot}
           </div>
         )}
 
-        {/* Favorite Button */}
+        {/* Favorite Button - Modern style */}
         {user && (
           <button
             onClick={handleFavoriteToggle}
-            className="absolute top-1 sm:top-2 left-1 sm:left-2 p-1.5 sm:p-2 bg-black/50 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+            className="absolute top-2 left-2 p-2 bg-white/90 dark:bg-black/90 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 z-10 shadow-md"
           >
-            <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+            <Heart className={`h-3 w-3 sm:h-4 sm:w-4 transition-colors ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600 dark:text-gray-300'}`} />
           </button>
         )}
       </div>
       
-      {/* Content Section */}
-      <div className={`${viewMode === 'list' ? 'flex-1 min-w-0' : 'p-2 sm:p-3 lg:p-4'}`}>
-        <div className="mb-1.5 sm:mb-2">
-          <h3 className="card-title text-sm sm:text-base lg:text-lg font-semibold text-foreground line-clamp-2">
+      {/* Content Section - More compact */}
+      <div className={`${viewMode === 'list' ? 'flex-1 min-w-0 py-1' : 'p-3 sm:p-4'}`}>
+        {/* Title Section - Compact */}
+        <div className="mb-2">
+          <h3 className="card-title text-sm sm:text-base font-semibold text-foreground line-clamp-2 leading-tight">
             {year} {make} {model}
           </h3>
           {title && title !== `${make} ${model}` && (
-            <p className="text-xs text-muted-foreground mb-1 line-clamp-1">{title}</p>
+            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{title}</p>
           )}
         </div>
 
-        {/* Vehicle Info - Layout changes for list vs grid */}
-        <div className={`mb-2 sm:mb-3 card-details text-xs ${
+        {/* Vehicle Info - Compact grid layout */}
+        <div className={`mb-3 card-details text-xs ${
           viewMode === 'list' 
-            ? 'grid grid-cols-2 gap-x-4 gap-y-1' 
-            : 'space-y-0.5 sm:space-y-1'
+            ? 'grid grid-cols-2 gap-x-3 gap-y-1' 
+            : 'grid grid-cols-2 gap-x-2 gap-y-1'
         }`}>
           {mileage && (
             <div className="flex items-center gap-1">
-              <Gauge className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
-              <span className="truncate">{mileage}</span>
+              <Gauge className="h-3 w-3 text-primary flex-shrink-0" />
+              <span className="truncate font-medium">{mileage}</span>
             </div>
           )}
           {transmission && (
             <div className="flex items-center gap-1">
-              <Settings className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate">{transmission}</span>
+              <Settings className="h-3 w-3 text-primary flex-shrink-0" />
+              <span className="capitalize truncate font-medium">{transmission}</span>
             </div>
           )}
           {fuel && (
             <div className="flex items-center gap-1">
-              <Fuel className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate">{fuel}</span>
+              <Fuel className="h-3 w-3 text-primary flex-shrink-0" />
+              <span className="capitalize truncate font-medium">{fuel}</span>
             </div>
           )}
           {color && (
             <div className="flex items-center gap-1">
-              <Palette className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate">{color}</span>
+              <Palette className="h-3 w-3 text-primary flex-shrink-0" />
+              <span className="capitalize truncate font-medium">{color}</span>
             </div>
           )}
         </div>
 
         {/* Status Indicators - More compact */}
         {insurance_v2?.accidentCnt === 0 && (
-          <div className="mb-1.5 sm:mb-2">
-            <Badge variant="secondary" className="text-xs px-1.5 sm:px-2 py-0">
-              <Shield className="h-2 w-2 mr-1" />
-              Clean Record
+          <div className="mb-2">
+            <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-green-100 text-green-800 border-0 rounded-md">
+              <Shield className="h-2.5 w-2.5 mr-1" />
+              Clean
             </Badge>
           </div>
         )}
 
-        {/* Pricing Section */}
-        <div className={`${viewMode === 'list' ? 'flex flex-col items-end' : 'flex flex-col gap-0.5 sm:gap-1 mb-1.5 sm:mb-2'}`}>
-          <span className="card-price text-base sm:text-lg lg:text-xl font-bold text-primary">
-            €{price.toLocaleString()}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            Deri ne portin e Durresit
-          </span>
-        </div>
-
-        {viewMode === 'grid' && (
-          <div className="text-center">
-            <p className="text-xs text-muted-foreground">
-              KORAUTO
-            </p>
+        {/* Pricing Section - Modern layout */}
+        <div className={`${viewMode === 'list' ? 'flex flex-col items-end mt-auto' : 'mt-auto'}`}>
+          <div className="flex items-baseline gap-1 mb-1">
+            <span className="card-price text-lg sm:text-xl font-bold text-primary">
+              €{price.toLocaleString()}
+            </span>
           </div>
-        )}
+          <p className="text-xs text-muted-foreground font-medium">
+            Deri në port
+          </p>
+          
+          {viewMode === 'grid' && (
+            <div className="mt-2 pt-2 border-t border-border/50">
+              <p className="text-xs text-muted-foreground font-semibold text-center">
+                KORAUTO
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
