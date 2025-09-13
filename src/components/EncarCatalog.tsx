@@ -16,8 +16,8 @@ import {
   X,
   PanelLeftOpen,
   PanelLeftClose,
-  Lock,
-  Unlock,
+  Grid3X3,
+  List,
 } from "lucide-react";
 import LoadingLogo from "@/components/LoadingLogo";
 import LazyCarCard from "@/components/LazyCarCard";
@@ -131,13 +131,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     return true;
   });
 
-  // Catalog lock state - prevents accidental swipe gestures on mobile
-  const [catalogLocked, setCatalogLocked] = useState(() => {
-    if (isMobile) {
-      const savedLockState = localStorage.getItem('catalog-lock-state');
-      return savedLockState === 'true';
-    }
-    return false;
+  // View mode state - toggle between grid and list view
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+    const savedViewMode = localStorage.getItem('catalog-view-mode');
+    return (savedViewMode === 'list' || savedViewMode === 'grid') ? savedViewMode : 'grid';
   });
   
   const [hasSelectedCategories, setHasSelectedCategories] = useState(false);
@@ -326,25 +323,25 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
   // Swipe gesture handlers
   const handleSwipeRightToShowFilters = useCallback(() => {
-    if (!showFilters && isMobile && !catalogLocked) {
+    if (!showFilters && isMobile) {
       setShowFilters(true);
       setHasExplicitlyClosed(false); // Reset explicit close flag when opening via swipe
     }
-  }, [showFilters, isMobile, catalogLocked]);
+  }, [showFilters, isMobile]);
 
   const handleSwipeLeftToCloseFilters = useCallback(() => {
-    if (showFilters && isMobile && !catalogLocked) {
+    if (showFilters && isMobile) {
       setShowFilters(false);
       setHasExplicitlyClosed(true); // Mark as explicitly closed
     }
-  }, [showFilters, isMobile, catalogLocked]);
+  }, [showFilters, isMobile]);
 
-  // Handle catalog lock toggle
-  const handleCatalogLockToggle = useCallback(() => {
-    const newLockState = !catalogLocked;
-    setCatalogLocked(newLockState);
-    localStorage.setItem('catalog-lock-state', newLockState.toString());
-  }, [catalogLocked]);
+  // Handle view mode toggle
+  const handleViewModeToggle = useCallback(() => {
+    const newViewMode = viewMode === 'grid' ? 'list' : 'grid';
+    setViewMode(newViewMode);
+    localStorage.setItem('catalog-view-mode', newViewMode);
+  }, [viewMode]);
 
   // Debounced filter toggle to prevent rapid clicking issues
   const handleFilterToggle = useCallback(
@@ -1231,23 +1228,17 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               
                 {/* View mode and sort - mobile optimized */}
               <div className="flex gap-1 items-center">
-                {/* Catalog Lock Button - Only on mobile */}
-                {isMobile && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCatalogLockToggle}
-                    className={`h-8 px-2 flex items-center gap-1 transition-colors ${
-                      catalogLocked 
-                        ? 'bg-orange-100 hover:bg-orange-200 border-orange-300 text-orange-700 dark:bg-orange-900/20 dark:hover:bg-orange-900/30 dark:border-orange-600 dark:text-orange-400' 
-                        : 'hover:bg-accent'
-                    }`}
-                    title={catalogLocked ? 'Unlock swipe gestures' : 'Lock to prevent accidental swipes'}
-                  >
-                    {catalogLocked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
-                    <span className="hidden sm:inline text-xs">{catalogLocked ? 'Locked' : 'Lock'}</span>
-                  </Button>
-                )}
+                {/* View Mode Toggle Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleViewModeToggle}
+                  className="h-8 px-2 flex items-center gap-1 transition-colors hover:bg-accent"
+                  title={viewMode === 'grid' ? 'Switch to list view' : 'Switch to grid view'}
+                >
+                  {viewMode === 'grid' ? <List className="h-3 w-3" /> : <Grid3X3 className="h-3 w-3" />}
+                  <span className="hidden sm:inline text-xs">{viewMode === 'grid' ? 'List' : 'Grid'}</span>
+                </Button>
                 
                 {/* Sort Control - smaller on mobile */}
                 <div className="relative">
@@ -1368,12 +1359,16 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               
               <div
                 ref={containerRef}
-                className={`grid gap-2 sm:gap-3 lg:gap-4 transition-all duration-300 ${
-                  isMobile 
-                    ? 'mobile-car-grid-compact px-1 sm:px-2' 
-                    : showFilters 
-                      ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' 
-                      : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
+                className={`transition-all duration-300 ${
+                  viewMode === 'list' 
+                    ? 'flex flex-col gap-2 sm:gap-3' 
+                    : `grid gap-2 sm:gap-3 lg:gap-4 ${
+                        isMobile 
+                          ? 'mobile-car-grid-compact px-1 sm:px-2' 
+                          : showFilters 
+                            ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' 
+                            : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
+                      }`
                 } ${isFilterLoading ? 'opacity-50' : ''}`}
               >
                 {carsToDisplay
@@ -1428,6 +1423,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                         final_price={car.final_price || lot?.final_price}
                         insurance_v2={(lot as any)?.insurance_v2}
                         details={(lot as any)?.details}
+                        viewMode={viewMode}
                       />
                     </div>
                   );
