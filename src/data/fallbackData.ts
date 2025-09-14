@@ -66,7 +66,38 @@ export const fallbackCars = [
     seats_count: 5,
     accidents_count: 0,
     inspection_available: true,
-    status: "1"
+    status: "1",
+    lots: [{
+      buy_now: 32000,
+      odometer: { km: 25000 },
+      images: {
+        normal: [
+          "/images/placeholder-car.jpg",
+          "https://picsum.photos/800/600?random=1",
+          "https://picsum.photos/800/600?random=2",
+          "https://picsum.photos/800/600?random=3",
+          "https://picsum.photos/800/600?random=4",
+          "https://picsum.photos/800/600?random=5"
+        ],
+        big: [
+          "/images/placeholder-car.jpg",
+          "https://picsum.photos/1200/900?random=1",
+          "https://picsum.photos/1200/900?random=2",
+          "https://picsum.photos/1200/900?random=3",
+          "https://picsum.photos/1200/900?random=4",
+          "https://picsum.photos/1200/900?random=5"
+        ]
+      },
+      lot: "FB001",
+      status: 1,
+      details: {
+        options: {
+          standard: ["001", "002", "003", "004", "005", "010", "011", "014", "037", "046"],
+          choice: ["009", "015", "028", "042", "043"],
+          tuning: ["034", "035"]
+        }
+      }
+    }]
   },
   {
     id: "fb-car-2", 
