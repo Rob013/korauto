@@ -181,18 +181,25 @@ const EquipmentOptionsSection = memo(({
   const INITIAL_SHOW_COUNT = 6;
   const PREVIEW_SHOW_COUNT = 5;
 
-  // Helper function to get appropriate icon for equipment item
+  // Helper function to get appropriate icon component for equipment item
   const getEquipmentIcon = (item: string) => {
     const itemLower = item.toLowerCase();
-    if (itemLower.includes('air') || itemLower.includes('klima')) return <Settings className="h-3 w-3 text-primary" />;
-    if (itemLower.includes('brake') || itemLower.includes('frena')) return <Shield className="h-3 w-3 text-primary" />;
-    if (itemLower.includes('engine') || itemLower.includes('motor')) return <Cog className="h-3 w-3 text-primary" />;
-    if (itemLower.includes('seat') || itemLower.includes('ulëse')) return <Car className="h-3 w-3 text-primary" />;
-    if (itemLower.includes('window') || itemLower.includes('dritare')) return <Eye className="h-3 w-3 text-primary" />;
-    if (itemLower.includes('light') || itemLower.includes('dritë')) return <Star className="h-3 w-3 text-primary" />;
-    if (itemLower.includes('radio') || itemLower.includes('audio')) return <MessageCircle className="h-3 w-3 text-primary" />;
+    if (itemLower.includes('air') || itemLower.includes('klima')) return Settings;
+    if (itemLower.includes('brake') || itemLower.includes('frena')) return Shield;
+    if (itemLower.includes('engine') || itemLower.includes('motor')) return Cog;
+    if (itemLower.includes('seat') || itemLower.includes('ulëse')) return Car;
+    if (itemLower.includes('window') || itemLower.includes('dritare')) return Eye;
+    if (itemLower.includes('light') || itemLower.includes('dritë') || itemLower.includes('led') || itemLower.includes('xenon')) return Lightbulb;
+    if (itemLower.includes('radio') || itemLower.includes('audio') || itemLower.includes('bluetooth')) return MessageCircle;
+    if (itemLower.includes('camera') || itemLower.includes('kamerë')) return Camera;
+    if (itemLower.includes('sensor') || itemLower.includes('parking') || itemLower.includes('sensorët')) return Radar;
+    if (itemLower.includes('ngrohje') || itemLower.includes('heated') || itemLower.includes('heat')) return Thermometer;
+    if (itemLower.includes('ventil') || itemLower.includes('ajros') || itemLower.includes('cool')) return Wind;
+    if (itemLower.includes('abs') || itemLower.includes('airbag') || itemLower.includes('sigurisë')) return Shield;
+    if (itemLower.includes('navigac') || itemLower.includes('gps')) return MapPin;
+    if (itemLower.includes('control') || itemLower.includes('kontroll')) return Settings;
     // Default icon for standard equipment
-    return <CheckCircle className="h-3 w-3 text-primary" />;
+    return CheckCircle;
   };
 
   // Check for specific equipment features
@@ -252,37 +259,21 @@ const EquipmentOptionsSection = memo(({
     };
   };
 
-  // Get specific equipment preview items
+  // Get specific equipment preview items - Show real car standard equipment (5 items)
   const getSpecificPreviewItems = () => {
-    const features = checkSpecificFeatures();
-    
-    return [
-      {
-        name: 'LED Lights',
-        hasFeature: features.ledLights,
-        icon: Lightbulb
-      },
-      {
-        name: 'Back Sensors',
-        hasFeature: features.backSensors,
-        icon: Radar
-      },
-      {
-        name: 'Back Camera',
-        hasFeature: features.backCamera,
-        icon: Camera
-      },
-      {
-        name: 'Heated Seats',
-        hasFeature: features.heatedSeats,
-        icon: Thermometer
-      },
-      {
-        name: 'Ventilation Seats',
-        hasFeature: features.ventilationSeats,
-        icon: Wind
-      }
-    ];
+    if (!options.standard || options.standard.length === 0) {
+      return [];
+    }
+
+    // Take the first 5 standard equipment items from the actual car
+    return options.standard.slice(0, PREVIEW_SHOW_COUNT).map((equipment) => {
+      const equipmentName = equipment.toString();
+      return {
+        name: equipmentName,
+        hasFeature: true, // These are standard equipment, so they're always present
+        icon: getEquipmentIcon(equipmentName)
+      };
+    });
   };
 
   // Get preview items for display (5 standard equipment items)
@@ -922,7 +913,8 @@ const CarDetails = memo(() => {
               safety_features: ["ABS", "Airbags", "Stability Control"],
               comfort_features: ["Air Conditioning", "Power Windows"],
               performance_rating: 4.5,
-              popularity_score: 85
+              popularity_score: 85,
+              details: lotData.details || {}
             };
             setCar(transformedCar);
             setLoading(false);
