@@ -213,21 +213,21 @@ const EquipmentOptionsSection = memo(({
               <h5 className="text-sm font-medium text-foreground">Pajisje Standarde</h5>
               <span className="text-xs text-muted-foreground">(5 previews)</span>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 md:flex md:flex-wrap">
               {specificFeatures.map((feature, index) => {
                 const IconComponent = feature.icon;
                 return (
-                  <div key={index} className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors ${
+                  <div key={index} className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors min-h-[64px] justify-center ${
                     feature.hasFeature 
                       ? 'bg-primary/10 border border-primary/30' 
                       : 'bg-gray-100 border border-gray-200'
                   }`}>
-                    <IconComponent className={`h-4 w-4 ${
+                    <IconComponent className={`h-4 w-4 flex-shrink-0 ${
                       feature.hasFeature 
                         ? 'text-primary font-bold' 
                         : 'text-gray-400'
                     }`} />
-                    <span className={`text-xs font-medium ${
+                    <span className={`text-xs font-medium text-center leading-tight ${
                       feature.hasFeature 
                         ? 'text-foreground' 
                         : 'text-gray-400'
