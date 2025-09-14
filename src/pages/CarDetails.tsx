@@ -1077,12 +1077,7 @@ const CarDetails = memo(() => {
                       {car.make} {car.model}
                     </span>
                   </div>
-
-                  
-
-                  {car.mileage}
-
-                  {car.transmission && <div className="flex items-center justify-between p-2 sm:p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors mobile-spec-item">
+                   {car.transmission && <div className="flex items-center justify-between p-2 sm:p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors mobile-spec-item">
                       <div className="flex items-center gap-1.5 sm:gap-2">
                         <Settings className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
                         <span className="font-medium text-foreground text-xs sm:text-sm">Transmisioni</span>
