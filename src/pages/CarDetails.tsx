@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
-import { ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, Fuel, Palette, Hash, Calendar, Shield, FileText, Search, Info, Eye, CheckCircle, AlertTriangle, Star, Clock, Users, MessageCircle, Share2, Heart, ChevronLeft, ChevronRight, Expand, Copy, ChevronDown, ChevronUp, DollarSign, Cog } from "lucide-react";
+import { ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, Fuel, Palette, Hash, Calendar, Shield, FileText, Search, Info, Eye, CheckCircle, AlertTriangle, Star, Clock, Users, MessageCircle, Share2, Heart, ChevronLeft, ChevronRight, Expand, Copy, ChevronDown, ChevronUp, DollarSign, Cog, Lightbulb, Camera, Thermometer, Wind, Radar } from "lucide-react";
 import { ImageZoom } from "@/components/ImageZoom";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
@@ -118,6 +118,81 @@ const EquipmentOptionsSection = memo(({
     return <CheckCircle className="h-3 w-3 text-primary" />;
   };
 
+  // Check for specific equipment features
+  const checkSpecificFeatures = () => {
+    const allEquipment = [
+      ...(options.standard || []),
+      ...(options.choice || []),
+      ...(options.additional || [])
+    ].map(item => item.toLowerCase());
+
+    return {
+      ledLights: allEquipment.some(item => 
+        item.includes('led') || 
+        item.includes('xenon') || 
+        item.includes('halogen') ||
+        item.includes('headlight') ||
+        item.includes('dritë')
+      ),
+      backSensors: allEquipment.some(item => 
+        item.includes('sensor') || 
+        item.includes('parking') ||
+        item.includes('distance') ||
+        item.includes('rear sensor')
+      ),
+      backCamera: allEquipment.some(item => 
+        item.includes('camera') || 
+        item.includes('backup camera') ||
+        item.includes('rear camera') ||
+        item.includes('kamerë')
+      ),
+      heatedSeats: allEquipment.some(item => 
+        item.includes('heated seat') || 
+        item.includes('seat heat') ||
+        item.includes('ulëse të ngrohta')
+      ),
+      ventilationSeats: allEquipment.some(item => 
+        item.includes('ventilated seat') || 
+        item.includes('seat ventilation') ||
+        item.includes('cooled seat') ||
+        item.includes('ulëse të ajrosura')
+      )
+    };
+  };
+
+  // Get specific equipment preview items
+  const getSpecificPreviewItems = () => {
+    const features = checkSpecificFeatures();
+    
+    return [
+      {
+        name: 'LED Lights',
+        hasFeature: features.ledLights,
+        icon: Lightbulb
+      },
+      {
+        name: 'Back Sensors',
+        hasFeature: features.backSensors,
+        icon: Radar
+      },
+      {
+        name: 'Back Camera',
+        hasFeature: features.backCamera,
+        icon: Camera
+      },
+      {
+        name: 'Heated Seats',
+        hasFeature: features.heatedSeats,
+        icon: Thermometer
+      },
+      {
+        name: 'Ventilation Seats',
+        hasFeature: features.ventilationSeats,
+        icon: Wind
+      }
+    ];
+  };
+
   // Get preview items for display (5 standard equipment items)
   const getPreviewItems = () => {
     if (options.standard && options.standard.length > 0) {
@@ -127,30 +202,42 @@ const EquipmentOptionsSection = memo(({
   };
 
   const previewItems = getPreviewItems();
+  const specificFeatures = getSpecificPreviewItems();
+  
   return <div className="overflow-hidden bg-gradient-to-br from-background to-muted/20 rounded-xl border border-border/40 backdrop-blur-sm shadow-lg">
-        {/* Preview Section - Shows 5 standard equipment items by default */}
-        {previewItems.length > 0 && !showOptions && (
+        {/* Specific Equipment Preview - Shows 5 specific features horizontally */}
+        {!showOptions && (
           <div className="p-4 border-b border-border/20">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-2 h-2 rounded-full bg-primary"></div>
               <h5 className="text-sm font-medium text-foreground">Pajisje Standarde</h5>
-              <span className="text-xs text-muted-foreground">({options.standard?.length || 0} total)</span>
+              <span className="text-xs text-muted-foreground">(5 previews)</span>
             </div>
-            <div className="grid grid-cols-1 gap-2">
-              {previewItems.map((item, index) => (
-                <div key={index} className="flex items-center gap-3 py-1.5 px-3 bg-primary/5 border border-primary/20 rounded-lg hover:bg-primary/10 transition-colors">
-                  {getEquipmentIcon(item)}
-                  <span className="text-xs font-medium text-foreground">{item}</span>
-                </div>
-              ))}
+            <div className="flex flex-wrap gap-2">
+              {specificFeatures.map((feature, index) => {
+                const IconComponent = feature.icon;
+                return (
+                  <div key={index} className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors ${
+                    feature.hasFeature 
+                      ? 'bg-primary/10 border border-primary/30' 
+                      : 'bg-gray-100 border border-gray-200'
+                  }`}>
+                    <IconComponent className={`h-4 w-4 ${
+                      feature.hasFeature 
+                        ? 'text-primary font-bold' 
+                        : 'text-gray-400'
+                    }`} />
+                    <span className={`text-xs font-medium ${
+                      feature.hasFeature 
+                        ? 'text-foreground' 
+                        : 'text-gray-400'
+                    }`}>
+                      {feature.name}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
-            {(options.standard?.length || 0) > PREVIEW_SHOW_COUNT && (
-              <div className="mt-3 text-center">
-                <span className="text-xs text-muted-foreground">
-                  +{(options.standard?.length || 0) - PREVIEW_SHOW_COUNT} më shumë pajisje
-                </span>
-              </div>
-            )}
           </div>
         )}
         
@@ -957,9 +1044,9 @@ const CarDetails = memo(() => {
   return <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       <div className="container-responsive py-6 max-w-7xl">
         {/* Header with Actions - Improved Mobile Layout */}
-        <div className="flex flex-col gap-4 mb-6 md:mb-8">
-          {/* Navigation Buttons */}
-          <div className="flex flex-row gap-2">
+        <div className="flex flex-col gap-2 mb-4 md:mb-6">
+          {/* Compact Navigation and Action Buttons */}
+          <div className="flex flex-row gap-1.5 sm:gap-2">
             <Button variant="outline" onClick={() => {
             console.log("🔙 Attempting to go back...");
             console.log("Page state from context:", pageState);
@@ -975,25 +1062,23 @@ const CarDetails = memo(() => {
               console.log("🔙 Using goBack fallback");
               goBack();
             }
-          }} className="flex-1 sm:flex-none shadow-sm border-2 hover:shadow-md transition-all h-10 px-4">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Kthehu te Makinat
+          }} className="flex-1 sm:flex-none shadow-sm hover:shadow-md transition-all h-8 px-3 text-xs sm:text-sm">
+              <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+              <span className="hidden sm:inline">Kthehu te Makinat</span>
+              <span className="sm:hidden">Kthehu</span>
             </Button>
-            <Button variant="outline" onClick={() => navigate("/")} className="flex-1 sm:flex-none shadow-sm border-2 hover:shadow-md transition-all h-10 px-4">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Kryefaqja
+            <Button variant="outline" onClick={() => navigate("/")} className="flex-1 sm:flex-none shadow-sm hover:shadow-md transition-all h-8 px-3 text-xs sm:text-sm">
+              <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+              <span className="hidden sm:inline">Kryefaqja</span>
+              <span className="sm:hidden">Home</span>
             </Button>
-          </div>
-          
-          {/* Action Buttons */}
-          <div className="flex gap-2 justify-center sm:justify-end">
-            <Button variant="outline" size="sm" onClick={handleLike} className="shadow-sm hover:shadow-md transition-all flex-1 sm:flex-none max-w-[120px] h-9">
-              <Heart className={`h-4 w-4 mr-2 ${isLiked ? "fill-red-500 text-red-500" : ""}`} />
-              <span className="text-sm">Pëlqej</span>
+            <Button variant="outline" size="sm" onClick={handleLike} className="shadow-sm hover:shadow-md transition-all h-8 px-3 text-xs sm:text-sm">
+              <Heart className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 ${isLiked ? "fill-red-500 text-red-500" : ""}`} />
+              <span className="hidden sm:inline">Pëlqej</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={handleShare} className="shadow-sm hover:shadow-md transition-all flex-1 sm:flex-none max-w-[120px] h-9">
-              <Share2 className="h-4 w-4 mr-2" />
-              <span className="text-sm">Ndaj</span>
+            <Button variant="outline" size="sm" onClick={handleShare} className="shadow-sm hover:shadow-md transition-all h-8 px-3 text-xs sm:text-sm">
+              <Share2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+              <span className="hidden sm:inline">Ndaj</span>
             </Button>
           </div>
         </div>
@@ -1007,7 +1092,7 @@ const CarDetails = memo(() => {
               <CardContent className="p-0">
                 <div ref={imageContainerRef} className="car-details-hero relative h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] xl:h-[700px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer" onClick={() => setIsImageZoomOpen(true)} data-fancybox="gallery">
                   {images.length > 0 ? <img src={images[selectedImageIndex]} alt={`${car.year} ${car.make} ${car.model}`} className={`w-full h-full transition-transform duration-300 hover:scale-105 ${isPlaceholderImage ? "object-cover" // Use object-cover for placeholder to fill container properly on mobile
-                : "object-contain" // Use object-contain for real images to show full image
+                : "object-contain bg-white" // Use object-contain for real images to show full image with white background
                 }`} onError={e => {
                   e.currentTarget.src = "/placeholder.svg";
                   setIsPlaceholderImage(true);
@@ -1111,10 +1196,16 @@ const CarDetails = memo(() => {
                         +350€ deri në Prishtinë
                       </div>
                     </div>
-                    <InspectionRequestForm trigger={<Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto h-9 text-sm">
-                          <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                          Kërko Inspektim
-                        </Button>} carId={car.id} carMake={car.make} carModel={car.model} carYear={car.year} />
+                    <div className="flex gap-2 flex-col sm:flex-row">
+                      <InspectionRequestForm trigger={<Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto h-9 text-sm">
+                            <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                            Kërko Inspektim
+                          </Button>} carId={car.id} carMake={car.make} carModel={car.model} carYear={car.year} />
+                      <Button onClick={handleContactWhatsApp} size="sm" variant="outline" className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white w-full sm:w-auto h-9 text-sm">
+                        <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                        WhatsApp
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
