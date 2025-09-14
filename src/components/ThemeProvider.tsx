@@ -42,10 +42,23 @@ export function ThemeProvider({
         : "light"
 
       root.classList.add(systemTheme)
-      return
+      
+      // Add listener for system theme changes
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
+      const handleChange = (e: MediaQueryListEvent) => {
+        root.classList.remove("light", "dark")
+        root.classList.add(e.matches ? "dark" : "light")
+      }
+      
+      mediaQuery.addEventListener("change", handleChange)
+      
+      // Cleanup listener on unmount or theme change
+      return () => {
+        mediaQuery.removeEventListener("change", handleChange)
+      }
+    } else {
+      root.classList.add(theme)
     }
-
-    root.classList.add(theme)
   }, [theme])
 
   const value = {
