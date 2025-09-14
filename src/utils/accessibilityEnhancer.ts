@@ -470,56 +470,24 @@ export class AccessibilityEnhancer {
   }
 
   /**
-   * Enhance a specific element
-   */
-  private enhanceElement(element: Element): void {
-    // Handle buttons
-    if (element.tagName === 'BUTTON' && !element.getAttribute('aria-label')) {
-      const text = element.textContent?.trim();
-      if (text) {
-        element.setAttribute('aria-label', text);
-      }
-    }
-
-    // Handle images
-    if (element.tagName === 'IMG' && !element.getAttribute('alt')) {
-      const src = element.getAttribute('src') || '';
-      if (src.includes('logo')) {
-        element.setAttribute('alt', 'KORAUTO Logo');
-      } else if (src.includes('car') || src.includes('vehicle')) {
-        element.setAttribute('alt', 'Fotografi e makinës');
-      } else {
-        element.setAttribute('alt', 'Imazh');
-      }
-    }
-
-    // Handle links
-    if (element.tagName === 'A' && !element.getAttribute('aria-label')) {
-      const text = element.textContent?.trim();
-      if (text && text.length < 3) {
-        // Short link text, needs better description
-        element.setAttribute('aria-label', `Link: ${text}`);
-      }
-    }
-
-    // Handle form controls
-    if (['INPUT', 'SELECT', 'TEXTAREA'].includes(element.tagName)) {
-      const placeholder = element.getAttribute('placeholder');
-      const label = element.getAttribute('aria-label');
-      
-      if (placeholder && !label) {
-        element.setAttribute('aria-label', placeholder);
-      }
-    }
-  }
-
-  /**
-   * Destroy the accessibility enhancer
+   * Destroy the accessibility enhancer and clean up resources
    */
   public destroy(): void {
     if (this.observer) {
       this.observer.disconnect();
       this.observer = null;
+    }
+    
+    // Remove skip links
+    const skipLinks = document.querySelector('#skip-links');
+    if (skipLinks) {
+      skipLinks.remove();
+    }
+    
+    // Remove high contrast styles
+    const highContrastStyles = document.querySelector('#high-contrast-styles');
+    if (highContrastStyles) {
+      highContrastStyles.remove();
     }
   }
 }
