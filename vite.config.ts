@@ -24,6 +24,11 @@ export default defineConfig(({ mode }) => ({
     cssCodeSplit: true,
     rollupOptions: {
       output: {
+        // Ensure ES module format for better compatibility
+        format: 'es',
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
         manualChunks: {
           // Core React libraries
           vendor: ['react', 'react-dom'],
@@ -42,6 +47,8 @@ export default defineConfig(({ mode }) => ({
           charts: ['recharts'],
         },
       },
+      // Add external dependencies that should not be bundled
+      external: [],
     },
     // Optimize chunk size warnings
     chunkSizeWarningLimit: 1000,
@@ -57,8 +64,8 @@ export default defineConfig(({ mode }) => ({
         safari10: true, // Safari 10 compatibility
       },
     },
-    // Target modern browsers for better optimization
-    target: 'es2020',
+    // Target more compatible browsers to avoid ES module import errors
+    target: ['es2015', 'edge88', 'firefox78', 'chrome87', 'safari12'],
     // Enable source maps for production debugging
     sourcemap: mode !== 'production',
   },
@@ -71,5 +78,13 @@ export default defineConfig(({ mode }) => ({
       '@tanstack/react-query',
       '@supabase/supabase-js',
     ],
+    // Add polyfills for better browser compatibility
+    esbuildOptions: {
+      target: 'es2015',
+    },
+  },
+  // Add polyfill configuration for legacy browsers
+  define: {
+    global: 'globalThis',
   },
 }));
