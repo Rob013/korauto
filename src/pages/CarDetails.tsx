@@ -1076,18 +1076,8 @@ const CarDetails = memo(() => {
                     <span className="text-muted-foreground font-medium text-right text-xs sm:text-sm">
                       {car.make} {car.model}
                     </span>
-                   </div>
-                   
-                   {car.details?.badge && <div className="flex items-center justify-between p-2 sm:p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors mobile-spec-item">
-                     <div className="flex items-center gap-1.5 sm:gap-2">
-                       <span className="font-medium text-foreground text-xs sm:text-sm">Versioni</span>
-                     </div>
-                     <span className="text-muted-foreground font-medium text-right text-xs sm:text-sm">
-                       {car.details.badge}
-                     </span>
-                   </div>}
-                   
-                    {car.transmission && <div className="flex items-center justify-between p-2 sm:p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors mobile-spec-item">
+                  </div>
+                   {car.transmission && <div className="flex items-center justify-between p-2 sm:p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors mobile-spec-item">
                       <div className="flex items-center gap-1.5 sm:gap-2">
                         <Settings className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
                         <span className="font-medium text-foreground text-xs sm:text-sm">Transmisioni</span>
@@ -1221,7 +1211,12 @@ const CarDetails = memo(() => {
                                 {car.details.seats_count}
                               </span>
                             </div>}
-                   
+                          {car.details.badge && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                              <span className="text-sm text-foreground font-medium">Versioni:</span>
+                              <span className="text-sm font-medium text-muted-foreground">
+                                {car.details.badge}
+                              </span>
+                            </div>}
                           {car.details.sell_type}
 
                           {/* Inspection Report Button */}
