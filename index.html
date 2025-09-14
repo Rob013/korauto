@@ -65,6 +65,36 @@
 
       gtag('config', 'G-EK3E1KLL6V');
     </script>
+
+    <!-- ES Module compatibility check and fallback -->
+    <script>
+      // Check for ES module support and provide better error handling
+      (function() {
+        try {
+          // Basic ES6 feature check
+          new Function('import("")');
+        } catch (e) {
+          // Browser doesn't support dynamic imports, show error
+          document.addEventListener('DOMContentLoaded', function() {
+            document.body.innerHTML = '<div style="padding: 20px; font-family: Arial, sans-serif; text-align: center;"><h2>Browser Not Supported</h2><p>This application requires a modern browser that supports ES modules. Please update your browser to the latest version.</p><p>Supported browsers: Chrome 63+, Firefox 60+, Safari 11.1+, Edge 79+</p></div>';
+          });
+          return;
+        }
+
+        // Handle module loading errors
+        window.addEventListener('error', function(e) {
+          if (e.message && e.message.includes('module')) {
+            console.error('Module loading error:', e);
+            // Don't replace content immediately, wait a bit to see if it recovers
+            setTimeout(function() {
+              if (!document.querySelector('#root > *')) {
+                document.body.innerHTML = '<div style="padding: 20px; font-family: Arial, sans-serif; text-align: center;"><h2>Loading Error</h2><p>There was an error loading the application. Please refresh the page.</p><button onclick="location.reload()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Refresh Page</button></div>';
+              }
+            }, 5000);
+          }
+        });
+      })();
+    </script>
   </head>
 
   <body>
