@@ -195,156 +195,49 @@ const EquipmentOptionsSection = memo(({
     return <CheckCircle className="h-3 w-3 text-primary" />;
   };
 
-  // Check for specific equipment features (now includes 10 features)
-  const checkSpecificFeatures = () => {
-    const allEquipment = [
-      ...(options.standard || []),
-      ...(options.choice || []),
-      ...(options.tuning || [])
-    ];
-
-    // Convert numeric codes to feature names and also check in Albanian feature names
-    const allFeatureNames = allEquipment.map(item => {
-      const itemStr = item.toString().trim();
-      return FEATURE_MAPPING[itemStr] || item;
-    }).map(item => item.toLowerCase());
-
-    return {
-      ledLights: allEquipment.includes("014") || allEquipment.includes("14") || 
-                allEquipment.includes("015") || allEquipment.includes("15") ||
-                allFeatureNames.some(item => 
-                  item.includes('led') || 
-                  item.includes('xenon') || 
-                  item.includes('halogen') ||
-                  item.includes('headlight') ||
-                  item.includes('dritë')
-                ),
-      backSensors: allEquipment.includes("011") || allEquipment.includes("11") ||
-                  allFeatureNames.some(item => 
-                    item.includes('sensor') || 
-                    item.includes('parking') ||
-                    item.includes('distance') ||
-                    item.includes('rear sensor') ||
-                    item.includes('sensorët')
-                  ),
-      backCamera: allEquipment.includes("010") || allEquipment.includes("10") ||
-                 allFeatureNames.some(item => 
-                   item.includes('camera') || 
-                   item.includes('backup camera') ||
-                   item.includes('rear camera') ||
-                   item.includes('kamerë')
-                 ),
-      heatedSeats: allEquipment.includes("037") || allEquipment.includes("37") ||
-                  allFeatureNames.some(item => 
-                    item.includes('heated seat') || 
-                    item.includes('seat heat') ||
-                    item.includes('ulëse të ngrohta') ||
-                    item.includes('ngrohje')
-                  ),
-      ventilationSeats: allEquipment.includes("046") || allEquipment.includes("46") ||
-                       allFeatureNames.some(item => 
-                         item.includes('ventilated seat') || 
-                         item.includes('seat ventilation') ||
-                         item.includes('cooled seat') ||
-                         item.includes('ulëse të ajrosura') ||
-                         item.includes('ventilimi')
-                       ),
-      airConditioning: allEquipment.includes("001") || allEquipment.includes("1") ||
-                      allFeatureNames.some(item => 
-                        item.includes('air conditioning') || 
-                        item.includes('klimatizimi') ||
-                        item.includes('ac') ||
-                        item.includes('climate')
-                      ),
-      electricWindows: allEquipment.includes("002") || allEquipment.includes("2") ||
-                      allFeatureNames.some(item => 
-                        item.includes('electric window') || 
-                        item.includes('power window') ||
-                        item.includes('dritaret elektrike') ||
-                        item.includes('window')
-                      ),
-      absBrakes: allEquipment.includes("004") || allEquipment.includes("4") ||
-                allFeatureNames.some(item => 
-                  item.includes('abs') || 
-                  item.includes('brake') ||
-                  item.includes('frena') ||
-                  item.includes('anti-lock')
-                ),
-      bluetooth: allEquipment.includes("008") || allEquipment.includes("8") ||
-                allFeatureNames.some(item => 
-                  item.includes('bluetooth') || 
-                  item.includes('wireless') ||
-                  item.includes('connectivity')
-                ),
-      cruiseControl: allEquipment.includes("012") || allEquipment.includes("12") ||
-                    allFeatureNames.some(item => 
-                      item.includes('cruise control') || 
-                      item.includes('cruise') ||
-                      item.includes('kontrolli i kursimit') ||
-                      item.includes('speed control')
-                    )
-    };
-  };
-
-  // Get specific equipment preview items (now 10 items)
+  // Get specific equipment preview items (up to 10 items from real API data)
   const getSpecificPreviewItems = () => {
-    const features = checkSpecificFeatures();
+    if (!options.standard || options.standard.length === 0) {
+      return [];
+    }
     
-    return [
-      {
-        name: 'LED Lights',
-        hasFeature: features.ledLights,
-        icon: Lightbulb
-      },
-      {
-        name: 'Back Sensors',
-        hasFeature: features.backSensors,
-        icon: Radar
-      },
-      {
-        name: 'Back Camera',
-        hasFeature: features.backCamera,
-        icon: Camera
-      },
-      {
-        name: 'Heated Seats',
-        hasFeature: features.heatedSeats,
-        icon: Thermometer
-      },
-      {
-        name: 'Ventilation Seats',
-        hasFeature: features.ventilationSeats,
-        icon: Wind
-      },
-      {
-        name: 'Air Conditioning',
-        hasFeature: features.airConditioning,
-        icon: Settings
-      },
-      {
-        name: 'Electric Windows',
-        hasFeature: features.electricWindows,
-        icon: Eye
-      },
-      {
-        name: 'ABS Brakes',
-        hasFeature: features.absBrakes,
-        icon: Shield
-      },
-      {
-        name: 'Bluetooth',
-        hasFeature: features.bluetooth,
-        icon: MessageCircle
-      },
-      {
-        name: 'Cruise Control',
-        hasFeature: features.cruiseControl,
-        icon: Cog
-      }
-    ];
+    // Get the first 10 most useful equipment items from the API
+    const previewItems = options.standard.slice(0, 10);
+    
+    return previewItems.map((item, index) => {
+      const itemName = typeof item === 'string' ? item : String(item);
+      
+      // Get appropriate icon based on equipment name
+      const getIconForEquipment = (name: string) => {
+        const itemLower = name.toLowerCase();
+        if (itemLower.includes('air') || itemLower.includes('klima') || itemLower.includes('conditioning')) return Settings;
+        if (itemLower.includes('brake') || itemLower.includes('frena') || itemLower.includes('abs')) return Shield;
+        if (itemLower.includes('engine') || itemLower.includes('motor')) return Cog;
+        if (itemLower.includes('seat') || itemLower.includes('ulëse')) return Car;
+        if (itemLower.includes('window') || itemLower.includes('dritare')) return Eye;
+        if (itemLower.includes('light') || itemLower.includes('dritë') || itemLower.includes('led') || itemLower.includes('xenon')) return Lightbulb;
+        if (itemLower.includes('radio') || itemLower.includes('audio') || itemLower.includes('bluetooth')) return MessageCircle;
+        if (itemLower.includes('camera') || itemLower.includes('kamerë')) return Camera;
+        if (itemLower.includes('sensor') || itemLower.includes('sensorët') || itemLower.includes('radar')) return Radar;
+        if (itemLower.includes('navigation') || itemLower.includes('gps') || itemLower.includes('navigacion')) return MapPin;
+        if (itemLower.includes('cruise') || itemLower.includes('control') || itemLower.includes('kontroll')) return Gauge;
+        if (itemLower.includes('heated') || itemLower.includes('ngrohje') || itemLower.includes('thermostat')) return Thermometer;
+        if (itemLower.includes('vent') || itemLower.includes('air') || itemLower.includes('ajros')) return Wind;
+        // Default icon for standard equipment
+        return CheckCircle;
+      };
+      
+      const IconComponent = getIconForEquipment(itemName);
+      
+      return {
+        name: itemName,
+        hasFeature: true, // All items from options.standard are available features
+        icon: IconComponent
+      };
+    });
   };
 
-  // Get preview items for display (5 standard equipment items)
+  // Get preview items for display (standard equipment items)
   const getPreviewItems = () => {
     if (options.standard && options.standard.length > 0) {
       return options.standard.slice(0, PREVIEW_SHOW_COUNT);
@@ -356,29 +249,28 @@ const EquipmentOptionsSection = memo(({
   const specificFeatures = getSpecificPreviewItems();
   
   return <div className="overflow-hidden bg-gradient-to-br from-background to-muted/20 rounded-xl border border-border/40 backdrop-blur-sm shadow-lg">
-        {/* Specific Equipment Preview - Shows 5 specific features horizontally */}
+        {/* Equipment Preview - Shows up to 10 real equipment items from API */}
         {!showOptions && (
           <div className="p-4 border-b border-border/20">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-2 h-2 rounded-full bg-primary"></div>
               <h5 className="text-sm font-medium text-foreground">Pajisje Standarde</h5>
-              <span className="text-xs text-muted-foreground">(10 previews)</span>
             </div>
-            <div className="grid grid-cols-5 gap-2 sm:gap-3 md:grid-cols-5 lg:grid-cols-10">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-10">
               {specificFeatures.map((feature, index) => {
                 const IconComponent = feature.icon;
                 return (
-                  <div key={index} className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors min-h-[64px] justify-center ${
+                  <div key={index} className={`flex flex-col items-center gap-2 p-3 rounded-lg transition-colors min-h-[80px] justify-center ${
                     feature.hasFeature 
                       ? 'bg-primary/10 border border-primary/30' 
                       : 'bg-gray-100 border border-gray-200'
                   }`}>
-                    <IconComponent className={`h-4 w-4 flex-shrink-0 ${
+                    <IconComponent className={`h-5 w-5 flex-shrink-0 ${
                       feature.hasFeature 
                         ? 'text-primary font-bold' 
                         : 'text-gray-400'
                     }`} />
-                    <span className={`text-xs font-medium text-center leading-tight ${
+                    <span className={`text-xs font-medium text-center leading-tight break-words hyphens-auto max-w-full ${
                       feature.hasFeature 
                         ? 'text-foreground' 
                         : 'text-gray-400'

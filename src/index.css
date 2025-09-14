@@ -2015,3 +2015,23 @@ body {
     padding: 0 4px !important;
   }
 }
+
+/* Equipment grid text alignment improvements */
+.equipment-item-text {
+  word-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+  text-align: center;
+  line-height: 1.2;
+  max-width: 100%;
+}
+
+/* Better text wrapping for equipment names */
+.break-words {
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+.hyphens-auto {
+  hyphens: auto;
+}
