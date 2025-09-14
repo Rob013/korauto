@@ -1191,23 +1191,7 @@ const CarDetails = memo(() => {
 
                     {/* Vehicle Details */}
                     {car.details && <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                        <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                          <Car className="h-5 w-5" />
-                          Detaje të Veturës
-                        </h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {car.details.seats_count && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                              <span className="text-sm text-foreground font-medium">Numri i Vendeve:</span>
-                              <span className="text-sm font-medium text-muted-foreground">
-                                {car.details.seats_count}
-                              </span>
-                            </div>}
-                   
-                          {car.details.sell_type}
-
-                          {/* Inspection Report Button */}
-                          <div className="sm:col-span-2 mt-4">
-                            <Button onClick={() => {
+                        <Button onClick={() => {
                         setShowInspectionReport(!showInspectionReport);
                       }} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" size="lg">
                               {showInspectionReport ? "Fshih Raportin" : "Raporti"}
@@ -1218,8 +1202,6 @@ const CarDetails = memo(() => {
                                   {car.insurance_v2?.accidents && <div className="w-2 h-2 bg-red-400 rounded-full" title="Accident history available" />}
                                 </div>}
                             </Button>
-                          </div>
-                        </div>
                       </div>}
 
                     {/* Compact Modern Inspection Report Section - Triggered by Raporti Button */}
