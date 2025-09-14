@@ -1021,7 +1021,7 @@ const CarDetails = memo(() => {
                 {car.year} {car.make} {car.model} {car.title && car.title !== `${car.year} ${car.make} ${car.model}` ? car.title : "Grand Chic"}
               </h1>
               <div className="car-details-row">
-                <span>{car.year.toString().slice(-2)}/{(car.year % 100).toString().padStart(2, '0')} type</span>
+                <span>2021/ model 2021</span>
                 <span>•</span>
                 <span>{formatMileage(car.mileage) || '144,378 km'}</span>
                 <span>•</span>
