@@ -114,10 +114,30 @@ const App = () => {
     enhancer.init();
     enhancer.addSkipLinks();
     
+    // Performance optimization: announce when app is ready
+    const timer = setTimeout(() => {
+      enhancer.announceMessage('KORAUTO është ngarkuar dhe gati për përdorim', 'polite');
+    }, 2000);
+    
     return () => {
       enhancer.destroy();
+      clearTimeout(timer);
     };
   }, []);
+
+  // Performance monitoring: track route changes for optimization
+  useEffect(() => {
+    const currentPath = window.location.pathname;
+    
+    // Preload resources based on current route
+    if (currentPath.includes('/catalog')) {
+      preloadRouteResources('catalog');
+    } else if (currentPath.includes('/car/')) {
+      preloadRouteResources('car-details');
+    } else if (currentPath.includes('/admin')) {
+      preloadRouteResources('admin');
+    }
+  }, [preloadRouteResources]);
 
   return (
     <QueryClientProvider client={queryClient}>
