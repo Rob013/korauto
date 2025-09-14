@@ -19,7 +19,7 @@ import { useImageSwipe } from "@/hooks/useImageSwipe";
 import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
 
-// Helper function to format production date as MM/YY
+// Helper function to format production date as MM/YYYY
 const getFormattedProductionDate = (car: {
   year?: number;
   month?: number;
@@ -35,13 +35,13 @@ const getFormattedProductionDate = (car: {
   if (month >= 1 && month <= 12 && year) {
     // Format month with leading zero if needed
     const formattedMonth = month.toString().padStart(2, '0');
-    // Get last 2 digits of year
-    const formattedYear = year.toString().slice(-2);
+    // Use full 4-digit year
+    const formattedYear = year.toString();
     return `${formattedMonth}/${formattedYear}`;
   }
   
   // Fallback to just year if no month available
-  return year ? year.toString().slice(-2) : '';
+  return year ? year.toString() : '';
 };
 
 // Enhanced Feature mapping for equipment/options - supporting both string and numeric formats
