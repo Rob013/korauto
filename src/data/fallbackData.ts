@@ -72,7 +72,16 @@ export const fallbackCars = [
           choice: ["009", "015", "028", "042", "043"],
           tuning: ["034", "035"]
         }
-      }
+      },
+      lots: [{
+        details: {
+          options: {
+            standard: ["001", "002", "003", "004", "005", "010", "011", "014", "037", "046"],
+            choice: ["009", "015", "028", "042", "043"],
+            tuning: ["034", "035"]
+          }
+        }
+      }]
     }]
   },
   {
@@ -98,7 +107,14 @@ export const fallbackCars = [
         big: ["/images/placeholder-car.jpg"]
       },
       lot: "FB002",
-      status: 1
+      status: 1,
+      details: {
+        options: {
+          standard: ["001", "002", "003", "004", "005", "006", "014", "016", "017", "020"],
+          choice: ["009", "010", "011", "037", "041"],
+          tuning: []
+        }
+      }
     }],
     location: "Prishtinë, Kosovo",
     features: ["All-Wheel Drive", "CVT Transmission", "Excellent Condition"],
