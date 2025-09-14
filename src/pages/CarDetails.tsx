@@ -179,7 +179,7 @@ const EquipmentOptionsSection = memo(({
   const [showAllComfort, setShowAllComfort] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const INITIAL_SHOW_COUNT = 6;
-  const PREVIEW_SHOW_COUNT = 5;
+  const PREVIEW_SHOW_COUNT = 10;
 
   // Helper function to get appropriate icon for equipment item
   const getEquipmentIcon = (item: string) => {
@@ -195,7 +195,7 @@ const EquipmentOptionsSection = memo(({
     return <CheckCircle className="h-3 w-3 text-primary" />;
   };
 
-  // Check for specific equipment features
+  // Check for specific equipment features (now includes 10 features)
   const checkSpecificFeatures = () => {
     const allEquipment = [
       ...(options.standard || []),
@@ -248,11 +248,45 @@ const EquipmentOptionsSection = memo(({
                          item.includes('cooled seat') ||
                          item.includes('ulëse të ajrosura') ||
                          item.includes('ventilimi')
-                       )
+                       ),
+      airConditioning: allEquipment.includes("001") || allEquipment.includes("1") ||
+                      allFeatureNames.some(item => 
+                        item.includes('air conditioning') || 
+                        item.includes('klimatizimi') ||
+                        item.includes('ac') ||
+                        item.includes('climate')
+                      ),
+      electricWindows: allEquipment.includes("002") || allEquipment.includes("2") ||
+                      allFeatureNames.some(item => 
+                        item.includes('electric window') || 
+                        item.includes('power window') ||
+                        item.includes('dritaret elektrike') ||
+                        item.includes('window')
+                      ),
+      absBrakes: allEquipment.includes("004") || allEquipment.includes("4") ||
+                allFeatureNames.some(item => 
+                  item.includes('abs') || 
+                  item.includes('brake') ||
+                  item.includes('frena') ||
+                  item.includes('anti-lock')
+                ),
+      bluetooth: allEquipment.includes("008") || allEquipment.includes("8") ||
+                allFeatureNames.some(item => 
+                  item.includes('bluetooth') || 
+                  item.includes('wireless') ||
+                  item.includes('connectivity')
+                ),
+      cruiseControl: allEquipment.includes("012") || allEquipment.includes("12") ||
+                    allFeatureNames.some(item => 
+                      item.includes('cruise control') || 
+                      item.includes('cruise') ||
+                      item.includes('kontrolli i kursimit') ||
+                      item.includes('speed control')
+                    )
     };
   };
 
-  // Get specific equipment preview items
+  // Get specific equipment preview items (now 10 items)
   const getSpecificPreviewItems = () => {
     const features = checkSpecificFeatures();
     
@@ -281,6 +315,31 @@ const EquipmentOptionsSection = memo(({
         name: 'Ventilation Seats',
         hasFeature: features.ventilationSeats,
         icon: Wind
+      },
+      {
+        name: 'Air Conditioning',
+        hasFeature: features.airConditioning,
+        icon: Settings
+      },
+      {
+        name: 'Electric Windows',
+        hasFeature: features.electricWindows,
+        icon: Eye
+      },
+      {
+        name: 'ABS Brakes',
+        hasFeature: features.absBrakes,
+        icon: Shield
+      },
+      {
+        name: 'Bluetooth',
+        hasFeature: features.bluetooth,
+        icon: MessageCircle
+      },
+      {
+        name: 'Cruise Control',
+        hasFeature: features.cruiseControl,
+        icon: Cog
       }
     ];
   };
@@ -303,9 +362,9 @@ const EquipmentOptionsSection = memo(({
             <div className="flex items-center gap-2 mb-3">
               <div className="w-2 h-2 rounded-full bg-primary"></div>
               <h5 className="text-sm font-medium text-foreground">Pajisje Standarde</h5>
-              <span className="text-xs text-muted-foreground">(5 previews)</span>
+              <span className="text-xs text-muted-foreground">(10 previews)</span>
             </div>
-            <div className="grid grid-cols-5 gap-2 sm:gap-3">
+            <div className="grid grid-cols-5 gap-2 sm:gap-3 md:grid-cols-5 lg:grid-cols-10">
               {specificFeatures.map((feature, index) => {
                 const IconComponent = feature.icon;
                 return (
@@ -922,7 +981,9 @@ const CarDetails = memo(() => {
               safety_features: ["ABS", "Airbags", "Stability Control"],
               comfort_features: ["Air Conditioning", "Power Windows"],
               performance_rating: 4.5,
-              popularity_score: 85
+              popularity_score: 85,
+              // Enhanced API data  
+              details: lotData.details
             };
             setCar(transformedCar);
             setLoading(false);
