@@ -1099,6 +1099,14 @@ All colors MUST be HSL.
     min-height: -webkit-fill-available; /* iOS Safari */
     max-height: 100vh; /* Prevent overflow on some devices */
     max-height: 100dvh;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background-color: rgba(255, 255, 255, 0.95);
+  }
+  
+  /* Dark mode filter panel */
+  .dark .mobile-filter-panel {
+    background-color: rgba(0, 0, 0, 0.95);
   }
 
   /* Optimized container spacing for mobile - More compact */
