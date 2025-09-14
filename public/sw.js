@@ -1,8 +1,9 @@
-// Service Worker for caching API responses and static assets
+// Service Worker for caching API responses and static assets with 120fps performance optimization
 const VERSION = new Date().getTime(); // Use timestamp for versioning
 const CACHE_NAME = `korauto-v${VERSION}`;
 const STATIC_CACHE_NAME = `korauto-static-v${VERSION}`;
 const ASSETS_CACHE_NAME = `korauto-assets-v${VERSION}`;
+const HIGH_PERFORMANCE_CACHE = `korauto-high-perf-v${VERSION}`;
 
 // Static assets to cache
 const STATIC_ASSETS = [
@@ -10,6 +11,16 @@ const STATIC_ASSETS = [
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png'
+];
+
+// High-priority assets for 120fps performance
+const HIGH_PERFORMANCE_ASSETS = [
+  // Critical JS chunks for frame rate optimization
+  '/assets/frameRateOptimizer-*.js',
+  '/assets/vendor-*.js',
+  '/assets/index-*.js',
+  // Critical CSS for layout stability
+  '/assets/index-*.css'
 ];
 
 // API endpoints to cache
@@ -20,21 +31,43 @@ const API_CACHE_PATTERNS = [
   /\/api\/cars\?/
 ];
 
-// Cache duration in milliseconds
+// Cache duration in milliseconds (optimized for 120fps performance)
 const CACHE_DURATION = {
   API: 5 * 60 * 1000, // 5 minutes for API responses
   STATIC: 24 * 60 * 60 * 1000, // 24 hours for static assets
   IMAGES: 60 * 60 * 1000, // 1 hour for images
   ASSETS: 7 * 24 * 60 * 60 * 1000, // 7 days for versioned assets (JS/CSS)
-  FONTS: 30 * 24 * 60 * 60 * 1000 // 30 days for fonts
+  FONTS: 30 * 24 * 60 * 60 * 1000, // 30 days for fonts
+  HIGH_PERFORMANCE: 60 * 60 * 1000 // 1 hour for performance-critical assets
 };
 
-// Install event - cache static assets
+// Install event - cache static assets and prioritize performance-critical resources
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(STATIC_CACHE_NAME)
-      .then((cache) => cache.addAll(STATIC_ASSETS))
-      .then(() => self.skipWaiting())
+    Promise.all([
+      // Cache static assets
+      caches.open(STATIC_CACHE_NAME)
+        .then((cache) => cache.addAll(STATIC_ASSETS)),
+      
+      // Preload high-performance assets for 120fps optimization
+      caches.open(HIGH_PERFORMANCE_CACHE)
+        .then((cache) => {
+          // Preload critical assets for frame rate optimization
+          return Promise.all(
+            HIGH_PERFORMANCE_ASSETS.map(async (asset) => {
+              try {
+                const response = await fetch(asset);
+                if (response.ok) {
+                  return cache.put(asset, response);
+                }
+              } catch (error) {
+                // Silently fail for asset preloading
+                console.log('Failed to preload asset:', asset);
+              }
+            })
+          );
+        })
+    ]).then(() => self.skipWaiting())
   );
 });
 
@@ -45,7 +78,10 @@ self.addEventListener('activate', (event) => {
       .then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
-            if (cacheName !== CACHE_NAME && cacheName !== STATIC_CACHE_NAME && cacheName !== ASSETS_CACHE_NAME) {
+            if (cacheName !== CACHE_NAME && 
+                cacheName !== STATIC_CACHE_NAME && 
+                cacheName !== ASSETS_CACHE_NAME && 
+                cacheName !== HIGH_PERFORMANCE_CACHE) {
               return caches.delete(cacheName);
             }
           })
@@ -106,9 +142,15 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Handle HTML documents (network first to ensure latest version)
+  // Handle HTML documents with network-first strategy
   if (request.mode === 'navigate' || (request.method === 'GET' && request.headers.get('accept')?.includes('text/html'))) {
     event.respondWith(handleHTMLRequest(request));
+    return;
+  }
+
+  // Handle performance-critical assets (frame rate optimizer, etc.)
+  if (HIGH_PERFORMANCE_ASSETS.some(pattern => url.pathname.includes(pattern.replace('*', '')))) {
+    event.respondWith(handleHighPerformanceAsset(request));
     return;
   }
 
@@ -118,6 +160,37 @@ self.addEventListener('fetch', (event) => {
       .catch(() => caches.match(request))
   );
 });
+
+// Handle high-performance assets with immediate cache response
+async function handleHighPerformanceAsset(request) {
+  const cache = await caches.open(HIGH_PERFORMANCE_CACHE);
+  const cachedResponse = await cache.match(request);
+
+  // Return cached version immediately for performance-critical assets
+  if (cachedResponse) {
+    // Update cache in background for next time
+    fetch(request).then(response => {
+      if (response.ok) {
+        cache.put(request, response.clone());
+      }
+    }).catch(() => {
+      // Silently fail background update
+    });
+    
+    return cachedResponse;
+  }
+
+  // If not cached, fetch and cache
+  try {
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch (error) {
+    throw error;
+  }
+}
 
 // Handle API requests with cache-first strategy for GET requests
 async function handleAPIRequest(request) {

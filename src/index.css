@@ -773,12 +773,14 @@ All colors MUST be HSL.
   .smooth-scroll {
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
   /* GPU acceleration for animations */
   .gpu-accelerated {
     transform: translateZ(0);
     will-change: transform;
+    backface-visibility: hidden;
   }
 
   /* Layout stability utilities */
@@ -791,10 +793,11 @@ All colors MUST be HSL.
     min-width: 0;
   }
 
-  /* Image optimization */
+  /* Image optimization with content visibility */
   .optimized-image {
     content-visibility: auto;
     contain-intrinsic-size: 280px 160px;
+    contain: size layout style paint;
   }
 
   /* Prevent layout shifts in card grids */
@@ -803,6 +806,29 @@ All colors MUST be HSL.
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1.5rem;
     align-items: start;
+    contain: layout style;
+  }
+
+  /* Performance-optimized card container */
+  .performance-card {
+    contain: layout style paint;
+    will-change: transform, opacity;
+    transform: translateZ(0);
+  }
+
+  /* Optimized animations for 120fps displays */
+  .animation-120fps {
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform, opacity;
+    transform: translateZ(0);
+  }
+
+  /* Enhanced touch targets for high-DPI displays */
+  .touch-target-120fps {
+    min-height: 48px;
+    min-width: 48px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
 
   /* Better focus management */

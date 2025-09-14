@@ -9,6 +9,8 @@ import { InstallPrompt } from "./components/InstallPrompt";
 import { useResourcePreloader } from "./hooks/useResourcePreloader";
 import { AccessibilityEnhancer } from "./utils/accessibilityEnhancer";
 import { StatusRefreshProvider } from "./components/StatusRefreshProvider";
+import { useFrameRate } from "./hooks/useFrameRate";
+import { PerformanceMonitor } from "./components/PerformanceMonitor";
 
 // Lazy load all pages for better code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -108,6 +110,9 @@ const App = () => {
   // Initialize resource preloading for better performance
   const { preloadRouteResources } = useResourcePreloader();
 
+  // Initialize frame rate optimization for 120fps support
+  const { supportsHighRefreshRate, targetFPS, currentFPS } = useFrameRate();
+
   // Initialize accessibility enhancements
   useEffect(() => {
     const enhancer = AccessibilityEnhancer.getInstance();
@@ -118,6 +123,19 @@ const App = () => {
       enhancer.destroy();
     };
   }, []);
+
+  // Log performance information for development
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🚀 KORAUTO Performance Info:', {
+        supportsHighRefreshRate,
+        targetFPS,
+        currentFPS,
+        userAgent: navigator.userAgent,
+        devicePixelRatio: window.devicePixelRatio
+      });
+    }
+  }, [supportsHighRefreshRate, targetFPS, currentFPS]);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -222,6 +240,10 @@ const App = () => {
           </Routes>
         </BrowserRouter>
         <InstallPrompt />
+        {/* Performance Monitor for development and high-performance monitoring */}
+        {(process.env.NODE_ENV === 'development' || supportsHighRefreshRate) && (
+          <PerformanceMonitor showDetails={false} />
+        )}
       </TooltipProvider>
       </StatusRefreshProvider>
     </QueryClientProvider>
