@@ -420,7 +420,7 @@ const CarCard = ({
         aspectRatio: '280/360'
       }}
     >
-      <div className="relative h-48 bg-muted overflow-hidden">
+      <div className="relative h-56 bg-muted overflow-hidden">
         {image ? (
           <OptimizedImage
             src={image}
@@ -523,7 +523,7 @@ const CarCard = ({
             <span className="text-lg font-bold text-primary">
               €{price.toLocaleString()}
             </span>
-            <p className="text-xs text-muted-foreground">deri ne portin e durresit</p>
+            <p className="text-xs text-muted-foreground">deri ne portin e Durrësit</p>
           </div>
         </div>
 

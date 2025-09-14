@@ -293,8 +293,8 @@ const LazyCarCard = memo(({
       {/* Image Section - 70% of card height */}
       <div className={`relative bg-muted overflow-hidden flex-shrink-0 rounded-lg ${
         viewMode === 'list' 
-          ? 'w-28 h-20 sm:w-36 sm:h-24 lg:w-44 lg:h-28' 
-          : 'h-44 sm:h-52 lg:h-60'
+          ? 'w-32 h-24 sm:w-40 sm:h-28 lg:w-48 lg:h-32' 
+          : 'h-52 sm:h-60 lg:h-72'
       }`}>
         {/* Always show single image - swipe functionality removed from car cards */}
         {(image || (images && images.length > 0)) ? (
@@ -397,7 +397,7 @@ const LazyCarCard = memo(({
                 €{price.toLocaleString()}
               </span>
               <span className="text-xs text-muted-foreground block">
-                deri ne portin e durresit
+                deri ne portin e Durrësit
               </span>
             </div>
           ) : (
@@ -407,7 +407,7 @@ const LazyCarCard = memo(({
                 €{price.toLocaleString()}
               </span>
               <span className="text-xs text-muted-foreground">
-                deri ne portin e durresit
+                deri ne portin e Durrësit
               </span>
             </div>
           )}
