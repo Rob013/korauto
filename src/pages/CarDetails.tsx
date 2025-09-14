@@ -1120,8 +1120,8 @@ const CarDetails = memo(() => {
               </CardContent>
             </Card>
 
-            {/* Mobile Car Title and Details - MOBILE ONLY */}
-            <div className="md:hidden">
+            {/* Car Title and Details - NOW SHOWN ON ALL DEVICES */}
+            <div>
               <h1 className="car-details-title">
                 {car.year} {car.make} {car.model} {car.title && car.title !== `${car.year} ${car.make} ${car.model}` ? car.title : "Grand Chic"}
               </h1>

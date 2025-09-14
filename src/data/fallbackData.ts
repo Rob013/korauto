@@ -1,6 +1,72 @@
 // Fallback car data for when API is unavailable
 export const fallbackCars = [
   {
+    id: "LOT000000",
+    title: "2023 Toyota Camry Hybrid",
+    manufacturer: { name: "Toyota" },
+    model: { name: "Camry" },
+    year: 2023,
+    price: 35000,
+    currency: "USD",
+    odometer: 15000,
+    fuel: { name: "Hybrid" },
+    transmission: { name: "Automatic" },
+    color: { name: "Blue" },
+    grade: "4.8",
+    vin: "1HGBH41JXMN109188",
+    lot_number: "LOT000000",
+    location: "Prishtinë, Kosovo",
+    features: ["Hybrid Engine", "Automatic Transmission", "Low Mileage", "Toyota Safety Sense", "Bluetooth"],
+    equipment_options: {
+      standard: [
+        "Air Conditioning",
+        "Power Steering", 
+        "ABS Brakes",
+        "Airbags (Front & Side)",
+        "Electric Windows",
+        "Radio/Audio System",
+        "Bluetooth Connectivity",
+        "Cruise Control",
+        "Power Seats",
+        "LED Lights"
+      ],
+      choice: [
+        "Sunroof",
+        "Navigation System", 
+        "Heated Seats",
+        "Parking Sensors",
+        "Backup Camera"
+      ]
+    },
+    is_premium: true,
+    seats_count: 5,
+    accidents_count: 0,
+    inspection_available: true,
+    status: "1",
+    lots: [{
+      buy_now: 35000,
+      odometer: { km: 15000 },
+      images: {
+        normal: [
+          "https://picsum.photos/800/600?random=100",
+          "https://picsum.photos/800/600?random=101",
+          "https://picsum.photos/800/600?random=102",
+          "https://picsum.photos/800/600?random=103",
+          "https://picsum.photos/800/600?random=104"
+        ]
+      },
+      lot: "LOT000000",
+      status: 1,
+      details: {
+        options: {
+          standard: ["001", "002", "003", "004", "005", "010", "011", "014", "037", "046"],
+          choice: ["009", "015", "028", "042", "043"],
+          tuning: []
+        }
+      }
+    }]
+  },
+  {
     id: "fb-car-1",
     title: "2022 Toyota Camry Hybrid",
     manufacturer: { name: "Toyota" },
