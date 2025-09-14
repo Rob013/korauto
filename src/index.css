@@ -1127,12 +1127,12 @@ All colors MUST be HSL.
     max-height: 100dvh;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    background-color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(255, 255, 255, 0.95) !important;
   }
   
-  /* Dark mode filter panel */
+  /* Force white blur background for mobile filter panel regardless of theme */
   .dark .mobile-filter-panel {
-    background-color: rgba(0, 0, 0, 0.95);
+    background-color: rgba(255, 255, 255, 0.95) !important;
   }
 
   /* Optimized container spacing for mobile - More compact */
