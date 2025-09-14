@@ -123,40 +123,55 @@ const EquipmentOptionsSection = memo(({
     const allEquipment = [
       ...(options.standard || []),
       ...(options.choice || []),
-      ...(options.additional || [])
-    ].map(item => item.toLowerCase());
+      ...(options.tuning || [])
+    ];
+
+    // Convert numeric codes to feature names and also check in Albanian feature names
+    const allFeatureNames = allEquipment.map(item => {
+      const itemStr = item.toString().trim();
+      return FEATURE_MAPPING[itemStr] || item;
+    }).map(item => item.toLowerCase());
 
     return {
-      ledLights: allEquipment.some(item => 
-        item.includes('led') || 
-        item.includes('xenon') || 
-        item.includes('halogen') ||
-        item.includes('headlight') ||
-        item.includes('dritë')
-      ),
-      backSensors: allEquipment.some(item => 
-        item.includes('sensor') || 
-        item.includes('parking') ||
-        item.includes('distance') ||
-        item.includes('rear sensor')
-      ),
-      backCamera: allEquipment.some(item => 
-        item.includes('camera') || 
-        item.includes('backup camera') ||
-        item.includes('rear camera') ||
-        item.includes('kamerë')
-      ),
-      heatedSeats: allEquipment.some(item => 
-        item.includes('heated seat') || 
-        item.includes('seat heat') ||
-        item.includes('ulëse të ngrohta')
-      ),
-      ventilationSeats: allEquipment.some(item => 
-        item.includes('ventilated seat') || 
-        item.includes('seat ventilation') ||
-        item.includes('cooled seat') ||
-        item.includes('ulëse të ajrosura')
-      )
+      ledLights: allEquipment.includes("014") || allEquipment.includes("14") || 
+                allEquipment.includes("015") || allEquipment.includes("15") ||
+                allFeatureNames.some(item => 
+                  item.includes('led') || 
+                  item.includes('xenon') || 
+                  item.includes('halogen') ||
+                  item.includes('headlight') ||
+                  item.includes('dritë')
+                ),
+      backSensors: allEquipment.includes("011") || allEquipment.includes("11") ||
+                  allFeatureNames.some(item => 
+                    item.includes('sensor') || 
+                    item.includes('parking') ||
+                    item.includes('distance') ||
+                    item.includes('rear sensor') ||
+                    item.includes('sensorët')
+                  ),
+      backCamera: allEquipment.includes("010") || allEquipment.includes("10") ||
+                 allFeatureNames.some(item => 
+                   item.includes('camera') || 
+                   item.includes('backup camera') ||
+                   item.includes('rear camera') ||
+                   item.includes('kamerë')
+                 ),
+      heatedSeats: allEquipment.includes("037") || allEquipment.includes("37") ||
+                  allFeatureNames.some(item => 
+                    item.includes('heated seat') || 
+                    item.includes('seat heat') ||
+                    item.includes('ulëse të ngrohta') ||
+                    item.includes('ngrohje')
+                  ),
+      ventilationSeats: allEquipment.includes("046") || allEquipment.includes("46") ||
+                       allFeatureNames.some(item => 
+                         item.includes('ventilated seat') || 
+                         item.includes('seat ventilation') ||
+                         item.includes('cooled seat') ||
+                         item.includes('ulëse të ajrosura') ||
+                         item.includes('ventilimi')
+                       )
     };
   };
 
@@ -213,7 +228,7 @@ const EquipmentOptionsSection = memo(({
               <h5 className="text-sm font-medium text-foreground">Pajisje Standarde</h5>
               <span className="text-xs text-muted-foreground">(5 previews)</span>
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 md:flex md:flex-wrap">
+            <div className="grid grid-cols-5 gap-2 sm:gap-3">
               {specificFeatures.map((feature, index) => {
                 const IconComponent = feature.icon;
                 return (

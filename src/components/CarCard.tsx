@@ -416,11 +416,11 @@ const CarCard = ({
       onClick={handleCardClick}
       style={{
         // Prevent layout shifts by setting fixed dimensions
-        minHeight: '320px',
-        aspectRatio: '280/320'
+        minHeight: '360px',
+        aspectRatio: '280/360'
       }}
     >
-      <div className="relative h-40 bg-muted overflow-hidden">
+      <div className="relative h-48 bg-muted overflow-hidden">
         {image ? (
           <OptimizedImage
             src={image}
@@ -434,7 +434,7 @@ const CarCard = ({
         ) : (
           <div 
             className="w-full h-full flex items-center justify-center bg-muted"
-            style={{ aspectRatio: '280/160' }}
+            style={{ aspectRatio: '280/192' }}
           >
             <Car className="h-16 w-16 text-muted-foreground" />
           </div>
@@ -460,7 +460,7 @@ const CarCard = ({
         })()}
       </div>
 
-      <div className="p-3 flex flex-col flex-1" style={{ minHeight: '160px' }}>
+      <div className="p-3 flex flex-col flex-1" style={{ minHeight: '168px' }}>
         <div className="mb-2">
           <h3 className="text-base font-semibold text-foreground line-clamp-1" style={{ minHeight: '1.5rem' }}>
             {year} {make} {model}
