@@ -19,6 +19,23 @@ import { useImageSwipe } from "@/hooks/useImageSwipe";
 import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
 
+// Helper function to get production month name in Albanian
+const getProductionMonth = (car: any): string => {
+  const monthNames = [
+    '', 'Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor',
+    'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'
+  ];
+  
+  // Try to get month from first_registration first, then details.month
+  const month = car.details?.first_registration?.month || car.details?.month || car.month;
+  
+  if (month >= 1 && month <= 12) {
+    return ` ${monthNames[month]}`;
+  }
+  
+  return '';
+};
+
 // Enhanced Feature mapping for equipment/options - supporting both string and numeric formats
 const FEATURE_MAPPING: { [key: string]: string } = {
   // String format (with leading zeros)
@@ -1123,14 +1140,14 @@ const CarDetails = memo(() => {
             {/* Car Title and Details - VISIBLE ON ALL DEVICES */}
             <div>
               <h1 className="car-details-title">
-                {car.year} {car.make} {car.model} {car.title && car.title !== `${car.year} ${car.make} ${car.model}` ? car.title : "Grand Chic"}
+                {car.make} {car.model}
               </h1>
               <div className="car-details-row">
-                <span>{car.year}/ model {car.year}</span>
+                <span>{car.year}/{getProductionMonth(car)}</span>
                 <span>•</span>
-                <span>{formatMileage(car.mileage)}</span>
+                <span>{formatMileage(car.mileage)?.replace(' km', ' Km')}</span>
                 <span>•</span>
-                <span>{car.fuel || 'gasoline'}</span>
+                <span style={{ textTransform: 'capitalize' }}>{car.fuel || 'gasoline'}</span>
                 <a href="#specifications" className="detail-link">In detail</a>
               </div>
             </div>

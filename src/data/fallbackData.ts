@@ -43,6 +43,14 @@ export const fallbackCars = [
     accidents_count: 0,
     inspection_available: true,
     status: "1",
+    details: {
+      month: 6, // June
+      first_registration: {
+        year: 2022,
+        month: 6,
+        day: 15
+      }
+    },
     lots: [{
       buy_now: 32000,
       odometer: { km: 25000 },
@@ -67,6 +75,12 @@ export const fallbackCars = [
       lot: "FB001",
       status: 1,
       details: {
+        month: 6, // June
+        first_registration: {
+          year: 2022,
+          month: 6,
+          day: 15
+        },
         options: {
           standard: ["001", "002", "003", "004", "005", "010", "011", "014", "037", "046"],
           choice: ["009", "015", "028", "042", "043"],
@@ -75,6 +89,12 @@ export const fallbackCars = [
       },
       lots: [{
         details: {
+          month: 6, // June
+          first_registration: {
+            year: 2022,
+            month: 6,
+            day: 15
+          },
           options: {
             standard: ["001", "002", "003", "004", "005", "010", "011", "014", "037", "046"],
             choice: ["009", "015", "028", "042", "043"],
