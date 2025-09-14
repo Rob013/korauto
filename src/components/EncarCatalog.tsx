@@ -197,7 +197,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   }, [filteredCars]);
   
   // Apply daily rotating cars when in default state, same as homepage
-  const dailyRotatingCars = useDailyRotatingCars(carsForSorting, !isDefaultState, 200);
+  // Use daily rotating cars with reduced count for better performance
+  const dailyRotatingCars = useDailyRotatingCars(carsForSorting, !isDefaultState, 60);
   
   // Always call useSortedCars hook (hooks must be called unconditionally)
   const sortedResults = useSortedCars(carsForSorting, sortBy);
@@ -692,7 +693,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       
       // Fetch cars with new filters
       promises.push(
-        fetchCars(1, { ...newFilters, per_page: "200" }, true)
+        fetchCars(1, { ...newFilters, per_page: "60" }, true)
       );
       
       await Promise.all(promises);
@@ -739,7 +740,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     try {
       if (!modelId) {
         // Fetch cars with cleared model filter
-        await fetchCars(1, { ...newFilters, per_page: "200" }, true);
+        await fetchCars(1, { ...newFilters, per_page: "60" }, true);
         setIsLoading(false);
         setIsFilterLoading(false);
         return;
@@ -752,7 +753,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           setGenerations(generationData);
           return generationData;
         }),
-        fetchCars(1, { ...newFilters, per_page: "200" }, true)
+        fetchCars(1, { ...newFilters, per_page: "60" }, true)
       ];
       
       await Promise.all(promises);
@@ -838,7 +839,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         // Load cars last - this is the most expensive operation
         const initialFilters = {
           ...urlFilters,
-          per_page: "200",
+          per_page: "60", // Reduced from 200 for better performance
           page: urlCurrentPage.toString()
         };
         
@@ -1141,7 +1142,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             onSearchCars={() => {
               console.log("Search button clicked, isMobile:", isMobile);
               // Apply search/filters
-              fetchCars(1, { ...filters, per_page: "200" }, true);
+              fetchCars(1, { ...filters, per_page: "60" }, true);
               
               // Force close filter panel on mobile (and desktop for consistency)
               setShowFilters(false);

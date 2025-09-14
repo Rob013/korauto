@@ -240,8 +240,8 @@ const HomeCarsSection = memo(() => {
     return !!(pendingFilters.manufacturer_id || pendingFilters.model_id || pendingFilters.generation_id || pendingFilters.color || pendingFilters.fuel_type || pendingFilters.transmission || pendingFilters.odometer_from_km || pendingFilters.odometer_to_km || pendingFilters.from_year || pendingFilters.to_year || pendingFilters.buy_now_price_from || pendingFilters.buy_now_price_to || pendingFilters.search || pendingFilters.seats_count);
   }, [pendingFilters]);
 
-  // Apply daily rotating cars when no filters are applied, showing 50 cars same as catalog
-  const dailyRotatingCars = useDailyRotatingCars(carsForSorting, hasFilters, 50);
+  // Apply daily rotating cars when no filters are applied, showing 12 cars initially for faster loading
+  const dailyRotatingCars = useDailyRotatingCars(carsForSorting, hasFilters, 24);
 
   // Use daily rotating cars when no filters, otherwise use sorted cars
   const carsToDisplay = useMemo(() => {
@@ -252,8 +252,8 @@ const HomeCarsSection = memo(() => {
     return useSortedCars(carsForSorting, sortBy);
   }, [hasFilters, dailyRotatingCars, carsForSorting, sortBy]);
 
-  // Show 50 cars by default (daily rotation) to match catalog
-  const defaultDisplayCount = 50;
+  // Show 12 cars by default initially for faster perceived performance
+  const defaultDisplayCount = 12;
 
   // Memoize displayed cars to prevent unnecessary re-renders
   const displayedCars = useMemo(() => {
@@ -265,33 +265,35 @@ const HomeCarsSection = memo(() => {
     return showAllCars ? carsToDisplay : carsToDisplay.slice(0, defaultDisplayCount);
   }, [showAllCars, carsToDisplay, defaultDisplayCount, hasFilters]);
 
-  // Preload first 6 car images for better initial loading performance
+  // Preload only first 4 car images for better initial loading performance 
   useEffect(() => {
     const preloadImages = () => {
-      const firstSixCars = displayedCars.slice(0, 6);
-      firstSixCars.forEach(car => {
+      const firstFourCars = displayedCars.slice(0, 4);
+      firstFourCars.forEach(car => {
         const lot = car.lots?.[0];
         const imageUrl = lot?.images?.normal?.[0] || lot?.images?.big?.[0];
         if (imageUrl) {
           const img = new Image();
           img.src = imageUrl;
+          // Add low priority to not block critical resources
+          img.loading = 'lazy';
         }
       });
     };
-    if (displayedCars.length > 0) {
-      // Delay preloading to not interfere with critical resources
-      setTimeout(preloadImages, 100);
+    if (displayedCars.length > 0 && !hasFilters) {
+      // Only preload on homepage (no filters), and delay more to not interfere with critical resources
+      setTimeout(preloadImages, 200);
     }
-  }, [displayedCars]);
+  }, [displayedCars, hasFilters]);
   useEffect(() => {
     // Calculate daily page based on day of month (1-31)
     const today = new Date();
     const dayOfMonth = today.getDate(); // 1-31
     const dailyPage = (dayOfMonth - 1) % 10 + 1; // Cycle through pages 1-10
 
-    // Load initial data with 50 cars from daily page - increased for better visibility
+    // Load initial data with 24 cars from daily page for better performance
     fetchCars(dailyPage, {
-      per_page: "50"
+      per_page: "24"
     }, true);
 
     // Load manufacturers with caching
