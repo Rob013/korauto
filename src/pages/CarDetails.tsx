@@ -166,7 +166,7 @@ const EquipmentOptionsSection = memo(({
           <ChevronDown className={`h-5 w-5 text-muted-foreground transition-all duration-300 ${showOptions ? "rotate-180 text-primary" : ""}`} />
         </Button>
 
-        {showOptions && <div className="px-4 pb-4 space-y-4 animate-fade-in">
+        {showOptions && <div className="px-4 pb-4 space-y-4 animate-fade-in-up">
             {/* Standard Equipment */}
             {options.standard && options.standard.length > 0 && <div className="space-y-2">
                 <div className="flex items-center gap-2">

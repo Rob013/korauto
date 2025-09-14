@@ -41,6 +41,27 @@ export const fallbackCars = [
     }],
     location: "Prishtinë, Kosovo",
     features: ["Hybrid Engine", "Automatic Transmission", "Low Mileage"],
+    equipment_options: {
+      standard: [
+        "Air Conditioning",
+        "Power Steering", 
+        "ABS Brakes",
+        "Airbags (Front & Side)",
+        "Electric Windows",
+        "Radio/Audio System",
+        "Bluetooth Connectivity",
+        "Cruise Control",
+        "Power Seats",
+        "LED Lights"
+      ],
+      choice: [
+        "Sunroof",
+        "Navigation System", 
+        "Heated Seats",
+        "Parking Sensors",
+        "Backup Camera"
+      ]
+    },
     is_premium: false,
     seats_count: 5,
     accidents_count: 0,
@@ -74,6 +95,25 @@ export const fallbackCars = [
     }],
     location: "Prishtinë, Kosovo",
     features: ["All-Wheel Drive", "CVT Transmission", "Excellent Condition"],
+    equipment_options: {
+      standard: [
+        "Air Conditioning",
+        "Power Windows", 
+        "Anti-lock Brakes (ABS)",
+        "Multiple Airbags",
+        "Power Steering",
+        "Audio System",
+        "Keyless Entry",
+        "AWD System"
+      ],
+      choice: [
+        "Premium Sound System",
+        "Leather Seats", 
+        "Sunroof",
+        "Navigation",
+        "Heated Steering Wheel"
+      ]
+    },
     is_premium: true,
     seats_count: 5,
     accidents_count: 0,
