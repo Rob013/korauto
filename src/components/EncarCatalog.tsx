@@ -1297,8 +1297,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             </div>
           )}
 
-          {/* Loading State */}
-          {(loading && cars.length === 0) || isRestoringState || isFilterLoading ? (
+          {/* Loading State - Only for initial load, not for filters */}
+          {(loading && cars.length === 0) || isRestoringState ? (
             <div className="flex flex-col items-center justify-center py-12 space-y-4">
               <LoadingLogo size="lg" />
               {/* No text needed - logo shows loading state */}
@@ -1342,8 +1342,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             </div>
           )}
 
-          {/* Filter Loading State */}
-          {isFilterLoading && cars.length === 0 && (
+          {/* Filter Loading State - Only when no cars and not in main loading */}
+          {isFilterLoading && cars.length === 0 && !loading && !isRestoringState && (
             <div className="flex items-center justify-center py-12">
               <LoadingLogo size="lg" />
             </div>
@@ -1352,8 +1352,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           {/* Cars Grid/List - Show cars without requiring filters */}
           {shouldShowCars && cars.length > 0 && (
             <div className="relative">
-              {/* Loading Overlay for Cars Grid */}
-              {isFilterLoading && (
+              {/* Loading Overlay for Cars Grid - Only on desktop or when not conflicting with main loading */}
+              {isFilterLoading && !loading && !isRestoringState && !isMobile && (
                 <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
                   <div className="bg-card border border-border rounded-lg p-6 shadow-lg">
                     <LoadingLogo size="md" />

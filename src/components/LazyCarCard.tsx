@@ -264,11 +264,11 @@ const LazyCarCard = memo(({
         className="glass-card rounded-lg overflow-hidden h-96"
       >
           <div className="animate-pulse">
-            <div className="h-52 bg-muted" />
-            <div className="p-3 space-y-2">
-              <div className="h-5 bg-muted rounded w-3/4" />
+            <div className="h-72 bg-muted" />
+            <div className="p-2 space-y-1">
+              <div className="h-4 bg-muted rounded w-3/4" />
               <div className="h-3 bg-muted rounded w-1/2" />
-              <div className="h-6 bg-muted rounded w-2/3" />
+              <div className="h-5 bg-muted rounded w-2/3" />
             </div>
           </div>
       </div>
@@ -290,11 +290,11 @@ const LazyCarCard = memo(({
       }`}
       onClick={handleCardClick}
     >
-      {/* Image Section */}
+      {/* Image Section - 70% of card height */}
       <div className={`relative bg-muted overflow-hidden flex-shrink-0 rounded-lg ${
         viewMode === 'list' 
           ? 'w-28 h-20 sm:w-36 sm:h-24 lg:w-44 lg:h-28' 
-          : 'h-32 sm:h-40 lg:h-44'
+          : 'h-44 sm:h-52 lg:h-60'
       }`}>
         {/* Always show single image - swipe functionality removed from car cards */}
         {(image || (images && images.length > 0)) ? (
@@ -335,10 +335,10 @@ const LazyCarCard = memo(({
         )}
       </div>
       
-      {/* Content Section */}
-      <div className={`${viewMode === 'list' ? 'flex-1 min-w-0' : 'p-2 sm:p-3'}`}>
-        <div className="mb-1.5">
-          <h3 className="card-title text-sm sm:text-base font-bold text-foreground line-clamp-2 leading-tight">
+      {/* Content Section - 30% of card height, more compact */}
+      <div className={`${viewMode === 'list' ? 'flex-1 min-w-0' : 'p-2 flex-1'}`}>
+        <div className="mb-1">
+          <h3 className="card-title text-sm font-bold text-foreground line-clamp-1 leading-tight">
             {year} {make} {model}
           </h3>
           {title && title !== `${make} ${model}` && (
@@ -347,10 +347,10 @@ const LazyCarCard = memo(({
         </div>
 
         {/* Vehicle Info - More compact layout */}
-        <div className={`mb-2 text-xs space-y-0.5 ${
+        <div className={`mb-1 text-xs space-y-0.5 ${
           viewMode === 'list' 
             ? 'grid grid-cols-2 gap-x-3 gap-y-0.5' 
-            : 'space-y-0.5'
+            : 'grid grid-cols-2 gap-x-2 gap-y-0.5'
         }`}>
           {mileage && (
             <div className="flex items-center gap-1.5">
@@ -380,27 +380,27 @@ const LazyCarCard = memo(({
 
         {/* Status Indicators - More compact */}
         {insurance_v2?.accidentCnt === 0 && (
-          <div className="mb-1.5">
-            <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-green-50 text-green-700 border-green-200">
+          <div className="mb-1">
+            <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-green-50 text-green-700 border-green-200">
               <Shield className="h-2 w-2 mr-1" />
-              Clean Record
+              Clean
             </Badge>
           </div>
         )}
 
-        {/* Pricing Section - Compact but prominent */}
-        <div className={`${viewMode === 'list' ? 'flex flex-col items-end justify-center' : 'mt-2'}`}>
+        {/* Pricing Section - Very compact */}
+        <div className={`${viewMode === 'list' ? 'flex flex-col items-end justify-center' : 'mt-1'}`}>
           <div className="text-center">
-            <span className="card-price text-lg sm:text-xl font-bold text-primary block">
+            <span className="card-price text-base sm:text-lg font-bold text-primary block">
               €{price.toLocaleString()}
             </span>
-            <span className="text-xs text-muted-foreground block mt-0.5">
-              Deri ne portin e Durresit
+            <span className="text-xs text-muted-foreground block">
+              Deri ne port
             </span>
           </div>
           
           {viewMode === 'grid' && (
-            <div className="text-center mt-1">
+            <div className="text-center mt-0.5">
               <p className="text-xs text-muted-foreground font-medium">
                 KORAUTO
               </p>
