@@ -134,7 +134,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // View mode state - toggle between grid and list view
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
     const savedViewMode = localStorage.getItem('catalog-view-mode');
-    return (savedViewMode === 'list' || savedViewMode === 'grid') ? savedViewMode : 'grid';
+    if (savedViewMode === 'list' || savedViewMode === 'grid') {
+      return savedViewMode;
+    }
+    // Default to 'list' for mobile, 'grid' for desktop
+    return window.innerWidth < 768 ? 'list' : 'grid';
   });
   
   const [hasSelectedCategories, setHasSelectedCategories] = useState(false);
@@ -1364,10 +1368,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     ? 'flex flex-col gap-2 sm:gap-3' 
                     : `grid gap-2 sm:gap-3 lg:gap-4 ${
                         isMobile 
-                          ? 'mobile-car-grid-compact px-1 sm:px-2' 
-                          : showFilters 
-                            ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' 
-                            : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
+                          ? 'grid-cols-1 px-1 sm:px-2' 
+                          : 'grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2'
                       }`
                 } ${isFilterLoading ? 'opacity-50' : ''}`}
               >
