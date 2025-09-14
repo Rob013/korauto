@@ -1092,6 +1092,16 @@ const CarDetails = memo(() => {
                       </span>
                     </div>}
 
+                  {car.details?.engine_volume && <div className="flex items-center justify-between p-2 sm:p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors mobile-spec-item">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <Cog className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                        <span className="font-medium text-foreground text-xs sm:text-sm">Vëllimi i Motorit</span>
+                      </div>
+                      <span className="text-muted-foreground font-medium text-xs sm:text-sm">
+                        {car.details.engine_volume}cc
+                      </span>
+                    </div>}
+
                   {car.fuel && <div className="flex items-center justify-between p-2 sm:p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors mobile-spec-item">
                       <div className="flex items-center gap-1.5 sm:gap-2">
                         <Fuel className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
@@ -1200,14 +1210,6 @@ const CarDetails = memo(() => {
                           Detaje të Veturës
                         </h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {car.details.engine_volume && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                              <span className="text-sm text-foreground font-medium">
-                                Vëllimi i Motorit:
-                              </span>
-                              <span className="text-sm font-medium text-muted-foreground">
-                                {car.details.engine_volume}cc
-                              </span>
-                            </div>}
                           {car.details.seats_count && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
                               <span className="text-sm text-foreground font-medium">Numri i Vendeve:</span>
                               <span className="text-sm font-medium text-muted-foreground">
