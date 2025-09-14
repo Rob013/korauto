@@ -420,7 +420,7 @@ const CarCard = ({
         aspectRatio: '280/360'
       }}
     >
-      <div className="relative h-48 bg-muted overflow-hidden">
+      <div className="relative h-32 bg-muted overflow-hidden">
         {image ? (
           <OptimizedImage
             src={image}

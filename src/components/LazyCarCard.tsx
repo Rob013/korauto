@@ -294,7 +294,7 @@ const LazyCarCard = memo(({
       <div className={`relative bg-muted overflow-hidden flex-shrink-0 rounded-lg ${
         viewMode === 'list' 
           ? 'w-28 h-20 sm:w-36 sm:h-24 lg:w-44 lg:h-28' 
-          : 'h-32 sm:h-40 lg:h-44'
+          : 'h-24 sm:h-28 lg:h-32'
       }`}>
         {/* Always show single image - swipe functionality removed from car cards */}
         {(image || (images && images.length > 0)) ? (

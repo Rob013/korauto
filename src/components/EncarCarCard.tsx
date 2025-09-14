@@ -173,7 +173,7 @@ const EncarCarCard = ({
       onClick={handleCardClick}
     >
       {/* Large Image Section - Enhanced for mobile with bigger thumbnail */}
-      <div className="relative h-48 sm:h-56 bg-gray-100 overflow-hidden">
+      <div className="relative h-32 sm:h-36 bg-gray-100 overflow-hidden">
         {image ? (
           <img
             src={image}
