@@ -502,10 +502,8 @@ const CarCard = ({
 
         {/* Compact Pricing and Action - Push to bottom */}
         <div className="space-y-2 mt-auto">
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-bold text-primary">
-              €{price.toLocaleString()}
-            </span>
+          {/* Favorite button row */}
+          <div className="flex items-center justify-end">
             <Button
               size="sm"
               variant="ghost"
@@ -520,7 +518,13 @@ const CarCard = ({
               />
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">Deri ne portin e Durresit</p>
+          {/* Price on bottom left with text on the right */}
+          <div className="flex items-end justify-between">
+            <span className="text-lg font-bold text-primary">
+              €{price.toLocaleString()}
+            </span>
+            <p className="text-xs text-muted-foreground">deri ne portin e durresit</p>
+          </div>
         </div>
 
         <div className="text-center pt-2 border-t border-border/50">

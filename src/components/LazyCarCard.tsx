@@ -390,14 +390,27 @@ const LazyCarCard = memo(({
 
         {/* Pricing Section - Very compact */}
         <div className={`${viewMode === 'list' ? 'flex flex-col items-end justify-center' : 'mt-1'}`}>
-          <div className="text-center">
-            <span className="card-price text-base sm:text-lg font-bold text-primary block">
-              €{price.toLocaleString()}
-            </span>
-            <span className="text-xs text-muted-foreground block">
-              Deri ne port
-            </span>
-          </div>
+          {viewMode === 'list' ? (
+            // List view: keep existing centered layout for compact display
+            <div className="text-center">
+              <span className="card-price text-base sm:text-lg font-bold text-primary block">
+                €{price.toLocaleString()}
+              </span>
+              <span className="text-xs text-muted-foreground block">
+                deri ne portin e durresit
+              </span>
+            </div>
+          ) : (
+            // Grid view: price on left, text on right
+            <div className="flex items-end justify-between">
+              <span className="card-price text-base sm:text-lg font-bold text-primary">
+                €{price.toLocaleString()}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                deri ne portin e durresit
+              </span>
+            </div>
+          )}
           
           {viewMode === 'grid' && (
             <div className="text-center mt-0.5">
