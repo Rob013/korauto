@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { usePerformanceAudit } from "@/hooks/usePerformanceAudit";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { 
   Activity, 
   AlertTriangle, 
@@ -23,7 +24,32 @@ import {
 
 const PerformanceDashboard = () => {
   const { metrics, isAuditing, runAudit, generateReport, applyFixes, error } = usePerformanceAudit();
+  const { isAdmin, isLoading } = useAdminCheck();
   const [showReport, setShowReport] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center max-w-md mx-auto">
+          <h1 className="text-2xl font-bold mb-4">Access Restricted</h1>
+          <p className="text-muted-foreground">
+            Performance monitoring tools are only available to administrators.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const getScoreColor = (score: number) => {
     if (score >= 90) return "text-green-600";
