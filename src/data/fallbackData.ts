@@ -278,6 +278,65 @@ export const fallbackCars = [
     inspection_available: true,
     status: "2",
     sale_status: "pending"
+  },
+  {
+    id: "fb-car-4",
+    title: "2021 Toyota Corolla",
+    manufacturer: { name: "Toyota" },
+    model: { name: "Corolla" },
+    year: 2021,
+    price: 18500,
+    currency: "USD",
+    odometer: 190811,
+    fuel: { name: "Gasoline" },
+    transmission: { name: "CVT" },
+    color: { name: "White" },
+    grade: "3.8",
+    vin: "2T1BURHE9MC123789",
+    lot_number: "FB004",
+    lots: [{
+      buy_now: 18500,
+      odometer: { km: 190811 },
+      images: {
+        normal: ["/images/placeholder-car.jpg"],
+        big: ["/images/placeholder-car.jpg"]
+      },
+      lot: "FB004",
+      status: 1,
+      details: {
+        options: {
+          standard: ["001", "002", "003", "004", "005", "010", "011", "014", "037", "046"],
+          choice: ["009", "015", "028", "042", "043"],
+          tuning: []
+        }
+      }
+    }],
+    location: "Prishtinë, Kosovo",
+    features: ["High Mileage", "CVT Transmission", "Reliable Engine"],
+    equipment_options: {
+      standard: [
+        "Air Conditioning",
+        "Power Windows", 
+        "Anti-lock Brakes (ABS)",
+        "Multiple Airbags",
+        "Power Steering",
+        "Audio System",
+        "Keyless Entry",
+        "Backup Camera"
+      ],
+      choice: [
+        "Bluetooth Connectivity",
+        "USB Ports", 
+        "Cruise Control",
+        "Power Mirrors",
+        "Remote Start"
+      ]
+    },
+    is_premium: false,
+    seats_count: 5,
+    accidents_count: 0,
+    inspection_available: true,
+    status: "1"
   }
 ];
 
