@@ -4,7 +4,7 @@ import React from 'react';
 
 // Mock the EquipmentOptionsSection component for testing
 const EquipmentOptionsSection = ({ options }: { options: { standard?: string[], choice?: string[] } }) => {
-  const PREVIEW_SHOW_COUNT = 5;
+  const PREVIEW_SHOW_COUNT = 10;
   
   const getPreviewItems = () => {
     if (options.standard && options.standard.length > 0) {
@@ -39,7 +39,7 @@ const EquipmentOptionsSection = ({ options }: { options: { standard?: string[], 
 };
 
 describe('EquipmentOptionsSection', () => {
-  test('shows preview of 5 standard equipment items', () => {
+  test('shows preview of 10 standard equipment items', () => {
     const mockOptions = {
       standard: [
         'Air Conditioning',
@@ -49,7 +49,11 @@ describe('EquipmentOptionsSection', () => {
         'Electric Windows',
         'Radio/Audio System',
         'Bluetooth Connectivity',
-        'Cruise Control'
+        'Cruise Control',
+        'LED Headlights',
+        'Heated Seats',
+        'Extra Item 1',
+        'Extra Item 2'
       ]
     };
 
@@ -58,18 +62,23 @@ describe('EquipmentOptionsSection', () => {
     // Check preview section exists
     expect(screen.getByTestId('preview-section')).toBeInTheDocument();
 
-    // Check that exactly 5 items are shown in preview
+    // Check that exactly 10 items are shown in preview
     expect(screen.getByTestId('preview-item-0')).toHaveTextContent('Air Conditioning');
     expect(screen.getByTestId('preview-item-1')).toHaveTextContent('Power Steering');
     expect(screen.getByTestId('preview-item-2')).toHaveTextContent('ABS Brakes');
     expect(screen.getByTestId('preview-item-3')).toHaveTextContent('Airbags');
     expect(screen.getByTestId('preview-item-4')).toHaveTextContent('Electric Windows');
+    expect(screen.getByTestId('preview-item-5')).toHaveTextContent('Radio/Audio System');
+    expect(screen.getByTestId('preview-item-6')).toHaveTextContent('Bluetooth Connectivity');
+    expect(screen.getByTestId('preview-item-7')).toHaveTextContent('Cruise Control');
+    expect(screen.getByTestId('preview-item-8')).toHaveTextContent('LED Headlights');
+    expect(screen.getByTestId('preview-item-9')).toHaveTextContent('Heated Seats');
 
-    // Check that "more items" indicator shows the correct count
-    expect(screen.getByTestId('more-count')).toHaveTextContent('+3 më shumë pajisje');
+    // Check that "more items" indicator shows the correct count (12 total - 10 shown = 2 more)
+    expect(screen.getByTestId('more-count')).toHaveTextContent('+2 më shumë pajisje');
 
     // Check total count is shown
-    expect(screen.getByText('(8 total)')).toBeInTheDocument();
+    expect(screen.getByText('(12 total)')).toBeInTheDocument();
   });
 
   test('does not show preview when no standard equipment', () => {
@@ -83,7 +92,7 @@ describe('EquipmentOptionsSection', () => {
     expect(screen.queryByTestId('preview-section')).not.toBeInTheDocument();
   });
 
-  test('shows all items when less than 5 standard equipment items', () => {
+  test('shows all items when less than 10 standard equipment items', () => {
     const mockOptions = {
       standard: ['Air Conditioning', 'Power Steering', 'ABS Brakes']
     };

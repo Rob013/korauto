@@ -362,7 +362,6 @@ const EquipmentOptionsSection = memo(({
             <div className="flex items-center gap-2 mb-3">
               <div className="w-2 h-2 rounded-full bg-primary"></div>
               <h5 className="text-sm font-medium text-foreground">Pajisje Standarde</h5>
-              <span className="text-xs text-muted-foreground">(10 previews)</span>
             </div>
             <div className="grid grid-cols-5 gap-2 sm:gap-3 md:grid-cols-5 lg:grid-cols-10">
               {specificFeatures.map((feature, index) => {
