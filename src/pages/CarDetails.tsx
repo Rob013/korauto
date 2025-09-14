@@ -102,18 +102,71 @@ const EquipmentOptionsSection = memo(({
   const [showAllComfort, setShowAllComfort] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const INITIAL_SHOW_COUNT = 6;
+  const PREVIEW_SHOW_COUNT = 5;
+
+  // Helper function to get appropriate icon for equipment item
+  const getEquipmentIcon = (item: string) => {
+    const itemLower = item.toLowerCase();
+    if (itemLower.includes('air') || itemLower.includes('klima')) return <Settings className="h-3 w-3 text-primary" />;
+    if (itemLower.includes('brake') || itemLower.includes('frena')) return <Shield className="h-3 w-3 text-primary" />;
+    if (itemLower.includes('engine') || itemLower.includes('motor')) return <Cog className="h-3 w-3 text-primary" />;
+    if (itemLower.includes('seat') || itemLower.includes('ulëse')) return <Car className="h-3 w-3 text-primary" />;
+    if (itemLower.includes('window') || itemLower.includes('dritare')) return <Eye className="h-3 w-3 text-primary" />;
+    if (itemLower.includes('light') || itemLower.includes('dritë')) return <Star className="h-3 w-3 text-primary" />;
+    if (itemLower.includes('radio') || itemLower.includes('audio')) return <MessageCircle className="h-3 w-3 text-primary" />;
+    // Default icon for standard equipment
+    return <CheckCircle className="h-3 w-3 text-primary" />;
+  };
+
+  // Get preview items for display (5 standard equipment items)
+  const getPreviewItems = () => {
+    if (options.standard && options.standard.length > 0) {
+      return options.standard.slice(0, PREVIEW_SHOW_COUNT);
+    }
+    return [];
+  };
+
+  const previewItems = getPreviewItems();
   return <div className="overflow-hidden bg-gradient-to-br from-background to-muted/20 rounded-xl border border-border/40 backdrop-blur-sm shadow-lg">
+        {/* Preview Section - Shows 5 standard equipment items by default */}
+        {previewItems.length > 0 && !showOptions && (
+          <div className="p-4 border-b border-border/20">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-2 h-2 rounded-full bg-primary"></div>
+              <h5 className="text-sm font-medium text-foreground">Pajisje Standarde</h5>
+              <span className="text-xs text-muted-foreground">({options.standard?.length || 0} total)</span>
+            </div>
+            <div className="grid grid-cols-1 gap-2">
+              {previewItems.map((item, index) => (
+                <div key={index} className="flex items-center gap-3 py-1.5 px-3 bg-primary/5 border border-primary/20 rounded-lg hover:bg-primary/10 transition-colors">
+                  {getEquipmentIcon(item)}
+                  <span className="text-xs font-medium text-foreground">{item}</span>
+                </div>
+              ))}
+            </div>
+            {(options.standard?.length || 0) > PREVIEW_SHOW_COUNT && (
+              <div className="mt-3 text-center">
+                <span className="text-xs text-muted-foreground">
+                  +{(options.standard?.length || 0) - PREVIEW_SHOW_COUNT} më shumë pajisje
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+        
         <Button onClick={() => setShowOptions(!showOptions)} variant="ghost" className="w-full justify-between p-4 h-auto group hover:bg-gradient-to-r hover:from-muted/20 hover:to-muted/10 transition-all duration-300">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
               <Cog className="h-4 w-4 text-primary" />
             </div>
-            <span className="font-semibold text-foreground">Pajisjet dhe Opsionet</span>
+            <span className="font-semibold text-foreground">
+              {showOptions ? "Fsheh Pajisjet dhe Opsionet" : "Shfaq të Gjitha Pajisjet dhe Opsionet"}
+            </span>
           </div>
           <ChevronDown className={`h-5 w-5 text-muted-foreground transition-all duration-300 ${showOptions ? "rotate-180 text-primary" : ""}`} />
         </Button>
 
-        {showOptions && <div className="px-4 pb-4 space-y-4 animate-fade-in">
+        {showOptions && <div className="px-4 pb-4 space-y-4 animate-fade-in-up">
             {/* Standard Equipment */}
             {options.standard && options.standard.length > 0 && <div className="space-y-2">
                 <div className="flex items-center gap-2">
