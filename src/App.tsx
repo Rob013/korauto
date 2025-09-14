@@ -10,8 +10,6 @@ import { useResourcePreloader } from "./hooks/useResourcePreloader";
 import { AccessibilityEnhancer } from "./utils/accessibilityEnhancer";
 import { StatusRefreshProvider } from "./components/StatusRefreshProvider";
 import { useFrameRate } from "./hooks/useFrameRate";
-import { PerformanceMonitor } from "./components/PerformanceMonitor";
-import { useAdminCheck } from "./hooks/useAdminCheck";
 
 // Lazy load all pages for better code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -113,9 +111,6 @@ const App = () => {
 
   // Initialize frame rate optimization for 120fps support
   const { supportsHighRefreshRate, targetFPS, currentFPS } = useFrameRate();
-
-  // Check admin status for performance monitoring
-  const { isAdmin } = useAdminCheck();
 
   // Initialize accessibility enhancements
   useEffect(() => {
@@ -244,10 +239,6 @@ const App = () => {
           </Routes>
         </BrowserRouter>
         <InstallPrompt />
-        {/* Performance Monitor for admin users only */}
-        {isAdmin && (
-          <PerformanceMonitor showDetails={false} />
-        )}
       </TooltipProvider>
       </StatusRefreshProvider>
     </QueryClientProvider>
