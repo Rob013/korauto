@@ -1,7 +1,5 @@
 // Service Worker for caching API responses and static assets with 120fps performance optimization
-// Force version bump to invalidate all caches when updates are deployed
-const APP_VERSION = '2024.14.12.1'; // Manual version for major updates
-const VERSION = `${APP_VERSION}-${new Date().getTime()}`; // Combined versioning
+const VERSION = new Date().getTime(); // Use timestamp for versioning
 const CACHE_NAME = `korauto-v${VERSION}`;
 const STATIC_CACHE_NAME = `korauto-static-v${VERSION}`;
 const ASSETS_CACHE_NAME = `korauto-assets-v${VERSION}`;
@@ -73,40 +71,23 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate event - clean up old caches aggressively
+// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    Promise.all([
-      // Clear all old caches - be aggressive to ensure fresh content
-      caches.keys()
-        .then((cacheNames) => {
-          return Promise.all(
-            cacheNames.map((cacheName) => {
-              // Delete any cache that doesn't match current version exactly
-              if (!cacheName.includes(VERSION)) {
-                console.log('🧹 Deleting outdated cache:', cacheName);
-                return caches.delete(cacheName);
-              }
-            })
-          );
-        }),
-      
-      // Force immediate control of all clients to ensure fresh content
-      self.clients.claim()
-        .then(() => {
-          // Notify all clients to reload for fresh content
-          return self.clients.matchAll();
-        })
-        .then((clients) => {
-          clients.forEach((client) => {
-            client.postMessage({
-              type: 'CACHE_UPDATED',
-              version: VERSION,
-              message: 'New version available - please refresh'
-            });
-          });
-        })
-    ])
+    caches.keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== CACHE_NAME && 
+                cacheName !== STATIC_CACHE_NAME && 
+                cacheName !== ASSETS_CACHE_NAME && 
+                cacheName !== HIGH_PERFORMANCE_CACHE) {
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      })
+      .then(() => self.clients.claim())
   );
 });
 
@@ -366,37 +347,10 @@ async function handleFontRequest(request) {
 async function handleHTMLRequest(request) {
   try {
     // Always try network first for HTML to ensure latest version
-    // Add cache-busting parameters to ensure fresh content
-    const url = new URL(request.url);
-    url.searchParams.set('_v', VERSION);
-    
-    const networkResponse = await fetch(url.toString(), {
-      cache: 'no-cache', // Force fresh fetch from server
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache'
-      }
-    });
-    
+    const networkResponse = await fetch(request);
     if (networkResponse.ok) {
-      // Clone response and modify headers to prevent browser caching
-      const modifiedResponse = new Response(networkResponse.body, {
-        status: networkResponse.status,
-        statusText: networkResponse.statusText,
-        headers: {
-          ...Object.fromEntries(networkResponse.headers.entries()),
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-          'SW-Version': VERSION
-        }
-      });
-      
-      // Cache the response but serve with no-cache headers
       const cache = await caches.open(CACHE_NAME);
       cache.put(request, networkResponse.clone());
-      
-      return modifiedResponse;
     }
     return networkResponse;
   } catch (error) {
@@ -404,17 +358,7 @@ async function handleHTMLRequest(request) {
     const cache = await caches.open(CACHE_NAME);
     const cachedResponse = await cache.match(request);
     if (cachedResponse) {
-      // Add headers to cached response to indicate it's from cache
-      const modifiedCachedResponse = new Response(cachedResponse.body, {
-        status: cachedResponse.status,
-        statusText: cachedResponse.statusText,
-        headers: {
-          ...Object.fromEntries(cachedResponse.headers.entries()),
-          'SW-Cached': 'true',
-          'SW-Version': VERSION
-        }
-      });
-      return modifiedCachedResponse;
+      return cachedResponse;
     }
     throw error;
   }
