@@ -1023,7 +1023,7 @@ const CarDetails = memo(() => {
               <div className="car-details-row">
                 <span>2021/ model 2021</span>
                 <span>•</span>
-                <span>{formatMileage(car.mileage) || '144,378 km'}</span>
+                <span>{formatMileage(car.mileage)}</span>
                 <span>•</span>
                 <span>{car.fuel || 'Diesel'}</span>
                 <a href="#specifications" className="detail-link">In detail</a>
