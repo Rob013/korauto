@@ -32,6 +32,7 @@ const ApiInfoDemo = lazy(() => import("./components/ApiInfoDemo"));
 // Lazy load admin components for better code splitting
 const AdminSyncDashboard = lazy(() => import("./components/AdminSyncDashboard"));
 const CookieManagementDashboard = lazy(() => import("./components/CookieManagementDashboard"));
+const HighRefreshRateSettings = lazy(() => import("./components/HighRefreshRateSettings"));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-background">
@@ -211,6 +212,11 @@ const App = () => {
             <Route path="/api-info-demo" element={
               <Suspense fallback={<PageSkeleton />}>
                 <ApiInfoDemo />
+              </Suspense>
+            } />
+            <Route path="/high-refresh-rate" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <HighRefreshRateSettings />
               </Suspense>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

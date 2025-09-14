@@ -692,7 +692,274 @@ All colors MUST be HSL.
     }
   }
 
-  /* Enhanced Adaptive Select Optimizations for All Devices */
+/* High Refresh Rate Optimizations for 120fps support */
+@media (min-resolution: 120dpi) and (min-device-pixel-ratio: 2) {
+  /* Enable 120fps optimizations for high refresh rate displays */
+  .high-refresh-rate-optimized {
+    /* Use transform3d to enable GPU acceleration */
+    transform: translate3d(0, 0, 0);
+    /* Force hardware acceleration */
+    will-change: transform, opacity;
+    /* Optimize for smooth animations */
+    backface-visibility: hidden;
+    /* Use subpixel antialiasing when available */
+    -webkit-font-smoothing: subpixel-antialiased;
+    -moz-osx-font-smoothing: auto;
+  }
+  
+  /* High refresh rate animations */
+  .high-refresh-animation {
+    animation-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
+    /* Slightly longer durations for smoother appearance at 120fps */
+    animation-duration: calc(var(--animation-duration, 300ms) * 1.1);
+  }
+  
+  /* Smooth hover effects for high refresh displays */
+  .high-refresh-hover {
+    transition: all 8ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+  
+  /* High refresh rate card hover effects */
+  .card-hover.high-refresh-rate-optimized:hover {
+    transform: translateY(-6px) translate3d(0, 0, 0);
+    transition: transform 8ms cubic-bezier(0.25, 0.1, 0.25, 1),
+                box-shadow 8ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+  
+  /* Optimized scroll behavior for high refresh rate */
+  .high-refresh-scroll {
+    scroll-behavior: smooth;
+    scroll-snap-type: y mandatory;
+    /* Enable momentum scrolling on iOS high refresh devices */
+    -webkit-overflow-scrolling: touch;
+    /* Optimize scrolling performance */
+    overscroll-behavior: contain;
+  }
+}
+
+/* 120fps specific optimizations */
+@supports (refresh-rate: 120hz) {
+  .fps-120-optimized {
+    /* Ultra-smooth transitions for 120fps displays */
+    transition-duration: 8ms;
+    transition-timing-function: linear;
+  }
+  
+  /* High frame rate animations */
+  .fps-120-animation {
+    animation-fill-mode: both;
+    animation-timing-function: linear;
+    /* Use shorter durations that work well with 120fps */
+    animation-duration: calc(var(--animation-duration, 300ms) * 0.9);
+  }
+  
+  /* Ultra-smooth hover effects */
+  .fps-120-hover:hover {
+    transition: all 4ms linear;
+    transform: translateY(-2px) scale(1.01);
+  }
+}
+
+/* Adaptive frame rate support */
+.adaptive-frame-rate {
+  /* Base animation that adapts to screen refresh rate */
+  animation-duration: calc(1000ms / var(--screen-refresh-rate, 60));
+  transition-duration: calc(16ms * (60 / var(--screen-refresh-rate, 60)));
+}
+
+/* High refresh rate button optimizations */
+.btn-high-refresh {
+  transition: all 8ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  transform: translate3d(0, 0, 0);
+  will-change: transform, box-shadow;
+}
+
+.btn-high-refresh:hover {
+  transform: translateY(-1px) translate3d(0, 0, 0);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-high-refresh:active {
+  transform: translateY(0) translate3d(0, 0, 0);
+  transition-duration: 4ms;
+}
+
+/* High refresh rate image loading optimizations */
+.high-refresh-image {
+  /* Optimize image rendering for high refresh displays */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  /* Enable hardware acceleration for image transforms */
+  transform: translate3d(0, 0, 0);
+  will-change: transform, opacity;
+}
+
+/* Loading animation optimized for high refresh rates */
+@keyframes high-refresh-spin {
+  from {
+    transform: rotate(0deg) translate3d(0, 0, 0);
+  }
+  to {
+    transform: rotate(360deg) translate3d(0, 0, 0);
+  }
+}
+
+.high-refresh-spinner {
+  animation: high-refresh-spin 1s linear infinite;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+
+/* High refresh rate fade animations */
+@keyframes high-refresh-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) translate3d(0, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translate3d(0, 0, 0);
+  }
+}
+
+.high-refresh-fade-in {
+  animation: high-refresh-fade-in 200ms cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+/* Optimized card animations for high refresh rate */
+.high-refresh-card {
+  transform: translate3d(0, 0, 0);
+  will-change: transform, box-shadow;
+  transition: all 8ms cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.high-refresh-card:hover {
+  transform: translateY(-4px) translate3d(0, 0, 0);
+  box-shadow: 
+    0 12px 24px -8px rgba(0, 0, 0, 0.2),
+    0 4px 16px -4px rgba(0, 0, 0, 0.1);
+}
+
+/* High refresh rate stagger animations */
+.high-refresh-stagger > * {
+  opacity: 0;
+  transform: translateY(20px) translate3d(0, 0, 0);
+  animation: high-refresh-stagger-in 400ms cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+.high-refresh-stagger > *:nth-child(1) { animation-delay: 50ms; }
+.high-refresh-stagger > *:nth-child(2) { animation-delay: 100ms; }
+.high-refresh-stagger > *:nth-child(3) { animation-delay: 150ms; }
+.high-refresh-stagger > *:nth-child(4) { animation-delay: 200ms; }
+.high-refresh-stagger > *:nth-child(5) { animation-delay: 250ms; }
+.high-refresh-stagger > *:nth-child(6) { animation-delay: 300ms; }
+
+@keyframes high-refresh-stagger-in {
+  to {
+    opacity: 1;
+    transform: translateY(0) translate3d(0, 0, 0);
+  }
+}
+
+/* High refresh rate scroll indicators */
+.high-refresh-scroll-indicator {
+  transform: translate3d(0, 0, 0);
+  will-change: transform, opacity;
+  transition: all 8ms linear;
+}
+
+/* Performance optimizations for high refresh rate devices */
+.high-refresh-container {
+  /* Enable containment for better performance */
+  contain: layout style paint;
+  /* Optimize for high refresh rate rendering */
+  content-visibility: auto;
+  /* Use GPU acceleration */
+  transform: translate3d(0, 0, 0);
+}
+
+/* Battery-aware animations */
+@media (prefers-reduced-motion: no-preference) {
+  .battery-aware-animation {
+    /* Full animations when battery is not a concern */
+    animation-duration: var(--animation-duration, 300ms);
+    transition-duration: var(--transition-duration, 200ms);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .battery-aware-animation {
+    /* Reduced animations for battery saving */
+    animation-duration: calc(var(--animation-duration, 300ms) * 0.5);
+    transition-duration: calc(var(--transition-duration, 200ms) * 0.5);
+  }
+}
+
+/* High refresh rate form controls */
+.high-refresh-input {
+  transition: all 8ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  transform: translate3d(0, 0, 0);
+}
+
+.high-refresh-input:focus {
+  transform: scale(1.01) translate3d(0, 0, 0);
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.2);
+}
+
+/* High refresh rate navigation animations */
+.high-refresh-nav-item {
+  transition: all 8ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  transform: translate3d(0, 0, 0);
+}
+
+.high-refresh-nav-item:hover {
+  transform: translateY(-1px) translate3d(0, 0, 0);
+  background-color: hsl(var(--accent));
+}
+
+/* Utility classes for manual 120fps optimization */
+.force-gpu-acceleration {
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+
+.high-refresh-transition {
+  transition-duration: 8ms;
+  transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.ultra-smooth-transition {
+  transition-duration: 4ms;
+  transition-timing-function: linear;
+}
+
+/* CSS custom properties for dynamic frame rate adjustment */
+:root {
+  --screen-refresh-rate: 60; /* Default to 60Hz, can be updated via JavaScript */
+  --frame-time: calc(1000ms / var(--screen-refresh-rate));
+  --optimal-transition-duration: calc(var(--frame-time) * 0.5);
+  --optimal-animation-duration: calc(var(--frame-time) * 5);
+}
+
+/* Responsive high refresh rate optimizations */
+@media (min-width: 768px) and (min-resolution: 120dpi) {
+  .desktop-high-refresh {
+    /* Desktop-specific high refresh rate optimizations */
+    transition-duration: var(--optimal-transition-duration);
+    animation-duration: var(--optimal-animation-duration);
+  }
+}
+
+@media (max-width: 767px) and (min-resolution: 120dpi) {
+  .mobile-high-refresh {
+    /* Mobile-specific high refresh rate optimizations */
+    /* Slightly reduced performance to preserve battery */
+    transition-duration: calc(var(--optimal-transition-duration) * 1.5);
+    animation-duration: calc(var(--optimal-animation-duration) * 1.2);
+  }
+}
+
+/* Enhanced Adaptive Select Optimizations for All Devices */
   
   /* Base responsive optimizations */
   .adaptive-select-trigger {

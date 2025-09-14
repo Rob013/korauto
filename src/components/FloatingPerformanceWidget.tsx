@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useQuickAudit } from "@/hooks/usePerformanceAudit";
+import { useHighRefreshRatePerformance, useHighRefreshRateSettings } from "@/hooks/useHighRefreshRate";
 import { 
   Activity, 
   X, 
@@ -10,7 +11,9 @@ import {
   Maximize2,
   RefreshCw,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  Zap,
+  Monitor
 } from "lucide-react";
 
 interface FloatingPerformanceWidgetProps {
@@ -25,6 +28,10 @@ const FloatingPerformanceWidget = ({
   const [isMinimized, setIsMinimized] = useState(true);
   const [isVisible, setIsVisible] = useState(enabled);
   const { metrics, isLoading, runQuickCheck } = useQuickAudit();
+  const hrPerformance = useHighRefreshRatePerformance();
+  const { settings, getPerformanceStats } = useHighRefreshRateSettings();
+  
+  const hrStats = getPerformanceStats();
 
   // Auto-run audit on mount
   useEffect(() => {
@@ -50,6 +57,19 @@ const FloatingPerformanceWidget = ({
     return "bg-red-500";
   };
 
+  const getFrameRateColor = (frameRate: number) => {
+    if (frameRate >= 100) return "bg-green-500";
+    if (frameRate >= 80) return "bg-blue-500";
+    if (frameRate >= 60) return "bg-yellow-500";
+    return "bg-red-500";
+  };
+
+  const getFrameRateIcon = () => {
+    if (hrPerformance.frameRate >= 100) return <Zap className="h-4 w-4 text-green-500" />;
+    if (hrPerformance.frameRate >= 60) return <Activity className="h-4 w-4 text-blue-500" />;
+    return <Monitor className="h-4 w-4 text-yellow-500" />;
+  };
+
   return (
     <div className={`fixed ${positionClasses[position]} z-50 max-w-sm floating-animation`}>
       <Card className="shadow-2xl border-2 glass-card hover-lift-gentle transition-all duration-300">
@@ -58,8 +78,17 @@ const FloatingPerformanceWidget = ({
             // Minimized view
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2">
-                <Activity className="h-4 w-4 text-blue-500 animate-pulse" />
-                <span className="text-sm font-medium">Performanca</span>
+                {getFrameRateIcon()}
+                <span className="text-sm font-medium">Performance</span>
+                {/* Show frame rate in minimized view if high refresh rate is active */}
+                {settings.enabled && settings.targetFrameRate > 60 && (
+                  <Badge 
+                    variant="secondary" 
+                    className={`${getFrameRateColor(hrPerformance.frameRate)} text-white text-xs hover-scale-gentle`}
+                  >
+                    {hrPerformance.frameRate}fps
+                  </Badge>
+                )}
                 {metrics && (
                   <Badge 
                     variant="secondary" 
@@ -102,8 +131,14 @@ const FloatingPerformanceWidget = ({
             <div className="space-y-3 animate-scale-in">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-blue-500 animate-pulse" />
-                  <span className="font-medium">Monitor i Performancës</span>
+                  {getFrameRateIcon()}
+                  <span className="font-medium">Performance Monitor</span>
+                  {/* High refresh rate indicator */}
+                  {settings.enabled && settings.targetFrameRate > 60 && (
+                    <Badge variant="secondary" className="bg-blue-500 text-white text-xs">
+                      {settings.targetFrameRate}fps
+                    </Badge>
+                  )}
                 </div>
                 <div className="flex gap-1">
                   <Button
@@ -132,6 +167,19 @@ const FloatingPerformanceWidget = ({
                 </div>
               ) : metrics ? (
                 <div className="space-y-2">
+                  {/* High Refresh Rate Performance */}
+                  {settings.enabled && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Frame Rate</span>
+                      <Badge 
+                        variant="secondary" 
+                        className={`${getFrameRateColor(hrPerformance.frameRate)} text-white`}
+                      >
+                        {hrPerformance.frameRate} fps
+                      </Badge>
+                    </div>
+                  )}
+
                   {/* Overall Score */}
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Overall Score</span>
@@ -145,6 +193,14 @@ const FloatingPerformanceWidget = ({
 
                   {/* Quick metrics */}
                   <div className="grid grid-cols-2 gap-2 text-xs">
+                    {settings.enabled && (
+                      <div>
+                        <span className="text-muted-foreground">Frame Time</span>
+                        <div className={hrPerformance.frameTime < 17 ? 'text-green-600' : 'text-red-600'}>
+                          {hrPerformance.frameTime.toFixed(1)}ms
+                        </div>
+                      </div>
+                    )}
                     <div>
                       <span className="text-muted-foreground">Layout Shifts</span>
                       <div className={metrics.layoutShifts < 0.1 ? 'text-green-600' : 'text-red-600'}>
@@ -158,18 +214,26 @@ const FloatingPerformanceWidget = ({
                       </div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Images</span>
-                      <div className={metrics.imageLoadTime < 1000 ? 'text-green-600' : 'text-red-600'}>
-                        {metrics.imageLoadTime.toFixed(0)}ms
-                      </div>
-                    </div>
-                    <div>
                       <span className="text-muted-foreground">Scroll</span>
                       <div className={metrics.scrollPerformance >= 90 ? 'text-green-600' : 'text-red-600'}>
                         {metrics.scrollPerformance.toFixed(0)}
                       </div>
                     </div>
                   </div>
+
+                  {/* High refresh rate status */}
+                  {settings.enabled && settings.targetFrameRate > 60 && (
+                    <div className="text-xs text-blue-600 border border-blue-200 rounded p-1 bg-blue-50 dark:bg-blue-900/20">
+                      🚀 High refresh rate mode: {settings.targetFrameRate}fps
+                    </div>
+                  )}
+
+                  {/* Performance warnings */}
+                  {hrPerformance.droppedFrames > 0 && (
+                    <div className="text-xs text-yellow-600 border border-yellow-200 rounded p-1 bg-yellow-50 dark:bg-yellow-900/20">
+                      ⚠️ {hrPerformance.droppedFrames} dropped frames
+                    </div>
+                  )}
 
                   {/* Issues summary */}
                   <div className="flex items-center justify-between text-sm">
