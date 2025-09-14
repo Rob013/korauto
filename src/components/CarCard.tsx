@@ -27,11 +27,12 @@ import {
   XCircle,
 } from "lucide-react";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { getStatusBadgeConfig } from "@/utils/statusBadgeUtils";
+import { useHighRefreshRateOptimization } from "@/components/HighRefreshRateOptimizer";
 interface CarCardProps {
   id: string;
   make: string;
@@ -267,6 +268,16 @@ const CarCard = ({
   const { toast } = useToast();
   const [isFavorite, setIsFavorite] = useState(false);
   const [user, setUser] = useState<any>(null);
+  
+  // High refresh rate optimization
+  const cardRef = useRef<HTMLDivElement>(null);
+  const { isHighRefreshEnabled } = useHighRefreshRateOptimization(
+    cardRef,
+    { 
+      priority: 'medium', 
+      animationTypes: ['hover', 'transition', 'transform'] 
+    }
+  );
   const [isAdmin, setIsAdmin] = useState(false);
 
   // Simplified logic: trust the database filtering, only hide in clear edge cases
@@ -412,12 +423,18 @@ const CarCard = ({
 
   return (
     <div
-      className="glass-card card-hover overflow-hidden cursor-pointer group touch-manipulation relative rounded-lg"
+      ref={cardRef}
+      className={`glass-card card-hover overflow-hidden cursor-pointer group touch-manipulation relative rounded-lg ${
+        isHighRefreshEnabled ? 'high-refresh-card' : ''
+      }`}
       onClick={handleCardClick}
       style={{
         // Prevent layout shifts by setting fixed dimensions
         minHeight: '360px',
-        aspectRatio: '280/360'
+        aspectRatio: '280/360',
+        // High refresh rate optimizations
+        transform: 'translate3d(0, 0, 0)',
+        willChange: isHighRefreshEnabled ? 'transform, box-shadow' : 'auto'
       }}
     >
       <div className="relative h-56 bg-muted overflow-hidden">
@@ -425,7 +442,11 @@ const CarCard = ({
           <OptimizedImage
             src={image}
             alt={`${year} ${make} ${model}`}
-            className="w-full h-full group-hover:scale-110 transition-transform duration-500 ease-out"
+            className={`w-full h-full group-hover:scale-110 ${
+              isHighRefreshEnabled 
+                ? 'transition-transform duration-300 ease-out high-refresh-optimized' 
+                : 'transition-transform duration-500 ease-out'
+            }`}
             width={280}
             priority={false}
             enableLazyLoad={true}

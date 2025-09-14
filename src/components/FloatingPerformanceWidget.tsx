@@ -251,7 +251,7 @@ const FloatingPerformanceWidget = ({
                   </div>
 
                   {/* Actions */}
-                  <div className="flex gap-2 pt-2">
+                  <div className="flex gap-1 pt-2">
                     <Button 
                       size="sm" 
                       onClick={runQuickCheck}
@@ -268,6 +268,17 @@ const FloatingPerformanceWidget = ({
                     >
                       Details
                     </Button>
+                    {settings.enabled && settings.targetFrameRate > 60 && (
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => window.open('/120fps-demo', '_blank')}
+                        className="flex-1 text-xs h-7"
+                        title="View 120fps Demo"
+                      >
+                        120fps
+                      </Button>
+                    )}
                   </div>
                 </div>
               ) : (

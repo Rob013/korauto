@@ -33,6 +33,7 @@ const ApiInfoDemo = lazy(() => import("./components/ApiInfoDemo"));
 const AdminSyncDashboard = lazy(() => import("./components/AdminSyncDashboard"));
 const CookieManagementDashboard = lazy(() => import("./components/CookieManagementDashboard"));
 const HighRefreshRateSettings = lazy(() => import("./components/HighRefreshRateSettings"));
+const HighRefreshRateDemo = lazy(() => import("./components/HighRefreshRateDemo"));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-background">
@@ -217,6 +218,11 @@ const App = () => {
             <Route path="/high-refresh-rate" element={
               <Suspense fallback={<PageSkeleton />}>
                 <HighRefreshRateSettings />
+              </Suspense>
+            } />
+            <Route path="/120fps-demo" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <HighRefreshRateDemo />
               </Suspense>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
