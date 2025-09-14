@@ -1144,27 +1144,8 @@ const CarDetails = memo(() => {
             <Card className="glass-panel border-0 shadow-2xl rounded-xl mobile-detailed-info-card">
               <CardContent className="p-3 sm:p-4 lg:p-6">
                 <div className="flex flex-col gap-2 sm:gap-3 mb-3 sm:mb-4">
-                  <h3 className="text-base sm:text-lg lg:text-xl font-bold flex items-center text-foreground">
-                    <Info className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 mr-2 text-primary" />
-                    Informacione të Detajuara
-                  </h3>
-                  <Button variant="outline" size="sm" onClick={() => {
-                  setShowDetailedInfo(!showDetailedInfo);
-                }} className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto h-9 text-sm">
-                    {showDetailedInfo ? <>
-                        <ChevronUp className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                        Fshih Detajet
-                      </> : <>
-                        <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                        Shiko Detajet
-                      </>}
-                    {/* Show indicators for available detailed data */}
-                    {!showDetailedInfo && <div className="ml-1 sm:ml-2 flex gap-0.5 sm:gap-1">
-                        {car.details?.options && <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full" title="Pajisjet dhe Opsionet në dispozicion" />}
-                        {car.insurance_v2 && <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full" title="Raporti i sigurimeve në dispozicion" />}
-                        {(car.details?.inspect_outer || car.details?.inspect?.inner) && <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-500 rounded-full" title="Të dhënat e inspektimit në dispozicion" />}
-                      </div>}
-                  </Button>
+                  
+                  
                 </div>
 
                 {showDetailedInfo && <div className="space-y-4 sm:space-y-6 animate-in slide-in-from-top-2 duration-300">
