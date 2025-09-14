@@ -19,21 +19,29 @@ import { useImageSwipe } from "@/hooks/useImageSwipe";
 import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
 
-// Helper function to get production month name in Albanian
-const getProductionMonth = (car: any): string => {
-  const monthNames = [
-    '', 'Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor',
-    'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'
-  ];
-  
+// Helper function to format production date as MM/YY
+const getFormattedProductionDate = (car: {
+  year?: number;
+  month?: number;
+  details?: {
+    first_registration?: { month?: number };
+    month?: number;
+  };
+}): string => {
   // Try to get month from first_registration first, then details.month
   const month = car.details?.first_registration?.month || car.details?.month || car.month;
+  const year = car.year;
   
-  if (month >= 1 && month <= 12) {
-    return ` ${monthNames[month]}`;
+  if (month >= 1 && month <= 12 && year) {
+    // Format month with leading zero if needed
+    const formattedMonth = month.toString().padStart(2, '0');
+    // Get last 2 digits of year
+    const formattedYear = year.toString().slice(-2);
+    return `${formattedMonth}/${formattedYear}`;
   }
   
-  return '';
+  // Fallback to just year if no month available
+  return year ? year.toString().slice(-2) : '';
 };
 
 // Enhanced Feature mapping for equipment/options - supporting both string and numeric formats
@@ -1143,7 +1151,7 @@ const CarDetails = memo(() => {
                 {car.make} {car.model}
               </h1>
               <div className="car-details-row">
-                <span>{car.year}/{getProductionMonth(car)}</span>
+                <span>{getFormattedProductionDate(car)}</span>
                 <span>•</span>
                 <span>{formatMileage(car.mileage)?.replace(' km', ' Km')}</span>
                 <span>•</span>
