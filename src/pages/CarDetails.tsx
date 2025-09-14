@@ -1078,23 +1078,9 @@ const CarDetails = memo(() => {
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between p-2 sm:p-3 bg-white/5 dark:bg-black/10 backdrop-blur-sm border border-white/10 dark:border-white/5 rounded-lg hover:bg-white/10 dark:hover:bg-black/15 transition-all duration-200 mobile-spec-item">
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                      <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
-                      <span className="font-medium text-foreground text-xs sm:text-sm">Viti</span>
-                    </div>
-                    <span className="text-muted-foreground font-medium text-xs sm:text-sm">{car.year}</span>
-                  </div>
+                  
 
-                  {car.mileage && <div className="flex items-center justify-between p-2 sm:p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors mobile-spec-item">
-                      <div className="flex items-center gap-1.5 sm:gap-2">
-                        <Gauge className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
-                        <span className="font-medium text-foreground text-xs sm:text-sm">Kilometrazh</span>
-                      </div>
-                      <span className="text-muted-foreground font-medium text-xs sm:text-sm">
-                        {formatMileage(car.mileage)}
-                      </span>
-                    </div>}
+                  {car.mileage}
 
                   {car.transmission && <div className="flex items-center justify-between p-2 sm:p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors mobile-spec-item">
                       <div className="flex items-center gap-1.5 sm:gap-2">
@@ -1234,12 +1220,7 @@ const CarDetails = memo(() => {
                                 {car.details.badge}
                               </span>
                             </div>}
-                          {car.details.sell_type && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                              <span className="text-sm text-foreground font-medium">Lloji i Shitjes:</span>
-                              <span className="text-sm font-medium text-muted-foreground capitalize">
-                                {car.details.sell_type}
-                              </span>
-                            </div>}
+                          {car.details.sell_type}
 
                           {/* Inspection Report Button */}
                           <div className="sm:col-span-2 mt-4">
