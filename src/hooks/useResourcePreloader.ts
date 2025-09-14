@@ -1,128 +1,314 @@
-import { useEffect, useCallback } from 'react';
-import { preloadResource } from '@/utils/performance';
+import { useEffect, useCallback, useRef } from 'react';
+import { preloadResource, isFastConnection, getOptimizedImageUrl } from '@/utils/performance';
 
 interface ResourcePreloadOptions {
   enabled?: boolean;
   priority?: 'high' | 'medium' | 'low';
+  delay?: number;
+}
+
+interface PreloadedResource {
+  url: string;
+  type: string;
+  timestamp: number;
+  priority: string;
 }
 
 /**
- * Hook for preloading critical resources to improve performance
+ * Enhanced hook for intelligent resource preloading to improve performance
  */
 export const useResourcePreloader = () => {
-  
-  const preloadCriticalAssets = useCallback((options: ResourcePreloadOptions = {}) => {
-    const { enabled = true, priority = 'high' } = options;
-    
-    if (!enabled) return;
+  const preloadedResources = useRef<Set<string>>(new Set());
+  const preloadHistory = useRef<PreloadedResource[]>([]);
+  const connectionType = useRef<string>('unknown');
 
-    // Preload critical fonts
-    const fontLinks = [
-      '/fonts/inter-var.woff2',
-      '/fonts/geist-sans.woff2'
-    ];
-
-    fontLinks.forEach(href => {
-      const existingLink = document.head.querySelector(`link[href="${href}"]`);
-      if (!existingLink) {
-        preloadResource(href, 'font', 'font/woff2');
+  // Initialize connection monitoring
+  useEffect(() => {
+    const updateConnection = () => {
+      const connection = (navigator as any).connection;
+      if (connection) {
+        connectionType.current = connection.effectiveType || 'unknown';
       }
-    });
+    };
 
-    // Preload critical CSS for faster rendering
-    const criticalStyles = document.head.querySelector('style[data-critical]');
-    if (!criticalStyles) {
-      const style = document.createElement('style');
-      style.setAttribute('data-critical', 'true');
-      style.textContent = `
-        /* Critical above-the-fold styles */
-        .loading-skeleton { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        .image-placeholder { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); }
-      `;
-      document.head.appendChild(style);
+    updateConnection();
+    
+    if ('connection' in navigator) {
+      (navigator as any).connection?.addEventListener('change', updateConnection);
+      return () => {
+        (navigator as any).connection?.removeEventListener('change', updateConnection);
+      };
+    }
+  }, []);
+  
+  const shouldPreload = useCallback((resource: string, type: string): boolean => {
+    // Don't preload if already preloaded
+    if (preloadedResources.current.has(resource)) {
+      return false;
     }
 
-    // Preload important images based on connection quality
-    if ('connection' in navigator) {
-      const connection = (navigator as any).connection;
-      if (connection?.effectiveType === '4g' || connection?.downlink > 2) {
-        // High-quality connection, preload hero images
-        const heroImages = [
-          '/images/hero-car.jpg',
-          '/images/catalog-preview.jpg'
-        ];
-        
-        heroImages.forEach(src => {
-          preloadResource(src, 'image');
-        });
+    // Check connection quality
+    const connection = (navigator as any).connection;
+    if (connection) {
+      // Don't preload on slow connections
+      if (connection.saveData || connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g') {
+        return false;
       }
+      
+      // Limit image preloading on medium connections
+      if (type === 'image' && connection.effectiveType === '3g') {
+        return Math.random() < 0.5; // 50% chance for images on 3G
+      }
+    }
+
+    return true;
+  }, []);
+
+  const trackPreload = useCallback((url: string, type: string, priority: string) => {
+    preloadedResources.current.add(url);
+    preloadHistory.current.push({
+      url,
+      type,
+      timestamp: Date.now(),
+      priority
+    });
+
+    // Keep history limited
+    if (preloadHistory.current.length > 100) {
+      preloadHistory.current.shift();
     }
   }, []);
 
-  const preloadRouteResources = useCallback((routeName: string) => {
-    // Preload resources specific to certain routes
-    const routeResources: Record<string, string[]> = {
+  const preloadCriticalAssets = useCallback((options: ResourcePreloadOptions = {}) => {
+    const { enabled = true, priority = 'high', delay = 0 } = options;
+    
+    if (!enabled) return;
+
+    const executePreload = () => {
+      // Preload critical fonts with better detection
+      const fontLinks = [
+        '/fonts/inter-var.woff2',
+        '/fonts/geist-sans.woff2'
+      ];
+
+      fontLinks.forEach(href => {
+        if (shouldPreload(href, 'font')) {
+          const existingLink = document.head.querySelector(`link[href="${href}"]`);
+          if (!existingLink) {
+            preloadResource(href, 'font', 'font/woff2', priority as any);
+            trackPreload(href, 'font', priority);
+          }
+        }
+      });
+
+      // Preload critical CSS for faster rendering
+      const criticalStyles = document.head.querySelector('style[data-critical]');
+      if (!criticalStyles) {
+        const style = document.createElement('style');
+        style.setAttribute('data-critical', 'true');
+        style.textContent = `
+          /* Critical above-the-fold styles for instant loading */
+          .loading-skeleton { 
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--muted) / 0.5) 50%, hsl(var(--muted)) 75%);
+            background-size: 200% 100%;
+          }
+          .image-placeholder { 
+            background: linear-gradient(90deg, hsl(var(--muted)), hsl(var(--muted) / 0.8), hsl(var(--muted)));
+            background-size: 200% 100%;
+            animation: shimmer 1.5s ease-in-out infinite;
+          }
+          @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+          }
+          .performance-optimized {
+            contain: layout style paint;
+            will-change: auto;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+
+      // Smart image preloading based on connection and viewport
+      if (isFastConnection()) {
+        const heroImages = [
+          '/images/hero-car.webp',
+          '/images/catalog-preview.webp',
+          '/images/logo.webp'
+        ];
+        
+        heroImages.forEach(src => {
+          if (shouldPreload(src, 'image')) {
+            // Use optimized image URLs
+            const optimizedSrc = getOptimizedImageUrl(src, 1200, 85, 'webp');
+            preloadResource(optimizedSrc, 'image', undefined, priority as any);
+            trackPreload(optimizedSrc, 'image', priority);
+          }
+        });
+      }
+
+      // Preload critical API endpoints
+      const criticalEndpoints = [
+        '/api/status',
+        '/api/manufacturers'
+      ];
+
+      criticalEndpoints.forEach(endpoint => {
+        if (shouldPreload(endpoint, 'fetch')) {
+          fetch(endpoint, { 
+            method: 'HEAD',
+            headers: { 'Cache-Control': 'max-age=300' }
+          }).then(() => {
+            trackPreload(endpoint, 'api', priority);
+          }).catch(() => {
+            // Silently fail
+          });
+        }
+      });
+    };
+
+    if (delay > 0) {
+      setTimeout(executePreload, delay);
+    } else {
+      executePreload();
+    }
+  }, [shouldPreload, trackPreload]);
+
+  const preloadRouteResources = useCallback((routeName: string, options: ResourcePreloadOptions = {}) => {
+    const { priority = 'medium' } = options;
+
+    // Smart route-based preloading
+    const routeResources: Record<string, Array<{ url: string; type: string }>> = {
       'catalog': [
-        '/api/manufacturers',
-        '/api/car-models'
+        { url: '/api/manufacturers', type: 'api' },
+        { url: '/api/models', type: 'api' },
+        { url: '/api/filters', type: 'api' }
       ],
       'car-details': [
-        '/api/car-images',
-        '/api/inspection-data'
+        { url: '/api/car-images', type: 'api' },
+        { url: '/api/inspection-data', type: 'api' }
       ],
       'admin': [
-        '/api/admin-dashboard',
-        '/api/analytics'
+        { url: '/api/admin-dashboard', type: 'api' },
+        { url: '/api/analytics', type: 'api' },
+        { url: '/api/sync-status', type: 'api' }
       ]
     };
 
     const resources = routeResources[routeName] || [];
-    resources.forEach(url => {
-      // Use fetch to preload API responses into browser cache
-      fetch(url, { 
-        method: 'GET',
-        headers: { 'Cache-Control': 'max-age=300' }
-      }).catch(() => {
-        // Silently fail - preloading is best effort
-      });
+    
+    resources.forEach(({ url, type }) => {
+      if (shouldPreload(url, type)) {
+        // Use fetch to preload API responses into browser cache
+        fetch(url, { 
+          method: 'GET',
+          headers: { 
+            'Cache-Control': 'max-age=300',
+            'Accept': 'application/json'
+          }
+        }).then(() => {
+          trackPreload(url, type, priority);
+        }).catch(() => {
+          // Silently fail - preloading is best effort
+        });
+      }
     });
-  }, []);
+  }, [shouldPreload, trackPreload]);
 
-  const preloadNextPageResources = useCallback((currentPage: number, totalPages: number) => {
-    // Preload next page of results if available
-    if (currentPage < totalPages) {
-      const nextPageUrl = `/api/cars?page=${currentPage + 1}`;
-      fetch(nextPageUrl, {
-        method: 'GET',
-        headers: { 'Cache-Control': 'max-age=300' }
-      }).catch(() => {
-        // Silently fail - preloading is best effort
-      });
+  const preloadNextPageResources = useCallback((currentPage: number, totalPages: number, baseUrl = '/api/cars') => {
+    // Smart next page preloading
+    if (currentPage < totalPages && isFastConnection()) {
+      const nextPageUrl = `${baseUrl}?page=${currentPage + 1}`;
+      
+      if (shouldPreload(nextPageUrl, 'api')) {
+        fetch(nextPageUrl, {
+          method: 'GET',
+          headers: { 
+            'Cache-Control': 'max-age=300',
+            'Accept': 'application/json'
+          }
+        }).then(() => {
+          trackPreload(nextPageUrl, 'api', 'low');
+        }).catch(() => {
+          // Silently fail
+        });
+      }
     }
+  }, [shouldPreload, trackPreload]);
+
+  // Preload images in viewport with Intersection Observer
+  const preloadImagesInViewport = useCallback((threshold = 0.1) => {
+    if (!('IntersectionObserver' in window)) return;
+
+    const imageObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const img = entry.target as HTMLImageElement;
+            const src = img.dataset.src;
+            
+            if (src && shouldPreload(src, 'image')) {
+              img.src = getOptimizedImageUrl(src, img.width || 400, 80);
+              img.removeAttribute('data-src');
+              trackPreload(src, 'image', 'medium');
+              imageObserver.unobserve(img);
+            }
+          }
+        });
+      },
+      { 
+        rootMargin: '50px',
+        threshold 
+      }
+    );
+
+    // Observe all images with data-src
+    document.querySelectorAll('img[data-src]').forEach((img) => {
+      imageObserver.observe(img);
+    });
+
+    return () => imageObserver.disconnect();
+  }, [shouldPreload, trackPreload]);
+
+  // Get preload statistics
+  const getPreloadStats = useCallback(() => {
+    const stats = {
+      totalPreloaded: preloadHistory.current.length,
+      byType: {} as Record<string, number>,
+      byPriority: {} as Record<string, number>,
+      connectionType: connectionType.current
+    };
+
+    preloadHistory.current.forEach(({ type, priority }) => {
+      stats.byType[type] = (stats.byType[type] || 0) + 1;
+      stats.byPriority[priority] = (stats.byPriority[priority] || 0) + 1;
+    });
+
+    return stats;
   }, []);
 
-  // Auto-preload critical assets on hook initialization (delayed to avoid warnings)
+  // Auto-preload critical assets on hook initialization
   useEffect(() => {
-    // Use requestIdleCallback for non-critical preloading with longer delay
+    // Use requestIdleCallback for non-critical preloading
     if ('requestIdleCallback' in window) {
-      window.requestIdleCallback(() => {
-        // Add delay to ensure fonts/images are actually needed
-        setTimeout(() => {
-          preloadCriticalAssets();
-        }, 3000); // Wait 3 seconds before preloading
-      });
+      requestIdleCallback(() => {
+        preloadCriticalAssets({ delay: 2000 }); // Wait 2 seconds
+      }, { timeout: 10000 });
     } else {
-      // Fallback for browsers without requestIdleCallback - longer delay
+      // Fallback for browsers without requestIdleCallback
       setTimeout(() => {
-        preloadCriticalAssets();
-      }, 5000);
+        preloadCriticalAssets({ delay: 3000 });
+      }, 3000);
     }
   }, [preloadCriticalAssets]);
 
   return {
     preloadCriticalAssets,
     preloadRouteResources,
-    preloadNextPageResources
+    preloadNextPageResources,
+    preloadImagesInViewport,
+    getPreloadStats
   };
 };
 
