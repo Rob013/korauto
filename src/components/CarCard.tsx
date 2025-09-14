@@ -27,7 +27,7 @@ import {
   XCircle,
 } from "lucide-react";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { OptimizedImage } from "@/components/OptimizedImage";
@@ -336,7 +336,7 @@ const CarCard = ({
     });
     return () => subscription.unsubscribe();
   }, [id]);
-  const handleFavoriteToggle = async (e: React.MouseEvent) => {
+  const handleFavoriteToggle = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user) {
       toast({
@@ -384,9 +384,9 @@ const CarCard = ({
         variant: "destructive",
       });
     }
-  };
+  }, [user, isFavorite, id, make, model, year, price, image, toast, navigate]);
 
-  const handleCardClick = () => {
+  const handleCardClick = useCallback(() => {
     // Save current page and scroll position before navigating
     const scrollData = {
       scrollTop: window.scrollY,
@@ -403,7 +403,7 @@ const CarCard = ({
     setPreviousPage(window.location.pathname + window.location.search);
     // Open car details in new tab
     window.open(`/car/${lot}`, '_blank');
-  };
+  }, [id, lot, setPreviousPage]);
 
   // Don't render the component if it should be hidden
   if (hideSoldCar) {
@@ -412,7 +412,7 @@ const CarCard = ({
 
   return (
     <div
-      className="glass-card card-hover overflow-hidden cursor-pointer group touch-manipulation relative rounded-lg"
+      className="glass-card card-hover overflow-hidden cursor-pointer group touch-manipulation relative rounded-lg performance-card animation-120fps"
       onClick={handleCardClick}
       style={{
         // Prevent layout shifts by setting fixed dimensions
@@ -534,4 +534,4 @@ const CarCard = ({
     </div>
   );
 };
-export default CarCard;
+export default memo(CarCard);
