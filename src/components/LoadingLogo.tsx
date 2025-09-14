@@ -65,44 +65,7 @@ const LoadingLogo: React.FC<LoadingLogoProps> = ({
           }}
         />
         
-        {/* Pulsing dots around logo - perfectly positioned - smoother animation */}
-        <div className={cn("absolute inset-0 flex items-center justify-center", ringSize[size])}>
-          {/* Top dot */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2">
-            <div className="w-1.5 h-1.5 bg-primary rounded-full" 
-                 style={{ 
-                   animation: 'ping 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                   animationDelay: '0s'
-                 }} />
-          </div>
-          
-          {/* Right dot */}
-          <div className="absolute top-1/2 right-0 translate-x-2 -translate-y-1/2">
-            <div className="w-1.5 h-1.5 bg-primary rounded-full" 
-                 style={{ 
-                   animation: 'ping 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                   animationDelay: '0.5s'
-                 }} />
-          </div>
-          
-          {/* Bottom dot */}
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-2">
-            <div className="w-1.5 h-1.5 bg-primary rounded-full" 
-                 style={{ 
-                   animation: 'ping 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                   animationDelay: '1s'
-                 }} />
-          </div>
-          
-          {/* Left dot */}
-          <div className="absolute top-1/2 left-0 -translate-x-2 -translate-y-1/2">
-            <div className="w-1.5 h-1.5 bg-primary rounded-full" 
-                 style={{ 
-                   animation: 'ping 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                   animationDelay: '1.5s'
-                 }} />
-          </div>
-        </div>
+
       </div>
     </div>
   );
