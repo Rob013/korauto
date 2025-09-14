@@ -2,6 +2,75 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== PERFORMANCE OPTIMIZATION LAYER ===== */
+/* Critical performance optimizations for smoothness, loading, and accessibility */
+
+/* Enable hardware acceleration for all interactive elements */
+* {
+  /* Enable GPU acceleration for smoother animations */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Remove hardware acceleration from static elements to save GPU memory */
+p, span, div:not([class*="animate"]):not([class*="transition"]):not([class*="hover"]):not([class*="glass"]):not([class*="modern"]) {
+  transform: none;
+  backface-visibility: visible;
+  perspective: none;
+}
+
+/* Optimize scroll performance */
+html {
+  scroll-behavior: smooth;
+  /* Enable smooth scrolling with hardware acceleration */
+  scroll-padding-top: 2rem;
+}
+
+/* Reduce layout shifts and improve loading performance */
+img, video, iframe {
+  /* Prevent layout shifts during loading */
+  height: auto;
+  max-width: 100%;
+  /* GPU acceleration for media elements */
+  transform: translateZ(0);
+  /* Optimize image rendering */
+  image-rendering: optimizeSpeed;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Optimize animation performance */
+@media (prefers-reduced-motion: no-preference) {
+  * {
+    /* Use compositing layer for animations */
+    will-change: auto;
+  }
+}
+
+/* Respect user motion preferences for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Optimize focus performance */
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  /* Ensure focus is visible and performant */
+  transition: outline-offset 0.15s ease-in-out;
+}
+
+/* Remove focus outline for mouse users while keeping it for keyboard users */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
@@ -1905,49 +1974,127 @@ body {
   max-width: 100vw !important;
 }
 
-/* Smooth loading animations for better UX */
+/* ===== ENHANCED SMOOTH LOADING ANIMATIONS ===== */
+/* Optimized for 60fps performance with GPU acceleration */
+
 @keyframes smooth-spin {
   from {
-    transform: rotate(0deg);
+    transform: rotate(0deg) translateZ(0);
   }
   to {
-    transform: rotate(360deg);
+    transform: rotate(360deg) translateZ(0);
   }
 }
 
 @keyframes smooth-pulse {
   0%, 100% {
     opacity: 0.8;
-    transform: scale(1);
+    transform: scale(1) translateZ(0);
   }
   50% {
     opacity: 1;
-    transform: scale(1.05);
+    transform: scale(1.05) translateZ(0);
   }
 }
 
 @keyframes smooth-ping {
   0% {
-    transform: scale(1);
+    transform: scale(1) translateZ(0);
     opacity: 1;
   }
   75%, 100% {
-    transform: scale(2);
+    transform: scale(2) translateZ(0);
     opacity: 0;
   }
 }
 
-/* Apply smooth animations */
+/* Enhanced loading skeleton animation */
+@keyframes skeleton-shimmer {
+  0% {
+    transform: translateX(-100%) translateZ(0);
+  }
+  100% {
+    transform: translateX(100%) translateZ(0);
+  }
+}
+
+/* Smooth fade-in with subtle slide for better UX */
+@keyframes smooth-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateZ(0);
+  }
+}
+
+/* Apply smooth animations with performance optimization */
 .animate-smooth-spin {
   animation: smooth-spin 2s linear infinite;
+  /* Enable GPU acceleration and reduce repaints */
+  will-change: transform;
+  transform-origin: center center;
 }
 
 .animate-smooth-pulse {
   animation: smooth-pulse 2s ease-in-out infinite alternate;
+  will-change: transform, opacity;
 }
 
 .animate-smooth-ping {
   animation: smooth-ping 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  will-change: transform, opacity;
+}
+
+/* Enhanced skeleton loading with shimmer effect */
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: hsl(var(--muted));
+}
+
+.skeleton-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  will-change: transform;
+}
+
+.dark .skeleton-shimmer::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+}
+
+/* Smooth content reveal animation */
+.animate-smooth-fade-in {
+  animation: smooth-fade-in 0.6s ease-out;
+  will-change: transform, opacity;
+}
+
+/* Performance optimized hover transitions */
+.hover-performance {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.hover-performance:hover {
+  transform: translateY(-2px) translateZ(0);
 }
 
 /* Compact card styling for mobile catalog */
@@ -2013,5 +2160,243 @@ body {
     gap: 8px !important;
     width: 100% !important;
     padding: 0 4px !important;
+  }
+}
+
+/* ===== COMPREHENSIVE PERFORMANCE OPTIMIZATIONS ===== */
+/* Advanced performance, accessibility, and smoothness enhancements */
+
+/* Optimize image loading and prevent layout shifts */
+.performance-image {
+  /* Reserve space to prevent layout shifts */
+  aspect-ratio: attr(width) / attr(height);
+  /* Optimize image loading */
+  loading: lazy;
+  decoding: async;
+  /* GPU acceleration for smooth scaling */
+  transform: translateZ(0);
+  /* Optimize image rendering quality */
+  image-rendering: auto;
+}
+
+/* Progressive image loading with blur effect */
+.progressive-image {
+  background: hsl(var(--muted));
+  transition: filter 0.3s ease-in-out;
+}
+
+.progressive-image.loading {
+  filter: blur(8px);
+}
+
+.progressive-image.loaded {
+  filter: blur(0);
+}
+
+/* Enhanced scroll performance */
+.scroll-performance {
+  /* Use CSS scroll-behavior for smooth scrolling */
+  scroll-behavior: smooth;
+  /* Optimize scroll performance */
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Enable momentum scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+  /* Use GPU for scroll animations */
+  transform: translateZ(0);
+}
+
+/* Optimize virtual scrolling containers */
+.virtual-scroll-container {
+  contain: layout style paint;
+  /* Isolate rendering context */
+  isolation: isolate;
+  /* Optimize scroll performance */
+  overscroll-behavior: contain;
+}
+
+/* Enhanced focus management for accessibility */
+.focus-enhanced {
+  position: relative;
+}
+
+.focus-enhanced:focus-visible::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border: 2px solid hsl(var(--ring));
+  border-radius: inherit;
+  animation: focus-pulse 0.3s ease-out;
+}
+
+@keyframes focus-pulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* High contrast mode support for accessibility */
+@media (prefers-contrast: high) {
+  .glass-card, .modern-card, .glass-panel {
+    background: hsl(var(--background));
+    border: 2px solid hsl(var(--border));
+    backdrop-filter: none;
+  }
+  
+  .shadow-sm, .shadow, .shadow-md, .shadow-lg {
+    box-shadow: 0 0 0 1px hsl(var(--border));
+  }
+}
+
+/* Optimize text rendering for better performance */
+.text-performance {
+  /* Optimize text rendering */
+  text-rendering: optimizeSpeed;
+  /* Enable font display swap for better loading performance */
+  font-display: swap;
+  /* Use subpixel antialiasing when available */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Enhanced loading states with better animation performance */
+.loading-enhanced {
+  position: relative;
+  overflow: hidden;
+}
+
+.loading-enhanced::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(var(--muted) / 0.5) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: loading-shimmer 2s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes loading-shimmer {
+  0% {
+    transform: translateX(-100%) translateZ(0);
+  }
+  100% {
+    transform: translateX(100%) translateZ(0);
+  }
+}
+
+/* Optimize grid and flex layouts for better performance */
+.performance-grid {
+  /* Use CSS Grid for optimal performance */
+  display: grid;
+  /* Enable GPU acceleration */
+  transform: translateZ(0);
+  /* Optimize rendering */
+  contain: layout style;
+}
+
+.performance-flex {
+  /* Use flexbox with GPU acceleration */
+  display: flex;
+  transform: translateZ(0);
+  contain: layout style;
+}
+
+/* Optimize card hover animations for 60fps */
+.card-performance-hover {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, box-shadow;
+}
+
+.card-performance-hover:hover {
+  transform: translateY(-4px) translateZ(0);
+}
+
+/* Memory efficient animations */
+.animate-efficient {
+  /* Only animate transform and opacity for best performance */
+  transition-property: transform, opacity;
+  transition-duration: 0.3s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
+}
+
+/* Optimize button interactions */
+.button-performance {
+  /* Use compositing layer for better animation performance */
+  transform: translateZ(0);
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 0.15s ease-in-out;
+  will-change: transform, background-color;
+}
+
+.button-performance:active {
+  transform: scale(0.98) translateZ(0);
+}
+
+/* Enhanced accessibility for screen readers */
+.sr-only-focusable:focus {
+  position: absolute;
+  width: auto;
+  height: auto;
+  padding: 0.5rem;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  background: hsl(var(--background));
+  border: 2px solid hsl(var(--ring));
+  border-radius: 0.375rem;
+  z-index: 9999;
+}
+
+/* Performance monitoring class for debugging */
+.perf-monitor {
+  /* Enable performance monitoring */
+  contain: layout style paint;
+  /* Isolate rendering */
+  isolation: isolate;
+  /* Mark element for performance tracking */
+  will-change: contents;
+}
+
+/* Optimize video and iframe performance */
+video, iframe {
+  /* Reserve aspect ratio to prevent layout shifts */
+  aspect-ratio: 16 / 9;
+  /* Enable GPU acceleration */
+  transform: translateZ(0);
+  /* Optimize rendering */
+  contain: layout style paint;
+}
+
+/* Enhanced print styles for accessibility */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-break-before {
+    break-before: page;
+  }
+  
+  .print-break-after {
+    break-after: page;
+  }
+  
+  /* Optimize print layout */
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }
