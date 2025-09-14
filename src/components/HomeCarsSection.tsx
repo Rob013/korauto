@@ -503,7 +503,7 @@ const HomeCarsSection = memo(() => {
               Nuk ka makina të disponueshme.
             </p>
           </div> : <>
-            <div className={`grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0 mobile-card-container ${isInView ? 'stagger-animation' : ''}`}>
+            <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0 mobile-card-container ${isInView ? 'stagger-animation' : ''}`}>
               {displayedCars.filter(car => {
             // Only show cars with buy_now pricing
             const lot = car.lots?.[0];
