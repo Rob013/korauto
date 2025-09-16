@@ -11,7 +11,6 @@ import { useSortedCars, getSortOptions, SortOption } from "@/hooks/useSortedCars
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowUpDown } from "lucide-react";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
-import { useDailyRotatingCars } from "@/hooks/useDailyRotatingCars";
 import { filterOutTestCars } from "@/utils/testCarFilter";
 import { calculateFinalPriceEUR, filterCarsWithBuyNowPricing } from "@/utils/carPricing";
 import { fallbackCars, fallbackManufacturers } from "@/data/fallbackData";
@@ -240,19 +239,17 @@ const HomeCarsSection = memo(() => {
     return !!(pendingFilters.manufacturer_id || pendingFilters.model_id || pendingFilters.generation_id || pendingFilters.color || pendingFilters.fuel_type || pendingFilters.transmission || pendingFilters.odometer_from_km || pendingFilters.odometer_to_km || pendingFilters.from_year || pendingFilters.to_year || pendingFilters.buy_now_price_from || pendingFilters.buy_now_price_to || pendingFilters.search || pendingFilters.seats_count);
   }, [pendingFilters]);
 
-  // Apply daily rotating cars when no filters are applied, showing 50 cars same as catalog
-  const dailyRotatingCars = useDailyRotatingCars(carsForSorting, hasFilters, 50);
-
-  // Use daily rotating cars when no filters, otherwise use sorted cars
+  // Use recently added sorting by default when no filters are applied, showing 50 cars same as catalog
   const carsToDisplay = useMemo(() => {
     if (!hasFilters) {
-      return dailyRotatingCars;
+      // Show most recently added cars by default for consistent user experience
+      return useSortedCars(carsForSorting, 'recently_added');
     }
     // When filters are applied, use sorted cars
     return useSortedCars(carsForSorting, sortBy);
-  }, [hasFilters, dailyRotatingCars, carsForSorting, sortBy]);
+  }, [hasFilters, carsForSorting, sortBy]);
 
-  // Show 50 cars by default (daily rotation) to match catalog
+  // Show 50 cars by default (most recently added) to match catalog
   const defaultDisplayCount = 50;
 
   // Memoize displayed cars to prevent unnecessary re-renders
