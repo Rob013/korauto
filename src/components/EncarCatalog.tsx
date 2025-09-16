@@ -28,7 +28,6 @@ import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useResourcePreloader } from "@/hooks/useResourcePreloader";
 import { debounce } from "@/utils/performance";
 import { useOptimizedYearFilter } from "@/hooks/useOptimizedYearFilter";
-import { useDailyRotatingCars } from "@/hooks/useDailyRotatingCars";
 import {
   APIFilters,
   extractGradesFromTitle,
@@ -196,14 +195,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }));
   }, [filteredCars]);
   
-  // Apply daily rotating cars when in default state, same as homepage
-  const dailyRotatingCars = useDailyRotatingCars(carsForSorting, !isDefaultState, 200);
-  
   // Always call useSortedCars hook (hooks must be called unconditionally)
   const sortedResults = useSortedCars(carsForSorting, sortBy);
   const sortedAllCarsResults = useSortedCars(allCarsData, sortBy); // Add sorting for all cars data
   
-  // Memoized cars to display - uses global sorting when available
+  // Memoized cars to display - uses global sorting when available, always shows recently added by default
   const carsToDisplay = useMemo(() => {
     // Priority 0: Show all cars when user has selected "Show All" option
     if (showAllCars && allCarsData.length > 0) {
@@ -218,18 +214,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       return rankedCarsForPage;
     }
     
-    // Priority 2: Daily rotating cars (only for default state without user sort selection)
-    if (isDefaultState && !hasUserSelectedSort && !shouldUseGlobalSorting()) {
-      // For server-side pagination, use all daily rotating cars without client-side slicing
-      // Server already provides the correct page data
-      console.log(`🎲 Using daily rotating cars for page ${currentPage}: ${dailyRotatingCars.length} cars (default state, no explicit sort, small dataset)`);
-      return dailyRotatingCars;
-    }
-    
-    // Priority 3: Regular sorted cars (fallback)
+    // Priority 2: Always show recently added cars as default (removed daily rotation)
     // For server-side pagination, use all sorted results without client-side slicing
     // Server already provides the correct page data
-    console.log(`📄 Using regular sorted cars for page ${currentPage}: ${sortedResults.length} cars (fallback or loading state)`);
+    console.log(`📄 Showing recently added cars for page ${currentPage}: ${sortedResults.length} cars (recently_added sort by default)`);
     return sortedResults;
   }, [
     showAllCars,
@@ -241,9 +229,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     getCarsForCurrentPage, 
     currentPage,
     globalSortingState.currentSortBy,
-    isDefaultState,
-    hasUserSelectedSort,
-    dailyRotatingCars,
     sortedResults
   ]);
 
@@ -387,7 +372,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           }
         }, 50); // Reduced from 100ms to 50ms to reduce race conditions
       }
-    }, 250), // 250ms debounce to prevent rapid clicking
+    }, 150), // 150ms debounce to prevent rapid clicking while maintaining responsiveness
     [showFilters, isMobile, setShowFilters, setHasExplicitlyClosed]
   );
 
@@ -439,9 +424,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     filters
   });
 
-  // Debounced version for performance - Reduced debounce time for year filters - using catalog utility
+  // Debounced version for performance - Reduced debounce time for faster response
   const debouncedApplyFilters = useCallback(
-    catalogDebounce(applyFiltersInternal, 150), // Reduced from 300ms for faster response
+    catalogDebounce(applyFiltersInternal, 100), // Reduced from 150ms for faster response
     [applyFiltersInternal]
   );
 
@@ -925,8 +910,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       }
     };
 
-    // PERFORMANCE: Longer debounce and only load when necessary
-    const timeoutId = setTimeout(loadFilterCounts, 500);
+    // PERFORMANCE: Reduced debounce for faster filter count updates
+    const timeoutId = setTimeout(loadFilterCounts, 300);
     return () => clearTimeout(timeoutId);
   }, [filters, manufacturers.length]); // Only depend on manufacturers.length, not the full array
 
