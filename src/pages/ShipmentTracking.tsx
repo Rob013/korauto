@@ -239,20 +239,20 @@ const ShipmentTracking = () => {
     };
 
     // Parse search results table - looking for SHIPPER, MODEL(YEAR), CHASSIS, VESSEL, POL, On Board, PORT, ETA
-    const tableRegex = /<table[^>]*>(.*?)<\/table>/gis;
+    const tableRegex = /<table[^>]*>([\s\S]*?)<\/table>/gi;
     const tableMatch = html.match(tableRegex);
     
     if (tableMatch) {
       const tableHtml = tableMatch[0];
       
       // Extract table rows
-      const rowRegex = /<tr[^>]*>(.*?)<\/tr>/gis;
+      const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
       let rowMatch;
       let shipmentData: any = {};
       
       while ((rowMatch = rowRegex.exec(tableHtml)) !== null) {
         const rowHtml = rowMatch[1];
-        const cellRegex = /<td[^>]*>(.*?)<\/td>/gis;
+        const cellRegex = /<td[^>]*>([\s\S]*?)<\/td>/gi;
         const cells = [];
         let cellMatch;
         

@@ -394,7 +394,7 @@ const LazyCarCard = memo(({
             // List view: keep existing centered layout for compact display
             <div className="text-center">
               <span className="card-price text-base sm:text-lg font-bold text-primary block">
-                €{price.toLocaleString()}
+                €{Math.round(price).toLocaleString()}
               </span>
               <span className="text-xs text-muted-foreground block">
                 deri ne portin e Durrësit
@@ -404,7 +404,7 @@ const LazyCarCard = memo(({
             // Grid view: price on left, text on right
             <div className="flex items-end justify-between">
               <span className="card-price text-base sm:text-lg font-bold text-primary">
-                €{price.toLocaleString()}
+                €{Math.round(price).toLocaleString()}
               </span>
               <span className="text-xs text-muted-foreground">
                 deri ne portin e Durrësit

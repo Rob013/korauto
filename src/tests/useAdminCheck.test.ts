@@ -3,19 +3,19 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 
 // Mock Supabase client
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {
-    auth: {
-      getUser: vi.fn(),
-      onAuthStateChange: vi.fn(() => ({
-        data: { subscription: { unsubscribe: vi.fn() } }
-      }))
-    },
-    rpc: vi.fn()
-  }
-}));
+const mockSupabase = {
+  auth: {
+    getUser: vi.fn(),
+    onAuthStateChange: vi.fn(() => ({
+      data: { subscription: { unsubscribe: vi.fn() } }
+    }))
+  },
+  rpc: vi.fn()
+};
 
-const { supabase } = await import('@/integrations/supabase/client');
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: mockSupabase
+}));
 
 describe('useAdminCheck Hook', () => {
   beforeEach(() => {
@@ -23,7 +23,7 @@ describe('useAdminCheck Hook', () => {
   });
 
   it('should return initial loading state', () => {
-    vi.mocked(supabase.auth.getUser).mockResolvedValue({
+    vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
       data: { user: null },
       error: null
     });
@@ -36,14 +36,21 @@ describe('useAdminCheck Hook', () => {
   });
 
   it('should handle non-admin user correctly', async () => {
-    const mockUser = { id: 'user-123', email: 'user@test.com' };
+    const mockUser = { 
+      id: 'user-123', 
+      email: 'user@test.com',
+      app_metadata: {},
+      user_metadata: {},
+      aud: 'authenticated',
+      created_at: '2023-01-01T00:00:00.000Z'
+    };
     
-    vi.mocked(supabase.auth.getUser).mockResolvedValue({
-      data: { user: mockUser },
+    vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
+      data: { user: mockUser as any },
       error: null
     });
     
-    vi.mocked(supabase.rpc).mockResolvedValue({
+    vi.mocked(mockSupabase.rpc).mockResolvedValue({
       data: false,
       error: null
     });
@@ -60,14 +67,21 @@ describe('useAdminCheck Hook', () => {
   });
 
   it('should handle admin user correctly', async () => {
-    const mockUser = { id: 'admin-123', email: 'admin@test.com' };
+    const mockUser = { 
+      id: 'admin-123', 
+      email: 'admin@test.com',
+      app_metadata: {},
+      user_metadata: {},
+      aud: 'authenticated',
+      created_at: '2023-01-01T00:00:00.000Z'
+    };
     
-    vi.mocked(supabase.auth.getUser).mockResolvedValue({
-      data: { user: mockUser },
+    vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
+      data: { user: mockUser as any },
       error: null
     });
     
-    vi.mocked(supabase.rpc).mockResolvedValue({
+    vi.mocked(mockSupabase.rpc).mockResolvedValue({
       data: true,
       error: null
     });
@@ -84,14 +98,21 @@ describe('useAdminCheck Hook', () => {
   });
 
   it('should handle admin check error gracefully', async () => {
-    const mockUser = { id: 'user-123', email: 'user@test.com' };
+    const mockUser = { 
+      id: 'user-123', 
+      email: 'user@test.com',
+      app_metadata: {},
+      user_metadata: {},
+      aud: 'authenticated',
+      created_at: '2023-01-01T00:00:00.000Z'
+    };
     
-    vi.mocked(supabase.auth.getUser).mockResolvedValue({
-      data: { user: mockUser },
+    vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
+      data: { user: mockUser as any },
       error: null
     });
     
-    vi.mocked(supabase.rpc).mockResolvedValue({
+    vi.mocked(mockSupabase.rpc).mockResolvedValue({
       data: null,
       error: { message: 'Admin check failed' }
     });
@@ -107,7 +128,7 @@ describe('useAdminCheck Hook', () => {
   });
 
   it('should handle unauthenticated user', async () => {
-    vi.mocked(supabase.auth.getUser).mockResolvedValue({
+    vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
       data: { user: null },
       error: null
     });

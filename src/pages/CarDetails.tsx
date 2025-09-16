@@ -900,7 +900,7 @@ const CarDetails = memo(() => {
               performance_rating: 4.5,
               popularity_score: 85,
               // Enhanced API data  
-              details: lotData.details
+              details: (lotData as any).details || undefined
             };
             setCar(transformedCar);
             setLoading(false);
@@ -921,7 +921,7 @@ const CarDetails = memo(() => {
   }, [lot, convertUSDtoEUR]);
   const handleContactWhatsApp = useCallback(() => {
     const currentUrl = window.location.href;
-    const message = `Përshëndetje! Jam i interesuar për ${car?.year} ${car?.make} ${car?.model} (€${car?.price.toLocaleString()}) - Kodi #${car?.lot || lot}. A mund të më jepni më shumë informacion? ${currentUrl}`;
+    const message = `Përshëndetje! Jam i interesuar për ${car?.year} ${car?.make} ${car?.model} (€${Math.round(car?.price || 0).toLocaleString()}) - Kodi #${car?.lot || lot}. A mund të më jepni më shumë informacion? ${currentUrl}`;
     const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, "_blank");
   }, [car, lot]);
@@ -1182,7 +1182,7 @@ const CarDetails = memo(() => {
                   <div className="flex flex-col gap-2 sm:gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="text-center sm:text-left">
                       <div className="text-xl sm:text-2xl font-bold text-primary">
-                        €{car.price.toLocaleString()}
+                        €{Math.round(car.price).toLocaleString()}
                       </div>
                       <div className="text-xs sm:text-sm text-muted-foreground">
                         +350€ deri në Prishtinë
