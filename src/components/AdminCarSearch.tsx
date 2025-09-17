@@ -344,7 +344,7 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
     if (value.trim()) {
       searchTimeoutRef.current = setTimeout(() => {
         performSearch(value);
-      }, 200); // Reduced from 500ms for faster filter response
+      }, 500); // 500ms debounce
     } else {
       setSearchResults([]);
       setShowResults(false);
