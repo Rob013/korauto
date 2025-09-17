@@ -223,10 +223,12 @@ const HomeCarsSection = memo(() => {
 
   // Type conversion to match the sorting hook interface - use fallback data if API fails
   const carsForSorting = useMemo(() => {
+    // Ensure cars is an array before accessing
+    const carsArray = Array.isArray(cars) ? cars : [];
     // Use fallback data when there's an error and no cars loaded
-    const sourceCars = error && cars.length === 0 ? fallbackCars : cars;
-    const cleanedCars = filterOutTestCars(sourceCars);
-    return cleanedCars.map(car => ({
+    const sourceCars = error && carsArray.length === 0 ? fallbackCars : carsArray;
+    const cleanedCars = filterOutTestCars(sourceCars || []);
+    return (cleanedCars || []).map(car => ({
       ...car,
       status: String(car.status || ""),
       lot_number: String(car.lot_number || ""),
@@ -241,12 +243,13 @@ const HomeCarsSection = memo(() => {
 
   // Use recently added sorting by default when no filters are applied, showing 50 cars same as catalog
   const carsToDisplay = useMemo(() => {
+    const safeCarsForSorting = Array.isArray(carsForSorting) ? carsForSorting : [];
     if (!hasFilters) {
       // Show most recently added cars by default for consistent user experience
-      return useSortedCars(carsForSorting, 'recently_added');
+      return useSortedCars(safeCarsForSorting, 'recently_added');
     }
     // When filters are applied, use sorted cars
-    return useSortedCars(carsForSorting, sortBy);
+    return useSortedCars(safeCarsForSorting, sortBy);
   }, [hasFilters, carsForSorting, sortBy]);
 
   // Show 50 cars by default (most recently added) to match catalog
@@ -254,12 +257,13 @@ const HomeCarsSection = memo(() => {
 
   // Memoize displayed cars to prevent unnecessary re-renders
   const displayedCars = useMemo(() => {
+    const safeCarsToDisplay = Array.isArray(carsToDisplay) ? carsToDisplay : [];
     if (!hasFilters) {
       // When no filters, show all daily rotating cars (already limited to 50)
-      return showAllCars ? carsToDisplay : carsToDisplay.slice(0, defaultDisplayCount);
+      return showAllCars ? safeCarsToDisplay : safeCarsToDisplay.slice(0, defaultDisplayCount);
     }
     // When filters are applied, use the slice logic
-    return showAllCars ? carsToDisplay : carsToDisplay.slice(0, defaultDisplayCount);
+    return showAllCars ? safeCarsToDisplay : safeCarsToDisplay.slice(0, defaultDisplayCount);
   }, [showAllCars, carsToDisplay, defaultDisplayCount, hasFilters]);
 
   // Preload first 6 car images for better initial loading performance
@@ -501,7 +505,7 @@ const HomeCarsSection = memo(() => {
             </p>
           </div> : <>
             <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0 mobile-card-container ${isInView ? 'stagger-animation' : ''}`}>
-              {displayedCars.filter(car => {
+              {(displayedCars || []).filter(car => {
             // Only show cars with buy_now pricing
             const lot = car.lots?.[0];
             return lot?.buy_now && lot.buy_now > 0;
