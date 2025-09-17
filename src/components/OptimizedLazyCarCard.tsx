@@ -1,4 +1,4 @@
-import React, { memo, useState, useCallback, useRef, useEffect } from "react";
+import React, { memo, useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
@@ -6,16 +6,16 @@ import { useNavigation } from "@/contexts/NavigationContext";
 import { Car, Gauge, Settings, Fuel, Palette, Shield, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { getStatusBadgeConfig } from "@/utils/statusBadgeUtils";
+import { useLazyImageLoading } from "@/hooks/useOptimizedIntersection";
 
-interface LazyCarCardProps {
+interface OptimizedLazyCarCardProps {
   id: string;
   make: string;
   model: string;
   year: number;
   price: number;
   image?: string;
-  images?: string[]; // New prop for multiple images
+  images?: string[];
   vin?: string;
   mileage?: string;
   transmission?: string;
@@ -33,22 +33,23 @@ interface LazyCarCardProps {
   details?: {
     seats_count?: number;
   };
-  // Archive information for sold cars
   is_archived?: boolean;
   archived_at?: string;
   archive_reason?: string;
-  // View mode prop
   viewMode?: 'grid' | 'list';
+  user?: any; // Pass user from parent to avoid duplicate fetches
+  isFavorite?: boolean;
+  onFavoriteToggle?: (id: string, isFavorite: boolean) => void;
 }
 
-const LazyCarCard = memo(({
+const OptimizedLazyCarCard = memo(({
   id,
   make,
   model,
   year,
   price,
   image,
-  images, // New prop
+  images,
   mileage,
   transmission,
   fuel,
@@ -63,121 +64,44 @@ const LazyCarCard = memo(({
   is_archived,
   archived_at,
   archive_reason,
-  viewMode = 'grid' // Default to grid view
-}: LazyCarCardProps) => {
+  viewMode = 'grid',
+  user,
+  isFavorite: initialIsFavorite = false,
+  onFavoriteToggle
+}: OptimizedLazyCarCardProps) => {
   const navigate = useNavigate();
   const { setCompletePageState } = useNavigation();
   const { toast } = useToast();
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [isIntersecting, setIsIntersecting] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
+  const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
 
-  // Simplified logic: trust the database filtering, only hide in clear edge cases
-  const shouldHideSoldCar = () => {
-    // Only hide if it's definitively a sold car that's clearly old
+  // Use optimized image loading
+  const imageUrl = image || images?.[0];
+  const {
+    targetRef,
+    imageSrc,
+    imageLoaded,
+    imageError,
+    handleLoad,
+    handleError,
+    shouldShowPlaceholder
+  } = useLazyImageLoading(imageUrl);
+
+  // Memoized visibility check
+  const shouldHide = useMemo(() => {
     if (is_archived && archived_at && archive_reason === 'sold') {
       try {
         const archivedTime = new Date(archived_at);
-        
-        // Check if date is valid
-        if (isNaN(archivedTime.getTime())) {
-          return true; // Hide cars with invalid dates as safety measure
-        }
+        if (isNaN(archivedTime.getTime())) return true;
         
         const now = new Date();
         const hoursSinceArchived = (now.getTime() - archivedTime.getTime()) / (1000 * 60 * 60);
-        
-        // Only hide if clearly over 24 hours (with small buffer for timing differences)
-        return hoursSinceArchived > 24.5; // 30-minute buffer to account for timing differences
-      } catch (error) {
-        // In case of any error, hide the car as a safety measure
+        return hoursSinceArchived > 24.5;
+      } catch {
         return true;
       }
     }
-    
-    // Default: show the car (trust database filtering)
     return false;
-  };
-
-  const hideSoldCar = shouldHideSoldCar();
-
-  // Optimized Intersection Observer with performance improvements
-  useEffect(() => {
-    let observer: IntersectionObserver;
-    const currentRef = cardRef.current;
-    
-    if (currentRef) {
-      observer = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) {
-            // Use requestIdleCallback for better performance on mobile
-            if ('requestIdleCallback' in window) {
-              (window as any).requestIdleCallback(() => {
-                setIsIntersecting(true);
-              });
-            } else {
-              setTimeout(() => setIsIntersecting(true), 0);
-            }
-            observer?.disconnect();
-          }
-        },
-        { 
-          rootMargin: '100px', // Increased for better mobile performance
-          threshold: 0.1 // Lower threshold for faster loading
-        }
-      );
-      observer.observe(currentRef);
-    }
-
-    return () => {
-      observer?.disconnect();
-    };
-  }, []);
-
-  // Optimized user data fetching with better caching
-  useEffect(() => {
-    let isMounted = true;
-    
-    const getUser = async () => {
-      try {
-        // Only fetch if intersecting for better performance
-        if (!isIntersecting) return;
-        
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!isMounted) return;
-        
-        setUser(user);
-        
-        if (user) {
-          // Only fetch favorite status to reduce database calls
-          const { data: favorite } = await supabase
-            .from('favorite_cars')
-            .select('id')
-            .eq('user_id', user.id)
-            .eq('car_id', id)
-            .maybeSingle();
-          
-          if (isMounted) {
-            setIsFavorite(!!favorite);
-          }
-        }
-      } catch (error) {
-        // Silent fail for better UX
-        console.debug('User data fetch:', error);
-      }
-    };
-    
-    // Only run when component is visible
-    if (isIntersecting) {
-      getUser();
-    }
-
-    return () => {
-      isMounted = false;
-    };
-  }, [id, isIntersecting]);
+  }, [is_archived, archived_at, archive_reason]);
 
   const handleFavoriteToggle = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -192,19 +116,9 @@ const LazyCarCard = memo(({
     }
 
     try {
-      if (isFavorite) {
-        await supabase
-          .from('favorite_cars')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('car_id', id);
-        
-        setIsFavorite(false);
-        toast({
-          title: "Removed from favorites",
-          description: "Car removed from your favorites",
-        });
-      } else {
+      const newFavoriteState = !isFavorite;
+      
+      if (newFavoriteState) {
         await supabase
           .from('favorite_cars')
           .insert({
@@ -214,15 +128,28 @@ const LazyCarCard = memo(({
             car_model: model,
             car_year: year,
             car_price: price,
-            car_image: image
+            car_image: imageUrl
           });
         
-        setIsFavorite(true);
         toast({
           title: "Added to favorites",
           description: "Car saved to your favorites",
         });
+      } else {
+        await supabase
+          .from('favorite_cars')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('car_id', id);
+        
+        toast({
+          title: "Removed from favorites",
+          description: "Car removed from your favorites",
+        });
       }
+      
+      setIsFavorite(newFavoriteState);
+      onFavoriteToggle?.(id, newFavoriteState);
     } catch (error) {
       console.error('Error toggling favorite:', error);
       toast({
@@ -231,13 +158,12 @@ const LazyCarCard = memo(({
         variant: "destructive",
       });
     }
-  }, [user, isFavorite, id, make, model, year, price, image, toast, navigate]);
+  }, [user, isFavorite, id, make, model, year, price, imageUrl, toast, navigate, onFavoriteToggle]);
 
   const handleCardClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    // Save complete page state including scroll position and filter panel state
     const currentFilterPanelState = sessionStorage.getItem('mobile-filter-panel-state');
     setCompletePageState({
       url: window.location.pathname + window.location.search,
@@ -246,84 +172,47 @@ const LazyCarCard = memo(({
       timestamp: Date.now()
     });
     
-    // Close filter panel when navigating to car details (if it's open)
     sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
-    
     navigate(`/car/${lot}`);
   }, [setCompletePageState, lot, navigate]);
 
-  const handleDetailsClick = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // Save complete page state including scroll position and filter panel state
-    const currentFilterPanelState = sessionStorage.getItem('mobile-filter-panel-state');
-    setCompletePageState({
-      url: window.location.pathname + window.location.search,
-      scrollPosition: window.scrollY,
-      filterPanelState: currentFilterPanelState ? JSON.parse(currentFilterPanelState) : false,
-      timestamp: Date.now()
-    });
-    
-    // Close filter panel when navigating to car details (if it's open)
-    sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
-    
-    navigate(`/car/${lot}`);
-  }, [setCompletePageState, lot, navigate]);
-
-  // Don't render content until intersection
-  if (!isIntersecting) {
-    return (
-      <div 
-        ref={cardRef}
-        className="glass-card rounded-lg overflow-hidden h-96"
-      >
-          <div className="animate-pulse">
-            <div className="h-72 bg-muted" />
-            <div className="p-2 space-y-1">
-              <div className="h-4 bg-muted rounded w-3/4" />
-              <div className="h-3 bg-muted rounded w-1/2" />
-              <div className="h-5 bg-muted rounded w-2/3" />
-            </div>
-          </div>
-      </div>
-    );
-  }
-
-  // Don't render the component if it should be hidden
-  if (hideSoldCar) {
+  // Don't render if should hide
+  if (shouldHide) {
     return null;
   }
 
   return (
     <div 
-      ref={cardRef}
-      className={`glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] ${
+      ref={targetRef}
+      className={`glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] will-change-transform ${
         viewMode === 'list' 
           ? 'flex flex-row items-start gap-3 p-3 mobile-card-compact' 
           : 'mobile-card-compact compact-modern-card'
       }`}
       onClick={handleCardClick}
     >
-      {/* Image Section - 70% of card height */}
+      {/* Image Section */}
       <div className={`relative bg-muted overflow-hidden flex-shrink-0 rounded-lg ${
         viewMode === 'list' 
           ? 'w-32 h-24 sm:w-40 sm:h-28 lg:w-48 lg:h-32' 
           : 'h-52 sm:h-60 lg:h-72'
       }`}>
-        {/* Optimized image loading with progressive enhancement */}
-        {(image || (images && images.length > 0)) ? (
+        {/* Optimized image with better loading */}
+        {shouldShowPlaceholder && (
+          <div className="absolute inset-0 bg-muted animate-pulse flex items-center justify-center">
+            <Car className="h-8 w-8 text-muted-foreground" />
+          </div>
+        )}
+        
+        {imageSrc && (
           <img 
-            src={isIntersecting ? (image || images?.[0]) : undefined}
+            src={imageSrc}
             alt={`${year} ${make} ${model}`} 
             className={`w-full h-full object-cover transition-all duration-300 ${
               imageLoaded ? 'opacity-100 group-hover:scale-105' : 'opacity-0'
             }`}
-            onLoad={() => setImageLoaded(true)}
-            onError={(e) => {
-              e.currentTarget.src = "/placeholder.svg";
-              setImageLoaded(true);
-            }}
+            onLoad={handleLoad}
+            onError={handleError}
             loading="lazy"
             decoding="async"
             style={{ 
@@ -331,10 +220,6 @@ const LazyCarCard = memo(({
               willChange: imageLoaded ? 'transform' : 'auto'
             }}
           />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-muted">
-            <Car className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
-          </div>
         )}
         
         {/* Lot Number Badge */}
@@ -355,7 +240,7 @@ const LazyCarCard = memo(({
         )}
       </div>
       
-      {/* Content Section - 30% of card height, more compact */}
+      {/* Content Section */}
       <div className={`${viewMode === 'list' ? 'flex-1 min-w-0' : 'p-2 flex-1'}`}>
         <div className="mb-1">
           <h3 className="card-title text-sm font-bold text-foreground line-clamp-1 leading-tight">
@@ -366,7 +251,7 @@ const LazyCarCard = memo(({
           )}
         </div>
 
-        {/* Vehicle Info - More compact layout */}
+        {/* Vehicle Info - Optimized layout */}
         <div className={`mb-1 text-xs space-y-0.5 ${
           viewMode === 'list' 
             ? 'grid grid-cols-2 gap-x-3 gap-y-0.5' 
@@ -398,7 +283,7 @@ const LazyCarCard = memo(({
           )}
         </div>
 
-        {/* Status Indicators - More compact */}
+        {/* Status Indicators */}
         {insurance_v2?.accidentCnt === 0 && (
           <div className="mb-1">
             <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-green-50 text-green-700 border-green-200">
@@ -408,10 +293,9 @@ const LazyCarCard = memo(({
           </div>
         )}
 
-        {/* Pricing Section - Very compact */}
+        {/* Pricing Section */}
         <div className={`${viewMode === 'list' ? 'flex flex-col items-end justify-center' : 'mt-1'}`}>
           {viewMode === 'list' ? (
-            // List view: keep existing centered layout for compact display
             <div className="text-center">
               <span className="card-price text-base sm:text-lg font-bold text-primary block">
                 €{Math.round(price).toLocaleString()}
@@ -421,7 +305,6 @@ const LazyCarCard = memo(({
               </span>
             </div>
           ) : (
-            // Grid view: price on left, text on right
             <div className="flex items-end justify-between">
               <span className="card-price text-base sm:text-lg font-bold text-primary">
                 €{Math.round(price).toLocaleString()}
@@ -445,6 +328,6 @@ const LazyCarCard = memo(({
   );
 });
 
-LazyCarCard.displayName = 'LazyCarCard';
+OptimizedLazyCarCard.displayName = 'OptimizedLazyCarCard';
 
-export default LazyCarCard;
+export default OptimizedLazyCarCard;

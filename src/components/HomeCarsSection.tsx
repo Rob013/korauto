@@ -1,5 +1,5 @@
 // @ts-nocheck
-import LazyCarCard from "./LazyCarCard";
+import LazyCarCard from "./OptimizedLazyCarCard";
 import { memo, useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";

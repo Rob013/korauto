@@ -20,7 +20,7 @@ import {
   List,
 } from "lucide-react";
 import LoadingLogo from "@/components/LoadingLogo";
-import LazyCarCard from "@/components/LazyCarCard";
+import LazyCarCard from "@/components/OptimizedLazyCarCard";
 import { useSecureAuctionAPI, createFallbackManufacturers } from "@/hooks/useSecureAuctionAPI";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
