@@ -44,17 +44,13 @@ const HomeCarsSection = memo(() => {
     triggerOnce: true
   });
   const {
-    cars,
+    vehicles: cars,
     loading,
     error,
-    fetchCars,
-    fetchManufacturers,
+    fetchVehicles: fetchCars,
+    fetchMakes: fetchManufacturers,
     fetchModels,
-    fetchGenerations,
-    fetchFilterCounts,
-    fetchGrades,
-    fetchTrimLevels
-  } = useSecureAuctionAPI();
+  } = useCarAPIs();
   const {
     convertUSDtoEUR,
     exchangeRate

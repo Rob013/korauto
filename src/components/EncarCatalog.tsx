@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import LoadingLogo from "@/components/LoadingLogo";
 import LazyCarCard from "@/components/OptimizedLazyCarCard";
-import { useSecureAuctionAPI, createFallbackManufacturers } from "@/hooks/useSecureAuctionAPI";
+import { useCarAPIs } from "@/hooks/useCarAPIs";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
@@ -66,26 +66,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const { toast } = useToast();
   const { restorePageState } = useNavigation();
   const {
-    cars,
-    setCars, // ✅ Import setCars
+    vehicles: cars,
     loading,
     error,
-    totalCount,
-    setTotalCount, // ✅ Import setTotalCount for optimized filtering
-    hasMorePages,
-    fetchCars,
-    fetchAllCars, // ✅ Import new function for global sorting
-    filters,
-    setFilters,
-    fetchManufacturers,
+    total: totalCount,
+    fetchVehicles: fetchCars,
+    fetchMakes: fetchManufacturers,
     fetchModels,
-    fetchGenerations,
-    fetchAllGenerationsForManufacturer, // ✅ Import new function
-    fetchFilterCounts,
-    fetchGrades,
-    fetchTrimLevels,
-    loadMore,
-  } = useSecureAuctionAPI();
+  } = useCarAPIs();
   const { convertUSDtoEUR, exchangeRate } = useCurrencyAPI();
   
   // Global sorting hook
