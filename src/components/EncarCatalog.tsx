@@ -896,7 +896,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
         saveScrollPosition();
-      }, 250); // Reduced from 500ms for more responsive scroll position saving
+      }, 500); // Increased debounce time for better performance
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
