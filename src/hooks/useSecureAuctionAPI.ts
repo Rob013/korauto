@@ -23,77 +23,11 @@ const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => P
   return data;
 };
 
-// Create fallback car data for testing when API is not available
-export const createFallbackCars = (filters: any = {}): any[] => {
-  console.log(`🔄 Creating fallback cars for development/testing`);
-  
-  // Generate mock cars for pagination testing
-  const mockCars = [];
-  const brands = ['BMW', 'Audi', 'Mercedes-Benz', 'Toyota', 'Honda', 'Hyundai', 'Kia'];
-  const models = {
-    'BMW': ['3 Series', '5 Series', 'X3', 'X5'],
-    'Audi': ['A3', 'A4', 'A6', 'Q5'],
-    'Mercedes-Benz': ['C-Class', 'E-Class', 'GLC'],
-    'Toyota': ['Camry', 'RAV4', 'Corolla'],
-    'Honda': ['Civic', 'Accord', 'CR-V'],
-    'Hyundai': ['Elantra', 'Tucson', 'Santa Fe'],
-    'Kia': ['Optima', 'Sportage', 'Sorento']
-  };
-  
-  // Generate 500 cars to support multiple pages of pagination
-  for (let i = 1; i <= 500; i++) {
-    const brand = brands[i % brands.length];
-    const brandModels = models[brand] || ['Model'];
-    const model = brandModels[(i + 1) % brandModels.length];
-    
-    // Add some test cars with different statuses for badge testing
-    let status = 1; // default active
-    let sale_status = 'active'; // default active
-    
-    // Make specific cars have different statuses for testing
-    if (i === 1) {
-      status = 3;
-      sale_status = 'sold';
-    } else if (i === 2) {
-      status = 1;
-      sale_status = 'reserved';
-    } else if (i === 3) {
-      status = 2;
-      sale_status = 'pending';
-    } else if (i === 4) {
-      status = 2; // pending status without sale_status
-    } else if (i === 5) {
-      status = 3; // sold status without sale_status
-    }
-    
-    mockCars.push({
-      id: i,
-      title: `${2015 + (i % 10)} ${brand} ${model}`,
-      year: 2015 + (i % 10),
-      manufacturer: { name: brand },
-      model: { name: model },
-      vin: `KMHJ381${String(i).padStart(7, '0')}ABC`, // Valid VIN format (17 characters)
-      lot_number: `LOT${String(i).padStart(6, '0')}`, // Valid lot number
-      status: status,
-      sale_status: sale_status,
-      lots: [{
-        buy_now: 20000 + (i * 100),
-        images: {
-          normal: [`https://picsum.photos/400/300?random=${i}`]
-        },
-        odometer: { km: 50000 + (i * 1000) },
-        status: status
-      }],
-      fuel: { name: i % 3 === 0 ? 'Petrol' : i % 3 === 1 ? 'Diesel' : 'Hybrid' },
-      transmission: { name: i % 2 === 0 ? 'Automatic' : 'Manual' },
-      color: { name: ['Black', 'White', 'Silver', 'Blue', 'Red'][i % 5] },
-      location: 'Seoul'
-    });
-  }
-  
-  console.log(`✅ Generated ${mockCars.length} mock cars for fallback`);
-  return mockCars;
-};
+// DEPRECATED: Use static fallbackCars from @/data/fallbackData instead
+// This function was creating different random cars each time, causing inconsistent displays
+// export const createFallbackCars = (filters: any = {}): any[] => {
+//   // Function content commented out - use static fallbackCars instead
+// };
 
 // Create fallback generation data for testing when API is not available
 export const createFallbackGenerations = (manufacturerName: string): Generation[] => {
@@ -889,9 +823,9 @@ export const useSecureAuctionAPI = () => {
         return;
       }
       
-      // Use fallback cars when API fails
-      console.log("❌ API failed, using fallback cars for pagination testing");
-      const fallbackCars = createFallbackCars(newFilters);
+      // Use static fallback cars when API fails (consistent display)
+      console.log("❌ API failed, using static fallback cars");
+      const { fallbackCars } = await import("@/data/fallbackData");
       
       if (fallbackCars.length === 0) {
         console.log("❌ No fallback cars available, showing empty state");
@@ -902,7 +836,7 @@ export const useSecureAuctionAPI = () => {
         return;
       }
       
-      // Simulate pagination with fallback data
+      // Simulate pagination with static fallback data
       const pageSize = parseInt(newFilters.per_page || "200");
       const startIndex = (page - 1) * pageSize;
       const endIndex = startIndex + pageSize;
@@ -2030,10 +1964,10 @@ export const useSecureAuctionAPI = () => {
         return [];
       }
       
-      // Use fallback cars for global sorting when API fails
-      console.log("❌ API failed for global sorting, using fallback cars");
-      const fallbackCars = createFallbackCars(newFilters);
-      console.log(`✅ Fallback Success - Created ${fallbackCars.length} fallback cars for global sorting`);
+      // Use static fallback cars for global sorting when API fails
+      console.log("❌ API failed for global sorting, using static fallback cars");
+      const { fallbackCars } = await import("@/data/fallbackData");
+      console.log(`✅ Fallback Success - Using ${fallbackCars.length} static fallback cars for global sorting`);
       return fallbackCars;
     }
   };

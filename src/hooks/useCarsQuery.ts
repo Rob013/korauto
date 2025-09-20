@@ -118,12 +118,12 @@ const fetchCarsFallback = async (
   params: ReturnType<typeof buildQueryParams>,
   signal?: AbortSignal
 ): Promise<CarsResponse> => {
-  // When no brand filter is applied, use the same secure auction API data as homepage
+  // When no brand filter is applied, use the same static fallback data as other parts
   if (!params.brand || params.brand === '' || params.brand === 'all') {
-    const { createFallbackCars } = await import('@/hooks/useSecureAuctionAPI');
+    const { fallbackCars } = await import('@/data/fallbackData');
     
-    // Get cars from secure auction API (same as homepage)
-    const allCars = createFallbackCars({});
+    // Get cars from static fallback data (consistent display)
+    const allCars = fallbackCars;
     
     // Apply daily rotation logic (same as homepage)
     const hasFilters = Object.entries(params).some(([key, value]) => 
