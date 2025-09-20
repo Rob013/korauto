@@ -103,81 +103,66 @@ const LazyCarCard = memo(({
 
   const hideSoldCar = shouldHideSoldCar();
 
-  // Optimized Intersection Observer with performance improvements
+  // Intersection Observer for lazy loading
   useEffect(() => {
-    let observer: IntersectionObserver;
-    const currentRef = cardRef.current;
-    
-    if (currentRef) {
-      observer = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) {
-            // Use requestIdleCallback for better performance on mobile
-            if ('requestIdleCallback' in window) {
-              (window as any).requestIdleCallback(() => {
-                setIsIntersecting(true);
-              });
-            } else {
-              setTimeout(() => setIsIntersecting(true), 0);
-            }
-            observer?.disconnect();
-          }
-        },
-        { 
-          rootMargin: '100px', // Increased for better mobile performance
-          threshold: 0.1 // Lower threshold for faster loading
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsIntersecting(true);
+          observer.disconnect();
         }
-      );
-      observer.observe(currentRef);
+      },
+      { rootMargin: '50px' }
+    );
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
     }
 
-    return () => {
-      observer?.disconnect();
-    };
+    return () => observer.disconnect();
   }, []);
 
-  // Optimized user data fetching with better caching
+  // Optimized user data fetching
   useEffect(() => {
     let isMounted = true;
     
     const getUser = async () => {
       try {
-        // Only fetch if intersecting for better performance
-        if (!isIntersecting) return;
-        
         const { data: { user } } = await supabase.auth.getUser();
         if (!isMounted) return;
         
         setUser(user);
         
         if (user) {
-          // Only fetch favorite status to reduce database calls
-          const { data: favorite } = await supabase
-            .from('favorite_cars')
-            .select('id')
-            .eq('user_id', user.id)
-            .eq('car_id', id)
-            .maybeSingle();
+          const [{ data: favorite }, { data: userRole }] = await Promise.all([
+            supabase
+              .from('favorite_cars')
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('car_id', id)
+              .maybeSingle(),
+            supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', user.id)
+              .maybeSingle()
+          ]);
           
           if (isMounted) {
             setIsFavorite(!!favorite);
           }
         }
       } catch (error) {
-        // Silent fail for better UX
-        console.debug('User data fetch:', error);
+        console.error('Error fetching user data:', error);
       }
     };
     
-    // Only run when component is visible
-    if (isIntersecting) {
-      getUser();
-    }
+    getUser();
 
     return () => {
       isMounted = false;
     };
-  }, [id, isIntersecting]);
+  }, [id]);
 
   const handleFavoriteToggle = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -311,13 +296,13 @@ const LazyCarCard = memo(({
           ? 'w-32 h-24 sm:w-40 sm:h-28 lg:w-48 lg:h-32' 
           : 'h-52 sm:h-60 lg:h-72'
       }`}>
-        {/* Optimized image loading with progressive enhancement */}
+        {/* Always show single image - swipe functionality removed from car cards */}
         {(image || (images && images.length > 0)) ? (
           <img 
-            src={isIntersecting ? (image || images?.[0]) : undefined}
+            src={image || images?.[0]} 
             alt={`${year} ${make} ${model}`} 
-            className={`w-full h-full object-cover transition-all duration-300 ${
-              imageLoaded ? 'opacity-100 group-hover:scale-105' : 'opacity-0'
+            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
             onLoad={() => setImageLoaded(true)}
             onError={(e) => {
@@ -325,11 +310,6 @@ const LazyCarCard = memo(({
               setImageLoaded(true);
             }}
             loading="lazy"
-            decoding="async"
-            style={{ 
-              backgroundColor: 'hsl(var(--muted))',
-              willChange: imageLoaded ? 'transform' : 'auto'
-            }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-muted">

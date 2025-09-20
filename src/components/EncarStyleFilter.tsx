@@ -197,7 +197,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
             console.error('Grade fetch error:', err);
             setIsLoadingGrades(false);
           });
-      }, 300); // 300ms debounce delay
+      }, 200); // Reduced from 300ms for faster filter response
 
       return () => clearTimeout(timeoutId);
     } else {
@@ -221,7 +221,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
             console.error('Trim level fetch error:', err);
             setTrimLevels([]);
           });
-      }, 300); // 300ms debounce delay
+      }, 200); // Reduced from 300ms for faster filter response
 
       return () => clearTimeout(timeoutId);
     } else {

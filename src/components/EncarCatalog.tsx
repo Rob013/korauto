@@ -20,8 +20,8 @@ import {
   List,
 } from "lucide-react";
 import LoadingLogo from "@/components/LoadingLogo";
-import LazyCarCard from "@/components/OptimizedLazyCarCard";
-import { useCarAPIs } from "@/hooks/useCarAPIs";
+import LazyCarCard from "@/components/LazyCarCard";
+import { useSecureAuctionAPI, createFallbackManufacturers } from "@/hooks/useSecureAuctionAPI";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
@@ -66,14 +66,26 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const { toast } = useToast();
   const { restorePageState } = useNavigation();
   const {
-    vehicles: cars,
+    cars,
+    setCars, // ✅ Import setCars
     loading,
     error,
-    total: totalCount,
-    fetchVehicles: fetchCars,
-    fetchMakes: fetchManufacturers,
+    totalCount,
+    setTotalCount, // ✅ Import setTotalCount for optimized filtering
+    hasMorePages,
+    fetchCars,
+    fetchAllCars, // ✅ Import new function for global sorting
+    filters,
+    setFilters,
+    fetchManufacturers,
     fetchModels,
-  } = useCarAPIs();
+    fetchGenerations,
+    fetchAllGenerationsForManufacturer, // ✅ Import new function
+    fetchFilterCounts,
+    fetchGrades,
+    fetchTrimLevels,
+    loadMore,
+  } = useSecureAuctionAPI();
   const { convertUSDtoEUR, exchangeRate } = useCurrencyAPI();
   
   // Global sorting hook
@@ -884,7 +896,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
         saveScrollPosition();
-      }, 500); // Increased debounce time for better performance
+      }, 250); // Reduced from 500ms for more responsive scroll position saving
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
