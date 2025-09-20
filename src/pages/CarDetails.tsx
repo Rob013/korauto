@@ -18,6 +18,7 @@ import { useImagePreload } from "@/hooks/useImagePreload";
 import { useImageSwipe } from "@/hooks/useImageSwipe";
 import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
+import { useOptimizedCarDetails } from "@/hooks/useOptimizedCarDetails";
 
 // Helper function to format production date as MM/YYYY
 const getFormattedProductionDate = (car: {
@@ -473,9 +474,7 @@ const CarDetails = memo(() => {
     processFloodDamageText,
     exchangeRate
   } = useCurrencyAPI();
-  const [car, setCar] = useState<CarDetails | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { car, loading, error } = useOptimizedCarDetails(lot);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -608,14 +607,23 @@ const CarDetails = memo(() => {
     let isMounted = true;
     const fetchCarDetails = async () => {
       if (!lot) return;
+      
+      setLoading(true);
+      setError(null);
+      
       try {
-        // Try to fetch from cache using OR condition for all possible matches
-        console.log("Searching for car with lot:", lot);
+        // First: Try to fetch from cache using optimized query
+        console.log("🔍 Searching for car with lot:", lot);
         const {
           data: cachedCar,
           error: cacheError
-        } = await supabase.from("cars_cache").select("*").or(`id.eq.${lot},api_id.eq.${lot},lot_number.eq.${lot}`).maybeSingle();
-        console.log("Cache query result:", {
+        } = await supabase
+          .from("cars_cache")
+          .select("*")
+          .or(`id.eq.${lot},api_id.eq.${lot},lot_number.eq.${lot}`)
+          .maybeSingle();
+        
+        console.log("📋 Cache query result:", {
           cachedCar,
           cacheError
         });
@@ -768,41 +776,59 @@ const CarDetails = memo(() => {
           console.log("Edge function failed:", edgeFunctionError);
         }
 
-        // If edge function fails, try external API with both lot ID and as lot number
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-        // Try to fetch by lot ID first, then by lot number if that fails
-        let response;
-        try {
-          response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
-            headers: {
-              accept: "*/*",
-              "x-api-key": API_KEY
-            },
-            signal: controller.signal
-          });
-        } catch (firstAttemptError) {
-          // If first attempt fails, try searching by lot number
-          console.log("First API attempt failed, trying as lot number...");
-          response = await fetch(`${API_BASE_URL}/search?lot_number=${lot}`, {
-            headers: {
-              accept: "*/*",
-              "x-api-key": API_KEY
-            },
-            signal: controller.signal
-          });
+        // Third: Try fallback data immediately if edge function fails
+        console.log("🔄 Trying fallback data...");
+        const fallbackCar = fallbackCars.find(car => car.id === lot || car.lot_number === lot);
+        if (fallbackCar && fallbackCar.lots?.[0]) {
+          console.log("✅ Using fallback car data for:", lot);
+          const lotData = fallbackCar.lots[0];
+          const basePrice = lotData.buy_now || fallbackCar.price;
+          
+          if (basePrice) {
+            const price = calculateFinalPriceEUR(basePrice, exchangeRate.rate);
+            const transformedCar: CarDetails = {
+              id: fallbackCar.id,
+              make: fallbackCar.manufacturer?.name || "Unknown",
+              model: fallbackCar.model?.name || "Unknown",
+              year: fallbackCar.year || 2020,
+              price,
+              image: lotData.images?.normal?.[0] || lotData.images?.big?.[0] || "/placeholder.svg",
+              images: lotData.images?.normal || lotData.images?.big || [],
+              vin: fallbackCar.vin,
+              mileage: lotData.odometer?.km,
+              transmission: fallbackCar.transmission?.name,
+              fuel: fallbackCar.fuel?.name,
+              color: fallbackCar.color?.name,
+              condition: "Good Condition",
+              lot: fallbackCar.lot_number,
+              title: fallbackCar.title,
+              odometer: lotData.odometer ? {
+                km: lotData.odometer.km,
+                mi: Math.round(lotData.odometer.km * 0.621371),
+                status: { name: "Verified" }
+              } : undefined,
+              features: fallbackCar.features || [],
+              safety_features: ["ABS", "Airbags", "Stability Control"],
+              comfort_features: ["Air Conditioning", "Power Windows"],
+              performance_rating: 4.5,
+              popularity_score: 85
+            };
+            
+            if (isMounted) {
+              setCar(transformedCar);
+              setLoading(false);
+              trackCarView(fallbackCar.id, transformedCar);
+              return;
+            }
+          }
         }
-        clearTimeout(timeoutId);
-        if (!response.ok) {
-          throw new Error(`API returned ${response.status}: ${response.statusText}`);
+        
+        // If no car found in any source, show error
+        console.log("❌ Car not found in any source");
+        if (isMounted) {
+          setError(`Car with ID ${lot} is not available. This car may have been sold or removed from the auction.`);
+          setLoading(false);
         }
-        const data = await response.json();
-        if (!isMounted) return;
-        const carData = data.data;
-        const lotData = carData.lots?.[0];
-        if (!lotData) throw new Error("Missing lot data");
-        const basePrice = lotData.buy_now;
         if (!basePrice) {
           console.log("Car doesn't have buy_now pricing, redirecting to catalog");
           navigate('/catalog');
