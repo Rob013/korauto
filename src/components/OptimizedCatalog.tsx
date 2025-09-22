@@ -14,7 +14,7 @@ import {
   X,
   ArrowUpDown 
 } from 'lucide-react';
-import { useCarsQuery } from '@/hooks/useCarsQuery';
+import { useSecureAuctionAPI } from '@/hooks/useSecureAuctionAPI';
 import { useFiltersFromUrl } from '@/hooks/useFiltersFromUrl';
 import FiltersPanel from '@/components/FiltersPanel';
 import LazyCarCard from '@/components/LazyCarCard';
@@ -113,35 +113,46 @@ export const OptimizedCatalog: React.FC<OptimizedCatalogProps> = ({ highlightCar
   };
   const {
     cars,
-    total,
-    totalPages,
-    hasMore,
-    models,
-    isLoading,
-    isFetching,
-    isLoadingModels,
+    loading: isLoading,
     error,
-    refetch,
-    prefetchNextPage,
-  } = useCarsQuery({
-    brand: urlFilters.brand,
-    model: urlFilters.model,
-    fuel: urlFilters.fuel,
-    transmission: urlFilters.transmission,
-    bodyType: urlFilters.bodyType,
-    color: urlFilters.color,
-    location: urlFilters.location,
-    yearMin: urlFilters.yearMin,
-    yearMax: urlFilters.yearMax,
-    priceMin: urlFilters.priceMin,
-    priceMax: urlFilters.priceMax,
-    mileageMin: urlFilters.mileageMin,
-    mileageMax: urlFilters.mileageMax,
-    page: urlFilters.page || 1,
-    pageSize: urlFilters.pageSize || 20,
-    sort: urlFilters.sort || 'price_asc',
-    search: urlFilters.search,
-  });
+    totalCount: total,
+    hasMorePages: hasMore,
+    fetchCars,
+    loadMore,
+    fetchManufacturers,
+    fetchModels,
+  } = useSecureAuctionAPI();
+
+  // Track loading state for models
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
+  const [models, setModels] = useState<any[]>([]);
+  
+  // Calculate total pages based on page size
+  const totalPages = Math.ceil(total / (urlFilters.pageSize || 20));
+  const prefetchNextPage = loadMore;
+  const isFetching = isLoading;
+
+  // Effect to fetch cars when filters change
+  useEffect(() => {
+    const filters = {
+      manufacturer_id: urlFilters.brand,
+      model_id: urlFilters.model,
+      fuel_type: urlFilters.fuel,
+      transmission: urlFilters.transmission,
+      color: urlFilters.color,
+      from_year: urlFilters.yearMin?.toString(),
+      to_year: urlFilters.yearMax?.toString(),
+      buy_now_price_from: urlFilters.priceMin?.toString(),
+      buy_now_price_to: urlFilters.priceMax?.toString(),
+      odometer_from_km: urlFilters.mileageMin?.toString(),
+      odometer_to_km: urlFilters.mileageMax?.toString(),
+      search: urlFilters.search,
+      page: (urlFilters.page || 1).toString(),
+      per_page: (urlFilters.pageSize || 20).toString(),
+    };
+
+    fetchCars(1, filters);
+  }, [urlFilters, fetchCars]);
 
   // Handle filter changes
   const handleFiltersChange = useCallback((newFilters: any) => {
@@ -257,7 +268,7 @@ export const OptimizedCatalog: React.FC<OptimizedCatalogProps> = ({ highlightCar
             <p className="text-muted-foreground mb-4">
               Ka ndodhur një gabim gjatë ngarkimit të makinave.
             </p>
-            <Button onClick={() => refetch()}>
+            <Button onClick={() => fetchCars(1, urlFilters)}>
               Provo përsëri
             </Button>
           </CardContent>
@@ -399,22 +410,22 @@ export const OptimizedCatalog: React.FC<OptimizedCatalogProps> = ({ highlightCar
                   </>
                 ) : cars.length > 0 ? (
                   // Show cars
-                  cars.map((car, index) => (
-                    <LazyCarCard
-                      key={`${car.id}-${index}`}
-                      id={`car-${car.id}`}
-                      make={car.make}
-                      model={car.model}
-                      year={car.year}
-                      price={car.price}
-                      mileage={car.mileage?.toString()}
-                      fuel={car.fuel}
-                      transmission={car.transmission}
-                      color={car.color}
-                      images={car.images}
-                      viewMode={viewMode}
-                    />
-                  ))
+                   cars.map((car, index) => (
+                     <LazyCarCard
+                       key={`${car.id}-${index}`}
+                       id={`car-${car.id}`}
+                       make={car.manufacturer?.name || ''}
+                       model={car.model?.name || ''}
+                       year={car.year}
+                       price={typeof car.price === 'string' ? parseInt(car.price) : car.price || 0}
+                       mileage={car.mileage?.toString()}
+                       fuel={car.fuel?.name || ''}
+                       transmission={car.transmission?.name || ''}
+                       color={car.color?.name || ''}
+                       images={car.lots?.[0]?.images?.normal || []}
+                       viewMode={viewMode}
+                     />
+                   ))
                 ) : (
                   // Empty state
                   <div className="col-span-full">
