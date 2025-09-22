@@ -14,7 +14,6 @@ import {
   X,
   ArrowUpDown 
 } from 'lucide-react';
-import { useFilterStore, useFilterStoreSelectors } from '@/store/filterStore';
 import { useCarsQuery } from '@/hooks/useCarsQuery';
 import { useFiltersFromUrl } from '@/hooks/useFiltersFromUrl';
 import FiltersPanel from '@/components/FiltersPanel';
@@ -147,6 +146,23 @@ export const OptimizedCatalog: React.FC<OptimizedCatalogProps> = ({ highlightCar
   // Handle filter changes
   const handleFiltersChange = useCallback((newFilters: any) => {
     console.log('🔄 Filters changing:', newFilters);
+    
+    // Skip processing if all values are undefined to prevent infinite loops
+    const hasValidValues = Object.values(newFilters).some(value => {
+      if (value === undefined || value === null || value === '') {
+        return false;
+      }
+      // Check for special undefined objects from FiltersPanel
+      if (typeof value === 'object' && value && 'value' in value && (value as any).value === 'undefined') {
+        return false;
+      }
+      return true;
+    });
+    
+    if (!hasValidValues) {
+      console.log('⏭️ Skipping undefined filter values');
+      return;
+    }
     
     // Convert store filters back to URL format
     const urlUpdate: any = {};
