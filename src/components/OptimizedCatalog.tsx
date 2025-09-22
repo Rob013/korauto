@@ -93,25 +93,25 @@ export const OptimizedCatalog: React.FC<OptimizedCatalogProps> = ({ highlightCar
   const { toast } = useToast();
   const isMobile = useIsMobile();
   
-  // Filter state management
+  // Filter state management - use URL as single source of truth
   const { filters: urlFilters, updateFilters, clearFilters } = useFiltersFromUrl();
-  const filterStore = useFilterStore();
-  const { searchRequest, hasActiveFilters, activeFilterCount } = useFilterStoreSelectors();
   
   // Local UI state
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // Sync URL filters with store on mount and URL changes
-  useEffect(() => {
-    // We'll manage filters through URL only for simplicity
-    // The useCarsQuery hook reads from URL filters directly
-    if (urlFilters.search) filterStore.setQuery(urlFilters.search);
-    if (urlFilters.page) filterStore.setPage(urlFilters.page);
-    if (urlFilters.pageSize) filterStore.setPageSize(urlFilters.pageSize);
-  }, [urlFilters.search, urlFilters.page, urlFilters.pageSize, filterStore]);
+  // Simple filter state helpers
+  const hasActiveFilters = () => {
+    return Object.entries(urlFilters).some(([key, value]) => 
+      value && value !== '' && key !== 'page' && key !== 'pageSize' && key !== 'sort'
+    );
+  };
 
-  // Cars query using the new optimized hook
+  const activeFilterCount = () => {
+    return Object.entries(urlFilters).filter(([key, value]) => 
+      value && value !== '' && key !== 'page' && key !== 'pageSize' && key !== 'sort'
+    ).length;
+  };
   const {
     cars,
     total,
@@ -185,9 +185,8 @@ export const OptimizedCatalog: React.FC<OptimizedCatalogProps> = ({ highlightCar
   // Handle page change
   const handlePageChange = useCallback((page: number) => {
     console.log('🔄 Page changing to:', page);
-    filterStore.setPage(page);
     updateFilters({ page });
-  }, [filterStore, updateFilters]);
+  }, [updateFilters]);
 
   // Load more cars (for infinite scroll)
   const handleLoadMore = useCallback(() => {
@@ -201,13 +200,12 @@ export const OptimizedCatalog: React.FC<OptimizedCatalogProps> = ({ highlightCar
   // Clear all filters
   const handleClearFilters = useCallback(() => {
     console.log('🗑️ Clearing all filters');
-    filterStore.clearFilters();
     clearFilters();
     toast({
       title: "Filtrat u pastruan",
       description: "Të gjitha filtrat janë hequr.",
     });
-  }, [filterStore, clearFilters, toast]);
+  }, [clearFilters, toast]);
 
   // Toggle view mode
   const handleViewModeToggle = useCallback(() => {
@@ -285,11 +283,10 @@ export const OptimizedCatalog: React.FC<OptimizedCatalogProps> = ({ highlightCar
               >
                 {showFilters ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
                 <Filter className="h-4 w-4 ml-1" />
-                {activeFilterCount() > 0 && (
-                  <Badge variant="secondary" className="ml-1 h-5 w-5 text-xs p-0 flex items-center justify-center">
-                    {activeFilterCount()}
-                  </Badge>
-                )}
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      <Filter className="h-4 w-4" />
+                      {activeFilterCount()} filtër aktiv
+                    </Badge>
               </Button>
               
               {/* Sort dropdown */}
