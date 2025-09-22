@@ -56,34 +56,27 @@ export const useCachedCars = () => {
       // First try to load from cache
       await fetchCachedCars();
       
+      // Check if cache is fresh enough (increased from 1 hour to 4 hours for better performance)
+      const now = new Date();
+      const fourHoursAgo = new Date(now.getTime() - 4 * 60 * 60 * 1000);
+      
+      // Only fetch from API if cache is empty or very outdated
+      if (cachedCars.length === 0) {
+        const hasRecentData = cachedCars.some(car => 
+          new Date(car.last_api_sync) > fourHoursAgo
+        );
+        
+        if (!hasRecentData) {
+          console.log('Cache is empty or outdated, fetching from API...');
+          await fetchCars();
+        }
+      }
+      
       setLoading(false);
     };
 
     loadCars();
   }, []);
-
-  // Separate effect to check for fresh data and fetch from API if needed
-  useEffect(() => {
-    const checkAndFetchFreshData = async () => {
-      // Check if cache is fresh enough (4 hours)
-      const now = new Date();
-      const fourHoursAgo = new Date(now.getTime() - 4 * 60 * 60 * 1000);
-      
-      // Only fetch from API if cache is empty OR all data is outdated
-      const shouldFetch = cachedCars.length === 0 || 
-        !cachedCars.some(car => new Date(car.last_api_sync) > fourHoursAgo);
-      
-      if (shouldFetch) {
-        console.log('Cache is empty or outdated, fetching from API...');
-        await fetchCars();
-      }
-    };
-
-    // Only run this check after initial cache load
-    if (cachedCars.length > 0) {
-      checkAndFetchFreshData();
-    }
-  }, [cachedCars.length, fetchCars]);
 
   // Memoize transformed cars to prevent unnecessary recalculations
   const transformedCars = useMemo(() => {
