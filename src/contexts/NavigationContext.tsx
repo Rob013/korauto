@@ -49,9 +49,6 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({ children
   const [previousPage, setPreviousPageState] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<FilterState | null>(null);
   const [pageState, setPageState] = useState<PageState | null>(null);
-  
-  // Get access to filter store for state capture and restoration
-  const filterStore = useFilterStore();
 
   const setPreviousPage = (page: string, filters?: FilterState) => {
     setPreviousPageState(page);
@@ -61,13 +58,20 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({ children
   };
 
   const getCurrentFilterState = (): FilterState | null => {
-    return {
-      filters: filterStore.filters,
-      sort: filterStore.sort,
-      page: filterStore.page,
-      pageSize: filterStore.pageSize,
-      query: filterStore.query,
-    };
+    try {
+      // Access store directly to avoid hook call during render
+      const store = useFilterStore.getState();
+      return {
+        filters: store.filters,
+        sort: store.sort,
+        page: store.page,
+        pageSize: store.pageSize,
+        query: store.query,
+      };
+    } catch (error) {
+      console.warn('Failed to get current filter state:', error);
+      return null;
+    }
   };
 
   const setCompletePageState = (newPageState: PageState) => {
@@ -97,8 +101,12 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({ children
       if (isRecent) {
         // Restore filter state if available
         if (pageState.filterState) {
-          filterStore.setState(pageState.filterState);
-          console.log('🔄 Restored filter state:', pageState.filterState);
+          try {
+            useFilterStore.getState().setState(pageState.filterState);
+            console.log('🔄 Restored filter state:', pageState.filterState);
+          } catch (error) {
+            console.warn('Failed to restore filter state:', error);
+          }
         }
         
         // Restore scroll position with optimized timing for smoother experience
@@ -130,8 +138,12 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({ children
             
             // Restore filter state if available
             if (parsedState.filterState) {
-              filterStore.setState(parsedState.filterState);
-              console.log('🔄 Restored filter state from sessionStorage:', parsedState.filterState);
+              try {
+                useFilterStore.getState().setState(parsedState.filterState);
+                console.log('🔄 Restored filter state from sessionStorage:', parsedState.filterState);
+              } catch (error) {
+                console.warn('Failed to restore filter state from sessionStorage:', error);
+              }
             }
             
             // Restore scroll position with optimized timing for smoother experience
