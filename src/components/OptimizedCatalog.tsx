@@ -417,12 +417,20 @@ export const OptimizedCatalog: React.FC<OptimizedCatalogProps> = ({ highlightCar
                        make={car.manufacturer?.name || ''}
                        model={car.model?.name || ''}
                        year={car.year}
-                       price={typeof car.price === 'string' ? parseInt(car.price) : car.price || 0}
-                       mileage={car.mileage?.toString()}
+                       price={car.lots?.[0]?.buy_now || parseInt(car.price || '0') || 0}
+                       mileage={car.lots?.[0]?.odometer?.km?.toString() || car.mileage}
                        fuel={car.fuel?.name || ''}
                        transmission={car.transmission?.name || ''}
                        color={car.color?.name || ''}
                        images={car.lots?.[0]?.images?.normal || []}
+                       lot={car.lots?.[0]?.lot || car.lot_number}
+                       title={car.title}
+                       vin={car.vin}
+                       condition={car.lots?.[0]?.damage?.main || car.condition}
+                       status={typeof car.lots?.[0]?.status === 'number' ? car.lots?.[0]?.status : (typeof car.status === 'number' ? car.status : undefined)}
+                       sale_status={car.lots?.[0]?.sale_status || car.sale_status}
+                       final_price={car.lots?.[0]?.final_price || car.final_price}
+                       insurance_v2={car.lots?.[0]?.insurance_v2}
                        viewMode={viewMode}
                      />
                    ))
