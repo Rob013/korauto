@@ -218,18 +218,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       return rankedCarsForPage;
     }
     
-    // Priority 2: Daily rotating cars (only for default state without user sort selection)
-    if (isDefaultState && !hasUserSelectedSort && !shouldUseGlobalSorting()) {
-      // For server-side pagination, use all daily rotating cars without client-side slicing
-      // Server already provides the correct page data
-      console.log(`🎲 Using daily rotating cars for page ${currentPage}: ${dailyRotatingCars.length} cars (default state, no explicit sort, small dataset)`);
-      return dailyRotatingCars;
-    }
-    
-    // Priority 3: Regular sorted cars (fallback)
+    // Priority 2: Regular sorted cars - always respect the selected sort option (including default "recently_added")
     // For server-side pagination, use all sorted results without client-side slicing
     // Server already provides the correct page data
-    console.log(`📄 Using regular sorted cars for page ${currentPage}: ${sortedResults.length} cars (fallback or loading state)`);
+    console.log(`📄 Using regular sorted cars for page ${currentPage}: ${sortedResults.length} cars (sort: ${sortBy})`);
     return sortedResults;
   }, [
     showAllCars,
@@ -1071,10 +1063,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         className={`
         fixed lg:relative z-40 glass-card transition-transform duration-300 ease-in-out
         ${showFilters 
-          ? 'translate-x-0' 
+          ? 'translate-x-0 block' 
           : isMobile 
             ? 'hidden' 
-            : '-translate-x-full lg:hidden'
+            : 'hidden lg:block lg:translate-x-0'
         }
         ${isMobile ? 'mobile-filter-panel top-0 left-0 right-0 bottom-0 w-full rounded-none' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0 overflow-y-auto rounded-lg'} 
         lg:shadow-none
