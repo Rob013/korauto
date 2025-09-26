@@ -16,6 +16,7 @@ import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
 import { useImageSwipe } from "@/hooks/useImageSwipe";
+import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
 
@@ -435,6 +436,47 @@ const CarDetails = () => {
   const [imageContainerRef, setImageContainerRef] = useState<HTMLDivElement | null>(null);
   const [showAllFeatures, setShowAllFeatures] = useState(false);
   const [autoplayEnabled, setAutoplayEnabled] = useState(false);
+  const [showInspectionForm, setShowInspectionForm] = useState(false);
+  const [showInspectionReport, setShowInspectionReport] = useState(false);
+  const [showEngineSection, setShowEngineSection] = useState(false);
+  const [title, setTitle] = useState("Car Details");
+
+  // Helper functions
+  const processFloodDamageText = (text: string): string => {
+    if (!text) return "Nuk ka informacion për dëmtimet nga përmbytja";
+    
+    // Handle common flood damage statuses
+    const floodMap: { [key: string]: string } = {
+      "flood_damage": "Dëmtim nga përmbytja",
+      "no_flood_damage": "Pa dëmtime nga përmbytja",
+      "flood": "Dëmtim nga ujërat",
+      "water_damage": "Dëmtim nga uji",
+      "normal": "Normal - pa dëmtime nga uji"
+    };
+    
+    return floodMap[text.toLowerCase()] || text;
+  };
+
+  const convertOptionsToNames = (options: any) => {
+    if (!options) return { standard: [], choice: [], tuning: [] };
+    
+    // Convert the options object to arrays of readable names
+    const convertArray = (arr: any[]) => {
+      if (!Array.isArray(arr)) return [];
+      return arr.map(item => {
+        if (typeof item === 'string') return item;
+        if (typeof item === 'object' && item.name) return item.name;
+        if (typeof item === 'number') return FEATURE_MAPPING[item.toString()] || `Option ${item}`;
+        return String(item);
+      });
+    };
+
+    return {
+      standard: convertArray(options.standard || []),
+      choice: convertArray(options.choice || []),
+      tuning: convertArray(options.tuning || [])
+    };
+  };
 
   // Extract features from car data
   const getCarFeatures = (carData: any, lotData: any): string[] => {
@@ -753,8 +795,8 @@ const CarDetails = () => {
           console.log("Using fallback car data:", fallbackCar);
           
           // Use fallback data with proper transformation
-          const lotData = (fallbackCar.lots && fallbackCar.lots[0]) || {};
-          const basePrice = (lotData as any).buy_now || fallbackCar.price;
+          const lotData = (fallbackCar.lots && fallbackCar.lots[0]) || {} as any;
+          const basePrice = lotData?.buy_now || fallbackCar.price;
           if (!basePrice) {
             console.log("Fallback car doesn't have buy_now pricing, showing error");
             throw new Error("Car pricing not available");
@@ -766,17 +808,17 @@ const CarDetails = () => {
             model: fallbackCar.model?.name || "Unknown",
             year: fallbackCar.year || 2020,
             price,
-            image: lotData.images?.normal?.[0] || lotData.images?.big?.[0] || "/placeholder.svg",
-            images: lotData.images?.normal || lotData.images?.big || [],
+            image: lotData?.images?.normal?.[0] || lotData?.images?.big?.[0] || "/placeholder.svg",
+            images: lotData?.images?.normal || lotData?.images?.big || [],
             vin: fallbackCar.vin,
-            mileage: lotData.odometer?.km,
+            mileage: lotData?.odometer?.km,
             transmission: fallbackCar.transmission?.name,
             fuel: fallbackCar.fuel?.name,
             color: fallbackCar.color?.name,
             condition: "Good Condition",
             lot: fallbackCar.lot_number,
             title: fallbackCar.title,
-            odometer: lotData.odometer ? {
+            odometer: lotData?.odometer ? {
               km: lotData.odometer.km || 0,
               mi: Math.round((lotData.odometer.km || 0) * 0.621371),
               status: {
@@ -795,7 +837,7 @@ const CarDetails = () => {
             performance_rating: 4.5,
             popularity_score: 85,
             // Enhanced API data  
-            details: (lotData as any).details || undefined
+            details: (lotData as any)?.details || undefined
           };
           setCar(transformedCar);
           setLoading(false);
@@ -818,21 +860,34 @@ const CarDetails = () => {
   // Set page title based on car data
   useEffect(() => {
     if (car) {
-      setTitle(`${car.year} ${car.make} ${car.model} - Car Details`);
-      trackPageView(window.location.pathname, `Car Details: ${car.make} ${car.model}`);
+      const pageTitle = `${car.year} ${car.make} ${car.model} - Car Details`;
+      setTitle(pageTitle);
+      document.title = pageTitle;
+      trackPageView(window.location.pathname, {});
     } else {
       setTitle("Car Details");
+      document.title = "Car Details";
     }
-  }, [car, setTitle]);
+  }, [car]);
 
   // Preload images when car data is available
-  useImagePreload(car?.images || []);
+  useImagePreload(car?.images?.[0] || "");
+
+  // Get current images for display
+  const images = useMemo(() => {
+    if (car?.images?.length) {
+      return car.images;
+    }
+    if (car?.image) {
+      return [car.image];
+    }
+    return ["/placeholder.svg"];
+  }, [car?.images, car?.image]);
 
   // Enhanced image navigation with swipe support
   const swipeHandlers = useImageSwipe({
     images: images,
-    currentIndex: selectedImageIndex,
-    onIndexChange: setSelectedImageIndex
+    onImageChange: setSelectedImageIndex
   });
 
   // Navigation functions
@@ -873,16 +928,6 @@ const CarDetails = () => {
     return () => clearInterval(interval);
   }, [autoplayEnabled, car?.images]);
 
-  // Get current images for display
-  const images = useMemo(() => {
-    if (car?.images?.length) {
-      return car.images;
-    }
-    if (car?.image) {
-      return [car.image];
-    }
-    return ["/placeholder.svg"];
-  }, [car?.images, car?.image]);
 
   // Check if current image is a placeholder
   const isPlaceholderImage = useMemo(() => {
@@ -924,7 +969,7 @@ const CarDetails = () => {
     if (!car) return;
     
     setIsFavorited(!isFavorited);
-    trackFavorite(car.id, !isFavorited);
+    trackFavorite(car.id, isFavorited ? "remove" : "add");
     
     toast({
       title: isFavorited ? "Hequr nga të preferuarat" : "Shtuar në të preferuarat",
@@ -988,12 +1033,9 @@ const CarDetails = () => {
             <Card className="glass-card border-0 shadow-2xl overflow-hidden rounded-xl">
               <CardContent className="p-0">
                 <div 
-                  ref={setImageContainerRef} 
+                  ref={swipeHandlers.containerRef} 
                   className="car-details-hero relative h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] xl:h-[700px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer" 
                   onClick={() => setIsImageZoomOpen(true)}
-                  onTouchStart={handleTouchStart}
-                  onTouchMove={handleTouchMove}
-                  onTouchEnd={handleTouchEnd}
                   data-fancybox="gallery"
                 >
                   {images.length > 0 ? (
@@ -2049,10 +2091,13 @@ const CarDetails = () => {
       {/* Enhanced Image Zoom Modal */}
       {isImageZoomOpen && (
         <ImageZoom
-          images={images}
-          initialIndex={selectedImageIndex}
+          src={images[selectedImageIndex]}
+          alt={`${car.year} ${car.make} ${car.model}`}
+          isOpen={isImageZoomOpen}
           onClose={() => setIsImageZoomOpen(false)}
-          carTitle={`${car.year} ${car.make} ${car.model}`}
+          images={images}
+          currentIndex={selectedImageIndex}
+          onImageChange={setSelectedImageIndex}
         />
       )}
     </div>
