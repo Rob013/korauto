@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, memo, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { trackPageView, trackCarView, trackFavorite } from "@/utils/analytics";
 import { calculateFinalPriceEUR } from "@/utils/carPricing";
@@ -423,12 +423,38 @@ EquipmentOptionsSection.displayName = "EquipmentOptionsSection";
 const CarDetails = () => {
   const { lot } = useParams<{ lot: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { exchangeRate, loading: currencyLoading, error: currencyError } = useCurrencyAPI();
   const { } = useNavigation();
 
+  // Get instant car data from navigation state or sessionStorage (for mobile new tab)
+  const instantCarData = useMemo(() => {
+    // First try navigation state (desktop and same-tab mobile)
+    if (location.state?.carData) {
+      return location.state.carData;
+    }
+    
+    // Then try sessionStorage (mobile new tab)
+    if (lot) {
+      const storedData = sessionStorage.getItem(`carData_${lot}`);
+      if (storedData) {
+        try {
+          const parsed = JSON.parse(storedData);
+          // Clean up after using
+          sessionStorage.removeItem(`carData_${lot}`);
+          return parsed;
+        } catch (e) {
+          console.error("Failed to parse stored car data:", e);
+        }
+      }
+    }
+    
+    return null;
+  }, [location.state, lot]);
+
   const [car, setCar] = useState<CarDetails | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!instantCarData); // Start as not loading if we have instant data
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
@@ -439,7 +465,51 @@ const CarDetails = () => {
   const [showInspectionForm, setShowInspectionForm] = useState(false);
   const [showInspectionReport, setShowInspectionReport] = useState(false);
   const [showEngineSection, setShowEngineSection] = useState(false);
-  const [title, setTitle] = useState("Car Details");
+   const [title, setTitle] = useState("Car Details");
+
+  // Set up instant display from navigation state
+  useEffect(() => {
+    if (instantCarData && !car) {
+      console.log("Setting up instant car display from navigation state:", instantCarData);
+      
+      // Transform instant car data to CarDetails format
+      const transformedCar: CarDetails = {
+        id: instantCarData.id || lot || "",
+        make: instantCarData.make || "Unknown",
+        model: instantCarData.model || "Unknown", 
+        year: instantCarData.year || 2020,
+        price: instantCarData.price || 0,
+        image: instantCarData.image || (instantCarData.images && instantCarData.images[0]),
+        images: instantCarData.images || [instantCarData.image].filter(Boolean),
+        vin: instantCarData.vin,
+        mileage: instantCarData.mileage,
+        transmission: instantCarData.transmission,
+        fuel: instantCarData.fuel,
+        color: instantCarData.color,
+        condition: instantCarData.condition,
+        lot: instantCarData.lot || lot || "",
+        title: instantCarData.title || `${instantCarData.make} ${instantCarData.model}`,
+        features: [],
+        safety_features: [],
+        comfort_features: [],
+        performance_rating: 4.5,
+        popularity_score: 85,
+        // Additional fields from navigation state
+        cylinders: instantCarData.cylinders,
+        insurance: instantCarData.insurance,
+        insurance_v2: instantCarData.insurance_v2,
+        location: instantCarData.locationDetails,
+        inspect: instantCarData.inspect,
+        details: instantCarData.details
+      };
+      
+      setCar(transformedCar);
+      setLoading(false); // Stop loading since we have instant data
+      
+      // Track the instant view
+      trackCarView(instantCarData.id || lot || "", transformedCar);
+    }
+  }, [instantCarData, car, lot]);
 
   // Helper functions
   const processFloodDamageText = (text: string): string => {
@@ -514,14 +584,23 @@ const CarDetails = () => {
     return comfort;
   };
 
-  // Fetch car details with enhanced error handling
+  // Background data enhancement - fetch complete details even if we have instant data
   useEffect(() => {
     let isMounted = true;
     if (!lot || currencyLoading) return;
 
+    // Skip background fetch if we already have complete data with detailed information
+    if (car && car.details && car.insurance_v2 && car.images && car.images.length > 3) {
+      console.log("Already have complete car data, skipping background fetch");
+      return;
+    }
+
     const fetchCarDetails = async () => {
       try {
-        setLoading(true);
+        // Only show loading if we don't have instant data
+        if (!instantCarData) {
+          setLoading(true);
+        }
         setError(null);
 
         // First try to find car in cache
@@ -725,7 +804,7 @@ const CarDetails = () => {
     return () => {
       isMounted = false;
     };
-  }, [lot, exchangeRate.rate, currencyLoading, navigate]);
+  }, [lot, exchangeRate.rate, currencyLoading, navigate, instantCarData, car]);
 
   // Set page title based on car data
   useEffect(() => {

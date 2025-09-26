@@ -49,10 +49,12 @@ const LazyCarCard = memo(({
   price,
   image,
   images, // New prop
+  vin,
   mileage,
   transmission,
   fuel,
   color,
+  condition,
   lot,
   title,
   status,
@@ -234,8 +236,31 @@ const LazyCarCard = memo(({
     // Close filter panel when navigating to car details (if it's open)
     sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
     
-    navigate(`/car/${lot}`);
-  }, [setCompletePageState, lot, navigate]);
+    // Pass car data for instant display
+    const carData = {
+      id,
+      make,
+      model,
+      year,
+      price,
+      image,
+      images,
+      vin,
+      mileage,
+      transmission,
+      fuel,
+      color,
+      lot,
+      title,
+      status,
+      sale_status,
+      final_price,
+      insurance_v2,
+      details
+    };
+    
+    navigate(`/car/${lot}`, { state: { carData } });
+  }, [setCompletePageState, lot, navigate, id, make, model, year, price, image, images, vin, mileage, transmission, fuel, color, title, status, sale_status, final_price, insurance_v2, details]);
 
   const handleDetailsClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -253,8 +278,31 @@ const LazyCarCard = memo(({
     // Close filter panel when navigating to car details (if it's open)
     sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
     
-    navigate(`/car/${lot}`);
-  }, [setCompletePageState, lot, navigate]);
+    // Pass car data for instant display
+    const carData = {
+      id,
+      make,
+      model,
+      year,
+      price,
+      image,
+      images,
+      vin,
+      mileage,
+      transmission,
+      fuel,
+      color,
+      lot,
+      title,
+      status,
+      sale_status,
+      final_price,
+      insurance_v2,
+      details
+    };
+    
+    navigate(`/car/${lot}`, { state: { carData } });
+  }, [setCompletePageState, lot, navigate, id, make, model, year, price, image, images, vin, mileage, transmission, fuel, color, title, status, sale_status, final_price, insurance_v2, details]);
 
   // Don't render content until intersection
   if (!isIntersecting) {
