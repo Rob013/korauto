@@ -72,25 +72,40 @@ const CarDetails = () => {
   // Fetch car details
   const fetchCarDetails = useCallback(async (carId: string) => {
     try {
+      console.log('🔍 Fetching car details for ID:', carId);
       setLoading(true);
       setError(null);
 
-      // Try secure API first
+      // Try secure API first with correct format
       const { data, error } = await supabase.functions.invoke('secure-cars-api', {
-        body: { action: 'getCarDetails', carId }
+        body: { 
+          endpoint: 'cars', 
+          carId: carId,
+          filters: {}
+        }
       });
 
-      if (error) throw error;
+      console.log('🔍 API Response:', { data, error });
 
-      if (data && data.car) {
-        setCar(data.car);
-        trackCarView(data.car.id, data.car);
+      if (error) {
+        console.error('❌ API Error:', error);
+        throw error;
+      }
+
+      if (data && (data.data || data.car)) {
+        const carData = data.data || data.car || data;
+        console.log('✅ Car data received:', carData);
+        setCar(carData);
+        trackCarView(carData.id, carData);
         return;
       }
 
+      console.log('⚠️ No car data in response, trying fallback...');
+      
       // Fallback to local data
       const fallbackCar = fallbackCars.find(c => c.id === carId);
       if (fallbackCar) {
+        console.log('✅ Using fallback car:', fallbackCar);
         // Transform fallback car to match our interface
         const transformedCar: CarDetails = {
           ...fallbackCar,
@@ -112,9 +127,10 @@ const CarDetails = () => {
         return;
       }
 
+      console.error('❌ Car not found in API or fallback data');
       setError("Makina nuk u gjet");
     } catch (err) {
-      console.error('Error fetching car details:', err);
+      console.error('❌ Error fetching car details:', err);
       setError("Gabim në ngarkimin e detajeve");
     } finally {
       setLoading(false);
@@ -174,10 +190,13 @@ const CarDetails = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Duke ngarkuar detajet...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <div className="space-y-2">
+            <p className="text-lg font-medium text-foreground">Duke ngarkuar detajet e makinës...</p>
+            <p className="text-sm text-muted-foreground">ID: {id}</p>
+          </div>
         </div>
       </div>
     );
@@ -185,13 +204,24 @@ const CarDetails = () => {
 
   if (error || !car) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-destructive mb-4">{error || "Makina nuk u gjet"}</p>
-          <Button onClick={handleBack} variant="outline">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Kthehu mbrapa
-          </Button>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4 max-w-md mx-auto px-4">
+          <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto">
+            <span className="text-2xl">⚠️</span>
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-semibold text-foreground">Problem me ngarkimin</h2>
+            <p className="text-muted-foreground">{error || "Makina nuk u gjet"}</p>
+            <p className="text-sm text-muted-foreground">Car ID: {id}</p>
+          </div>
+          <div className="flex gap-2 justify-center">
+            <Button onClick={handleBack} variant="outline">
+              Kthehu mbrapa
+            </Button>
+            <Button onClick={() => window.location.reload()} variant="default">
+              Provo përsëri
+            </Button>
+          </div>
         </div>
       </div>
     );
