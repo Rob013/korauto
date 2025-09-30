@@ -76,31 +76,52 @@ const CarDetails = () => {
       setLoading(true);
       setError(null);
 
-      // Try secure API first with correct format
-      const { data, error } = await supabase.functions.invoke('secure-cars-api', {
-        body: { 
-          endpoint: 'cars', 
-          carId: carId,
-          filters: {}
-        }
-      });
+      // Fetch directly from Supabase cars_cache
+      const { data: carsData, error: dbError } = await supabase
+        .from('cars_cache')
+        .select('*')
+        .eq('id', carId)
+        .single();
 
-      console.log('🔍 API Response:', { data, error });
+      console.log('🔍 Supabase Response:', { carsData, dbError });
 
-      if (error) {
-        console.error('❌ API Error:', error);
-        throw error;
+      if (dbError) {
+        console.error('❌ Database Error:', dbError);
+        throw dbError;
       }
 
-      if (data && (data.data || data.car)) {
-        const carData = data.data || data.car || data;
-        console.log('✅ Car data received:', carData);
-        setCar(carData);
-        trackCarView(carData.id, carData);
+      if (carsData) {
+        // Transform Supabase data to match expected format
+        const images = typeof carsData.images === 'string' 
+          ? JSON.parse(carsData.images || '[]') 
+          : carsData.images || [];
+
+        const allImages = Array.isArray(images) ? images.filter(Boolean) : [];
+
+        const transformedCar: CarDetails = {
+          id: carsData.id,
+          make: carsData.make,
+          model: carsData.model,
+          year: carsData.year,
+          price: carsData.price || 0,
+          title: `${carsData.make} ${carsData.model} ${carsData.year}`,
+          vin: carsData.vin || undefined,
+          mileage: carsData.mileage ? parseInt(carsData.mileage.replace(/\D/g, '')) : undefined,
+          fuel: carsData.fuel || undefined,
+          transmission: carsData.transmission || undefined,
+          color: carsData.color || undefined,
+          condition: carsData.condition || undefined,
+          lot: carsData.lot_number || undefined,
+          images: allImages
+        };
+
+        console.log('✅ Car data transformed:', transformedCar);
+        setCar(transformedCar);
+        trackCarView(transformedCar.id, transformedCar);
         return;
       }
 
-      console.log('⚠️ No car data in response, trying fallback...');
+      console.log('⚠️ No car data in database, trying fallback...');
       
       // Fallback to local data
       const fallbackCar = fallbackCars.find(c => c.id === carId);

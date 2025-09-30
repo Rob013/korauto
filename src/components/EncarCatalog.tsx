@@ -67,20 +67,20 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const { restorePageState } = useNavigation();
   const {
     cars,
-    setCars, // ✅ Import setCars
+    setCars,
     loading,
     error,
     totalCount,
-    setTotalCount, // ✅ Import setTotalCount for optimized filtering
+    setTotalCount,
     hasMorePages,
     fetchCars,
-    fetchAllCars, // ✅ Import new function for global sorting
+    fetchAllCars,
     filters,
     setFilters,
     fetchManufacturers,
     fetchModels,
     fetchGenerations,
-    fetchAllGenerationsForManufacturer, // ✅ Import new function
+    fetchAllGenerationsForManufacturer,
     fetchFilterCounts,
     fetchGrades,
     fetchTrimLevels,

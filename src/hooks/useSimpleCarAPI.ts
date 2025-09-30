@@ -1,5 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+const SUPABASE_URL = "https://qtyyiqimkysmjnaocswe.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0eXlpcWlta3lzbWpuYW9jc3dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0MzkxMzQsImV4cCI6MjA2OTAxNTEzNH0.lyRCHiShhW4wrGHL3G7pK5JBUHNAtgSUQACVOBGRpL8";
 
 interface SimpleCar {
   id: string;
@@ -35,15 +38,12 @@ export const useSimpleCarAPI = () => {
   const [cars, setCars] = useState<SimpleCar[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
-
-  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+  const lastFetchTimeRef = useRef<number>(0);
 
   const fetchCars = useCallback(async (resetList: boolean = true) => {
-    // Prevent too frequent API calls
     const now = Date.now();
-    if (now - lastFetchTime < 2000) { // 2 second minimum between calls
-      console.log('🚫 Skipping API call - too frequent');
+    if (now - lastFetchTimeRef.current < 2000) {
+      console.log('🚫 Skipping - too frequent');
       return;
     }
 
@@ -53,67 +53,59 @@ export const useSimpleCarAPI = () => {
     setError(null);
 
     try {
-      console.log('🔄 Fetching cars from API');
-      setLastFetchTime(now);
+      console.log('🔄 Fetching cars from Supabase');
+      lastFetchTimeRef.current = now;
 
-      const { data, error: functionError } = await supabase.functions.invoke('secure-cars-api', {
-        body: { 
-          endpoint: 'cars',
-          filters: {
-            page: '1',
-            per_page: '36', // Get enough cars for homepage display
-            simple_paginate: '0'
-          }
-        }
-      });
+      const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+      const result: any = await supabase
+        .from('cars_cache')
+        .select('*', { count: 'exact' })
+        .neq('sale_status', 'archived')
+        .neq('sale_status', 'sold')
+        .order('price_cents', { ascending: true, nullsFirst: false })
+        .range(0, 35);
 
-      if (functionError) {
-        console.error('❌ Edge function error:', functionError);
-        throw new Error(functionError.message || 'API call failed');
-      }
+      const data = result.data;
+      const queryError = result.error;
+      const count = result.count;
 
-      if (data?.error) {
-        if (data.retryAfter) {
-          console.log('⏳ Rate limited, waiting...');
-          await delay(data.retryAfter);
-          throw new Error('RATE_LIMITED');
-        }
-        throw new Error(data.error);
-      }
+      if (queryError) throw queryError;
 
-      const response: SimpleAPIResponse = data;
-      
-      if (response.data && response.data.length > 0) {
-        setCars(response.data);
-        console.log(`✅ Fetched ${response.data.length} cars successfully`);
-      } else {
-        console.log('⚠️ No cars returned from API');
-        setCars([]);
-      }
+      const transformedCars: SimpleCar[] = (data || []).map((car: any) => ({
+        id: car.id,
+        manufacturer: { name: car.make },
+        model: { name: car.model },
+        year: car.year,
+        price: car.price?.toString(),
+        mileage: car.mileage,
+        title: `${car.make} ${car.model} ${car.year}`,
+        vin: car.vin,
+        fuel: car.fuel ? { name: car.fuel } : undefined,
+        transmission: car.transmission ? { name: car.transmission } : undefined,
+        condition: car.condition,
+        lot_number: car.lot_number,
+        color: car.color ? { name: car.color } : undefined,
+        lots: [{
+          buy_now: car.price,
+          lot: car.lot_number,
+          images: typeof car.images === 'string' ? JSON.parse(car.images || '[]') : car.images
+        }]
+      }));
 
+      setCars(transformedCars);
+      console.log(`✅ Fetched ${transformedCars.length} cars from Supabase (Total: ${count})`);
     } catch (err: any) {
-      if (err.message === 'RATE_LIMITED') {
-        // Retry once after rate limit
-        try {
-          await delay(3000);
-          return fetchCars(resetList);
-        } catch (retryErr) {
-          console.error('❌ Retry failed:', retryErr);
-          setError('Rate limited - please try again later');
-        }
-      } else {
-        console.error('❌ Fetch cars error:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch cars');
-      }
+      console.error('❌ Fetch cars error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch cars');
     } finally {
       setLoading(false);
     }
-  }, [lastFetchTime]);
+  }, []);
 
   // Auto-fetch cars on mount
   useEffect(() => {
     fetchCars(true);
-  }, []);
+  }, [fetchCars]);
 
   return {
     cars,
