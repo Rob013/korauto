@@ -350,8 +350,8 @@ const LazyCarCard = memo(({
       </div>
       
       {/* Content Section - 30% of card height, more compact */}
-      <div className={`${viewMode === 'list' ? 'flex-1 min-w-0' : 'p-2 flex-1'}`}>
-        <div className="mb-1">
+      <div className={`${viewMode === 'list' ? 'flex-1 min-w-0' : 'p-3 flex-1 flex flex-col'}`}>
+        <div className="mb-2">
           <h3 className="card-title text-sm font-bold text-foreground line-clamp-1 leading-tight">
             {year} {make} {model}
           </h3>
@@ -361,75 +361,70 @@ const LazyCarCard = memo(({
         </div>
 
         {/* Vehicle Info - More compact layout */}
-        <div className={`mb-1 text-xs space-y-0.5 ${
+        <div className={`mb-2 text-xs ${
           viewMode === 'list' 
-            ? 'grid grid-cols-2 gap-x-3 gap-y-0.5' 
-            : 'grid grid-cols-2 gap-x-2 gap-y-0.5'
+            ? 'grid grid-cols-2 gap-x-3 gap-y-1' 
+            : 'grid grid-cols-2 gap-x-2 gap-y-1'
         }`}>
           {mileage && (
-            <div className="flex items-center gap-1.5">
-              <Gauge className="h-2.5 w-2.5 text-muted-foreground flex-shrink-0" />
-              <span className="truncate font-medium">{mileage}</span>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Gauge className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="truncate font-medium text-foreground">{mileage}</span>
             </div>
           )}
           {transmission && (
-            <div className="flex items-center gap-1.5">
-              <Settings className="h-2.5 w-2.5 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate">{transmission}</span>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Settings className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="capitalize truncate text-foreground">{transmission}</span>
             </div>
           )}
           {fuel && (
-            <div className="flex items-center gap-1.5">
-              <Fuel className="h-2.5 w-2.5 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate">{fuel}</span>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Fuel className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="capitalize truncate text-foreground">{fuel}</span>
             </div>
           )}
           {color && (
-            <div className="flex items-center gap-1.5">
-              <Palette className="h-2.5 w-2.5 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate">{color}</span>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Palette className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="capitalize truncate text-foreground">{color}</span>
             </div>
           )}
         </div>
 
         {/* Status Indicators - More compact */}
         {insurance_v2?.accidentCnt === 0 && (
-          <div className="mb-1">
-            <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-green-50 text-green-700 border-green-200">
-              <Shield className="h-2 w-2 mr-1" />
+          <div className="mb-2">
+            <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-green-50 text-green-700 border-green-200">
+              <Shield className="h-2.5 w-2.5 mr-1" />
               Clean
             </Badge>
           </div>
         )}
 
-        {/* Pricing Section - Very compact */}
-        <div className={`${viewMode === 'list' ? 'flex flex-col items-end justify-center' : 'mt-1'}`}>
+        {/* Pricing Section - Better aligned */}
+        <div className={`mt-auto ${viewMode === 'list' ? 'flex flex-col items-end justify-center' : ''}`}>
           {viewMode === 'list' ? (
-            // List view: keep existing centered layout for compact display
-            <div className="text-center">
-              <span className="card-price text-base sm:text-lg font-bold text-primary block">
+            <div className="text-right">
+              <span className="card-price text-lg font-bold text-primary block">
                 €{price.toLocaleString()}
               </span>
-              <span className="text-xs text-muted-foreground block">
+              <span className="text-xs text-muted-foreground block mt-0.5">
                 deri ne portin e Durrësit
               </span>
             </div>
           ) : (
-            // Grid view: price on left, text on right
-            <div className="flex items-end justify-between">
-              <span className="card-price text-base sm:text-lg font-bold text-primary">
-                €{price.toLocaleString()}
-              </span>
-              <span className="text-xs text-muted-foreground">
+            <div className="space-y-1">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="card-price text-lg font-bold text-primary">
+                  €{price.toLocaleString()}
+                </span>
+                <span className="text-xs text-muted-foreground text-right flex-shrink-0">
+                  KORAUTO
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground leading-tight">
                 deri ne portin e Durrësit
-              </span>
-            </div>
-          )}
-          
-          {viewMode === 'grid' && (
-            <div className="text-center mt-0.5">
-              <p className="text-xs text-muted-foreground font-medium">
-                KORAUTO
               </p>
             </div>
           )}
