@@ -1058,7 +1058,7 @@ const CarDetails = memo(() => {
             <Card className="glass-card border-0 shadow-2xl overflow-hidden rounded-xl">
               <CardContent className="p-0">
                 <div ref={imageContainerRef} className="car-details-hero relative w-full aspect-[4/3] sm:aspect-[16/9] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer" onClick={() => setIsImageZoomOpen(true)} data-fancybox="gallery">
-                  {images.length > 0 ? <img src={images[selectedImageIndex]} alt={`${car.year} ${car.make} ${car.model}`} className="w-full h-full object-cover transition-transform duration-300 hover:scale-105" onError={e => {
+                  {images.length > 0 ? <img src={images[selectedImageIndex]} alt={`${car.year} ${car.make} ${car.model}`} className="w-full h-full object-contain transition-transform duration-300 hover:scale-105" onError={e => {
                   e.currentTarget.src = "/placeholder.svg";
                   setIsPlaceholderImage(true);
                 }} onLoad={e => {
