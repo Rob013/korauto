@@ -136,15 +136,8 @@ const EncarCarCard = ({
     // Save current page and any filter state before navigating
     setPreviousPage(window.location.pathname + window.location.search);
     
-    // On mobile, open in new tab to preserve the current catalog state
-    // On desktop, navigate in the same tab for better user experience
-    if (isMobile) {
-      // Open in new tab on mobile to preserve filter state and scroll position
-      window.open(`/car/${id}`, '_blank');
-    } else {
-      // Navigate in same tab on desktop
-      navigate(`/car/${id}`);
-    }
+    // Open in new tab to preserve catalog state and scroll position
+    window.open(`/car/${id}`, '_blank');
   };
 
   const handleLikeClick = (e: React.MouseEvent) => {
