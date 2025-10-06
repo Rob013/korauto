@@ -2062,31 +2062,51 @@ body {
   hyphens: auto;
 }
 
-/* Smartsupp Chat - Always visible on all devices */
+/* Smartsupp Chat - Force visibility on all devices */
 #chat-application,
 #chat-application-iframe,
+#chat-widget-container,
 [id^="smartsupp"],
-[class*="smartsupp"] {
+[id*="smartsupp"],
+[class^="smartsupp"],
+[class*="smartsupp"],
+iframe[src*="smartsupp"] {
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
-  z-index: 999999 !important;
+  z-index: 2147483647 !important;
+  pointer-events: auto !important;
+  position: fixed !important;
+}
+
+/* Smartsupp button/widget specific */
+#chat-button,
+.smartsupp-widget,
+.smartsupp-chat-button {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 2147483647 !important;
   pointer-events: auto !important;
 }
 
-/* Ensure chat widget is always on top */
-#chat-widget-container {
-  z-index: 999999 !important;
+/* Override any hiding styles */
+body [id*="smartsupp"],
+body [class*="smartsupp"] {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
-/* Mobile specific - ensure chat is visible */
+/* Mobile specific */
 @media (max-width: 768px) {
   #chat-application,
-  #chat-application-iframe,
-  [id^="smartsupp"],
+  #chat-widget-container,
+  [id*="smartsupp"],
   [class*="smartsupp"] {
     display: block !important;
     visibility: visible !important;
-    z-index: 999999 !important;
+    opacity: 1 !important;
+    z-index: 2147483647 !important;
   }
 }
