@@ -159,7 +159,8 @@ Deno.serve(async (req) => {
 
     console.log(`✅ Created sync record: ${syncRecord.id}`)
 
-    const API_KEY = 'd00985c77981fe8d26be16735f932ed1'
+    // Use environment variable for API key or fallback to default
+    const API_KEY = Deno.env.get('AUCTIONS_API_KEY') || 'd00985c77981fe8d26be16735f932ed1'
     const BASE_URL = 'https://auctionsapi.com/api'
     
     let totalCarsProcessed = 0
@@ -305,8 +306,8 @@ Deno.serve(async (req) => {
         console.log(`⚠️ Reached maximum page limit (${MAX_PAGES}), stopping pagination`)
       }
 
-      // Step 2: Process archived lots from /api/archived-lots endpoint
-      console.log(`🗂️ Processing archived lots (${syncType === 'full' ? 'full sync' : `last ${minutes} minutes`})`)
+      // 🗄️ Step 2: Process archived/sold cars from /api/archived-lots endpoint
+      console.log(`🗄️ Fetching archived lots (${syncType === 'full' ? 'full sync' : `last ${minutes} minutes`})`)
       
       let archivedUrl = `${BASE_URL}/archived-lots?api_key=${API_KEY}`
       if (syncType !== 'full') {
@@ -316,28 +317,33 @@ Deno.serve(async (req) => {
       try {
         const archivedData = await makeApiRequest(archivedUrl)
         
-        if (archivedData?.archived_lots && Array.isArray(archivedData.archived_lots)) {
-          console.log(`📊 Processing ${archivedData.archived_lots.length} archived lots`)
+        // Handle both possible response formats
+        const archivedLots = archivedData?.archived_lots || archivedData?.data || []
+        
+        if (Array.isArray(archivedLots) && archivedLots.length > 0) {
+          console.log(`📊 Processing ${archivedLots.length} archived lots`)
 
-          for (const archivedLot of archivedData.archived_lots) {
+          for (const archivedLot of archivedLots) {
             try {
-              const carId = archivedLot.id?.toString()
-              if (!carId) continue
+              // Try multiple ID fields as API format may vary
+              const carId = (archivedLot.car_id || archivedLot.id || archivedLot.external_id)?.toString()
+              if (!carId) {
+                console.warn(`⚠️ Skipping archived lot with no ID`)
+                continue
+              }
 
-              // Archive the car in our database
+              // Mark car as sold/archived in our database
               const { error: archiveError } = await supabase
                 .from('cars')
                 .update({
                   is_archived: true,
-                  archived_at: new Date().toISOString(),
-                  sold_price: parseFloat(archivedLot.final_price) || null,
-                  final_bid: parseFloat(archivedLot.final_price) || null,
-                  sale_date: archivedLot.sale_date || new Date().toISOString(),
-                  archive_reason: 'sold',
+                  is_active: false,
                   status: 'sold',
+                  final_bid: parseFloat(archivedLot.final_price || archivedLot.sold_price) || null,
+                  sale_date: archivedLot.sale_date || new Date().toISOString(),
                   last_synced_at: new Date().toISOString()
                 })
-                .eq('external_id', carId)
+                .eq('id', carId)
 
               if (archiveError) {
                 console.error(`❌ Error archiving car ${carId}:`, archiveError)
