@@ -1127,6 +1127,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      remove_old_sold_cars: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       save_precise_sync_checkpoint: {
         Args: {
           api_cursor: string
