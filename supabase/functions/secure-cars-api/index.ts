@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -6,6 +7,36 @@ const corsHeaders = {
 };
 
 const API_BASE_URL = 'https://auctionsapi.com/api';
+
+// Validation schema for car filters
+const carFiltersSchema = z.object({
+  manufacturer_id: z.string().max(50).optional(),
+  model_id: z.string().max(50).optional(),
+  generation_id: z.string().max(50).optional(),
+  grade_iaai: z.string().max(100).optional(), // Allow car grade values
+  color: z.string().max(50).optional(),
+  fuel_type: z.string().max(30).optional(),
+  transmission: z.string().max(30).optional(),
+  odometer_from_km: z.string().regex(/^\d+$/).optional(),
+  odometer_to_km: z.string().regex(/^\d+$/).optional(),
+  from_year: z.string().regex(/^\d{4}$/).optional(),
+  to_year: z.string().regex(/^\d{4}$/).optional(),
+  buy_now_price_from: z.string().regex(/^\d+$/).optional(),
+  buy_now_price_to: z.string().regex(/^\d+$/).optional(),
+  seats_count: z.string().regex(/^\d+$/).optional(),
+  search: z.string().max(200).optional(),
+  page: z.string().regex(/^\d+$/).optional(),
+  per_page: z.string().regex(/^\d+$/).optional(),
+  simple_paginate: z.string().optional(),
+  endpoint: z.string().optional()
+});
+
+const requestSchema = z.object({
+  endpoint: z.string().min(1, "Endpoint is required"),
+  filters: carFiltersSchema.optional(),
+  carId: z.string().max(100).optional(),
+  lotNumber: z.string().max(50).optional()
+});
 
 interface CarFilters {
   manufacturer_id?: string;
@@ -48,13 +79,23 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { endpoint, filters = {}, carId, lotNumber } = await req.json();
-    if (!endpoint) {
+    const requestBody = await req.json();
+    
+    // Validate request with zod
+    const validationResult = requestSchema.safeParse(requestBody);
+    
+    if (!validationResult.success) {
+      console.error('❌ Validation error:', validationResult.error.issues);
       return new Response(
-        JSON.stringify({ error: 'Missing endpoint parameter' }),
+        JSON.stringify({ 
+          error: 'Invalid request',
+          details: validationResult.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', ')
+        }),
         { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
     }
+
+    const { endpoint, filters = {}, carId, lotNumber } = validationResult.data;
     
     console.log('📋 Request params:', { endpoint, filters, carId, lotNumber });
     
@@ -106,32 +147,10 @@ const handler = async (req: Request): Promise<Response> => {
       // Regular endpoints with filters
       const params = new URLSearchParams();
       
-      // Add filters to params with validation
+      // Add validated filters to params (no additional sanitization needed - already validated by zod)
       Object.entries(filters).forEach(([key, value]) => {
         if (value && typeof value === 'string' && value.trim()) {
-          const originalValue = value.trim();
-          let sanitizedValue = originalValue;
-          
-          // Special handling for grade_iaai to preserve spaces and special characters common in car grades
-          if (key === 'grade_iaai' || key === 'trim_level') {
-            // Allow spaces, dots, parentheses, plus signs, and common grade characters
-            // This preserves values like "M4(+)", "35 TDI", "AMG 63S+", "2.0 TDI", etc.
-            sanitizedValue = originalValue.replace(/[^\w\-_.@\s()+]/g, '');
-          } else {
-            // Sanitize other parameter values more restrictively
-            sanitizedValue = originalValue.replace(/[^\w\-_.@]/g, '');
-          }
-          
-          // Log if value was changed during sanitization
-          if (sanitizedValue !== originalValue) {
-            console.log(`🔍 Sanitized ${key}: "${originalValue}" -> "${sanitizedValue}"`);
-          }
-          
-          if (sanitizedValue) {
-            params.append(key, sanitizedValue);
-          } else {
-            console.warn(`⚠️ Parameter ${key} was completely removed during sanitization: "${originalValue}"`);
-          }
+          params.append(key, value.trim());
         }
       });
 

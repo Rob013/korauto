@@ -1,10 +1,31 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Validation schema
+const inspectionRequestSchema = z.object({
+  customer_name: z.string().trim().min(1, "Name is required").max(100, "Name too long"),
+  customer_email: z.string().trim().email("Invalid email format").max(255, "Email too long"),
+  customer_phone: z.string().trim().regex(/^\+?[\d\s\-\(\)]{8,15}$/, "Invalid phone format"),
+  car_id: z.string().trim().max(50).optional().nullable(),
+  notes: z.string().trim().max(1000, "Notes too long").optional().nullable(),
+  client_ip: z.string().optional().nullable()
+});
+
+// Hash IP address for privacy (SHA-256)
+async function hashIP(ip: string): Promise<string> {
+  const salt = Deno.env.get('IP_HASH_SALT') || 'korauto-security-salt-2024';
+  const encoder = new TextEncoder();
+  const data = encoder.encode(ip + salt);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 const handler = async (req: Request): Promise<Response> => {
   console.log('🔐 Secure Inspection Request called:', req.method);
@@ -21,26 +42,20 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { 
-      customer_name, 
-      customer_email, 
-      customer_phone, 
-      car_id, 
-      notes,
-      client_ip 
-    } = await req.json();
+    const requestBody = await req.json();
 
-    console.log('📝 Processing inspection request:', {
-      customer_name,
-      customer_email,
-      car_id,
-      client_ip
-    });
+    console.log('📝 Processing inspection request');
 
-    // Input validation
-    if (!customer_name || !customer_email || !customer_phone) {
+    // Validate input with zod
+    const validationResult = inspectionRequestSchema.safeParse(requestBody);
+    
+    if (!validationResult.success) {
+      console.error('❌ Validation error:', validationResult.error.issues);
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
+        JSON.stringify({ 
+          error: 'Invalid input',
+          details: validationResult.error.issues.map(i => i.message).join(', ')
+        }),
         {
           status: 400,
           headers: { 'Content-Type': 'application/json', ...corsHeaders }
@@ -48,35 +63,15 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(customer_email)) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid email format' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders }
-        }
-      );
-    }
+    const { customer_name, customer_email, customer_phone, car_id, notes, client_ip } = validationResult.data;
 
-    // Phone validation
-    const phoneRegex = /^\+?[\d\s\-\(\)]{8,15}$/;
-    if (!phoneRegex.test(customer_phone)) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid phone format' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders }
-        }
-      );
-    }
-
-    // Rate limiting check
-    const identifier = client_ip || 'unknown';
+    // Hash IP address for privacy before rate limiting
+    const hashedIP = client_ip ? await hashIP(client_ip) : 'unknown';
+    
+    // Rate limiting check using hashed IP
     const { data: rateLimitCheck, error: rateLimitError } = await supabaseClient
       .rpc('check_rate_limit', {
-        _identifier: identifier,
+        _identifier: hashedIP,
         _action: 'inspection_request',
         _max_requests: 5,
         _window_minutes: 60
@@ -84,9 +79,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (rateLimitError) {
       console.error('❌ Rate limit check error:', rateLimitError);
-      // Continue without rate limiting if check fails
     } else if (!rateLimitCheck) {
-      console.log('⚠️ Rate limit exceeded for:', identifier);
+      console.log('⚠️ Rate limit exceeded for hashed IP');
       return new Response(
         JSON.stringify({ error: 'Too many requests. Please try again later.' }),
         {
@@ -96,13 +90,14 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Sanitize inputs
+    // Prepare data (already validated by zod)
     const sanitizedData = {
-      customer_name: customer_name.trim().replace(/[<>"'&]/g, ''),
-      customer_email: customer_email.trim().toLowerCase().replace(/[<>"'&]/g, ''),
-      customer_phone: customer_phone.trim().replace(/[<>"'&]/g, ''),
-      car_id: car_id?.trim() || null,
-      notes: notes?.trim().replace(/[<>"'&]/g, '') || 'General inspection request'
+      customer_name,
+      customer_email: customer_email.toLowerCase(),
+      customer_phone,
+      car_id: car_id || null,
+      notes: notes || 'General inspection request',
+      ip_address: hashedIP // Store hashed IP instead of plaintext
     };
 
     // Insert inspection request
