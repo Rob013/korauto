@@ -1009,7 +1009,7 @@ const CarDetails = memo(() => {
       </div>;
   }
   return <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
-      <div className="container-responsive py-6 max-w-7xl">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-[1920px]">
         {/* Header with Actions - Improved Mobile Layout */}
         <div className="flex flex-col gap-2 mb-4 md:mb-6">
           {/* Compact Navigation and Action Buttons */}
@@ -1051,9 +1051,9 @@ const CarDetails = memo(() => {
         </div>
 
         {/* Compact Main Content - Enhanced Mobile-First Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] xl:grid-cols-[1fr_380px] gap-4 lg:gap-8">
           {/* Left Column - Images and Gallery */}
-          <div className="lg:col-span-2 xl:col-span-3 space-y-4">
+          <div className="space-y-4">
             {/* Compact Main Image */}
             <Card className="glass-card border-0 shadow-2xl overflow-hidden rounded-xl">
               <CardContent className="p-0">
@@ -1136,7 +1136,7 @@ const CarDetails = memo(() => {
             </div>
 
             {/* Enhanced Image Thumbnails - Better Mobile Layout - HIDDEN ON MOBILE */}
-            {images.length > 1 && <div className="car-details-thumbnails hidden md:grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-14 gap-2">
+            {images.length > 1 && <div className="car-details-thumbnails hidden md:grid grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 2xl:grid-cols-16 gap-2">
                 {images.slice(0, 24).map((image, index) => <button key={index} onClick={() => setSelectedImageIndex(index)} aria-label={`Shiko imazhin ${index + 1} nga ${images.length}`} className={`relative aspect-[4/3] bg-muted rounded-md overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${selectedImageIndex === index ? "border-primary shadow-md ring-2 ring-primary/50" : "border-transparent hover:border-primary/50"}`}>
                     <img src={image} alt={`View ${index + 1}`} className="w-full h-full object-cover" onError={e => {
                 e.currentTarget.src = "/placeholder.svg";
@@ -1177,7 +1177,7 @@ const CarDetails = memo(() => {
                 </div>
 
                 {/* Enhanced Specifications Grid - Compact Mobile Layout */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 text-xs sm:text-sm">
                   {/* Basic Info */}
                   <div className="flex items-center justify-between p-2 sm:p-3 bg-white/5 dark:bg-black/10 backdrop-blur-sm border border-white/10 dark:border-white/5 rounded-lg hover:bg-white/10 dark:hover:bg-black/15 transition-all duration-200 mobile-spec-item">
                     <div className="flex items-center gap-1.5 sm:gap-2">
@@ -1620,7 +1620,7 @@ const CarDetails = memo(() => {
           </div>
 
           {/* Right Column - Enhanced Contact Card */}
-          <div className="lg:col-span-1 xl:col-span-1 space-y-4">
+          <div className="space-y-4">
             {/* Enhanced Contact & Inspection Card */}
             <Card className="glass-panel border-0 shadow-2xl sticky top-4 rounded-xl">
               <CardContent className="p-4">
