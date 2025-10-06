@@ -2062,7 +2062,7 @@ body {
   hyphens: auto;
 }
 
-/* Smartsupp Chat - Force visibility on all devices */
+/* Smartsupp Chat - Force visibility and position on bottom right */
 #chat-application,
 #chat-application-iframe,
 #chat-widget-container,
@@ -2077,6 +2077,8 @@ iframe[src*="smartsupp"] {
   z-index: 2147483647 !important;
   pointer-events: auto !important;
   position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
 }
 
 /* Smartsupp button/widget specific */
@@ -2088,6 +2090,9 @@ iframe[src*="smartsupp"] {
   opacity: 1 !important;
   z-index: 2147483647 !important;
   pointer-events: auto !important;
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
 }
 
 /* Override any hiding styles */
@@ -2096,9 +2101,12 @@ body [class*="smartsupp"] {
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
 }
 
-/* Mobile specific */
+/* Mobile specific - ensure proper positioning */
 @media (max-width: 768px) {
   #chat-application,
   #chat-widget-container,
@@ -2108,5 +2116,8 @@ body [class*="smartsupp"] {
     visibility: visible !important;
     opacity: 1 !important;
     z-index: 2147483647 !important;
+    position: fixed !important;
+    bottom: 15px !important;
+    right: 15px !important;
   }
 }
