@@ -1055,11 +1055,11 @@ const CarDetails = memo(() => {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-6 lg:gap-8">
           {/* Left Column - Images and Gallery */}
           <div className="space-y-6 animate-fade-in" style={{animationDelay: '100ms'}}>
-            {/* Main Image with modern styling */}
+            {/* Main Image with modern styling - Compact size */}
             <Card className="border-0 shadow-2xl overflow-hidden rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
               <CardContent className="p-0">
-                <div ref={imageContainerRef} className="car-details-hero relative w-full aspect-[3/2] sm:aspect-[16/10] lg:aspect-[16/9] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer" onClick={() => setIsImageZoomOpen(true)} data-fancybox="gallery">
-                  {images.length > 0 ? <img src={images[selectedImageIndex]} alt={`${car.year} ${car.make} ${car.model}`} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105" onError={e => {
+                <div ref={imageContainerRef} className="car-details-hero relative w-full aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer" onClick={() => setIsImageZoomOpen(true)} data-fancybox="gallery">
+                  {images.length > 0 ? <img src={images[selectedImageIndex]} alt={`${car.year} ${car.make} ${car.model}`} className="w-full h-full object-contain transition-all duration-500 group-hover:scale-105" onError={e => {
                   e.currentTarget.src = "/placeholder.svg";
                   setIsPlaceholderImage(true);
                 }} onLoad={e => {
