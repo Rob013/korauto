@@ -5,13 +5,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// API rate limiting and retry configuration - Updated for correct endpoint
-const RATE_LIMIT_DELAY = 8000 // Reduced to 8 seconds between requests
-const MAX_RETRIES = 3
-const BACKOFF_MULTIPLIER = 2
-const PAGE_SIZE = 100 // Updated from 1000 to 100 as specified
-const REQUEST_TIMEOUT = 30000
-const MAX_PAGES = 100 // Safety limit
+// API rate limiting - Following integration guide best practices
+const RATE_LIMIT_DELAY = 15000 // 15 seconds between requests to avoid 429 errors
+const MAX_RETRIES = 2 // Reduced retries since we have longer delays
+const BACKOFF_MULTIPLIER = 3 // More aggressive backoff
+const PAGE_SIZE = 250 // Optimal page size per API docs
+const REQUEST_TIMEOUT = 45000 // Longer timeout for large pages
+const MAX_PAGES = 500 // Safety limit for full syncs
 
 // Helper function for API requests with retry logic
 async function makeApiRequest(url: string, retryCount = 0): Promise<any> {
@@ -168,22 +168,24 @@ Deno.serve(async (req) => {
     const errors: string[] = []
 
     try {
-      // Step 1: Process active cars from /api/cars endpoint
-      console.log(`📡 Processing active cars (${syncType === 'full' ? 'full sync' : `last ${minutes} minutes`})`)
+      // ✅ Step 1: Process active cars from /api/cars endpoint
+      // Following API Integration Guide: Use ?minutes=X for incremental updates
+      console.log(`📡 Fetching active cars (${syncType === 'full' ? 'full sync' : `last ${minutes} minutes`})`)
       
-      let baseUrl = `${BASE_URL}/cars?api_key=${API_KEY}&per_page=${PAGE_SIZE}`
-      if (syncType !== 'full') {
-        baseUrl += `&minutes=${minutes}`
-      }
-
-      // Handle pagination for cars
       let currentPage = 1
       let hasMorePages = true
+      let consecutiveErrors = 0
+      const MAX_CONSECUTIVE_ERRORS = 3
       
-      while (hasMorePages && currentPage <= MAX_PAGES) {
-        const pageUrl = `${baseUrl}&page=${currentPage}`
+      while (hasMorePages && currentPage <= MAX_PAGES && consecutiveErrors < MAX_CONSECUTIVE_ERRORS) {
+        // Build URL per page following API guide: /api/cars?minutes=60&page=X&per_page=250
+        let pageUrl = `${BASE_URL}/cars?page=${currentPage}&per_page=${PAGE_SIZE}`
+        if (syncType !== 'full' && minutes > 0) {
+          pageUrl += `&minutes=${minutes}`
+        }
         
         try {
+          console.log(`📄 Fetching page ${currentPage}...`)
           const carsData = await makeApiRequest(pageUrl)
           
           // Validate response structure
@@ -268,15 +270,16 @@ Deno.serve(async (req) => {
             }
           }
 
-          // Update pagination logic
-          hasMorePages = carsArray.length >= PAGE_SIZE
+          // Check if there are more pages using API metadata
+          hasMorePages = carsData.meta?.current_page < carsData.meta?.last_page
+          consecutiveErrors = 0 // Reset error counter on success
           
           // Update progress in database
           await supabase
             .from('sync_status')
             .update({
               current_page: currentPage,
-              total_pages: hasMorePages ? currentPage + 1 : currentPage,
+              total_pages: carsData.meta?.last_page || currentPage,
               cars_processed: totalCarsProcessed,
               last_activity_at: new Date().toISOString(),
               last_cars_sync_at: new Date().toISOString()
@@ -285,17 +288,21 @@ Deno.serve(async (req) => {
 
           currentPage++
           
-          // Proper delay between pages to prevent rate limiting
-          await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY))
+          // Important: Wait between requests to avoid rate limiting
+          if (hasMorePages) {
+            console.log(`⏸️ Waiting ${RATE_LIMIT_DELAY}ms before next page...`)
+            await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY))
+          }
 
         } catch (pageError) {
           console.error(`❌ Error processing page ${currentPage}:`, pageError)
           errors.push(`Page ${currentPage}: ${pageError.message}`)
+          consecutiveErrors++
           
-          // If we get consistent errors, break out
-          if (errors.length > 10) {
-            console.error(`❌ Too many errors, stopping sync`)
-            break
+          // If rate limited, wait longer before next attempt
+          if (pageError.message.includes('Rate limit')) {
+            console.log(`⏸️ Rate limit detected, waiting 30 seconds...`)
+            await new Promise(resolve => setTimeout(resolve, 30000))
           }
           
           currentPage++
@@ -306,22 +313,33 @@ Deno.serve(async (req) => {
         console.log(`⚠️ Reached maximum page limit (${MAX_PAGES}), stopping pagination`)
       }
 
-      // 🗄️ Step 2: Process archived/sold cars from /api/archived-lots endpoint
+      // 🔄 Step 2: Process archived/sold cars from /api/archived-lots endpoint
+      // Following API Integration Guide: Use ?minutes=X to get recently sold cars
       console.log(`🗄️ Fetching archived lots (${syncType === 'full' ? 'full sync' : `last ${minutes} minutes`})`)
       
-      let archivedUrl = `${BASE_URL}/archived-lots?api_key=${API_KEY}`
-      if (syncType !== 'full') {
-        archivedUrl += `&minutes=${minutes}`
-      }
+      // Build archived lots URL with pagination support
+      let archivedPage = 1
+      let hasMoreArchived = true
+      
+      while (hasMoreArchived && archivedPage <= 50) { // Limit archived pages
+        let archivedUrl = `${BASE_URL}/archived-lots?page=${archivedPage}&per_page=${PAGE_SIZE}`
+        if (syncType !== 'full' && minutes > 0) {
+          archivedUrl += `&minutes=${minutes}`
+        }
 
-      try {
-        const archivedData = await makeApiRequest(archivedUrl)
+        try {
+          console.log(`📄 Fetching archived lots page ${archivedPage}...`)
+          const archivedData = await makeApiRequest(archivedUrl)
         
-        // Handle both possible response formats
-        const archivedLots = archivedData?.archived_lots || archivedData?.data || []
-        
-        if (Array.isArray(archivedLots) && archivedLots.length > 0) {
-          console.log(`📊 Processing ${archivedLots.length} archived lots`)
+          // Handle both possible response formats
+          const archivedLots = archivedData?.archived_lots || archivedData?.data || []
+          
+          if (!Array.isArray(archivedLots) || archivedLots.length === 0) {
+            console.log(`⚠️ No archived lots in page ${archivedPage}`)
+            break
+          }
+
+          console.log(`📊 Processing ${archivedLots.length} archived lots from page ${archivedPage}`)
 
           for (const archivedLot of archivedLots) {
             try {
@@ -360,6 +378,10 @@ Deno.serve(async (req) => {
             }
           }
 
+          // Check if there are more archived pages
+          hasMoreArchived = archivedData.meta?.current_page < archivedData.meta?.last_page
+          archivedPage++
+
           // Update sync progress
           await supabase
             .from('sync_status')
@@ -369,25 +391,33 @@ Deno.serve(async (req) => {
               last_archived_sync_at: new Date().toISOString()
             })
             .eq('id', syncRecord.id)
+
+          // Rate limiting between archived pages
+          if (hasMoreArchived) {
+            console.log(`⏸️ Waiting ${RATE_LIMIT_DELAY}ms before next archived page...`)
+            await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY))
+          }
+
+        } catch (archivedError) {
+          console.error(`❌ Error processing archived lots page ${archivedPage}:`, archivedError)
+          errors.push(`Archived lots page ${archivedPage}: ${archivedError.message}`)
+          break
         }
-      } catch (archivedError) {
-        console.error(`❌ Error processing archived lots:`, archivedError)
-        errors.push(`Archived lots error: ${archivedError.message}`)
       }
 
-      // For daily sync, call the cleanup function to remove old sold cars
+      // 🧹 Step 3: For daily sync, cleanup old sold cars (>30 days)
       let cleanupResult = null
       if (syncType === 'daily') {
         try {
-          console.log(`🧹 Running daily cleanup to remove old sold cars...`)
-          const { data: cleanupData, error: cleanupError } = await supabase.rpc('remove_old_sold_cars')
+          console.log(`🧹 Running daily cleanup (removing cars sold >30 days ago)...`)
+          const { error: cleanupError } = await supabase.rpc('remove_old_sold_cars')
           
           if (cleanupError) {
             console.error(`❌ Error during daily cleanup:`, cleanupError)
             errors.push(`Cleanup error: ${cleanupError.message}`)
           } else {
-            cleanupResult = cleanupData
-            console.log(`✅ Daily cleanup completed: ${cleanupData?.removed_cars_count || 0} cars removed from website`)
+            cleanupResult = { message: 'Old sold cars cleaned up successfully' }
+            console.log(`✅ Daily cleanup completed`)
           }
         } catch (cleanupError) {
           console.error(`❌ Error calling cleanup function:`, cleanupError)
@@ -409,7 +439,10 @@ Deno.serve(async (req) => {
         })
         .eq('id', syncRecord.id)
 
-      console.log(`✅ Sync completed: ${totalCarsProcessed} cars processed, ${totalArchivedProcessed} archived`)
+      console.log(`✅ Sync completed successfully!`)
+      console.log(`📊 Active cars processed: ${totalCarsProcessed}`)
+      console.log(`🗄️ Archived cars processed: ${totalArchivedProcessed}`)
+      console.log(`⚠️ Errors encountered: ${errors.length}`)
 
       return new Response(
         JSON.stringify({
