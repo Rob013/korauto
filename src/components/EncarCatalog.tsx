@@ -416,13 +416,19 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Use 200 cars per page for proper pagination
     const filtersWithPagination = addPaginationToFilters(newFilters, 200, 1);
     
-    fetchCars(1, filtersWithPagination, true);
+    // Add default sort if user hasn't selected one
+    const filtersWithSort = {
+      ...filtersWithPagination,
+      sort_by: hasUserSelectedSort && sortBy ? sortBy : 'recently_added'
+    };
+    
+    fetchCars(1, filtersWithSort, true);
 
     // Update URL with all non-empty filter values - now using utility
     const searchParams = filtersToURLParams(newFilters);
     searchParams.set('page', '1');
     setSearchParams(searchParams);
-  }, [fetchCars, setSearchParams]);
+  }, [fetchCars, setSearchParams, hasUserSelectedSort, sortBy, clearGlobalSorting]);
 
   // Optimized year filtering hook for better performance
   const {
@@ -493,7 +499,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setModels([]);
     setGenerations([]);
     setHasUserSelectedSort(false); // Reset to allow daily rotating cars again
-    fetchCars(1, {}, true);
+    fetchCars(1, { sort_by: 'recently_added' }, true);
     setSearchParams({});
   }, [fetchCars, setSearchParams]);
 
@@ -516,7 +522,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     
     // Fetch cars for the specific page with proper API pagination
     const filtersWithPagination = addPaginationToFilters(filters, 200, page);
-    fetchCars(page, filtersWithPagination, true); // Reset list for new page
+    const filtersWithSort = {
+      ...filtersWithPagination,
+      sort_by: hasUserSelectedSort && sortBy ? sortBy : 'recently_added'
+    };
+    fetchCars(page, filtersWithSort, true); // Reset list for new page
     
     // Update URL with new page
     const currentParams = Object.fromEntries(searchParams.entries());
@@ -692,7 +702,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       
       // Fetch cars with new filters
       promises.push(
-        fetchCars(1, { ...newFilters, per_page: "200" }, true)
+        fetchCars(1, { ...newFilters, per_page: "200", sort_by: hasUserSelectedSort && sortBy ? sortBy : 'recently_added' }, true)
       );
       
       await Promise.all(promises);
@@ -739,7 +749,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     try {
       if (!modelId) {
         // Fetch cars with cleared model filter
-        await fetchCars(1, { ...newFilters, per_page: "200" }, true);
+        await fetchCars(1, { ...newFilters, per_page: "200", sort_by: hasUserSelectedSort && sortBy ? sortBy : 'recently_added' }, true);
         setIsLoading(false);
         setIsFilterLoading(false);
         return;
@@ -752,7 +762,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           setGenerations(generationData);
           return generationData;
         }),
-        fetchCars(1, { ...newFilters, per_page: "200" }, true)
+        fetchCars(1, { ...newFilters, per_page: "200", sort_by: hasUserSelectedSort && sortBy ? sortBy : 'recently_added' }, true)
       ];
       
       await Promise.all(promises);
@@ -839,7 +849,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         const initialFilters = {
           ...urlFilters,
           per_page: "200",
-          page: urlCurrentPage.toString()
+          page: urlCurrentPage.toString(),
+          sort_by: hasUserSelectedSort && sortBy ? sortBy : 'recently_added'
         };
         
         await fetchCars(urlCurrentPage, initialFilters, true);
@@ -1136,7 +1147,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             onSearchCars={() => {
               console.log("Search button clicked, isMobile:", isMobile);
               // Apply search/filters
-              fetchCars(1, { ...filters, per_page: "200" }, true);
+              fetchCars(1, { ...filters, per_page: "200", sort_by: hasUserSelectedSort && sortBy ? sortBy : 'recently_added' }, true);
               
               // Force close filter panel on mobile (and desktop for consistency)
               setShowFilters(false);
