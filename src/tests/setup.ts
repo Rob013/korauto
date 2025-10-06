@@ -4,7 +4,6 @@
  */
 
 import { beforeAll, vi } from 'vitest';
-import '@testing-library/jest-dom';
 
 // Mock browser APIs
 beforeAll(() => {
@@ -134,21 +133,8 @@ beforeAll(() => {
   // Mock getComputedStyle
   global.getComputedStyle = vi.fn(() => ({
     getPropertyValue: vi.fn(),
-    getProperty: vi.fn(),
     gridTemplateColumns: 'repeat(3, 1fr)',
-    // Add all the missing CSSStyleDeclaration properties as empty values/functions
-    accentColor: '',
-    alignContent: '',
-    alignItems: '',
-    alignSelf: '',
-    // ... (we can add just the basic structure)
-    length: 0,
-    parentRule: null,
-    cssText: '',
-    item: vi.fn(() => ''),
-    removeProperty: vi.fn(),
-    setProperty: vi.fn(),
-  } as any));
+  }));
 
   // Mock sessionStorage
   Object.defineProperty(window, 'sessionStorage', {

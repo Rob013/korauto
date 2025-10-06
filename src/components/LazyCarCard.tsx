@@ -49,12 +49,10 @@ const LazyCarCard = memo(({
   price,
   image,
   images, // New prop
-  vin,
   mileage,
   transmission,
   fuel,
   color,
-  condition,
   lot,
   title,
   status,
@@ -236,31 +234,8 @@ const LazyCarCard = memo(({
     // Close filter panel when navigating to car details (if it's open)
     sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
     
-    // Pass car data for instant display
-    const carData = {
-      id,
-      make,
-      model,
-      year,
-      price,
-      image,
-      images,
-      vin,
-      mileage,
-      transmission,
-      fuel,
-      color,
-      lot,
-      title,
-      status,
-      sale_status,
-      final_price,
-      insurance_v2,
-      details
-    };
-    
-    navigate(`/car/${lot}`, { state: { carData } });
-  }, [setCompletePageState, lot, navigate, id, make, model, year, price, image, images, vin, mileage, transmission, fuel, color, title, status, sale_status, final_price, insurance_v2, details]);
+    navigate(`/car/${lot}`);
+  }, [setCompletePageState, lot, navigate]);
 
   const handleDetailsClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -278,31 +253,8 @@ const LazyCarCard = memo(({
     // Close filter panel when navigating to car details (if it's open)
     sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
     
-    // Pass car data for instant display
-    const carData = {
-      id,
-      make,
-      model,
-      year,
-      price,
-      image,
-      images,
-      vin,
-      mileage,
-      transmission,
-      fuel,
-      color,
-      lot,
-      title,
-      status,
-      sale_status,
-      final_price,
-      insurance_v2,
-      details
-    };
-    
-    navigate(`/car/${lot}`, { state: { carData } });
-  }, [setCompletePageState, lot, navigate, id, make, model, year, price, image, images, vin, mileage, transmission, fuel, color, title, status, sale_status, final_price, insurance_v2, details]);
+    navigate(`/car/${lot}`);
+  }, [setCompletePageState, lot, navigate]);
 
   // Don't render content until intersection
   if (!isIntersecting) {
@@ -442,7 +394,7 @@ const LazyCarCard = memo(({
             // List view: keep existing centered layout for compact display
             <div className="text-center">
               <span className="card-price text-base sm:text-lg font-bold text-primary block">
-                €{Math.round(price).toLocaleString()}
+                €{price.toLocaleString()}
               </span>
               <span className="text-xs text-muted-foreground block">
                 deri ne portin e Durrësit
@@ -452,7 +404,7 @@ const LazyCarCard = memo(({
             // Grid view: price on left, text on right
             <div className="flex items-end justify-between">
               <span className="card-price text-base sm:text-lg font-bold text-primary">
-                €{Math.round(price).toLocaleString()}
+                €{price.toLocaleString()}
               </span>
               <span className="text-xs text-muted-foreground">
                 deri ne portin e Durrësit

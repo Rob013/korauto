@@ -1,32 +1,40 @@
-import React, { Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { lazy, Suspense, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InstallPrompt } from "./components/InstallPrompt";
+import { useResourcePreloader } from "./hooks/useResourcePreloader";
+import { AccessibilityEnhancer } from "./utils/accessibilityEnhancer";
 import { StatusRefreshProvider } from "./components/StatusRefreshProvider";
+import { useFrameRate } from "./hooks/useFrameRate";
+import { PerformanceMonitor } from "./components/PerformanceMonitor";
+import { useAdminCheck } from "./hooks/useAdminCheck";
 
-// Import pages directly to avoid lazy loading issues during debugging
-import Index from "./pages/Index";
-import Catalog from "./pages/Catalog";
-import CarDetails from "./pages/CarDetails";
-import CarGallery from "./pages/CarGallery";
-import AdminDashboard from "./pages/AdminDashboard";
-import AuthPage from "./pages/AuthPage";
-import EmailConfirmationPage from "./pages/EmailConfirmationPage";
-import FavoritesPage from "./pages/FavoritesPage";
-import InspectionServices from "./pages/InspectionServices";
-import MyAccount from "./pages/MyAccount";
-import NotFound from "./pages/NotFound";
-import Contacts from "./pages/Contacts";
-import ShipmentTracking from "./pages/ShipmentTracking";
-import PerformanceDashboard from "./components/PerformanceDashboard";
-import AuditTestPage from "./pages/AuditTestPage";
-import ApiInfoDemo from "./components/ApiInfoDemo";
-import AdminSyncDashboard from "./components/AdminSyncDashboard";
-import CookieManagementDashboard from "./components/CookieManagementDashboard";
+// Lazy load all pages for better code splitting
+const Index = lazy(() => import("./pages/Index"));
+const Catalog = lazy(() => import("./pages/Catalog"));
+const CarDetails = lazy(() => import("./pages/CarDetails"));
+const CarGallery = lazy(() => import("./pages/CarGallery"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AuthPage = lazy(() => import("./pages/AuthPage"));
+const EmailConfirmationPage = lazy(() => import("./pages/EmailConfirmationPage"));
+const FavoritesPage = lazy(() => import("./pages/FavoritesPage"));
+const InspectionServices = lazy(() => import("./pages/InspectionServices"));
+const MyAccount = lazy(() => import("./pages/MyAccount"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Contacts = lazy(() => import("./pages/Contacts"));
+const ShipmentTracking = lazy(() => import("./pages/ShipmentTracking"));
+// Demo imports removed - no longer needed
+const PerformanceDashboard = lazy(() => import("./components/PerformanceDashboard"));
+const AuditTestPage = lazy(() => import("./pages/AuditTestPage"));
+const ApiInfoDemo = lazy(() => import("./components/ApiInfoDemo"));
+
+// Lazy load admin components for better code splitting
+const AdminSyncDashboard = lazy(() => import("./components/AdminSyncDashboard"));
+const CookieManagementDashboard = lazy(() => import("./components/CookieManagementDashboard"));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-background">
@@ -99,8 +107,39 @@ const queryClient = new QueryClient({
   },
 });
 
-const App: React.FC = () => {
-  console.log('🚀 App component rendering');
+const App = () => {
+  // Initialize resource preloading for better performance
+  const { preloadRouteResources } = useResourcePreloader();
+
+  // Initialize frame rate optimization for 120fps support
+  const { supportsHighRefreshRate, targetFPS, currentFPS } = useFrameRate();
+
+  // Check admin status for performance monitoring
+  const { isAdmin } = useAdminCheck();
+
+  // Initialize accessibility enhancements
+  useEffect(() => {
+    const enhancer = AccessibilityEnhancer.getInstance();
+    enhancer.init();
+    enhancer.addSkipLinks();
+    
+    return () => {
+      enhancer.destroy();
+    };
+  }, []);
+
+  // Log performance information for development
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🚀 KORAUTO Performance Info:', {
+        supportsHighRefreshRate,
+        targetFPS,
+        currentFPS,
+        userAgent: navigator.userAgent,
+        devicePixelRatio: window.devicePixelRatio
+      });
+    }
+  }, [supportsHighRefreshRate, targetFPS, currentFPS]);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -109,29 +148,107 @@ const App: React.FC = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/catalog" element={<Catalog />} />
-              <Route path="/car/:id" element={<CarDetails />} />
-              <Route path="/car/:id/gallery" element={<CarGallery />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/sync" element={<AdminSyncDashboard />} />
-              <Route path="/auth" element={<AuthPage />} />
-              <Route path="/auth/confirm" element={<EmailConfirmationPage />} />
-              <Route path="/account" element={<MyAccount />} />
-              <Route path="/favorites" element={<FavoritesPage />} />
-              <Route path="/inspections" element={<InspectionServices />} />
-              <Route path="/contacts" element={<Contacts />} />
-              <Route path="/tracking" element={<ShipmentTracking />} />
-              <Route path="/performance" element={<PerformanceDashboard />} />
-              <Route path="/cookie-management" element={<CookieManagementDashboard />} />
-              <Route path="/audit-test" element={<AuditTestPage />} />
-              <Route path="/api-info-demo" element={<ApiInfoDemo />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-          <InstallPrompt />
-        </TooltipProvider>
+          <Routes>
+            <Route path="/" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <Index />
+              </Suspense>
+            } />
+            <Route path="/catalog" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <Catalog />
+              </Suspense>
+            } />
+            <Route path="/car/:id" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <CarDetails />
+              </Suspense>
+            } />
+            <Route path="/car/:id/gallery" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <CarGallery />
+              </Suspense>
+            } />
+            <Route path="/admin" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <AdminDashboard />
+              </Suspense>
+            } />
+            <Route path="/admin/sync" element={
+              <Suspense fallback={<AdminSyncSkeleton />}>
+                <AdminSyncDashboard />
+              </Suspense>
+            } />
+            <Route path="/auth" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <AuthPage />
+              </Suspense>
+            } />
+            <Route path="/auth/confirm" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <EmailConfirmationPage />
+              </Suspense>
+            } />
+            <Route path="/account" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <MyAccount />
+              </Suspense>
+            } />
+            <Route path="/favorites" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <FavoritesPage />
+              </Suspense>
+            } />
+            <Route path="/inspections" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <InspectionServices />
+              </Suspense>
+            } />
+            <Route path="/contacts" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <Contacts />
+              </Suspense>
+            } />
+            <Route path="/tracking" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <ShipmentTracking />
+              </Suspense>
+            } />
+            {/* Demo routes removed - no longer needed */}
+            <Route path="/performance" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <PerformanceDashboard />
+              </Suspense>
+            } />
+            <Route path="/cookie-management" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <CookieManagementDashboard />
+              </Suspense>
+            } />
+            <Route path="/audit-test" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <AuditTestPage />
+              </Suspense>
+            } />
+            <Route path="/api-info-demo" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <ApiInfoDemo />
+              </Suspense>
+            } />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <NotFound />
+              </Suspense>
+            } />
+          </Routes>
+        </BrowserRouter>
+        <InstallPrompt />
+        {/* Performance Monitor for admin users only */}
+        {isAdmin && (
+          <PerformanceMonitor showDetails={false} />
+        )}
+      </TooltipProvider>
       </StatusRefreshProvider>
     </QueryClientProvider>
   );

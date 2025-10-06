@@ -136,39 +136,14 @@ const EncarCarCard = ({
     // Save current page and any filter state before navigating
     setPreviousPage(window.location.pathname + window.location.search);
     
-    // Prepare car data for instant display
-    const carData = {
-      id,
-      make,
-      model,
-      year,
-      price,
-      image,
-      mileage,
-      fuel,
-      vin,
-      transmission,
-      color,
-      condition,
-      lot,
-      cylinders,
-      insurance,
-      insurance_v2,
-      locationDetails,
-      inspect,
-      details,
-      location
-    };
-    
     // On mobile, open in new tab to preserve the current catalog state
     // On desktop, navigate in the same tab for better user experience
     if (isMobile) {
-      // For new tab, we can't pass state directly, so store in sessionStorage
-      sessionStorage.setItem(`carData_${id}`, JSON.stringify(carData));
+      // Open in new tab on mobile to preserve filter state and scroll position
       window.open(`/car/${id}`, '_blank');
     } else {
-      // Navigate in same tab on desktop with state
-      navigate(`/car/${id}`, { state: { carData } });
+      // Navigate in same tab on desktop
+      navigate(`/car/${id}`);
     }
   };
 

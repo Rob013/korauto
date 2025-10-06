@@ -30,7 +30,7 @@ export default defineConfig(({ mode }) => ({
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
         manualChunks: {
-          // Core React libraries - keep together to prevent multiple instances
+          // Core React libraries
           vendor: ['react', 'react-dom'],
           // Router in separate chunk for better caching
           router: ['react-router-dom'],
@@ -74,18 +74,10 @@ export default defineConfig(({ mode }) => ({
     include: [
       'react',
       'react-dom',
-      'react-dom/client',
       'react-router-dom',
       '@tanstack/react-query',
       '@supabase/supabase-js',
-      '@radix-ui/react-dialog',
-      '@radix-ui/react-dropdown-menu',
-      '@radix-ui/react-select',
-      '@radix-ui/react-tabs',
-      '@radix-ui/react-tooltip',
     ],
-    // Force single React instance to prevent dispatcher issues
-    force: true,
     // Add polyfills for better browser compatibility
     esbuildOptions: {
       target: 'es2015',

@@ -37,6 +37,7 @@ import AuthLogin from "@/components/AuthLogin";
 import { CarsSyncButton } from "@/components/CarsSyncButton";
 import AdminCarSearch from "@/components/AdminCarSearch";
 import { CookieManagementDashboard } from "@/components/CookieManagementDashboard";
+import PerformanceAuditWidget from "@/components/PerformanceAuditWidget";
 import ApiInfoDashboard from "@/components/ApiInfoDashboard";
 
 // Lazy load heavy admin components
@@ -751,10 +752,11 @@ const AdminDashboard = () => {
           onValueChange={setActiveTab}
           className="space-y-3 sm:space-y-4"
         >
-          <TabsList className="grid w-full grid-cols-5 h-auto">
+          <TabsList className="grid w-full grid-cols-6 h-auto">
             <TabsTrigger value="overview" className="text-xs sm:text-sm p-2 sm:p-3">Overview</TabsTrigger>
             <TabsTrigger value="inspections" className="text-xs sm:text-sm p-2 sm:p-3">Inspections</TabsTrigger>
             <TabsTrigger value="analytics" className="text-xs sm:text-sm p-2 sm:p-3">Analytics</TabsTrigger>
+            <TabsTrigger value="performance" className="text-xs sm:text-sm p-2 sm:p-3">Performance</TabsTrigger>
             <TabsTrigger value="cookies" className="text-xs sm:text-sm p-2 sm:p-3">Cookies</TabsTrigger>
             <TabsTrigger value="api-info" className="text-xs sm:text-sm p-2 sm:p-3">API Info</TabsTrigger>
           </TabsList>
@@ -1733,6 +1735,13 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          <TabsContent value="performance" className="space-y-3 sm:space-y-4">
+            {/* Performance Audit Widget */}
+            <div className="w-full">
+              <PerformanceAuditWidget />
+            </div>
           </TabsContent>
 
           <TabsContent value="cookies" className="space-y-3 sm:space-y-4">
