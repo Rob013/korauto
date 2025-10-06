@@ -1,27 +1,77 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Validation schema
-const inspectionRequestSchema = z.object({
-  customer_name: z.string().trim().min(1, "Name is required").max(100, "Name too long"),
-  customer_email: z.string().trim().email("Invalid email format").max(255, "Email too long"),
-  customer_phone: z.string().trim().regex(/^\+?[\d\s\-\(\)]{8,15}$/, "Invalid phone format"),
-  car_id: z.string().trim().max(50).optional().nullable(),
-  notes: z.string().trim().max(1000, "Notes too long").optional().nullable(),
-  client_ip: z.string().optional().nullable()
-});
+// Simple validation schemas
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const phoneRegex = /^\+?[\d\s\-\(\)]{8,20}$/;
+
+interface InspectionRequest {
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  car_id?: string;
+  notes?: string;
+  client_ip?: string;
+}
+
+// Validate and sanitize input
+function validateInspectionRequest(data: any): { valid: boolean; errors?: string[]; sanitized?: InspectionRequest } {
+  const errors: string[] = [];
+  
+  // Validate required fields
+  if (!data.customer_name || typeof data.customer_name !== 'string' || data.customer_name.trim().length === 0) {
+    errors.push('Customer name is required');
+  } else if (data.customer_name.length > 100) {
+    errors.push('Customer name must be less than 100 characters');
+  }
+  
+  if (!data.customer_email || typeof data.customer_email !== 'string' || !emailRegex.test(data.customer_email.trim())) {
+    errors.push('Valid email address is required');
+  } else if (data.customer_email.length > 255) {
+    errors.push('Email must be less than 255 characters');
+  }
+  
+  if (!data.customer_phone || typeof data.customer_phone !== 'string' || !phoneRegex.test(data.customer_phone.trim())) {
+    errors.push('Valid phone number is required (8-20 digits)');
+  }
+  
+  if (data.notes && typeof data.notes === 'string' && data.notes.length > 1000) {
+    errors.push('Notes must be less than 1000 characters');
+  }
+  
+  if (errors.length > 0) {
+    return { valid: false, errors };
+  }
+  
+  // Sanitize - allowlist approach: only keep alphanumeric, spaces, and common punctuation
+  const sanitize = (str: string, maxLength: number) => {
+    return str.trim()
+      .replace(/[^\w\s\-.,@()+]/g, '') // Allow only word chars, spaces, and safe punctuation
+      .slice(0, maxLength);
+  };
+  
+  return {
+    valid: true,
+    sanitized: {
+      customer_name: sanitize(data.customer_name, 100),
+      customer_email: data.customer_email.trim().toLowerCase().slice(0, 255),
+      customer_phone: sanitize(data.customer_phone, 20),
+      car_id: data.car_id ? sanitize(data.car_id, 50) : undefined,
+      notes: data.notes ? sanitize(data.notes, 1000) : 'General inspection request',
+      client_ip: data.client_ip
+    }
+  };
+}
 
 // Hash IP address for privacy (SHA-256)
 async function hashIP(ip: string): Promise<string> {
-  const salt = Deno.env.get('IP_HASH_SALT') || 'korauto-security-salt-2024';
   const encoder = new TextEncoder();
-  const data = encoder.encode(ip + salt);
+  const data = encoder.encode(ip + Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')); // Use secret as salt
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
@@ -30,48 +80,43 @@ async function hashIP(ip: string): Promise<string> {
 const handler = async (req: Request): Promise<Response> => {
   console.log('🔐 Secure Inspection Request called:', req.method);
 
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Initialize Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const requestBody = await req.json();
-
-    console.log('📝 Processing inspection request');
-
-    // Validate input with zod
-    const validationResult = inspectionRequestSchema.safeParse(requestBody);
+    const requestData = await req.json();
     
-    if (!validationResult.success) {
-      console.error('❌ Validation error:', validationResult.error.issues);
+    // Validate and sanitize input
+    const validation = validateInspectionRequest(requestData);
+    
+    if (!validation.valid) {
+      console.log('❌ Validation failed:', validation.errors);
       return new Response(
-        JSON.stringify({ 
-          error: 'Invalid input',
-          details: validationResult.error.issues.map(i => i.message).join(', ')
-        }),
+        JSON.stringify({ error: 'Validation failed', details: validation.errors }),
         {
           status: 400,
           headers: { 'Content-Type': 'application/json', ...corsHeaders }
         }
       );
     }
-
-    const { customer_name, customer_email, customer_phone, car_id, notes, client_ip } = validationResult.data;
-
-    // Hash IP address for privacy before rate limiting
-    const hashedIP = client_ip ? await hashIP(client_ip) : 'unknown';
     
+    const sanitizedData = validation.sanitized!;
+
+    console.log('📝 Processing inspection request for:', sanitizedData.customer_email);
+
+    // Hash IP address for privacy
+    const ipHash = sanitizedData.client_ip ? await hashIP(sanitizedData.client_ip) : 'unknown';
+
     // Rate limiting check using hashed IP
     const { data: rateLimitCheck, error: rateLimitError } = await supabaseClient
       .rpc('check_rate_limit', {
-        _identifier: hashedIP,
+        _identifier: ipHash,
         _action: 'inspection_request',
         _max_requests: 5,
         _window_minutes: 60
@@ -80,7 +125,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (rateLimitError) {
       console.error('❌ Rate limit check error:', rateLimitError);
     } else if (!rateLimitCheck) {
-      console.log('⚠️ Rate limit exceeded for hashed IP');
+      console.log('⚠️ Rate limit exceeded for IP hash:', ipHash.slice(0, 10));
       return new Response(
         JSON.stringify({ error: 'Too many requests. Please try again later.' }),
         {
@@ -90,20 +135,17 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Prepare data (already validated by zod)
-    const sanitizedData = {
-      customer_name,
-      customer_email: customer_email.toLowerCase(),
-      customer_phone,
-      car_id: car_id || null,
-      notes: notes || 'General inspection request',
-      ip_address: hashedIP // Store hashed IP instead of plaintext
-    };
-
-    // Insert inspection request
+    // Insert inspection request (without storing IP)
     const { data: insertData, error: insertError } = await supabaseClient
       .from('inspection_requests')
-      .insert(sanitizedData)
+      .insert({
+        customer_name: sanitizedData.customer_name,
+        customer_email: sanitizedData.customer_email,
+        customer_phone: sanitizedData.customer_phone,
+        car_id: sanitizedData.car_id,
+        notes: sanitizedData.notes,
+        ip_address: null // Don't store raw IP - use hashed version for rate limiting only
+      })
       .select()
       .single();
 
@@ -114,15 +156,20 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('✅ Inspection request saved:', insertData.id);
 
-    // Try to send email notification (don't fail if this fails)
+    // Try to send email notification
     try {
       await supabaseClient.functions.invoke('send-inspection-notification', {
-        body: sanitizedData
+        body: {
+          customer_name: sanitizedData.customer_name,
+          customer_email: sanitizedData.customer_email,
+          customer_phone: sanitizedData.customer_phone,
+          car_id: sanitizedData.car_id,
+          notes: sanitizedData.notes
+        }
       });
       console.log('📧 Email notification sent');
     } catch (emailError) {
       console.error('⚠️ Email notification failed:', emailError);
-      // Don't fail the whole process
     }
 
     return new Response(
