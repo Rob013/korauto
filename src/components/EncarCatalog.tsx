@@ -137,8 +137,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     if (savedViewMode === 'list' || savedViewMode === 'grid') {
       return savedViewMode;
     }
-    // Default to 'list' for mobile, 'grid' for desktop
-    return window.innerWidth < 768 ? 'list' : 'grid';
+    // Default to 'grid' for all devices
+    return 'grid';
   });
   
   const [hasSelectedCategories, setHasSelectedCategories] = useState(false);
