@@ -1211,70 +1211,76 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           {/* Header Section - Mobile optimized */}
           <div className="flex flex-col gap-3 mb-4">
             {/* Top row: Back button and filter button */}
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => window.history.back()}
-                className="flex items-center gap-1 hover:bg-primary hover:text-primary-foreground transition-colors h-8 px-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span className="hidden xs:inline text-xs">Back</span>
-              </Button>
+            <div className="flex items-center justify-between gap-2 w-full flex-wrap sm:flex-nowrap">
+              {/* Left group: Back and Filter buttons */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => window.history.back()}
+                  className="flex items-center gap-1 hover:bg-primary hover:text-primary-foreground transition-colors h-8 px-2 sm:h-9 sm:px-3"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span className="hidden xs:inline text-xs sm:text-sm">Back</span>
+                </Button>
+                
+                {/* Filter Toggle Button - Enhanced mobile reliability */}
+                <Button
+                  variant="default"
+                  size="lg"
+                  onClick={handleFilterToggle}
+                  className="flex items-center gap-1 sm:gap-2 h-9 sm:h-10 md:h-12 px-3 sm:px-4 md:px-6 lg:px-8 font-semibold text-xs sm:text-sm md:text-base bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 transition-transform"
+                >
+                  {showFilters ? <PanelLeftClose className="h-4 w-4 sm:h-5 sm:w-5" /> : <PanelLeftOpen className="h-4 w-4 sm:h-5 sm:w-5" />}
+                  <span className="hidden xs:inline whitespace-nowrap">{showFilters ? 'Fshih Filtrat' : 'Shfaq Filtrat'}</span>
+                  <span className="xs:hidden whitespace-nowrap">Zgjedh</span>
+                  {hasSelectedCategories && !showFilters && (
+                    <span className="ml-1 text-xs bg-primary-foreground/20 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full animate-bounce">
+                      {Object.values(filters).filter(Boolean).length}
+                    </span>
+                  )}
+                </Button>
+              </div>
               
-              {/* Filter Toggle Button - Enhanced mobile reliability */}
-              <Button
-                variant="default"
-                size="lg"
-                onClick={handleFilterToggle}
-                className="flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 transition-transform"
-              >
-                {showFilters ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
-                <span className="hidden xs:inline">{showFilters ? 'Fshih Filtrat' : 'Shfaq Filtrat'}</span>
-                <span className="xs:hidden">Zgjedh Veturën</span>
-                {hasSelectedCategories && !showFilters && (
-                  <span className="ml-1 text-xs bg-primary-foreground/20 px-2 py-1 rounded-full animate-bounce">
-                    {Object.values(filters).filter(Boolean).length}
-                  </span>
-                )}
-              </Button>
-              
-              {/* View Mode Toggle Button */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleViewModeToggle}
-                className="h-8 px-2 flex items-center gap-1 transition-colors hover:bg-accent ml-auto"
-                title={viewMode === 'grid' ? 'Switch to list view' : 'Switch to grid view'}
-              >
-                {viewMode === 'grid' ? <List className="h-3 w-3" /> : <Grid3X3 className="h-3 w-3" />}
-                <span className="hidden sm:inline text-xs">{viewMode === 'grid' ? 'List' : 'Grid'}</span>
-              </Button>
-              
-              {/* Sort Control - smaller on mobile */}
-              <div className="relative">
-                <ArrowUpDown className="h-3 w-3 absolute left-2 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none" />
-                <AdaptiveSelect
-                  value={sortBy}
-                  onValueChange={(value: SortOption) => {
-                    setSortBy(value);
-                    setHasUserSelectedSort(true); // Mark that user has explicitly chosen a sort option
-                    // Reset to page 1 when sort changes to show users the first page of newly sorted results
-                    setCurrentPage(1);
-                    // Update URL to reflect page reset
-                    const currentParams = Object.fromEntries(searchParams.entries());
-                    currentParams.page = '1';
-                    setSearchParams(currentParams);
-                    // Note: Global sorting initialization is handled by the useEffect that watches sortBy changes
-                    // This prevents duplicate calls and ensures proper state management
-                  }}
-                  placeholder="Sort"
-                  className="w-24 sm:w-32 h-7 text-xs pl-6"
-                  options={getEncarSortOptions().map((option) => ({
-                    value: option.value,
-                    label: option.label
-                  }))}
-                />
+              {/* Right group: View and Sort controls */}
+              <div className="flex items-center gap-2 ml-auto flex-shrink-0">
+                {/* View Mode Toggle Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleViewModeToggle}
+                  className="h-8 sm:h-9 px-2 sm:px-3 flex items-center gap-1 transition-colors hover:bg-accent"
+                  title={viewMode === 'grid' ? 'Switch to list view' : 'Switch to grid view'}
+                >
+                  {viewMode === 'grid' ? <List className="h-3 w-3 sm:h-4 sm:w-4" /> : <Grid3X3 className="h-3 w-3 sm:h-4 sm:w-4" />}
+                  <span className="hidden sm:inline text-xs sm:text-sm">{viewMode === 'grid' ? 'List' : 'Grid'}</span>
+                </Button>
+                
+                {/* Sort Control - smaller on mobile */}
+                <div className="relative">
+                  <ArrowUpDown className="h-3 w-3 absolute left-2 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none" />
+                  <AdaptiveSelect
+                    value={sortBy}
+                    onValueChange={(value: SortOption) => {
+                      setSortBy(value);
+                      setHasUserSelectedSort(true); // Mark that user has explicitly chosen a sort option
+                      // Reset to page 1 when sort changes to show users the first page of newly sorted results
+                      setCurrentPage(1);
+                      // Update URL to reflect page reset
+                      const currentParams = Object.fromEntries(searchParams.entries());
+                      currentParams.page = '1';
+                      setSearchParams(currentParams);
+                      // Note: Global sorting initialization is handled by the useEffect that watches sortBy changes
+                      // This prevents duplicate calls and ensures proper state management
+                    }}
+                    placeholder="Sort"
+                    className="w-20 sm:w-28 md:w-32 h-7 sm:h-8 text-xs pl-6"
+                    options={getEncarSortOptions().map((option) => ({
+                      value: option.value,
+                      label: option.label
+                    }))}
+                  />
+                </div>
               </div>
             </div>
             
