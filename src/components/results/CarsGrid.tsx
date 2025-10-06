@@ -57,7 +57,7 @@ const CarCard = memo(({ car, onCarClick, priority = false }: CarCardProps) => {
     >
       <CardContent className="p-3 h-full flex flex-col">
         {/* Image */}
-        <div className="relative w-full h-32 mb-3 bg-muted rounded-md overflow-hidden">
+        <div className="relative w-full aspect-[4/3] mb-3 bg-muted rounded-md overflow-hidden">
           {car.thumbnail ? (
             <img
               src={car.thumbnail}
@@ -122,7 +122,7 @@ CarCard.displayName = 'CarCard';
 const CarCardSkeleton = memo(() => (
   <Card className="h-full">
     <CardContent className="p-3 h-full flex flex-col">
-      <Skeleton className="w-full h-32 mb-3 rounded-md" />
+      <Skeleton className="w-full aspect-[4/3] mb-3 rounded-md" />
       <div className="flex-1 space-y-2">
         <Skeleton className="h-4 w-3/4" />
         <Skeleton className="h-6 w-1/2" />
@@ -171,7 +171,7 @@ export const CarsGrid = memo(({
   width,
   height,
   columnCount = 4,
-  rowHeight = 280,
+  rowHeight = 320, // Updated to accommodate 4:3 aspect ratio images + content
 }: CarsGridProps) => {
   // Calculate responsive column count based on width
   const responsiveColumnCount = useMemo(() => {

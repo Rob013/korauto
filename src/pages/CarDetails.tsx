@@ -1057,7 +1057,7 @@ const CarDetails = memo(() => {
             {/* Compact Main Image */}
             <Card className="glass-card border-0 shadow-2xl overflow-hidden rounded-xl">
               <CardContent className="p-0">
-                <div ref={imageContainerRef} className="car-details-hero relative h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] xl:h-[700px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer" onClick={() => setIsImageZoomOpen(true)} data-fancybox="gallery">
+                <div ref={imageContainerRef} className="car-details-hero relative w-full aspect-[4/3] sm:aspect-[16/9] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer" onClick={() => setIsImageZoomOpen(true)} data-fancybox="gallery">
                   {images.length > 0 ? <img src={images[selectedImageIndex]} alt={`${car.year} ${car.make} ${car.model}`} className={`w-full h-full transition-transform duration-300 hover:scale-105 ${isPlaceholderImage ? "object-cover" // Use object-cover for placeholder to fill container properly on mobile
                 : "object-contain bg-white" // Use object-contain for real images to show full image with white background
                 }`} onError={e => {
@@ -1136,8 +1136,8 @@ const CarDetails = memo(() => {
             </div>
 
             {/* Enhanced Image Thumbnails - Better Mobile Layout - HIDDEN ON MOBILE */}
-            {images.length > 1 && <div className="car-details-thumbnails hidden md:grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-16 gap-2">
-                {images.slice(0, 24).map((image, index) => <button key={index} onClick={() => setSelectedImageIndex(index)} aria-label={`Shiko imazhin ${index + 1} nga ${images.length}`} className={`relative h-12 sm:h-14 md:h-16 bg-muted rounded-md overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${selectedImageIndex === index ? "border-primary shadow-md ring-2 ring-primary/50" : "border-transparent hover:border-primary/50"}`}>
+            {images.length > 1 && <div className="car-details-thumbnails hidden md:grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-14 gap-2">
+                {images.slice(0, 24).map((image, index) => <button key={index} onClick={() => setSelectedImageIndex(index)} aria-label={`Shiko imazhin ${index + 1} nga ${images.length}`} className={`relative aspect-[4/3] bg-muted rounded-md overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${selectedImageIndex === index ? "border-primary shadow-md ring-2 ring-primary/50" : "border-transparent hover:border-primary/50"}`}>
                     <img src={image} alt={`View ${index + 1}`} className="w-full h-full object-cover" onError={e => {
                 e.currentTarget.src = "/placeholder.svg";
               }} />

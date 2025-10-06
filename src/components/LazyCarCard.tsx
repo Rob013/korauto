@@ -290,11 +290,11 @@ const LazyCarCard = memo(({
       }`}
       onClick={handleCardClick}
     >
-      {/* Image Section - 70% of card height */}
+      {/* Image Section - Standard 4:3 aspect ratio like encar.com */}
       <div className={`relative bg-muted overflow-hidden flex-shrink-0 rounded-lg ${
         viewMode === 'list' 
-          ? 'w-32 h-24 sm:w-40 sm:h-28 lg:w-48 lg:h-32' 
-          : 'h-52 sm:h-60 lg:h-72'
+          ? 'w-32 h-24 sm:w-40 sm:h-30 lg:w-48 lg:h-36' 
+          : 'aspect-[4/3] w-full'
       }`}>
         {/* Always show single image - swipe functionality removed from car cards */}
         {(image || (images && images.length > 0)) ? (
