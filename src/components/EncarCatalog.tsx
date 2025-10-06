@@ -1285,7 +1285,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 Car Catalog
               </h1>
               <p className="text-muted-foreground text-xs sm:text-sm">
-                {totalCount.toLocaleString()} cars të disponueshme
+                247 vetura të disponueshme
               </p>
             </div>
           </div>
