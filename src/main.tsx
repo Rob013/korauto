@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
+import './utils/iosOptimizations.css'
 import { ThemeProvider } from "@/components/ThemeProvider"
 import { NavigationProvider } from './contexts/NavigationContext.tsx'
 import cacheManager from '@/utils/cacheManager'

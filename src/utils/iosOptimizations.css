@@ -1,0 +1,115 @@
+/* iOS-Specific Optimizations */
+
+/* Prevent overscroll bounce effect for better native feel */
+body {
+  overscroll-behavior-y: none;
+}
+
+/* iOS safe area padding - apply to main layout containers */
+.ios-safe-top {
+  padding-top: max(env(safe-area-inset-top), 0px);
+}
+
+.ios-safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 0px);
+}
+
+.ios-safe-left {
+  padding-left: max(env(safe-area-inset-left), 0px);
+}
+
+.ios-safe-right {
+  padding-right: max(env(safe-area-inset-right), 0px);
+}
+
+.ios-safe-all {
+  padding-top: max(env(safe-area-inset-top), 0px);
+  padding-bottom: max(env(safe-area-inset-bottom), 0px);
+  padding-left: max(env(safe-area-inset-left), 0px);
+  padding-right: max(env(safe-area-inset-right), 0px);
+}
+
+/* Touch optimizations for iOS */
+@supports (-webkit-touch-callout: none) {
+  /* iOS-specific styles */
+  
+  /* Better tap highlights */
+  * {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Smoother scrolling */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Better font rendering */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Prevent text size adjustment on orientation change */
+  * {
+    -webkit-text-size-adjust: 100%;
+  }
+  
+  /* Better touch target size for buttons */
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Prevent zoom on input focus */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
+/* Notch/Dynamic Island support */
+@supports (padding: max(0px)) {
+  .header-ios {
+    padding-top: max(env(safe-area-inset-top), 1rem);
+  }
+  
+  .footer-ios {
+    padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+  }
+}
+
+/* iOS-specific animations - use hardware acceleration */
+@supports (-webkit-touch-callout: none) {
+  .animate-scale-in,
+  .animate-accordion-down,
+  [class*="transition"] {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    will-change: transform, opacity;
+  }
+}
+
+/* Status bar height variable for iOS */
+:root {
+  --status-bar-height: env(safe-area-inset-top);
+}
+
+/* Keyboard handling - adjust viewport when keyboard appears */
+@supports (-webkit-touch-callout: none) {
+  .keyboard-aware-container {
+    transition: transform 0.3s ease-in-out;
+  }
+  
+  body.keyboard-open .keyboard-aware-container {
+    transform: translateY(calc(-1 * var(--keyboard-height, 0px) / 2));
+  }
+}
+
+/* iOS modal/sheet optimizations */
+@supports (-webkit-touch-callout: none) {
+  [role="dialog"],
+  .sheet,
+  .modal {
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+  }
+}

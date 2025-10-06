@@ -14,6 +14,7 @@ import { PerformanceMonitor } from "./components/PerformanceMonitor";
 import { useAdminCheck } from "./hooks/useAdminCheck";
 import { CacheUpdateNotification } from "./components/CacheUpdateNotification";
 import { useIsMobile } from "./hooks/use-mobile";
+import { IOSEnhancer } from "./components/IOSEnhancer";
 
 // Lazy load all pages for better code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -250,6 +251,7 @@ const App = () => {
         </BrowserRouter>
         <InstallPrompt />
         <CacheUpdateNotification />
+        <IOSEnhancer />
         {/* Performance Monitor for admin users only, hidden on mobile */}
         {isAdmin && !isMobile && (
           <PerformanceMonitor showDetails={false} />
