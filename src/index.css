@@ -2071,3 +2071,28 @@ body {
 .hyphens-auto {
   hyphens: auto;
 }
+
+/* Smartsupp Chat Widget - Always Visible */
+#chat-application,
+#chat-button,
+div[id*="smartsupp"],
+iframe[src*="smartsupp"] {
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  z-index: 999999 !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+@media (max-width: 768px) {
+  #chat-application,
+  #chat-button,
+  div[id*="smartsupp"],
+  iframe[src*="smartsupp"] {
+    bottom: 16px !important;
+    right: 16px !important;
+  }
+}
