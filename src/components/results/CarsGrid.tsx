@@ -175,11 +175,10 @@ export const CarsGrid = memo(({
 }: CarsGridProps) => {
   // Calculate responsive column count based on width
   const responsiveColumnCount = useMemo(() => {
-    if (width < 640) return 1; // Mobile
-    if (width < 1024) return 2; // Tablet
-    if (width < 1280) return 3; // Small desktop
-    return columnCount; // Large desktop
-  }, [width, columnCount]);
+    if (width < 768) return 1; // Mobile
+    if (width < 1024) return 3; // Tablet/iPad
+    return 4; // Desktop - always 4 columns
+  }, [width]);
 
   const columnWidth = useMemo(() => {
     return Math.floor(width / responsiveColumnCount);
