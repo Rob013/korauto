@@ -107,15 +107,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     validationEnabled: false
   });
   
-  const [sortBy, setSortBy] = useState<SortOption>("recently_added");
+  const [sortBy, setSortBy] = useState<SortOption>("price_low");
   const [hasUserSelectedSort, setHasUserSelectedSort] = useState(false);
-  
-  // Force recently_added as default on mount
-  useEffect(() => {
-    if (!hasUserSelectedSort && sortBy !== "recently_added") {
-      setSortBy("recently_added");
-    }
-  }, []);
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);

@@ -107,7 +107,7 @@ export function mapFrontendSortToBackend(sort: SortOption | FrontendSortOption):
     case 'popular':
       return 'rank_desc';
     default:
-      return 'created_desc'; // Default to recently added
+      return 'price_asc';
   }
 }
 
@@ -141,14 +141,14 @@ export function getSortParams(sort: SortOption | FrontendSortOption): { field: s
     case 'created_desc':
       return { field: 'created_at', direction: 'DESC' };
     default:
-      return { field: 'created_at', direction: 'DESC' }; // Default to recently added
+      return { field: 'price_cents', direction: 'ASC' };
   }
 }
 
 export async function fetchCarsWithKeyset(params: CarsApiParams): Promise<CarsApiResponse> {
   const {
     filters = {},
-    sort = 'recently_added', // Default to recently added instead of price_asc
+    sort = 'price_asc',
     limit = 24,
     cursor
   } = params;
@@ -249,7 +249,7 @@ export async function fetchCarsApi(searchParams: URLSearchParams): Promise<CarsA
   if (searchParams.has('fuel')) filters.fuel = searchParams.get('fuel')!;
   if (searchParams.has('search')) filters.search = searchParams.get('search')!;
 
-  const sort = (searchParams.get('sort') as SortOption | FrontendSortOption) || 'recently_added';
+  const sort = (searchParams.get('sort') as SortOption | FrontendSortOption) || 'price_asc';
   const limit = parseInt(searchParams.get('limit') || '24');
   const cursor = searchParams.get('cursor') || undefined;
 
