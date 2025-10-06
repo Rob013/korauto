@@ -1211,93 +1211,81 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         <div className="container-responsive py-3 sm:py-6 mobile-text-optimize">
           {/* Header Section - Mobile optimized */}
           <div className="flex flex-col gap-3 mb-4">
-            {/* Mobile header - stacked layout */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => window.history.back()}
-                  className="flex items-center gap-1 hover:bg-primary hover:text-primary-foreground transition-colors h-8 px-2"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  <span className="hidden xs:inline text-xs">Back</span>
-                </Button>
-                
-                {/* Filter Toggle Button - Enhanced mobile reliability */}
-<Button
-  variant="default"
-  size="lg"
-  onClick={handleFilterToggle}
-  className="flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 transition-transform"
->
-                  {showFilters ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
-                  <span className="hidden xs:inline">{showFilters ? 'Fshih Filtrat' : 'Shfaq Filtrat'}</span>
-                  <span className="xs:hidden">Zgjedh Veturën</span>
-                  {hasSelectedCategories && !showFilters && (
-                    <span className="ml-1 text-xs bg-primary-foreground/20 px-2 py-1 rounded-full animate-bounce">
-                      {Object.values(filters).filter(Boolean).length}
-                    </span>
-                  )}
-                </Button>
-              </div>
+            {/* Top row: Back button and filter button */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => window.history.back()}
+                className="flex items-center gap-1 hover:bg-primary hover:text-primary-foreground transition-colors h-8 px-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span className="hidden xs:inline text-xs">Back</span>
+              </Button>
               
-                {/* View mode and sort - mobile optimized */}
-              <div className="flex gap-1 items-center">
-                {/* View Mode Toggle Button */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleViewModeToggle}
-                  className="h-8 px-2 flex items-center gap-1 transition-colors hover:bg-accent"
-                  title={viewMode === 'grid' ? 'Switch to list view' : 'Switch to grid view'}
-                >
-                  {viewMode === 'grid' ? <List className="h-3 w-3" /> : <Grid3X3 className="h-3 w-3" />}
-                  <span className="hidden sm:inline text-xs">{viewMode === 'grid' ? 'List' : 'Grid'}</span>
-                </Button>
-                
-                {/* Sort Control - smaller on mobile */}
-                <div className="relative">
-                  <ArrowUpDown className="h-3 w-3 absolute left-2 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none" />
-                  <AdaptiveSelect
-                    value={sortBy}
-                    onValueChange={(value: SortOption) => {
-                      setSortBy(value);
-                      setHasUserSelectedSort(true); // Mark that user has explicitly chosen a sort option
-                      // Reset to page 1 when sort changes to show users the first page of newly sorted results
-                      setCurrentPage(1);
-                      // Update URL to reflect page reset
-                      const currentParams = Object.fromEntries(searchParams.entries());
-                      currentParams.page = '1';
-                      setSearchParams(currentParams);
-                      // Note: Global sorting initialization is handled by the useEffect that watches sortBy changes
-                      // This prevents duplicate calls and ensures proper state management
-                    }}
-                    placeholder="Sort"
-                    className="w-24 sm:w-32 h-7 text-xs pl-6"
-                    options={getEncarSortOptions().map((option) => ({
-                      value: option.value,
-                      label: option.label
-                    }))}
-                  />
-                </div>
+              {/* Filter Toggle Button - Enhanced mobile reliability */}
+              <Button
+                variant="default"
+                size="lg"
+                onClick={handleFilterToggle}
+                className="flex items-center gap-2 h-12 px-4 sm:px-6 lg:px-8 font-semibold text-sm sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 transition-transform"
+              >
+                {showFilters ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
+                <span className="hidden xs:inline">{showFilters ? 'Fshih Filtrat' : 'Shfaq Filtrat'}</span>
+                <span className="xs:hidden">Zgjedh Veturën</span>
+                {hasSelectedCategories && !showFilters && (
+                  <span className="ml-1 text-xs bg-primary-foreground/20 px-2 py-1 rounded-full animate-bounce">
+                    {Object.values(filters).filter(Boolean).length}
+                  </span>
+                )}
+              </Button>
+              
+              {/* View Mode Toggle Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleViewModeToggle}
+                className="h-8 px-2 flex items-center gap-1 transition-colors hover:bg-accent ml-auto"
+                title={viewMode === 'grid' ? 'Switch to list view' : 'Switch to grid view'}
+              >
+                {viewMode === 'grid' ? <List className="h-3 w-3" /> : <Grid3X3 className="h-3 w-3" />}
+                <span className="hidden sm:inline text-xs">{viewMode === 'grid' ? 'List' : 'Grid'}</span>
+              </Button>
+              
+              {/* Sort Control - smaller on mobile */}
+              <div className="relative">
+                <ArrowUpDown className="h-3 w-3 absolute left-2 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none" />
+                <AdaptiveSelect
+                  value={sortBy}
+                  onValueChange={(value: SortOption) => {
+                    setSortBy(value);
+                    setHasUserSelectedSort(true); // Mark that user has explicitly chosen a sort option
+                    // Reset to page 1 when sort changes to show users the first page of newly sorted results
+                    setCurrentPage(1);
+                    // Update URL to reflect page reset
+                    const currentParams = Object.fromEntries(searchParams.entries());
+                    currentParams.page = '1';
+                    setSearchParams(currentParams);
+                    // Note: Global sorting initialization is handled by the useEffect that watches sortBy changes
+                    // This prevents duplicate calls and ensures proper state management
+                  }}
+                  placeholder="Sort"
+                  className="w-24 sm:w-32 h-7 text-xs pl-6"
+                  options={getEncarSortOptions().map((option) => ({
+                    value: option.value,
+                    label: option.label
+                  }))}
+                />
               </div>
             </div>
             
-            {/* Title and stats - separate row for better mobile layout */}
+            {/* Title and simple count */}
             <div className="space-y-1">
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 Car Catalog
               </h1>
               <p className="text-muted-foreground text-xs sm:text-sm">
-                {totalCount.toLocaleString()} cars across {totalPages.toLocaleString()} pages • Page {currentPage} of {totalPages.toLocaleString()} • Showing {carsToDisplay.length} cars per page
-
-                {yearFilterProgress === 'instant' && (
-                  <span className="ml-2 text-primary text-xs">⚡ Instant results</span>
-                )}
-                {yearFilterProgress === 'loading' && (
-                  <span className="ml-2 text-primary text-xs">🔄 Loading complete results...</span>
-                )}
+                {totalCount.toLocaleString()} cars të disponueshme
               </p>
             </div>
           </div>
