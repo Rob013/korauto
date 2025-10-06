@@ -12,6 +12,7 @@ import { StatusRefreshProvider } from "./components/StatusRefreshProvider";
 import { useFrameRate } from "./hooks/useFrameRate";
 import { PerformanceMonitor } from "./components/PerformanceMonitor";
 import { useAdminCheck } from "./hooks/useAdminCheck";
+import { CacheUpdateNotification } from "./components/CacheUpdateNotification";
 
 // Lazy load all pages for better code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -83,16 +84,16 @@ const AdminSyncSkeleton = () => (
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Cache for 10 minutes by default (increased from 5)
-      staleTime: 10 * 60 * 1000,
-      // Keep data for 30 minutes (increased from 10)
-      gcTime: 30 * 60 * 1000,
-      // Refetch on window focus for critical data only
-      refetchOnWindowFocus: false,
+      // Cache for 5 minutes (reduced for fresher data)
+      staleTime: 5 * 60 * 1000,
+      // Keep data for 15 minutes (reduced for fresher data)
+      gcTime: 15 * 60 * 1000,
+      // Refetch on window focus to get fresh data
+      refetchOnWindowFocus: true,
       // Retry failed requests up to 2 times
       retry: 2,
-      // Only refetch if data is stale (improved from 'always')
-      refetchOnMount: false,
+      // Refetch on mount if data is stale
+      refetchOnMount: 'always',
       // Enable background refetching for better UX
       refetchInterval: false,
       // Network mode optimizations
@@ -244,6 +245,7 @@ const App = () => {
           </Routes>
         </BrowserRouter>
         <InstallPrompt />
+        <CacheUpdateNotification />
         {/* Performance Monitor for admin users only */}
         {isAdmin && (
           <PerformanceMonitor showDetails={false} />

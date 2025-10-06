@@ -1,5 +1,6 @@
 // Service Worker for caching API responses and static assets with 120fps performance optimization
-const VERSION = new Date().getTime(); // Use timestamp for versioning
+// CRITICAL: Update this version number to force cache refresh for all users
+const VERSION = '2025.06.01.001'; // YYYY.MM.DD.BUILD format
 const CACHE_NAME = `korauto-v${VERSION}`;
 const STATIC_CACHE_NAME = `korauto-static-v${VERSION}`;
 const ASSETS_CACHE_NAME = `korauto-assets-v${VERSION}`;
@@ -31,14 +32,14 @@ const API_CACHE_PATTERNS = [
   /\/api\/cars\?/
 ];
 
-// Cache duration in milliseconds (optimized for 120fps performance)
+// Cache duration in milliseconds (shorter for fresher content)
 const CACHE_DURATION = {
-  API: 5 * 60 * 1000, // 5 minutes for API responses
-  STATIC: 24 * 60 * 60 * 1000, // 24 hours for static assets
-  IMAGES: 60 * 60 * 1000, // 1 hour for images
-  ASSETS: 7 * 24 * 60 * 60 * 1000, // 7 days for versioned assets (JS/CSS)
-  FONTS: 30 * 24 * 60 * 60 * 1000, // 30 days for fonts
-  HIGH_PERFORMANCE: 60 * 60 * 1000 // 1 hour for performance-critical assets
+  API: 2 * 60 * 1000, // 2 minutes for API responses (reduced for fresher data)
+  STATIC: 12 * 60 * 60 * 1000, // 12 hours for static assets
+  IMAGES: 30 * 60 * 1000, // 30 minutes for images
+  ASSETS: 24 * 60 * 60 * 1000, // 24 hours for versioned assets (JS/CSS)
+  FONTS: 7 * 24 * 60 * 60 * 1000, // 7 days for fonts
+  HIGH_PERFORMANCE: 30 * 60 * 1000 // 30 minutes for performance-critical assets
 };
 
 // Install event - cache static assets and prioritize performance-critical resources
@@ -71,23 +72,39 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up old caches and notify clients
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
       .then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
+            // Delete ALL old caches to force fresh content
             if (cacheName !== CACHE_NAME && 
                 cacheName !== STATIC_CACHE_NAME && 
                 cacheName !== ASSETS_CACHE_NAME && 
                 cacheName !== HIGH_PERFORMANCE_CACHE) {
+              console.log('Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
           })
         );
       })
-      .then(() => self.clients.claim())
+      .then(() => {
+        // Claim all clients immediately to ensure they use new cache
+        return self.clients.claim();
+      })
+      .then(() => {
+        // Notify all clients about the update
+        return self.clients.matchAll().then(clients => {
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'CACHE_UPDATED',
+              version: VERSION
+            });
+          });
+        });
+      })
   );
 });
 
@@ -192,23 +209,12 @@ async function handleHighPerformanceAsset(request) {
   }
 }
 
-// Handle API requests with cache-first strategy for GET requests
+// Handle API requests with network-first strategy for fresh data
 async function handleAPIRequest(request) {
   const cache = await caches.open(CACHE_NAME);
-  const cachedResponse = await cache.match(request);
-
-  // Check if cached response is still fresh
-  if (cachedResponse) {
-    const cacheDate = new Date(cachedResponse.headers.get('sw-cache-date'));
-    const now = new Date();
-    
-    if (now - cacheDate < CACHE_DURATION.API) {
-      return cachedResponse;
-    }
-  }
-
+  
   try {
-    // Fetch fresh data
+    // Always try network first for fresh data
     const networkResponse = await fetch(request);
     
     if (networkResponse.ok) {
@@ -216,6 +222,7 @@ async function handleAPIRequest(request) {
       const responseToCache = networkResponse.clone();
       const headers = new Headers(responseToCache.headers);
       headers.set('sw-cache-date', new Date().toISOString());
+      headers.set('sw-version', VERSION);
       
       const cachedResponse = new Response(responseToCache.body, {
         status: responseToCache.status,
@@ -228,10 +235,19 @@ async function handleAPIRequest(request) {
     
     return networkResponse;
   } catch (error) {
-    // Return stale cache if network fails
+    // Only use cache as fallback when network fails
+    const cachedResponse = await cache.match(request);
+    
     if (cachedResponse) {
-      return cachedResponse;
+      // Check if cache is too old
+      const cacheDate = new Date(cachedResponse.headers.get('sw-cache-date'));
+      const now = new Date();
+      
+      if (now - cacheDate < CACHE_DURATION.API) {
+        return cachedResponse;
+      }
     }
+    
     throw error;
   }
 }
