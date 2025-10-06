@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -185,13 +185,13 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
     onFiltersChange({ brand: brandId, model: undefined });
   };
 
-  const toggleSection = (section: string) => {
-    setExpandedSections(prev => 
-      prev.includes(section) 
+  const toggleSection = useCallback((section: string) => {
+    setExpandedSections(prev =>
+      prev.includes(section)
         ? prev.filter(s => s !== section)
         : [...prev, section]
     );
-  };
+  }, []);
 
   const removeFilter = (key: string) => {
     switch (key) {
@@ -308,15 +308,25 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
         </Button>
 
         {expandedSections.includes('basic') && (
-          <div className="space-y-4 p-3 bg-muted/30 rounded-lg animate-accordion-down">
+          <div 
+            className="space-y-4 p-3 bg-muted/30 rounded-lg"
+            style={{
+              animation: 'fadeIn 0.2s ease-out',
+              willChange: 'contents'
+            }}
+          >
             {/* Brand */}
-            <div className="space-y-2 transition-all duration-200">
+            <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Car className="h-4 w-4" />
                 Marka
               </Label>
-              <Select value={filters.brand || ''} onValueChange={handleBrandChange}>
-                <SelectTrigger>
+              <Select 
+                key={`brand-${filters.brand || 'empty'}`}
+                value={filters.brand || ''} 
+                onValueChange={handleBrandChange}
+              >
+                <SelectTrigger className="filter-select bg-background">
                   <SelectValue placeholder="Zgjidhni markën" />
                 </SelectTrigger>
                 <SelectContent>
@@ -336,11 +346,12 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 Modeli
               </Label>
               <Select 
+                key={`model-${filters.brand || 'no-brand'}-${filters.model || 'empty'}`}
                 value={filters.model || ''} 
                 onValueChange={(value) => onFiltersChange({ model: value })}
                 disabled={!filters.brand || availableModels.length === 0}
               >
-                <SelectTrigger>
+                <SelectTrigger className="filter-select bg-background">
                   <SelectValue placeholder={!filters.brand ? "Zgjidhni markën së pari" : "Zgjidhni modelin"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -418,24 +429,30 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
         </Button>
 
         {expandedSections.includes('advanced') && (
-          <div className="space-y-4 p-3 bg-card/50 backdrop-blur-sm rounded-lg border border-border/30 animate-accordion-down transition-all duration-200">
+          <div 
+            className="space-y-4 p-3 bg-card/50 backdrop-blur-sm rounded-lg border border-border/30"
+            style={{
+              animation: 'fadeIn 0.2s ease-out',
+              willChange: 'contents'
+            }}
+          >
             {/* Fuel Type */}
-            <div className="space-y-2 transition-all duration-200">
+            <div className="space-y-2">
               <Label className="flex items-center gap-2 font-medium">
                 <Fuel className="h-4 w-4" />
                 Lloji i Karburantit
               </Label>
-              <Select value={filters.fuel || ''} onValueChange={(value) => onFiltersChange({ fuel: value })}>
-                <SelectTrigger className="bg-background/60 backdrop-blur-sm border-border/50 transition-all duration-200 hover:border-primary/50">
+              <Select 
+                key={`fuel-${filters.fuel || 'empty'}`}
+                value={filters.fuel || ''} 
+                onValueChange={(value) => onFiltersChange({ fuel: value })}
+              >
+                <SelectTrigger className="filter-select bg-background">
                   <SelectValue placeholder="Zgjidhni karburantin" />
                 </SelectTrigger>
-                <SelectContent className="backdrop-blur-lg bg-background/95">
+                <SelectContent>
                   {data.fuelTypes.map((fuel) => (
-                    <SelectItem 
-                      key={fuel.id} 
-                      value={fuel.id}
-                      className="transition-colors duration-150"
-                    >
+                    <SelectItem key={fuel.id} value={fuel.id}>
                       {fuel.name} {fuel.count && `(${fuel.count})`}
                     </SelectItem>
                   ))}
@@ -449,8 +466,12 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <Settings className="h-4 w-4" />
                 Transmisioni
               </Label>
-              <Select value={filters.transmission || ''} onValueChange={(value) => onFiltersChange({ transmission: value })}>
-                <SelectTrigger>
+              <Select 
+                key={`transmission-${filters.transmission || 'empty'}`}
+                value={filters.transmission || ''} 
+                onValueChange={(value) => onFiltersChange({ transmission: value })}
+              >
+                <SelectTrigger className="filter-select bg-background">
                   <SelectValue placeholder="Zgjidhni transmisionin" />
                 </SelectTrigger>
                 <SelectContent>
@@ -491,8 +512,12 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <Car className="h-4 w-4" />
                 Lloji i Trupit
               </Label>
-              <Select value={filters.bodyType || ''} onValueChange={(value) => onFiltersChange({ bodyType: value })}>
-                <SelectTrigger>
+              <Select 
+                key={`bodyType-${filters.bodyType || 'empty'}`}
+                value={filters.bodyType || ''} 
+                onValueChange={(value) => onFiltersChange({ bodyType: value })}
+              >
+                <SelectTrigger className="filter-select bg-background">
                   <SelectValue placeholder="Zgjidhni llojin e trupit" />
                 </SelectTrigger>
                 <SelectContent>
@@ -511,8 +536,12 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <Palette className="h-4 w-4" />
                 Ngjyra
               </Label>
-              <Select value={filters.color || ''} onValueChange={(value) => onFiltersChange({ color: value })}>
-                <SelectTrigger>
+              <Select 
+                key={`color-${filters.color || 'empty'}`}
+                value={filters.color || ''} 
+                onValueChange={(value) => onFiltersChange({ color: value })}
+              >
+                <SelectTrigger className="filter-select bg-background">
                   <SelectValue placeholder="Zgjidhni ngjyrën" />
                 </SelectTrigger>
                 <SelectContent>
@@ -531,8 +560,12 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <MapPin className="h-4 w-4" />
                 Vendndodhja
               </Label>
-              <Select value={filters.location || ''} onValueChange={(value) => onFiltersChange({ location: value })}>
-                <SelectTrigger>
+              <Select 
+                key={`location-${filters.location || 'empty'}`}
+                value={filters.location || ''} 
+                onValueChange={(value) => onFiltersChange({ location: value })}
+              >
+                <SelectTrigger className="filter-select bg-background">
                   <SelectValue placeholder="Zgjidhni vendndodhjen" />
                 </SelectTrigger>
                 <SelectContent>

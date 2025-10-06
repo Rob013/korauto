@@ -23,6 +23,16 @@
   }
 }
 
+/* Spinning animation for loading indicators */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Smooth page transitions */
 @keyframes fadeIn {
   from {
@@ -37,6 +47,22 @@
 
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Scale in animation for badges */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out forwards;
 }
 
 /* Smooth skeleton pulse */
@@ -62,6 +88,11 @@ img {
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;
+}
+
+/* Prevent layout shifts */
+.filter-select {
+  min-height: 40px;
 }
 
 /* Reduce motion for accessibility */
