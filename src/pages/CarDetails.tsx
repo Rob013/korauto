@@ -1008,12 +1008,12 @@ const CarDetails = memo(() => {
         </div>
       </div>;
   }
-  return <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+  return <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-[1920px]">
-        {/* Header with Actions - Improved Mobile Layout */}
-        <div className="flex flex-col gap-2 mb-4 md:mb-6">
-          {/* Compact Navigation and Action Buttons */}
-          <div className="flex flex-row gap-1.5 sm:gap-2">
+        {/* Header with Actions - Modern Layout with animations */}
+        <div className="flex flex-col gap-3 mb-6 animate-fade-in">
+          {/* Navigation and Action Buttons with hover effects */}
+          <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" onClick={() => {
             console.log("🔙 Attempting to go back...");
             console.log("Page state from context:", pageState);
@@ -1029,36 +1029,37 @@ const CarDetails = memo(() => {
               console.log("🔙 Using goBack fallback");
               goBack();
             }
-          }} className="flex-1 sm:flex-none shadow-sm hover:shadow-md transition-all h-8 px-3 text-xs sm:text-sm">
-              <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-              <span className="hidden sm:inline">Kthehu te Makinat</span>
-              <span className="sm:hidden">Kthehu</span>
+          }} className="flex-1 sm:flex-none hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group">
+              <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform duration-300" />
+              <span className="hidden sm:inline font-medium">Kthehu te Makinat</span>
+              <span className="sm:hidden font-medium">Kthehu</span>
             </Button>
-            <Button variant="outline" onClick={() => navigate("/")} className="flex-1 sm:flex-none shadow-sm hover:shadow-md transition-all h-8 px-3 text-xs sm:text-sm">
-              <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-              <span className="hidden sm:inline">Kryefaqja</span>
-              <span className="sm:hidden">Home</span>
+            <Button variant="outline" onClick={() => navigate("/")} className="flex-1 sm:flex-none hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group">
+              <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform duration-300" />
+              <span className="hidden sm:inline font-medium">Kryefaqja</span>
+              <span className="sm:hidden font-medium">Home</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={handleLike} className="shadow-sm hover:shadow-md transition-all h-8 px-3 text-xs sm:text-sm">
-              <Heart className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 ${isLiked ? "fill-red-500 text-red-500" : ""}`} />
-              <span className="hidden sm:inline">Pëlqej</span>
+            <div className="flex-1"></div>
+            <Button variant="outline" size="sm" onClick={handleLike} className="hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group">
+              <Heart className={`h-4 w-4 mr-2 transition-all duration-300 ${isLiked ? "fill-red-500 text-red-500 scale-110" : "group-hover:scale-110"}`} />
+              <span className="hidden sm:inline font-medium">Pëlqej</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={handleShare} className="shadow-sm hover:shadow-md transition-all h-8 px-3 text-xs sm:text-sm">
-              <Share2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-              <span className="hidden sm:inline">Ndaj</span>
+            <Button variant="outline" size="sm" onClick={handleShare} className="hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group">
+              <Share2 className="h-4 w-4 mr-2 group-hover:rotate-12 transition-transform duration-300" />
+              <span className="hidden sm:inline font-medium">Ndaj</span>
             </Button>
           </div>
         </div>
 
-        {/* Compact Main Content - Enhanced Mobile-First Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] xl:grid-cols-[1fr_380px] gap-4 lg:gap-8">
+        {/* Main Content - Modern Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-6 lg:gap-8">
           {/* Left Column - Images and Gallery */}
-          <div className="space-y-4">
-            {/* Compact Main Image */}
-            <Card className="glass-card border-0 shadow-2xl overflow-hidden rounded-xl">
+          <div className="space-y-6 animate-fade-in" style={{animationDelay: '100ms'}}>
+            {/* Main Image with modern styling */}
+            <Card className="border-0 shadow-2xl overflow-hidden rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
               <CardContent className="p-0">
-                <div ref={imageContainerRef} className="car-details-hero relative w-full aspect-[4/3] sm:aspect-[16/9] bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer" onClick={() => setIsImageZoomOpen(true)} data-fancybox="gallery">
-                  {images.length > 0 ? <img src={images[selectedImageIndex]} alt={`${car.year} ${car.make} ${car.model}`} className="w-full h-full object-contain transition-transform duration-300 hover:scale-105" onError={e => {
+                <div ref={imageContainerRef} className="car-details-hero relative w-full aspect-[4/3] sm:aspect-[16/9] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer" onClick={() => setIsImageZoomOpen(true)} data-fancybox="gallery">
+                  {images.length > 0 ? <img src={images[selectedImageIndex]} alt={`${car.year} ${car.make} ${car.model}`} className="w-full h-full object-contain transition-all duration-500 group-hover:scale-105" onError={e => {
                   e.currentTarget.src = "/placeholder.svg";
                   setIsPlaceholderImage(true);
                 }} onLoad={e => {
@@ -1070,20 +1071,20 @@ const CarDetails = memo(() => {
                       <Car className="h-16 w-16 text-muted-foreground" />
                     </div>}
                   
-                  {/* Navigation arrows for swipe - only show if multiple images */}
+                  {/* Navigation arrows with smooth animations */}
                   {images.length > 1 && <>
-                      <Button variant="ghost" size="sm" className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 hover:bg-black/70 text-white rounded-full w-10 h-10 p-0 hidden sm:flex z-10" onClick={e => {
+                      <Button variant="ghost" size="sm" className="absolute left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white rounded-full w-12 h-12 p-0 hidden sm:flex z-10 hover:scale-110 hover:-translate-x-1" onClick={e => {
                     e.stopPropagation();
                     goToPrevious();
                   }}>
-                        <ChevronLeft className="h-5 w-5" />
+                        <ChevronLeft className="h-6 w-6" />
                       </Button>
                       
-                      <Button variant="ghost" size="sm" className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 hover:bg-black/70 text-white rounded-full w-10 h-10 p-0 hidden sm:flex z-10" onClick={e => {
+                      <Button variant="ghost" size="sm" className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white rounded-full w-12 h-12 p-0 hidden sm:flex z-10 hover:scale-110 hover:translate-x-1" onClick={e => {
                     e.stopPropagation();
                     goToNext();
                   }}>
-                        <ChevronRight className="h-5 w-5" />
+                        <ChevronRight className="h-6 w-6" />
                       </Button>
                     </>}
                   
@@ -1107,141 +1108,161 @@ const CarDetails = memo(() => {
                       Swipe to see more photos
                     </div>}
                   
-                  {car.lot && <Badge className="absolute top-2 right-2 bg-primary/90 backdrop-blur-sm text-primary-foreground px-2 py-1 text-xs font-medium shadow-lg">
+                  {car.lot && <Badge className="absolute top-4 right-4 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-full hover-scale">
                       Lot #{car.lot}
                     </Badge>}
-                  {/* Zoom icon */}
-                  <div className="absolute bottom-2 right-2 bg-black/50 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Expand className="h-3 w-3 text-white" />
+                  {/* Zoom icon with animation */}
+                  <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md rounded-full p-3 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110">
+                    <Expand className="h-5 w-5 text-white" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Mobile Car Title and Details - MOBILE ONLY */}
-            <div className="md:hidden">
-              <h1 className="car-details-title">
+            {/* Mobile Car Title - Modern Style */}
+            <div className="md:hidden animate-fade-in" style={{animationDelay: '200ms'}}>
+              <h1 className="text-2xl font-bold text-foreground mb-3 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                 {car.year} {car.make} {car.model} {car.title && car.title !== `${car.year} ${car.make} ${car.model}` ? car.title : "Grand Chic"}
               </h1>
-              <div className="car-details-row">
-                <span>2021/ model 2021</span>
-                <span>•</span>
-                <span>{formatMileage(car.mileage)}</span>
-                <span>•</span>
-                <span>{car.fuel || 'Diesel'}</span>
-                <a href="#specifications" className="detail-link">In detail</a>
+              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                <span className="font-medium">2021/ model 2021</span>
+                <span className="text-primary">•</span>
+                <span className="font-medium">{formatMileage(car.mileage)}</span>
+                <span className="text-primary">•</span>
+                <span className="font-medium">{car.fuel || 'Diesel'}</span>
+                <a href="#specifications" className="ml-auto text-primary hover:underline font-medium hover-scale inline-block">Detajet →</a>
               </div>
             </div>
 
-            {/* Enhanced Image Thumbnails - Better Mobile Layout - HIDDEN ON MOBILE */}
-            {images.length > 1 && <div className="car-details-thumbnails hidden md:grid grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 2xl:grid-cols-16 gap-2">
-                {images.slice(0, 24).map((image, index) => <button key={index} onClick={() => setSelectedImageIndex(index)} aria-label={`Shiko imazhin ${index + 1} nga ${images.length}`} className={`relative aspect-[4/3] bg-muted rounded-md overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${selectedImageIndex === index ? "border-primary shadow-md ring-2 ring-primary/50" : "border-transparent hover:border-primary/50"}`}>
-                    <img src={image} alt={`View ${index + 1}`} className="w-full h-full object-cover" onError={e => {
+            {/* Image Thumbnails - Modern Grid */}
+            {images.length > 1 && <div className="car-details-thumbnails hidden md:grid grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 2xl:grid-cols-16 gap-3 animate-fade-in" style={{animationDelay: '300ms'}}>
+                {images.slice(0, 24).map((image, index) => <button key={index} onClick={() => setSelectedImageIndex(index)} aria-label={`Shiko imazhin ${index + 1} nga ${images.length}`} className={`relative aspect-[4/3] bg-muted rounded-xl overflow-hidden border-2 transition-all duration-300 hover-scale ${selectedImageIndex === index ? "border-primary shadow-xl ring-2 ring-primary/50 scale-105" : "border-border hover:border-primary/70 hover:shadow-lg"}`}>
+                    <img src={image} alt={`View ${index + 1}`} className="w-full h-full object-cover transition-transform duration-300" onError={e => {
                 e.currentTarget.src = "/placeholder.svg";
               }} />
+                    {selectedImageIndex === index && <div className="absolute inset-0 bg-primary/20 backdrop-blur-[1px]"></div>}
                   </button>)}
               </div>}
 
-            {/* Enhanced Vehicle Specifications - Mobile Optimized */}
-            <Card id="specifications" className="glass-card border-0 shadow-xl rounded-xl mobile-specs-card">
-              <CardContent className="p-3 sm:p-4">
-                <div className="flex flex-col gap-2 sm:gap-3 mb-3 sm:mb-4">
-                  <h3 className="text-base sm:text-lg font-bold flex items-center text-foreground">
-                    <Settings className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-primary" />
+            {/* Vehicle Specifications - Modern Card */}
+            <Card id="specifications" className="border-0 shadow-2xl rounded-2xl mobile-specs-card bg-gradient-to-br from-card to-card/80 backdrop-blur-sm overflow-hidden animate-fade-in" style={{animationDelay: '400ms'}}>
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-6">
+                  <h3 className="text-lg sm:text-xl font-bold flex items-center text-foreground">
+                    <div className="p-2 bg-primary/10 rounded-lg mr-3">
+                      <Settings className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                    </div>
                     Specifikimet Teknike
                   </h3>
 
-                  {/* Enhanced Price and action buttons - Mobile First */}
-                  <div className="flex flex-col gap-2 sm:gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="text-center sm:text-left">
-                      <div className="text-xl sm:text-2xl font-bold text-primary">
-                        €{car.price.toLocaleString()}
+                  {/* Price and Actions - Modern Layout */}
+                  <div className="flex flex-col gap-4 sm:gap-4 p-4 sm:p-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="text-center sm:text-left">
+                        <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                          €{car.price.toLocaleString()}
+                        </div>
+                        <div className="text-sm text-muted-foreground font-medium mt-1">
+                          +350€ deri në Prishtinë
+                        </div>
                       </div>
-                      <div className="text-xs sm:text-sm text-muted-foreground">
-                        +350€ deri në Prishtinë
+                      <div className="flex gap-2 flex-col sm:flex-row">
+                        <InspectionRequestForm trigger={<Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto h-10 text-sm hover-scale shadow-md">
+                              <FileText className="h-4 w-4 mr-2" />
+                              Kërko Inspektim
+                            </Button>} carId={car.id} carMake={car.make} carModel={car.model} carYear={car.year} />
+                        <Button onClick={handleContactWhatsApp} size="sm" variant="outline" className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white w-full sm:w-auto h-10 text-sm hover-scale shadow-md">
+                          <MessageCircle className="h-4 w-4 mr-2" />
+                          WhatsApp
+                        </Button>
                       </div>
-                    </div>
-                    <div className="flex gap-2 flex-col sm:flex-row">
-                      <InspectionRequestForm trigger={<Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto h-9 text-sm">
-                            <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                            Kërko Inspektim
-                          </Button>} carId={car.id} carMake={car.make} carModel={car.model} carYear={car.year} />
-                      <Button onClick={handleContactWhatsApp} size="sm" variant="outline" className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white w-full sm:w-auto h-9 text-sm">
-                        <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                        WhatsApp
-                      </Button>
                     </div>
                   </div>
                 </div>
 
-                {/* Enhanced Specifications Grid - Compact Mobile Layout */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 text-xs sm:text-sm">
+                {/* Specifications Grid - Modern Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 text-sm">
                   {/* Basic Info */}
-                  <div className="flex items-center justify-between p-2 sm:p-3 bg-white/5 dark:bg-black/10 backdrop-blur-sm border border-white/10 dark:border-white/5 rounded-lg hover:bg-white/10 dark:hover:bg-black/15 transition-all duration-200 mobile-spec-item">
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                      <Car className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
-                      <span className="font-medium text-foreground text-xs sm:text-sm">Marka</span>
+                  <div className="group flex items-center justify-between p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item hover-scale">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
+                        <Car className="h-5 w-5 text-primary flex-shrink-0" />
+                      </div>
+                      <span className="font-semibold text-foreground">Marka</span>
                     </div>
-                    <span className="text-muted-foreground font-medium text-right text-xs sm:text-sm">
+                    <span className="text-muted-foreground font-medium text-right">
                       {car.make} {car.model}
                     </span>
                    </div>
                    
-                   {car.details?.badge && <div className="flex items-center justify-between p-2 sm:p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors mobile-spec-item">
-                     <div className="flex items-center gap-1.5 sm:gap-2">
-                       <span className="font-medium text-foreground text-xs sm:text-sm">Versioni</span>
+                   {car.details?.badge && <div className="group flex items-center justify-between p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item hover-scale">
+                     <div className="flex items-center gap-3">
+                       <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
+                         <Star className="h-5 w-5 text-primary flex-shrink-0" />
+                       </div>
+                       <span className="font-semibold text-foreground">Versioni</span>
                      </div>
-                     <span className="text-muted-foreground font-medium text-right text-xs sm:text-sm">
+                     <span className="text-muted-foreground font-medium text-right">
                        {car.details.badge}
                      </span>
                    </div>}
                    
-                    {car.transmission && <div className="flex items-center justify-between p-2 sm:p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors mobile-spec-item">
-                      <div className="flex items-center gap-1.5 sm:gap-2">
-                        <Settings className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
-                        <span className="font-medium text-foreground text-xs sm:text-sm">Transmisioni</span>
+                    {car.transmission && <div className="group flex items-center justify-between p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item hover-scale">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
+                          <Settings className="h-5 w-5 text-primary flex-shrink-0" />
+                        </div>
+                        <span className="font-semibold text-foreground">Transmisioni</span>
                       </div>
-                      <span className="text-muted-foreground font-medium capitalize text-xs sm:text-sm">
+                      <span className="text-muted-foreground font-medium capitalize">
                         {translateTransmission(car.transmission)}
                       </span>
                     </div>}
 
-                  {car.details?.engine_volume && <div className="flex items-center justify-between p-2 sm:p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors mobile-spec-item">
-                      <div className="flex items-center gap-1.5 sm:gap-2">
-                        <Cog className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
-                        <span className="font-medium text-foreground text-xs sm:text-sm">Vëllimi i Motorit</span>
+                  {car.details?.engine_volume && <div className="group flex items-center justify-between p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item hover-scale">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
+                          <Cog className="h-5 w-5 text-primary flex-shrink-0" />
+                        </div>
+                        <span className="font-semibold text-foreground">Vëllimi i Motorit</span>
                       </div>
-                      <span className="text-muted-foreground font-medium text-xs sm:text-sm">
+                      <span className="text-muted-foreground font-medium">
                         {car.details.engine_volume}cc
                       </span>
                     </div>}
 
-                  {car.fuel && <div className="flex items-center justify-between p-2 sm:p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors mobile-spec-item">
-                      <div className="flex items-center gap-1.5 sm:gap-2">
-                        <Fuel className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
-                        <span className="font-medium text-foreground text-xs sm:text-sm">Karburanti</span>
+                  {car.fuel && <div className="group flex items-center justify-between p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item hover-scale">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
+                          <Fuel className="h-5 w-5 text-primary flex-shrink-0" />
+                        </div>
+                        <span className="font-semibold text-foreground">Karburanti</span>
                       </div>
-                      <span className="text-muted-foreground font-medium capitalize text-xs sm:text-sm">
+                      <span className="text-muted-foreground font-medium capitalize">
                         {car.fuel}
                       </span>
                     </div>}
 
-                  {car.color && <div className="flex items-center justify-between p-2 sm:p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors mobile-spec-item">
-                      <div className="flex items-center gap-1.5 sm:gap-2">
-                        <Palette className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
-                        <span className="font-medium text-foreground text-xs sm:text-sm">Ngjyra</span>
+                  {car.color && <div className="group flex items-center justify-between p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item hover-scale">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
+                          <Palette className="h-5 w-5 text-primary flex-shrink-0" />
+                        </div>
+                        <span className="font-semibold text-foreground">Ngjyra</span>
                       </div>
-                      <span className="text-muted-foreground font-medium capitalize text-xs sm:text-sm">
+                      <span className="text-muted-foreground font-medium capitalize">
                         {translateColor(car.color)}
                       </span>
                     </div>}
 
-                  {car.vin && <div className="flex items-center justify-between p-2 sm:p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors mobile-spec-item">
-                      <div className="flex items-center gap-1.5 sm:gap-2">
-                        <Hash className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
-                        <span className="font-medium text-foreground text-xs sm:text-sm">Numri i shasisë</span>
+                  {car.vin && <div className="group flex items-center justify-between p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item hover-scale">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
+                          <Hash className="h-5 w-5 text-primary flex-shrink-0" />
+                        </div>
+                        <span className="font-semibold text-foreground">Numri i shasisë</span>
                       </div>
-                      <span className="text-muted-foreground font-medium font-mono text-xs">
+                      <span className="text-muted-foreground font-medium font-mono text-sm">
                         {car.vin}
                       </span>
                     </div>}
