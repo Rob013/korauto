@@ -1379,13 +1379,17 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
               >
                 {carsToDisplay
                   .filter(car => {
-                    // Only show cars with buy_now pricing
+                    // Only show cars with buy_now pricing - enhanced validation
                     const lot = car.lots?.[0];
-                    return lot?.buy_now && lot.buy_now > 0;
+                    const buyNowPrice = lot?.buy_now;
+                    return buyNowPrice && 
+                           typeof buyNowPrice === 'number' && 
+                           !isNaN(buyNowPrice) && 
+                           buyNowPrice > 0;
                   })
                   .map((car: CarWithRank | any) => {
                   const lot = car.lots?.[0];
-                  // Only use buy_now price, no fallbacks
+                  // Only use buy_now price, validated above
                   const usdPrice = lot?.buy_now;
                   const price = calculateFinalPriceEUR(usdPrice, exchangeRate.rate);
                   const lotNumber = car.lot_number || lot?.lot || "";
