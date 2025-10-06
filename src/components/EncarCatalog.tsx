@@ -1081,7 +1081,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         data-filter-panel
         className={`
         fixed lg:relative z-40 glass-card transition-transform duration-300 ease-in-out
-        ${showFilters ? 'translate-x-0' : '-translate-x-full lg:hidden'}
+        ${showFilters ? 'translate-x-0' : '-translate-x-full'}
+        ${!showFilters && 'lg:flex hidden'}
         ${isMobile ? 'mobile-filter-panel top-0 left-0 right-0 bottom-0 w-full rounded-none' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0 overflow-y-auto rounded-lg'} 
         lg:shadow-none
       `}>
