@@ -2080,6 +2080,7 @@ body {
 
 /* Ensure full size Smartsupp chat on mobile */
 @media (max-width: 768px) {
+  /* Force desktop view for Smartsupp widget on mobile */
   #chat-application-iframe,
   #chat-application,
   .smartsupp-widget,
@@ -2096,5 +2097,22 @@ body {
   #chat-application iframe {
     width: 100% !important;
     height: 100% !important;
+  }
+  
+  /* Force all text elements to be visible */
+  #chat-application * {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+  
+  /* Ensure button/input elements show full text */
+  #chat-application button,
+  #chat-application input,
+  #chat-application textarea,
+  #chat-application .message-input {
+    min-width: auto !important;
+    width: auto !important;
+    font-size: inherit !important;
   }
 }
