@@ -1369,7 +1369,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     : `grid gap-2 sm:gap-3 lg:gap-4 ${
                         isMobile 
                           ? 'grid-cols-1 px-1 sm:px-2' 
-                          : 'grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2'
+                          : 'grid-cols-4'
                       }`
                 } ${isFilterLoading ? 'opacity-50' : ''}`}
               >

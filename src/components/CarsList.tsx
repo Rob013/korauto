@@ -195,19 +195,10 @@ const CarsList: React.FC<CarsListProps> = ({
     let cardWidth: number;
     let columnsPerRow: number;
     
-    if (containerWidth >= 1536) { // 2xl
-      cardWidth = 280;
-      columnsPerRow = Math.floor((containerWidth - 64) / (cardWidth + 16));
-    } else if (containerWidth >= 1280) { // xl
-      cardWidth = 260;
-      columnsPerRow = Math.floor((containerWidth - 64) / (cardWidth + 16));
-    } else if (containerWidth >= 1024) { // lg
+    if (containerWidth >= 768) { // Tablet and desktop
       cardWidth = 240;
-      columnsPerRow = Math.floor((containerWidth - 48) / (cardWidth + 16));
-    } else if (containerWidth >= 768) { // md
-      cardWidth = 220;
-      columnsPerRow = Math.floor((containerWidth - 32) / (cardWidth + 16));
-    } else { // sm and smaller
+      columnsPerRow = 4;
+    } else { // Mobile
       cardWidth = Math.min(300, containerWidth - 32);
       columnsPerRow = 1;
     }
