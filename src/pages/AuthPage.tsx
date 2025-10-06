@@ -135,21 +135,17 @@ const AuthPage = () => {
         description: rememberMe ? "Ju do të mbeteni të lidhur." : "Hyrja u krye me sukses.",
       });
       
-      // Check if user is admin or specific email and redirect accordingly
+      // Check if user is admin using server-side validation and redirect accordingly
       try {
-        const { data: adminCheck } = await supabase.rpc('is_admin');
-        if (adminCheck || email === '0013rob@gmail.com') {
+        const { data: adminCheck, error: adminError } = await supabase.rpc('is_admin');
+        if (!adminError && adminCheck) {
           navigate('/admin');
         } else {
           navigate('/');
         }
       } catch (error) {
-        // If role check fails, check email directly
-        if (email === '0013rob@gmail.com') {
-          navigate('/admin');
-        } else {
-          navigate('/');
-        }
+        console.error('Admin check failed:', error);
+        navigate('/');
       }
     } catch (error: any) {
       toast({
