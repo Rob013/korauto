@@ -1232,7 +1232,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 >
                   {showFilters ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
                   <span className="hidden xs:inline">{showFilters ? 'Fshih Filtrat' : 'Shfaq Filtrat'}</span>
-                  <span className="xs:hidden">Filtrat</span>
+                  <span className="xs:hidden">Zgjedh Veturën</span>
                   {hasSelectedCategories && !showFilters && (
                     <span className="ml-1 text-xs bg-primary-foreground/20 px-2 py-1 rounded-full animate-bounce">
                       {Object.values(filters).filter(Boolean).length}
