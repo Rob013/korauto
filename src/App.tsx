@@ -13,6 +13,7 @@ import { useFrameRate } from "./hooks/useFrameRate";
 import { PerformanceMonitor } from "./components/PerformanceMonitor";
 import { useAdminCheck } from "./hooks/useAdminCheck";
 import { CacheUpdateNotification } from "./components/CacheUpdateNotification";
+import { useIsMobile } from "./hooks/use-mobile";
 
 // Lazy load all pages for better code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -117,6 +118,9 @@ const App = () => {
 
   // Check admin status for performance monitoring
   const { isAdmin } = useAdminCheck();
+  
+  // Check if mobile to hide performance widget
+  const isMobile = useIsMobile();
 
   // Initialize accessibility enhancements
   useEffect(() => {
@@ -246,8 +250,8 @@ const App = () => {
         </BrowserRouter>
         <InstallPrompt />
         <CacheUpdateNotification />
-        {/* Performance Monitor for admin users only */}
-        {isAdmin && (
+        {/* Performance Monitor for admin users only, hidden on mobile */}
+        {isAdmin && !isMobile && (
           <PerformanceMonitor showDetails={false} />
         )}
       </TooltipProvider>
