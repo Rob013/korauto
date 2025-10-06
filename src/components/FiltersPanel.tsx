@@ -239,14 +239,18 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
 
       {/* Selected filters chips */}
       {selectedFilters.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 transition-all duration-300">
           {selectedFilters.map((chip) => (
-            <Badge key={chip.key} variant="default" className="flex items-center gap-1">
+            <Badge 
+              key={chip.key} 
+              variant="default" 
+              className="flex items-center gap-1 animate-scale-in transition-all duration-200 hover:scale-105"
+            >
               <span className="text-xs">{chip.label}: {chip.value}</span>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-auto w-auto p-0 hover:bg-transparent"
+                className="h-auto w-auto p-0 hover:bg-transparent transition-colors"
                 onClick={() => removeFilter(chip.key)}
               >
                 <X className="h-3 w-3" />
@@ -290,9 +294,9 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
         </Button>
 
         {expandedSections.includes('basic') && (
-          <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
+          <div className="space-y-4 p-3 bg-muted/30 rounded-lg animate-accordion-down">
             {/* Brand */}
-            <div className="space-y-2">
+            <div className="space-y-2 transition-all duration-200">
               <Label className="flex items-center gap-2">
                 <Car className="h-4 w-4" />
                 Marka
@@ -397,7 +401,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
         </Button>
 
         {expandedSections.includes('advanced') && (
-          <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
+          <div className="space-y-4 p-3 bg-muted/30 rounded-lg animate-accordion-down">
             {/* Fuel Type */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
