@@ -37,35 +37,36 @@ const LoadingLogo: React.FC<LoadingLogoProps> = ({
       className
     )}>
       <div className="relative flex items-center justify-center">
-        {/* Spinning ring around logo - perfectly centered - smoother animation */}
-        <div className={cn(
-          "absolute border-2 border-primary/20 border-t-primary rounded-full",
-          "animate-spin transition-all duration-300 ease-linear",
-          ringSize[size]
-        )} 
-        style={{ 
-          animation: 'spin 2s linear infinite',
-          borderTopColor: 'hsl(var(--primary))',
-          borderRightColor: 'hsl(var(--primary) / 0.3)',
-          borderBottomColor: 'hsl(var(--primary) / 0.1)',
-          borderLeftColor: 'hsl(var(--primary) / 0.3)'
-        }} />
+        {/* Spinning ring around logo - GPU accelerated */}
+        <div 
+          className={cn(
+            "absolute border-2 rounded-full",
+            ringSize[size]
+          )} 
+          style={{ 
+            animation: 'spin 1.5s linear infinite',
+            willChange: 'transform',
+            borderTopColor: 'hsl(var(--primary))',
+            borderRightColor: 'hsl(var(--primary) / 0.3)',
+            borderBottomColor: 'hsl(var(--primary) / 0.1)',
+            borderLeftColor: 'hsl(var(--primary) / 0.3)',
+            transform: 'translateZ(0)'
+          }} 
+        />
         
-        {/* Animated logo - centered - smoother pulse */}
+        {/* Static logo - no animation for stability */}
         <img 
           src="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png"
           alt="KORAUTO Logo Loading"
           className={cn(
             sizeClasses[size],
-            "object-contain dark:invert dark:brightness-0 dark:contrast-100",
-            "transition-all duration-300 relative z-10"
+            "object-contain dark:invert dark:brightness-0 dark:contrast-100 relative z-10"
           )}
           style={{
-            animation: 'pulse 2s ease-in-out infinite alternate'
+            willChange: 'auto',
+            transform: 'translateZ(0)'
           }}
         />
-        
-
       </div>
     </div>
   );

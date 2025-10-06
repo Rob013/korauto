@@ -264,6 +264,10 @@ const LazyCarCard = memo(({
       <div 
         ref={cardRef}
         className="glass-card rounded-lg overflow-hidden h-96"
+        style={{
+          willChange: 'contents',
+          containIntrinsicSize: '280px 360px'
+        }}
       >
           <div className="animate-pulse">
             <div className="h-72 bg-muted" />
@@ -291,6 +295,10 @@ const LazyCarCard = memo(({
           : 'mobile-card-compact compact-modern-card'
       }`}
       onClick={handleCardClick}
+      style={{
+        willChange: 'transform',
+        transform: 'translateZ(0)'
+      }}
     >
       {/* Image Section - Standard 4:3 aspect ratio like encar.com */}
       <div className={`relative bg-muted overflow-hidden flex-shrink-0 rounded-lg ${
@@ -303,7 +311,7 @@ const LazyCarCard = memo(({
           <img 
             src={image || images?.[0]} 
             alt={`${year} ${make} ${model}`} 
-            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
+            className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-300 ease-out ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
             onLoad={() => setImageLoaded(true)}
@@ -312,6 +320,10 @@ const LazyCarCard = memo(({
               setImageLoaded(true);
             }}
             loading="lazy"
+            style={{
+              willChange: 'transform',
+              transform: 'translateZ(0)'
+            }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-muted">

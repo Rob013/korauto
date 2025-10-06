@@ -74,7 +74,7 @@ const Index = () => {
       <Header />
       
       {/* Main content with proper landmark */}
-      <main id="main">
+      <main id="main" className="animate-fade-in">
         {/* Lazy load other sections with optimized skeletons */}
         <Suspense fallback={<HomeSectionSkeleton />}>
           <HomeSection />
@@ -89,7 +89,7 @@ const Index = () => {
         </Suspense>
       </main>
       
-      <Suspense fallback={<div className="h-64 bg-muted/20" />}>
+      <Suspense fallback={<div className="h-64 bg-muted/20 animate-pulse" />}>
         <Footer />
       </Suspense>
     </div>

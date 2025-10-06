@@ -417,7 +417,9 @@ const CarCard = ({
       style={{
         // Prevent layout shifts by setting fixed dimensions
         minHeight: '360px',
-        aspectRatio: '280/360'
+        aspectRatio: '280/360',
+        willChange: 'transform',
+        transform: 'translateZ(0)'
       }}
     >
       <div className="relative h-56 bg-muted overflow-hidden">
@@ -425,7 +427,7 @@ const CarCard = ({
           <OptimizedImage
             src={image}
             alt={`${year} ${make} ${model}`}
-            className="w-full h-full group-hover:scale-110 transition-transform duration-500 ease-out"
+            className="w-full h-full group-hover:scale-105 transition-transform duration-300 ease-out"
             width={280}
             priority={false}
             enableLazyLoad={true}
