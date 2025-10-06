@@ -2072,62 +2072,37 @@ body {
   hyphens: auto;
 }
 
-/* Smartsupp Chat - Force visibility and position on bottom right */
-#chat-application,
-#chat-application-iframe,
-#chat-widget-container,
-[id^="smartsupp"],
-[id*="smartsupp"],
-[class^="smartsupp"],
-[class*="smartsupp"],
-iframe[src*="smartsupp"] {
+/* ========================================
+   SMARTSUPP LIVE CHAT - ALWAYS VISIBLE
+   ======================================== */
+
+/* Force chat widget to always show */
+#chat-application {
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
-  z-index: 2147483647 !important;
+  z-index: 999999 !important;
   pointer-events: auto !important;
-  position: fixed !important;
-  bottom: 20px !important;
-  right: 20px !important;
 }
 
-/* Smartsupp button/widget specific */
+/* Chat button positioning */
 #chat-button,
-.smartsupp-widget,
-.smartsupp-chat-button {
+[id*="smartsupp-widget-container"] {
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
-  z-index: 2147483647 !important;
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  z-index: 999999 !important;
   pointer-events: auto !important;
-  position: fixed !important;
-  bottom: 20px !important;
-  right: 20px !important;
 }
 
-/* Override any hiding styles */
-body [id*="smartsupp"],
-body [class*="smartsupp"] {
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  position: fixed !important;
-  bottom: 20px !important;
-  right: 20px !important;
-}
-
-/* Mobile specific - ensure proper positioning */
+/* Mobile adjustments */
 @media (max-width: 768px) {
-  #chat-application,
-  #chat-widget-container,
-  [id*="smartsupp"],
-  [class*="smartsupp"] {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    z-index: 2147483647 !important;
-    position: fixed !important;
-    bottom: 15px !important;
-    right: 15px !important;
+  #chat-button,
+  [id*="smartsupp-widget-container"] {
+    bottom: 16px !important;
+    right: 16px !important;
   }
 }

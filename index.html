@@ -106,12 +106,27 @@
       var _smartsupp = _smartsupp || {};
       _smartsupp.key = 'b946031b416bd52d6cebdf0f507bfa4dd021e21f';
       _smartsupp.hideMobileWidget = false;
+      _smartsupp.cookieDomain = window.location.hostname;
+      _smartsupp.sitePlatform = 'React';
       window.smartsupp||(function(d) {
         var s,c,o=smartsupp=function(){ o._.push(arguments)};o._=[];
         s=d.getElementsByTagName('script')[0];c=d.createElement('script');
         c.type='text/javascript';c.charset='utf-8';c.async=true;
         c.src='https://www.smartsupp.com/widget/loader.js';s.parentNode.insertBefore(c,s);
       })(document);
+      
+      // Ensure widget shows after page load
+      window.addEventListener('load', function() {
+        if (window.smartsupp) {
+          setTimeout(function() {
+            try {
+              window.smartsupp('chat:show');
+            } catch(e) {
+              console.log('Smartsupp widget loading...');
+            }
+          }, 1000);
+        }
+      });
     </script>
   </body>
 </html>
