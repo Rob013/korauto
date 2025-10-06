@@ -377,7 +377,7 @@ const ShipmentTracking = () => {
       
       {/* CIG Shipping inspired header */}
       <div className="bg-gradient-to-r from-blue-800 to-blue-600 text-white py-6">
-        <div className="container mx-auto px-4">
+        <div className="container-responsive">
           <div className="flex items-center gap-3">
             <Ship className="h-8 w-8" />
             <div>
@@ -388,7 +388,7 @@ const ShipmentTracking = () => {
         </div>
       </div>
       
-      <div className="container mx-auto container-responsive px-2 sm:px-4 py-4 sm:py-8">
+      <div className="container-responsive py-4 sm:py-8">
         <div className="max-w-4xl mx-auto">
           {/* Page Header - Ultra Compact for mobile */}
           <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-6 tracking-page-header">

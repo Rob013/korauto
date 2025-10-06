@@ -38,8 +38,8 @@ const Header = () => {
   return (
     <header className="bg-background/95 backdrop-blur-md shadow-sm border-b border-border sticky top-0 z-50 transition-all duration-300">
       {/* Main header with proper navigation landmark */}
-      <nav className="container mx-auto" role="navigation" aria-label="Main navigation">
-        <div className="flex h-14 sm:h-16 items-center justify-between px-3 sm:px-4">
+      <nav className="container-responsive" role="navigation" aria-label="Main navigation">
+        <div className="flex h-14 sm:h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 group min-w-0 focus:outline-none focus:ring-2 focus:ring-primary rounded-lg" aria-label="KORAUTO kryefaqja">
             <div 

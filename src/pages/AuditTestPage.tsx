@@ -30,7 +30,7 @@ const AuditTestPage: React.FC = () => {
   }
   return (
     <div className="min-h-screen bg-background p-4">
-      <div className="container mx-auto max-w-6xl space-y-8">
+      <div className="container-responsive max-w-6xl mx-auto space-y-8">
         <header>
           <h1 className="text-3xl font-bold">Audit Test Page</h1>
           <p>This page contains intentional issues to test the enhanced audit functionality.</p>
