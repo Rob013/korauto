@@ -11,7 +11,6 @@ import { StatusRefreshProvider } from "./components/StatusRefreshProvider";
 // Import pages directly to avoid lazy loading issues during debugging
 import Index from "./pages/Index";
 import Catalog from "./pages/Catalog";
-import CatalogSupabase from "./pages/CatalogSupabase";
 import CarDetails from "./pages/CarDetails";
 import CarGallery from "./pages/CarGallery";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -112,7 +111,7 @@ const App: React.FC = () => {
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/catalog" element={<CatalogSupabase />} />
+              <Route path="/catalog" element={<Catalog />} />
               <Route path="/car/:id" element={<CarDetails />} />
               <Route path="/car/:id/gallery" element={<CarGallery />} />
               <Route path="/admin" element={<AdminDashboard />} />

@@ -40,7 +40,7 @@ export const useSimpleCarAPI = () => {
   const [error, setError] = useState<string | null>(null);
   const lastFetchTimeRef = useRef<number>(0);
 
-  const fetchCars = useCallback(async (resetList: boolean = true, page: number = 1, perPage: number = 36) => {
+  const fetchCars = useCallback(async (resetList: boolean = true) => {
     const now = Date.now();
     if (now - lastFetchTimeRef.current < 2000) {
       console.log('🚫 Skipping - too frequent');
@@ -53,21 +53,17 @@ export const useSimpleCarAPI = () => {
     setError(null);
 
     try {
-      console.log(`🔄 Fetching cars from Supabase - Page ${page}`);
+      console.log('🔄 Fetching cars from Supabase');
       lastFetchTimeRef.current = now;
 
       const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-      const from = (page - 1) * perPage;
-      const to = from + perPage - 1;
-      
       const result: any = await supabase
         .from('cars_cache')
         .select('*', { count: 'exact' })
-        .not('sale_status', 'in', '(archived,sold)')
-        .gt('price_cents', 0)
-        .not('price_cents', 'is', null)
+        .neq('sale_status', 'archived')
+        .neq('sale_status', 'sold')
         .order('price_cents', { ascending: true, nullsFirst: false })
-        .range(from, to);
+        .range(0, 35);
 
       const data = result.data;
       const queryError = result.error;
@@ -108,8 +104,8 @@ export const useSimpleCarAPI = () => {
 
   // Auto-fetch cars on mount
   useEffect(() => {
-    fetchCars(true, 1, 200); // Fetch 200 cars for homepage
-  }, []);
+    fetchCars(true);
+  }, [fetchCars]);
 
   return {
     cars,
