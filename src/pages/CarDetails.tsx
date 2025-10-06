@@ -875,7 +875,7 @@ const CarDetails = memo(() => {
               performance_rating: 4.5,
               popularity_score: 85,
               // Enhanced API data  
-              details: lotData.details
+              details: lotData && 'details' in lotData ? lotData.details : undefined
             };
             setCar(transformedCar);
             setLoading(false);

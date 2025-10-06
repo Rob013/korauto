@@ -134,7 +134,7 @@ beforeAll(() => {
   global.getComputedStyle = vi.fn(() => ({
     getPropertyValue: vi.fn(),
     gridTemplateColumns: 'repeat(3, 1fr)',
-  }));
+  } as any));
 
   // Mock sessionStorage
   Object.defineProperty(window, 'sessionStorage', {
