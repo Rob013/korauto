@@ -2061,3 +2061,32 @@ body {
 .hyphens-auto {
   hyphens: auto;
 }
+
+/* Smartsupp Chat - Always visible on all devices */
+#chat-application,
+#chat-application-iframe,
+[id^="smartsupp"],
+[class*="smartsupp"] {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 999999 !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure chat widget is always on top */
+#chat-widget-container {
+  z-index: 999999 !important;
+}
+
+/* Mobile specific - ensure chat is visible */
+@media (max-width: 768px) {
+  #chat-application,
+  #chat-application-iframe,
+  [id^="smartsupp"],
+  [class*="smartsupp"] {
+    display: block !important;
+    visibility: visible !important;
+    z-index: 999999 !important;
+  }
+}
