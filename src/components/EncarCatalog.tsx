@@ -1378,9 +1378,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   viewMode === 'list' 
                     ? 'flex flex-col gap-2 sm:gap-3' 
                     : `grid gap-2 sm:gap-3 lg:gap-4 ${
-                        isMobile 
-                          ? 'grid-cols-1 px-1 sm:px-2' 
-                          : 'grid-cols-4'
+                        'grid-cols-1 md:grid-cols-4 px-1 sm:px-2'
                       }`
                 } ${isFilterLoading ? 'opacity-50' : ''}`}
               >
