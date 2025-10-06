@@ -21,6 +21,16 @@
       body { margin: 0; background: #ffffff; }
       #root { min-height: 100vh; }
       .dark body { background: #0a0a0a; }
+      
+      /* Ensure Smartsupp chat is visible */
+      #chat-application-iframe,
+      iframe[title="Smartsupp"],
+      #smartsupp-widget-container {
+        opacity: 1 !important;
+        z-index: 999999 !important;
+        pointer-events: auto !important;
+        visibility: visible !important;
+      }
     </style>
     
     <!-- Favicon and Icons -->
