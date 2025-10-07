@@ -2,12 +2,14 @@ import { Button } from "@/components/ui/button";
 import { Car, Heart, Menu, X, User, Ship } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const Header = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
 
@@ -60,48 +62,42 @@ const Header = () => {
             <Link 
               to="/" 
               className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
-              aria-label="Shkoni në kryefaqe"
             >
-              Kryefaqja
+              {t("nav.home")}
             </Link>
             <Link 
               to="/catalog" 
               className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
-              aria-label="Shikoni katalogun e makinave"
             >
-              Katalogu
+              {t("nav.catalog")}
             </Link>
             <Link 
               to="/inspections" 
               className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
-              aria-label="Mësoni më shumë për inspektimet"
             >
-              Inspektimet
+              {t("nav.inspection")}
             </Link>
             <Link 
               to="/contacts" 
               className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
-              aria-label="Na kontaktoni"
             >
-              Kontaktet
+              {t("nav.contacts")}
             </Link>
             {user && (
               <Link 
                 to="/tracking" 
                 className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
-                aria-label="Gjurmoni ngarkesën tuaj"
               >
                 <Ship className="h-4 w-4" />
-                Gjurmimi
+                {t("nav.tracking")}
               </Link>
             )}
             <Link 
               to="/favorites" 
               className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
-              aria-label="Shikoni makinat tuaja të preferuara"
             >
               <Heart className="h-4 w-4" />
-              Të Preferuarat
+              {t("nav.favorites")}
             </Link>
           </div>
 
@@ -130,10 +126,9 @@ const Header = () => {
                 size="sm" 
                 onClick={handleAuthClick}
                 className="btn-enhanced focus-enhanced flex items-center gap-2 hover-lift-gentle transition-all duration-300"
-                aria-label={user ? 'Shkoni në llogarinë tuaj' : 'Hyni në llogari'}
               >
                 <User className="h-4 w-4" />
-                {user ? 'Llogaria Ime' : 'Llogaria Ime'}
+                {t("nav.account")}
               </Button>
             </div>
           </div>
@@ -154,33 +149,29 @@ const Header = () => {
                 to="/" 
                 className="text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"
                 onClick={() => setIsMobileMenuOpen(false)}
-                aria-label="Shkoni në kryefaqe"
               >
-                Kryefaqja
+                {t("nav.home")}
               </Link>
               <Link 
                 to="/catalog" 
                 className="text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"
                 onClick={() => setIsMobileMenuOpen(false)}
-                aria-label="Shikoni katalogun e makinave"
               >
-                Katalogu
+                {t("nav.catalog")}
               </Link>
               <Link 
                 to="/inspections" 
                 className="text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"
                 onClick={() => setIsMobileMenuOpen(false)}
-                aria-label="Mësoni më shumë për inspektimet"
               >
-                Inspektimet
+                {t("nav.inspection")}
               </Link>
               <Link 
                 to="/contacts" 
                 className="text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"
                 onClick={() => setIsMobileMenuOpen(false)}
-                aria-label="Na kontaktoni"
               >
-                Kontaktet
+                {t("nav.contacts")}
               </Link>
 
               {user && (
@@ -188,10 +179,9 @@ const Header = () => {
                   to="/tracking" 
                   className="flex items-center gap-2 text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  aria-label="Gjurmoni ngarkesën tuaj"
                 >
                   <Ship className="h-4 w-4" />
-                  Gjurmimi
+                  {t("nav.tracking")}
                 </Link>
               )}
 
@@ -199,10 +189,9 @@ const Header = () => {
                 to="/favorites" 
                 className="flex items-center gap-2 text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"
                 onClick={() => setIsMobileMenuOpen(false)}
-                aria-label="Shikoni makinat tuaja të preferuara"
               >
                 <Heart className="h-4 w-4" />
-                Të Preferuarat
+                {t("nav.favorites")}
               </Link>
               <button 
                 className="flex items-center gap-2 text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 w-full text-left hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"
@@ -210,10 +199,9 @@ const Header = () => {
                   setIsMobileMenuOpen(false);
                   handleAuthClick();
                 }}
-                aria-label={user ? 'Shkoni në llogarinë tuaj' : 'Hyni në llogari'}
               >
                 <User className="h-4 w-4" />
-                {user ? 'Llogaria Ime' : 'Llogaria Ime'}
+                {t("nav.account")}
               </button>
               
               {/* Mobile CTA Buttons */}
@@ -226,9 +214,8 @@ const Header = () => {
                     setIsMobileMenuOpen(false);
                     navigate("/catalog");
                   }}
-                  aria-label="Shikoni katalogun e makinave"
                 >
-                  Shiko Makinat
+                  {t("btn.viewCars")}
                 </Button>
                 <Button 
                   size="sm" 
@@ -238,7 +225,7 @@ const Header = () => {
                     window.open('https://wa.me/38348181116', '_blank');
                   }}
                 >
-                  Kontakto WhatsApp
+                  {t("btn.whatsapp")}
                 </Button>
               </div>
             </nav>
