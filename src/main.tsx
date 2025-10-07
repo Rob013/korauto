@@ -3,6 +3,7 @@ import App from './App.tsx'
 import './index.css'
 import './utils/iosOptimizations.css'
 import { ThemeProvider } from "@/components/ThemeProvider"
+import { LanguageProvider } from "@/contexts/LanguageContext"
 import { NavigationProvider } from './contexts/NavigationContext.tsx'
 import cacheManager from '@/utils/cacheManager'
 import { useEffect } from 'react'
@@ -65,8 +66,10 @@ if ('serviceWorker' in navigator) {
 
 createRoot(document.getElementById("root")!).render(
   <ThemeProvider defaultTheme="system" storageKey="korauto-ui-theme">
-    <NavigationProvider>
-      <AppWrapper />
-    </NavigationProvider>
+    <LanguageProvider>
+      <NavigationProvider>
+        <AppWrapper />
+      </NavigationProvider>
+    </LanguageProvider>
   </ThemeProvider>
 );
