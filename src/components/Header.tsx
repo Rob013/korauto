@@ -36,7 +36,7 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-background/95 backdrop-blur-md shadow-sm border-b border-border sticky top-0 z-50 transition-all duration-300">
+    <header className="bg-background/95 backdrop-blur-md shadow-sm border-b border-border sticky top-0 z-50 transition-smooth hover-lift-gentle">
       {/* Main header with proper navigation landmark */}
       <nav className="container-responsive" role="navigation" aria-label="Main navigation">
         <div className="flex h-14 sm:h-16 items-center justify-between">
@@ -141,7 +141,7 @@ const Header = () => {
       {/* Mobile Navigation */}
       {isMobileMenuOpen && (
         <div 
-          className="lg:hidden bg-background border-t border-border shadow-lg animate-slide-in-left"
+          className="lg:hidden bg-background border-t border-border shadow-lg animate-fade-in-up smooth-scroll-container"
           id="mobile-menu"
           role="navigation" 
           aria-label="Navigimi mobil"
