@@ -105,6 +105,8 @@
     <script type="text/javascript">
     var _smartsupp = _smartsupp || {};
     _smartsupp.key = 'b946031b416bd52d6cebdf0f507bfa4dd021e21f';
+    _smartsupp.alwaysUseFloatingButton = true;
+    _smartsupp.hideMobileWidget = false;
     window.smartsupp||(function(d) {
       var s,c,o=smartsupp=function(){ o._.push(arguments)};o._=[];
       s=d.getElementsByTagName('script')[0];c=d.createElement('script');
@@ -113,5 +115,16 @@
     })(document);
     </script>
     <noscript> Powered by <a href="https://www.korautoks.com" target="_blank">Smartsupp</a></noscript>
+    
+    <!-- Ensure Smartsupp widget is always visible -->
+    <style>
+      #chat-application,
+      #chat-application-iframe,
+      .smartsupp-widget {
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: block !important;
+      }
+    </style>
   </body>
 </html>
