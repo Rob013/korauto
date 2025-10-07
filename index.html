@@ -129,7 +129,7 @@
     
     <!-- Ensure Smartsupp widget is always visible and follows the page -->
     <style>
-      /* Force Smartsupp to be always visible on all devices as floating widget */
+      /* Force Smartsupp to be always visible on all devices as floating bubble */
       #chat-application,
       #chat-application-iframe,
       .smartsupp-widget,
@@ -139,23 +139,28 @@
         display: block !important;
         position: fixed !important;
         right: 20px !important;
-        top: 100px !important;
-        bottom: auto !important;
+        bottom: 20px !important;
+        top: auto !important;
+        left: auto !important;
         z-index: 2147483647 !important;
         pointer-events: auto !important;
         transform: none !important;
         transition: none !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+        filter: none !important;
+        perspective: none !important;
+        will-change: auto !important;
+        contain: none !important;
       }
       
-      /* Ensure the widget button stays fixed and visible - floating on top-right */
+      /* Ensure the widget button stays fixed - floating on bottom-right */
       #chat-button,
       .smartsupp-button,
       .smartsupp-widget-button {
         position: fixed !important;
         right: 20px !important;
-        top: 100px !important;
-        bottom: auto !important;
+        bottom: 20px !important;
+        top: auto !important;
+        left: auto !important;
         z-index: 2147483647 !important;
         opacity: 1 !important;
         visibility: visible !important;
@@ -163,7 +168,17 @@
         pointer-events: auto !important;
         transform: none !important;
         transition: none !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+        filter: none !important;
+        perspective: none !important;
+        will-change: auto !important;
+        contain: none !important;
+      }
+      
+      /* Prevent parent elements from breaking fixed positioning */
+      body, html, #root, [id*="smartsupp"], [class*="smartsupp"] {
+        transform: none !important;
+        filter: none !important;
+        perspective: none !important;
       }
       
       /* Prevent any hide animations */
@@ -177,18 +192,14 @@
         #chat-application,
         #chat-button,
         .smartsupp-widget,
-        .smartsupp-button {
+        .smartsupp-button,
+        .smartsupp-widget-button {
           display: block !important;
           visibility: visible !important;
           opacity: 1 !important;
-          right: 15px !important;
-          top: 80px !important;
+          right: 10px !important;
+          bottom: 10px !important;
         }
-      }
-      
-      /* Ensure visibility on page load */
-      body {
-        padding-right: 0 !important;
       }
     </style>
   </body>
