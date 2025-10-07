@@ -1064,8 +1064,8 @@ const CarDetails = memo(() => {
             {/* Main Image with modern styling - Compact size */}
             <Card className="border-0 shadow-2xl overflow-hidden rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
               <CardContent className="p-0">
-                <div ref={imageContainerRef} className="car-details-hero relative w-full aspect-[3/2] md:aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer" onClick={() => setIsImageZoomOpen(true)}>
-                  {images.length > 0 ? <img src={images[selectedImageIndex]} alt={`${car.year} ${car.make} ${car.model}`} className="w-full h-full object-contain transition-all duration-500 group-hover:scale-105" onError={e => {
+                <div ref={imageContainerRef} className="car-details-hero relative w-full aspect-[16/10] md:aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer" onClick={() => setIsImageZoomOpen(true)} data-fancybox="gallery">
+                  {images.length > 0 ? <img src={images[selectedImageIndex]} alt={`${car.year} ${car.make} ${car.model}`} className="w-full h-full object-cover md:object-contain transition-all duration-500 group-hover:scale-105" onError={e => {
                   e.currentTarget.src = "/placeholder.svg";
                   setIsPlaceholderImage(true);
                 }} onLoad={e => {
