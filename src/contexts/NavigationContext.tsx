@@ -49,6 +49,9 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({ children
   const [previousPage, setPreviousPageState] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<FilterState | null>(null);
   const [pageState, setPageState] = useState<PageState | null>(null);
+  
+  // Get access to filter store for state capture and restoration
+  const filterStore = useFilterStore();
 
   const setPreviousPage = (page: string, filters?: FilterState) => {
     setPreviousPageState(page);
@@ -58,13 +61,12 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({ children
   };
 
   const getCurrentFilterState = (): FilterState | null => {
-    const store = useFilterStore.getState();
     return {
-      filters: store.filters,
-      sort: store.sort,
-      page: store.page,
-      pageSize: store.pageSize,
-      query: store.query,
+      filters: filterStore.filters,
+      sort: filterStore.sort,
+      page: filterStore.page,
+      pageSize: filterStore.pageSize,
+      query: filterStore.query,
     };
   };
 
@@ -95,7 +97,7 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({ children
       if (isRecent) {
         // Restore filter state if available
         if (pageState.filterState) {
-          useFilterStore.setState(pageState.filterState);
+          filterStore.setState(pageState.filterState);
           console.log('🔄 Restored filter state:', pageState.filterState);
         }
         
@@ -128,7 +130,7 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({ children
             
             // Restore filter state if available
             if (parsedState.filterState) {
-              useFilterStore.setState(parsedState.filterState);
+              filterStore.setState(parsedState.filterState);
               console.log('🔄 Restored filter state from sessionStorage:', parsedState.filterState);
             }
             
