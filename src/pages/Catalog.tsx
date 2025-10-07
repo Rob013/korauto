@@ -39,9 +39,9 @@ const Catalog = () => {
   }, [highlightCarId]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background smooth-scroll-container">
       <Header />
-      <div className="animate-fade-in">
+      <div className="animate-fade-in-up">
         <EncarCatalog highlightCarId={highlightCarId} />
       </div>
       <Suspense fallback={<FooterSkeleton />}>

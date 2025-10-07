@@ -289,15 +289,16 @@ const LazyCarCard = memo(({
   return (
     <div 
       ref={cardRef}
-      className={`glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] ${
+      className={`glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-xl hover-lift ${
         viewMode === 'list' 
           ? 'flex flex-row items-start gap-3 p-3 mobile-card-compact' 
           : 'mobile-card-compact compact-modern-card'
       }`}
       onClick={handleCardClick}
       style={{
-        willChange: 'transform',
-        transform: 'translateZ(0)'
+        willChange: 'transform, opacity',
+        transform: 'translateZ(0)',
+        perspective: '1000px'
       }}
     >
       {/* Image Section - Standard 4:3 aspect ratio like encar.com */}
@@ -311,7 +312,7 @@ const LazyCarCard = memo(({
           <img 
             src={image || images?.[0]} 
             alt={`${year} ${make} ${model}`} 
-            className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-300 ease-out ${
+            className={`w-full h-full object-cover group-hover:scale-110 transition-elegant ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
             onLoad={() => setImageLoaded(true)}
@@ -321,7 +322,7 @@ const LazyCarCard = memo(({
             }}
             loading="lazy"
             style={{
-              willChange: 'transform',
+              willChange: 'transform, opacity',
               transform: 'translateZ(0)'
             }}
           />
@@ -342,9 +343,9 @@ const LazyCarCard = memo(({
         {user && (
           <button
             onClick={handleFavoriteToggle}
-            className="absolute top-1 left-1 p-1.5 bg-black/60 backdrop-blur-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 z-10 hover:bg-black/80"
+            className="absolute top-1 left-1 p-1.5 bg-black/60 backdrop-blur-sm rounded-lg opacity-0 group-hover:opacity-100 transition-elegant z-10 hover:bg-black/80 hover:scale-110"
           >
-            <Heart className={`h-3.5 w-3.5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+            <Heart className={`h-3.5 w-3.5 transition-elegant ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
           </button>
         )}
       </div>
