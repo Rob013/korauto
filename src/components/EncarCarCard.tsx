@@ -161,15 +161,9 @@ const EncarCarCard = ({
   };
 
   return (
-    <Card
+    <Card 
       className="group cursor-pointer bg-white border border-gray-200 hover:border-primary/50 hover:shadow-lg transition-all duration-300 overflow-hidden rounded-xl compact-card"
       onClick={handleCardClick}
-      style={{
-        touchAction: 'manipulation',
-        WebkitTapHighlightColor: 'transparent',
-        transform: 'translateZ(0)',
-        willChange: 'transform'
-      }}
     >
       {/* Large Image Section - Enhanced for mobile with bigger thumbnail */}
       <div className="relative h-48 sm:h-56 bg-gray-100 overflow-hidden">

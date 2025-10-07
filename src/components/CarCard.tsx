@@ -415,12 +415,11 @@ const CarCard = ({
       className="glass-card card-hover overflow-hidden cursor-pointer group touch-manipulation relative rounded-lg performance-card animation-120fps"
       onClick={handleCardClick}
       style={{
+        // Prevent layout shifts by setting fixed dimensions
         minHeight: '360px',
         aspectRatio: '280/360',
         willChange: 'transform',
-        transform: 'translateZ(0)',
-        touchAction: 'manipulation',
-        WebkitTapHighlightColor: 'transparent'
+        transform: 'translateZ(0)'
       }}
     >
       <div className="relative h-56 bg-muted overflow-hidden">
