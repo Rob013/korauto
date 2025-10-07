@@ -116,7 +116,7 @@
     </script>
     <noscript> Powered by <a href="https://www.korautoks.com" target="_blank">Smartsupp</a></noscript>
     
-    <!-- Ensure Smartsupp widget is always visible -->
+    <!-- Ensure Smartsupp widget is always visible and follows the page -->
     <style>
       #chat-application,
       #chat-application-iframe,
@@ -124,6 +124,15 @@
         opacity: 1 !important;
         visibility: visible !important;
         display: block !important;
+        position: fixed !important;
+        z-index: 999999 !important;
+      }
+      
+      /* Ensure the widget button stays fixed */
+      #chat-button,
+      .smartsupp-button {
+        position: fixed !important;
+        z-index: 999999 !important;
       }
     </style>
   </body>
