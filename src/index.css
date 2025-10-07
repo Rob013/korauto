@@ -33,11 +33,11 @@
   }
 }
 
-/* Smooth page transitions */
+/* Modern smooth page transitions with depth */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -45,8 +45,66 @@
   }
 }
 
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes floatAnimation {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
 .animate-fade-in {
-  animation: fadeIn 0.3s ease-out forwards;
+  animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-float {
+  animation: floatAnimation 3s ease-in-out infinite;
 }
 
 /* Scale in animation for badges */
@@ -310,30 +368,80 @@ All colors MUST be HSL.
 }
 
 @layer utilities {
-  /* Professional animations and transitions */
+  /* Modern professional animations with depth */
   .transition-smooth {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
+  .transition-elegant {
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Zen-inspired hover lift with 3D depth */
   .hover-lift {
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), 
+                box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .hover-lift:hover {
-    transform: translateY(-4px) scale(1.02);
-    box-shadow: 0 20px 40px -12px hsl(var(--primary) / 0.25);
+    transform: translateY(-8px) translateZ(20px) scale(1.02);
+    box-shadow: 
+      0 25px 50px -12px hsl(var(--primary) / 0.25),
+      0 12px 25px -8px hsl(var(--primary) / 0.15);
   }
 
-  /* Enhanced card animations */
+  /* Zen-style card animations with layered depth */
   .card-hover {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform;
   }
 
   .card-hover:hover {
-    transform: translateY(-6px);
+    transform: translateY(-12px) scale(1.02);
     box-shadow: 
-      0 10px 40px -12px rgba(0, 0, 0, 0.1),
-      0 4px 25px -5px rgba(0, 0, 0, 0.1);
+      0 20px 60px -15px rgba(0, 0, 0, 0.2),
+      0 8px 30px -8px rgba(0, 0, 0, 0.15),
+      0 2px 10px -2px rgba(0, 0, 0, 0.1);
+  }
+
+  /* 3D Card Stack Effect (Zen-inspired) */
+  .card-stack {
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .card-stack::before,
+  .card-stack::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: inherit;
+    border-radius: inherit;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .card-stack::before {
+    transform: translateZ(-20px) translateY(10px);
+    opacity: 0.3;
+  }
+
+  .card-stack::after {
+    transform: translateZ(-40px) translateY(20px);
+    opacity: 0.15;
+  }
+
+  .card-stack:hover {
+    transform: translateY(-20px) rotateX(5deg);
+  }
+
+  .card-stack:hover::before {
+    transform: translateZ(-10px) translateY(5px);
+  }
+
+  .card-stack:hover::after {
+    transform: translateZ(-20px) translateY(10px);
   }
 
   /* Dark mode card touch effect */
@@ -383,25 +491,54 @@ All colors MUST be HSL.
     box-shadow: 0 8px 25px -8px hsl(var(--primary) / 0.4);
   }
 
-  /* Stagger animation for cards */
+  /* Zen-inspired stagger animation with depth */
   .stagger-animation > * {
     opacity: 0;
-    transform: translateY(20px);
-    animation: staggerIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    transform: translateY(30px) scale(0.95);
+    animation: staggerIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
-  .stagger-animation > *:nth-child(1) { animation-delay: 0.1s; }
-  .stagger-animation > *:nth-child(2) { animation-delay: 0.2s; }
-  .stagger-animation > *:nth-child(3) { animation-delay: 0.3s; }
-  .stagger-animation > *:nth-child(4) { animation-delay: 0.4s; }
-  .stagger-animation > *:nth-child(5) { animation-delay: 0.5s; }
-  .stagger-animation > *:nth-child(6) { animation-delay: 0.6s; }
+  .stagger-animation > *:nth-child(1) { animation-delay: 0.05s; }
+  .stagger-animation > *:nth-child(2) { animation-delay: 0.1s; }
+  .stagger-animation > *:nth-child(3) { animation-delay: 0.15s; }
+  .stagger-animation > *:nth-child(4) { animation-delay: 0.2s; }
+  .stagger-animation > *:nth-child(5) { animation-delay: 0.25s; }
+  .stagger-animation > *:nth-child(6) { animation-delay: 0.3s; }
+  .stagger-animation > *:nth-child(7) { animation-delay: 0.35s; }
+  .stagger-animation > *:nth-child(8) { animation-delay: 0.4s; }
 
   @keyframes staggerIn {
     to {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateY(0) scale(1);
     }
+  }
+
+  /* Smooth reveal animation */
+  .reveal-on-scroll {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .reveal-on-scroll.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Parallax effect */
+  .parallax-slow {
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Smooth scale animation */
+  .scale-on-hover {
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .scale-on-hover:hover {
+    transform: scale(1.05);
   }
 
   /* Pulse animation for loading states */

@@ -41,7 +41,7 @@ const Catalog = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="animate-fade-in">
+      <div className="animate-fade-in-up">
         <EncarCatalog highlightCarId={highlightCarId} />
       </div>
       <Suspense fallback={<FooterSkeleton />}>
