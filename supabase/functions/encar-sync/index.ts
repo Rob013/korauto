@@ -204,21 +204,11 @@ Deno.serve(async (req) => {
 
           console.log(`📊 Processing ${carsArray.length} cars from page ${currentPage}`)
 
-          // Process each car with COMPLETE field mapping
+          // Process each car
           for (const apiCar of carsArray) {
             try {
-              // Use the database mapping function to extract ALL fields
-              const { data: mappedData, error: mappingError } = await supabase
-                .rpc('map_complete_api_data', { api_record: apiCar });
-
-              if (mappingError) {
-                console.error(`❌ Error mapping car ${apiCar.id}:`, mappingError);
-                continue;
-              }
-
               const primaryLot = apiCar.lots?.[0]
               const images = primaryLot?.images?.normal || primaryLot?.images?.big || []
-              const highResImages = primaryLot?.images?.big || []
               
               const carId = apiCar.id?.toString()
               const make = apiCar.manufacturer?.name?.trim()
@@ -229,144 +219,7 @@ Deno.serve(async (req) => {
                 continue
               }
 
-              // Store to cars_cache with ALL fields
-              const completeCarData = {
-                // IDs
-                id: carId,
-                api_id: carId,
-                
-                // Basic info
-                make,
-                model,
-                year: apiCar.year && apiCar.year > 1900 ? apiCar.year : 2020,
-                vin: apiCar.vin?.trim() || null,
-                
-                // Pricing
-                price: Math.max(primaryLot?.buy_now || 0, 0),
-                price_cents: (primaryLot?.buy_now || 0) * 100,
-                price_usd: primaryLot?.buy_now || 0,
-                price_eur: primaryLot?.buy_now ? Math.round(primaryLot.buy_now * 0.92) : 0,
-                
-                // Vehicle details
-                fuel: apiCar.fuel?.name?.trim() || null,
-                transmission: apiCar.transmission?.name?.trim() || null,
-                color: apiCar.color?.name?.trim() || null,
-                condition: primaryLot?.condition?.name || 'good',
-                mileage: primaryLot?.odometer?.km ? `${primaryLot.odometer.km} km` : null,
-                
-                // Engine/Performance from mapped data
-                engine_size: mappedData?.engine_size || apiCar.engine?.name,
-                engine_displacement: mappedData?.engine_displacement,
-                cylinders: mappedData?.cylinders || (apiCar.cylinders ? Number(apiCar.cylinders) : null),
-                max_power: mappedData?.max_power,
-                torque: mappedData?.torque,
-                acceleration: mappedData?.acceleration,
-                top_speed: mappedData?.top_speed,
-                co2_emissions: mappedData?.co2_emissions,
-                fuel_consumption: mappedData?.fuel_consumption,
-                
-                // Body details
-                body_style: mappedData?.body_style || apiCar.body_type?.name,
-                drive_type: mappedData?.drive_type || apiCar.drive_wheel,
-                doors: mappedData?.doors,
-                seats: mappedData?.seats,
-                
-                // Lot/Auction info
-                lot_number: primaryLot?.lot?.toString() || null,
-                lot_seller: mappedData?.lot_seller || primaryLot?.seller,
-                sale_title: mappedData?.sale_title,
-                grade: mappedData?.grade || primaryLot?.grade_iaai,
-                sale_status: primaryLot?.sale_status,
-                auction_date: mappedData?.auction_date || primaryLot?.sale_date,
-                time_left: mappedData?.time_left,
-                bid_count: mappedData?.bid_count || 0,
-                watchers_count: mappedData?.watchers_count || 0,
-                views_count: mappedData?.views_count || 0,
-                reserve_met: mappedData?.reserve_met || false,
-                estimated_value: mappedData?.estimated_value,
-                
-                // Images - Store ALL
-                images: images.length > 0 ? JSON.stringify(images) : '[]',
-                high_res_images: highResImages.length > 0 ? JSON.stringify(highResImages) : '[]',
-                all_images_urls: [...images, ...highResImages],
-                image_url: images[0] || highResImages[0] || null,
-                thumbnail_url: images[0] || null,
-                image_count: images.length + highResImages.length,
-                
-                // Keys and documentation
-                keys_count: mappedData?.keys_count || (primaryLot?.keys_available ? 1 : 0),
-                keys_count_detailed: mappedData?.keys_count_detailed || 0,
-                books_count: mappedData?.books_count || 0,
-                spare_key_available: mappedData?.spare_key_available || false,
-                service_book_available: mappedData?.service_book_available || false,
-                
-                // History
-                previous_owners: mappedData?.previous_owners || 1,
-                service_history: mappedData?.service_history,
-                accident_history: mappedData?.accident_history,
-                modifications: mappedData?.modifications,
-                warranty_info: mappedData?.warranty_info,
-                
-                // Registration/Legal
-                registration_date: mappedData?.registration_date,
-                first_registration: mappedData?.first_registration,
-                mot_expiry: mappedData?.mot_expiry,
-                road_tax: mappedData?.road_tax,
-                insurance_group: mappedData?.insurance_group,
-                title_status: mappedData?.title_status,
-                
-                // Damage
-                damage_primary: mappedData?.damage_primary || primaryLot?.damage?.main,
-                damage_secondary: mappedData?.damage_secondary || primaryLot?.damage?.second,
-                
-                // Location
-                location_country: 'South Korea',
-                location_city: mappedData?.location_city,
-                location_state: mappedData?.location_state,
-                seller_type: mappedData?.seller_type || primaryLot?.seller_type,
-                seller_notes: mappedData?.seller_notes,
-                
-                // Features
-                features: mappedData?.features || '[]',
-                inspection_report: mappedData?.inspection_report,
-                
-                // Raw data preservation (ALL API data stored)
-                car_data: JSON.stringify(apiCar),
-                lot_data: JSON.stringify(primaryLot || {}),
-                original_api_data: JSON.stringify(apiCar),
-                sync_metadata: JSON.stringify({
-                  synced_at: new Date().toISOString(),
-                  sync_version: '3.0',
-                  complete_mapping: true,
-                  api_fields_count: Object.keys(apiCar).length,
-                  mapped_fields_count: Object.keys(mappedData || {}).length
-                }),
-                
-                // Metadata
-                last_api_sync: new Date().toISOString(),
-                last_updated_source: new Date().toISOString(),
-                data_completeness_score: Object.keys(apiCar).length / 50,
-                api_version: '1.0',
-                source_site: 'auctionsapi',
-                external_url: `https://auctionsapi.com/car/${carId}`
-              };
-
-              // Upsert to cars_cache (primary storage)
-              const { error: cacheError } = await supabase
-                .from('cars_cache')
-                .upsert(completeCarData, { 
-                  onConflict: 'id',
-                  ignoreDuplicates: false 
-                })
-
-              if (cacheError) {
-                console.error(`❌ Error upserting to cars_cache ${carId}:`, cacheError)
-                errors.push(`Cache ${carId}: ${cacheError.message}`)
-                continue
-              }
-
-              // Also update cars table (for compatibility)
-              const basicCarData = {
+              const transformedCar = {
                 id: carId,
                 external_id: carId,
                 make,
@@ -393,22 +246,22 @@ Deno.serve(async (req) => {
                 domain_name: 'encar_com',
                 source_api: 'auctionapis',
                 last_synced_at: new Date().toISOString()
-              };
+              }
 
               const { error: upsertError } = await supabase
                 .from('cars')
-                .upsert(basicCarData, { 
+                .upsert(transformedCar, { 
                   onConflict: 'id',
                   ignoreDuplicates: false 
                 })
 
               if (upsertError) {
-                console.error(`❌ Error upserting car ${carId}:`, upsertError)
-                errors.push(`Car ${carId}: ${upsertError.message}`)
+                console.error(`❌ Error upserting car ${transformedCar.id}:`, upsertError)
+                errors.push(`Car ${transformedCar.id}: ${upsertError.message}`)
               } else {
                 totalCarsProcessed++
                 if (totalCarsProcessed % 100 === 0) {
-                  console.log(`✅ Processed ${totalCarsProcessed} cars with complete field mapping...`)
+                  console.log(`✅ Processed ${totalCarsProcessed} cars so far...`)
                 }
               }
             } catch (carError) {
