@@ -138,23 +138,28 @@
         visibility: visible !important;
         display: block !important;
         position: fixed !important;
+        right: 20px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
         z-index: 999999 !important;
         pointer-events: auto !important;
-        transform: none !important;
         transition: none !important;
       }
       
-      /* Ensure the widget button stays fixed and visible */
+      /* Ensure the widget button stays fixed and visible - positioned in middle-right */
       #chat-button,
       .smartsupp-button,
       .smartsupp-widget-button {
         position: fixed !important;
+        right: 20px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        bottom: auto !important;
         z-index: 999999 !important;
         opacity: 1 !important;
         visibility: visible !important;
         display: block !important;
         pointer-events: auto !important;
-        transform: none !important;
         transition: none !important;
       }
       
@@ -164,7 +169,7 @@
         animation: none !important;
       }
       
-      /* Mobile specific fixes */
+      /* Mobile specific fixes - keep it visible but slightly adjusted */
       @media (max-width: 768px) {
         #chat-application,
         #chat-button,
@@ -173,7 +178,19 @@
           display: block !important;
           visibility: visible !important;
           opacity: 1 !important;
+          right: 10px !important;
         }
+        
+        #chat-button,
+        .smartsupp-button,
+        .smartsupp-widget-button {
+          top: 45% !important;
+        }
+      }
+      
+      /* Ensure visibility on page load */
+      body {
+        padding-right: 0 !important;
       }
     </style>
   </body>
