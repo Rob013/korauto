@@ -1,10 +1,17 @@
 /* iOS-Specific Optimizations */
 
 /* Allow native scrolling behavior */
-html,
-body {
-  overflow: auto;
+html {
+  overflow-x: hidden;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+body {
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  min-height: 100vh;
 }
 
 /* iOS safe area padding - apply to main layout containers */
@@ -56,9 +63,8 @@ body {
     -webkit-text-size-adjust: 100%;
   }
   
-  /* Better touch target size for buttons */
+  /* Better touch target size for buttons - removed min-height that was causing issues */
   button, a, [role="button"] {
-    min-height: 44px;
     min-width: 44px;
   }
   
