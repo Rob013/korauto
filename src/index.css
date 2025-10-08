@@ -2218,47 +2218,56 @@ body {
   hyphens: auto;
 }
 
-/* Smartsupp Chat Widget */
+/* Smartsupp Chat Widget - Fixed positioning */
 #chat-application-iframe,
 #chat-button-iframe {
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
   z-index: 999999 !important;
 }
 
-/* Ensure full size Smartsupp chat on mobile */
+/* Chat button specific positioning */
+#chat-button-iframe {
+  width: 60px !important;
+  height: 60px !important;
+}
+
+/* Chat window positioning when opened */
+#chat-application-iframe {
+  bottom: 90px !important;
+  right: 20px !important;
+  width: 400px !important;
+  max-width: calc(100vw - 40px) !important;
+  height: 600px !important;
+  max-height: calc(100vh - 120px) !important;
+}
+
+/* Mobile optimizations */
 @media (max-width: 768px) {
-  /* Force desktop view for Smartsupp widget on mobile */
-  #chat-application-iframe,
-  #chat-application,
-  .smartsupp-widget,
-  #smartsupp-widget-container {
+  /* Chat button on mobile */
+  #chat-button-iframe {
+    bottom: 16px !important;
+    right: 16px !important;
+    width: 56px !important;
+    height: 56px !important;
+  }
+  
+  /* Full screen chat window on mobile */
+  #chat-application-iframe {
+    bottom: 0 !important;
+    right: 0 !important;
+    left: 0 !important;
+    top: 0 !important;
     width: 100vw !important;
     height: 100vh !important;
     max-width: 100vw !important;
     max-height: 100vh !important;
-    min-width: 100vw !important;
-    min-height: 100vh !important;
   }
   
   /* Ensure chat window is full size when opened */
   #chat-application iframe {
     width: 100% !important;
     height: 100% !important;
-  }
-  
-  /* Force all text elements to be visible */
-  #chat-application * {
-    white-space: normal !important;
-    overflow: visible !important;
-    text-overflow: clip !important;
-  }
-  
-  /* Ensure button/input elements show full text */
-  #chat-application button,
-  #chat-application input,
-  #chat-application textarea,
-  #chat-application .message-input {
-    min-width: auto !important;
-    width: auto !important;
-    font-size: inherit !important;
   }
 }
