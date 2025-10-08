@@ -412,7 +412,7 @@ const CarCard = ({
 
   return (
     <div
-      className="glass-card card-hover overflow-hidden cursor-pointer group relative rounded-lg performance-card animation-120fps"
+      className="glass-card card-hover overflow-hidden cursor-pointer group touch-manipulation relative rounded-lg performance-card animation-120fps"
       onClick={handleCardClick}
       style={{
         // Prevent layout shifts by setting fixed dimensions
@@ -474,29 +474,29 @@ const CarCard = ({
           )}
         </div>
 
-        {/* Compact Vehicle Info - Consistent grid layout for all devices */}
-        <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 mb-3 text-xs" style={{ minHeight: '3rem' }}>
+        {/* Compact Vehicle Info - Grid Layout with fixed heights */}
+        <div className="grid grid-cols-2 gap-2 mb-3 text-xs" style={{ minHeight: '3rem' }}>
           {mileage && (
-            <div className="flex items-center gap-1.5">
-              <Gauge className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+            <div className="flex items-center gap-1">
+              <Gauge className="h-3 w-3 text-muted-foreground flex-shrink-0" />
               <span className="truncate text-muted-foreground">{mileage}</span>
             </div>
           )}
           {transmission && (
-            <div className="flex items-center gap-1.5">
-              <Settings className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+            <div className="flex items-center gap-1">
+              <Settings className="h-3 w-3 text-muted-foreground flex-shrink-0" />
               <span className="capitalize truncate text-muted-foreground">{transmission}</span>
             </div>
           )}
           {fuel && (
-            <div className="flex items-center gap-1.5">
-              <Fuel className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+            <div className="flex items-center gap-1">
+              <Fuel className="h-3 w-3 text-muted-foreground flex-shrink-0" />
               <span className="capitalize truncate text-muted-foreground">{fuel}</span>
             </div>
           )}
           {color && (
-            <div className="flex items-center gap-1.5">
-              <Palette className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+            <div className="flex items-center gap-1">
+              <Palette className="h-3 w-3 text-muted-foreground flex-shrink-0" />
               <span className="capitalize truncate text-muted-foreground">{color}</span>
             </div>
           )}

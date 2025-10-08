@@ -127,56 +127,78 @@
     </script>
     <noscript> Powered by <a href="https://www.korautoks.com" target="_blank">Smartsupp</a></noscript>
     
-    <!-- Ensure Smartsupp widget is properly positioned without blocking content -->
+    <!-- Ensure Smartsupp widget is always visible and follows the page -->
     <style>
-      /* Smartsupp chat button - compact and non-blocking */
+      /* Force Smartsupp to be always visible on all devices as floating bubble */
+      #chat-application,
+      #chat-application-iframe,
+      .smartsupp-widget,
+      #smartsupp-widget-container {
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: block !important;
+        position: fixed !important;
+        right: 20px !important;
+        bottom: 20px !important;
+        top: auto !important;
+        left: auto !important;
+        z-index: 2147483647 !important;
+        pointer-events: auto !important;
+        transform: none !important;
+        transition: none !important;
+        filter: none !important;
+        perspective: none !important;
+        will-change: auto !important;
+        contain: none !important;
+      }
+      
+      /* Ensure the widget button stays fixed - floating on bottom-right */
       #chat-button,
-      #chat-button-iframe,
       .smartsupp-button,
       .smartsupp-widget-button {
         position: fixed !important;
         right: 20px !important;
         bottom: 20px !important;
-        z-index: 9999 !important;
+        top: auto !important;
+        left: auto !important;
+        z-index: 2147483647 !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: block !important;
         pointer-events: auto !important;
-        width: 60px !important;
-        height: 60px !important;
-        max-width: 60px !important;
-        max-height: 60px !important;
+        transform: none !important;
+        transition: none !important;
+        filter: none !important;
+        perspective: none !important;
+        will-change: auto !important;
+        contain: none !important;
       }
       
-      /* Chat window - only visible when opened */
-      #chat-application,
-      #chat-application-iframe {
-        position: fixed !important;
-        z-index: 9999 !important;
-        pointer-events: auto !important;
+      /* Prevent parent elements from breaking fixed positioning */
+      body, html, #root, [id*="smartsupp"], [class*="smartsupp"] {
+        transform: none !important;
+        filter: none !important;
+        perspective: none !important;
       }
       
-      /* Don't override body/html/root transforms - let them work normally */
+      /* Prevent any hide animations */
+      [id*="smartsupp"],
+      [class*="smartsupp"] {
+        animation: none !important;
+      }
       
-      /* Mobile adjustments */
+      /* Mobile specific fixes */
       @media (max-width: 768px) {
+        #chat-application,
         #chat-button,
-        #chat-button-iframe,
-        .smartsupp-button {
+        .smartsupp-widget,
+        .smartsupp-button,
+        .smartsupp-widget-button {
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
           right: 10px !important;
           bottom: 10px !important;
-          width: 56px !important;
-          height: 56px !important;
-          max-width: 56px !important;
-          max-height: 56px !important;
-        }
-        
-        /* Full screen chat when opened on mobile */
-        #chat-application,
-        #chat-application-iframe {
-          top: 0 !important;
-          left: 0 !important;
-          right: 0 !important;
-          bottom: 0 !important;
-          width: 100vw !important;
-          height: 100vh !important;
         }
       }
     </style>
