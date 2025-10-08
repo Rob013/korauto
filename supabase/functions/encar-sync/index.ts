@@ -55,9 +55,10 @@ async function makeApiRequest(url: string, retryCount = 0): Promise<any> {
     return data
 
   } catch (error) {
-    console.error(`❌ API Error for ${url}:`, error.message)
+    const message = (error as any)?.message || 'Unknown error'
+    console.error(`❌ API Error for ${url}:`, message)
     
-    if (retryCount < MAX_RETRIES && !error.message.includes('Rate limit exceeded')) {
+    if (retryCount < MAX_RETRIES && !message.includes('Rate limit exceeded')) {
       const delay = 1000 * Math.pow(BACKOFF_MULTIPLIER, retryCount)
       console.log(`⏰ Retrying in ${delay}ms...`)
       await new Promise(resolve => setTimeout(resolve, delay))
@@ -150,8 +151,13 @@ Deno.serve(async (req) => {
 
     console.log(`✅ Created sync record: ${syncRecord.id}`)
 
-    const API_KEY = 'd00985c77981fe8d26be16735f932ed1'
-    const BASE_URL = 'https://auctionsapi.com/api'
+    // Read configuration from environment variables
+    const API_KEY = Deno.env.get('AUCTIONS_API_KEY') || Deno.env.get('ENCAR_API_KEY') || Deno.env.get('API_KEY') || ''
+    const BASE_URL = Deno.env.get('AUCTIONS_API_BASE_URL') || Deno.env.get('API_BASE_URL') || 'https://auctionsapi.com/api'
+
+    if (!API_KEY) {
+      throw new Error('Missing AUCTIONS_API_KEY in environment')
+    }
     
     let totalCarsProcessed = 0
     let totalArchivedProcessed = 0
@@ -161,7 +167,7 @@ Deno.serve(async (req) => {
       // Step 1: Process active cars from /api/cars endpoint
       console.log(`📡 Processing active cars (${syncType === 'full' ? 'full sync' : `last ${minutes} minutes`})`)
       
-      let baseUrl = `${BASE_URL}/cars?api_key=${API_KEY}&per_page=${PAGE_SIZE}`
+      let baseUrl = `${BASE_URL}/cars?per_page=${PAGE_SIZE}&api_key=${API_KEY}`
       if (syncType !== 'full') {
         baseUrl += `&minutes=${minutes}`
       }
@@ -213,8 +219,8 @@ Deno.serve(async (req) => {
                 make,
                 model,
                 year: apiCar.year && apiCar.year > 1900 ? apiCar.year : 2020,
-                price: Math.max(primaryLot?.buy_now || 0, 0),
-                mileage: Math.max(primaryLot?.odometer?.km || 0, 0),
+                price: Math.max(Number(primaryLot?.buy_now) || 0, 0),
+                mileage: Math.max(Number(primaryLot?.odometer?.km) || 0, 0),
                 title: apiCar.title?.trim() || `${make} ${model} ${apiCar.year || ''}`,
                 vin: apiCar.vin?.trim() || null,
                 color: apiCar.color?.name?.trim() || null,
@@ -223,9 +229,9 @@ Deno.serve(async (req) => {
                 lot_number: primaryLot?.lot?.toString() || null,
                 image_url: images[0] || null,
                 images: JSON.stringify(images),
-                current_bid: parseFloat(primaryLot?.bid) || 0,
-                buy_now_price: parseFloat(primaryLot?.buy_now) || 0,
-                is_live: primaryLot?.status?.name === 'sale',
+                current_bid: Number(primaryLot?.bid) || 0,
+                buy_now_price: Number(primaryLot?.buy_now) || 0,
+                is_live: (primaryLot?.status as any)?.name === 'sale' || (primaryLot as any)?.status === 'sale',
                 keys_available: primaryLot?.keys_available !== false,
                 status: 'active',
                 is_archived: false,

@@ -861,9 +861,10 @@ const filteredCars = useMemo(() => {
       {/* Collapsible Filter Sidebar - Optimized for mobile */}
       <div 
         ref={filterPanelRef}
+        aria-hidden={!showFilters}
         className={`
         fixed lg:relative z-40 bg-card border-r transition-transform duration-300 ease-in-out
-        ${showFilters ? 'translate-x-0' : '-translate-x-full'}
+        ${showFilters ? 'translate-x-0 pointer-events-auto' : '-translate-x-full pointer-events-none'}
         ${isMobile ? 'top-0 left-0 right-0 bottom-0 w-full h-dvh overflow-y-auto safe-area-inset' : 'w-80 sm:w-80 lg:w-72 h-full flex-shrink-0 overflow-y-auto'} 
         lg:shadow-none shadow-xl
       `}>
@@ -945,15 +946,14 @@ const filteredCars = useMemo(() => {
       </div>
 
       {/* Overlay for mobile - stronger backdrop on mobile */}
-      {showFilters && (
+      {(
         <div 
           className={`fixed inset-0 z-30 lg:hidden transition-opacity duration-300 ${
-            isMobile ? 'bg-black/70 backdrop-blur-md' : 'bg-black/50 backdrop-blur-sm'
-          }`}
+            showFilters ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          } ${isMobile ? 'bg-black/70 backdrop-blur-md' : 'bg-black/50 backdrop-blur-sm'}`}
           onClick={() => {
-            // Issue #2 FIXED: Allow closing filters anytime via overlay click and mark as explicitly closed
             setShowFilters(false);
-            setHasExplicitlyClosed(true); // Mark as explicitly closed
+            setHasExplicitlyClosed(true);
           }}
         />
       )}

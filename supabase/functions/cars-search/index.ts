@@ -44,7 +44,7 @@ const SearchReqSchema = z.object({
 
 const LISTING_FIELDS = ['id', 'make', 'model', 'year', 'price_eur', 'mileage_km', 'thumbnail', 'listed_at'];
 
-const API_BASE_URL = 'https://auctionsapi.com/api';
+const API_BASE_URL = Deno.env.get('AUCTIONS_API_BASE_URL') || 'https://auctionsapi.com/api';
 
 function buildFilter(filters: any): Record<string, any> {
   if (!filters) return {};
@@ -174,6 +174,57 @@ async function fetchCarsData(req: any): Promise<any> {
   return await response.json();
 }
 
+async function fetchAllCarsData(req: any): Promise<any[]> {
+  const apiKey = Deno.env.get('AUCTIONS_API_KEY');
+  if (!apiKey) {
+    throw new Error('API key not configured');
+  }
+
+  const pageSize = Math.min(Math.max(req.pageSize || 100, 20), 100);
+  const apiFilters = buildFilter(req.filters);
+  const baseParams = new URLSearchParams({
+    ...Object.fromEntries(Object.entries(apiFilters).map(([k, v]) => [k, String(v)])),
+    per_page: String(pageSize),
+  });
+
+  if (req.q) baseParams.set('search', req.q);
+
+  let page = 1;
+  const all: any[] = [];
+  const maxPages = 50; // safety cap
+
+  while (page <= maxPages) {
+    const params = new URLSearchParams(baseParams);
+    params.set('page', String(page));
+    const url = `${API_BASE_URL}/cars?${params}`;
+
+    const res = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'KORAUTO-WebApp/1.0',
+        'X-API-Key': apiKey
+      },
+      signal: AbortSignal.timeout(30000)
+    });
+    if (!res.ok) {
+      throw new Error(`API request failed: ${res.status} ${res.statusText}`);
+    }
+    const json = await res.json();
+    const pageData = Array.isArray(json?.data) ? json.data : [];
+    all.push(...pageData);
+
+    const current = Number(json?.meta?.current_page) || page;
+    const last = Number(json?.meta?.last_page) || current;
+    if (current >= last) break;
+    page++;
+
+    // brief delay to be nice to API
+    await new Promise(r => setTimeout(r, 250));
+  }
+
+  return all;
+}
+
 const handler = async (req: Request): Promise<Response> => {
   console.log('🔍 Cars search API called:', req.method, req.url);
 
@@ -212,23 +263,58 @@ const handler = async (req: Request): Promise<Response> => {
       console.log('📊 Returning facets only');
       
     } else if (validatedReq.mode === 'results') {
-      // Return only results with listing fields
-      const apiData = await fetchCarsData(validatedReq);
+      // Global sort: fetch across pages, sort server-side, then paginate
+      const allCars = await fetchAllCarsData(validatedReq);
+      let hits = allCars.map(transformCarData);
+
+      // Apply sorting globally
+      if (validatedReq.sort) {
+        const { field, dir } = validatedReq.sort;
+        const mul = dir === 'asc' ? 1 : -1;
+        hits.sort((a: any, b: any) => {
+          const av = a[field] ?? 0;
+          const bv = b[field] ?? 0;
+          if (av === bv) return 0;
+          return av > bv ? mul : -mul;
+        });
+      }
+
+      const page = validatedReq.page || 1;
+      const pageSize = validatedReq.pageSize || 20;
+      const start = (page - 1) * pageSize;
+      const end = start + pageSize;
+
+      result.total = hits.length;
+      result.hits = hits.slice(start, end);
       
-      result.hits = (apiData.data || []).map(transformCarData);
-      result.total = apiData.meta?.total || result.hits.length;
-      
-      console.log(`📋 Returning ${result.hits.length} results (total: ${result.total})`);
+      console.log(`📋 Returning ${result.hits.length} globally-sorted results (total: ${result.total})`);
       
     } else {
-      // mode === 'full' - return both results and facets
-      const apiData = await fetchCarsData(validatedReq);
-      
-      result.hits = (apiData.data || []).map(transformCarData);
-      result.total = apiData.meta?.total || result.hits.length;
+      // mode === 'full' - return both results and facets using global sort
+      const allCars = await fetchAllCarsData(validatedReq);
+      let hits = allCars.map(transformCarData);
+
+      if (validatedReq.sort) {
+        const { field, dir } = validatedReq.sort;
+        const mul = dir === 'asc' ? 1 : -1;
+        hits.sort((a: any, b: any) => {
+          const av = a[field] ?? 0;
+          const bv = b[field] ?? 0;
+          if (av === bv) return 0;
+          return av > bv ? mul : -mul;
+        });
+      }
+
+      const page = validatedReq.page || 1;
+      const pageSize = validatedReq.pageSize || 20;
+      const start = (page - 1) * pageSize;
+      const end = start + pageSize;
+
+      result.total = hits.length;
+      result.hits = hits.slice(start, end);
       result.facets = generateMockFacets(validatedReq.filters);
       
-      console.log(`📋 Returning full data: ${result.hits.length} results + facets`);
+      console.log(`📋 Returning full globally-sorted data: ${result.hits.length} results + facets`);
     }
 
     return new Response(JSON.stringify(result), {
