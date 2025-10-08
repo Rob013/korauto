@@ -385,19 +385,16 @@ html {
     /* iOS momentum scrolling */
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
-    /* Prevent elastic bounce on body */
-    position: fixed;
-    overflow: hidden;
-    height: 100vh;
-    height: 100dvh;
+    /* Allow natural scrolling on mobile */
+    min-height: 100vh;
+    min-height: 100dvh;
   }
 
   #root {
     width: 100%;
     overflow-x: hidden;
-    overflow-y: auto;
-    height: 100vh;
-    height: 100dvh;
+    min-height: 100vh;
+    min-height: 100dvh;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
   }
@@ -431,8 +428,9 @@ html {
   [onclick] {
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
     -webkit-touch-callout: none;
-    touch-action: manipulation;
     cursor: pointer;
+    /* Allow all touch gestures */
+    touch-action: auto;
   }
 
   /* Disable iOS text size adjustment */
