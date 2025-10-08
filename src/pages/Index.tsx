@@ -69,12 +69,12 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background smooth-scroll-container">
+    <div className="min-h-screen bg-background">
       {/* Header loads immediately for navigation */}
       <Header />
       
       {/* Main content with proper landmark */}
-      <main id="main" className="animate-fade-in-up">
+      <main id="main" className="animate-fade-in">
         {/* Lazy load other sections with optimized skeletons */}
         <Suspense fallback={<HomeSectionSkeleton />}>
           <HomeSection />

@@ -3,18 +3,8 @@ import App from './App.tsx'
 import './index.css'
 import './utils/iosOptimizations.css'
 import { ThemeProvider } from "@/components/ThemeProvider"
-import { LanguageProvider } from "@/contexts/LanguageContext"
 import { NavigationProvider } from './contexts/NavigationContext.tsx'
 import cacheManager from '@/utils/cacheManager'
-import { useEffect } from 'react'
-import { useIOSOptimization } from './hooks/useIOSOptimization'
-
-// Main App Wrapper with iOS optimization
-const AppWrapper = () => {
-  useIOSOptimization();
-  
-  return <App />;
-};
 
 // Initialize cache manager and check for updates
 cacheManager.initialize().then((cacheCleared) => {
@@ -66,10 +56,8 @@ if ('serviceWorker' in navigator) {
 
 createRoot(document.getElementById("root")!).render(
   <ThemeProvider defaultTheme="system" storageKey="korauto-ui-theme">
-    <LanguageProvider>
-      <NavigationProvider>
-        <AppWrapper />
-      </NavigationProvider>
-    </LanguageProvider>
+    <NavigationProvider>
+      <App />
+    </NavigationProvider>
   </ThemeProvider>
 );
