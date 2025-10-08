@@ -179,22 +179,31 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Use fallback data when there's an error and no cars loaded
     const sourceCars = (error && cars.length === 0) ? fallbackCars : cars;
     const cleanedCars = filterOutTestCars(sourceCars || []);
-    return applyGradeFilter(cleanedCars, filters?.grade_iaai) || [];
+    const gradeFiltered = applyGradeFilter(cleanedCars, filters?.grade_iaai) || [];
+    // Filter to show only cars with real buy_now pricing data
+    return filterCarsWithBuyNowPricing(gradeFiltered);
   }, [cars, filters?.grade_iaai, error]);
   
   // console.log(`📊 Filter Results: ${filteredCars.length} cars match (total loaded: ${cars.length}, total count from API: ${totalCount}, grade filter: ${filters.grade_iaai || 'none'})`);
 
   // Memoized cars for sorting to prevent unnecessary re-computations
   const carsForSorting = useMemo(() => {
-    return filteredCars.map((car) => ({
-      ...car,
-      status: String(car.status || ""),
-      lot_number: String(car.lot_number || ""),
-      cylinders: Number(car.cylinders || 0),
-      year: Number(car.year || 2000), // Ensure year is a number for FlexibleCar interface
-      engine: { name: car.engine?.name || "Unknown" }, // Ensure engine has required name property
-    }));
-  }, [filteredCars]);
+    return filteredCars.map((car) => {
+      // Calculate EUR price using current exchange rate
+      const priceUSD = Number(car.lots?.[0]?.buy_now || car.buy_now || 0);
+      const priceEUR = priceUSD > 0 ? calculateFinalPriceEUR(priceUSD, exchangeRate.rate) : 0;
+      
+      return {
+        ...car,
+        price_eur: priceEUR, // Add calculated EUR price
+        status: String(car.status || ""),
+        lot_number: String(car.lot_number || ""),
+        cylinders: Number(car.cylinders || 0),
+        year: Number(car.year || 2000), // Ensure year is a number for FlexibleCar interface
+        engine: { name: car.engine?.name || "Unknown" }, // Ensure engine has required name property
+      };
+    });
+  }, [filteredCars, exchangeRate.rate]);
   
   // Apply daily rotating cars when in default state, same as homepage
   const dailyRotatingCars = useDailyRotatingCars(carsForSorting, !isDefaultState, 200);
@@ -1429,7 +1438,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                         final_price={car.final_price || lot?.final_price}
                         insurance_v2={(lot as any)?.insurance_v2}
                         details={(lot as any)?.details}
-                        viewMode={viewMode}
                       />
                     </div>
                   );

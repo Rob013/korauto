@@ -37,8 +37,6 @@ interface LazyCarCardProps {
   is_archived?: boolean;
   archived_at?: string;
   archive_reason?: string;
-  // View mode prop
-  viewMode?: 'grid' | 'list';
 }
 
 const LazyCarCard = memo(({
@@ -62,8 +60,7 @@ const LazyCarCard = memo(({
   details,
   is_archived,
   archived_at,
-  archive_reason,
-  viewMode = 'grid' // Default to grid view
+  archive_reason
 }: LazyCarCardProps) => {
   const navigate = useNavigate();
   const { setCompletePageState } = useNavigation();
@@ -289,11 +286,7 @@ const LazyCarCard = memo(({
   return (
     <div 
       ref={cardRef}
-      className={`glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] ${
-        viewMode === 'list' 
-          ? 'flex flex-row items-start gap-3 p-3 mobile-card-compact' 
-          : 'mobile-card-compact compact-modern-card'
-      }`}
+      className="glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] mobile-card-compact compact-modern-card"
       onClick={handleCardClick}
       style={{
         willChange: 'transform',
@@ -301,11 +294,7 @@ const LazyCarCard = memo(({
       }}
     >
       {/* Image Section - Standard 4:3 aspect ratio like encar.com */}
-      <div className={`relative bg-muted overflow-hidden flex-shrink-0 rounded-lg ${
-        viewMode === 'list' 
-          ? 'w-32 h-24 sm:w-40 sm:h-30 lg:w-48 lg:h-36' 
-          : 'aspect-[4/3] w-full'
-      }`}>
+      <div className="relative bg-muted overflow-hidden flex-shrink-0 rounded-lg aspect-[4/3] w-full">
         {/* Always show single image - swipe functionality removed from car cards */}
         {(image || (images && images.length > 0)) ? (
           <img 
@@ -350,7 +339,7 @@ const LazyCarCard = memo(({
       </div>
       
       {/* Content Section - 30% of card height, more compact */}
-      <div className={`${viewMode === 'list' ? 'flex-1 min-w-0' : 'p-3 flex-1 flex flex-col'}`}>
+      <div className="p-3 flex-1 flex flex-col">
         <div className="mb-2">
           <h3 className="card-title text-sm font-bold text-foreground line-clamp-1 leading-tight">
             {year} {make} {model}
@@ -361,11 +350,7 @@ const LazyCarCard = memo(({
         </div>
 
         {/* Vehicle Info - More compact layout */}
-        <div className={`mb-2 text-xs ${
-          viewMode === 'list' 
-            ? 'grid grid-cols-2 gap-x-3 gap-y-1' 
-            : 'grid grid-cols-2 gap-x-2 gap-y-1'
-        }`}>
+        <div className="mb-2 text-xs grid grid-cols-2 gap-x-2 gap-y-1">
           {mileage && (
             <div className="flex items-center gap-1.5 min-w-0">
               <Gauge className="h-3 w-3 text-muted-foreground flex-shrink-0" />
@@ -403,31 +388,20 @@ const LazyCarCard = memo(({
         )}
 
         {/* Pricing Section - Better aligned */}
-        <div className={`mt-auto ${viewMode === 'list' ? 'flex flex-col items-end justify-center' : ''}`}>
-          {viewMode === 'list' ? (
-            <div className="text-right">
-              <span className="card-price text-lg font-bold text-primary block">
+        <div className="mt-auto">
+          <div className="space-y-1">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="card-price text-lg font-bold text-primary">
                 €{price.toLocaleString()}
               </span>
-              <span className="text-xs text-muted-foreground block mt-0.5">
-                deri ne portin e Durrësit
+              <span className="text-xs text-muted-foreground text-right flex-shrink-0">
+                KORAUTO
               </span>
             </div>
-          ) : (
-            <div className="space-y-1">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="card-price text-lg font-bold text-primary">
-                  €{price.toLocaleString()}
-                </span>
-                <span className="text-xs text-muted-foreground text-right flex-shrink-0">
-                  KORAUTO
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground leading-tight">
-                deri ne portin e Durrësit
-              </p>
-            </div>
-          )}
+            <p className="text-xs text-muted-foreground leading-tight">
+              deri ne portin e Durrësit
+            </p>
+          </div>
         </div>
       </div>
     </div>

@@ -227,13 +227,23 @@ const HomeCarsSection = memo(() => {
     // Use fallback data when there's an error and no cars loaded
     const sourceCars = error && cars.length === 0 ? fallbackCars : cars;
     const cleanedCars = filterOutTestCars(sourceCars);
-    return cleanedCars.map(car => ({
-      ...car,
-      status: String(car.status || ""),
-      lot_number: String(car.lot_number || ""),
-      cylinders: Number(car.cylinders || 0)
-    }));
-  }, [cars, error]);
+    // Filter to show only cars with real buy_now pricing
+    const carsWithRealPricing = filterCarsWithBuyNowPricing(cleanedCars);
+    
+    return carsWithRealPricing.map(car => {
+      // Calculate EUR price using current exchange rate
+      const priceUSD = Number(car.lots?.[0]?.buy_now || car.buy_now || 0);
+      const priceEUR = priceUSD > 0 ? calculateFinalPriceEUR(priceUSD, exchangeRate.rate) : 0;
+      
+      return {
+        ...car,
+        price_eur: priceEUR, // Add calculated EUR price
+        status: String(car.status || ""),
+        lot_number: String(car.lot_number || ""),
+        cylinders: Number(car.cylinders || 0)
+      };
+    });
+  }, [cars, error, exchangeRate.rate]);
 
   // Check if any meaningful filters are applied (using pendingFilters for homepage)
   const hasFilters = useMemo(() => {
