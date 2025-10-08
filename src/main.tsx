@@ -8,6 +8,7 @@ import { NavigationProvider } from './contexts/NavigationContext.tsx'
 import cacheManager from '@/utils/cacheManager'
 import { useEffect } from 'react'
 import { useIOSOptimization } from './hooks/useIOSOptimization'
+import '@/utils/removeBlockingElements'
 
 // Main App Wrapper with iOS optimization
 const AppWrapper = () => {
