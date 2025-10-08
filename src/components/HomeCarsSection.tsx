@@ -15,7 +15,6 @@ import { useDailyRotatingCars } from "@/hooks/useDailyRotatingCars";
 import { filterOutTestCars } from "@/utils/testCarFilter";
 import { calculateFinalPriceEUR, filterCarsWithBuyNowPricing } from "@/utils/carPricing";
 import { fallbackCars, fallbackManufacturers } from "@/data/fallbackData";
-import { useLanguage } from "@/contexts/LanguageContext";
 interface APIFilters {
   manufacturer_id?: string;
   model_id?: string;
@@ -37,7 +36,6 @@ interface APIFilters {
 }
 const HomeCarsSection = memo(() => {
   const navigate = useNavigate();
-  const { t } = useLanguage();
   const {
     ref,
     isInView
@@ -522,7 +520,7 @@ const HomeCarsSection = memo(() => {
             {/* Show More Button */}
             <div className="text-center mt-8">
               {carsToDisplay.length > defaultDisplayCount && !showAllCars && <Button onClick={() => setShowAllCars(true)} variant="outline" size="lg" className="btn-enhanced bg-card border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3">
-                  {t("cars.viewAll")} ({carsToDisplay.length})
+                  Shiko të gjitha ({carsToDisplay.length} makina)
                 </Button>}
             </div>
           </>}

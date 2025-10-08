@@ -1,10 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
-
 const HomeSection = () => {
-  const { t } = useLanguage();
-  
   return <section id="home" className="min-h-[85vh] flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 pt-2 pb-4 relative overflow-hidden">
       {/* Background decorative elements */}
       <div className="absolute inset-0 pointer-events-none">
@@ -22,18 +18,16 @@ const HomeSection = () => {
           </div>
           
           <h1 className="text-4xl md:text-6xl font-bold mb-4 text-foreground animate-slide-in-left">
-            {t("home.welcome")} KORAUTO
+            Mirë se vini në KORAUTO
           </h1>
           <p className="text-lg md:text-xl mb-6 text-muted-foreground max-w-3xl mx-auto animate-slide-in-right">
-            {t("home.subtitle")}
+            Gjeni makinën tuaj të përsosur nga Koreja e Jugut me çmimin më të mirë dhe cilësinë e lartë
           </p>
           
           <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-8 animate-bounce-in">
-            <Button variant="outline" size="lg" className="btn-enhanced border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3 text-lg transition-all duration-300 hover-lift-gentle" onClick={() => window.location.href = '/catalog'}>
-              {t("btn.viewCars")}
-            </Button>
+            <Button variant="outline" size="lg" className="btn-enhanced border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3 text-lg transition-all duration-300 hover-lift-gentle" onClick={() => window.location.href = '/catalog'}>Shfleto Veturat</Button>
             <Button variant="outline" size="lg" className="btn-enhanced border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3 text-lg transition-all duration-300 hover-lift-gentle" onClick={() => window.location.href = '/inspections'}>
-              {t("btn.learnMore")}
+              Mëso për Inspektimet
             </Button>
           </div>
 
@@ -41,15 +35,15 @@ const HomeSection = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-2xl mx-auto mt-8 stagger-animation">
             <div className="text-center modern-card p-6 hover-lift-gentle">
               <div className="text-3xl md:text-4xl font-bold gradient-text mb-1">400+</div>
-              <div className="text-sm text-muted-foreground">{t("hero.stats.cars")}</div>
+              <div className="text-sm text-muted-foreground">Makina të Shitura në Kosovë</div>
             </div>
             <div className="text-center modern-card p-6 hover-lift-gentle">
               <div className="text-3xl md:text-4xl font-bold gradient-text mb-1">100%</div>
-              <div className="text-sm text-muted-foreground">{t("home.features.quality")}</div>
+              <div className="text-sm text-muted-foreground">Garancion ne Motor, Transimison dhe KM</div>
             </div>
             <div className="text-center col-span-2 md:col-span-1 modern-card p-6 hover-lift-gentle">
               <div className="text-3xl md:text-4xl font-bold gradient-text mb-1">24/7</div>
-              <div className="text-sm text-muted-foreground">{t("hero.stats.support")}</div>
+              <div className="text-sm text-muted-foreground">Mbështetje</div>
             </div>
           </div>
         </div>

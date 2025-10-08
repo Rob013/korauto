@@ -2,11 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 const Footer = () => {
-  const { t } = useLanguage();
-  
   return (
     <footer className="bg-primary text-primary-foreground py-8">
       <div className="container-responsive">
@@ -15,16 +12,16 @@ const Footer = () => {
           <div className="space-y-4">
             <h3 className="text-2xl font-bold">KORAUTO</h3>
             <p className="text-sm opacity-90">
-              {t("footer.aboutText")}
+              Partneri juaj i besuar për makina të cilësisë së lartë me shërbime profesionale inspektimi në të gjithë Korenë e jugut.
             </p>
           </div>
 
           {/* Quick Links */}
           <div className="space-y-4">
-            <h4 className="text-lg font-semibold">{t("footer.quickLinks")}</h4>
+            <h4 className="text-lg font-semibold">Lidhje të Shpejta</h4>
             <div className="space-y-2 text-sm">
-              <Link to="/" className="block hover:text-gray-300 transition-colors">{t("nav.home")}</Link>
-              <Link to="/catalog" className="block hover:text-gray-300 transition-colors">{t("nav.catalog")}</Link>
+              <Link to="/" className="block hover:text-gray-300 transition-colors">Kryefaqja</Link>
+              <Link to="/catalog" className="block hover:text-gray-300 transition-colors">Katalogu</Link>
               <button 
                 onClick={() => {
                   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -34,14 +31,14 @@ const Footer = () => {
                 }}
                 className="block hover:text-gray-300 transition-colors text-left bg-transparent border-none cursor-pointer p-0"
               >
-                {t("footer.contact")}
+                Kontakti
               </button>
             </div>
           </div>
 
           {/* Contact Info */}
           <div className="space-y-4">
-            <h4 className="text-lg font-semibold">{t("footer.contact")}</h4>
+            <h4 className="text-lg font-semibold">Informacioni i Kontaktit</h4>
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4" />
@@ -74,7 +71,7 @@ const Footer = () => {
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="hover:text-gray-300 transition-colors"
-                  aria-label="Follow us on Facebook"
+                  aria-label="Ndiqni ne Facebook"
                 >
                   <Facebook className="h-5 w-5" />
                 </a>
@@ -83,7 +80,7 @@ const Footer = () => {
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="hover:text-gray-300 transition-colors"
-                  aria-label="Follow us on Instagram"
+                  aria-label="Ndiqni ne Instagram"
                 >
                   <Instagram className="h-5 w-5" />
                 </a>
@@ -108,7 +105,7 @@ const Footer = () => {
 
         <div className="border-t border-white/20 mt-8 pt-8 text-center">
           <p className="text-sm opacity-75">
-            © 2024 KORAUTO. {t("footer.rights")}
+            © 2024 KORAUTO. Të gjitha të drejtat e rezervuara. Shërbime profesionale inspektimi makinash.
           </p>
         </div>
       </div>
