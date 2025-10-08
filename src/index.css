@@ -38,18 +38,47 @@ textarea,
 [role="link"] {
   pointer-events: auto !important;
   touch-action: manipulation !important;
-  -webkit-user-select: none;
-  user-select: none;
+  -webkit-tap-highlight-color: transparent;
   cursor: pointer;
   position: relative;
+  z-index: 1;
+}
+
+/* Allow text selection in inputs and textareas */
+input,
+select,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Prevent text selection on buttons and links */
+button,
+a,
+[role="button"],
+[role="link"] {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* Minimum touch targets for accessibility */
-button:not(.icon-only),
-a:not(.icon-only),
-[role="button"]:not(.icon-only) {
+button:not(.icon-only):not([class*="h-"]),
+a:not(.icon-only):not([class*="h-"]),
+[role="button"]:not(.icon-only):not([class*="h-"]) {
   min-height: 44px;
+}
+
+button:not(.icon-only):not([class*="w-"]),
+a:not(.icon-only):not([class*="w-"]),
+[role="button"]:not(.icon-only):not([class*="w-"]) {
   min-width: 44px;
+}
+
+/* Ensure buttons maintain proper touch zones even with custom heights */
+button[class*="h-8"],
+button[class*="h-9"] {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
 }
 
 /* Ensure header and its children are always interactive */
@@ -59,6 +88,76 @@ header button,
 header a {
   pointer-events: auto !important;
   z-index: inherit;
+}
+
+/* Z-index hierarchy for proper layering */
+/* Base interactive elements */
+button:not([class*="z-"]),
+a:not([class*="z-"]),
+input:not([class*="z-"]),
+select:not([class*="z-"]) {
+  z-index: 1;
+}
+
+/* Dropdowns and popovers should be above base elements but below modals */
+[data-radix-popper-content-wrapper],
+[data-radix-portal],
+[role="menu"],
+[role="listbox"],
+[role="dialog"]:not(.modal),
+.dropdown-content,
+.popover-content {
+  z-index: 100 !important;
+  pointer-events: auto !important;
+}
+
+/* Select dropdowns */
+[data-radix-select-content],
+[data-radix-select-viewport] {
+  z-index: 100 !important;
+  pointer-events: auto !important;
+}
+
+/* Tooltips should be above most content */
+[role="tooltip"],
+.tooltip {
+  z-index: 200 !important;
+  pointer-events: none !important; /* Tooltips shouldn't block interactions */
+}
+
+/* Modals and dialogs should be on top */
+[role="dialog"].modal,
+.modal,
+[data-radix-dialog-overlay],
+[data-radix-dialog-content] {
+  z-index: 1000 !important;
+}
+
+/* Notifications and toasts */
+.toast,
+[data-sonner-toast],
+[data-sonner-toaster] {
+  z-index: 2000 !important;
+}
+
+/* Utility class for ensuring interactive elements work properly */
+.force-interactive {
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+  position: relative;
+  z-index: 10;
+}
+
+/* Force mobile dropdowns to be above everything except modals */
+@media (max-width: 768px) {
+  [role="menu"],
+  [role="listbox"],
+  [data-radix-select-content],
+  .mobile-dropdown {
+    z-index: 150 !important;
+  }
 }
 
 /* GPU acceleration for animations with iOS optimization */
@@ -2555,10 +2654,11 @@ body {
   hyphens: auto;
 }
 
-/* Smartsupp Chat Widget */
+/* Smartsupp Chat Widget - Reduced z-index to prevent blocking interactions */
 #chat-application-iframe,
 #chat-button-iframe {
-  z-index: 999999 !important;
+  z-index: 9999 !important;
+  pointer-events: auto !important;
 }
 
 /* Ensure full size Smartsupp chat on mobile */
