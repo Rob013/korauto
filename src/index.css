@@ -2198,6 +2198,27 @@ body {
   }
 }
 
+/* Smartsupp Chat Widget - Fixed Positioning */
+#chat-application,
+#chat-application iframe,
+[id^="smartsupp"],
+[class*="smartsupp"] {
+  position: fixed !important;
+  z-index: 9999 !important;
+}
+
+#chat-application {
+  bottom: 20px !important;
+  right: 20px !important;
+}
+
+@media (max-width: 768px) {
+  #chat-application {
+    bottom: 80px !important;
+    right: 15px !important;
+  }
+}
+
 /* Equipment grid text alignment improvements */
 .equipment-item-text {
   word-wrap: break-word;
