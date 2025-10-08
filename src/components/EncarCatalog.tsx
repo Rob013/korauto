@@ -1081,7 +1081,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         data-filter-panel
         className={`
         fixed lg:sticky lg:top-4 lg:self-start z-40 glass-card transition-transform duration-300 ease-in-out
-        ${showFilters ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        ${showFilters ? 'translate-x-0 pointer-events-auto' : '-translate-x-full lg:translate-x-0 pointer-events-none lg:pointer-events-auto'}
         ${!showFilters && 'lg:block hidden'}
         ${isMobile ? 'mobile-filter-panel top-0 left-0 right-0 bottom-0 w-full rounded-none' : 'w-80 lg:w-72 xl:w-80 flex-shrink-0 overflow-y-auto rounded-lg shadow-lg lg:max-h-[calc(100vh-2rem)]'} 
       `}>
