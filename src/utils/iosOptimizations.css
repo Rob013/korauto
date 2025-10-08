@@ -1,8 +1,10 @@
 /* iOS-Specific Optimizations */
 
-/* Prevent overscroll bounce effect for better native feel */
+/* Allow native scrolling behavior */
+html,
 body {
-  overscroll-behavior-y: none;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* iOS safe area padding - apply to main layout containers */

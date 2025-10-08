@@ -18,37 +18,7 @@ export const useIOSOptimization = () => {
       // Enable momentum scrolling
       (document.body.style as any).webkitOverflowScrolling = 'touch';
       
-      // Prevent elastic bounce on body
-      let lastTouchY = 0;
-      const handleTouchStart = (e: TouchEvent) => {
-        lastTouchY = e.touches[0].clientY;
-      };
-      
-      const handleTouchMove = (e: TouchEvent) => {
-        const currentY = e.touches[0].clientY;
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        const scrollHeight = document.documentElement.scrollHeight;
-        const clientHeight = document.documentElement.clientHeight;
-        
-        // Prevent pull-to-refresh at top
-        if (scrollTop === 0 && currentY > lastTouchY) {
-          e.preventDefault();
-        }
-        
-        // Prevent bounce at bottom
-        if (scrollTop + clientHeight >= scrollHeight && currentY < lastTouchY) {
-          e.preventDefault();
-        }
-        
-        lastTouchY = currentY;
-      };
-      
-      document.addEventListener('touchstart', handleTouchStart, { passive: false });
-      document.addEventListener('touchmove', handleTouchMove, { passive: false });
-      
       return () => {
-        document.removeEventListener('touchstart', handleTouchStart);
-        document.removeEventListener('touchmove', handleTouchMove);
         document.documentElement.classList.remove('ios-device');
       };
     }
