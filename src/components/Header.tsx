@@ -44,7 +44,16 @@ const Header = () => {
       <nav className="container-responsive" role="navigation" aria-label="Main navigation">
         <div className="flex h-14 sm:h-16 items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 group min-w-0 focus:outline-none focus:ring-2 focus:ring-primary rounded-lg" aria-label="KORAUTO kryefaqja">
+          <Link 
+            to="/" 
+            className="flex items-center space-x-2 group min-w-0 focus:outline-none focus:ring-2 focus:ring-primary rounded-lg" 
+            aria-label="KORAUTO kryefaqja"
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              navigate('/');
+            }}
+            style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+          >
             <div 
               className="rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-300 flex-shrink-0 hover-lift-gentle"
               aria-label="KORAUTO company logo"
@@ -62,24 +71,44 @@ const Header = () => {
             <Link 
               to="/" 
               className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                navigate('/');
+              }}
+              style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
             >
               {t("nav.home")}
             </Link>
             <Link 
               to="/catalog" 
               className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                navigate('/catalog');
+              }}
+              style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
             >
               {t("nav.catalog")}
             </Link>
             <Link 
               to="/inspections" 
               className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                navigate('/inspections');
+              }}
+              style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
             >
               {t("nav.inspection")}
             </Link>
             <Link 
               to="/contacts" 
               className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                navigate('/contacts');
+              }}
+              style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
             >
               {t("nav.contacts")}
             </Link>
@@ -87,6 +116,11 @@ const Header = () => {
               <Link 
                 to="/tracking" 
                 className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  navigate('/tracking');
+                }}
+                style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
               >
                 <Ship className="h-4 w-4" />
                 {t("nav.tracking")}
@@ -95,6 +129,11 @@ const Header = () => {
             <Link 
               to="/favorites" 
               className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                navigate('/favorites');
+              }}
+              style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
             >
               <Heart className="h-4 w-4" />
               {t("nav.favorites")}
@@ -112,9 +151,14 @@ const Header = () => {
               size="sm"
               className="lg:hidden focus-enhanced p-2 hover-scale-gentle"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                setIsMobileMenuOpen(!isMobileMenuOpen);
+              }}
               aria-label={isMobileMenuOpen ? "Mbyll menunë" : "Hap menunë"}
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-menu"
+              style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
             >
               {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
@@ -125,7 +169,12 @@ const Header = () => {
                 variant="outline" 
                 size="sm" 
                 onClick={handleAuthClick}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  handleAuthClick();
+                }}
                 className="btn-enhanced focus-enhanced flex items-center gap-2 hover-lift-gentle transition-all duration-300"
+                style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
               >
                 <User className="h-4 w-4" />
                 {t("nav.account")}
@@ -149,6 +198,12 @@ const Header = () => {
                 to="/" 
                 className="text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"
                 onClick={() => setIsMobileMenuOpen(false)}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  setIsMobileMenuOpen(false);
+                  navigate('/');
+                }}
+                style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
               >
                 {t("nav.home")}
               </Link>
@@ -156,6 +211,12 @@ const Header = () => {
                 to="/catalog" 
                 className="text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"
                 onClick={() => setIsMobileMenuOpen(false)}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  setIsMobileMenuOpen(false);
+                  navigate('/catalog');
+                }}
+                style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
               >
                 {t("nav.catalog")}
               </Link>
@@ -163,6 +224,12 @@ const Header = () => {
                 to="/inspections" 
                 className="text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"
                 onClick={() => setIsMobileMenuOpen(false)}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  setIsMobileMenuOpen(false);
+                  navigate('/inspections');
+                }}
+                style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
               >
                 {t("nav.inspection")}
               </Link>
@@ -170,6 +237,12 @@ const Header = () => {
                 to="/contacts" 
                 className="text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"
                 onClick={() => setIsMobileMenuOpen(false)}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  setIsMobileMenuOpen(false);
+                  navigate('/contacts');
+                }}
+                style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
               >
                 {t("nav.contacts")}
               </Link>
@@ -179,6 +252,12 @@ const Header = () => {
                   to="/tracking" 
                   className="flex items-center gap-2 text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"
                   onClick={() => setIsMobileMenuOpen(false)}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    setIsMobileMenuOpen(false);
+                    navigate('/tracking');
+                  }}
+                  style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                 >
                   <Ship className="h-4 w-4" />
                   {t("nav.tracking")}
@@ -189,6 +268,12 @@ const Header = () => {
                 to="/favorites" 
                 className="flex items-center gap-2 text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"
                 onClick={() => setIsMobileMenuOpen(false)}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  setIsMobileMenuOpen(false);
+                  navigate('/favorites');
+                }}
+                style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
               >
                 <Heart className="h-4 w-4" />
                 {t("nav.favorites")}
@@ -199,6 +284,12 @@ const Header = () => {
                   setIsMobileMenuOpen(false);
                   handleAuthClick();
                 }}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  setIsMobileMenuOpen(false);
+                  handleAuthClick();
+                }}
+                style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
               >
                 <User className="h-4 w-4" />
                 {t("nav.account")}
@@ -214,6 +305,12 @@ const Header = () => {
                     setIsMobileMenuOpen(false);
                     navigate("/catalog");
                   }}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    setIsMobileMenuOpen(false);
+                    navigate("/catalog");
+                  }}
+                  style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                 >
                   {t("btn.viewCars")}
                 </Button>
@@ -224,6 +321,12 @@ const Header = () => {
                     setIsMobileMenuOpen(false);
                     window.open('https://wa.me/38348181116', '_blank');
                   }}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    setIsMobileMenuOpen(false);
+                    window.open('https://wa.me/38348181116', '_blank');
+                  }}
+                  style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                 >
                   {t("btn.whatsapp")}
                 </Button>
