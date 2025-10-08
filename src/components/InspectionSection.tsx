@@ -2,31 +2,28 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Shield, FileText, Camera, Clock } from "lucide-react";
 import InspectionRequestForm from "./InspectionRequestForm";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 const InspectionSection = () => {
-  const { t } = useLanguage();
-  
   const inspectionSteps = [
     {
       icon: <Shield className="h-8 w-8" />,
-      title: t("inspection.step1.title"),
-      description: t("inspection.step1.desc")
+      title: "Vlerësim Profesional",
+      description: "Mekanikët e certifikuar kryejnë inspektime gjithëpërfshirëse të mjeteve"
     },
     {
       icon: <Camera className="h-8 w-8" />,
-      title: t("inspection.step2.title"),
-      description: t("inspection.step2.desc")
+      title: "Dokumentim me Foto",
+      description: "Dokumentim i detajuar vizual i gjendjes së mjetit"
     },
     {
       icon: <FileText className="h-8 w-8" />,
-      title: t("inspection.step3.title"),
-      description: t("inspection.step3.desc")
+      title: "Raport i Detajuar",
+      description: "Raport i plotë i gjendjes me rekomandime"
     },
     {
       icon: <Clock className="h-8 w-8" />,
-      title: t("inspection.step4.title"),
-      description: t("inspection.step4.desc")
+      title: "Përgjigje e Shpejtë",
+      description: "Inspektimi programohet brenda 24 orësh"
     }
   ];
 
@@ -34,16 +31,17 @@ const InspectionSection = () => {
     <section id="inspection" className="py-16 bg-muted/50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4 text-foreground">{t("inspection.title")}</h2>
+          <h2 className="text-4xl font-bold mb-4 text-foreground">Shërbim profesional i importit të makinave</h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            {t("inspection.description")}
+            Kërkoni një inspektim profesional për çdo makinë vetëm për €50. 
+            Fitoni qetësinë mendore me shërbimin tonë gjithëpërfshirës të vlerësimit të mjeteve.
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Process Steps */}
           <div className="space-y-6">
-            <h3 className="text-2xl font-semibold mb-6 text-foreground">{t("inspection.howItWorks")}</h3>
+            <h3 className="text-2xl font-semibold mb-6 text-foreground">Si Funksionon</h3>
             {inspectionSteps.map((step, index) => (
               <div key={index} className="flex items-start space-x-4">
                 <div className="flex-shrink-0 w-16 h-16 bg-primary rounded-lg flex items-center justify-center text-primary-foreground">
@@ -61,37 +59,37 @@ const InspectionSection = () => {
           <div className="space-y-6">
             <Card className="border-2 border-primary/20 shadow-lg">
               <CardHeader className="text-center bg-primary text-primary-foreground">
-                <CardTitle className="text-3xl">{t("inspection.price")}</CardTitle>
-                <p className="text-primary-foreground/90">{t("inspection.priceDesc")}</p>
+                <CardTitle className="text-3xl">€50</CardTitle>
+                <p className="text-primary-foreground/90">për inspektim mjeti</p>
               </CardHeader>
               <CardContent className="p-6 space-y-4">
                 <h3 className="text-xl font-semibold text-center mb-4 text-foreground">
-                  {t("inspection.whatsIncluded")}
+                  Çfarë Përfshihet:
                 </h3>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm text-foreground">{t("inspection.feature1")}</span>
+                    <span className="text-sm text-foreground">Lista kontrolluese 150-pikëshe</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm text-foreground">{t("inspection.feature2")}</span>
+                    <span className="text-sm text-foreground">Dokumentim me foto rezolucion të lartë</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm text-foreground">{t("inspection.feature3")}</span>
+                    <span className="text-sm text-foreground">Raport i detajuar i gjendjes</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm text-foreground">{t("inspection.feature4")}</span>
+                    <span className="text-sm text-foreground">Vlerësim mekanik</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm text-foreground">{t("inspection.feature5")}</span>
+                    <span className="text-sm text-foreground">Dorëzimi i raportit të njëjtën ditë</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm text-foreground">{t("inspection.feature6")}</span>
+                    <span className="text-sm text-foreground">Garanci 100% për MOTOR, TRANSMISION dhe KM me prakontratë</span>
                   </div>
                 </div>
                 
@@ -101,7 +99,7 @@ const InspectionSection = () => {
                       className="w-full bg-inspection hover:bg-inspection/90 text-inspection-foreground mt-6" 
                       size="lg"
                     >
-                      {t("inspection.request")}
+                      Kërkesë për Inspektim (€50)
                     </Button>
                   }
                   carId={undefined}
@@ -114,13 +112,13 @@ const InspectionSection = () => {
 
             <div className="text-center">
               <p className="text-sm text-muted-foreground mb-2">
-                {t("inspection.trustedBy")}
+                I besuar nga mijëra blerës makinash
               </p>
               <div className="flex justify-center items-center space-x-2">
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className="w-5 h-5 bg-yellow-400 rounded-full" />
                 ))}
-                <span className="ml-2 text-sm font-medium text-foreground">4.9/5 {t("inspection.rating")}</span>
+                <span className="ml-2 text-sm font-medium text-foreground">4.9/5 rating</span>
               </div>
             </div>
           </div>
