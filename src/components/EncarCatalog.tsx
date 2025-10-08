@@ -348,11 +348,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   }, [viewMode]);
 
   // Immediate filter toggle for better mobile responsiveness
-  const handleFilterToggle = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    // Prevent event bubbling and ensure click is processed
-    e.preventDefault();
-    e.stopPropagation();
-    
+  const handleFilterToggle = useCallback(() => {
     console.log("Filter toggle clicked, current showFilters:", showFilters, "isMobile:", isMobile);
     
     const newShowState = !showFilters;
@@ -1235,7 +1231,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   variant="default"
                   size="sm"
                   onClick={handleFilterToggle}
-                  onTouchEnd={handleFilterToggle}
                   className="flex items-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3 font-semibold text-xs sm:text-sm bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 transition-transform relative z-50"
                   style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                 >

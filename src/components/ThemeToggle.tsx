@@ -12,10 +12,6 @@ export function ThemeToggle() {
       variant="ghost"
       size="sm"
       onClick={toggleTheme}
-      onTouchEnd={(e) => {
-        e.preventDefault();
-        toggleTheme();
-      }}
       className="w-9 h-9 p-0"
       aria-label="Toggle theme"
       style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
