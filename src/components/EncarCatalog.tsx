@@ -1080,8 +1080,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         fixed lg:sticky lg:top-4 lg:self-start z-40 glass-card transition-transform duration-300 ease-in-out
         ${showFilters ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         ${!showFilters && 'lg:block hidden'}
-        ${isMobile ? 'mobile-filter-panel top-0 left-0 right-0 bottom-0 w-full rounded-none' : 'w-80 lg:w-72 xl:w-80 flex-shrink-0 overflow-y-auto rounded-lg shadow-lg lg:max-h-[calc(100vh-2rem)]'} 
-      `}>
+        ${isMobile ? 'mobile-filter-panel left-0 right-0 bottom-0 w-full rounded-none' : 'w-80 lg:w-72 xl:w-80 flex-shrink-0 overflow-y-auto rounded-lg shadow-lg lg:max-h-[calc(100vh-2rem)]'} 
+      `}
+        style={{
+          top: isMobile ? '4rem' : undefined, // Start below header on mobile
+          maxHeight: isMobile ? 'calc(100vh - 4rem)' : undefined
+        }}
+      >
         <div className={`${isMobile ? 'mobile-filter-compact filter-header bg-primary text-primary-foreground safe-area-inset-top' : 'p-4 border-b flex-shrink-0 bg-card'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -1186,12 +1191,16 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         </div>
       </div>
 
-      {/* Overlay for mobile - stronger backdrop on mobile */}
+      {/* Overlay for mobile - stronger backdrop on mobile, exclude header area */}
       {showFilters && (
         <div 
           className={`fixed inset-0 z-30 lg:hidden transition-opacity duration-300 ${
             isMobile ? 'bg-black/70 backdrop-blur-md' : 'bg-black/50 backdrop-blur-sm'
           }`}
+          style={{ 
+            top: '4rem', // Exclude header height (h-16 = 4rem)
+            pointerEvents: 'auto'
+          }}
           onClick={() => {
             // Only close on mobile via overlay click
             if (isMobile) {

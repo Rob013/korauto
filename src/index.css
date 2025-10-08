@@ -52,10 +52,13 @@ a:not(.icon-only),
   min-width: 44px;
 }
 
-/* Ensure buttons are always above other content */
-button,
-[role="button"] {
-  z-index: 10;
+/* Ensure header and its children are always interactive */
+header,
+header *,
+header button,
+header a {
+  pointer-events: auto !important;
+  z-index: inherit;
 }
 
 /* GPU acceleration for animations with iOS optimization */
