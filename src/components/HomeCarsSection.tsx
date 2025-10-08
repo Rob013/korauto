@@ -38,13 +38,9 @@ interface APIFilters {
 const HomeCarsSection = memo(() => {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const {
-    ref,
-    isInView
-  } = useInView({
-    threshold: 0.1,
-    triggerOnce: true
-  });
+  // Removed lazy loading - load cars immediately for better UX
+  const ref = null;
+  const isInView = true;
   const {
     cars,
     loading,
@@ -455,7 +451,7 @@ const HomeCarsSection = memo(() => {
     setFilters({});
     setPendingFilters({});
   };
-  return <section ref={ref} id="cars" className={`py-4 sm:py-6 lg:py-8 bg-secondary/30 transition-all duration-1000 ${isInView ? 'animate-fade-in-up' : 'opacity-0'}`}>
+  return <section id="cars" className="py-4 sm:py-6 lg:py-8 bg-secondary/30 animate-fade-in-up">
       <div className="container-responsive">
         <div className="text-center mb-4 sm:mb-6">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground gradient-text">
