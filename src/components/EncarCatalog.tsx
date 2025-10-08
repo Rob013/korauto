@@ -118,10 +118,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [allCarsData, setAllCarsData] = useState<any[]>([]); // Store all cars when fetched
   const isMobile = useIsMobile();
   
-  // Initialize showFilters - always start closed, only open when user explicitly clicks filter button
+  // Initialize showFilters - always start closed on mobile, only open when user explicitly clicks filter button
   const [showFilters, setShowFilters] = useState(() => {
-    // Always start with filters closed when navigating to catalog
-    // This ensures filter panel is hidden after "Kthehu te Makinat" or any external navigation
+    // Always start with filters closed on mobile
+    // Desktop can show filters by default
     return false;
   });
   
@@ -1189,19 +1189,15 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         </div>
       </div>
 
-      {/* Overlay for mobile - stronger backdrop on mobile */}
-      {showFilters && (
+      {/* Overlay for mobile - only show when filters are explicitly open */}
+      {showFilters && isMobile && (
         <div 
-          className={`fixed inset-0 z-30 lg:hidden transition-opacity duration-300 ${
-            isMobile ? 'bg-black/70 backdrop-blur-md' : 'bg-black/50 backdrop-blur-sm'
-          }`}
+          className="fixed inset-0 z-30 bg-black/70 backdrop-blur-md transition-opacity duration-300"
           onClick={() => {
-            // Only close on mobile via overlay click
-            if (isMobile) {
-              setShowFilters(false);
-              setHasExplicitlyClosed(true); // Mark as explicitly closed
-            }
+            setShowFilters(false);
+            setHasExplicitlyClosed(true); // Mark as explicitly closed
           }}
+          style={{ touchAction: 'auto' }}
         />
       )}
 
