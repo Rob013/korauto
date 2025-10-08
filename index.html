@@ -127,22 +127,37 @@
     </script>
     <noscript> Powered by <a href="https://www.korautoks.com" target="_blank">Smartsupp</a></noscript>
     
-    <!-- Smartsupp - compact chat widget -->
+    <!-- Smartsupp - always visible widget -->
     <style>
-      /* Smartsupp chat widget - non-blocking */
+      /* Smartsupp chat widget - always visible and following screen */
       #chat-application,
-      #chat-button {
+      #chat-application-iframe,
+      #chat-button,
+      [id^="smartsupp"] {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
         position: fixed !important;
         right: 16px !important;
         bottom: 16px !important;
-        z-index: 9998 !important;
+        z-index: 999999 !important;
         pointer-events: auto !important;
+      }
+      
+      /* Ensure the iframe is visible */
+      #chat-application-iframe {
+        width: auto !important;
+        height: auto !important;
+        min-width: 60px !important;
+        min-height: 60px !important;
       }
       
       /* Mobile optimized */
       @media (max-width: 768px) {
         #chat-application,
-        #chat-button {
+        #chat-application-iframe,
+        #chat-button,
+        [id^="smartsupp"] {
           right: 12px !important;
           bottom: 12px !important;
         }
