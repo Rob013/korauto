@@ -40,16 +40,9 @@ body {
 
 /* Touch optimizations for iOS */
 @supports (-webkit-touch-callout: none) {
-  /* iOS-specific styles */
-  
   /* Better tap highlights */
   * {
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
-  }
-  
-  /* Smoother scrolling */
-  * {
-    -webkit-overflow-scrolling: touch;
   }
   
   /* Better font rendering */
@@ -63,9 +56,12 @@ body {
     -webkit-text-size-adjust: 100%;
   }
   
-  /* Better touch target size for buttons - removed min-height that was causing issues */
+  /* Better touch target size for buttons */
   button, a, [role="button"] {
     min-width: 44px;
+    min-height: 44px;
+    touch-action: manipulation;
+    pointer-events: auto;
   }
   
   /* Prevent zoom on input focus */

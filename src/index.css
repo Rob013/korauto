@@ -28,7 +28,7 @@ body {
   min-height: 100vh;
 }
 
-/* Ensure all interactive elements are touchable */
+/* Ensure all interactive elements are touchable with proper targets */
 button,
 a,
 input,
@@ -37,7 +37,18 @@ textarea,
 [role="button"],
 [role="link"] {
   pointer-events: auto !important;
-  touch-action: auto !important;
+  touch-action: manipulation !important;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: pointer;
+}
+
+/* Minimum touch targets for accessibility */
+button:not(.icon-only),
+a:not(.icon-only),
+[role="button"]:not(.icon-only) {
+  min-height: 44px;
+  min-width: 44px;
 }
 
 /* GPU acceleration for animations with iOS optimization */

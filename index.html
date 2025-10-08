@@ -129,18 +129,15 @@
     
     <!-- Smartsupp - always visible widget -->
     <style>
-      /* Smartsupp chat widget - always visible and following screen */
+      /* Smartsupp chat widget - visible but not blocking content */
       #chat-application,
       #chat-application-iframe,
       #chat-button,
       [id^="smartsupp"] {
-        display: block !important;
-        opacity: 1 !important;
-        visibility: visible !important;
         position: fixed !important;
         right: 16px !important;
         bottom: 16px !important;
-        z-index: 999999 !important;
+        z-index: 9999 !important;
         pointer-events: auto !important;
       }
       
