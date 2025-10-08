@@ -2218,42 +2218,49 @@ body {
   hyphens: auto;
 }
 
-/* Smartsupp Chat Widget - Fixed positioning */
+/* Smartsupp Chat Widget - Floating fixed to viewport */
 #chat-application-iframe,
-#chat-button-iframe {
+#chat-button-iframe,
+#chat-application,
+#smartsupp-widget-container,
+.smartsupp-widget {
   position: fixed !important;
-  bottom: 20px !important;
-  right: 20px !important;
   z-index: 999999 !important;
 }
 
-/* Chat button specific positioning */
+/* Chat button - floating on bottom-right of screen */
 #chat-button-iframe {
-  width: 60px !important;
-  height: 60px !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  width: 64px !important;
+  height: 64px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  border-radius: 50% !important;
 }
 
-/* Chat window positioning when opened */
+/* Chat window - positioned above button */
 #chat-application-iframe {
-  bottom: 90px !important;
-  right: 20px !important;
-  width: 400px !important;
-  max-width: calc(100vw - 40px) !important;
-  height: 600px !important;
-  max-height: calc(100vh - 120px) !important;
+  bottom: 100px !important;
+  right: 24px !important;
+  width: 380px !important;
+  max-width: calc(100vw - 48px) !important;
+  height: 580px !important;
+  max-height: calc(100vh - 140px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+  border-radius: 16px !important;
 }
 
-/* Mobile optimizations */
+/* Mobile - floating widget */
 @media (max-width: 768px) {
-  /* Chat button on mobile */
+  /* Chat button stays floating on mobile */
   #chat-button-iframe {
-    bottom: 16px !important;
-    right: 16px !important;
+    bottom: 20px !important;
+    right: 20px !important;
     width: 56px !important;
     height: 56px !important;
   }
   
-  /* Full screen chat window on mobile */
+  /* Chat window full screen on mobile when opened */
   #chat-application-iframe {
     bottom: 0 !important;
     right: 0 !important;
@@ -2263,11 +2270,6 @@ body {
     height: 100vh !important;
     max-width: 100vw !important;
     max-height: 100vh !important;
-  }
-  
-  /* Ensure chat window is full size when opened */
-  #chat-application iframe {
-    width: 100% !important;
-    height: 100% !important;
+    border-radius: 0 !important;
   }
 }
