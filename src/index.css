@@ -2198,10 +2198,10 @@ body {
   }
 }
 
-/* Smartsupp Chat Widget - Independent floating bubble */
+/* Smartsupp Chat Widget - Top floating bubble */
 #chat-application {
   position: fixed !important;
-  bottom: 24px !important;
+  top: 24px !important;
   right: 24px !important;
   z-index: 999999 !important;
   width: auto !important;
@@ -2219,7 +2219,7 @@ body {
 /* Mobile adjustments */
 @media (max-width: 768px) {
   #chat-application {
-    bottom: 20px !important;
+    top: 20px !important;
     right: 20px !important;
   }
 }
