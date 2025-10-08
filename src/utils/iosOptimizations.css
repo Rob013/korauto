@@ -1,10 +1,5 @@
 /* iOS-Specific Optimizations */
 
-/* Prevent overscroll bounce effect for better native feel */
-body {
-  overscroll-behavior-y: none;
-}
-
 /* iOS safe area padding - apply to main layout containers */
 .ios-safe-top {
   padding-top: max(env(safe-area-inset-top), 0px);
@@ -36,11 +31,6 @@ body {
   /* Better tap highlights */
   * {
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
-  }
-  
-  /* Smoother scrolling */
-  * {
-    -webkit-overflow-scrolling: touch;
   }
   
   /* Better font rendering */
