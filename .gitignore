@@ -26,4 +26,3 @@ public/test-exchange-rate.json
 *.njsproj
 *.sln
 *.sw?
-.env

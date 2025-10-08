@@ -95,34 +95,107 @@ Deno.serve(async (req) => {
 
       console.log(`🔄 Processing ${cars.length} cars from page ${page}...`);
 
-      // Process cars in batches
+      // Process cars in batches - Use complete API mapping
       const batchSize = 10;
       for (let i = 0; i < cars.length; i += batchSize) {
         const batch = cars.slice(i, i + batchSize);
         
         await Promise.all(batch.map(async (car) => {
           try {
+            // Use the database function to map ALL API fields
+            const { data: mappedData, error: mappingError } = await supabaseClient
+              .rpc('map_complete_api_data', { api_record: car });
+
+            if (mappingError) {
+              console.error(`❌ Error mapping car ${car.id}:`, mappingError);
+              return;
+            }
+
+            // Extract core fields from mapped data
             const lot = car.lots?.[0];
-            const price = lot?.buy_now ? Math.round(lot.buy_now + 2300) : null;
+            const images = lot?.images?.normal || lot?.images?.big || [];
+            const highResImages = lot?.images?.big || [];
             
             const carCache = {
-              id: car.id.toString(),
-              api_id: car.id.toString(),
-              make: car.manufacturer?.name || 'Unknown',
-              model: car.model?.name || 'Unknown',
-              year: car.year || 2020,
-              price: price,
-              vin: car.vin,
-              fuel: car.fuel?.name,
-              transmission: car.transmission?.name,
-              color: car.color?.name,
-              condition: lot?.condition?.name?.replace('run_and_drives', 'Good'),
-              lot_number: lot?.lot,
-              mileage: lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : null,
-              images: JSON.stringify(lot?.images?.normal || lot?.images?.big || []),
+              // IDs
+              id: mappedData.api_id || car.id.toString(),
+              api_id: mappedData.api_id || car.id.toString(),
+              
+              // Basic info
+              make: mappedData.make || car.manufacturer?.name || 'Unknown',
+              model: mappedData.model || car.model?.name || 'Unknown',
+              year: mappedData.year || car.year || 2020,
+              vin: mappedData.vin || car.vin,
+              
+              // Pricing
+              price: mappedData.price ? Number(mappedData.price) : null,
+              price_cents: mappedData.price_cents || null,
+              price_usd: lot?.buy_now ? Math.round(lot.buy_now) : null,
+              price_eur: lot?.buy_now ? Math.round(lot.buy_now * 0.92) : null,
+              
+              // Vehicle details
+              fuel: mappedData.fuel || car.fuel?.name,
+              transmission: mappedData.transmission || car.transmission?.name,
+              color: mappedData.color || car.color?.name,
+              condition: mappedData.condition || lot?.condition?.name?.replace('run_and_drives', 'Good'),
+              mileage: mappedData.mileage || (lot?.odometer?.km ? `${lot.odometer.km} km` : null),
+              
+              // Engine/Performance
+              engine_size: mappedData.engine_size || car.engine?.name,
+              engine_displacement: mappedData.engine_displacement,
+              cylinders: mappedData.cylinders || Number(car.cylinders),
+              max_power: mappedData.max_power,
+              torque: mappedData.torque,
+              body_style: mappedData.body_style || car.body_type?.name,
+              drive_type: mappedData.drive_type || car.drive_wheel,
+              doors: mappedData.doors,
+              seats: mappedData.seats,
+              
+              // Lot/Auction info
+              lot_number: mappedData.lot_number || lot?.lot,
+              lot_seller: mappedData.lot_seller || lot?.seller,
+              grade: mappedData.grade || lot?.grade_iaai,
+              sale_status: lot?.sale_status,
+              auction_date: mappedData.auction_date || lot?.sale_date,
+              bid_count: mappedData.bid_count || 0,
+              
+              // Images - Store ALL available images
+              images: images.length > 0 ? JSON.stringify(images) : '[]',
+              high_res_images: highResImages.length > 0 ? JSON.stringify(highResImages) : '[]',
+              all_images_urls: [...images, ...highResImages],
+              image_url: images[0] || highResImages[0] || null,
+              image_count: images.length + highResImages.length,
+              
+              // Keys and documentation
+              keys_count: mappedData.keys_count || (lot?.keys_available ? 1 : 0),
+              keys_count_detailed: lot?.keys_available ? 1 : 0,
+              
+              // Damage info
+              damage_primary: mappedData.damage_primary || lot?.damage?.main,
+              damage_secondary: mappedData.damage_secondary || lot?.damage?.second,
+              
+              // Location
+              location_country: 'South Korea',
+              location_city: mappedData.location_city,
+              location_state: mappedData.location_state,
+              seller_type: mappedData.seller_type || lot?.seller_type,
+              
+              // Raw data storage (preserve ALL API data)
               car_data: JSON.stringify(car),
               lot_data: JSON.stringify(lot || {}),
-              last_api_sync: new Date().toISOString()
+              original_api_data: JSON.stringify(car),
+              sync_metadata: JSON.stringify({
+                synced_at: new Date().toISOString(),
+                sync_version: '3.0',
+                data_mapping_used: true,
+                fields_captured: Object.keys(car).length
+              }),
+              
+              // Metadata
+              last_api_sync: new Date().toISOString(),
+              data_completeness_score: Object.keys(car).length / 50, // Rough score
+              api_version: '1.0',
+              source_site: 'auctionsapi'
             };
 
             const { error } = await supabaseClient
@@ -136,6 +209,9 @@ Deno.serve(async (req) => {
               console.error(`❌ Error upserting car ${car.id}:`, error);
             } else {
               totalSynced++;
+              if (totalSynced % 10 === 0) {
+                console.log(`✅ Synced ${totalSynced} cars with complete data mapping...`);
+              }
             }
           } catch (err) {
             console.error(`❌ Error processing car ${car.id}:`, err);

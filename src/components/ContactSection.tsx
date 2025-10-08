@@ -1,17 +1,19 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, Phone, MapPin, Clock } from "lucide-react";
 import { useInView } from "@/hooks/useInView";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const ContactSection = () => {
   const { ref, isInView } = useInView({ threshold: 0.1, triggerOnce: true });
+  const { t } = useLanguage();
   
   return (
     <section ref={ref} id="contact" className={`py-4 sm:py-6 lg:py-8 bg-background transition-all duration-1000 ${isInView ? 'animate-fade-in-up' : 'opacity-0'}`}>
       <div className="container-responsive">
         <div className="text-center mb-4 sm:mb-6">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground gradient-text">Na Kontaktoni</h2>
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground gradient-text">{t("contact.title")}</h2>
           <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
-            Lidhuni me ekipin tonë për inspektime, pyetje, ose mbështetje.
+            {t("contact.subtitle")}
           </p>
         </div>
 
@@ -21,10 +23,10 @@ const ContactSection = () => {
               <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-3">
                 <Mail className="h-6 w-6 text-primary-foreground" />
               </div>
-              <CardTitle className="text-lg">Email</CardTitle>
+              <CardTitle className="text-lg">{t("contact.email")}</CardTitle>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col justify-between">
-              <p className="text-muted-foreground mb-2 text-sm">Dërgoni një mesazh</p>
+              <p className="text-muted-foreground mb-2 text-sm">{t("contact.description")}</p>
               <a 
                 href="mailto:INFO.RGSHPK@gmail.com" 
                 className="text-primary hover:text-primary/80 transition-colors font-medium text-sm break-all"
@@ -39,10 +41,10 @@ const ContactSection = () => {
               <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
                 <MapPin className="h-6 w-6 text-primary-foreground" />
               </div>
-              <CardTitle className="text-lg">Vendndodhja</CardTitle>
+              <CardTitle className="text-lg">{t("contact.address")}</CardTitle>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col justify-between">
-              <p className="text-muted-foreground mb-2">Vizitoni zyrën tonë</p>
+              <p className="text-muted-foreground mb-2">{t("contact.description")}</p>
               <a 
                 href="https://maps.google.com/?q=KORAUTO,Rr.+Ilaz+Kodra+70,Prishtinë,Kosovo" 
                 target="_blank" 
@@ -59,12 +61,12 @@ const ContactSection = () => {
               <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4 interactive-element">
                 <Clock className="h-6 w-6 text-primary-foreground" />
               </div>
-              <CardTitle className="text-lg">Orari</CardTitle>
+              <CardTitle className="text-lg">{t("contact.hours")}</CardTitle>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col justify-between">
-              <p className="text-muted-foreground mb-2">Jemi të disponueshëm</p>
+              <p className="text-muted-foreground mb-2">{t("contact.description")}</p>
               <div className="text-primary font-medium">
-                <p>Çdo ditë: 9:00-18:00</p>
+                <p>{t("contact.hoursValue")}</p>
               </div>
             </CardContent>
           </Card>
@@ -77,7 +79,7 @@ const ContactSection = () => {
               <CardTitle className="text-lg">Robert Gashi</CardTitle>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col justify-between">
-              <p className="text-muted-foreground mb-2">Agent shitjesh</p>
+              <p className="text-muted-foreground mb-2">{t("contact.description")}</p>
               <div className="space-y-2">
                 <a 
                   href="tel:+38348181116" 

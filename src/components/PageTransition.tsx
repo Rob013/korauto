@@ -7,10 +7,11 @@ interface PageTransitionProps {
 const PageTransition = ({ children }: PageTransitionProps) => {
   return (
     <div 
-      className="animate-fade-in"
+      className="animate-fade-in-up"
       style={{
         willChange: 'opacity, transform',
-        transform: 'translateZ(0)'
+        transform: 'translateZ(0)',
+        perspective: '1000px'
       }}
     >
       {children}
