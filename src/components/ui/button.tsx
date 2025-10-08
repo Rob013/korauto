@@ -41,21 +41,12 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, style, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
-    
-    // Enhanced touch optimization for all buttons
-    const enhancedStyle = {
-      touchAction: 'manipulation',
-      WebkitTapHighlightColor: 'transparent',
-      ...style
-    } as React.CSSProperties;
-    
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
-        style={enhancedStyle}
         {...props}
       />
     )

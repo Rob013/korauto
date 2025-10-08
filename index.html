@@ -16,70 +16,12 @@
     <!-- Preload critical resources -->
     <link rel="modulepreload" href="/src/main.tsx">
     <style>
-      /* Critical CSS - Prevent FOUC and optimize initial render */
-      html { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; -webkit-font-smoothing: antialiased; }
-      body { margin: 0; background: #ffffff; color: #0a0a0a; line-height: 1.5; }
-      #root { min-height: 100vh; display: flex; flex-direction: column; }
-      .dark body { background: #0a0a0a; color: #fafafa; }
-      
-      /* Box model and resets */
-      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-      button, input, select, textarea { font: inherit; }
-      button { cursor: pointer; background: none; border: none; }
-      a { text-decoration: none; color: inherit; }
-      img, picture, video, canvas, svg { display: block; max-width: 100%; }
-      
-      /* Critical layout - Header */
-      header { position: sticky; top: 0; z-index: 50; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 0, 0, 0.1); }
-      .dark header { background: rgba(10, 10, 10, 0.8); border-bottom-color: rgba(255, 255, 255, 0.1); }
-      nav { max-width: 1280px; margin: 0 auto; padding: 1rem; display: flex; align-items: center; justify-content: space-between; }
-      
-      /* Critical layout - Hero section */
-      section { padding: 2rem 1rem; }
-      h1 { font-size: 2rem; font-weight: bold; line-height: 1.2; margin-bottom: 1rem; }
-      h2 { font-size: 1.5rem; font-weight: 600; line-height: 1.3; margin-bottom: 0.75rem; }
-      p { margin-bottom: 1rem; }
-      
-      /* Loading state */
-      .loading { display: inline-block; width: 1rem; height: 1rem; border: 2px solid rgba(0, 0, 0, 0.1); border-radius: 50%; border-top-color: #000; animation: spin 0.6s linear infinite; }
-      @keyframes spin { to { transform: rotate(360deg); } }
-      
-      /* Utility classes */
-      .container { max-width: 1280px; margin: 0 auto; padding: 0 1rem; }
-      .flex { display: flex; }
-      .hidden { display: none; }
+      /* Critical CSS - Prevent FOUC */
+      html { font-family: system-ui, sans-serif; }
+      body { margin: 0; background: #ffffff; }
+      #root { min-height: 100vh; }
+      .dark body { background: #0a0a0a; }
     </style>
-    
-    <!-- Non-blocking CSS loader - eliminates render-blocking resources -->
-    <script>
-      // Make Vite-generated CSS non-render-blocking for better FCP
-      (function() {
-        // Wait for Vite to inject the stylesheet, then make it non-blocking
-        var observer = new MutationObserver(function(mutations) {
-          mutations.forEach(function(mutation) {
-            mutation.addedNodes.forEach(function(node) {
-              if (node.tagName === 'LINK' && node.rel === 'stylesheet' && node.href.includes('/assets/')) {
-                // Use media="print" trick to load CSS asynchronously
-                var sheet = node;
-                sheet.media = 'print';
-                sheet.onload = function() { 
-                  sheet.media = 'all';
-                  sheet.onload = null;
-                };
-                // Disconnect observer after handling the main stylesheet
-                observer.disconnect();
-              }
-            });
-          });
-        });
-        
-        // Observe head for stylesheet additions
-        observer.observe(document.head, { childList: true, subtree: true });
-        
-        // Fallback: stop observing after 2 seconds
-        setTimeout(function() { observer.disconnect(); }, 2000);
-      })();
-    </script>
     
     <!-- Favicon and Icons -->
     <link rel="icon" type="image/x-icon" href="https://storage.googleapis.com/gpt-engineer-file-uploads/YQL55BAx4ad4To5BuJ6CPGn22603/uploads/1757847506537-f5e4fe22-b482-4333-91fd-12132af7d102.jpeg">
@@ -185,36 +127,78 @@
     </script>
     <noscript> Powered by <a href="https://www.korautoks.com" target="_blank">Smartsupp</a></noscript>
     
-    <!-- Smartsupp - always visible widget -->
+    <!-- Ensure Smartsupp widget is always visible and follows the page -->
     <style>
-      /* Smartsupp chat widget - visible but not blocking content */
+      /* Force Smartsupp to be always visible on all devices as floating bubble */
       #chat-application,
       #chat-application-iframe,
-      #chat-button,
-      [id^="smartsupp"] {
+      .smartsupp-widget,
+      #smartsupp-widget-container {
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: block !important;
         position: fixed !important;
-        right: 16px !important;
-        bottom: 16px !important;
-        z-index: 9999 !important;
+        right: 20px !important;
+        bottom: 20px !important;
+        top: auto !important;
+        left: auto !important;
+        z-index: 2147483647 !important;
         pointer-events: auto !important;
+        transform: none !important;
+        transition: none !important;
+        filter: none !important;
+        perspective: none !important;
+        will-change: auto !important;
+        contain: none !important;
       }
       
-      /* Ensure the iframe is visible */
-      #chat-application-iframe {
-        width: auto !important;
-        height: auto !important;
-        min-width: 60px !important;
-        min-height: 60px !important;
+      /* Ensure the widget button stays fixed - floating on bottom-right */
+      #chat-button,
+      .smartsupp-button,
+      .smartsupp-widget-button {
+        position: fixed !important;
+        right: 20px !important;
+        bottom: 20px !important;
+        top: auto !important;
+        left: auto !important;
+        z-index: 2147483647 !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: block !important;
+        pointer-events: auto !important;
+        transform: none !important;
+        transition: none !important;
+        filter: none !important;
+        perspective: none !important;
+        will-change: auto !important;
+        contain: none !important;
       }
       
-      /* Mobile optimized */
+      /* Prevent parent elements from breaking fixed positioning */
+      body, html, #root, [id*="smartsupp"], [class*="smartsupp"] {
+        transform: none !important;
+        filter: none !important;
+        perspective: none !important;
+      }
+      
+      /* Prevent any hide animations */
+      [id*="smartsupp"],
+      [class*="smartsupp"] {
+        animation: none !important;
+      }
+      
+      /* Mobile specific fixes */
       @media (max-width: 768px) {
         #chat-application,
-        #chat-application-iframe,
         #chat-button,
-        [id^="smartsupp"] {
-          right: 12px !important;
-          bottom: 12px !important;
+        .smartsupp-widget,
+        .smartsupp-button,
+        .smartsupp-widget-button {
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          right: 10px !important;
+          bottom: 10px !important;
         }
       }
     </style>

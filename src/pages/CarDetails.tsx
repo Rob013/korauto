@@ -1125,13 +1125,13 @@ const CarDetails = memo(() => {
               </CardContent>
             </Card>
 
-            {/* Car Title - Modern Style - Visible on all devices */}
-            <div className="animate-fade-in" style={{animationDelay: '200ms'}}>
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-3 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            {/* Mobile Car Title - Modern Style */}
+            <div className="md:hidden animate-fade-in" style={{animationDelay: '200ms'}}>
+              <h1 className="text-2xl font-bold text-foreground mb-3 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                 {car.year} {car.make} {car.model} {car.title && car.title !== `${car.year} ${car.make} ${car.model}` ? car.title : "Grand Chic"}
               </h1>
-              <div className="flex flex-wrap items-center gap-2 text-sm md:text-base text-muted-foreground">
-                <span className="font-medium">{car.year}/ model {car.year}</span>
+              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                <span className="font-medium">2021/ model 2021</span>
                 <span className="text-primary">•</span>
                 <span className="font-medium">{formatMileage(car.mileage)}</span>
                 <span className="text-primary">•</span>

@@ -347,42 +347,49 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     localStorage.setItem('catalog-view-mode', newViewMode);
   }, [viewMode]);
 
-  // Immediate filter toggle for better mobile responsiveness
-  const handleFilterToggle = useCallback(() => {
-    console.log("Filter toggle clicked, current showFilters:", showFilters, "isMobile:", isMobile);
-    
-    const newShowState = !showFilters;
-    
-    // Update state immediately
-    setShowFilters(newShowState);
-    
-    // Update explicit close tracking
-    if (newShowState) {
-      setHasExplicitlyClosed(false);
-      console.log("Opening filters, reset explicit close flag");
-    } else {
-      setHasExplicitlyClosed(true);
-      console.log("Closing filters, set explicit close flag");
-    }
-    
-    // Force DOM update for mobile
-    if (isMobile) {
-      requestAnimationFrame(() => {
-        const filterPanel = document.querySelector('[data-filter-panel]') as HTMLElement;
-        if (filterPanel) {
-          if (newShowState) {
-            filterPanel.style.transform = 'translateX(0)';
-            filterPanel.style.visibility = 'visible';
-            console.log("Mobile: Synced filter panel to show");
-          } else {
-            filterPanel.style.transform = 'translateX(-100%)';
-            filterPanel.style.visibility = 'hidden';
-            console.log("Mobile: Synced filter panel to hide");
+  // Debounced filter toggle to prevent rapid clicking issues
+  const handleFilterToggle = useCallback(
+    debounce((e: React.MouseEvent) => {
+      // Prevent event bubbling and ensure click is processed
+      e.preventDefault();
+      e.stopPropagation();
+      
+      console.log("Filter toggle clicked, current showFilters:", showFilters, "isMobile:", isMobile);
+      
+      const newShowState = !showFilters;
+      
+      // Update state
+      setShowFilters(newShowState);
+      
+      // Update explicit close tracking
+      if (newShowState) {
+        setHasExplicitlyClosed(false);
+        console.log("Opening filters, reset explicit close flag");
+      } else {
+        setHasExplicitlyClosed(true);
+        console.log("Closing filters, set explicit close flag");
+      }
+      
+      // Use a single shorter timeout for DOM sync if needed (mobile only)
+      if (isMobile) {
+        setTimeout(() => {
+          const filterPanel = document.querySelector('[data-filter-panel]') as HTMLElement;
+          if (filterPanel) {
+            if (newShowState) {
+              filterPanel.style.transform = 'translateX(0)';
+              filterPanel.style.visibility = 'visible';
+              console.log("Mobile: Synced filter panel to show");
+            } else {
+              filterPanel.style.transform = 'translateX(-100%)';
+              filterPanel.style.visibility = 'hidden';
+              console.log("Mobile: Synced filter panel to hide");
+            }
           }
-        }
-      });
-    }
-  }, [showFilters, isMobile]);
+        }, 50); // Reduced from 100ms to 50ms to reduce race conditions
+      }
+    }, 250), // 250ms debounce to prevent rapid clicking
+    [showFilters, isMobile, setShowFilters, setHasExplicitlyClosed]
+  );
 
   // Set up swipe gestures for main content (swipe right to show filters)
   useSwipeGesture(mainContentRef, {
@@ -1076,13 +1083,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         fixed lg:sticky lg:top-4 lg:self-start z-40 glass-card transition-transform duration-300 ease-in-out
         ${showFilters ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         ${!showFilters && 'lg:block hidden'}
-        ${isMobile ? 'mobile-filter-panel left-0 right-0 bottom-0 w-full rounded-none' : 'w-80 lg:w-72 xl:w-80 flex-shrink-0 overflow-y-auto rounded-lg shadow-lg lg:max-h-[calc(100vh-2rem)]'} 
-      `}
-        style={{
-          top: isMobile ? '4rem' : undefined, // Start below header on mobile
-          maxHeight: isMobile ? 'calc(100vh - 4rem)' : undefined
-        }}
-      >
+        ${isMobile ? 'mobile-filter-panel top-0 left-0 right-0 bottom-0 w-full rounded-none' : 'w-80 lg:w-72 xl:w-80 flex-shrink-0 overflow-y-auto rounded-lg shadow-lg lg:max-h-[calc(100vh-2rem)]'} 
+      `}>
         <div className={`${isMobile ? 'mobile-filter-compact filter-header bg-primary text-primary-foreground safe-area-inset-top' : 'p-4 border-b flex-shrink-0 bg-card'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -1187,16 +1189,12 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         </div>
       </div>
 
-      {/* Overlay for mobile - stronger backdrop on mobile, exclude header area */}
+      {/* Overlay for mobile - stronger backdrop on mobile */}
       {showFilters && (
         <div 
           className={`fixed inset-0 z-30 lg:hidden transition-opacity duration-300 ${
             isMobile ? 'bg-black/70 backdrop-blur-md' : 'bg-black/50 backdrop-blur-sm'
           }`}
-          style={{ 
-            top: '4rem', // Exclude header height (h-16 = 4rem)
-            pointerEvents: 'auto'
-          }}
           onClick={() => {
             // Only close on mobile via overlay click
             if (isMobile) {
@@ -1231,8 +1229,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   variant="default"
                   size="sm"
                   onClick={handleFilterToggle}
-                  className="flex items-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3 font-semibold text-xs sm:text-sm bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 transition-transform relative z-50"
-                  style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+                  className="flex items-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3 font-semibold text-xs sm:text-sm bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 transition-transform"
                 >
                   {showFilters ? <PanelLeftClose className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <PanelLeftOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
                   <span className="whitespace-nowrap">{showFilters ? 'Fshih' : 'Filtrat'}</span>
