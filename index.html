@@ -21,7 +21,42 @@
       body { margin: 0; background: #ffffff; }
       #root { min-height: 100vh; }
       .dark body { background: #0a0a0a; }
+      /* Additional critical styles for better initial render */
+      * { box-sizing: border-box; }
+      button { cursor: pointer; }
+      a { text-decoration: none; }
     </style>
+    
+    <!-- Non-blocking CSS loader - eliminates render-blocking resources -->
+    <script>
+      // Make Vite-generated CSS non-render-blocking for better FCP
+      (function() {
+        // Wait for Vite to inject the stylesheet, then make it non-blocking
+        var observer = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            mutation.addedNodes.forEach(function(node) {
+              if (node.tagName === 'LINK' && node.rel === 'stylesheet' && node.href.includes('/assets/')) {
+                // Use media="print" trick to load CSS asynchronously
+                var sheet = node;
+                sheet.media = 'print';
+                sheet.onload = function() { 
+                  sheet.media = 'all';
+                  sheet.onload = null;
+                };
+                // Disconnect observer after handling the main stylesheet
+                observer.disconnect();
+              }
+            });
+          });
+        });
+        
+        // Observe head for stylesheet additions
+        observer.observe(document.head, { childList: true, subtree: true });
+        
+        // Fallback: stop observing after 2 seconds
+        setTimeout(function() { observer.disconnect(); }, 2000);
+      })();
+    </script>
     
     <!-- Favicon and Icons -->
     <link rel="icon" type="image/x-icon" href="https://storage.googleapis.com/gpt-engineer-file-uploads/YQL55BAx4ad4To5BuJ6CPGn22603/uploads/1757847506537-f5e4fe22-b482-4333-91fd-12132af7d102.jpeg">
