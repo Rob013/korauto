@@ -127,78 +127,24 @@
     </script>
     <noscript> Powered by <a href="https://www.korautoks.com" target="_blank">Smartsupp</a></noscript>
     
-    <!-- Ensure Smartsupp widget is always visible and follows the page -->
+    <!-- Smartsupp - compact chat widget -->
     <style>
-      /* Force Smartsupp to be always visible on all devices as floating bubble */
+      /* Smartsupp chat widget - non-blocking */
       #chat-application,
-      #chat-application-iframe,
-      .smartsupp-widget,
-      #smartsupp-widget-container {
-        opacity: 1 !important;
-        visibility: visible !important;
-        display: block !important;
+      #chat-button {
         position: fixed !important;
-        right: 20px !important;
-        bottom: 20px !important;
-        top: auto !important;
-        left: auto !important;
-        z-index: 2147483647 !important;
+        right: 16px !important;
+        bottom: 16px !important;
+        z-index: 9998 !important;
         pointer-events: auto !important;
-        transform: none !important;
-        transition: none !important;
-        filter: none !important;
-        perspective: none !important;
-        will-change: auto !important;
-        contain: none !important;
       }
       
-      /* Ensure the widget button stays fixed - floating on bottom-right */
-      #chat-button,
-      .smartsupp-button,
-      .smartsupp-widget-button {
-        position: fixed !important;
-        right: 20px !important;
-        bottom: 20px !important;
-        top: auto !important;
-        left: auto !important;
-        z-index: 2147483647 !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-        display: block !important;
-        pointer-events: auto !important;
-        transform: none !important;
-        transition: none !important;
-        filter: none !important;
-        perspective: none !important;
-        will-change: auto !important;
-        contain: none !important;
-      }
-      
-      /* Prevent parent elements from breaking fixed positioning */
-      body, html, #root, [id*="smartsupp"], [class*="smartsupp"] {
-        transform: none !important;
-        filter: none !important;
-        perspective: none !important;
-      }
-      
-      /* Prevent any hide animations */
-      [id*="smartsupp"],
-      [class*="smartsupp"] {
-        animation: none !important;
-      }
-      
-      /* Mobile specific fixes */
+      /* Mobile optimized */
       @media (max-width: 768px) {
         #chat-application,
-        #chat-button,
-        .smartsupp-widget,
-        .smartsupp-button,
-        .smartsupp-widget-button {
-          display: block !important;
-          visibility: visible !important;
-          opacity: 1 !important;
-          right: 10px !important;
-          bottom: 10px !important;
+        #chat-button {
+          right: 12px !important;
+          bottom: 12px !important;
         }
       }
     </style>
