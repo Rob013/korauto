@@ -2198,20 +2198,25 @@ body {
   }
 }
 
-/* Smartsupp Chat Widget - Fixed to Bottom Right (Like e-albania.al) */
-#chat-application,
-#chat-application iframe,
-[id^="smartsupp"],
-[class*="smartsupp"] {
-  position: fixed !important;
-  z-index: 9999 !important;
-}
-
+/* Smartsupp Chat Widget - Independent floating bubble */
 #chat-application {
+  position: fixed !important;
   bottom: 24px !important;
   right: 24px !important;
+  z-index: 999999 !important;
+  width: auto !important;
+  height: auto !important;
+  max-width: none !important;
+  max-height: none !important;
+  pointer-events: auto !important;
 }
 
+/* Ensure widget stays compact and doesn't block content */
+#chat-application > * {
+  pointer-events: auto !important;
+}
+
+/* Mobile adjustments */
 @media (max-width: 768px) {
   #chat-application {
     bottom: 20px !important;
