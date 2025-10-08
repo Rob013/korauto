@@ -2218,14 +2218,23 @@ body {
   hyphens: auto;
 }
 
-/* Smartsupp Chat Widget - Floating fixed to viewport */
+/* Smartsupp Chat Widget - Always floating fixed to viewport */
 #chat-application-iframe,
 #chat-button-iframe,
 #chat-application,
 #smartsupp-widget-container,
-.smartsupp-widget {
+.smartsupp-widget,
+[id*="smartsupp"],
+[class*="smartsupp"] {
   position: fixed !important;
   z-index: 999999 !important;
+  transform: translateZ(0) !important; /* Force GPU acceleration */
+}
+
+/* Override any absolute positioning */
+body #chat-application-iframe,
+body #chat-button-iframe {
+  position: fixed !important;
 }
 
 /* Chat button - floating on bottom-right of screen */
