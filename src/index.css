@@ -41,6 +41,7 @@ textarea,
   -webkit-user-select: none;
   user-select: none;
   cursor: pointer;
+  position: relative;
 }
 
 /* Minimum touch targets for accessibility */
@@ -49,6 +50,12 @@ a:not(.icon-only),
 [role="button"]:not(.icon-only) {
   min-height: 44px;
   min-width: 44px;
+}
+
+/* Ensure buttons are always above other content */
+button,
+[role="button"] {
+  z-index: 10;
 }
 
 /* GPU acceleration for animations with iOS optimization */

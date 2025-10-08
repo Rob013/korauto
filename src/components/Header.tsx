@@ -39,7 +39,7 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-background/95 backdrop-blur-md shadow-sm border-b border-border sticky top-0 z-50 transition-smooth hover-lift-gentle">
+    <header className="bg-background/95 backdrop-blur-md shadow-sm border-b border-border sticky top-0 z-[60] transition-smooth hover-lift-gentle">
       {/* Main header with proper navigation landmark */}
       <nav className="container-responsive" role="navigation" aria-label="Main navigation">
         <div className="flex h-14 sm:h-16 items-center justify-between">
