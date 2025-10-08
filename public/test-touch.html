@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Touch Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #f5f5f5;
+        }
+        .test-area {
+            background: white;
+            padding: 30px;
+            margin: 20px 0;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            cursor: pointer;
+            touch-action: auto;
+            pointer-events: auto;
+        }
+        .test-area:active {
+            background: #e0e0e0;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #4CAF50;
+            color: white;
+            border-radius: 5px;
+            display: none;
+        }
+        .visible {
+            display: block;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            touch-action: auto;
+            pointer-events: auto;
+            margin: 10px 5px;
+        }
+        button:active {
+            background: #1976D2;
+        }
+        .log {
+            margin-top: 20px;
+            padding: 15px;
+            background: #263238;
+            color: #4CAF50;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Mobile Touch Test</h1>
+    <p>Try tapping/clicking the areas below to test touch interactions:</p>
+
+    <div class="test-area" id="test1">
+        <h3>Test Area 1 - Click/Tap Me</h3>
+        <p>This should highlight when you tap it</p>
+        <div class="result" id="result1">✓ Touch detected!</div>
+    </div>
+
+    <button id="btn1">Test Button 1</button>
+    <button id="btn2">Test Button 2</button>
+    <button id="clearLog">Clear Log</button>
+
+    <div class="log" id="eventLog">
+        <div class="log-entry">Event log will appear here...</div>
+    </div>
+
+    <script>
+        const log = document.getElementById('eventLog');
+        
+        function addLog(message) {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            log.insertBefore(entry, log.firstChild);
+        }
+
+        // Test area 1
+        document.getElementById('test1').addEventListener('click', function() {
+            document.getElementById('result1').classList.add('visible');
+            addLog('Test Area 1 - CLICK event fired ✓');
+            setTimeout(() => {
+                document.getElementById('result1').classList.remove('visible');
+            }, 2000);
+        });
+
+        document.getElementById('test1').addEventListener('touchstart', function(e) {
+            addLog('Test Area 1 - TOUCHSTART event fired ✓');
+        });
+
+        document.getElementById('test1').addEventListener('touchend', function(e) {
+            addLog('Test Area 1 - TOUCHEND event fired ✓');
+        });
+
+        // Buttons
+        document.getElementById('btn1').addEventListener('click', function() {
+            addLog('Button 1 - CLICK event fired ✓');
+            this.style.background = '#4CAF50';
+            setTimeout(() => { this.style.background = '#2196F3'; }, 500);
+        });
+
+        document.getElementById('btn2').addEventListener('click', function() {
+            addLog('Button 2 - CLICK event fired ✓');
+            this.style.background = '#FF9800';
+            setTimeout(() => { this.style.background = '#2196F3'; }, 500);
+        });
+
+        document.getElementById('clearLog').addEventListener('click', function() {
+            log.innerHTML = '<div class="log-entry">Log cleared...</div>';
+        });
+
+        // Global touch tracking
+        document.addEventListener('touchstart', function(e) {
+            addLog(`Global TOUCHSTART at (${e.touches[0].clientX.toFixed(0)}, ${e.touches[0].clientY.toFixed(0)})`);
+        }, { passive: true });
+
+        document.addEventListener('click', function(e) {
+            addLog(`Global CLICK at (${e.clientX.toFixed(0)}, ${e.clientY.toFixed(0)})`);
+        }, { passive: true });
+
+        // Device info
+        addLog(`Device: ${navigator.userAgent}`);
+        addLog(`Touch support: ${'ontouchstart' in window ? 'YES ✓' : 'NO ✗'}`);
+        addLog(`Pointer events: ${window.PointerEvent ? 'YES ✓' : 'NO ✗'}`);
+    </script>
+</body>
+</html>
