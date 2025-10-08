@@ -18,7 +18,7 @@ export const useIOSOptimization = () => {
       // Enable momentum scrolling
       (document.body.style as any).webkitOverflowScrolling = 'touch';
       
-      // Prevent elastic bounce on body
+      // Enable passive touch listeners - don't prevent default to allow clicks
       let lastTouchY = 0;
       const handleTouchStart = (e: TouchEvent) => {
         lastTouchY = e.touches[0].clientY;
@@ -26,25 +26,14 @@ export const useIOSOptimization = () => {
       
       const handleTouchMove = (e: TouchEvent) => {
         const currentY = e.touches[0].clientY;
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        const scrollHeight = document.documentElement.scrollHeight;
-        const clientHeight = document.documentElement.clientHeight;
-        
-        // Prevent pull-to-refresh at top
-        if (scrollTop === 0 && currentY > lastTouchY) {
-          e.preventDefault();
-        }
-        
-        // Prevent bounce at bottom
-        if (scrollTop + clientHeight >= scrollHeight && currentY < lastTouchY) {
-          e.preventDefault();
-        }
-        
         lastTouchY = currentY;
+        // Note: Removed preventDefault to allow normal touch interactions
+        // This enables clicks, taps, and scrolling to work properly
       };
       
-      document.addEventListener('touchstart', handleTouchStart, { passive: false });
-      document.addEventListener('touchmove', handleTouchMove, { passive: false });
+      // Use passive: true to improve scroll performance and allow clicks
+      document.addEventListener('touchstart', handleTouchStart, { passive: true });
+      document.addEventListener('touchmove', handleTouchMove, { passive: true });
       
       return () => {
         document.removeEventListener('touchstart', handleTouchStart);
