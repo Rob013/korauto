@@ -419,8 +419,7 @@ const CarCard = ({
         minHeight: '360px',
         aspectRatio: '280/360',
         willChange: 'transform',
-        transform: 'translateZ(0)',
-        touchAction: 'auto'
+        transform: 'translateZ(0)'
       }}
     >
       <div className="relative h-56 bg-muted overflow-hidden">
@@ -512,7 +511,7 @@ const CarCard = ({
               variant="ghost"
               onClick={handleFavoriteToggle}
               className="h-8 w-8 p-0 hover:bg-muted touch-target interactive-element hover:scale-110 transition-all duration-200"
-              style={{ minHeight: '44px', minWidth: '44px', touchAction: 'auto' }}
+              style={{ minHeight: '44px', minWidth: '44px' }}
             >
               <Heart
                 className={`h-4 w-4 transition-all duration-200 ${
