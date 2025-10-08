@@ -2198,7 +2198,7 @@ body {
   }
 }
 
-/* Smartsupp Chat Widget - Fixed Positioning */
+/* Smartsupp Chat Widget - Fixed to Bottom Right (Like e-albania.al) */
 #chat-application,
 #chat-application iframe,
 [id^="smartsupp"],
@@ -2208,14 +2208,14 @@ body {
 }
 
 #chat-application {
-  bottom: 20px !important;
-  right: 20px !important;
+  bottom: 24px !important;
+  right: 24px !important;
 }
 
 @media (max-width: 768px) {
   #chat-application {
-    bottom: 80px !important;
-    right: 15px !important;
+    bottom: 20px !important;
+    right: 20px !important;
   }
 }
 
