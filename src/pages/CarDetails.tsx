@@ -1249,7 +1249,7 @@ const CarDetails = memo(() => {
             {/* Car Title - Modern Style - Same on all devices */}
             <div className="animate-fade-in" style={{animationDelay: '200ms'}}>
               <h1 className="text-2xl font-bold text-foreground mb-3 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                {car.year} {car.make} {car.model} {car.title && car.title !== `${car.year} ${car.make} ${car.model}` ? car.title : "Grand Chic"}
+                {car.year} {car.make} {car.model} {car.title && car.title !== `${car.year} ${car.make} ${car.model}` && ` ${car.title}`}
               </h1>
               <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                 <span className="font-medium">{car.year}/ model {car.year}</span>
