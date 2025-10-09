@@ -28,7 +28,6 @@ import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useResourcePreloader } from "@/hooks/useResourcePreloader";
 import { debounce } from "@/utils/performance";
 import { useOptimizedYearFilter } from "@/hooks/useOptimizedYearFilter";
-import { useDailyRotatingCars } from "@/hooks/useDailyRotatingCars";
 import { initializeTouchRipple, cleanupTouchRipple } from "@/utils/touchRipple";
 import {
   APIFilters,
@@ -206,9 +205,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     });
   }, [filteredCars, exchangeRate.rate]);
   
-  // Apply daily rotating cars when in default state, same as homepage
-  const dailyRotatingCars = useDailyRotatingCars(carsForSorting, !isDefaultState, 200);
-  
   // Always call useSortedCars hook (hooks must be called unconditionally)
   const sortedResults = useSortedCars(carsForSorting, sortBy);
   const sortedAllCarsResults = useSortedCars(allCarsData, sortBy); // Add sorting for all cars data
@@ -228,9 +224,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       return rankedCarsForPage;
     }
     
-    // Priority 2: Recently added cars (default state shows recently added from API)
-    // Skip daily rotating cars and show recently added cars by default
-    // This ensures catalog always shows fresh inventory first
+    // Priority 2: Recently added cars by default
+    // Catalog always shows fresh inventory from API sorted by recently_added
     
     // Priority 3: Regular sorted cars (recently added by default)
     // For server-side pagination, use all sorted results without client-side slicing
@@ -249,7 +244,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     globalSortingState.currentSortBy,
     isDefaultState,
     hasUserSelectedSort,
-    dailyRotatingCars,
     sortedResults
   ]);
 
@@ -504,7 +498,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setLoadedPages(1);
     setModels([]);
     setGenerations([]);
-    setHasUserSelectedSort(false); // Reset to allow daily rotating cars again
+    setHasUserSelectedSort(false); // Reset sort preference
     fetchCars(1, { sort_by: 'recently_added' }, true);
     setSearchParams({});
   }, [fetchCars, setSearchParams]);
