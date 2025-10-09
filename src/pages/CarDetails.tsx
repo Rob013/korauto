@@ -1031,10 +1031,10 @@ const CarDetails = memo(() => {
     });
   }, [toast]);
 
-  // Memoize images array for performance - compute before early returns
+  // Memoize images array for performance - compute before early returns (limit to 20 for gallery)
   const images = useMemo(() => {
     if (car?.images?.length) {
-      return car.images;
+      return car.images.slice(0, 20); // Limit to 20 images as per API specification
     }
     if (car?.image) {
       return [car.image];
@@ -1074,11 +1074,10 @@ const CarDetails = memo(() => {
   // Handler for opening gallery images in a new page
   const handleGalleryClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    // Navigate to gallery page with images data
+    // Navigate to gallery page with all images
     navigate(`/car/${lot}/gallery`, {
       state: {
-        images: images.slice(0, 20),
-        // Limit to 20 images as specified
+        images: images, // Already limited to 20 in images memo
         carMake: car?.make,
         carModel: car?.model,
         carYear: car?.year,
@@ -1187,7 +1186,7 @@ const CarDetails = memo(() => {
             <Card className="border-0 shadow-2xl overflow-hidden rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
               <CardContent className="p-0">
                 <div ref={imageContainerRef} className="car-details-hero relative w-full aspect-[21/9] md:aspect-[18/7] lg:aspect-[20/7] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer" onClick={() => setIsImageZoomOpen(true)} data-fancybox="gallery">
-                  {images.length > 0 ? <img src={images[selectedImageIndex]} alt={`${car.year} ${car.make} ${car.model}`} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105" onError={e => {
+                  {images.length > 0 ? <img src={images[selectedImageIndex]} alt={`${car.year} ${car.make} ${car.model}`} className="w-full h-full object-contain transition-all duration-500 group-hover:scale-105" onError={e => {
                   e.currentTarget.src = "/placeholder.svg";
                   setIsPlaceholderImage(true);
                 }} onLoad={e => {
