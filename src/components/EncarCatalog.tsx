@@ -206,8 +206,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   }, [filteredCars, exchangeRate.rate]);
   
   // Always call useSortedCars hook (hooks must be called unconditionally)
-  const sortedResults = useSortedCars(carsForSorting, sortBy);
-  const sortedAllCarsResults = useSortedCars(allCarsData, sortBy); // Add sorting for all cars data
+  const sortedResults = useSortedCars(carsForSorting, hasUserSelectedSort ? sortBy : 'recently_added');
+  const sortedAllCarsResults = useSortedCars(allCarsData, hasUserSelectedSort ? sortBy : 'recently_added');
   
   // Memoized cars to display - uses global sorting when available
   const carsToDisplay = useMemo(() => {
@@ -217,33 +217,34 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       return sortedAllCarsResults;
     }
     
-    // Priority 1: Global sorting (when available and dataset is large enough)
-    if (isGlobalSortingReady() && shouldUseGlobalSorting()) {
+    // Priority 1: Global sorting (when user has explicitly selected a sort and dataset is large enough)
+    if (hasUserSelectedSort && isGlobalSortingReady() && shouldUseGlobalSorting()) {
       const rankedCarsForPage = getCarsForCurrentPage(currentPage);
       console.log(`🎯 Using globally sorted cars for page ${currentPage}: ${rankedCarsForPage.length} cars (${globalSortingState.currentSortBy} sort)`);
       return rankedCarsForPage;
     }
     
-    // Priority 2: Recently added cars by default
-    // Catalog always shows fresh inventory from API sorted by recently_added
+    // Priority 2: No sorting - show natural API order when user hasn't selected sort
+    if (!hasUserSelectedSort) {
+      console.log(`📄 Using natural API order for page ${currentPage}: ${carsForSorting.length} cars (no sorting applied)`);
+      return carsForSorting;
+    }
     
-    // Priority 3: Regular sorted cars (recently added by default)
-    // For server-side pagination, use all sorted results without client-side slicing
-    // Server already provides the correct page data with 'recently_added' sort by default
-    console.log(`📄 Using sorted cars for page ${currentPage}: ${sortedResults.length} cars (sort: ${sortBy || 'recently_added'}, default shows recently added from API)`);
+    // Priority 3: User-selected sorting (client-side)
+    console.log(`📄 Using sorted cars for page ${currentPage}: ${sortedResults.length} cars (sort: ${sortBy})`);
     return sortedResults;
   }, [
     showAllCars,
     allCarsData,
     sortedAllCarsResults,
     sortBy,
+    hasUserSelectedSort,
+    carsForSorting,
     isGlobalSortingReady, 
     shouldUseGlobalSorting, 
     getCarsForCurrentPage, 
     currentPage,
     globalSortingState.currentSortBy,
-    isDefaultState,
-    hasUserSelectedSort,
     sortedResults
   ]);
 
@@ -410,7 +411,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setFilters(newFilters);
     setCurrentPage(1); // Reset to first page when filters change
     
-    // Reset sorting to default when filters change
+    // Reset sorting to no sort state when filters change
     setSortBy('recently_added');
     setHasUserSelectedSort(false);
     
@@ -420,19 +421,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Use 200 cars per page for proper pagination
     const filtersWithPagination = addPaginationToFilters(newFilters, 200, 1);
     
-    // Always use recently_added sort since we reset above
-    const filtersWithSort = {
-      ...filtersWithPagination,
-      sort_by: 'recently_added'
-    };
-    
-    fetchCars(1, filtersWithSort, true);
+    // Don't apply any sorting when filters change - show natural API order
+    fetchCars(1, filtersWithPagination, true);
 
     // Update URL with all non-empty filter values - now using utility
     const searchParams = filtersToURLParams(newFilters);
     searchParams.set('page', '1');
     setSearchParams(searchParams);
-  }, [fetchCars, setSearchParams, hasUserSelectedSort, sortBy, clearGlobalSorting]);
+  }, [fetchCars, setSearchParams, clearGlobalSorting]);
 
   // Optimized year filtering hook for better performance
   const {
@@ -507,7 +503,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setModels([]);
     setGenerations([]);
     setHasUserSelectedSort(false); // Reset sort preference
-    fetchCars(1, { sort_by: 'recently_added' }, true);
+    fetchCars(1, {}, true); // No sorting applied - show natural API order
     setSearchParams({});
   }, [fetchCars, setSearchParams]);
 
@@ -530,11 +526,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     
     // Fetch cars for the specific page with proper API pagination
     const filtersWithPagination = addPaginationToFilters(filters, 200, page);
-    const filtersWithSort = {
-      ...filtersWithPagination,
-      sort_by: hasUserSelectedSort && sortBy ? sortBy : 'recently_added'
-    };
-    fetchCars(page, filtersWithSort, true); // Reset list for new page
+    
+    // Only apply sorting if user has explicitly selected one
+    const filtersToUse = hasUserSelectedSort && sortBy 
+      ? { ...filtersWithPagination, sort_by: sortBy }
+      : filtersWithPagination;
+      
+    fetchCars(page, filtersToUse, true); // Reset list for new page
     
     // Update URL with new page
     const currentParams = Object.fromEntries(searchParams.entries());
@@ -545,7 +543,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
     console.log(`📄 Navigated to page ${page} of ${totalPages} with filters:`, filtersWithPagination);
-  }, [filters, fetchCars, setSearchParams, addPaginationToFilters, totalPages]);
+  }, [filters, fetchCars, setSearchParams, addPaginationToFilters, totalPages, hasUserSelectedSort, sortBy]);
 
   // Function to fetch and display all cars
   const handleShowAllCars = useCallback(async () => {
@@ -665,7 +663,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const handleManufacturerChange = async (manufacturerId: string) => {
     console.log(`[handleManufacturerChange] Called with manufacturerId: ${manufacturerId}`);
     
-    // Reset sorting to default when manufacturer changes
+    // Reset sorting to no sort state when manufacturer changes
     setSortBy('recently_added');
     setHasUserSelectedSort(false);
     
@@ -701,8 +699,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         return;
       }
       
-      // Fetch cars immediately with smaller page for instant results
-      await fetchCars(1, { ...newFilters, per_page: "50", sort_by: 'recently_added' }, true);
+      // Fetch cars immediately without sorting - show natural API order
+      await fetchCars(1, { ...newFilters, per_page: "50" }, true);
       
       // Fetch models in background (non-blocking)
       fetchModels(manufacturerId)
@@ -735,7 +733,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   }, [models]);
 
   const handleModelChange = async (modelId: string) => {
-    // Reset sorting to default when model changes
+    // Reset sorting to no sort state when model changes
     setSortBy('recently_added');
     setHasUserSelectedSort(false);
     
@@ -754,8 +752,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setIsLoading(true);
     
     try {
-      // Fetch cars immediately with smaller page for instant results
-      await fetchCars(1, { ...newFilters, per_page: "50", sort_by: 'recently_added' }, true);
+      // Fetch cars immediately without sorting - show natural API order
+      await fetchCars(1, { ...newFilters, per_page: "50" }, true);
       
       // Fetch generations in background (non-blocking)
       if (modelId) {
@@ -846,7 +844,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           ...urlFilters,
           per_page: "200",
           page: urlCurrentPage.toString(),
-          sort_by: hasUserSelectedSort && sortBy ? sortBy : 'recently_added'
+          // Only apply sort if user has explicitly selected one
+          ...(hasUserSelectedSort && sortBy ? { sort_by: sortBy } : {})
         };
         
         await fetchCars(urlCurrentPage, initialFilters, true);
@@ -1149,8 +1148,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             compact={true}
             onSearchCars={() => {
               console.log("Search button clicked, isMobile:", isMobile);
-              // Apply search/filters
-              fetchCars(1, { ...filters, per_page: "200", sort_by: hasUserSelectedSort && sortBy ? sortBy : 'recently_added' }, true);
+              
+              // Apply search/filters - only include sort if user has selected one
+              const searchFilters = {
+                ...filters,
+                per_page: "200",
+                ...(hasUserSelectedSort && sortBy ? { sort_by: sortBy } : {})
+              };
+              fetchCars(1, searchFilters, true);
               
               // Force close filter panel on mobile (and desktop for consistency)
               setShowFilters(false);
