@@ -108,7 +108,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     validationEnabled: false
   });
   
-  const [sortBy, setSortBy] = useState<SortOption>("");
+  const [sortBy, setSortBy] = useState<SortOption>("recently_added");
   const [hasUserSelectedSort, setHasUserSelectedSort] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentPage, setCurrentPage] = useState(1);
@@ -228,18 +228,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       return rankedCarsForPage;
     }
     
-    // Priority 2: Daily rotating cars (only for default state without user sort selection)
-    if (isDefaultState && !hasUserSelectedSort && !shouldUseGlobalSorting()) {
-      // For server-side pagination, use all daily rotating cars without client-side slicing
-      // Server already provides the correct page data
-      console.log(`🎲 Using daily rotating cars for page ${currentPage}: ${dailyRotatingCars.length} cars (default state, no explicit sort, small dataset)`);
-      return dailyRotatingCars;
-    }
+    // Priority 2: Recently added cars (default state shows recently added from API)
+    // Skip daily rotating cars and show recently added cars by default
+    // This ensures catalog always shows fresh inventory first
     
-    // Priority 3: Regular sorted cars (fallback)
+    // Priority 3: Regular sorted cars (recently added by default)
     // For server-side pagination, use all sorted results without client-side slicing
-    // Server already provides the correct page data
-    console.log(`📄 Using regular sorted cars for page ${currentPage}: ${sortedResults.length} cars (fallback or loading state)`);
+    // Server already provides the correct page data with 'recently_added' sort by default
+    console.log(`📄 Using sorted cars for page ${currentPage}: ${sortedResults.length} cars (sort: ${sortBy || 'recently_added'}, default shows recently added from API)`);
     return sortedResults;
   }, [
     showAllCars,
