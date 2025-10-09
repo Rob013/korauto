@@ -1262,7 +1262,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 <div className="relative flex-shrink-0">
                   <ArrowUpDown className="h-3 w-3 absolute left-2 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none" />
                   <AdaptiveSelect
-                    value={sortBy}
+                    value={hasUserSelectedSort ? sortBy : ""}
                     onValueChange={(value: SortOption) => {
                       setSortBy(value);
                       setHasUserSelectedSort(true);
