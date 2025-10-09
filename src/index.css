@@ -466,6 +466,36 @@ All colors MUST be HSL.
     }
   }
 
+  /* Touch ripple effect element */
+  .touch-ripple-effect {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    animation: rippleEffect 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  .dark .touch-ripple-effect {
+    background: radial-gradient(circle, rgba(0, 0, 0, 0.4) 0%, transparent 70%);
+  }
+
+  @keyframes rippleEffect {
+    0% {
+      width: 0;
+      height: 0;
+      opacity: 1;
+    }
+    100% {
+      width: 300px;
+      height: 300px;
+      opacity: 0;
+    }
+  }
+
   /* Pulse animation for loading states */
   .pulse-enhanced {
     animation: pulseEnhanced 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -802,84 +832,234 @@ All colors MUST be HSL.
     transform: scale(1.02);
   }
 
-  /* Enhanced Glass morphism effect with modern 3D shadows */
+  /* Enhanced Glass morphism effect with gradient background */
   .glass-card {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: linear-gradient(135deg, 
+      hsl(var(--background)) 0%, 
+      hsl(var(--muted)) 100%
+    );
+    border: 1px solid hsl(var(--border));
     box-shadow: 
-      /* Deep black shadow for 3D depth in light mode */
-      0 8px 32px -8px rgba(0, 0, 0, 0.25),
-      0 4px 20px -4px rgba(0, 0, 0, 0.15),
-      0 2px 8px -2px rgba(0, 0, 0, 0.1),
-      /* Subtle inner highlight */
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      0 8px 32px -8px rgba(0, 0, 0, 0.15),
+      0 4px 20px -4px rgba(0, 0, 0, 0.1),
+      0 2px 8px -2px rgba(0, 0, 0, 0.05);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
   }
 
   .dark .glass-card {
-    background: rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(135deg, 
+      hsl(var(--background)) 0%, 
+      hsl(var(--card)) 50%,
+      hsl(var(--muted)) 100%
+    );
+    border: 1px solid hsl(var(--border));
     box-shadow: 
-      /* White glow shadow for 3D depth in dark mode */
-      0 8px 32px -8px rgba(255, 255, 255, 0.12),
-      0 4px 20px -4px rgba(255, 255, 255, 0.08), 
-      0 2px 8px -2px rgba(255, 255, 255, 0.04),
-      /* Enhanced dark base shadow */
-      0 12px 40px -8px rgba(0, 0, 0, 0.4),
-      /* Subtle inner highlight */
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      0 8px 32px -8px rgba(255, 255, 255, 0.08),
+      0 4px 20px -4px rgba(255, 255, 255, 0.05),
+      0 12px 40px -8px rgba(0, 0, 0, 0.3);
   }
 
-  .glass-card:hover {
-    transform: translateY(-6px) scale(1.02);
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 
-      /* Enhanced black shadow on hover for light mode */
-      0 20px 60px -12px rgba(0, 0, 0, 0.3),
-      0 12px 32px -8px rgba(0, 0, 0, 0.2),
-      0 6px 16px -4px rgba(0, 0, 0, 0.15),
-      /* Enhanced inner highlight */
-      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  /* Touch/hover interaction with bright light animation */
+  .glass-card::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+    z-index: 1;
   }
 
-  .dark .glass-card:hover {
-    background: rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 
-      /* Enhanced white glow on hover for dark mode */
-      0 20px 60px -12px rgba(255, 255, 255, 0.18),
-      0 12px 32px -8px rgba(255, 255, 255, 0.12),
-      0 6px 16px -4px rgba(255, 255, 255, 0.08),
-      /* Enhanced darker base shadow */
-      0 16px 50px -8px rgba(0, 0, 0, 0.5),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  .dark .glass-card::before {
+    background: radial-gradient(circle, rgba(0, 0, 0, 0.4) 0%, transparent 70%);
   }
 
-  /* Glass panel for filter and details sections */
+  .glass-card:hover::before {
+    width: 500px;
+    height: 500px;
+    opacity: 1;
+    transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Active/touch state with instant bright pulse */
+  .glass-card:active::before {
+    width: 300px;
+    height: 300px;
+    opacity: 1;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Mobile touch interaction */
+  @media (hover: none) and (pointer: coarse) {
+    .glass-card::before {
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, transparent 70%);
+    }
+    
+    .dark .glass-card::before {
+      background: radial-gradient(circle, rgba(0, 0, 0, 0.5) 0%, transparent 70%);
+    }
+  }
+
+  /* Glass panel for filter and details sections with gradient */
   .glass-panel {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: linear-gradient(135deg,
+      hsl(var(--card)) 0%,
+      hsl(var(--muted)/0.5) 100%
+    );
+    border: 1px solid hsl(var(--border));
     box-shadow: 
       0 12px 40px -8px rgba(0, 0, 0, 0.08),
-      0 6px 20px -4px rgba(0, 0, 0, 0.05),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      0 6px 20px -4px rgba(0, 0, 0, 0.05);
   }
 
   .dark .glass-panel {
-    background: rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: linear-gradient(135deg,
+      hsl(var(--card)) 0%,
+      hsl(var(--background)) 100%
+    );
+    border: 1px solid hsl(var(--border));
     box-shadow: 
       0 12px 40px -8px rgba(0, 0, 0, 0.2),
-      0 6px 20px -4px rgba(0, 0, 0, 0.12),
-      inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      0 6px 20px -4px rgba(0, 0, 0, 0.12);
   }
 
-  /* Stagger animation for lists */
+  /* Filter controls interaction animation */
+  .filter-control, .filter-section {
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .filter-control:focus,
+  .filter-control:active {
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.2);
+    transform: scale(1.02);
+  }
+
+  /* Touch ripple for filter sections */
+  .filter-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+  }
+
+  .dark .filter-section::before {
+    background: radial-gradient(circle at center, rgba(0, 0, 0, 0.2) 0%, transparent 70%);
+  }
+
+  .filter-section:active::before {
+    opacity: 1;
+  }
+
+  /* Add bright pulse animation to filter panel on interaction */
+  [data-filter-panel]::after {
+    content: '';
+    position: absolute;
+    top: var(--touch-y, 50%);
+    left: var(--touch-x, 50%);
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .dark [data-filter-panel]::after {
+    background: radial-gradient(circle, rgba(0, 0, 0, 0.25) 0%, transparent 70%);
+  }
+
+  [data-filter-panel]:active::after {
+    width: 400px;
+    height: 400px;
+    opacity: 1;
+    transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Add touch interaction animations for buttons and interactive elements */
+  button, a[role="button"], .interactive-element, [data-filter-panel] {
+    position: relative;
+    overflow: hidden;
+  }
+
+  button::after, 
+  a[role="button"]::after, 
+  .interactive-element::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+  }
+
+  .dark button::after,
+  .dark a[role="button"]::after,
+  .dark .interactive-element::after {
+    background: radial-gradient(circle, rgba(0, 0, 0, 0.3) 0%, transparent 70%);
+  }
+
+  button:hover::after,
+  a[role="button"]:hover::after,
+  .interactive-element:hover::after {
+    width: 200px;
+    height: 200px;
+    opacity: 1;
+  }
+
+  button:active::after,
+  a[role="button"]:active::after,
+  .interactive-element:active::after {
+    width: 100px;
+    height: 100px;
+    opacity: 1;
+    transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Enhanced mobile touch feedback */
+  @media (hover: none) and (pointer: coarse) {
+    button::after,
+    a[role="button"]::after,
+    .interactive-element::after {
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.7) 0%, transparent 70%);
+    }
+    
+    .dark button::after,
+    .dark a[role="button"]::after,
+    .dark .interactive-element::after {
+      background: radial-gradient(circle, rgba(0, 0, 0, 0.5) 0%, transparent 70%);
+    }
+
+    button:active::after,
+    a[role="button"]:active::after,
+    .interactive-element:active::after {
+      width: 150px;
+      height: 150px;
+      opacity: 1;
+      transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+  }
   .stagger-animation > * {
     opacity: 0;
     animation: staggerChild 0.6s ease-out forwards;

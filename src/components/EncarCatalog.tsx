@@ -29,6 +29,7 @@ import { useResourcePreloader } from "@/hooks/useResourcePreloader";
 import { debounce } from "@/utils/performance";
 import { useOptimizedYearFilter } from "@/hooks/useOptimizedYearFilter";
 import { useDailyRotatingCars } from "@/hooks/useDailyRotatingCars";
+import { initializeTouchRipple, cleanupTouchRipple } from "@/utils/touchRipple";
 import {
   APIFilters,
   extractGradesFromTitle,
