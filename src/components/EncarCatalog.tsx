@@ -975,6 +975,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Initialize global sorting when sortBy changes or totalCount becomes available
   useEffect(() => {
     if (totalCount > 0) {
+      // Skip global sorting in default state - let server-side sorting handle it
+      if (isDefaultState && !hasUserSelectedSort) {
+        console.log(`📝 Default state - using server-side sorting (${totalCount} cars)`);
+        clearGlobalSorting();
+        return;
+      }
+      
       if (shouldUseGlobalSorting()) {
         console.log(`🔄 Initializing global sorting: totalCount=${totalCount}, sortBy=${sortBy}, hasUserSelectedSort=${hasUserSelectedSort}`);
         initializeGlobalSorting(sortBy);
@@ -984,7 +991,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         clearGlobalSorting();
       }
     }
-  }, [sortBy, totalCount, shouldUseGlobalSorting, initializeGlobalSorting, clearGlobalSorting, hasUserSelectedSort]);
+  }, [sortBy, totalCount, shouldUseGlobalSorting, initializeGlobalSorting, clearGlobalSorting, hasUserSelectedSort, isDefaultState]);
 
   // Show cars without requiring brand and model selection
   const shouldShowCars = true;
