@@ -110,20 +110,11 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     setIsLoading(true);
     
     if (key === 'manufacturer_id') {
+      // Only call the dedicated manufacturer handler - it handles everything including filter updates
       onManufacturerChange?.(actualValue || '');
-      onFiltersChange({
-        ...filters,
-        [key]: actualValue,
-        model_id: undefined,
-        grade_iaai: undefined
-      });
     } else if (key === 'model_id') {
+      // Only call the dedicated model handler - it handles everything including filter updates
       onModelChange?.(actualValue || '');
-      onFiltersChange({
-        ...filters,
-        [key]: actualValue,
-        grade_iaai: undefined
-      });
     } else {
       const updatedFilters = { ...filters, [key]: actualValue };
       onFiltersChange(updatedFilters);

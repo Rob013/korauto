@@ -410,16 +410,20 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setFilters(newFilters);
     setCurrentPage(1); // Reset to first page when filters change
     
+    // Reset sorting to default when filters change
+    setSortBy('recently_added');
+    setHasUserSelectedSort(false);
+    
     // Reset global sorting when filters change
     clearGlobalSorting();
     
     // Use 200 cars per page for proper pagination
     const filtersWithPagination = addPaginationToFilters(newFilters, 200, 1);
     
-    // Add default sort if user hasn't selected one
+    // Always use recently_added sort since we reset above
     const filtersWithSort = {
       ...filtersWithPagination,
-      sort_by: hasUserSelectedSort && sortBy ? sortBy : 'recently_added'
+      sort_by: 'recently_added'
     };
     
     fetchCars(1, filtersWithSort, true);
@@ -458,6 +462,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Reset "Show All" mode when filters change
     setShowAllCars(false);
     setAllCarsData([]);
+    
+    // Reset sorting to default when filters change
+    setSortBy('recently_added');
+    setHasUserSelectedSort(false);
     
     // Update UI immediately for responsiveness
     setFilters(newFilters);
@@ -663,6 +671,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setModels([]);
     setGenerations([]);
     
+    // Reset sorting to default when manufacturer changes
+    setSortBy('recently_added');
+    setHasUserSelectedSort(false);
+    
     // Create new filters immediately for faster UI response
     const newFilters: APIFilters = {
       manufacturer_id: manufacturerId,
@@ -700,9 +712,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         );
       }
       
-      // Fetch cars with new filters
+      // Fetch cars with new filters (always use recently_added since we reset sort above)
       promises.push(
-        fetchCars(1, { ...newFilters, per_page: "200", sort_by: hasUserSelectedSort && sortBy ? sortBy : 'recently_added' }, true)
+        fetchCars(1, { ...newFilters, per_page: "200", sort_by: 'recently_added' }, true)
       );
       
       await Promise.all(promises);
@@ -736,6 +748,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setIsFilterLoading(true);
     setGenerations([]);
     
+    // Reset sorting to default when model changes
+    setSortBy('recently_added');
+    setHasUserSelectedSort(false);
+    
     // Create new filters immediately for faster UI response
     const newFilters: APIFilters = {
       ...filters,
@@ -748,8 +764,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     
     try {
       if (!modelId) {
-        // Fetch cars with cleared model filter
-        await fetchCars(1, { ...newFilters, per_page: "200", sort_by: hasUserSelectedSort && sortBy ? sortBy : 'recently_added' }, true);
+        // Fetch cars with cleared model filter (always use recently_added since we reset sort above)
+        await fetchCars(1, { ...newFilters, per_page: "200", sort_by: 'recently_added' }, true);
         setIsLoading(false);
         setIsFilterLoading(false);
         return;
@@ -762,7 +778,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           setGenerations(generationData);
           return generationData;
         }),
-        fetchCars(1, { ...newFilters, per_page: "200", sort_by: hasUserSelectedSort && sortBy ? sortBy : 'recently_added' }, true)
+        fetchCars(1, { ...newFilters, per_page: "200", sort_by: 'recently_added' }, true)
       ];
       
       await Promise.all(promises);
