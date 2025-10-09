@@ -1090,15 +1090,15 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         ref={filterPanelRef}
         data-filter-panel
         className={`
-        fixed lg:sticky lg:top-4 lg:self-start z-40 glass-card transition-transform duration-300 ease-in-out
+        fixed lg:sticky lg:top-4 lg:self-start z-40 glass-card transition-transform duration-300 ease-in-out flex flex-col
         ${showFilters ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         ${!showFilters && 'lg:block hidden'}
-        ${isMobile ? 'mobile-filter-panel top-0 left-0 right-0 bottom-0 w-full rounded-none' : 'w-80 lg:w-72 xl:w-80 flex-shrink-0 overflow-y-auto rounded-lg shadow-lg lg:max-h-[calc(100vh-2rem)]'} 
+        ${isMobile ? 'mobile-filter-panel top-0 left-0 right-0 bottom-0 w-full rounded-none h-screen' : 'w-80 lg:w-72 xl:w-80 flex-shrink-0 rounded-lg shadow-lg lg:max-h-[calc(100vh-2rem)]'} 
       `}>
-        <div className={`${isMobile ? 'mobile-filter-compact filter-header bg-primary text-primary-foreground safe-area-inset-top' : 'p-4 border-b flex-shrink-0 bg-card'}`}>
+        <div className={`${isMobile ? 'mobile-filter-compact filter-header bg-primary text-primary-foreground safe-area-inset-top flex-shrink-0' : 'p-4 border-b flex-shrink-0 bg-card'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Filter className={`h-4 w-4 sm:h-5 sm:w-5 ${isMobile ? 'text-primary-foreground' : 'text-primary'}`} />
+              <Filter className={`h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 ${isMobile ? 'text-primary-foreground' : 'text-primary'}`} />
               <h3 className={`font-semibold ${isMobile ? 'text-sm text-primary-foreground' : 'text-sm sm:text-base'}`}>
                 {isMobile ? 'Filtrat e Kërkimit' : 'Filters'}
               </h3>
@@ -1108,12 +1108,12 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                 </Badge>
               )}
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-shrink-0">
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={handleClearFilters}
-                className={`lg:hidden flex items-center gap-1 ${isMobile ? 'h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground text-xs' : 'h-8 px-2'}`}
+                className={`lg:hidden flex items-center gap-1 flex-shrink-0 ${isMobile ? 'h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground text-xs' : 'h-8 px-2'}`}
               >
                 <span className="text-xs">Clear</span>
               </Button>
@@ -1127,7 +1127,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     setShowFilters(false);
                     setHasExplicitlyClosed(true); // Mark as explicitly closed
                   }}
-                  className="flex items-center gap-1 h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground"
+                  className="flex items-center gap-1 h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground flex-shrink-0"
                   title="Mbyll filtrat"
                 >
                   <X className="h-3 w-3" />
@@ -1137,7 +1137,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           </div>
         </div>
         
-        <div className={`flex-1 overflow-y-auto ${isMobile ? 'mobile-filter-content mobile-filter-compact safe-area-inset-bottom safe-area-inset-left safe-area-inset-right' : 'p-4'}`}>
+        <div className={`flex-1 overflow-y-auto overscroll-contain ${isMobile ? 'mobile-filter-content mobile-filter-compact safe-area-inset-bottom safe-area-inset-left safe-area-inset-right' : 'p-4'}`} style={{
+          WebkitOverflowScrolling: 'touch',
+          scrollBehavior: 'smooth'
+        }}>
           <div className={`${isMobile ? '' : ''}`}>
             <EncarStyleFilter
             filters={filters}

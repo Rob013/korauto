@@ -1648,11 +1648,51 @@ All colors MUST be HSL.
     justify-content: center;
   }
 
-  /* Ensure filter content is properly scrollable - More compact */
+  /* Ensure filter content is properly scrollable in both light and dark modes */
   .mobile-filter-content {
-    height: calc(100dvh - 60px); /* Account for header height instead of safe areas */
+    height: calc(100dvh - 60px); /* Account for header height */
     overflow-y: auto;
+    overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    position: relative;
+  }
+
+  /* Ensure dark mode has same scrolling behavior */
+  .dark .mobile-filter-content {
+    height: calc(100dvh - 60px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  /* Prevent body scroll when filter is open */
+  body:has([data-filter-panel].translate-x-0) {
+    overflow: hidden;
+  }
+
+  /* Ensure filter panel itself doesn't scroll, only its content */
+  .mobile-filter-panel {
+    height: 100vh;
+    height: 100dvh;
+    min-height: -webkit-fill-available;
+    max-height: 100vh;
+    max-height: 100dvh;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background-color: rgba(255, 255, 255, 0.95);
+    overflow: hidden; /* Panel itself should not scroll */
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Dark mode filter panel */
+  .dark .mobile-filter-panel {
+    background-color: rgba(0, 0, 0, 0.95);
+    overflow: hidden; /* Ensure no scroll on panel in dark mode */
+    display: flex;
+    flex-direction: column;
   }
 
   /* Compact filter panel styles */
