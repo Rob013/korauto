@@ -1213,6 +1213,18 @@ const CarDetails = memo(() => {
                      </span>
                    </div>}
                    
+                   {car.details?.seats_count && <div className="group flex items-center justify-between p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item hover-scale">
+                     <div className="flex items-center gap-3">
+                       <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
+                         <Users className="h-5 w-5 text-primary flex-shrink-0" />
+                       </div>
+                       <span className="font-semibold text-foreground">Numri i Vendeve</span>
+                     </div>
+                     <span className="text-muted-foreground font-medium text-right">
+                       {car.details.seats_count} vende
+                     </span>
+                   </div>}
+                   
                     {car.transmission && <div className="group flex items-center justify-between p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item hover-scale">
                       <div className="flex items-center gap-3">
                         <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">

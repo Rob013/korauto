@@ -19,7 +19,9 @@ import {
   Settings,
   MapPin,
   DollarSign,
-  Cog
+  Cog,
+  Gauge,
+  Users
 } from "lucide-react";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS, BODY_TYPE_OPTIONS } from '@/constants/carOptions';
 import {
@@ -388,6 +390,30 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
             </div>
           </div>
 
+          {/* Mileage Range (KM) - Moved under year filter */}
+          <div className="space-y-1 filter-section">
+            <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+              <Gauge className="h-2.5 w-2.5" />
+              Kilometrazha (KM)
+            </Label>
+            <div className="grid grid-cols-2 gap-1.5">
+              <Input
+                type="number"
+                placeholder="Nga (KM)"
+                value={filters.odometer_from_km || ''}
+                onChange={(e) => updateFilter('odometer_from_km', e.target.value)}
+                className="filter-control h-8 text-xs"
+              />
+              <Input
+                type="number"
+                placeholder="Deri (KM)"
+                value={filters.odometer_to_km || ''}
+                onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
+                className="filter-control h-8 text-xs"
+              />
+            </div>
+          </div>
+
           {/* Price Range */}
           <div className="space-y-1 filter-section">
             <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
@@ -531,49 +557,72 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                    />
                  </div>
 
-                 <div className="space-y-1 filter-section">
-                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-                     <Car className="h-2.5 w-2.5" />
-                     Lloji i Trupit
-                   </Label>
-                   <AdaptiveSelect 
-                     value={filters.body_type || 'all'} 
-                     onValueChange={(value) => updateFilter('body_type', value)}
-                     placeholder="Çdo tip"
-                     className="filter-control h-8 text-xs"
-                     options={[
-                       { value: 'all', label: 'Çdo tip' },
-                       ...Object.entries(BODY_TYPE_OPTIONS).map(([name, id]) => ({
-                         value: id.toString(),
-                         label: name.charAt(0).toUpperCase() + name.slice(1)
-                       }))
-                     ]}
-                   />
-                 </div>
+                  <div className="space-y-1 filter-section">
+                    <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+                      <Car className="h-2.5 w-2.5" />
+                      Lloji i Trupit
+                    </Label>
+                    <AdaptiveSelect 
+                      value={filters.body_type || 'all'} 
+                      onValueChange={(value) => updateFilter('body_type', value)}
+                      placeholder="Çdo tip"
+                      className="filter-control h-8 text-xs"
+                      options={[
+                        { value: 'all', label: 'Çdo tip' },
+                        ...Object.entries(BODY_TYPE_OPTIONS).map(([name, id]) => ({
+                          value: id.toString(),
+                          label: name.charAt(0).toUpperCase() + name.slice(1)
+                        }))
+                      ]}
+                    />
+                  </div>
 
-                 {/* Mileage */}
-                 <div className="space-y-1 filter-section">
-                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-                     <MapPin className="h-2.5 w-2.5" />
-                     Kilometrazhi (km)
-                   </Label>
-                   <div className="grid grid-cols-2 gap-1.5">
-                     <Input
-                       type="number"
-                       placeholder="Nga"
-                       value={filters.odometer_from_km || ''}
-                       onChange={(e) => updateFilter('odometer_from_km', e.target.value)}
-                       className="filter-control h-8 text-xs"
-                     />
-                     <Input
-                       type="number"
-                       placeholder="Deri"
-                       value={filters.odometer_to_km || ''}
-                       onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
-                       className="filter-control h-8 text-xs"
-                     />
-                   </div>
-                 </div>
+                  {/* Seats Count Filter */}
+                  <div className="space-y-1 filter-section">
+                    <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+                      <Users className="h-2.5 w-2.5" />
+                      Numri i Vendeve
+                    </Label>
+                    <AdaptiveSelect 
+                      value={filters.seats_count || 'all'} 
+                      onValueChange={(value) => updateFilter('seats_count', value)}
+                      placeholder="Çdo numër"
+                      className="filter-control h-8 text-xs"
+                      options={[
+                        { value: 'all', label: 'Çdo numër' },
+                        { value: '2', label: '2 vende' },
+                        { value: '4', label: '4 vende' },
+                        { value: '5', label: '5 vende' },
+                        { value: '6', label: '6 vende' },
+                        { value: '7', label: '7 vende' },
+                        { value: '8', label: '8+ vende' }
+                      ]}
+                    />
+                  </div>
+
+                  {/* Mileage - Kept in "More" section for users who want more detail */}
+                  <div className="space-y-1 filter-section">
+                    <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+                      <MapPin className="h-2.5 w-2.5" />
+                      Kilometrazhi (detajuar)
+                    </Label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <Input
+                        type="number"
+                        placeholder="Nga"
+                        value={filters.odometer_from_km || ''}
+                        onChange={(e) => updateFilter('odometer_from_km', e.target.value)}
+                        className="filter-control h-8 text-xs"
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Deri"
+                        value={filters.odometer_to_km || ''}
+                        onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
+                        className="filter-control h-8 text-xs"
+                      />
+                    </div>
+                  </div>
               </div>
             </div>
           )}
