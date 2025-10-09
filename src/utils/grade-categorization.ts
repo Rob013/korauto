@@ -36,28 +36,29 @@ export const normalizeGrade = (grade: string): string => {
 
 /**
  * Categorizes a grade based on its characteristics
+ * Priority: Diesel first, Hybrid second, Petrol third
  */
 export const categorizeGrade = (grade: string): { category: string; priority: number } => {
   const normalized = normalizeGrade(grade);
   
-  // Electric/Hybrid variants (highest priority for modern relevance)
-  if (/\b(electric|hybrid|e-tron|phev|ev|e-power|e-quattro)\b/.test(normalized)) {
-    return { category: 'Electric & Hybrid', priority: 1 };
+  // Diesel variants (highest priority - user requirement)
+  if (/\b(tdi|cdi|diesel|d\b|dci|turbodiesel)\b/.test(normalized)) {
+    return { category: 'Diesel', priority: 1 };
   }
   
-  // Performance variants (high priority)
+  // Hybrid/Electric variants (second priority - user requirement)
+  if (/\b(hybrid|electric|e-tron|phev|ev|e-power|e-quattro|plug-in)\b/.test(normalized)) {
+    return { category: 'Hybrid & Electric', priority: 2 };
+  }
+  
+  // Petrol variants (third priority - user requirement)
+  if (/\b(tfsi|tsi|fsi|cgi|petrol|gasoline|turbo|vtec|vvt|i\b|gdi|mpi)\b/.test(normalized)) {
+    return { category: 'Petrol', priority: 3 };
+  }
+  
+  // Performance variants
   if (/\b(amg|m\d*|rs\d*|s\d*|gt[s]?|gti|r\d*|n\d*|st|type-r|nismo|sti|wrx)\b/.test(normalized)) {
-    return { category: 'Performance', priority: 2 };
-  }
-  
-  // Engine specifications with technology (most common, high priority)
-  if (/\b\d+\.?\d*\s*(tdi|tfsi|tsi|fsi|cdi|cgi|turbo|vtec|vvt|dohc)\b/.test(normalized)) {
-    return { category: 'Engine Technology', priority: 3 };
-  }
-  
-  // Basic engine specifications
-  if (/\b\d+\.?\d*\s*(diesel|petrol|liter|l)\b/.test(normalized)) {
-    return { category: 'Engine Displacement', priority: 4 };
+    return { category: 'Performance', priority: 4 };
   }
   
   // Luxury/Premium trim levels
@@ -160,19 +161,28 @@ export const deduplicateGrades = (grades: GradeOption[]): GradeOption[] => {
 
 /**
  * Sorts grades within a category using intelligent logic
+ * For diesel/petrol/hybrid: sort numerically by displacement (30 TDI, 35 TDI, 40 TDI)
  */
 export const sortGradesInCategory = (grades: GradeOption[], category: string): GradeOption[] => {
   return [...grades].sort((a, b) => {
-    // First sort by count (popularity) in descending order
-    const countDiff = (b.count || 0) - (a.count || 0);
-    if (countDiff !== 0) return countDiff;
-    
-    // For engine categories, sort by displacement/power numerically
-    if (category === 'Engine Technology' || category === 'Engine Displacement') {
+    // For Diesel, Petrol, and Hybrid categories: sort numerically by displacement/power
+    if (category === 'Diesel' || category === 'Petrol' || category === 'Hybrid & Electric') {
       const aNum = extractEngineSize(a.value);
       const bNum = extractEngineSize(b.value);
-      if (aNum !== bNum) return bNum - aNum; // Larger engines first
+      
+      // If both have numbers, sort by number (ascending: 30, 35, 40, 45, etc.)
+      if (aNum !== bNum && aNum > 0 && bNum > 0) {
+        return aNum - bNum; // Smaller numbers first (30 before 35 before 40)
+      }
+      
+      // If only one has a number, put the numbered one first
+      if (aNum > 0 && bNum === 0) return -1;
+      if (bNum > 0 && aNum === 0) return 1;
     }
+    
+    // Then sort by count (popularity) in descending order
+    const countDiff = (b.count || 0) - (a.count || 0);
+    if (countDiff !== 0) return countDiff;
     
     // For performance variants, custom order
     if (category === 'Performance') {
@@ -193,11 +203,29 @@ export const sortGradesInCategory = (grades: GradeOption[], category: string): G
 };
 
 /**
- * Extracts numeric engine size for sorting
+ * Extracts numeric engine size/power for sorting
+ * Handles various formats: "30 TDI", "2.0 TDI", "45 TFSI", etc.
  */
 const extractEngineSize = (grade: string): number => {
-  const match = grade.match(/(\d+\.?\d*)/);
-  return match ? parseFloat(match[1]) : 0;
+  // First try to match power numbers (30, 35, 40, 45, etc. - common in Audi, VW)
+  const powerMatch = grade.match(/\b(\d{2,3})\s*(?:TDI|TFSI|TSI|FSI|CDI|CGI|d|i|e|hybrid)/i);
+  if (powerMatch) {
+    return parseFloat(powerMatch[1]);
+  }
+  
+  // Then try displacement numbers (1.4, 2.0, 3.0, etc.)
+  const displacementMatch = grade.match(/(\d+\.?\d*)\s*(?:L|liter|litre)?/i);
+  if (displacementMatch) {
+    const displacement = parseFloat(displacementMatch[1]);
+    // Convert displacement to comparable scale with power numbers
+    // 1.4L -> 14, 2.0L -> 20, 3.0L -> 30, etc.
+    if (displacement < 10) {
+      return displacement * 10;
+    }
+    return displacement;
+  }
+  
+  return 0;
 };
 
 /**
