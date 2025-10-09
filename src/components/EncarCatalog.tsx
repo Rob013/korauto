@@ -665,12 +665,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const handleManufacturerChange = async (manufacturerId: string) => {
     console.log(`[handleManufacturerChange] Called with manufacturerId: ${manufacturerId}`);
     
-    // Prevent rapid consecutive calls by showing loading immediately
-    setIsLoading(true);
-    setIsFilterLoading(true);
-    setModels([]);
-    setGenerations([]);
-    
     // Reset sorting to default when manufacturer changes
     setSortBy('recently_added');
     setHasUserSelectedSort(false);
@@ -695,29 +689,28 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     };
     setFilters(newFilters);
     setLoadedPages(1);
+    setModels([]);
+    setGenerations([]);
+    
+    // Only show loading for cars
+    setIsLoading(true);
     
     try {
-      // Only fetch essential data - models and cars. Skip grades/trim levels to prevent excessive calls
-      const promises = [];
-      
-      if (manufacturerId) {
-        console.log(`[handleManufacturerChange] Fetching models...`);
-        promises.push(
-          fetchModels(manufacturerId).then(modelData => {
-            console.log(`[handleManufacturerChange] Received modelData:`, modelData);
-            console.log(`[handleManufacturerChange] Setting models to:`, modelData);
-            setModels(modelData);
-            return modelData;
-          })
-        );
+      if (!manufacturerId) {
+        setIsLoading(false);
+        return;
       }
       
-      // Fetch cars with new filters (always use recently_added since we reset sort above)
-      promises.push(
-        fetchCars(1, { ...newFilters, per_page: "200", sort_by: 'recently_added' }, true)
-      );
+      // Fetch cars immediately with smaller page for instant results
+      await fetchCars(1, { ...newFilters, per_page: "50", sort_by: 'recently_added' }, true);
       
-      await Promise.all(promises);
+      // Fetch models in background (non-blocking)
+      fetchModels(manufacturerId)
+        .then(modelData => {
+          console.log(`[handleManufacturerChange] Setting models to:`, modelData);
+          setModels(modelData);
+        })
+        .catch(err => console.warn('Failed to load models:', err));
       
       // Update URL after successful data fetch
       const paramsToSet: any = {};
@@ -730,8 +723,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       
     } catch (error) {
       console.error('[handleManufacturerChange] Error:', error);
-      setModels([]);
-      setGenerations([]);
     } finally {
       setIsLoading(false);
       setIsFilterLoading(false);
@@ -744,10 +735,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   }, [models]);
 
   const handleModelChange = async (modelId: string) => {
-    setIsLoading(true);
-    setIsFilterLoading(true);
-    setGenerations([]);
-    
     // Reset sorting to default when model changes
     setSortBy('recently_added');
     setHasUserSelectedSort(false);
@@ -761,27 +748,21 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     };
     setFilters(newFilters);
     setLoadedPages(1);
+    setGenerations([]);
+    
+    // Only show loading for cars
+    setIsLoading(true);
     
     try {
-      if (!modelId) {
-        // Fetch cars with cleared model filter (always use recently_added since we reset sort above)
-        await fetchCars(1, { ...newFilters, per_page: "200", sort_by: 'recently_added' }, true);
-        setIsLoading(false);
-        setIsFilterLoading(false);
-        return;
+      // Fetch cars immediately with smaller page for instant results
+      await fetchCars(1, { ...newFilters, per_page: "50", sort_by: 'recently_added' }, true);
+      
+      // Fetch generations in background (non-blocking)
+      if (modelId) {
+        fetchGenerations(modelId)
+          .then(generationData => setGenerations(generationData))
+          .catch(err => console.warn('Failed to load generations:', err));
       }
-      
-      // Fetch generations and cars in parallel for better performance
-      // Removed duplicate car fetches to optimize performance
-      const promises = [
-        fetchGenerations(modelId).then(generationData => {
-          setGenerations(generationData);
-          return generationData;
-        }),
-        fetchCars(1, { ...newFilters, per_page: "200", sort_by: 'recently_added' }, true)
-      ];
-      
-      await Promise.all(promises);
       
       // Update URL after successful data fetch
       const paramsToSet: any = {};
@@ -794,7 +775,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       
     } catch (error) {
       console.error('[handleModelChange] Error:', error);
-      setGenerations([]);
     } finally {
       setIsLoading(false);
       setIsFilterLoading(false);
