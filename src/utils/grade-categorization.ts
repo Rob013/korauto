@@ -36,48 +36,73 @@ export const normalizeGrade = (grade: string): string => {
 
 /**
  * Categorizes a grade based on its characteristics
- * Priority: Diesel first, Hybrid second, Petrol third
+ * Priority: TDI first, TFSI second, other diesel third, other petrol fourth
  */
 export const categorizeGrade = (grade: string): { category: string; priority: number } => {
   const normalized = normalizeGrade(grade);
   
-  // Diesel variants (highest priority - user requirement)
-  if (/\b(tdi|cdi|diesel|d\b|dci|turbodiesel)\b/.test(normalized)) {
-    return { category: 'Diesel', priority: 1 };
+  // TDI variants (highest priority - Volkswagen/Audi diesel)
+  if (/\b\d*\s*tdi\b/.test(normalized)) {
+    return { category: 'TDI Diesel', priority: 1 };
   }
   
-  // Hybrid/Electric variants (second priority - user requirement)
+  // TFSI variants (second priority - Volkswagen/Audi petrol)
+  if (/\b\d*\s*tfsi\b/.test(normalized)) {
+    return { category: 'TFSI Petrol', priority: 2 };
+  }
+  
+  // TSI variants (Volkswagen/Audi petrol turbo)
+  if (/\b\d*\s*tsi\b/.test(normalized)) {
+    return { category: 'TSI Petrol', priority: 3 };
+  }
+  
+  // CDI variants (Mercedes diesel)
+  if (/\b\d*\s*cdi\b/.test(normalized)) {
+    return { category: 'CDI Diesel', priority: 4 };
+  }
+  
+  // CGI variants (Mercedes petrol)
+  if (/\b\d*\s*cgi\b/.test(normalized)) {
+    return { category: 'CGI Petrol', priority: 5 };
+  }
+  
+  // Other diesel variants
+  if (/\b(diesel|d\b|dci|turbodiesel)\b/.test(normalized)) {
+    return { category: 'Other Diesel', priority: 6 };
+  }
+  
+  // Other petrol variants
+  if (/\b(fsi|petrol|gasoline|turbo|vtec|vvt|i\b|gdi|mpi)\b/.test(normalized)) {
+    return { category: 'Other Petrol', priority: 7 };
+  }
+  
+  // Hybrid/Electric variants
   if (/\b(hybrid|electric|e-tron|phev|ev|e-power|e-quattro|plug-in)\b/.test(normalized)) {
-    return { category: 'Hybrid & Electric', priority: 2 };
-  }
-  
-  // Petrol variants (third priority - user requirement)
-  if (/\b(tfsi|tsi|fsi|cgi|petrol|gasoline|turbo|vtec|vvt|i\b|gdi|mpi)\b/.test(normalized)) {
-    return { category: 'Petrol', priority: 3 };
+    return { category: 'Hybrid & Electric', priority: 8 };
   }
   
   // Performance variants
   if (/\b(amg|m\d*|rs\d*|s\d*|gt[s]?|gti|r\d*|n\d*|st|type-r|nismo|sti|wrx)\b/.test(normalized)) {
-    return { category: 'Performance', priority: 4 };
+    return { category: 'Performance', priority: 9 };
   }
   
   // Luxury/Premium trim levels
   if (/\b(luxury|premium|prestige|executive|business|signature|platinum|diamond|exclusive|elite)\b/.test(normalized)) {
-    return { category: 'Luxury Trims', priority: 5 };
+    return { category: 'Luxury Trims', priority: 10 };
   }
   
   // Sport/Style trim levels
   if (/\b(sport|dynamic|design|style|elegance|advance|progressive|comfort|deluxe)\b/.test(normalized)) {
-    return { category: 'Style Trims', priority: 6 };
+    return { category: 'Style Trims', priority: 11 };
   }
   
   // Basic trim levels
   if (/\b(base|standard|limited|special|edition)\b/.test(normalized)) {
-    return { category: 'Standard Trims', priority: 7 };
+    return { category: 'Standard Trims', priority: 12 };
   }
   
   // Default category for unclassified
-  return { category: 'Other', priority: 8 };
+  return { category: 'Other', priority: 13 };
 };
 
 /**
@@ -161,12 +186,17 @@ export const deduplicateGrades = (grades: GradeOption[]): GradeOption[] => {
 
 /**
  * Sorts grades within a category using intelligent logic
- * For diesel/petrol/hybrid: sort numerically by displacement (30 TDI, 35 TDI, 40 TDI)
+ * For TDI/TFSI/diesel/petrol: sort numerically (30, 35, 40, 45)
  */
 export const sortGradesInCategory = (grades: GradeOption[], category: string): GradeOption[] => {
   return [...grades].sort((a, b) => {
-    // For Diesel, Petrol, and Hybrid categories: sort numerically by displacement/power
-    if (category === 'Diesel' || category === 'Petrol' || category === 'Hybrid & Electric') {
+    // For all engine categories: sort numerically by displacement/power number
+    const isEngineCategory = [
+      'TDI Diesel', 'TFSI Petrol', 'TSI Petrol', 'CDI Diesel', 'CGI Petrol',
+      'Other Diesel', 'Other Petrol', 'Hybrid & Electric'
+    ].includes(category);
+    
+    if (isEngineCategory) {
       const aNum = extractEngineSize(a.value);
       const bNum = extractEngineSize(b.value);
       

@@ -181,16 +181,80 @@ const EquipmentOptionsSection = memo(({
   const INITIAL_SHOW_COUNT = 6;
   const PREVIEW_SHOW_COUNT = 10;
 
-  // Helper function to get appropriate icon for equipment item
+  // Comprehensive helper function to get appropriate icon for equipment item
   const getEquipmentIcon = (item: string) => {
     const itemLower = item.toLowerCase();
-    if (itemLower.includes('air') || itemLower.includes('klima')) return <Settings className="h-3 w-3 text-primary" />;
-    if (itemLower.includes('brake') || itemLower.includes('frena')) return <Shield className="h-3 w-3 text-primary" />;
-    if (itemLower.includes('engine') || itemLower.includes('motor')) return <Cog className="h-3 w-3 text-primary" />;
-    if (itemLower.includes('seat') || itemLower.includes('ulëse')) return <Car className="h-3 w-3 text-primary" />;
-    if (itemLower.includes('window') || itemLower.includes('dritare')) return <Eye className="h-3 w-3 text-primary" />;
-    if (itemLower.includes('light') || itemLower.includes('dritë')) return <Star className="h-3 w-3 text-primary" />;
-    if (itemLower.includes('radio') || itemLower.includes('audio')) return <MessageCircle className="h-3 w-3 text-primary" />;
+    
+    // Climate control & Air conditioning
+    if (itemLower.includes('air conditioning') || itemLower.includes('climate') || itemLower.includes('klima') || 
+        itemLower.includes('a/c') || itemLower.includes('hvac')) 
+      return <Wind className="h-3 w-3 text-primary" />;
+    
+    // Heating
+    if (itemLower.includes('heated') || itemLower.includes('ngroh') || itemLower.includes('heat'))
+      return <Thermometer className="h-3 w-3 text-primary" />;
+    
+    // Safety - Brakes & ABS
+    if (itemLower.includes('brake') || itemLower.includes('frena') || itemLower.includes('abs') || 
+        itemLower.includes('ebd') || itemLower.includes('brake assist'))
+      return <Shield className="h-3 w-3 text-primary" />;
+    
+    // Airbags
+    if (itemLower.includes('airbag'))
+      return <Shield className="h-3 w-3 text-primary" />;
+    
+    // Lighting - LED, Xenon, Headlights
+    if (itemLower.includes('light') || itemLower.includes('dritë') || itemLower.includes('led') || 
+        itemLower.includes('xenon') || itemLower.includes('headlight') || itemLower.includes('lamp'))
+      return <Lightbulb className="h-3 w-3 text-primary" />;
+    
+    // Camera systems
+    if (itemLower.includes('camera') || itemLower.includes('kamerë') || itemLower.includes('view'))
+      return <Camera className="h-3 w-3 text-primary" />;
+    
+    // Parking sensors & Radar
+    if (itemLower.includes('sensor') || itemLower.includes('parking') || itemLower.includes('radar') || 
+        itemLower.includes('proximity') || itemLower.includes('park assist'))
+      return <Radar className="h-3 w-3 text-primary" />;
+    
+    // Navigation & GPS
+    if (itemLower.includes('navigation') || itemLower.includes('gps') || itemLower.includes('navigacion') ||
+        itemLower.includes('maps'))
+      return <MapPin className="h-3 w-3 text-primary" />;
+    
+    // Audio & Entertainment
+    if (itemLower.includes('radio') || itemLower.includes('audio') || itemLower.includes('speaker') ||
+        itemLower.includes('sound') || itemLower.includes('stereo') || itemLower.includes('cd') ||
+        itemLower.includes('bluetooth') || itemLower.includes('usb') || itemLower.includes('aux'))
+      return <MessageCircle className="h-3 w-3 text-primary" />;
+    
+    // Cruise control & Speed control
+    if (itemLower.includes('cruise') || itemLower.includes('speed control') || itemLower.includes('kontroll'))
+      return <Gauge className="h-3 w-3 text-primary" />;
+    
+    // Engine & Transmission
+    if (itemLower.includes('engine') || itemLower.includes('motor') || itemLower.includes('transmission') ||
+        itemLower.includes('gearbox'))
+      return <Cog className="h-3 w-3 text-primary" />;
+    
+    // Seats
+    if (itemLower.includes('seat') || itemLower.includes('ulëse'))
+      return <Users className="h-3 w-3 text-primary" />;
+    
+    // Windows
+    if (itemLower.includes('window') || itemLower.includes('dritare') || itemLower.includes('glass'))
+      return <Eye className="h-3 w-3 text-primary" />;
+    
+    // Wheels & Tires
+    if (itemLower.includes('wheel') || itemLower.includes('alloy') || itemLower.includes('rim') ||
+        itemLower.includes('tire') || itemLower.includes('tyre'))
+      return <Settings className="h-3 w-3 text-primary" />;
+    
+    // Keys & Security
+    if (itemLower.includes('key') || itemLower.includes('keyless') || itemLower.includes('security') ||
+        itemLower.includes('alarm') || itemLower.includes('immobilizer'))
+      return <Shield className="h-3 w-3 text-primary" />;
+    
     // Default icon for standard equipment
     return <CheckCircle className="h-3 w-3 text-primary" />;
   };
@@ -207,22 +271,80 @@ const EquipmentOptionsSection = memo(({
     return previewItems.map((item, index) => {
       const itemName = typeof item === 'string' ? item : String(item);
       
-      // Get appropriate icon based on equipment name
+      // Comprehensive icon mapping based on equipment name
       const getIconForEquipment = (name: string) => {
         const itemLower = name.toLowerCase();
-        if (itemLower.includes('air') || itemLower.includes('klima') || itemLower.includes('conditioning')) return Settings;
-        if (itemLower.includes('brake') || itemLower.includes('frena') || itemLower.includes('abs')) return Shield;
-        if (itemLower.includes('engine') || itemLower.includes('motor')) return Cog;
-        if (itemLower.includes('seat') || itemLower.includes('ulëse')) return Car;
-        if (itemLower.includes('window') || itemLower.includes('dritare')) return Eye;
-        if (itemLower.includes('light') || itemLower.includes('dritë') || itemLower.includes('led') || itemLower.includes('xenon')) return Lightbulb;
-        if (itemLower.includes('radio') || itemLower.includes('audio') || itemLower.includes('bluetooth')) return MessageCircle;
-        if (itemLower.includes('camera') || itemLower.includes('kamerë')) return Camera;
-        if (itemLower.includes('sensor') || itemLower.includes('sensorët') || itemLower.includes('radar')) return Radar;
-        if (itemLower.includes('navigation') || itemLower.includes('gps') || itemLower.includes('navigacion')) return MapPin;
-        if (itemLower.includes('cruise') || itemLower.includes('control') || itemLower.includes('kontroll')) return Gauge;
-        if (itemLower.includes('heated') || itemLower.includes('ngrohje') || itemLower.includes('thermostat')) return Thermometer;
-        if (itemLower.includes('vent') || itemLower.includes('air') || itemLower.includes('ajros')) return Wind;
+        
+        // Climate control & Air conditioning
+        if (itemLower.includes('air conditioning') || itemLower.includes('climate') || itemLower.includes('klima') || 
+            itemLower.includes('a/c') || itemLower.includes('hvac')) 
+          return Wind;
+        
+        // Heating
+        if (itemLower.includes('heated') || itemLower.includes('ngroh') || itemLower.includes('heat'))
+          return Thermometer;
+        
+        // Safety - Brakes & ABS
+        if (itemLower.includes('brake') || itemLower.includes('frena') || itemLower.includes('abs') || 
+            itemLower.includes('ebd') || itemLower.includes('brake assist'))
+          return Shield;
+        
+        // Airbags
+        if (itemLower.includes('airbag'))
+          return Shield;
+        
+        // Lighting - LED, Xenon, Headlights
+        if (itemLower.includes('light') || itemLower.includes('dritë') || itemLower.includes('led') || 
+            itemLower.includes('xenon') || itemLower.includes('headlight') || itemLower.includes('lamp'))
+          return Lightbulb;
+        
+        // Camera systems
+        if (itemLower.includes('camera') || itemLower.includes('kamerë') || itemLower.includes('view'))
+          return Camera;
+        
+        // Parking sensors & Radar
+        if (itemLower.includes('sensor') || itemLower.includes('parking') || itemLower.includes('radar') || 
+            itemLower.includes('proximity') || itemLower.includes('park assist'))
+          return Radar;
+        
+        // Navigation & GPS
+        if (itemLower.includes('navigation') || itemLower.includes('gps') || itemLower.includes('navigacion') ||
+            itemLower.includes('maps'))
+          return MapPin;
+        
+        // Audio & Entertainment
+        if (itemLower.includes('radio') || itemLower.includes('audio') || itemLower.includes('speaker') ||
+            itemLower.includes('sound') || itemLower.includes('stereo') || itemLower.includes('cd') ||
+            itemLower.includes('bluetooth') || itemLower.includes('usb') || itemLower.includes('aux'))
+          return MessageCircle;
+        
+        // Cruise control & Speed control
+        if (itemLower.includes('cruise') || itemLower.includes('speed control') || itemLower.includes('kontroll'))
+          return Gauge;
+        
+        // Engine & Transmission
+        if (itemLower.includes('engine') || itemLower.includes('motor') || itemLower.includes('transmission') ||
+            itemLower.includes('gearbox'))
+          return Cog;
+        
+        // Seats
+        if (itemLower.includes('seat') || itemLower.includes('ulëse'))
+          return Users;
+        
+        // Windows
+        if (itemLower.includes('window') || itemLower.includes('dritare') || itemLower.includes('glass'))
+          return Eye;
+        
+        // Wheels & Tires
+        if (itemLower.includes('wheel') || itemLower.includes('alloy') || itemLower.includes('rim') ||
+            itemLower.includes('tire') || itemLower.includes('tyre'))
+          return Settings;
+        
+        // Keys & Security
+        if (itemLower.includes('key') || itemLower.includes('keyless') || itemLower.includes('security') ||
+            itemLower.includes('alarm') || itemLower.includes('immobilizer'))
+          return Shield;
+        
         // Default icon for standard equipment
         return CheckCircle;
       };
