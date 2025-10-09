@@ -286,11 +286,14 @@ const LazyCarCard = memo(({
   return (
     <div 
       ref={cardRef}
-      className="glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] mobile-card-compact compact-modern-card"
+      className="glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-xl hover:shadow-2xl transition-all duration-500 mobile-card-compact compact-modern-card animate-slide-in-up"
       onClick={handleCardClick}
       style={{
-        willChange: 'transform',
-        transform: 'translateZ(0)'
+        willChange: 'transform, opacity',
+        transform: 'translate3d(0, 0, 0)',
+        backfaceVisibility: 'hidden',
+        perspective: 1000,
+        WebkitTapHighlightColor: 'transparent'
       }}
     >
       {/* Image Section - Standard 4:3 aspect ratio like encar.com */}
@@ -300,8 +303,8 @@ const LazyCarCard = memo(({
           <img 
             src={image || images?.[0]} 
             alt={`${year} ${make} ${model}`} 
-            className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-300 ease-out ${
-              imageLoaded ? 'opacity-100' : 'opacity-0'
+            className={`w-full h-full object-cover group-hover:scale-110 transition-all duration-700 ease-out ${
+              imageLoaded ? 'opacity-100 animate-image-reveal' : 'opacity-0'
             }`}
             onLoad={() => setImageLoaded(true)}
             onError={(e) => {
@@ -310,8 +313,9 @@ const LazyCarCard = memo(({
             }}
             loading="lazy"
             style={{
-              willChange: 'transform',
-              transform: 'translateZ(0)'
+              willChange: 'transform, opacity',
+              transform: 'translate3d(0, 0, 0)',
+              backfaceVisibility: 'hidden'
             }}
           />
         ) : (
