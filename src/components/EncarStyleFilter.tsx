@@ -180,7 +180,15 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   ], [years, isStrictMode, filters.from_year, filters.to_year]);
 
   // Prioritized manufacturer sorting using utility
-  const sortedManufacturers = useMemo(() => sortManufacturers(manufacturers), [manufacturers]);
+  const sortedManufacturers = useMemo(() => {
+    // Brands to exclude from the filter panel
+    const excludedBrands = ['mitsubishi', 'alfa romeo', 'alfa-romeo', 'acura', 'mazda', 'dongfeng', 'lotus'];
+    
+    const sorted = sortManufacturers(manufacturers);
+    return sorted.filter(manufacturer => 
+      !excludedBrands.includes(manufacturer.name.toLowerCase())
+    );
+  }, [manufacturers]);
 
   // Fetch grades when filters change - with debouncing to prevent excessive calls
   useEffect(() => {
