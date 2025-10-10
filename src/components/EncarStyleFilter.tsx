@@ -234,6 +234,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
   const toggleSection = (section: string) => {
     const isExpanding = !expandedSections.includes(section);
+    console.log(`Toggling section "${section}", expanding: ${isExpanding}`);
+    
     setExpandedSections(prev => 
       prev.includes(section) 
         ? prev.filter(s => s !== section)
@@ -242,6 +244,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     
     // Notify parent if "more" section is being expanded
     if (section === 'more' && isExpanding && onToggleMoreSection) {
+      console.log("Calling onToggleMoreSection to expand filter panel");
       onToggleMoreSection();
     }
   };
