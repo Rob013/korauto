@@ -74,6 +74,7 @@ interface EncarStyleFilterProps {
   compact?: boolean;
   onSearchCars?: () => void;
   onCloseFilter?: () => void;
+  onToggleMoreSection?: () => void;
 }
 
 const EncarStyleFilter = memo<EncarStyleFilterProps>(({
@@ -93,7 +94,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   isHomepage = false,
   compact = false,
   onSearchCars,
-  onCloseFilter
+  onCloseFilter,
+  onToggleMoreSection
 }) => {
   const [grades, setGrades] = useState<{ value: string; label: string; count?: number }[]>([]);
   const [trimLevels, setTrimLevels] = useState<{ value: string; label: string; count?: number }[]>([]);
@@ -231,11 +233,17 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   }, [filters.manufacturer_id, filters.model_id, onFetchTrimLevels]);
 
   const toggleSection = (section: string) => {
+    const isExpanding = !expandedSections.includes(section);
     setExpandedSections(prev => 
       prev.includes(section) 
         ? prev.filter(s => s !== section)
         : [...prev, section]
     );
+    
+    // Notify parent if "more" section is being expanded
+    if (section === 'more' && isExpanding && onToggleMoreSection) {
+      onToggleMoreSection();
+    }
   };
 
   // Compact mode for sidebar

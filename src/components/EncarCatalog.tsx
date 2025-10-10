@@ -1147,6 +1147,14 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             onFetchGrades={fetchGrades}
             onFetchTrimLevels={fetchTrimLevels}
             compact={true}
+            onToggleMoreSection={() => {
+              // Expand filter panel when user clicks "Më Shumë Filtra"
+              if (!showFilters) {
+                console.log("Expanding filter panel due to 'Më Shumë Filtra' click");
+                setShowFilters(true);
+                setHasExplicitlyClosed(false);
+              }
+            }}
             onSearchCars={() => {
               console.log("Search button clicked, isMobile:", isMobile);
               // Apply search/filters
