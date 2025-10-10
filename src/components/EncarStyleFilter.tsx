@@ -235,30 +235,38 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 {!(isStrictMode && filters.manufacturer_id) && (
                   <SelectItem value="all">Të gjitha markat</SelectItem>
                 )}
-                {sortedManufacturers.map((manufacturer) => (
-                  <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
-                    <div className="flex items-center gap-2.5 py-0.5">
-                      {(manufacturer as any).image ? (
-                        <img 
-                          src={(manufacturer as any).image} 
-                          alt={`${manufacturer.name} logo`} 
-                          className="w-6 h-6 object-contain flex-shrink-0" 
-                          loading="lazy"
-                          onError={(e) => {
-                            const target = e.currentTarget;
-                            target.style.display = 'none';
-                            const fallback = target.nextElementSibling as HTMLElement;
-                            if (fallback) fallback.style.display = 'flex';
-                          }}
-                        />
-                      ) : null}
-                      <div className="w-6 h-6 bg-muted rounded flex items-center justify-center flex-shrink-0" style={{ display: (manufacturer as any).image ? 'none' : 'flex' }}>
-                        <span className="text-xs font-bold text-muted-foreground">{manufacturer.name.charAt(0)}</span>
+                {sortedManufacturers.map((manufacturer) => {
+                  const mfr = manufacturer as Manufacturer & { image?: string };
+                  return (
+                    <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
+                      <div className="flex items-center gap-3 py-1">
+                        {mfr.image ? (
+                          <div className="w-8 h-8 flex items-center justify-center bg-white rounded-md p-1 flex-shrink-0">
+                            <img 
+                              src={mfr.image} 
+                              alt={`${manufacturer.name} logo`} 
+                              className="w-full h-full object-contain" 
+                              loading="lazy"
+                              onError={(e) => {
+                                const target = e.currentTarget;
+                                const parent = target.parentElement;
+                                if (parent) {
+                                  parent.style.display = 'none';
+                                  const fallback = parent.nextElementSibling as HTMLElement;
+                                  if (fallback) fallback.style.display = 'flex';
+                                }
+                              }}
+                            />
+                          </div>
+                        ) : null}
+                        <div className="w-8 h-8 bg-muted rounded-md flex items-center justify-center flex-shrink-0" style={{ display: mfr.image ? 'none' : 'flex' }}>
+                          <span className="text-sm font-bold text-muted-foreground">{manufacturer.name.charAt(0)}</span>
+                        </div>
+                        <span className="font-medium text-sm">{manufacturer.name} ({manufacturer.cars_qty})</span>
                       </div>
-                      <span className="font-medium">{manufacturer.name} ({manufacturer.cars_qty})</span>
-                    </div>
-                  </SelectItem>
-                ))}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
@@ -622,30 +630,38 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   {!(isStrictMode && filters.manufacturer_id) && (
                     <SelectItem value="all">Të gjitha Markat</SelectItem>
                   )}
-                   {sortedManufacturers.map((manufacturer) => (
-                    <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
-                      <div className="flex items-center gap-2.5 py-0.5">
-                        {(manufacturer as any).image ? (
-                          <img 
-                            src={(manufacturer as any).image} 
-                            alt={`${manufacturer.name} logo`} 
-                            className="w-6 h-6 object-contain flex-shrink-0" 
-                            loading="lazy"
-                            onError={(e) => {
-                              const target = e.currentTarget;
-                              target.style.display = 'none';
-                              const fallback = target.nextElementSibling as HTMLElement;
-                              if (fallback) fallback.style.display = 'flex';
-                            }}
-                          />
-                        ) : null}
-                        <div className="w-6 h-6 bg-muted rounded flex items-center justify-center flex-shrink-0" style={{ display: (manufacturer as any).image ? 'none' : 'flex' }}>
-                          <span className="text-xs font-bold text-muted-foreground">{manufacturer.name.charAt(0)}</span>
-                        </div>
-                        <span className="font-medium">{manufacturer.name} ({manufacturer.cars_qty})</span>
-                      </div>
-                    </SelectItem>
-                  ))}
+                   {sortedManufacturers.map((manufacturer) => {
+                     const mfr = manufacturer as Manufacturer & { image?: string };
+                     return (
+                       <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
+                         <div className="flex items-center gap-3 py-1">
+                           {mfr.image ? (
+                             <div className="w-8 h-8 flex items-center justify-center bg-white rounded-md p-1 flex-shrink-0">
+                               <img 
+                                 src={mfr.image} 
+                                 alt={`${manufacturer.name} logo`} 
+                                 className="w-full h-full object-contain" 
+                                 loading="lazy"
+                                 onError={(e) => {
+                                   const target = e.currentTarget;
+                                   const parent = target.parentElement;
+                                   if (parent) {
+                                     parent.style.display = 'none';
+                                     const fallback = parent.nextElementSibling as HTMLElement;
+                                     if (fallback) fallback.style.display = 'flex';
+                                   }
+                                 }}
+                               />
+                             </div>
+                           ) : null}
+                           <div className="w-8 h-8 bg-muted rounded-md flex items-center justify-center flex-shrink-0" style={{ display: mfr.image ? 'none' : 'flex' }}>
+                             <span className="text-sm font-bold text-muted-foreground">{manufacturer.name.charAt(0)}</span>
+                           </div>
+                           <span className="font-medium text-sm">{manufacturer.name} ({manufacturer.cars_qty})</span>
+                         </div>
+                       </SelectItem>
+                     );
+                   })}
                 </SelectContent>
               </Select>
             </div>
