@@ -239,16 +239,15 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   const mfr = manufacturer as Manufacturer & { image?: string };
                   return (
                     <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
-                      <div className="flex items-center gap-3 py-1.5">
+                      <div className="flex items-center gap-3 py-1">
                         {mfr.image ? (
-                          <div className="w-10 h-10 flex items-center justify-center bg-white rounded-lg p-2 flex-shrink-0 border border-border/30 shadow-sm">
+                          <div className="w-8 h-8 flex items-center justify-center bg-white/90 rounded-md p-1.5 flex-shrink-0 border border-border/50">
                             <img 
                               src={mfr.image} 
                               alt={`${manufacturer.name} logo`} 
-                              className="w-full h-full object-contain" 
+                              className="w-full h-full object-contain mix-blend-multiply" 
                               loading="eager"
                               crossOrigin="anonymous"
-                              style={{ filter: 'contrast(1.1) brightness(1.05)' }}
                               onError={(e) => {
                                 console.log(`Failed to load logo for ${manufacturer.name}:`, mfr.image);
                                 const target = e.currentTarget;
@@ -259,16 +258,16 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                                   if (fallback) fallback.style.display = 'flex';
                                 }
                               }}
+                              onLoad={() => {
+                                console.log(`Successfully loaded logo for ${manufacturer.name}`);
+                              }}
                             />
                           </div>
                         ) : null}
-                        <div className="w-10 h-10 bg-gradient-to-br from-muted to-muted/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-border/30" style={{ display: mfr.image ? 'none' : 'flex' }}>
-                          <span className="text-base font-bold text-muted-foreground">{manufacturer.name.charAt(0)}</span>
+                        <div className="w-8 h-8 bg-muted rounded-md flex items-center justify-center flex-shrink-0" style={{ display: mfr.image ? 'none' : 'flex' }}>
+                          <span className="text-sm font-bold text-muted-foreground">{manufacturer.name.charAt(0)}</span>
                         </div>
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-sm">{manufacturer.name}</span>
-                          <span className="text-xs text-muted-foreground">{manufacturer.cars_qty} makina</span>
-                        </div>
+                        <span className="font-medium text-sm">{manufacturer.name} ({manufacturer.cars_qty})</span>
                       </div>
                     </SelectItem>
                   );
@@ -640,16 +639,15 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                      const mfr = manufacturer as Manufacturer & { image?: string };
                      return (
                        <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
-                         <div className="flex items-center gap-3 py-1.5">
+                         <div className="flex items-center gap-3 py-1">
                            {mfr.image ? (
-                             <div className="w-10 h-10 flex items-center justify-center bg-white rounded-lg p-2 flex-shrink-0 border border-border/30 shadow-sm">
+                             <div className="w-8 h-8 flex items-center justify-center bg-white/90 rounded-md p-1.5 flex-shrink-0 border border-border/50">
                                <img 
                                  src={mfr.image} 
                                  alt={`${manufacturer.name} logo`} 
-                                 className="w-full h-full object-contain" 
+                                 className="w-full h-full object-contain mix-blend-multiply" 
                                  loading="eager"
                                  crossOrigin="anonymous"
-                                 style={{ filter: 'contrast(1.1) brightness(1.05)' }}
                                  onError={(e) => {
                                    console.log(`Failed to load logo for ${manufacturer.name}:`, mfr.image);
                                    const target = e.currentTarget;
@@ -660,16 +658,16 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                                      if (fallback) fallback.style.display = 'flex';
                                    }
                                  }}
+                                 onLoad={() => {
+                                   console.log(`Successfully loaded logo for ${manufacturer.name}`);
+                                 }}
                                />
                              </div>
                            ) : null}
-                           <div className="w-10 h-10 bg-gradient-to-br from-muted to-muted/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-border/30" style={{ display: mfr.image ? 'none' : 'flex' }}>
-                             <span className="text-base font-bold text-muted-foreground">{manufacturer.name.charAt(0)}</span>
+                           <div className="w-8 h-8 bg-muted rounded-md flex items-center justify-center flex-shrink-0" style={{ display: mfr.image ? 'none' : 'flex' }}>
+                             <span className="text-sm font-bold text-muted-foreground">{manufacturer.name.charAt(0)}</span>
                            </div>
-                           <div className="flex flex-col">
-                             <span className="font-semibold text-sm">{manufacturer.name}</span>
-                             <span className="text-xs text-muted-foreground">{manufacturer.cars_qty} makina</span>
-                           </div>
+                           <span className="font-medium text-sm">{manufacturer.name} ({manufacturer.cars_qty})</span>
                          </div>
                        </SelectItem>
                      );
