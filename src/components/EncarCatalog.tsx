@@ -1214,7 +1214,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           {/* Header Section - Mobile optimized */}
           <div className="flex flex-col gap-3 mb-4">
             {/* Top row: Back button and filter button */}
-            <div className="flex items-center justify-between gap-1.5 sm:gap-2 w-full flex-nowrap overflow-x-auto">
+            <div className="flex items-center justify-between gap-1.5 sm:gap-2 w-full flex-nowrap">
               {/* Left group: Back and Filter buttons */}
               <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                 <Button
