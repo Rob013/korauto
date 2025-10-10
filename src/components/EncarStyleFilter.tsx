@@ -440,7 +440,10 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           {/* Additional Filters Toggle */}
           <Button
             variant="ghost"
-            onClick={() => toggleSection('more')}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleSection('more');
+            }}
             className="w-full justify-between text-xs h-7"
           >
             Më Shumë Filtra
