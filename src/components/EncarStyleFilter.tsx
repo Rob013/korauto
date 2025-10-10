@@ -220,7 +220,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   // Compact mode for sidebar
   if (compact) {
     return (
-      <Card className="glass-panel border-0 rounded-xl p-4 sm:p-5 space-y-3 min-w-[320px] mx-auto">
+      <Card className="glass-panel border-0 rounded-xl p-6 sm:p-8 space-y-4 w-full max-w-md mx-auto shadow-lg">
         <div className="space-y-2">
           <div className="space-y-1 filter-section">
             <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
