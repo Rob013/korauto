@@ -1146,7 +1146,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
             onFetchGrades={fetchGrades}
             onFetchTrimLevels={fetchTrimLevels}
-            compact={true}
+            compact={isMobile}
             onToggleMoreSection={() => {
               // Expand filter panel when user clicks "Më Shumë Filtra"
               console.log("onToggleMoreSection called, current showFilters:", showFilters);
