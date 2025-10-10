@@ -243,15 +243,18 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                           src={(manufacturer as any).image} 
                           alt={`${manufacturer.name} logo`} 
                           className="w-6 h-6 object-contain flex-shrink-0" 
+                          loading="lazy"
                           onError={(e) => {
-                            e.currentTarget.style.display = 'none';
+                            const target = e.currentTarget;
+                            target.style.display = 'none';
+                            const fallback = target.nextElementSibling as HTMLElement;
+                            if (fallback) fallback.style.display = 'flex';
                           }}
                         />
-                      ) : (
-                        <div className="w-6 h-6 bg-muted rounded flex items-center justify-center flex-shrink-0">
-                          <span className="text-xs font-bold text-muted-foreground">{manufacturer.name.charAt(0)}</span>
-                        </div>
-                      )}
+                      ) : null}
+                      <div className="w-6 h-6 bg-muted rounded flex items-center justify-center flex-shrink-0" style={{ display: (manufacturer as any).image ? 'none' : 'flex' }}>
+                        <span className="text-xs font-bold text-muted-foreground">{manufacturer.name.charAt(0)}</span>
+                      </div>
                       <span className="font-medium">{manufacturer.name} ({manufacturer.cars_qty})</span>
                     </div>
                   </SelectItem>
@@ -619,7 +622,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   {!(isStrictMode && filters.manufacturer_id) && (
                     <SelectItem value="all">Të gjitha Markat</SelectItem>
                   )}
-                  {sortedManufacturers.map((manufacturer) => (
+                   {sortedManufacturers.map((manufacturer) => (
                     <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
                       <div className="flex items-center gap-2.5 py-0.5">
                         {(manufacturer as any).image ? (
@@ -627,15 +630,18 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                             src={(manufacturer as any).image} 
                             alt={`${manufacturer.name} logo`} 
                             className="w-6 h-6 object-contain flex-shrink-0" 
+                            loading="lazy"
                             onError={(e) => {
-                              e.currentTarget.style.display = 'none';
+                              const target = e.currentTarget;
+                              target.style.display = 'none';
+                              const fallback = target.nextElementSibling as HTMLElement;
+                              if (fallback) fallback.style.display = 'flex';
                             }}
                           />
-                        ) : (
-                          <div className="w-6 h-6 bg-muted rounded flex items-center justify-center flex-shrink-0">
-                            <span className="text-xs font-bold text-muted-foreground">{manufacturer.name.charAt(0)}</span>
-                          </div>
-                        )}
+                        ) : null}
+                        <div className="w-6 h-6 bg-muted rounded flex items-center justify-center flex-shrink-0" style={{ display: (manufacturer as any).image ? 'none' : 'flex' }}>
+                          <span className="text-xs font-bold text-muted-foreground">{manufacturer.name.charAt(0)}</span>
+                        </div>
                         <span className="font-medium">{manufacturer.name} ({manufacturer.cars_qty})</span>
                       </div>
                     </SelectItem>
