@@ -241,13 +241,15 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
                       <div className="flex items-center gap-3 py-1">
                         {mfr.image ? (
-                          <div className="w-8 h-8 flex items-center justify-center bg-white rounded-md p-1 flex-shrink-0">
+                          <div className="w-8 h-8 flex items-center justify-center bg-white/90 rounded-md p-1.5 flex-shrink-0 border border-border/50">
                             <img 
                               src={mfr.image} 
                               alt={`${manufacturer.name} logo`} 
-                              className="w-full h-full object-contain" 
-                              loading="lazy"
+                              className="w-full h-full object-contain mix-blend-multiply" 
+                              loading="eager"
+                              crossOrigin="anonymous"
                               onError={(e) => {
+                                console.log(`Failed to load logo for ${manufacturer.name}:`, mfr.image);
                                 const target = e.currentTarget;
                                 const parent = target.parentElement;
                                 if (parent) {
@@ -255,6 +257,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                                   const fallback = parent.nextElementSibling as HTMLElement;
                                   if (fallback) fallback.style.display = 'flex';
                                 }
+                              }}
+                              onLoad={() => {
+                                console.log(`Successfully loaded logo for ${manufacturer.name}`);
                               }}
                             />
                           </div>
@@ -636,13 +641,15 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                        <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
                          <div className="flex items-center gap-3 py-1">
                            {mfr.image ? (
-                             <div className="w-8 h-8 flex items-center justify-center bg-white rounded-md p-1 flex-shrink-0">
+                             <div className="w-8 h-8 flex items-center justify-center bg-white/90 rounded-md p-1.5 flex-shrink-0 border border-border/50">
                                <img 
                                  src={mfr.image} 
                                  alt={`${manufacturer.name} logo`} 
-                                 className="w-full h-full object-contain" 
-                                 loading="lazy"
+                                 className="w-full h-full object-contain mix-blend-multiply" 
+                                 loading="eager"
+                                 crossOrigin="anonymous"
                                  onError={(e) => {
+                                   console.log(`Failed to load logo for ${manufacturer.name}:`, mfr.image);
                                    const target = e.currentTarget;
                                    const parent = target.parentElement;
                                    if (parent) {
@@ -650,6 +657,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                                      const fallback = parent.nextElementSibling as HTMLElement;
                                      if (fallback) fallback.style.display = 'flex';
                                    }
+                                 }}
+                                 onLoad={() => {
+                                   console.log(`Successfully loaded logo for ${manufacturer.name}`);
                                  }}
                                />
                              </div>
