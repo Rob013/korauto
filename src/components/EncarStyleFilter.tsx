@@ -99,7 +99,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   const [trimLevels, setTrimLevels] = useState<{ value: string; label: string; count?: number }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingGrades, setIsLoadingGrades] = useState(false);
-  const [expandedSections, setExpandedSections] = useState<string[]>(['basic']);
+  const [expandedSections, setExpandedSections] = useState<string[]>(compact ? ['basic'] : ['basic', 'advanced']);
 
   // Track if strict filtering mode is enabled - using utility
   const isStrictMode = useMemo(() => isStrictFilterMode(filters), [filters]);
