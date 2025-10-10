@@ -835,7 +835,10 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
       <div className="space-y-3">
         <Button
           variant="ghost"
-          onClick={() => toggleSection('basic')}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleSection('basic');
+          }}
           className="w-full justify-between p-2 h-auto"
         >
           <div className="flex items-center gap-2">
@@ -896,7 +899,10 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
       <div className="space-y-3">
         <Button
           variant="ghost"
-          onClick={() => toggleSection('advanced')}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleSection('advanced');
+          }}
           className="w-full justify-between p-2 h-auto"
         >
           <div className="flex items-center gap-2">
