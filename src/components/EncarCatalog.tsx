@@ -1147,25 +1147,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             onFetchGrades={fetchGrades}
             onFetchTrimLevels={fetchTrimLevels}
             compact={true}
-            onToggleMoreSection={() => {
-              // Expand filter panel when user clicks "Më Shumë Filtra"
-              console.log("onToggleMoreSection called, current showFilters:", showFilters);
-              if (!showFilters) {
-                console.log("Expanding filter panel due to 'Më Shumë Filtra' click");
-                setShowFilters(true);
-                setHasExplicitlyClosed(false);
-                
-                // Force panel visibility on mobile
-                setTimeout(() => {
-                  const filterPanel = document.querySelector('[data-filter-panel]');
-                  if (filterPanel) {
-                    console.log("Forcing filter panel visibility");
-                    (filterPanel as HTMLElement).style.transform = 'translateX(0)';
-                    (filterPanel as HTMLElement).style.visibility = 'visible';
-                  }
-                }, 50);
-              }
-            }}
             onSearchCars={() => {
               console.log("Search button clicked, isMobile:", isMobile);
               // Apply search/filters
