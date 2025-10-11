@@ -231,41 +231,35 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               <SelectTrigger className="filter-control h-8 text-xs">
                 <SelectValue placeholder="Zgjidhni markën" />
               </SelectTrigger>
-              <SelectContent className="max-h-[400px]">
+              <SelectContent className="max-h-[400px] bg-background">
                 {!(isStrictMode && filters.manufacturer_id) && (
                   <SelectItem value="all">Të gjitha markat</SelectItem>
                 )}
-                {sortedManufacturers.map((manufacturer) => {
-                  const mfr = manufacturer as Manufacturer & { image?: string };
+                {sortedManufacturers.map((manufacturer: Manufacturer) => {
+                  const logoUrl = manufacturer.image || `https://auctionsapi.com/images/brands/${manufacturer.name}.svg`;
                   return (
                     <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
                       <div className="flex items-center gap-3 py-1.5">
-                        {mfr.image && (
-                          <div className="w-10 h-10 flex items-center justify-center bg-white rounded-lg p-2 flex-shrink-0 border border-border/30 shadow-sm">
-                            <img 
-                              src={mfr.image} 
-                              alt={`${manufacturer.name} logo`} 
-                              className="w-full h-full object-contain" 
-                              style={{ filter: 'contrast(1.1) brightness(1.05)' }}
-                              loading="eager"
-                              onError={(e) => {
-                                const target = e.currentTarget;
-                                const parent = target.parentElement;
-                                if (parent) {
-                                  parent.innerHTML = `<div class="w-10 h-10 bg-gradient-to-br from-muted to-muted/50 rounded-md flex items-center justify-center"><span class="text-sm font-bold text-muted-foreground">${manufacturer.name.charAt(0)}</span></div>`;
-                                }
-                              }}
-                            />
-                          </div>
-                        )}
-                        {!mfr.image && (
-                          <div className="w-10 h-10 bg-gradient-to-br from-muted to-muted/50 rounded-md flex items-center justify-center flex-shrink-0">
-                            <span className="text-sm font-bold text-muted-foreground">{manufacturer.name.charAt(0)}</span>
-                          </div>
-                        )}
+                        <div className="w-10 h-10 flex items-center justify-center bg-white rounded-lg p-2 flex-shrink-0 border border-border/30 shadow-sm">
+                          <img 
+                            src={logoUrl} 
+                            alt={`${manufacturer.name} logo`} 
+                            className="w-full h-full object-contain" 
+                            style={{ filter: 'contrast(1.1) brightness(1.05)' }}
+                            loading="eager"
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              const wrapper = target.parentElement;
+                              if (wrapper) {
+                                wrapper.className = 'w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/5 rounded-md flex items-center justify-center flex-shrink-0';
+                                wrapper.innerHTML = `<span class="text-sm font-bold text-primary">${manufacturer.name.charAt(0)}</span>`;
+                              }
+                            }}
+                          />
+                        </div>
                         <div className="flex flex-col">
                           <span className="font-medium text-sm">{manufacturer.name}</span>
-                          <span className="text-xs text-muted-foreground">{manufacturer.cars_qty} cars</span>
+                          <span className="text-xs text-muted-foreground">{manufacturer.cars_qty || manufacturer.car_count || 0} cars</span>
                         </div>
                       </div>
                     </SelectItem>
@@ -634,41 +628,35 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 <SelectTrigger>
                   <SelectValue placeholder="Zgjidhni markën" />
                 </SelectTrigger>
-                <SelectContent className="max-h-[400px]">
+                <SelectContent className="max-h-[400px] bg-background">
                   {!(isStrictMode && filters.manufacturer_id) && (
                     <SelectItem value="all">Të gjitha Markat</SelectItem>
                   )}
-                  {sortedManufacturers.map((manufacturer) => {
-                    const mfr = manufacturer as Manufacturer & { image?: string };
+                  {sortedManufacturers.map((manufacturer: Manufacturer) => {
+                    const logoUrl = manufacturer.image || `https://auctionsapi.com/images/brands/${manufacturer.name}.svg`;
                     return (
                       <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
                         <div className="flex items-center gap-3 py-1.5">
-                          {mfr.image && (
-                            <div className="w-10 h-10 flex items-center justify-center bg-white rounded-lg p-2 flex-shrink-0 border border-border/30 shadow-sm">
-                              <img 
-                                src={mfr.image} 
-                                alt={`${manufacturer.name} logo`} 
-                                className="w-full h-full object-contain" 
-                                style={{ filter: 'contrast(1.1) brightness(1.05)' }}
-                                loading="eager"
-                                onError={(e) => {
-                                  const target = e.currentTarget;
-                                  const parent = target.parentElement;
-                                  if (parent) {
-                                    parent.innerHTML = `<div class="w-10 h-10 bg-gradient-to-br from-muted to-muted/50 rounded-md flex items-center justify-center"><span class="text-sm font-bold text-muted-foreground">${manufacturer.name.charAt(0)}</span></div>`;
-                                  }
-                                }}
-                              />
-                            </div>
-                          )}
-                          {!mfr.image && (
-                            <div className="w-10 h-10 bg-gradient-to-br from-muted to-muted/50 rounded-md flex items-center justify-center flex-shrink-0">
-                              <span className="text-sm font-bold text-muted-foreground">{manufacturer.name.charAt(0)}</span>
-                            </div>
-                          )}
+                          <div className="w-10 h-10 flex items-center justify-center bg-white rounded-lg p-2 flex-shrink-0 border border-border/30 shadow-sm">
+                            <img 
+                              src={logoUrl} 
+                              alt={`${manufacturer.name} logo`} 
+                              className="w-full h-full object-contain" 
+                              style={{ filter: 'contrast(1.1) brightness(1.05)' }}
+                              loading="eager"
+                              onError={(e) => {
+                                const target = e.currentTarget;
+                                const wrapper = target.parentElement;
+                                if (wrapper) {
+                                  wrapper.className = 'w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/5 rounded-md flex items-center justify-center flex-shrink-0';
+                                  wrapper.innerHTML = `<span class="text-sm font-bold text-primary">${manufacturer.name.charAt(0)}</span>`;
+                                }
+                              }}
+                            />
+                          </div>
                           <div className="flex flex-col">
                             <span className="font-medium text-sm">{manufacturer.name}</span>
-                            <span className="text-xs text-muted-foreground">{manufacturer.cars_qty} cars</span>
+                            <span className="text-xs text-muted-foreground">{manufacturer.cars_qty || manufacturer.car_count || 0} cars</span>
                           </div>
                         </div>
                       </SelectItem>
