@@ -137,7 +137,7 @@ const App = () => {
   // Ensure Smartsupp chat widget is positioned relative to viewport
   useEffect(() => {
     const ensureSmartsuppPositioning = () => {
-      // Find all possible Smartsupp elements
+      // Find all possible Smartsupp elements with more aggressive selectors
       const smartsuppSelectors = [
         '#chat-application',
         '[data-smartsupp-widget]',
@@ -145,29 +145,68 @@ const App = () => {
         'iframe[src*="smartsupp"]',
         'iframe[src*="smartsuppchat"]',
         'div[class*="smartsupp"]',
-        'div[id*="smartsupp"]'
+        'div[id*="smartsupp"]',
+        'body > div:last-child',
+        'html > body > div:last-child'
       ];
 
+      // Also check all divs that might be Smartsupp
+      const allDivs = document.querySelectorAll('div');
+      const smartsuppElements: HTMLElement[] = [];
+
+      // Add elements from selectors
       smartsuppSelectors.forEach(selector => {
         const elements = document.querySelectorAll(selector);
         elements.forEach(element => {
-          const htmlElement = element as HTMLElement;
-          if (htmlElement) {
-            htmlElement.style.position = 'fixed';
-            htmlElement.style.bottom = '20px';
-            htmlElement.style.right = '20px';
-            htmlElement.style.top = 'auto';
-            htmlElement.style.left = 'auto';
-            htmlElement.style.zIndex = '2147483647';
-            htmlElement.style.transform = 'none';
-            htmlElement.style.margin = '0';
-            htmlElement.style.padding = '0';
+          if (element instanceof HTMLElement) {
+            smartsuppElements.push(element);
           }
         });
       });
+
+      // Check all divs for Smartsupp characteristics
+      allDivs.forEach(div => {
+        if (div.id?.includes('smartsupp') || 
+            div.className?.includes('smartsupp') ||
+            div.getAttribute('data-smartsupp') ||
+            div.style.position === 'fixed' ||
+            div.style.zIndex === '2147483647' ||
+            div.querySelector('iframe[src*="smartsupp"]')) {
+          smartsuppElements.push(div);
+        }
+      });
+
+      // Apply positioning to all found elements
+      smartsuppElements.forEach(element => {
+        if (element && element.style) {
+          element.style.setProperty('position', 'fixed', 'important');
+          element.style.setProperty('bottom', '20px', 'important');
+          element.style.setProperty('right', '20px', 'important');
+          element.style.setProperty('top', 'auto', 'important');
+          element.style.setProperty('left', 'auto', 'important');
+          element.style.setProperty('z-index', '2147483647', 'important');
+          element.style.setProperty('transform', 'none', 'important');
+          element.style.setProperty('margin', '0', 'important');
+          element.style.setProperty('padding', '0', 'important');
+          element.style.setProperty('inset', 'auto', 'important');
+        }
+      });
+
+      // Also check iframes specifically
+      const iframes = document.querySelectorAll('iframe');
+      iframes.forEach(iframe => {
+        if (iframe.src?.includes('smartsupp') || iframe.src?.includes('smartsuppchat')) {
+          iframe.style.setProperty('position', 'fixed', 'important');
+          iframe.style.setProperty('bottom', '20px', 'important');
+          iframe.style.setProperty('right', '20px', 'important');
+          iframe.style.setProperty('top', 'auto', 'important');
+          iframe.style.setProperty('left', 'auto', 'important');
+          iframe.style.setProperty('z-index', '2147483647', 'important');
+        }
+      });
     };
 
-    // Run immediately
+    // Run immediately and more frequently
     ensureSmartsuppPositioning();
 
     // Set up observer to watch for dynamically added Smartsupp elements
@@ -180,7 +219,8 @@ const App = () => {
               const element = node as Element;
               if (element.id?.includes('smartsupp') || 
                   element.className?.includes('smartsupp') ||
-                  element.tagName === 'IFRAME' && (element as HTMLIFrameElement).src?.includes('smartsupp')) {
+                  element.tagName === 'IFRAME' && (element as HTMLIFrameElement).src?.includes('smartsupp') ||
+                  element.querySelector && element.querySelector('iframe[src*="smartsupp"]')) {
                 shouldCheck = true;
               }
             }
@@ -189,7 +229,7 @@ const App = () => {
       });
       
       if (shouldCheck) {
-        setTimeout(ensureSmartsuppPositioning, 100);
+        setTimeout(ensureSmartsuppPositioning, 50);
       }
     });
 
@@ -199,12 +239,26 @@ const App = () => {
       subtree: true
     });
 
-    // Also check periodically in case the widget loads after our observer
-    const interval = setInterval(ensureSmartsuppPositioning, 2000);
+    // Check more frequently
+    const interval = setInterval(ensureSmartsuppPositioning, 1000);
+
+    // Also run on window load and resize
+    const handleLoad = () => {
+      setTimeout(ensureSmartsuppPositioning, 500);
+    };
+
+    const handleResize = () => {
+      ensureSmartsuppPositioning();
+    };
+
+    window.addEventListener('load', handleLoad);
+    window.addEventListener('resize', handleResize);
 
     return () => {
       observer.disconnect();
       clearInterval(interval);
+      window.removeEventListener('load', handleLoad);
+      window.removeEventListener('resize', handleResize);
     };
   }, []);
 

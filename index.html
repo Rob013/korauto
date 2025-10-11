@@ -107,6 +107,78 @@
       c.src='https://www.smartsuppchat.com/loader.js?';s.parentNode.insertBefore(c,s);
     })(document);
     </script>
+
+    <!-- Force Smartsupp positioning script -->
+    <script type="text/javascript">
+    (function() {
+      function forceSmartsuppPositioning() {
+        // Find all possible Smartsupp elements
+        const selectors = [
+          '#chat-application',
+          '[data-smartsupp-widget]',
+          '.smartsupp-widget',
+          'iframe[src*="smartsupp"]',
+          'iframe[src*="smartsuppchat"]',
+          'div[class*="smartsupp"]',
+          'div[id*="smartsupp"]',
+          'body > div:last-child'
+        ];
+
+        selectors.forEach(selector => {
+          const elements = document.querySelectorAll(selector);
+          elements.forEach(element => {
+            if (element && element.style) {
+              element.style.setProperty('position', 'fixed', 'important');
+              element.style.setProperty('bottom', '20px', 'important');
+              element.style.setProperty('right', '20px', 'important');
+              element.style.setProperty('top', 'auto', 'important');
+              element.style.setProperty('left', 'auto', 'important');
+              element.style.setProperty('z-index', '2147483647', 'important');
+              element.style.setProperty('transform', 'none', 'important');
+              element.style.setProperty('margin', '0', 'important');
+              element.style.setProperty('padding', '0', 'important');
+            }
+          });
+        });
+
+        // Check all divs for Smartsupp characteristics
+        const allDivs = document.querySelectorAll('div');
+        allDivs.forEach(div => {
+          if (div.id?.includes('smartsupp') || 
+              div.className?.includes('smartsupp') ||
+              div.style.position === 'fixed' ||
+              div.style.zIndex === '2147483647' ||
+              div.querySelector('iframe[src*="smartsupp"]')) {
+            div.style.setProperty('position', 'fixed', 'important');
+            div.style.setProperty('bottom', '20px', 'important');
+            div.style.setProperty('right', '20px', 'important');
+            div.style.setProperty('top', 'auto', 'important');
+            div.style.setProperty('left', 'auto', 'important');
+            div.style.setProperty('z-index', '2147483647', 'important');
+          }
+        });
+      }
+
+      // Run immediately
+      forceSmartsuppPositioning();
+
+      // Run on DOM ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', forceSmartsuppPositioning);
+      }
+
+      // Run on window load
+      window.addEventListener('load', function() {
+        setTimeout(forceSmartsuppPositioning, 1000);
+      });
+
+      // Run periodically
+      setInterval(forceSmartsuppPositioning, 2000);
+
+      // Run on resize
+      window.addEventListener('resize', forceSmartsuppPositioning);
+    })();
+    </script>
   </head>
 
   <body>

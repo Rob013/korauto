@@ -2405,7 +2405,13 @@ body {
 [data-smartsupp-widget],
 [data-smartsupp-widget] > div,
 .smartsupp-widget,
-.smartsupp-widget > div {
+.smartsupp-widget > div,
+iframe[src*="smartsupp"],
+iframe[src*="smartsuppchat"],
+div[class*="smartsupp"],
+div[id*="smartsupp"],
+body > div:last-child,
+html > body > div:last-child {
   position: fixed !important;
   bottom: 20px !important;
   right: 20px !important;
@@ -2420,6 +2426,7 @@ body {
   height: auto !important;
   max-width: none !important;
   max-height: none !important;
+  inset: auto !important;
 }
 
 /* Guard against internal wrappers changing layout */
