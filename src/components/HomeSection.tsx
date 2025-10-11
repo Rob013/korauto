@@ -10,18 +10,30 @@ const HomeSection = () => {
       
       <div className="container-responsive text-center relative z-10">
         <div className="max-w-4xl mx-auto">
-          {/* Logo on Homepage - Optimized for LCP */}
+          {/* Logo on Homepage - Optimized for LCP with dark mode support */}
           <div className="mb-4">
             <div className="logo-container">
-              <img 
-                src="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png" 
-                alt="KORAUTO Logo" 
-                className="logo-image"
-                loading="eager"
-                fetchPriority="high"
-                width="256"
-                height="256"
-              />
+              <picture>
+                {/* Dark mode logo */}
+                <source 
+                  media="(prefers-color-scheme: dark)" 
+                  srcSet="/lovable-uploads/korauto-logo-dark.png"
+                />
+                {/* Light mode logo */}
+                <img 
+                  src="/lovable-uploads/korauto-logo-light.png" 
+                  alt="KORAUTO Logo" 
+                  className="logo-image"
+                  loading="eager"
+                  fetchPriority="high"
+                  width="256"
+                  height="256"
+                  onError={(e) => {
+                    // Fallback to original logo if new logos don't exist
+                    e.currentTarget.src = '/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png';
+                  }}
+                />
+              </picture>
             </div>
           </div>
           

@@ -15,7 +15,8 @@
     
     <!-- Preload critical resources -->
     <link rel="modulepreload" href="/src/main.tsx">
-    <link rel="preload" href="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png" as="image" type="image/png">
+    <link rel="preload" href="/lovable-uploads/korauto-logo-light.png" as="image" type="image/png">
+    <link rel="preload" href="/lovable-uploads/korauto-logo-dark.png" as="image" type="image/png">
     <link rel="preload" href="/src/index.css" as="style">
     <link rel="preload" href="/src/utils/iosOptimizations.css" as="style">
     <style>
@@ -66,11 +67,26 @@
         height: 100%;
         object-fit: contain;
         transition: transform 0.3s ease;
+        /* Remove any background if present */
+        background: transparent;
+        /* Ensure crisp rendering */
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+        /* Smooth scaling */
+        image-rendering: auto;
       }
       
-      /* Homepage logo should not be inverted in dark mode */
-      .dark .logo-image {
+      /* Homepage logo uses separate files for light/dark mode */
+      .logo-image {
         filter: none;
+      }
+      
+      /* Enhanced logo display for high-quality images */
+      .logo-container img {
+        /* Remove any potential background artifacts */
+        background: transparent !important;
+        /* Ensure proper blending */
+        mix-blend-mode: normal;
       }
       
       @keyframes scaleIn {
