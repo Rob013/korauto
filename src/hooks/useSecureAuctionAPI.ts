@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { findGenerationYears } from "@/data/generationYears";
 import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from '../utils/grade-categorization';
+import { getBrandLogo } from '@/data/brandLogos';
 
 // Simple cache to prevent redundant API calls
 const apiCache = new Map<string, { data: any; timestamp: number }>();
@@ -336,7 +337,8 @@ export const createFallbackManufacturers = () => {
     id: manufacturer.id,
     name: manufacturer.name,
     cars_qty: manufacturer.cars_qty,
-    car_count: manufacturer.cars_qty
+    car_count: manufacturer.cars_qty,
+    image: getBrandLogo(manufacturer.name)
   }));
 };
 
@@ -939,7 +941,8 @@ export const useSecureAuctionAPI = () => {
           id: manufacturer.id,
           name: manufacturer.name,
           cars_qty: manufacturer.cars_qty || manufacturer.car_count || 0,
-          car_count: manufacturer.car_count || manufacturer.cars_qty || 0
+          car_count: manufacturer.car_count || manufacturer.cars_qty || 0,
+          image: manufacturer.image || getBrandLogo(manufacturer.name)
         }));
       } else {
         // No manufacturers from API, use fallback data

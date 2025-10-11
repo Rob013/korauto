@@ -29,7 +29,7 @@ import { validateFilters } from '@/utils/buildQueryParams';
 import { cn } from '@/lib/utils';
 
 interface FiltersData {
-  brands: Array<{ id: string; name: string; count?: number }>;
+  brands: Array<{ id: string; name: string; count?: number; image?: string }>;
   models: Array<{ id: string; name: string; brandId: string; count?: number }>;
   fuelTypes: Array<{ id: string; name: string; count?: number }>;
   transmissions: Array<{ id: string; name: string; count?: number }>;
@@ -332,7 +332,12 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <SelectContent>
                   {data.brands.map((brand) => (
                     <SelectItem key={brand.id} value={brand.id}>
-                      {brand.name} {brand.count && `(${brand.count})`}
+                      <div className="flex items-center gap-2">
+                        {brand.image && (
+                          <img src={brand.image} alt={brand.name} className="w-4 h-4 object-contain" />
+                        )}
+                        <span>{brand.name} {brand.count && `(${brand.count})`}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
