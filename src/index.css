@@ -2345,6 +2345,22 @@ body {
     }
   }
   
+  /* Fix image zoom centering issues */
+  .image-zoom-container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    height: 100% !important;
+    position: relative !important;
+  }
+  
+  .image-zoom-container img {
+    transform-origin: center center !important;
+    display: block !important;
+    margin: auto !important;
+  }
+  
   /* Fix mobile card alignment */
   .mobile-specs-card .card-content {
     padding: 12px !important;

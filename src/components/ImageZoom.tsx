@@ -111,6 +111,13 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
           className="relative w-full h-full flex items-center justify-center"
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '100%',
+            minWidth: '100%'
+          }}
         >
           {/* Close Button */}
           <Button
@@ -185,18 +192,33 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
             </Button>
           </div>
 
-          {/* Image */}
-          <img
-            ref={imageRef}
-            src={src}
-            alt={alt}
-            className="max-w-full max-h-full object-contain transition-transform duration-300 select-none"
+          {/* Image Container - Improved centering */}
+          <div 
+            className="image-zoom-container w-full h-full flex items-center justify-center overflow-hidden"
             style={{
-              transform: `scale(${zoom}) rotate(${rotation}deg)`,
-              touchAction: zoom > 1 ? 'pan-x pan-y' : 'none',
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: '100%',
+              minWidth: '100%'
             }}
-            draggable={false}
-          />
+          >
+            <img
+              ref={imageRef}
+              src={src}
+              alt={alt}
+              className="max-w-full max-h-full object-contain transition-transform duration-300 select-none"
+              style={{
+                transform: `scale(${zoom}) rotate(${rotation}deg)`,
+                touchAction: zoom > 1 ? 'pan-x pan-y' : 'none',
+                transformOrigin: 'center center',
+                display: 'block',
+                margin: 'auto'
+              }}
+              draggable={false}
+            />
+          </div>
 
           {/* Image counter and zoom indicator - Improved design */}
           <div className="absolute top-4 left-4 bg-black/80 text-white px-4 py-3 rounded-xl flex flex-col gap-1 text-sm border border-white/30 backdrop-blur-md shadow-xl">
