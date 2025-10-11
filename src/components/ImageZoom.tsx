@@ -115,19 +115,19 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
-        className="max-w-[100vw] max-h-[100vh] w-full h-full p-0 bg-black border-0 fixed inset-0"
+        className="max-w-[100vw] max-h-[100vh] w-full h-full p-0 bg-black border-0 z-50"
         style={{
           position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
           width: '100vw',
           height: '100vh',
           maxWidth: '100vw',
           maxHeight: '100vh',
           margin: 0,
-          padding: 0
+          padding: 0,
+          zIndex: 9999
         }}
       >
         <div 
@@ -141,7 +141,9 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
             width: '100vw',
             height: '100vh',
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            margin: 0,
+            padding: 0
           }}
         >
           {/* Close Button */}
@@ -162,7 +164,7 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
                 size="icon"
                 onClick={handlePrevImage}
                 disabled={currentIndex === 0}
-                className="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 z-50 bg-black/70 hover:bg-black/90 text-white disabled:opacity-20 disabled:cursor-not-allowed border border-white/20 h-12 w-12 touch-manipulation"
+                className="absolute left-1/2 top-1/2 transform -translate-x-16 -translate-y-1/2 z-50 bg-black/70 hover:bg-black/90 text-white disabled:opacity-20 disabled:cursor-not-allowed border border-white/20 h-12 w-12 touch-manipulation"
               >
                 <ChevronLeft className="h-8 w-8" />
               </Button>
@@ -171,7 +173,7 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
                 size="icon"
                 onClick={handleNextImage}
                 disabled={currentIndex === images.length - 1}
-                className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 z-50 bg-black/70 hover:bg-black/90 text-white disabled:opacity-20 disabled:cursor-not-allowed border border-white/20 h-12 w-12 touch-manipulation"
+                className="absolute left-1/2 top-1/2 transform translate-x-4 -translate-y-1/2 z-50 bg-black/70 hover:bg-black/90 text-white disabled:opacity-20 disabled:cursor-not-allowed border border-white/20 h-12 w-12 touch-manipulation"
               >
                 <ChevronRight className="h-8 w-8" />
               </Button>
@@ -217,7 +219,7 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
             </Button>
           </div>
 
-          {/* Image Container - Simple and reliable centering */}
+          {/* Image Container - Centered image */}
           <div 
             className="w-full h-full flex items-center justify-center overflow-hidden"
             style={{
@@ -235,10 +237,7 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
               alt={alt}
               className="max-w-full max-h-full object-contain transition-transform duration-300 select-none"
               style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: `translate(-50%, -50%) scale(${zoom}) rotate(${rotation}deg)`,
+                transform: `scale(${zoom}) rotate(${rotation}deg)`,
                 touchAction: zoom > 1 ? 'pan-x pan-y' : 'none',
                 transformOrigin: 'center center',
                 maxWidth: '95vw',
