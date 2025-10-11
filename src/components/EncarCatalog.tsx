@@ -107,6 +107,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     validationEnabled: false
   });
   
+  // Default sort: recently_added when no filters selected
   const [sortBy, setSortBy] = useState<SortOption>("recently_added");
   const [hasUserSelectedSort, setHasUserSelectedSort] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -121,7 +122,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Initialize showFilters - always open on desktop, closed on mobile
   const [showFilters, setShowFilters] = useState(() => {
     // On desktop (lg breakpoint), filters should always be open
-    return !isMobile;
+    return !isMobile; // desktop open, mobile closed
   });
   
   // Track if user has explicitly closed the filter panel (mobile only)
@@ -148,9 +149,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
   // Ensure filters are always open on desktop
   useEffect(() => {
-    if (!isMobile) {
-      setShowFilters(true);
-    }
+    if (!isMobile) setShowFilters(true);
+    else setShowFilters(false);
   }, [isMobile]);
 
   // Memoized helper function to extract grades from title - now using utility
@@ -790,6 +790,28 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     }
   };
 
+  // Detect if any filter is applied
+  const anyFilterApplied = useMemo(() => {
+    if (!filters) return false;
+    const entries = Object.entries(filters);
+    return entries.some(([key, value]) => !!value && value !== 'all');
+  }, [filters]);
+
+  // Adjust sort depending on filter presence
+  useEffect(() => {
+    if (anyFilterApplied) {
+      // User is filtering: clear to API/default order unless user explicitly picked a sort
+      if (!hasUserSelectedSort) {
+        setSortBy(''); // No client-side sort; API order
+      }
+    } else {
+      // No filters: default to recently added
+      if (!hasUserSelectedSort) {
+        setSortBy('recently_added');
+      }
+    }
+  }, [anyFilterApplied, hasUserSelectedSort]);
+
   // Initialize filters from URL params on component mount - OPTIMIZED
   useEffect(() => {
     const loadInitialData = async () => {
@@ -1159,23 +1181,28 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             onSearchCars={() => {
               console.log("Search button clicked, isMobile:", isMobile);
               // Apply search/filters with current sort preference
-              const searchFilters = hasUserSelectedSort && sortBy ? 
-                { ...filters, per_page: "200", sort_by: sortBy } : 
+              const effectiveSort = hasUserSelectedSort ? sortBy : (anyFilterApplied ? '' : 'recently_added');
+              const searchFilters = effectiveSort ? 
+                { ...filters, per_page: "200", sort_by: effectiveSort } : 
                 { ...filters, per_page: "200" };
               fetchCars(1, searchFilters, true);
               
-              // Force close filter panel on mobile (and desktop for consistency)
-              setShowFilters(false);
-              setHasExplicitlyClosed(true);
+              // Close filter panel on mobile only; keep open on desktop
+              if (isMobile) {
+                setShowFilters(false);
+                setHasExplicitlyClosed(true);
+              }
               
               // Additional CSS force close as backup
-              setTimeout(() => {
-                const filterPanel = document.querySelector('[data-filter-panel]');
-                if (filterPanel) {
-                  (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
-                  (filterPanel as HTMLElement).style.visibility = 'hidden';
-                }
-              }, 100);
+              if (isMobile) {
+                setTimeout(() => {
+                  const filterPanel = document.querySelector('[data-filter-panel]');
+                  if (filterPanel) {
+                    (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
+                    (filterPanel as HTMLElement).style.visibility = 'hidden';
+                  }
+                }, 100);
+              }
             }}
             onCloseFilter={() => {
               console.log("Close filter called, isMobile:", isMobile);
