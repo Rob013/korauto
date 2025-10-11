@@ -105,7 +105,7 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
   }, [currentIndex, isOpen]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="max-w-[100vw] max-h-[100vh] w-full h-full p-0 bg-black border-0 fixed inset-0">
         <div 
           className="relative w-full h-full flex items-center justify-center"
