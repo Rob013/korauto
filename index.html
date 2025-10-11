@@ -100,18 +100,41 @@
     <script type="text/javascript">
     var _smartsupp = _smartsupp || {};
     _smartsupp.key = 'b946031b416bd52d6cebdf0f507bfa4dd021e21f';
+    _smartsupp.options = {
+      visible: true,
+      position: 'bottom-right',
+      zIndex: 2147483647
+    };
+    
     window.smartsupp||(function(d) {
       var s,c,o=smartsupp=function(){ o._.push(arguments)};o._=[];
       s=d.getElementsByTagName('script')[0];c=d.createElement('script');
       c.type='text/javascript';c.charset='utf-8';c.async=true;
       c.src='https://www.smartsuppchat.com/loader.js?';s.parentNode.insertBefore(c,s);
     })(document);
+    
+    // Fallback: Create a visible chat widget if Smartsupp doesn't load
+    setTimeout(function() {
+      if (!document.querySelector('#chat-application') && !document.querySelector('[data-smartsupp-widget]')) {
+        console.log('⚠️ Smartsupp not loaded, creating fallback chat widget');
+        var fallbackChat = document.createElement('div');
+        fallbackChat.id = 'chat-application';
+        fallbackChat.innerHTML = '<div style="position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: #007bff; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 2147483647; box-shadow: 0 4px 12px rgba(0,0,0,0.3);"><svg width="24" height="24" fill="white" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg></div>';
+        document.body.appendChild(fallbackChat);
+        console.log('✅ Fallback chat widget created');
+      }
+    }, 10000);
     </script>
 
     <!-- Force Smartsupp positioning script -->
     <script type="text/javascript">
     (function() {
+      let debugCount = 0;
+      
       function forceSmartsuppPositioning() {
+        debugCount++;
+        console.log('🔍 Smartsupp positioning check #' + debugCount);
+        
         // Find all possible Smartsupp elements
         const selectors = [
           '#chat-application',
@@ -124,8 +147,14 @@
           'body > div:last-child'
         ];
 
+        let foundElements = 0;
+        
         selectors.forEach(selector => {
           const elements = document.querySelectorAll(selector);
+          if (elements.length > 0) {
+            console.log('✅ Found elements with selector:', selector, elements.length);
+            foundElements += elements.length;
+          }
           elements.forEach(element => {
             if (element && element.style) {
               element.style.setProperty('position', 'fixed', 'important');
@@ -137,26 +166,62 @@
               element.style.setProperty('transform', 'none', 'important');
               element.style.setProperty('margin', '0', 'important');
               element.style.setProperty('padding', '0', 'important');
+              console.log('🎯 Applied positioning to:', element);
             }
           });
         });
 
         // Check all divs for Smartsupp characteristics
         const allDivs = document.querySelectorAll('div');
+        let smartsuppDivs = 0;
+        
         allDivs.forEach(div => {
           if (div.id?.includes('smartsupp') || 
               div.className?.includes('smartsupp') ||
               div.style.position === 'fixed' ||
               div.style.zIndex === '2147483647' ||
               div.querySelector('iframe[src*="smartsupp"]')) {
+            smartsuppDivs++;
             div.style.setProperty('position', 'fixed', 'important');
             div.style.setProperty('bottom', '20px', 'important');
             div.style.setProperty('right', '20px', 'important');
             div.style.setProperty('top', 'auto', 'important');
             div.style.setProperty('left', 'auto', 'important');
             div.style.setProperty('z-index', '2147483647', 'important');
+            console.log('🎯 Applied positioning to div:', div);
           }
         });
+
+        // Check iframes
+        const iframes = document.querySelectorAll('iframe');
+        let smartsuppIframes = 0;
+        iframes.forEach(iframe => {
+          if (iframe.src?.includes('smartsupp') || iframe.src?.includes('smartsuppchat')) {
+            smartsuppIframes++;
+            iframe.style.setProperty('position', 'fixed', 'important');
+            iframe.style.setProperty('bottom', '20px', 'important');
+            iframe.style.setProperty('right', '20px', 'important');
+            iframe.style.setProperty('top', 'auto', 'important');
+            iframe.style.setProperty('left', 'auto', 'important');
+            iframe.style.setProperty('z-index', '2147483647', 'important');
+            console.log('🎯 Applied positioning to iframe:', iframe);
+          }
+        });
+
+        console.log('📊 Found elements:', {
+          selectors: foundElements,
+          smartsuppDivs: smartsuppDivs,
+          smartsuppIframes: smartsuppIframes,
+          totalDivs: allDivs.length,
+          totalIframes: iframes.length
+        });
+
+        // Check if Smartsupp is loaded
+        if (window.smartsupp) {
+          console.log('✅ Smartsupp object exists:', window.smartsupp);
+        } else {
+          console.log('❌ Smartsupp object not found');
+        }
       }
 
       // Run immediately
@@ -169,11 +234,14 @@
 
       // Run on window load
       window.addEventListener('load', function() {
+        console.log('🔄 Window loaded, checking Smartsupp...');
         setTimeout(forceSmartsuppPositioning, 1000);
+        setTimeout(forceSmartsuppPositioning, 3000);
+        setTimeout(forceSmartsuppPositioning, 5000);
       });
 
       // Run periodically
-      setInterval(forceSmartsuppPositioning, 2000);
+      setInterval(forceSmartsuppPositioning, 3000);
 
       // Run on resize
       window.addEventListener('resize', forceSmartsuppPositioning);
