@@ -114,7 +114,22 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[100vw] max-h-[100vh] w-full h-full p-0 bg-black border-0 fixed inset-0">
+      <DialogContent 
+        className="max-w-[100vw] max-h-[100vh] w-full h-full p-0 bg-black border-0 fixed inset-0"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100vw',
+          height: '100vh',
+          maxWidth: '100vw',
+          maxHeight: '100vh',
+          margin: 0,
+          padding: 0
+        }}
+      >
         <div 
           className="relative w-full h-full flex items-center justify-center"
           onTouchStart={handleTouchStart}
@@ -123,8 +138,8 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: '100%',
-            height: '100%',
+            width: '100vw',
+            height: '100vh',
             position: 'relative',
             overflow: 'hidden'
           }}
@@ -209,8 +224,8 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: '100%',
-              height: '100%',
+              width: '100vw',
+              height: '100vh',
               position: 'relative'
             }}
           >
