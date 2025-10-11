@@ -465,7 +465,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       setLoadedPages(new Set([1]));
 
       const filtersWithSort = (() => {
-        const eff = getEffectiveSortParam();
+        const entries = Object.entries(filters || {});
+        const hasFilters = entries.some(([key, value]) => !!value && value !== 'all');
+        const eff = hasFilters ? undefined : 'recently_added';
         return eff ? { ...filters, page: '1', per_page: '50', sort_by: eff } : { ...filters, page: '1', per_page: '50' };
       })();
 
@@ -474,7 +476,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     } finally {
       setIsFilterLoading(false);
     }
-  }, 300), [filters, fetchCars, clearGlobalSorting, getEffectiveSortParam]);
+  }, 300), [filters, fetchCars, clearGlobalSorting]);
 
   const handleFiltersChange = useCallback(async (newFilters: APIFilters) => {
     // Set filter loading state immediately for better UX
@@ -550,7 +552,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setCurrentPage(page);
     
     const filtersWithSort = (() => {
-      const eff = getEffectiveSortParam();
+      const entries = Object.entries(filters || {});
+      const hasFilters = entries.some(([key, value]) => !!value && value !== 'all');
+      const eff = hasFilters ? undefined : 'recently_added';
       return eff ? { ...filters, page: page.toString(), per_page: '50', sort_by: eff } : { ...filters, page: page.toString(), per_page: '50' };
     })();
 
@@ -565,7 +569,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
     console.log(`📄 Navigated to page ${page} of ${totalPages} with filters:`, filtersWithSort);
-  }, [filters, fetchCars, setSearchParams, addPaginationToFilters, totalPages, getEffectiveSortParam]);
+  }, [filters, fetchCars, setSearchParams, addPaginationToFilters, totalPages]);
 
   // Function to fetch and display all cars
   const handleShowAllCars = useCallback(async () => {
@@ -904,7 +908,12 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           ...urlFilters,
           per_page: "200",
           page: urlCurrentPage.toString(),
-          ...(getEffectiveSortParam() ? { sort_by: getEffectiveSortParam() } : {})
+          ...(() => {
+            const entries = Object.entries(urlFilters || {});
+            const hasFilters = entries.some(([key, value]) => !!value && value !== 'all');
+            const eff = hasFilters ? undefined : 'recently_added';
+            return eff ? { sort_by: eff } : {};
+          })()
         };
         
         await fetchCars(urlCurrentPage, initialFilters, true);
@@ -1208,7 +1217,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             onSearchCars={() => {
               console.log("Search button clicked, isMobile:", isMobile);
               // Apply search/filters with effective sort (recently_added when no filters, none when filters applied)
-              const eff = getEffectiveSortParam();
+              const entries = Object.entries(filters || {});
+              const hasFilters = entries.some(([key, value]) => !!value && value !== 'all');
+              const eff = hasFilters ? undefined : 'recently_added';
               const searchFilters = eff ? 
                 { ...filters, per_page: "200", sort_by: eff } : 
                 { ...filters, per_page: "200" };
