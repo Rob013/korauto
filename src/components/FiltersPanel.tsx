@@ -329,12 +329,12 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <SelectTrigger className="filter-select bg-background">
                   <SelectValue placeholder="Zgjidhni markën" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-popover text-popover-foreground border border-border shadow-lg">
                   {data.brands.map((brand) => (
                     <SelectItem key={brand.id} value={brand.id}>
                       <div className="flex items-center gap-2">
                         {brand.image && (
-                          <img src={brand.image} alt={brand.name} className="w-4 h-4 object-contain" />
+                          <img src={brand.image} alt={brand.name} className="w-4 h-4 object-contain rounded bg-white dark:bg-muted p-0.5" />
                         )}
                         <span>{brand.name} {brand.count && `(${brand.count})`}</span>
                       </div>

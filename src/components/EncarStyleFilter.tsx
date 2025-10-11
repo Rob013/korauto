@@ -231,7 +231,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               <SelectTrigger className="filter-control h-8 text-xs">
                 <SelectValue placeholder="Zgjidhni markën" />
               </SelectTrigger>
-              <SelectContent className="max-h-[400px] bg-background">
+              <SelectContent className="max-h-[400px] bg-popover text-popover-foreground border border-border shadow-lg">
                 {!(isStrictMode && filters.manufacturer_id) && (
                   <SelectItem value="all">Të gjitha markat</SelectItem>
                 )}
@@ -243,7 +243,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                         <img 
                           src={logoUrl} 
                           alt={manufacturer.name}
-                          className="w-6 h-6 object-contain flex-shrink-0"
+                          className="w-6 h-6 object-contain flex-shrink-0 rounded bg-white dark:bg-muted p-0.5"
                           loading="eager"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
