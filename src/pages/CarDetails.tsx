@@ -1905,6 +1905,8 @@ const CarDetails = memo(() => {
 
         {/* Image Zoom Modal - Removed, now using gallery page for all image viewing */}
       </div>
-    </div>;
+    </div>
+  );
 });
+
 export default CarDetails;
