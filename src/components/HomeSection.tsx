@@ -13,21 +13,15 @@ const HomeSection = () => {
           {/* Logo on Homepage - Optimized for LCP */}
           <div className="mb-4">
             <div className="logo-container">
-              <picture>
-                <source 
-                  srcSet="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.webp" 
-                  type="image/webp"
-                />
-                <img 
-                  src="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png" 
-                  alt="KORAUTO Logo" 
-                  className="logo-image"
-                  loading="eager"
-                  fetchPriority="high"
-                  width="256"
-                  height="256"
-                />
-              </picture>
+              <img 
+                src="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png" 
+                alt="KORAUTO Logo" 
+                className="logo-image"
+                loading="eager"
+                fetchPriority="high"
+                width="256"
+                height="256"
+              />
             </div>
           </div>
           

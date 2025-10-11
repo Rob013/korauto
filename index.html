@@ -15,7 +15,6 @@
     
     <!-- Preload critical resources -->
     <link rel="modulepreload" href="/src/main.tsx">
-    <link rel="preload" href="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.webp" as="image" type="image/webp">
     <link rel="preload" href="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png" as="image" type="image/png">
     <link rel="preload" href="/src/index.css" as="style">
     <link rel="preload" href="/src/utils/iosOptimizations.css" as="style">
@@ -69,8 +68,9 @@
         transition: transform 0.3s ease;
       }
       
+      /* Homepage logo should not be inverted in dark mode */
       .dark .logo-image {
-        filter: invert(1);
+        filter: none;
       }
       
       @keyframes scaleIn {
