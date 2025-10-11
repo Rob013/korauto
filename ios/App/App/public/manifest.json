@@ -1,0 +1,25 @@
+{
+  "name": "KORAUTO - Premium Cars from South Korea",
+  "short_name": "KORAUTO",
+  "description": "Find your perfect car from South Korea with best price and quality. Professional car inspection services and premium vehicle imports.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#1f2937",
+  "orientation": "portrait-primary",
+  "categories": ["automotive", "business", "shopping"],
+  "icons": [
+    {
+      "src": "/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
