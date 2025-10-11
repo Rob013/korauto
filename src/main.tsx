@@ -5,6 +5,8 @@ import './utils/iosOptimizations.css'
 import { ThemeProvider } from "@/components/ThemeProvider"
 import { NavigationProvider } from './contexts/NavigationContext.tsx'
 import cacheManager from '@/utils/cacheManager'
+import { inject120FPSStyles } from '@/utils/frameRateOptimizer'
+import initSmoothRuntime from '@/utils/runtimeSmoothness'
 
 // Initialize cache manager and check for updates
 cacheManager.initialize().then((cacheCleared) => {
@@ -52,6 +54,14 @@ if ('serviceWorker' in navigator) {
 
   // Setup periodic cache refresh check (every 30 minutes)
   cacheManager.setupPeriodicRefresh(30);
+}
+
+// Initialize smoothness helpers before first render
+try {
+  inject120FPSStyles();
+  initSmoothRuntime();
+} catch (e) {
+  // no-op
 }
 
 createRoot(document.getElementById("root")!).render(
