@@ -21,6 +21,27 @@
       body { margin: 0; background: #ffffff; }
       #root { min-height: 100vh; }
       .dark body { background: #0a0a0a; }
+      
+      /* Mobile fallback */
+      @media (max-width: 768px) {
+        #root {
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+        }
+        
+        .mobile-fallback {
+          display: none;
+          padding: 20px;
+          text-align: center;
+          background: #f3f4f6;
+          color: #374151;
+        }
+        
+        .mobile-fallback.show {
+          display: block;
+        }
+      }
     </style>
     
     <!-- Favicon and Icons -->
@@ -251,6 +272,23 @@
 
   <body>
     <div id="root"></div>
+    <div id="mobile-fallback" class="mobile-fallback">
+      <h2>KORAUTO</h2>
+      <p>Loading your premium car experience...</p>
+      <p>If this page doesn't load, please refresh or try again.</p>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Mobile fallback script -->
+    <script>
+      // Show mobile fallback if app doesn't load within 5 seconds
+      setTimeout(function() {
+        const root = document.getElementById('root');
+        const fallback = document.getElementById('mobile-fallback');
+        if (root && root.children.length === 0 && fallback) {
+          fallback.classList.add('show');
+        }
+      }, 5000);
+    </script>
   </body>
 </html>

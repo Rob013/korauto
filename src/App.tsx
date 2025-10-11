@@ -123,6 +123,28 @@ const App = () => {
   // Check if mobile to hide performance widget
   const isMobile = useIsMobile();
 
+  // Mobile debugging
+  useEffect(() => {
+    console.log('📱 App component mounted on mobile:', isMobile, {
+      userAgent: navigator.userAgent,
+      viewport: {
+        width: window.innerWidth,
+        height: window.innerHeight
+      }
+    });
+  }, [isMobile]);
+
+  // Error boundary for mobile issues
+  useEffect(() => {
+    const handleError = (error: ErrorEvent) => {
+      console.error('❌ App error:', error);
+      // Don't let errors break the app completely
+    };
+
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
+
   // Initialize accessibility enhancements
   useEffect(() => {
     const enhancer = AccessibilityEnhancer.getInstance();
