@@ -15,12 +15,110 @@
     
     <!-- Preload critical resources -->
     <link rel="modulepreload" href="/src/main.tsx">
+    <link rel="preload" href="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.webp" as="image" type="image/webp">
+    <link rel="preload" href="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png" as="image" type="image/png">
+    <link rel="preload" href="/src/index.css" as="style">
+    <link rel="preload" href="/src/utils/iosOptimizations.css" as="style">
     <style>
-      /* Critical CSS - Prevent FOUC */
-      html { font-family: system-ui, sans-serif; }
-      body { margin: 0; background: #ffffff; }
-      #root { min-height: 100vh; }
-      .dark body { background: #0a0a0a; }
+      /* Critical CSS - Prevent FOUC and improve LCP */
+      html { 
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        line-height: 1.5;
+      }
+      body { 
+        margin: 0; 
+        background: #ffffff;
+        color: #0f172a;
+        overflow-x: hidden;
+      }
+      #root { 
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      .dark body { 
+        background: #0a0a0a;
+        color: #f8fafc;
+      }
+      
+      /* Critical styles for LCP element */
+      .home-section {
+        min-height: 85vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .logo-container {
+        width: 12rem;
+        height: 12rem;
+        margin: 0 auto 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: scaleIn 0.6s ease-out;
+      }
+      
+      .logo-image {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        transition: transform 0.3s ease;
+      }
+      
+      .dark .logo-image {
+        filter: invert(1);
+      }
+      
+      @keyframes scaleIn {
+        from { transform: scale(0.8); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+      }
+      
+      /* Prevent layout shift during loading */
+      .loading-placeholder {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+      }
+      
+      @keyframes loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+      
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      
+      .animate-fade-in {
+        animation: fadeIn 0.6s ease-out;
+      }
+      
+      /* Performance optimizations */
+      * {
+        box-sizing: border-box;
+      }
+      
+      img {
+        max-width: 100%;
+        height: auto;
+      }
+      
+      /* Reduce paint complexity */
+      .home-section {
+        will-change: transform;
+        contain: layout style paint;
+      }
+      
+      .logo-container {
+        will-change: transform;
+        contain: layout style paint;
+      }
     </style>
     
     <!-- Favicon and Icons -->
@@ -56,14 +154,20 @@
     <meta name="twitter:description" content="Find your perfect car from South Korea with best price and quality. Professional car inspection services and premium vehicle imports." />
     <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/YQL55BAx4ad4To5BuJ6CPGn22603/social-images/social-1757832941689-Image.png">
 
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-EK3E1KLL6V"></script>
+    <!-- Google tag (gtag.js) - Deferred -->
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-EK3E1KLL6V');
+      // Defer Google Analytics to not block rendering
+      window.addEventListener('load', function() {
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=G-EK3E1KLL6V';
+        document.head.appendChild(script);
+        
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-EK3E1KLL6V');
+      });
     </script>
 
     <!-- ES Module compatibility check and fallback -->
@@ -96,16 +200,19 @@
       })();
     </script>
 
-    <!-- Smartsupp Live Chat script -->
+    <!-- Smartsupp Live Chat script - Deferred -->
     <script type="text/javascript">
-    var _smartsupp = _smartsupp || {};
-    _smartsupp.key = 'b946031b416bd52d6cebdf0f507bfa4dd021e21f';
-    window.smartsupp||(function(d) {
-      var s,c,o=smartsupp=function(){ o._.push(arguments)};o._=[];
-      s=d.getElementsByTagName('script')[0];c=d.createElement('script');
-      c.type='text/javascript';c.charset='utf-8';c.async=true;
-      c.src='https://www.smartsuppchat.com/loader.js?';s.parentNode.insertBefore(c,s);
-    })(document);
+    // Defer Smartsupp chat to not block rendering
+    window.addEventListener('load', function() {
+      var _smartsupp = _smartsupp || {};
+      _smartsupp.key = 'b946031b416bd52d6cebdf0f507bfa4dd021e21f';
+      window.smartsupp||(function(d) {
+        var s,c,o=smartsupp=function(){ o._.push(arguments)};o._=[];
+        s=d.getElementsByTagName('script')[0];c=d.createElement('script');
+        c.type='text/javascript';c.charset='utf-8';c.async=true;
+        c.src='https://www.smartsuppchat.com/loader.js?';s.parentNode.insertBefore(c,s);
+      })(document);
+    });
     </script>
   </head>
 
