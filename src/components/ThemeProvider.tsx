@@ -51,6 +51,7 @@ export function ThemeProvider({
   const value = {
     theme,
     setTheme: (theme: Theme) => {
+      console.log('🎨 Theme changing from', theme, 'to', theme === "light" ? "dark" : "light");
       localStorage.setItem(storageKey, theme)
       setTheme(theme)
     },

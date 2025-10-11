@@ -21,8 +21,8 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
 
   // Debug logging
   useEffect(() => {
-    console.log('🖼️ ImageZoom component - isOpen:', isOpen, 'src:', src);
-  }, [isOpen, src]);
+    console.log('🖼️ ImageZoom component - isOpen:', isOpen, 'src:', src, 'images length:', images.length);
+  }, [isOpen, src, images.length]);
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.2, 3));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.2, 0.5));

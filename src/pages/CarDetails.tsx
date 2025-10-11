@@ -575,6 +575,11 @@ const CarDetails = memo(() => {
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
+
+  // Debug image zoom state changes
+  useEffect(() => {
+    console.log('🖼️ ImageZoom state changed:', isImageZoomOpen);
+  }, [isImageZoomOpen]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showDetailedInfo, setShowDetailedInfo] = useState(false);
   const [showInspectionReport, setShowInspectionReport] = useState(false);
@@ -1074,6 +1079,8 @@ const CarDetails = memo(() => {
   // Handler for opening gallery images in a new page
   const handleGalleryClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
+    console.log('🖼️ Gallery button clicked, images:', images.length);
     // Track gallery view
     trackPageView(`/car/${lot}/gallery`);
     // Navigate to gallery page with all images
@@ -1194,13 +1201,15 @@ const CarDetails = memo(() => {
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
-                    console.log('🖼️ Image clicked, opening zoom modal');
+                    console.log('🖼️ Image clicked, opening zoom modal, current state:', isImageZoomOpen);
+                    console.log('🖼️ Images available:', images.length, 'Selected index:', selectedImageIndex);
                     setIsImageZoomOpen(true);
                   }}
                   onTouchEnd={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
-                    console.log('📱 Image touched on mobile, opening zoom modal');
+                    console.log('📱 Image touched on mobile, opening zoom modal, current state:', isImageZoomOpen);
+                    console.log('📱 Images available:', images.length, 'Selected index:', selectedImageIndex);
                     setIsImageZoomOpen(true);
                   }}
                   data-fancybox="gallery"
@@ -1264,7 +1273,10 @@ const CarDetails = memo(() => {
                     <div className="absolute bottom-3 right-3 flex items-center gap-2">
                       {/* Mobile gallery button */}
                       <button
-                        onClick={handleGalleryClick}
+                        onClick={(e) => {
+                          console.log('📱 Mobile gallery button clicked');
+                          handleGalleryClick(e);
+                        }}
                         className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
                         aria-label={`View all ${images.length} images`}
                       >
@@ -1274,7 +1286,10 @@ const CarDetails = memo(() => {
                       
                       {/* Desktop gallery button */}
                       <button
-                        onClick={handleGalleryClick}
+                        onClick={(e) => {
+                          console.log('🖥️ Desktop gallery button clicked');
+                          handleGalleryClick(e);
+                        }}
                         className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
                         aria-label={`View all ${images.length} images`}
                       >
