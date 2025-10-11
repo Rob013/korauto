@@ -347,14 +347,12 @@ All colors MUST be HSL.
     overflow-x: hidden;
   }
 
-  /* Smooth transitions globally - Adaptive timing based on device capabilities */
+  /* Smooth transitions globally - Optimized timing */
   * {
-    transition: background-color var(--transition-base, 0.25s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)),
-                border-color var(--transition-base, 0.25s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)),
-                color var(--transition-base, 0.25s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)),
-                box-shadow var(--transition-slow, 0.3s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)),
-                transform var(--transition-fast, 0.15s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)),
-                opacity var(--transition-fast, 0.15s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1));
+    transition: background-color 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+                border-color 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+                color 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   /* Hardware acceleration for animations - 120fps ready */
@@ -933,48 +931,16 @@ All colors MUST be HSL.
       0 6px 20px -4px rgba(0, 0, 0, 0.12);
   }
 
-  /* Enhanced filter controls interaction animation */
+  /* Filter controls interaction animation */
   .filter-control, .filter-section {
     position: relative;
-    transition: all var(--transition-base, 0.25s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1));
-    will-change: transform, box-shadow, background-color;
-    transform: translateZ(0);
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .filter-control:focus,
   .filter-control:active {
     box-shadow: 0 0 0 3px hsl(var(--primary) / 0.2);
-    transform: scale(1.02) translateZ(0);
-  }
-
-  /* Smooth filter panel slide animations */
-  [data-filter-panel] {
-    transition: transform var(--transition-slow, 0.4s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)),
-                opacity var(--transition-base, 0.25s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)),
-                visibility var(--transition-fast, 0.15s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1));
-    will-change: transform, opacity, visibility;
-    transform: translateZ(0);
-  }
-
-  /* Enhanced filter panel backdrop */
-  [data-filter-panel]::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity var(--transition-base, 0.25s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)),
-                visibility var(--transition-base, 0.25s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1));
-    z-index: -1;
-  }
-
-  [data-filter-panel].mobile-filter-panel::before {
-    opacity: 1;
-    visibility: visible;
+    transform: scale(1.02);
   }
 
   /* Touch ripple for filter sections */
@@ -1572,60 +1538,10 @@ All colors MUST be HSL.
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   }
 
-  /* Enhanced filter panel transitions with performance optimizations */
+  /* Smooth filter panel transitions */
   .filter-panel {
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    contain: layout style paint;
-    will-change: transform, opacity;
-  }
-
-  /* Staggered animation for filter sections */
-  .filter-section {
-    animation: filterSectionSlideIn var(--transition-slow, 0.4s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)) forwards;
-    opacity: 0;
-    transform: translateY(20px) translateZ(0);
-  }
-
-  .filter-section:nth-child(1) { animation-delay: calc(var(--transition-fast, 0.15s) * 0); }
-  .filter-section:nth-child(2) { animation-delay: calc(var(--transition-fast, 0.15s) * 1); }
-  .filter-section:nth-child(3) { animation-delay: calc(var(--transition-fast, 0.15s) * 2); }
-  .filter-section:nth-child(4) { animation-delay: calc(var(--transition-fast, 0.15s) * 3); }
-  .filter-section:nth-child(5) { animation-delay: calc(var(--transition-fast, 0.15s) * 4); }
-
-  @keyframes filterSectionSlideIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px) translateZ(0);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) translateZ(0);
-    }
-  }
-
-  /* Smooth filter input animations */
-  .filter-input {
-    transition: all var(--transition-fast, 0.15s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1));
-    will-change: border-color, box-shadow, transform;
-  }
-
-  .filter-input:focus {
-    transform: scale(1.01) translateZ(0);
-    box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2);
-  }
-
-  /* Performance-optimized car card animations */
-  .car-card {
-    contain: layout style paint;
-    will-change: transform, opacity;
-    transition: transform var(--transition-fast, 0.15s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)),
-                box-shadow var(--transition-base, 0.25s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1));
-  }
-
-  .car-card:hover {
-    transform: translateY(-4px) translateZ(0);
-    box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.15);
   }
 
   /* Better text readability on mobile - More compact */
@@ -2483,190 +2399,184 @@ body {
   }
 }
 
-/* Smartsupp enforced bottom-right fixed bubble - Device viewport positioning */
+/* Smartsupp enforced bottom-right fixed bubble */
 #chat-application, 
-#chat-application:not([style*="position: fixed"]),
-[data-smartsupp-widget],
-[data-smartsupp-widget] > div,
-.smartsupp-widget,
-.smartsupp-widget > div,
-iframe[src*="smartsupp"],
-iframe[src*="smartsuppchat"],
-div[class*="smartsupp"],
-div[id*="smartsupp"],
-body > div:last-child,
-html > body > div:last-child {
+#chat-application:not([style*="position: fixed"]) {
   position: fixed !important;
   bottom: 20px !important;
   right: 20px !important;
   top: auto !important;
   left: auto !important;
   transform: none !important;
-  z-index: 2147483647 !important; /* max safe z-index */
+  z-index: 2147483647 !important; /* max safe */
   pointer-events: auto !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  width: auto !important;
-  height: auto !important;
-  max-width: none !important;
-  max-height: none !important;
-  inset: auto !important;
 }
 
 /* Guard against internal wrappers changing layout */
 #chat-application *,
-#chat-application > div,
-[data-smartsupp-widget] *,
-[data-smartsupp-widget] > div *,
-.smartsupp-widget *,
-.smartsupp-widget > div * {
+#chat-application > div {
   inset: auto !important;
-  position: relative !important;
-  top: auto !important;
-  left: auto !important;
-  right: auto !important;
-  bottom: auto !important;
-  transform: none !important;
 }
 
-/* Ensure viewport positioning on all screen sizes */
 @media (min-width: 1025px) {
-  #chat-application,
-  [data-smartsupp-widget],
-  .smartsupp-widget {
+  #chat-application {
     bottom: 28px !important;
     right: 28px !important;
   }
 }
 
 @media (max-width: 768px) {
-  #chat-application,
-  [data-smartsupp-widget],
-  .smartsupp-widget {
+  #chat-application {
     bottom: 16px !important;
     right: 16px !important;
   }
 }
 
-/* Additional selectors for Smartsupp widget variations */
-iframe[src*="smartsupp"],
-iframe[src*="smartsuppchat"],
-div[class*="smartsupp"],
-div[id*="smartsupp"] {
-  position: fixed !important;
-  bottom: 20px !important;
-  right: 20px !important;
-  top: auto !important;
-  left: auto !important;
-  z-index: 2147483647 !important;
+/* Mobile/iOS animation and transition optimization */
+@supports (-webkit-touch-callout: none) {
+  :root {
+    --ios-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+    --ios-duration-fast: 160ms;
+    --ios-duration: 220ms;
+  }
+
+  /* Standardize easing and durations to iOS-like curve */
+  .transition-smooth,
+  .card-hover,
+  .hover-lift,
+  .hover-scale-gentle,
+  .hover-lift-gentle,
+  .glass-card,
+  .modern-card,
+  .btn-enhanced,
+  .interactive-element {
+    transition-timing-function: var(--ios-ease) !important;
+  }
+
+  .hover-lift,
+  .card-hover,
+  .btn-enhanced,
+  .interactive-element,
+  .transition-smooth {
+    transition-duration: var(--ios-duration) !important;
+  }
 }
 
-/* Force viewport positioning for all possible Smartsupp elements */
-body > div[style*="position"],
-body > div[style*="fixed"],
-html > body > div:last-child {
-  position: fixed !important;
-  bottom: 20px !important;
-  right: 20px !important;
-  top: auto !important;
-  left: auto !important;
-  z-index: 2147483647 !important;
+/* Prefer composite-only transitions on touch devices to avoid layout/reflow */
+@media (hover: none) and (pointer: coarse) {
+  /* Narrow transition properties when developers used transition-all */
+  [class*="transition-all"],
+  .transition-all {
+    transition-property: transform, opacity, background-color, color, box-shadow, border-color !important;
+    transition-duration: 180ms !important;
+    transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1) !important;
+  }
+
+  /* Reduce heavy blurs on mobile for smoother scrolling */
+  .backdrop-blur-sm { --tw-backdrop-blur: blur(2px) !important; }
+  .backdrop-blur-md { --tw-backdrop-blur: blur(4px) !important; }
+  .backdrop-blur-lg { --tw-backdrop-blur: blur(6px) !important; }
+
+  /* Tame expensive shadows on mobile */
+  .shadow-xl, .shadow-2xl, .shadow-3xl, .hover\:shadow-xl:hover, .hover\:shadow-2xl:hover, .hover\:shadow-3xl:hover {
+    box-shadow: 0 6px 18px -8px rgba(0,0,0,0.18) !important;
+  }
+
+  /* Ensure transform-based effects are GPU-accelerated */
+  .group-hover\:scale-110:hover,
+  .group-hover\:scale-105:hover,
+  [class*="hover:scale"],
+  [class*="transition-"],
+  [class*="animate-"] {
+    transform: translateZ(0) !important;
+    will-change: transform, opacity !important;
+    backface-visibility: hidden !important;
+  }
+
+  /* Softer image reveal to avoid filter thrash */
+  .animate-image-reveal {
+    animation-duration: 420ms !important;
+    animation-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1) !important;
+  }
+
+  /* Prefer color/opacity transitions for badges and buttons */
+  .transition-colors {
+    transition-property: background-color, color, border-color, opacity !important;
+    transition-duration: 160ms !important;
+  }
 }
 
-/* Override any parent container positioning */
-* {
-  /* Ensure no parent container affects Smartsupp positioning */
+/* High refresh devices: slightly faster but still natural durations */
+[data-high-refresh="true"] {
+  --ios-duration-fast: 140ms;
+  --ios-duration: 200ms;
 }
 
-/* Specific override for any container that might affect the chat widget */
-.container,
-.container-fluid,
-main,
-#root,
-#app {
-  position: relative !important;
+/* While actively scrolling: reduce costly effects to prevent flicker/jank */
+[data-scrolling="true"] .glass-card,
+[data-scrolling="true"] .card-hover,
+[data-scrolling="true"] .hover-lift,
+[data-scrolling="true"] .hover-scale-gentle,
+[data-scrolling="true"] .modern-card {
+  transition-duration: 120ms !important;
+  box-shadow: 0 6px 18px -8px rgba(0,0,0,0.12) !important;
 }
 
-/* Ensure Smartsupp is always on top and positioned relative to viewport */
-#chat-application,
-[data-smartsupp-widget],
-.smartsupp-widget,
-iframe[src*="smartsupp"] {
-  position: fixed !important;
-  bottom: 20px !important;
-  right: 20px !important;
-  top: auto !important;
-  left: auto !important;
-  z-index: 2147483647 !important;
-  transform: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
+[data-scrolling="true"] .backdrop-blur-sm,
+[data-scrolling="true"] .backdrop-blur-md,
+[data-scrolling="true"] .backdrop-blur-lg {
+  --tw-backdrop-blur: blur(2px) !important;
 }
 
-/* Enhanced Performance Optimizations */
+[data-scrolling="true"] img,
+[data-scrolling="true"] video {
+  will-change: transform, opacity !important;
+  transform: translateZ(0) !important;
+  backface-visibility: hidden !important;
+}
 
-/* Optimized filter panel animations */
+/* Filter panel smoothness and flicker-free transitions */
 [data-filter-panel] {
-  contain: layout style paint;
-  will-change: transform, opacity, visibility;
+  will-change: transform, opacity;
   transform: translateZ(0);
-}
-
-/* Smooth filter section animations */
-.filter-section {
-  contain: layout style;
-  will-change: transform, opacity;
-}
-
-/* Performance-optimized car card rendering */
-.car-card {
+  backface-visibility: hidden;
   contain: layout style paint;
-  will-change: transform, opacity, box-shadow;
+  transition-property: transform, opacity, background-color, box-shadow, border-color;
+  transition-duration: var(--ios-duration, 220ms);
+  transition-timing-function: var(--ios-ease, cubic-bezier(0.25, 0.1, 0.25, 1));
 }
 
-/* Performance-optimized images */
-.optimized-image {
-  content-visibility: auto;
-  contain-intrinsic-size: 280px 160px;
-  will-change: transform, opacity;
+/* Desktop sidebar variant keeps crisp shadows without overdraw */
+@media (hover: hover) and (pointer: fine) {
+  [data-filter-panel]:not(.mobile-filter-panel) {
+    box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.18);
+  }
 }
 
-/* Enhanced smooth scrolling */
-.smooth-scroll-container {
-  scroll-behavior: smooth;
+/* Mobile sheet variant: softer shadows, smooth transform/opacity transitions */
+.mobile-filter-panel[data-filter-panel] {
+  transition-property: transform, opacity, background-color, backdrop-filter;
+  transition-duration: var(--ios-duration, 220ms);
+  transition-timing-function: var(--ios-ease, cubic-bezier(0.25, 0.1, 0.25, 1));
+  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.22);
+}
+
+/* Keep inner content smooth and independently scrollable */
+[data-filter-panel] .mobile-filter-content,
+[data-filter-panel] .filter-content {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  contain: layout style;
+  contain: content;
 }
 
-/* Optimized button interactions */
-.performance-button {
-  contain: layout style paint;
-  will-change: transform, background-color, box-shadow;
-  transform: translateZ(0);
+/* While touching or scrolling, temporarily reduce expensive visuals */
+[data-touching="true"] [data-filter-panel],
+[data-scrolling="true"] [data-filter-panel] {
+  box-shadow: 0 6px 18px -8px rgba(0, 0, 0, 0.16) !important;
 }
 
-/* Reduced motion optimizations */
-@media (prefers-reduced-motion: reduce) {
-  .performance-optimized,
-  .car-card,
-  .filter-section,
-  [data-filter-panel] {
-    will-change: auto;
-    transform: none;
-  }
-  
-  .smooth-scroll-container {
-    scroll-behavior: auto;
-  }
-}
-
-/* High refresh rate optimizations */
-@media (min-resolution: 2dppx) {
-  .performance-optimized,
-  .car-card,
-  .filter-section {
-    transition-duration: calc(var(--transition-fast, 0.15s) * 0.8);
-  }
+[data-touching="true"] [data-filter-panel].mobile-filter-panel,
+[data-scrolling="true"] [data-filter-panel].mobile-filter-panel {
+  --tw-backdrop-blur: blur(6px) !important;
 }
 
