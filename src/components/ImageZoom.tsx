@@ -146,13 +146,14 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
             </>
           )}
 
-          {/* Controls */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50 flex gap-2 bg-black/70 rounded-lg p-2 border border-white/20 backdrop-blur-sm">
+          {/* Controls - Improved design and accessibility */}
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50 flex gap-1 bg-black/80 rounded-xl p-2 border border-white/30 backdrop-blur-md shadow-2xl">
             <Button
               variant="ghost"
               size="icon"
               onClick={handleZoomOut}
-              className="text-white hover:bg-white/20 touch-manipulation"
+              className="text-white hover:bg-white/20 touch-manipulation h-10 w-10"
+              aria-label="Zoom out"
             >
               <ZoomOut className="h-5 w-5" />
             </Button>
@@ -160,7 +161,8 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
               variant="ghost"
               size="icon"
               onClick={handleZoomIn}
-              className="text-white hover:bg-white/20 touch-manipulation"
+              className="text-white hover:bg-white/20 touch-manipulation h-10 w-10"
+              aria-label="Zoom in"
             >
               <ZoomIn className="h-5 w-5" />
             </Button>
@@ -168,14 +170,16 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
               variant="ghost"
               size="icon"
               onClick={handleRotate}
-              className="text-white hover:bg-white/20 touch-manipulation"
+              className="text-white hover:bg-white/20 touch-manipulation h-10 w-10"
+              aria-label="Rotate image"
             >
               <RotateCw className="h-5 w-5" />
             </Button>
             <Button
               variant="ghost"
               onClick={handleReset}
-              className="text-white hover:bg-white/20 px-3 touch-manipulation hidden sm:flex"
+              className="text-white hover:bg-white/20 px-4 touch-manipulation h-10 text-sm font-medium"
+              aria-label="Reset zoom and rotation"
             >
               Reset
             </Button>
@@ -194,11 +198,11 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
             draggable={false}
           />
 
-          {/* Image counter and zoom indicator */}
-          <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-2 rounded-lg flex flex-col gap-1 text-sm border border-white/20 backdrop-blur-sm">
-            <div className="font-semibold">{Math.round(zoom * 100)}%</div>
+          {/* Image counter and zoom indicator - Improved design */}
+          <div className="absolute top-4 left-4 bg-black/80 text-white px-4 py-3 rounded-xl flex flex-col gap-1 text-sm border border-white/30 backdrop-blur-md shadow-xl">
+            <div className="font-bold text-base">{Math.round(zoom * 100)}%</div>
             {images.length > 1 && (
-              <div className="text-xs opacity-80">{currentIndex + 1} / {images.length}</div>
+              <div className="text-xs opacity-90 font-medium">{currentIndex + 1} / {images.length}</div>
             )}
           </div>
 

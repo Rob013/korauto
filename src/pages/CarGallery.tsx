@@ -92,55 +92,68 @@ const CarGallery = () => {
         </div>
       </div>
 
-      {/* Gallery Grid */}
+      {/* Gallery Grid - Improved responsive design */}
       <div className="container-responsive py-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-foreground mb-2">All Images</h2>
+          <p className="text-muted-foreground">Click any image to view in full size</p>
+        </div>
+        
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
           {images.map((image, index) => (
             <div
               key={index}
-              className="group relative aspect-square bg-muted rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300"
+              className="group relative aspect-square bg-muted rounded-lg overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 hover:scale-105"
               onClick={() => handleImageClick(index)}
             >
               <img
                 src={image}
                 alt={`${carTitle} - Image ${index + 1}`}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                className="w-full h-full object-cover transition-transform duration-300"
                 onError={(e) => {
                   e.currentTarget.src = "/placeholder.svg";
                 }}
+                loading="lazy"
               />
               
-              {/* Image overlay with controls */}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
+              {/* Image overlay with improved controls */}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-center justify-center">
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex gap-2">
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="bg-white/90 hover:bg-white text-black"
+                    className="bg-white/95 hover:bg-white text-black shadow-lg hover:shadow-xl"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleImageClick(index);
                     }}
+                    aria-label={`View image ${index + 1} in full size`}
                   >
                     <ZoomIn className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="bg-white/90 hover:bg-white text-black"
+                    className="bg-white/95 hover:bg-white text-black shadow-lg hover:shadow-xl"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDownloadImage(image, index);
                     }}
+                    aria-label={`Download image ${index + 1}`}
                   >
                     <Download className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
               
-              {/* Image number badge */}
-              <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+              {/* Image number badge - Improved styling */}
+              <div className="absolute top-2 left-2 bg-black/80 text-white text-xs px-2 py-1 rounded-md font-medium backdrop-blur-sm">
                 {index + 1}
+              </div>
+              
+              {/* Loading indicator */}
+              <div className="absolute inset-0 bg-muted/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
               </div>
             </div>
           ))}

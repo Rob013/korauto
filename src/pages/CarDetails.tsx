@@ -1074,6 +1074,8 @@ const CarDetails = memo(() => {
   // Handler for opening gallery images in a new page
   const handleGalleryClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    // Track gallery view
+    trackPageView(`/car/${lot}/gallery`);
     // Navigate to gallery page with all images
     navigate(`/car/${lot}/gallery`, {
       state: {
@@ -1182,66 +1184,112 @@ const CarDetails = memo(() => {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-6 lg:gap-8">
           {/* Left Column - Images and Gallery */}
           <div className="space-y-6 animate-fade-in" style={{animationDelay: '100ms'}}>
-            {/* Main Image with modern styling - Compact size */}
+            {/* Main Image with modern styling - Improved responsive design */}
             <Card className="border-0 shadow-2xl overflow-hidden rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
               <CardContent className="p-0">
-                <div ref={imageContainerRef} className="car-details-hero relative w-full aspect-[16/9] md:aspect-[16/10] lg:aspect-[16/9] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer" onClick={(e) => handleGalleryClick(e)} data-fancybox="gallery">
-                  {images.length > 0 ? <img src={images[selectedImageIndex]} alt={`${car.year} ${car.make} ${car.model}`} className="w-full h-full object-contain transition-all duration-500 group-hover:scale-105" onError={e => {
-                  e.currentTarget.src = "/placeholder.svg";
-                  setIsPlaceholderImage(true);
-                }} onLoad={e => {
-                  // Reset placeholder state when a real image loads successfully
-                  if (!e.currentTarget.src.includes("/placeholder.svg")) {
-                    setIsPlaceholderImage(false);
-                  }
-                }} /> : <div className="w-full h-full flex items-center justify-center">
+                <div 
+                  ref={imageContainerRef} 
+                  className="relative w-full aspect-[4/3] sm:aspect-[16/10] lg:aspect-[16/9] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer" 
+                  onClick={(e) => handleGalleryClick(e)} 
+                  data-fancybox="gallery"
+                >
+                  {/* Main Image with improved loading states */}
+                  {images.length > 0 ? (
+                    <img 
+                      src={images[selectedImageIndex]} 
+                      alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`} 
+                      className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105" 
+                      onError={e => {
+                        e.currentTarget.src = "/placeholder.svg";
+                        setIsPlaceholderImage(true);
+                      }} 
+                      onLoad={e => {
+                        if (!e.currentTarget.src.includes("/placeholder.svg")) {
+                          setIsPlaceholderImage(false);
+                        }
+                      }}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
                       <Car className="h-16 w-16 text-muted-foreground" />
-                    </div>}
+                    </div>
+                  )}
                   
-                  {/* Navigation arrows with smooth animations */}
-                  {images.length > 1 && <>
-                      <Button variant="ghost" size="sm" className="absolute left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white rounded-full w-12 h-12 p-0 hidden sm:flex z-10 hover:scale-110 hover:-translate-x-1" onClick={e => {
-                    e.stopPropagation();
-                    goToPrevious();
-                  }}>
-                        <ChevronLeft className="h-6 w-6" />
+                  {/* Navigation arrows - Improved positioning and visibility */}
+                  {images.length > 1 && (
+                    <>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110" 
+                        onClick={e => {
+                          e.stopPropagation();
+                          goToPrevious();
+                        }}
+                        aria-label="Previous image"
+                      >
+                        <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
                       </Button>
                       
-                      <Button variant="ghost" size="sm" className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white rounded-full w-12 h-12 p-0 hidden sm:flex z-10 hover:scale-110 hover:translate-x-1" onClick={e => {
-                    e.stopPropagation();
-                    goToNext();
-                  }}>
-                        <ChevronRight className="h-6 w-6" />
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110" 
+                        onClick={e => {
+                          e.stopPropagation();
+                          goToNext();
+                        }}
+                        aria-label="Next image"
+                      >
+                        <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
                       </Button>
-                    </>}
+                    </>
+                  )}
                   
-
-                  
-                  {/* Mobile gallery counter with preview - MOBILE ONLY */}
-                  {images.length > 1 && <div className="mobile-gallery-counter md:hidden" onClick={handleGalleryClick} style={{
-                  cursor: 'pointer'
-                }}>
-                    <div className="mobile-gallery-preview">
-                      <img src={images[Math.min(selectedImageIndex, images.length - 1)]} alt="Preview" />
+                  {/* Image counter and gallery button - Improved mobile design */}
+                  {images.length > 1 && (
+                    <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                      {/* Mobile gallery button */}
+                      <button
+                        onClick={handleGalleryClick}
+                        className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
+                        aria-label={`View all ${images.length} images`}
+                      >
+                        <Camera className="h-3 w-3" />
+                        {selectedImageIndex + 1}/{images.length}
+                      </button>
+                      
+                      {/* Desktop gallery button */}
+                      <button
+                        onClick={handleGalleryClick}
+                        className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
+                        aria-label={`View all ${images.length} images`}
+                      >
+                        <Camera className="h-4 w-4" />
+                        View Gallery ({images.length})
+                      </button>
                     </div>
-                    <div className="flex flex-col items-center text-center">
-                      <span className="text-xs font-semibold">{selectedImageIndex + 1}/{Math.min(images.length, 20)}</span>
-                      <span className="text-[10px] opacity-80">Shiko të gjitha</span>
-                    </div>
-                  </div>}
+                  )}
                   
-                  {/* Swipe hint for mobile */}
-                  {images.length > 1 && <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white text-xs bg-black/50 rounded sm:hidden my-[26px] mx-0 px-0 py-0">
-                      Swipe to see more photos
-                    </div>}
+                  {/* Lot number badge - Improved positioning */}
+                  {car.lot && (
+                    <Badge className="absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg">
+                      Lot #{car.lot}
+                    </Badge>
+                  )}
                   
-                  {car.lot && <Badge className="absolute top-4 right-4 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-full hover-scale">
-                      {car.lot}
-                    </Badge>}
-                  {/* Zoom icon with animation */}
-                  <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md rounded-full p-3 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110">
-                    <Expand className="h-5 w-5 text-white" />
+                  {/* Zoom icon - Improved positioning and visibility */}
+                  <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110">
+                    <Expand className="h-4 w-4 text-white" />
                   </div>
+                  
+                  {/* Loading indicator */}
+                  {isPlaceholderImage && (
+                    <div className="absolute inset-0 bg-muted/50 flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -1261,15 +1309,44 @@ const CarDetails = memo(() => {
               </div>
             </div>
 
-            {/* Image Thumbnails - Modern Grid */}
-            {images.length > 1 && <div className="car-details-thumbnails hidden md:grid grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 2xl:grid-cols-16 gap-3 animate-fade-in" style={{animationDelay: '300ms'}}>
-                {images.slice(0, 24).map((image, index) => <button key={index} onClick={() => setSelectedImageIndex(index)} aria-label={`Shiko imazhin ${index + 1} nga ${images.length}`} className={`relative aspect-[4/3] bg-muted rounded-xl overflow-hidden border-2 transition-all duration-300 hover-scale ${selectedImageIndex === index ? "border-primary shadow-xl ring-2 ring-primary/50 scale-105" : "border-border hover:border-primary/70 hover:shadow-lg"}`}>
-                    <img src={image} alt={`View ${index + 1}`} className="w-full h-full object-cover transition-transform duration-300" onError={e => {
-                e.currentTarget.src = "/placeholder.svg";
-              }} />
-                    {selectedImageIndex === index && <div className="absolute inset-0 bg-primary/20 backdrop-blur-[1px]"></div>}
-                  </button>)}
-              </div>}
+            {/* Image Thumbnails - Improved responsive grid */}
+            {images.length > 1 && (
+              <div className="hidden md:block animate-fade-in" style={{animationDelay: '300ms'}}>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold text-foreground">Gallery</h3>
+                  <span className="text-sm text-muted-foreground">{images.length} images</span>
+                </div>
+                <div className="grid grid-cols-6 sm:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 2xl:grid-cols-16 gap-2">
+                  {images.slice(0, 24).map((image, index) => (
+                    <button 
+                      key={index} 
+                      onClick={() => setSelectedImageIndex(index)} 
+                      aria-label={`View image ${index + 1} of ${images.length}`}
+                      className={`relative aspect-square bg-muted rounded-lg overflow-hidden border-2 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50 ${
+                        selectedImageIndex === index 
+                          ? "border-primary shadow-lg ring-2 ring-primary/50 scale-105" 
+                          : "border-border hover:border-primary/70 hover:shadow-md"
+                      }`}
+                    >
+                      <img 
+                        src={image} 
+                        alt={`Thumbnail ${index + 1}`} 
+                        className="w-full h-full object-cover transition-transform duration-300" 
+                        onError={e => {
+                          e.currentTarget.src = "/placeholder.svg";
+                        }}
+                        loading="lazy"
+                      />
+                      {selectedImageIndex === index && (
+                        <div className="absolute inset-0 bg-primary/20 backdrop-blur-[1px] flex items-center justify-center">
+                          <div className="w-2 h-2 bg-primary rounded-full"></div>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Vehicle Specifications - Modern Card */}
             <Card id="specifications" className="border-0 shadow-2xl rounded-2xl mobile-specs-card bg-gradient-to-br from-card to-card/80 backdrop-blur-sm overflow-hidden animate-fade-in" style={{animationDelay: '400ms'}}>
