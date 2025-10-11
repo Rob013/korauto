@@ -87,6 +87,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     loadMore,
   } = useSecureAuctionAPI();
   const { convertUSDtoEUR, exchangeRate } = useCurrencyAPI();
+  // Optimistic models for instant mobile feedback
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+  import type { Model } from '@/hooks/useSecureAuctionAPI';
+  import { createFallbackModels } from '@/hooks/useSecureAuctionAPI';
   
   // Global sorting hook
   const {
@@ -704,7 +708,18 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
         return;
       }
       
-      // Fetch models IMMEDIATELY (synchronously) for instant update
+      // Optimistically show fallback models instantly (replaced when API returns)
+      const selectedManufacturer = manufacturers.find(m => m.id.toString() === manufacturerId);
+      if (selectedManufacturer?.name) {
+        try {
+          const optimisticModels: Model[] = createFallbackModels(selectedManufacturer.name);
+          if (optimisticModels && optimisticModels.length > 0) {
+            setModels(optimisticModels);
+          }
+        } catch {}
+      }
+
+      // Fetch models in parallel
       const modelPromise = fetchModels(manufacturerId);
       
       // Fetch cars with current sort preference

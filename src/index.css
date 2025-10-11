@@ -908,6 +908,19 @@ All colors MUST be HSL.
     }
   }
 
+  /* Mobile dropdown/content inside filter panel: reduce transform thrash */
+  @media (hover: none) and (pointer: coarse) {
+    [data-filter-panel] .SelectContent,
+    [data-filter-panel] .SelectItem,
+    [data-filter-panel] .SelectTrigger {
+      will-change: transform, opacity;
+      transform: translateZ(0);
+      transition-property: opacity, background-color, color, border-color, box-shadow;
+      transition-duration: var(--ios-duration-fast, 160ms);
+      transition-timing-function: var(--ios-ease, cubic-bezier(0.25, 0.1, 0.25, 1));
+    }
+  }
+
   /* Glass panel for filter and details sections with gradient */
   .glass-panel {
     background: linear-gradient(135deg,
