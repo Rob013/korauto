@@ -2,7 +2,7 @@
 import { useMemo } from 'react';
 import { filterCarsWithRealPricing } from '@/utils/carPricing';
 
-export type SortOption = 'recently_added' | 'oldest_first' | 'price_low' | 'price_high' | 'year_new' | 'year_old' | 'mileage_low' | 'mileage_high' | 'make_az' | 'make_za' | 'popular';
+export type SortOption = '' | 'recently_added' | 'oldest_first' | 'price_low' | 'price_high' | 'year_new' | 'year_old' | 'mileage_low' | 'mileage_high' | 'make_az' | 'make_za' | 'popular';
 
 // Use a generic type that works with both secure API cars and other car types
 interface FlexibleCar {
@@ -66,6 +66,11 @@ export const useSortedCars = (cars: FlexibleCar[], sortBy: SortOption) => {
 
     // Filter out cars without real pricing data first
     const carsWithRealPricing = filterCarsWithRealPricing(cars);
+
+    // If no sort is selected, return as-is (API default order)
+    if (!sortBy || sortBy === '') {
+      return carsWithRealPricing;
+    }
 
     const sorted = [...carsWithRealPricing].sort((a, b) => {
       const aLot = a.lots?.[0];
@@ -140,8 +145,9 @@ export const useSortedCars = (cars: FlexibleCar[], sortBy: SortOption) => {
   }, [cars, sortBy]);
 };
 
-// EncarCatalog-specific sort options that match NewEncarCatalog exactly
+// EncarCatalog-specific sort options
 export const getEncarSortOptions = () => [
+  { value: '', label: 'No Sorting' },
   { value: 'recently_added', label: 'Recently Added' },
   { value: 'oldest_first', label: 'Oldest First' },
   { value: 'price_low', label: 'Price: Low to High' },

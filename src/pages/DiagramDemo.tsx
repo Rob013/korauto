@@ -64,7 +64,7 @@ const DiagramDemo = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
-      <div className="container mx-auto py-8 px-4 max-w-7xl">
+      <div className="container-responsive py-8 max-w-7xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Diagrami i Inspektimit të Automjetit

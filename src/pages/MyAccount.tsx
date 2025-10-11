@@ -32,9 +32,19 @@ const MyAccount = () => {
 
       setUser(user);
 
-      // Check if user is admin
-      const isAdminEmail = user.email === '0013rob@gmail.com';
-      setIsAdmin(isAdminEmail);
+      // Check if user is admin using server-side validation
+      try {
+        const { data: adminCheck, error: adminError } = await supabase.rpc('is_admin');
+        if (!adminError) {
+          setIsAdmin(adminCheck || false);
+        } else {
+          console.error('Admin check error:', adminError);
+          setIsAdmin(false);
+        }
+      } catch (error) {
+        console.error('Admin check failed:', error);
+        setIsAdmin(false);
+      }
 
       // Get user profile
       const { data: profileData } = await supabase
@@ -179,7 +189,7 @@ const MyAccount = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Admin Dashboard Button - Only for 0013rob@gmail.com */}
+              {/* Admin Dashboard Button - Only for admins */}
               {isAdmin && (
                 <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
                   <h3 className="font-semibold text-primary mb-2 flex items-center gap-2">

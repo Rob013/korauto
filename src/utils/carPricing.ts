@@ -25,10 +25,42 @@ export const filterCarsWithRealPricing = <T>(cars: T[]): T[] => {
 };
 
 /**
+ * Calculate the final price in EUR: convert USD base price to EUR and add markup
+ * @param basePriceUSD - The base price in USD from the API
+ * @param usdToEurRate - The USD to EUR conversion rate
+ * @returns Final price in EUR (base price converted + 2200 EUR markup)
+ */
+export const calculateFinalPriceEUR = (basePriceUSD: number, usdToEurRate: number): number => {
+  const basePriceEUR = Math.round(basePriceUSD * usdToEurRate);
+  return basePriceEUR + 2200; // Add 2200 EUR markup
+};
+
+/**
  * Check if a calculated price is the default fallback price
- * Default is 25000 USD + 2200 markup = 27200 USD
- * When converted to EUR with default rate 0.92: 27200 * 0.92 = 25024 EUR
+ * Default is 25000 USD converted to EUR + markup (25000 * 0.85 + 2200 = 23450 EUR)
  */
 export const isDefaultPrice = (priceEUR: number): boolean => {
-  return priceEUR === 25024;
+  return priceEUR === 23450; // 25000 USD * 0.85 + 2200 EUR markup
+};
+
+/**
+ * Check if a car has buy_now pricing specifically (not fallback prices)
+ * Only cars with real buy_now prices should be displayed
+ */
+export const hasBuyNowPricing = (car: any): boolean => {
+  // Check if car has lots with buy_now pricing data
+  if (car.lots && Array.isArray(car.lots) && car.lots.length > 0) {
+    const lot = car.lots[0];
+    return !!(lot.buy_now && lot.buy_now > 0);
+  }
+  
+  // Check direct buy_now field (for cached cars or different data structures)
+  return !!(car.buy_now && car.buy_now > 0);
+};
+
+/**
+ * Filter out cars that don't have buy_now pricing data
+ */
+export const filterCarsWithBuyNowPricing = <T>(cars: T[]): T[] => {
+  return cars.filter(hasBuyNowPricing);
 };

@@ -27,10 +27,11 @@ import {
   XCircle,
 } from "lucide-react";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import { getStatusBadgeConfig } from "@/utils/statusBadgeUtils";
 interface CarCardProps {
   id: string;
   make: string;
@@ -335,7 +336,7 @@ const CarCard = ({
     });
     return () => subscription.unsubscribe();
   }, [id]);
-  const handleFavoriteToggle = async (e: React.MouseEvent) => {
+  const handleFavoriteToggle = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user) {
       toast({
@@ -383,9 +384,9 @@ const CarCard = ({
         variant: "destructive",
       });
     }
-  };
+  }, [user, isFavorite, id, make, model, year, price, image, toast, navigate]);
 
-  const handleCardClick = () => {
+  const handleCardClick = useCallback(() => {
     // Save current page and scroll position before navigating
     const scrollData = {
       scrollTop: window.scrollY,
@@ -402,7 +403,7 @@ const CarCard = ({
     setPreviousPage(window.location.pathname + window.location.search);
     // Open car details in new tab
     window.open(`/car/${lot}`, '_blank');
-  };
+  }, [id, lot, setPreviousPage]);
 
   // Don't render the component if it should be hidden
   if (hideSoldCar) {
@@ -411,20 +412,22 @@ const CarCard = ({
 
   return (
     <div
-      className="glass-card card-hover overflow-hidden cursor-pointer group touch-manipulation relative rounded-lg"
+      className="glass-card card-hover overflow-hidden cursor-pointer group touch-manipulation relative rounded-lg performance-card animation-120fps"
       onClick={handleCardClick}
       style={{
         // Prevent layout shifts by setting fixed dimensions
-        minHeight: '320px',
-        aspectRatio: '280/320'
+        minHeight: '360px',
+        aspectRatio: '280/360',
+        willChange: 'transform',
+        transform: 'translateZ(0)'
       }}
     >
-      <div className="relative h-40 bg-muted overflow-hidden">
+      <div className="relative h-56 bg-muted overflow-hidden">
         {image ? (
           <OptimizedImage
             src={image}
             alt={`${year} ${make} ${model}`}
-            className="w-full h-full group-hover:scale-110 transition-transform duration-500 ease-out"
+            className="w-full h-full group-hover:scale-105 transition-transform duration-300 ease-out"
             width={280}
             priority={false}
             enableLazyLoad={true}
@@ -433,26 +436,33 @@ const CarCard = ({
         ) : (
           <div 
             className="w-full h-full flex items-center justify-center bg-muted"
-            style={{ aspectRatio: '280/160' }}
+            style={{ aspectRatio: '280/192' }}
           >
             <Car className="h-16 w-16 text-muted-foreground" />
           </div>
         )}
-        {/* Sold Out Badge - Takes priority over lot number */}
-        {status === 3 || sale_status === "sold" ? (
-          <div className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded text-xs font-bold shadow-lg z-10">
-            E SHITUR
-          </div>
-        ) : (
-          lot && (
+        {/* Status Badge - Takes priority over lot number */}
+        {(() => {
+          const statusBadge = getStatusBadgeConfig({ status, sale_status });
+          
+          if (statusBadge.show) {
+            return (
+              <div className={`absolute top-2 left-2 ${statusBadge.className} px-3 py-1 rounded text-xs font-bold shadow-lg z-10`}>
+                {statusBadge.text}
+              </div>
+            );
+          }
+          
+          // Show lot number if no status badge and lot exists
+          return lot ? (
             <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-semibold">
               Kodi #{lot}
             </div>
-          )
-        )}
+          ) : null;
+        })()}
       </div>
 
-      <div className="p-3 flex flex-col flex-1" style={{ minHeight: '160px' }}>
+      <div className="p-3 flex flex-col flex-1" style={{ minHeight: '168px' }}>
         <div className="mb-2">
           <h3 className="text-base font-semibold text-foreground line-clamp-1" style={{ minHeight: '1.5rem' }}>
             {year} {make} {model}
@@ -494,10 +504,8 @@ const CarCard = ({
 
         {/* Compact Pricing and Action - Push to bottom */}
         <div className="space-y-2 mt-auto">
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-bold text-primary">
-              €{price.toLocaleString()}
-            </span>
+          {/* Favorite button row */}
+          <div className="flex items-center justify-end">
             <Button
               size="sm"
               variant="ghost"
@@ -512,7 +520,13 @@ const CarCard = ({
               />
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">Deri ne portin e Durresit</p>
+          {/* Price on bottom left with text on the right */}
+          <div className="flex items-end justify-between">
+            <span className="text-lg font-bold text-primary">
+              €{price.toLocaleString()}
+            </span>
+            <p className="text-xs text-muted-foreground">deri ne portin e Durrësit</p>
+          </div>
         </div>
 
         <div className="text-center pt-2 border-t border-border/50">
@@ -522,4 +536,4 @@ const CarCard = ({
     </div>
   );
 };
-export default CarCard;
+export default memo(CarCard);

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Session } from "@supabase/supabase-js";
+import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,49 +14,28 @@ const AuthPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [showResendConfirmation, setShowResendConfirmation] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Load saved email if remember me was checked
-    const savedEmail = localStorage.getItem('rememberedEmail');
-    const savedRememberMe = localStorage.getItem('rememberMe') === 'true';
-    if (savedEmail && savedRememberMe) {
-      setEmail(savedEmail);
-      setRememberMe(true);
-    }
+    // Check if user is already logged in
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getUser();
 
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        // Auto redirect if user is authenticated
-        if (session?.user) {
-          navigate('/');
-        }
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
-      
-      // Auto redirect if user is authenticated
-      if (session?.user) {
-        navigate('/');
-      }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, []);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,6 +93,15 @@ const AuthPage = () => {
     setShowResendConfirmation(false);
 
     try {
+      // Update Supabase client configuration based on remember me
+      const clientConfig = {
+        auth: {
+          storage: localStorage,
+          persistSession: rememberMe,
+          autoRefreshToken: rememberMe,
+        }
+      };
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -133,21 +121,32 @@ const AuthPage = () => {
         throw new Error('Ju lutemi konfirmoni emailin tuaj përpara se të hyni.');
       }
 
-      // Handle remember me functionality
+      // Store remember me preference
       if (rememberMe) {
-        localStorage.setItem('rememberedEmail', email);
         localStorage.setItem('rememberMe', 'true');
       } else {
-        localStorage.removeItem('rememberedEmail');
         localStorage.removeItem('rememberMe');
+        // For sessions that should not be remembered, we'll use sessionStorage
+        sessionStorage.setItem('tempSession', 'true');
       }
 
       toast({
-        title: "Mirë se erdhe! 🎉",
-        description: "U loguat me sukses",
+        title: "Mirë se erdhët përsëri!",
+        description: rememberMe ? "Ju do të mbeteni të lidhur." : "Hyrja u krye me sukses.",
       });
-
-      // Navigation will be handled by the auth state change listener
+      
+      // Check if user is admin using server-side validation and redirect accordingly
+      try {
+        const { data: adminCheck, error: adminError } = await supabase.rpc('is_admin');
+        if (!adminError && adminCheck) {
+          navigate('/admin');
+        } else {
+          navigate('/');
+        }
+      } catch (error) {
+        console.error('Admin check failed:', error);
+        navigate('/');
+      }
     } catch (error: any) {
       toast({
         title: "Hyrja Dështoi",
@@ -272,21 +271,19 @@ const AuthPage = () => {
                     required
                   />
                 </div>
-                
-                <div className="flex items-center space-x-2 mb-4">
+                <div className="flex items-center space-x-2">
                   <Checkbox 
-                    id="rememberMe" 
+                    id="remember-me" 
                     checked={rememberMe}
-                    onCheckedChange={(checked) => setRememberMe(checked === true)}
+                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
                   />
                   <label 
-                    htmlFor="rememberMe" 
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    htmlFor="remember-me" 
+                    className="text-sm text-muted-foreground cursor-pointer select-none"
                   >
-                    Remember me
+                    Më mbaj të lidhur (Mos më kërko të hyj përsëri)
                   </label>
                 </div>
-                
                 <Button type="submit" className="w-full" disabled={loading}>
                   <LogIn className="h-4 w-4 mr-2" />
                   {loading ? "Po hyni..." : "Hyni"}

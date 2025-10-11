@@ -98,7 +98,7 @@ describe('Default State vs Global Sorting', () => {
       }));
       
       // Sort all cars globally
-      mockCars.sort((a, b) => (a.lots[0].buy_now + 2200) - (b.lots[0].buy_now + 2200));
+      mockCars.sort((a, b) => (a.lots[0].buy_now) - (b.lots[0].buy_now));
       
       allCarsForSorting = mockCars;
       isSortingGlobal = true;
@@ -118,11 +118,11 @@ describe('Default State vs Global Sorting', () => {
     console.log(`Step 4: Pagination - ${totalPages} pages total`);
     
     // Verify lowest prices are on first page
-    const globalLowest = Math.min(...allCarsForSorting.map(car => car.lots[0].buy_now + 2200));
-    const globalHighest = Math.max(...allCarsForSorting.map(car => car.lots[0].buy_now + 2200));
+    const globalLowest = Math.min(...allCarsForSorting.map(car => car.lots[0].buy_now));
+    const globalHighest = Math.max(...allCarsForSorting.map(car => car.lots[0].buy_now));
     
-    const page1Prices = page1.map(car => car.lots[0].buy_now + 2200);
-    const lastPagePrices = lastPage.map(car => car.lots[0].buy_now + 2200);
+    const page1Prices = page1.map(car => car.lots[0].buy_now);
+    const lastPagePrices = lastPage.map(car => car.lots[0].buy_now);
     
     expect(page1Prices).toContain(globalLowest);
     expect(lastPagePrices).toContain(globalHighest);

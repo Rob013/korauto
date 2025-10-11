@@ -11,12 +11,6 @@ export interface FilterState {
   color?: string;
   location?: string;
   
-  // Enhanced filters for old layout
-  condition?: string; // new, used, certified
-  saleStatus?: string; // available, sold, pending
-  drivetrain?: string; // AWD, FWD, RWD, 4WD
-  doors?: string; // 2, 3, 4, 5
-  
   // Range filters
   yearMin?: number;
   yearMax?: number;
@@ -25,11 +19,6 @@ export interface FilterState {
   mileageMin?: number;
   mileageMax?: number;
   
-  // New range filters for enhanced experience
-  engineSizeMin?: number; // Engine displacement in L
-  engineSizeMax?: number;
-  accidentCountMax?: number; // Maximum accident count
-  
   // Pagination and sorting
   page?: number;
   pageSize?: number;
@@ -37,11 +26,6 @@ export interface FilterState {
   
   // Search
   search?: string;
-  
-  // Boolean filters for enhanced filtering
-  hasImages?: boolean; // Only cars with images
-  isCertified?: boolean; // Only certified cars
-  noAccidents?: boolean; // Only cars with no accident history
 }
 
 export const useFiltersFromUrl = () => {
@@ -56,32 +40,12 @@ export const useFiltersFromUrl = () => {
     bodyType: searchParams.get('bodyType') || undefined,
     color: searchParams.get('color') || undefined,
     location: searchParams.get('location') || undefined,
-    
-    // Enhanced filters
-    condition: searchParams.get('condition') || undefined,
-    saleStatus: searchParams.get('saleStatus') || undefined,
-    drivetrain: searchParams.get('drivetrain') || undefined,
-    doors: searchParams.get('doors') || undefined,
-    
-    // Range filters
     yearMin: searchParams.get('yearMin') ? parseInt(searchParams.get('yearMin')!) : undefined,
     yearMax: searchParams.get('yearMax') ? parseInt(searchParams.get('yearMax')!) : undefined,
     priceMin: searchParams.get('priceMin') ? parseInt(searchParams.get('priceMin')!) : undefined,
     priceMax: searchParams.get('priceMax') ? parseInt(searchParams.get('priceMax')!) : undefined,
     mileageMin: searchParams.get('mileageMin') ? parseInt(searchParams.get('mileageMin')!) : undefined,
     mileageMax: searchParams.get('mileageMax') ? parseInt(searchParams.get('mileageMax')!) : undefined,
-    
-    // Enhanced range filters
-    engineSizeMin: searchParams.get('engineSizeMin') ? parseFloat(searchParams.get('engineSizeMin')!) : undefined,
-    engineSizeMax: searchParams.get('engineSizeMax') ? parseFloat(searchParams.get('engineSizeMax')!) : undefined,
-    accidentCountMax: searchParams.get('accidentCountMax') ? parseInt(searchParams.get('accidentCountMax')!) : undefined,
-    
-    // Boolean filters
-    hasImages: searchParams.get('hasImages') === 'true' ? true : undefined,
-    isCertified: searchParams.get('isCertified') === 'true' ? true : undefined,
-    noAccidents: searchParams.get('noAccidents') === 'true' ? true : undefined,
-    
-    // Pagination and sorting
     page: searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1,
     pageSize: searchParams.get('pageSize') ? parseInt(searchParams.get('pageSize')!) : 20,
     sort: searchParams.get('sort') || 'price_asc',

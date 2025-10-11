@@ -135,7 +135,7 @@ describe('Catalog Sorting Fixes Validation', () => {
     
     // Step 3: Sort all cars globally
     const globalSorted = [...mockCars].sort((a, b) => 
-      (a.lots[0].buy_now + 2200) - (b.lots[0].buy_now + 2200)
+      (a.lots[0].buy_now) - (b.lots[0].buy_now)
     );
     
     console.log('Step 3: All 554 cars sorted globally by price');
@@ -151,19 +151,19 @@ describe('Catalog Sorting Fixes Validation', () => {
     console.log(`Step 4: Paginated into ${totalPages} pages`);
     
     // Step 5: Verify the fix - lowest prices on page 1, highest on last page
-    const globalLowest = Math.min(...globalSorted.map(car => car.lots[0].buy_now + 2200));
-    const globalHighest = Math.max(...globalSorted.map(car => car.lots[0].buy_now + 2200));
+    const globalLowest = Math.min(...globalSorted.map(car => car.lots[0].buy_now));
+    const globalHighest = Math.max(...globalSorted.map(car => car.lots[0].buy_now));
     
-    const page1Prices = page1.map(car => car.lots[0].buy_now + 2200);
-    const lastPagePrices = lastPage.map(car => car.lots[0].buy_now + 2200);
+    const page1Prices = page1.map(car => car.lots[0].buy_now);
+    const lastPagePrices = lastPage.map(car => car.lots[0].buy_now);
     
     // MAIN VALIDATION: Problem is fixed
     expect(page1Prices).toContain(globalLowest);  // Lowest price is on page 1
     expect(lastPagePrices).toContain(globalHighest); // Highest price is on last page
     
     // Verify proper sort order across pages
-    const lastPriceOfPage1 = page1[page1.length - 1].lots[0].buy_now + 2200;
-    const firstPriceOfPage2 = page2[0].lots[0].buy_now + 2200;
+    const lastPriceOfPage1 = page1[page1.length - 1].lots[0].buy_now;
+    const firstPriceOfPage2 = page2[0].lots[0].buy_now;
     expect(firstPriceOfPage2).toBeGreaterThanOrEqual(lastPriceOfPage1);
     
     console.log(`✅ PROBLEM FIXED:`);

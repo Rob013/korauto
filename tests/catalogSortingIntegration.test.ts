@@ -35,12 +35,12 @@ describe('Catalog Sorting Integration - Problem Scenario', () => {
 
     // Test current problematic behavior (sorting only first 50)
     const sortedFirstPageOnly = [...firstPage].sort((a, b) => 
-      (a.lots[0].buy_now + 2200) - (b.lots[0].buy_now + 2200)
+      (a.lots[0].buy_now) - (b.lots[0].buy_now)
     );
     
     // Test correct behavior (sorting all 554 cars)
     const sortedAllCars = [...allCars].sort((a, b) => 
-      (a.lots[0].buy_now + 2200) - (b.lots[0].buy_now + 2200)
+      (a.lots[0].buy_now) - (b.lots[0].buy_now)
     );
 
     // The cheapest car from all 554 cars should be different from 
@@ -51,8 +51,8 @@ describe('Catalog Sorting Integration - Problem Scenario', () => {
     // Verify that we're getting different results
     // The whole point is that the cheapest car across ALL 554 cars
     // should be the one shown first, not just the cheapest from the first 50
-    const cheapestPriceFromFirst50 = cheapestFromFirst50.lots[0].buy_now + 2200;
-    const cheapestPriceFromAll554 = cheapestFromAll554.lots[0].buy_now + 2200;
+    const cheapestPriceFromFirst50 = cheapestFromFirst50.lots[0].buy_now;
+    const cheapestPriceFromAll554 = cheapestFromAll554.lots[0].buy_now;
     
     // The cheapest price from all 554 should be <= cheapest from first 50
     expect(cheapestPriceFromAll554).toBeLessThanOrEqual(cheapestPriceFromFirst50);
@@ -62,13 +62,13 @@ describe('Catalog Sorting Integration - Problem Scenario', () => {
     expect(firstPage).toHaveLength(50);
     
     // The sorted all cars should start with the globally cheapest car
-    expect(sortedAllCars[0].lots[0].buy_now + 2200).toBe(cheapestPriceFromAll554);
+    expect(sortedAllCars[0].lots[0].buy_now).toBe(cheapestPriceFromAll554);
   });
 
   it('should maintain correct pagination after global sorting', () => {
     // Sort all 554 cars by price
     const sortedAllCars = [...mercedes554Cars].sort((a, b) => 
-      (a.lots[0].buy_now + 2200) - (b.lots[0].buy_now + 2200)
+      (a.lots[0].buy_now) - (b.lots[0].buy_now)
     );
 
     // Simulate pagination on globally sorted results
@@ -84,8 +84,8 @@ describe('Catalog Sorting Integration - Problem Scenario', () => {
     expect(lastPage).toHaveLength(4);
 
     // Verify that prices are correctly sorted across pages
-    const lastPriceOfPage1 = page1[49].lots[0].buy_now + 2200;
-    const firstPriceOfPage2 = page2[0].lots[0].buy_now + 2200;
+    const lastPriceOfPage1 = page1[49].lots[0].buy_now;
+    const firstPriceOfPage2 = page2[0].lots[0].buy_now;
     
     expect(firstPriceOfPage2).toBeGreaterThanOrEqual(lastPriceOfPage1);
   });
@@ -94,11 +94,11 @@ describe('Catalog Sorting Integration - Problem Scenario', () => {
     const testSortOptions = [
       {
         name: 'price_low',
-        sortFn: (a: any, b: any) => (a.lots[0].buy_now + 2200) - (b.lots[0].buy_now + 2200)
+        sortFn: (a: any, b: any) => (a.lots[0].buy_now) - (b.lots[0].buy_now)
       },
       {
         name: 'price_high', 
-        sortFn: (a: any, b: any) => (b.lots[0].buy_now + 2200) - (a.lots[0].buy_now + 2200)
+        sortFn: (a: any, b: any) => (b.lots[0].buy_now) - (a.lots[0].buy_now)
       },
       {
         name: 'year_new',
@@ -132,10 +132,10 @@ describe('Catalog Sorting Integration - Problem Scenario', () => {
     
     // Simulate current problematic behavior
     const firstPageCars = mercedes554Cars.slice(0, pageSize);
-    const cheapestFromFirstPageOnly = Math.min(...firstPageCars.map(car => car.lots[0].buy_now + 2200));
+    const cheapestFromFirstPageOnly = Math.min(...firstPageCars.map(car => car.lots[0].buy_now));
     
     // Simulate correct behavior (global sorting)
-    const cheapestFromAllCars = Math.min(...mercedes554Cars.map(car => car.lots[0].buy_now + 2200));
+    const cheapestFromAllCars = Math.min(...mercedes554Cars.map(car => car.lots[0].buy_now));
     
     // In a dataset of 554 cars vs 50 cars, the global minimum should typically be lower
     expect(cheapestFromAllCars).toBeLessThanOrEqual(cheapestFromFirstPageOnly);

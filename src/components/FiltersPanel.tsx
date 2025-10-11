@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { 
   X, 
   Search, 
@@ -18,11 +17,7 @@ import {
   Fuel, 
   Palette, 
   MapPin,
-  Filter,
-  Shield,
-  Camera,
-  Award,
-  AlertTriangle
+  Filter
 } from 'lucide-react';
 import { FilterState } from '@/hooks/useFiltersFromUrl';
 import { validateFilters } from '@/utils/buildQueryParams';
@@ -36,18 +31,9 @@ interface FiltersData {
   bodyTypes: Array<{ id: string; name: string; count?: number }>;
   colors: Array<{ id: string; name: string; count?: number }>;
   locations: Array<{ id: string; name: string; count?: number }>;
-  
-  // Enhanced filter data for old layout
-  conditions: Array<{ id: string; name: string; count?: number }>;
-  saleStatuses: Array<{ id: string; name: string; count?: number }>;
-  drivetrains: Array<{ id: string; name: string; count?: number }>;
-  doorCounts: Array<{ id: string; name: string; count?: number }>;
-  
-  // Range data
   yearRange: { min: number; max: number };
   priceRange: { min: number; max: number };
   mileageRange: { min: number; max: number };
-  engineSizeRange: { min: number; max: number }; // New range for engine size
 }
 
 interface FiltersPanelProps {
@@ -89,10 +75,6 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   const [yearRange, setYearRange] = useState([filters.yearMin || data.yearRange.min, filters.yearMax || data.yearRange.max]);
   const [priceRange, setPriceRange] = useState([filters.priceMin || data.priceRange.min, filters.priceMax || data.priceRange.max]);
   const [mileageRange, setMileageRange] = useState([filters.mileageMin || data.mileageRange.min, filters.mileageMax || data.mileageRange.max]);
-  const [engineSizeRange, setEngineSizeRange] = useState([
-    filters.engineSizeMin || data.engineSizeRange?.min || 1.0, 
-    filters.engineSizeMax || data.engineSizeRange?.max || 6.0
-  ]);
   const [expandedSections, setExpandedSections] = useState<string[]>(['basic']);
 
   // Debounce search term with 250ms delay as specified
@@ -109,7 +91,6 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   const debouncedYearRange = useDebounce(yearRange, 250);
   const debouncedPriceRange = useDebounce(priceRange, 250);
   const debouncedMileageRange = useDebounce(mileageRange, 250);
-  const debouncedEngineSizeRange = useDebounce(engineSizeRange, 250);
 
   useEffect(() => {
     if (debouncedYearRange[0] !== filters.yearMin || debouncedYearRange[1] !== filters.yearMax) {
@@ -137,15 +118,6 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       });
     }
   }, [debouncedMileageRange, filters.mileageMin, filters.mileageMax, data.mileageRange, onFiltersChange]);
-
-  useEffect(() => {
-    if (data.engineSizeRange && (debouncedEngineSizeRange[0] !== filters.engineSizeMin || debouncedEngineSizeRange[1] !== filters.engineSizeMax)) {
-      onFiltersChange({
-        engineSizeMin: debouncedEngineSizeRange[0] !== data.engineSizeRange.min ? debouncedEngineSizeRange[0] : undefined,
-        engineSizeMax: debouncedEngineSizeRange[1] !== data.engineSizeRange.max ? debouncedEngineSizeRange[1] : undefined,
-      });
-    }
-  }, [debouncedEngineSizeRange, filters.engineSizeMin, filters.engineSizeMax, data.engineSizeRange, onFiltersChange]);
 
   // Get available models based on selected brand
   const availableModels = useMemo(() => {
@@ -213,13 +185,13 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
     onFiltersChange({ brand: brandId, model: undefined });
   };
 
-  const toggleSection = (section: string) => {
-    setExpandedSections(prev => 
-      prev.includes(section) 
+  const toggleSection = useCallback((section: string) => {
+    setExpandedSections(prev =>
+      prev.includes(section)
         ? prev.filter(s => s !== section)
         : [...prev, section]
     );
-  };
+  }, []);
 
   const removeFilter = (key: string) => {
     switch (key) {
@@ -247,18 +219,32 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   };
 
   return (
-    <div className={cn('space-y-4', className)}>
+    <div 
+      className={cn(
+        'space-y-4 rounded-xl p-4 backdrop-blur-sm border border-border/50 shadow-lg',
+        className
+      )}
+      style={{
+        background: 'var(--gradient-filter)',
+        boxShadow: 'var(--shadow-filter)',
+      }}
+    >
       {/* Header with active filters count */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Filter className="h-5 w-5 text-primary" />
+          <Filter className="h-5 w-5 text-primary transition-transform hover:scale-110" />
           <h3 className="text-lg font-semibold">Filtrat e Kërkimit</h3>
         </div>
         <div className="flex items-center gap-2">
           {activeFiltersCount > 0 && (
-            <Badge variant="secondary">{activeFiltersCount}</Badge>
+            <Badge variant="secondary" className="animate-scale-in">{activeFiltersCount}</Badge>
           )}
-          <Button variant="outline" size="sm" onClick={onClearFilters}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onClearFilters}
+            className="transition-all duration-200 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
+          >
             <X className="h-3 w-3 mr-1" />
             Pastro të gjitha
           </Button>
@@ -267,14 +253,18 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
 
       {/* Selected filters chips */}
       {selectedFilters.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 animate-fade-in">
           {selectedFilters.map((chip) => (
-            <Badge key={chip.key} variant="default" className="flex items-center gap-1">
-              <span className="text-xs">{chip.label}: {chip.value}</span>
+            <Badge 
+              key={chip.key} 
+              variant="default" 
+              className="flex items-center gap-1 animate-scale-in bg-primary/10 hover:bg-primary/20 border border-primary/20 backdrop-blur-sm transition-all duration-200 hover:scale-105"
+            >
+              <span className="text-xs font-medium">{chip.label}: {chip.value}</span>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-auto w-auto p-0 hover:bg-transparent"
+                className="h-auto w-auto p-0 hover:bg-transparent transition-transform hover:scale-110"
                 onClick={() => removeFilter(chip.key)}
               >
                 <X className="h-3 w-3" />
@@ -286,19 +276,19 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
 
       {/* Search */}
       <div className="space-y-2">
-        <Label htmlFor="search" className="flex items-center gap-2">
+        <Label htmlFor="search" className="flex items-center gap-2 font-medium">
           <Search className="h-4 w-4" />
           Kërko
         </Label>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors" />
           <Input
             id="search"
             type="text"
             placeholder="Kërko makinat..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 bg-background/60 backdrop-blur-sm border-border/50 focus:border-primary transition-all duration-200"
           />
         </div>
       </div>
@@ -318,15 +308,25 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
         </Button>
 
         {expandedSections.includes('basic') && (
-          <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
+          <div 
+            className="space-y-4 p-3 bg-muted/30 rounded-lg"
+            style={{
+              animation: 'fadeIn 0.2s ease-out',
+              willChange: 'contents'
+            }}
+          >
             {/* Brand */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Car className="h-4 w-4" />
                 Marka
               </Label>
-              <Select value={filters.brand || ''} onValueChange={handleBrandChange}>
-                <SelectTrigger>
+              <Select 
+                key={`brand-${filters.brand || 'empty'}`}
+                value={filters.brand || ''} 
+                onValueChange={handleBrandChange}
+              >
+                <SelectTrigger className="filter-select bg-background">
                   <SelectValue placeholder="Zgjidhni markën" />
                 </SelectTrigger>
                 <SelectContent>
@@ -351,11 +351,12 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 Modeli
               </Label>
               <Select 
+                key={`model-${filters.brand || 'no-brand'}-${filters.model || 'empty'}`}
                 value={filters.model || ''} 
                 onValueChange={(value) => onFiltersChange({ model: value })}
                 disabled={!filters.brand || availableModels.length === 0}
               >
-                <SelectTrigger>
+                <SelectTrigger className="filter-select bg-background">
                   <SelectValue placeholder={!filters.brand ? "Zgjidhni markën së pari" : "Zgjidhni modelin"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -420,25 +421,38 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
         <Button
           variant="ghost"
           onClick={() => toggleSection('advanced')}
-          className="w-full justify-between p-2 h-auto"
+          className="w-full justify-between p-2 h-auto hover:bg-muted/50 backdrop-blur-sm border border-border/30 transition-all duration-200"
         >
           <div className="flex items-center gap-2">
-            <Settings className="h-4 w-4 text-primary" />
+            <Settings className="h-4 w-4 text-primary transition-transform hover:scale-110" />
             <span className="font-medium">Filtrat e Avancuar</span>
           </div>
-          {expandedSections.includes('advanced') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          {expandedSections.includes('advanced') ? 
+            <ChevronUp className="h-4 w-4 transition-transform duration-200" /> : 
+            <ChevronDown className="h-4 w-4 transition-transform duration-200" />
+          }
         </Button>
 
         {expandedSections.includes('advanced') && (
-          <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
+          <div 
+            className="space-y-4 p-3 bg-card/50 backdrop-blur-sm rounded-lg border border-border/30"
+            style={{
+              animation: 'fadeIn 0.2s ease-out',
+              willChange: 'contents'
+            }}
+          >
             {/* Fuel Type */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
+              <Label className="flex items-center gap-2 font-medium">
                 <Fuel className="h-4 w-4" />
                 Lloji i Karburantit
               </Label>
-              <Select value={filters.fuel || ''} onValueChange={(value) => onFiltersChange({ fuel: value })}>
-                <SelectTrigger>
+              <Select 
+                key={`fuel-${filters.fuel || 'empty'}`}
+                value={filters.fuel || ''} 
+                onValueChange={(value) => onFiltersChange({ fuel: value })}
+              >
+                <SelectTrigger className="filter-select bg-background">
                   <SelectValue placeholder="Zgjidhni karburantin" />
                 </SelectTrigger>
                 <SelectContent>
@@ -457,8 +471,12 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <Settings className="h-4 w-4" />
                 Transmisioni
               </Label>
-              <Select value={filters.transmission || ''} onValueChange={(value) => onFiltersChange({ transmission: value })}>
-                <SelectTrigger>
+              <Select 
+                key={`transmission-${filters.transmission || 'empty'}`}
+                value={filters.transmission || ''} 
+                onValueChange={(value) => onFiltersChange({ transmission: value })}
+              >
+                <SelectTrigger className="filter-select bg-background">
                   <SelectValue placeholder="Zgjidhni transmisionin" />
                 </SelectTrigger>
                 <SelectContent>
@@ -499,8 +517,12 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <Car className="h-4 w-4" />
                 Lloji i Trupit
               </Label>
-              <Select value={filters.bodyType || ''} onValueChange={(value) => onFiltersChange({ bodyType: value })}>
-                <SelectTrigger>
+              <Select 
+                key={`bodyType-${filters.bodyType || 'empty'}`}
+                value={filters.bodyType || ''} 
+                onValueChange={(value) => onFiltersChange({ bodyType: value })}
+              >
+                <SelectTrigger className="filter-select bg-background">
                   <SelectValue placeholder="Zgjidhni llojin e trupit" />
                 </SelectTrigger>
                 <SelectContent>
@@ -519,8 +541,12 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <Palette className="h-4 w-4" />
                 Ngjyra
               </Label>
-              <Select value={filters.color || ''} onValueChange={(value) => onFiltersChange({ color: value })}>
-                <SelectTrigger>
+              <Select 
+                key={`color-${filters.color || 'empty'}`}
+                value={filters.color || ''} 
+                onValueChange={(value) => onFiltersChange({ color: value })}
+              >
+                <SelectTrigger className="filter-select bg-background">
                   <SelectValue placeholder="Zgjidhni ngjyrën" />
                 </SelectTrigger>
                 <SelectContent>
@@ -539,8 +565,12 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <MapPin className="h-4 w-4" />
                 Vendndodhja
               </Label>
-              <Select value={filters.location || ''} onValueChange={(value) => onFiltersChange({ location: value })}>
-                <SelectTrigger>
+              <Select 
+                key={`location-${filters.location || 'empty'}`}
+                value={filters.location || ''} 
+                onValueChange={(value) => onFiltersChange({ location: value })}
+              >
+                <SelectTrigger className="filter-select bg-background">
                   <SelectValue placeholder="Zgjidhni vendndodhjen" />
                 </SelectTrigger>
                 <SelectContent>
@@ -552,190 +582,13 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Enhanced Filters for Old Layout */}
-            
-            {/* Car Condition */}
-            {data.conditions && data.conditions.length > 0 && (
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  Gjendja
-                </Label>
-                <Select value={filters.condition || ''} onValueChange={(value) => onFiltersChange({ condition: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Zgjidhni gjendjen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {data.conditions.map((condition) => (
-                      <SelectItem key={condition.id} value={condition.id}>
-                        {condition.name} {condition.count && `(${condition.count})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Sale Status */}
-            {data.saleStatuses && data.saleStatuses.length > 0 && (
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4" />
-                  Statusi i Shitjes
-                </Label>
-                <Select value={filters.saleStatus || ''} onValueChange={(value) => onFiltersChange({ saleStatus: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Zgjidhni statusin" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {data.saleStatuses.map((status) => (
-                      <SelectItem key={status.id} value={status.id}>
-                        {status.name} {status.count && `(${status.count})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Drivetrain */}
-            {data.drivetrains && data.drivetrains.length > 0 && (
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  Sistemi i Nxitjes
-                </Label>
-                <Select value={filters.drivetrain || ''} onValueChange={(value) => onFiltersChange({ drivetrain: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Zgjidhni sistemin" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {data.drivetrains.map((drivetrain) => (
-                      <SelectItem key={drivetrain.id} value={drivetrain.id}>
-                        {drivetrain.name} {drivetrain.count && `(${drivetrain.count})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Doors Count */}
-            {data.doorCounts && data.doorCounts.length > 0 && (
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Car className="h-4 w-4" />
-                  Numri i Dyerve
-                </Label>
-                <Select value={filters.doors || ''} onValueChange={(value) => onFiltersChange({ doors: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Zgjidhni numrin e dyerve" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {data.doorCounts.map((door) => (
-                      <SelectItem key={door.id} value={door.id}>
-                        {door.name} {door.count && `(${door.count})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Engine Size Range */}
-            {data.engineSizeRange && (
-              <div className="space-y-3">
-                <Label className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  Vëllimi i Motorrit (L)
-                </Label>
-                <div className="px-2">
-                  <Slider
-                    value={engineSizeRange}
-                    onValueChange={setEngineSizeRange}
-                    min={data.engineSizeRange.min}
-                    max={data.engineSizeRange.max}
-                    step={0.1}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-sm text-muted-foreground mt-1">
-                    <span>{engineSizeRange[0].toFixed(1)}L</span>
-                    <span>{engineSizeRange[1].toFixed(1)}L</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Boolean Filters */}
-            <div className="space-y-3 border-t pt-3">
-              <Label className="text-sm font-medium text-foreground">Filtrat e Përshtatur</Label>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="hasImages"
-                  checked={filters.hasImages || false}
-                  onCheckedChange={(checked) => onFiltersChange({ hasImages: checked ? true : undefined })}
-                />
-                <Label htmlFor="hasImages" className="flex items-center gap-2 text-sm cursor-pointer">
-                  <Camera className="h-4 w-4" />
-                  Vetëm me fotografi
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="isCertified"
-                  checked={filters.isCertified || false}
-                  onCheckedChange={(checked) => onFiltersChange({ isCertified: checked ? true : undefined })}
-                />
-                <Label htmlFor="isCertified" className="flex items-center gap-2 text-sm cursor-pointer">
-                  <Award className="h-4 w-4" />
-                  Vetëm të certifikuara
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="noAccidents"
-                  checked={filters.noAccidents || false}
-                  onCheckedChange={(checked) => onFiltersChange({ noAccidents: checked ? true : undefined })}
-                />
-                <Label htmlFor="noAccidents" className="flex items-center gap-2 text-sm cursor-pointer">
-                  <Shield className="h-4 w-4" />
-                  Pa aksidente
-                </Label>
-              </div>
-            </div>
-
-            {/* Accident Count Filter */}
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" />
-                Maksimum {filters.accidentCountMax || 0} aksidente
-              </Label>
-              <div className="px-2">
-                <Slider
-                  value={[filters.accidentCountMax || 0]}
-                  onValueChange={([value]) => onFiltersChange({ accidentCountMax: value })}
-                  min={0}
-                  max={10}
-                  step={1}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-sm text-muted-foreground mt-1">
-                  <span>0 aksidente</span>
-                  <span>10+ aksidente</span>
-                </div>
-              </div>
-            </div>
           </div>
         )}
       </div>
 
       {/* Validation Errors */}
       {validationErrors.length > 0 && (
-        <div className="rounded-md bg-destructive/10 p-3">
+        <div className="rounded-md bg-destructive/10 p-3 backdrop-blur-sm border border-destructive/20 animate-scale-in">
           <h4 className="text-sm font-medium text-destructive">Ju lutemi korrigoni gabimet e mëposhtme:</h4>
           <ul className="mt-1 text-sm text-destructive">
             {validationErrors.map((error, index) => (
@@ -747,7 +600,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
 
       {/* Loading State */}
       {isLoading && (
-        <div className="text-center text-sm text-muted-foreground">
+        <div className="text-center text-sm text-muted-foreground transition-opacity animate-pulse">
           Duke përditësuar filtrat...
         </div>
       )}

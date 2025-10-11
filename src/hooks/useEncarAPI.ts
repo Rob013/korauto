@@ -36,7 +36,7 @@ interface Car {
 interface SyncStatus {
   id: string;
   sync_type: string;
-  status: 'pending' | 'running' | 'completed' | 'failed'; // Removed 'paused' as it's deprecated
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'paused';
   current_page?: number;
   total_pages?: number;
   records_processed?: number;
@@ -60,6 +60,7 @@ interface UseEncarAPIReturn {
   fetchCars: (page?: number, limit?: number, filters?: CarFilters) => Promise<void>;
   triggerSync: (type?: 'full' | 'incremental') => Promise<void>;
   getSyncStatus: () => Promise<void>;
+  cleanupSoldCars: () => Promise<any>;
 }
 
 interface CarFilters {
@@ -86,45 +87,89 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     setError(null);
 
     try {
-      // Generate mock car data for testing since the database may not have the correct structure
-      const mockCars: Car[] = [
-        {
-          id: '1',
-          make: 'BMW',
-          model: 'M3',
-          year: 2022,
-          price: 67300,
-          mileage: 25000,
-          image_url: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800',
-          source_api: 'auctionapis',
-          status: 'active'
-        },
-        {
-          id: '2',
-          make: 'Mercedes-Benz',
-          model: 'C-Class',
-          year: 2021,
-          price: 47300,
-          mileage: 30000,
-          image_url: 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800',
-          source_api: 'auctionapis',
-          status: 'active'
-        },
-        // Add more mock cars as needed
-      ];
+      console.log(`📊 Fetching cars from cars_cache table - Page ${page}, Limit ${limit}`);
+      
+      // Build query for cached cars
+      let query = supabase
+        .from('cars_cache')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Apply filters if provided
+      if (filters?.make?.length) {
+        query = query.in('make', filters.make);
+      }
+      if (filters?.model?.length) {
+        query = query.in('model', filters.model);
+      }
+      if (filters?.yearFrom) {
+        query = query.gte('year', filters.yearFrom);
+      }
+      if (filters?.yearTo) {
+        query = query.lte('year', filters.yearTo);
+      }
+      if (filters?.priceFrom) {
+        query = query.gte('price', filters.priceFrom);
+      }
+      if (filters?.priceTo) {
+        query = query.lte('price', filters.priceTo);
+      }
+      if (filters?.search) {
+        query = query.or(`make.ilike.%${filters.search}%,model.ilike.%${filters.search}%,vin.ilike.%${filters.search}%`);
+      }
+
+      // Apply pagination
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+      query = query.range(from, to);
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('❌ Error fetching cars from active_cars view:', error);
+        throw error;
+      }
+
+      console.log(`✅ Fetched ${data?.length || 0} cached cars from database`);
+
+      // Transform the data to match Car interface
+      const transformedData = (data || []).map(item => ({
+        id: item.id,
+        external_id: item.api_id,
+        make: item.make,
+        model: item.model,
+        year: item.year,
+        price: item.price || 0,
+        mileage: typeof item.mileage === 'string' ? parseInt(item.mileage) || 0 : (item.mileage || 0),
+        title: `${item.year} ${item.make} ${item.model}`,
+        vin: item.vin,
+        color: item.color,
+        fuel: item.fuel,
+        transmission: item.transmission,
+        condition: item.condition,
+        lot_number: item.lot_number,
+        images: JSON.stringify(item.images || []),
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        last_synced_at: item.last_api_sync
+      }));
 
       if (page === 1) {
-        setCars(mockCars);
+        setCars(transformedData);
       } else {
-        setCars(prev => [...prev, ...mockCars]);
+        setCars(prev => [...prev, ...transformedData]);
       }
       
-      setTotalCount(mockCars.length);
+      // Get total count of cached cars for pagination
+      const { count } = await supabase
+        .from('cars_cache')
+        .select('id', { count: 'exact', head: true });
+      
+      if (count !== null) {
+        setTotalCount(count);
+      }
     } catch (err) {
-      console.error('Error fetching cars:', err);
+      console.error('❌ Error fetching cars:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch cars');
     } finally {
       setLoading(false);
@@ -138,7 +183,7 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     try {
       console.log(`🚀 Triggering ${type} sync...`);
       
-      const { data, error: syncError } = await supabase.functions.invoke('cars-sync', {
+      const { data, error: syncError } = await supabase.functions.invoke('encar-sync', {
         body: { type }
       });
 
@@ -184,8 +229,8 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
       // Immediate status refresh
       await getSyncStatus();
       
-      // Schedule periodic refreshes for ongoing syncs (removed paused status since it's deprecated)
-      if (data.status === 'running') {
+      // Schedule periodic refreshes for ongoing syncs
+      if (data.status === 'paused' || data.status === 'running') {
         const refreshInterval = setInterval(async () => {
           await getSyncStatus();
           
@@ -235,6 +280,32 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
       throw new Error(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const cleanupSoldCars = async () => {
+    try {
+      console.log('🧹 Triggering sold car cleanup...');
+      
+      // Use a generic function call for now - this would need to be implemented
+      const { data, error } = await supabase.functions.invoke('cars-sync', {
+        body: { action: 'cleanup_sold' }
+      });
+
+      if (error) {
+        console.error('❌ Error running sold car cleanup:', error);
+        throw error;
+      }
+
+      console.log('✅ Sold car cleanup completed:', data);
+      
+      // Refresh cars list after cleanup
+      await fetchCars(1, 100);
+      
+      return data;
+    } catch (err) {
+      console.error('❌ Error during sold car cleanup:', err);
+      throw err;
     }
   };
 
@@ -353,31 +424,15 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
       .subscribe();
 
     // Auto-refresh every 30 seconds to get latest counts
-    const refreshInterval = setInterval(async () => {
+    const refreshInterval = setInterval(() => {
       getSyncStatus();
-      // Get fresh car count from both tables for consistency
-      try {
-        const [cacheResult, mainResult] = await Promise.all([
-          supabase.from('cars_cache').select('id', { count: 'exact', head: true }),
-          supabase.from('cars').select('id', { count: 'exact', head: true })
-        ]);
-        
-        const cacheCount = cacheResult.count || 0;
-        const mainCount = mainResult.count || 0;
-        // Prioritize cars_cache count since sync now goes to cars_cache
-        const totalCount = cacheCount > 0 ? cacheCount : mainCount;
-        
-        console.log('🔄 Auto-refresh car count:', {
-          cacheCount,
-          mainCount,
-          totalCount,
-          timestamp: new Date().toLocaleTimeString()
+      // Get fresh cached car count using cars_cache table
+      supabase.from('cars_cache').select('id', { count: 'exact', head: true })
+        .then(({ count }) => {
+          if (count !== null) {
+            setTotalCount(count);
+          }
         });
-        
-        setTotalCount(totalCount);
-      } catch (error) {
-        console.error('❌ Error refreshing car count:', error);
-      }
     }, 30000);
 
     return () => {
@@ -395,6 +450,7 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
     totalCount,
     fetchCars,
     triggerSync,
-    getSyncStatus
+    getSyncStatus,
+    cleanupSoldCars
   };
 };

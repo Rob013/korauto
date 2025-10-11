@@ -37,49 +37,29 @@ const LoadingLogo: React.FC<LoadingLogoProps> = ({
       className
     )}>
       <div className="relative flex items-center justify-center">
-        {/* Spinning ring around logo - perfectly centered */}
-        <div className={cn(
-          "absolute border-2 border-primary/30 border-t-primary rounded-full animate-spin",
-          ringSize[size]
-        )} />
+        {/* Spinning ring around logo - using Tailwind animate-spin */}
+        <div 
+          className={cn(
+            "absolute border-2 rounded-full animate-spin",
+            ringSize[size]
+          )} 
+          style={{ 
+            borderTopColor: 'hsl(var(--primary))',
+            borderRightColor: 'hsl(var(--primary) / 0.3)',
+            borderBottomColor: 'hsl(var(--primary) / 0.1)',
+            borderLeftColor: 'hsl(var(--primary) / 0.3)',
+          }} 
+        />
         
-        {/* Animated logo - centered */}
+        {/* Static logo - no animation for stability */}
         <img 
           src="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png"
           alt="KORAUTO Logo Loading"
           className={cn(
             sizeClasses[size],
-            "object-contain dark:invert dark:brightness-0 dark:contrast-100",
-            "animate-pulse transition-all duration-300 relative z-10"
+            "object-contain dark:invert dark:brightness-0 dark:contrast-100 relative z-10"
           )}
         />
-        
-        {/* Pulsing dots around logo - perfectly positioned */}
-        <div className={cn("absolute inset-0 flex items-center justify-center", ringSize[size])}>
-          {/* Top dot */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2">
-            <div className="w-1.5 h-1.5 bg-primary rounded-full animate-ping" 
-                 style={{ animationDelay: '0s' }} />
-          </div>
-          
-          {/* Right dot */}
-          <div className="absolute top-1/2 right-0 translate-x-2 -translate-y-1/2">
-            <div className="w-1.5 h-1.5 bg-primary rounded-full animate-ping" 
-                 style={{ animationDelay: '0.5s' }} />
-          </div>
-          
-          {/* Bottom dot */}
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-2">
-            <div className="w-1.5 h-1.5 bg-primary rounded-full animate-ping" 
-                 style={{ animationDelay: '1s' }} />
-          </div>
-          
-          {/* Left dot */}
-          <div className="absolute top-1/2 left-0 -translate-x-2 -translate-y-1/2">
-            <div className="w-1.5 h-1.5 bg-primary rounded-full animate-ping" 
-                 style={{ animationDelay: '1.5s' }} />
-          </div>
-        </div>
       </div>
     </div>
   );

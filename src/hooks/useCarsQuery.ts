@@ -3,7 +3,6 @@ import { useRef, useCallback, useState, useEffect, useMemo } from 'react';
 import { FilterState } from '@/hooks/useFiltersFromUrl';
 import { buildQueryParams } from '@/utils/buildQueryParams';
 import { fetchCarsWithKeyset, Car as ApiCar, CarsApiResponse, SortOption, FrontendSortOption } from '@/services/carsApi';
-import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
 
 interface Car {
   id: string;
@@ -168,13 +167,13 @@ const fetchCarsFallback = async (
       return shuffleWithSeed(availableCars, dailySeed).slice(0, 50);
     })();
     
-    // Convert to the expected format with proper currency conversion
+    // Convert to the expected format
     const convertedCars = dailyRotatingCars.map(car => ({
       id: car.id?.toString() || '',
       make: car.manufacturer?.name || '',
       model: car.model?.name || '',
       year: car.year || 2020,
-      price: Math.round((car.lots?.[0]?.buy_now || 25000) + 2200), // Add fees like homepage
+      price: Math.round(car.lots?.[0]?.buy_now || 25000), // Base price without markup - NOTE: This is USD for sorting/filtering only
       mileage: car.lots?.[0]?.odometer?.km,
       fuel: car.fuel?.name,
       transmission: car.transmission?.name,
@@ -251,7 +250,6 @@ const fetchModels = async (brandId: string, signal?: AbortSignal): Promise<Model
 
 export const useCarsQuery = (filters: FilterState) => {
   const queryClient = useQueryClient();
-  const { convertUSDtoEUR } = useCurrencyAPI();
   const abortControllerRef = useRef<AbortController | null>(null);
   
   // Track accumulated cars for infinite scroll

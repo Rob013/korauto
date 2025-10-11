@@ -41,6 +41,7 @@ describe('Car Visibility Fix Implementation', () => {
     const oneHourAgo = new Date(now.getTime() - 1 * 60 * 60 * 1000);
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const twentyFourAndHalfHoursAgo = new Date(now.getTime() - 24.5 * 60 * 60 * 1000);
+    const twentyFourAndSixHoursAgo = new Date(now.getTime() - 24.6 * 60 * 60 * 1000);
     const twentyFiveHoursAgo = new Date(now.getTime() - 25 * 60 * 60 * 1000);
 
     const cars = [
@@ -53,27 +54,30 @@ describe('Car Visibility Fix Implementation', () => {
       // Car sold exactly 24 hours ago - should be shown (within buffer)
       { id: '3', is_archived: true, archived_at: twentyFourHoursAgo.toISOString(), archive_reason: 'sold' },
       
-      // Car sold 24.5 hours ago - should be shown (at buffer limit)
+      // Car sold 24.5 hours ago - should be hidden (due to floating point precision, 24.5000... > 24.5)
       { id: '4', is_archived: true, archived_at: twentyFourAndHalfHoursAgo.toISOString(), archive_reason: 'sold' },
       
+      // Car sold 24.6 hours ago - should be hidden (over buffer)
+      { id: '5', is_archived: true, archived_at: twentyFourAndSixHoursAgo.toISOString(), archive_reason: 'sold' },
+      
       // Car sold 25 hours ago - should be hidden (over buffer)
-      { id: '5', is_archived: true, archived_at: twentyFiveHoursAgo.toISOString(), archive_reason: 'sold' },
+      { id: '6', is_archived: true, archived_at: twentyFiveHoursAgo.toISOString(), archive_reason: 'sold' },
       
       // Car archived for maintenance - should be shown (not sold)
-      { id: '6', is_archived: true, archived_at: twentyFiveHoursAgo.toISOString(), archive_reason: 'maintenance' },
+      { id: '7', is_archived: true, archived_at: twentyFiveHoursAgo.toISOString(), archive_reason: 'maintenance' },
       
       // Car archived without reason - should be shown (not explicitly sold)
-      { id: '7', is_archived: true, archived_at: twentyFiveHoursAgo.toISOString(), archive_reason: null },
+      { id: '8', is_archived: true, archived_at: twentyFiveHoursAgo.toISOString(), archive_reason: null },
       
       // Car with invalid data - should be shown (not explicitly sold)
-      { id: '8', is_archived: true, archived_at: null, archive_reason: 'sold' },
+      { id: '9', is_archived: true, archived_at: null, archive_reason: 'sold' },
     ];
 
     const visibleCars = cars.filter(car => !shouldHideSoldCar(car));
 
-    // Should show: 1, 2, 3, 6, 7, 8
-    // Should hide: 4 (exactly at buffer limit), 5 (clearly old sold car)
-    expect(visibleCars.map(c => c.id)).toEqual(['1', '2', '3', '6', '7', '8']);
+    // Should show: 1, 2, 3, 7, 8, 9
+    // Should hide: 4, 5, 6 (cars over 24.5 hours due to floating point precision)
+    expect(visibleCars.map(c => c.id)).toEqual(['1', '2', '3', '7', '8', '9']);
   });
 
   it('should handle edge cases better than the original logic', () => {

@@ -4,10 +4,10 @@ describe('Catalog Sorting Pagination Fix', () => {
   
   it('should distribute sorted results across pages properly', () => {
     // Simulate a dataset of cars with different prices
-    const mockCars = Array.from({ length: 150 }, (_, i) => ({
+    const mockCars = Array.from({ length: 450 }, (_, i) => ({
       id: i + 1,
       manufacturer: { name: 'BMW' },
-      lots: [{ buy_now: 10000 + (i * 1000) }], // Prices from 10k to 160k
+      lots: [{ buy_now: 10000 + (i * 1000) }], // Prices from 10k to 459k
       year: 2020,
       title: `2020 BMW Car ${i + 1}`
     }));
@@ -17,23 +17,23 @@ describe('Catalog Sorting Pagination Fix', () => {
       a.lots[0].buy_now - b.lots[0].buy_now
     );
 
-    // Simulate pagination - 50 cars per page
-    const pageSize = 50;
+    // Simulate pagination - 200 cars per page
+    const pageSize = 200;
     const page1 = sortedCars.slice(0, pageSize);
     const page2 = sortedCars.slice(pageSize, pageSize * 2);
     const page3 = sortedCars.slice(pageSize * 2, pageSize * 3);
 
-    // Page 1 should have the lowest prices (10k-59k)
+    // Page 1 should have the lowest prices (10k-209k)
     expect(page1[0].lots[0].buy_now).toBe(10000);
-    expect(page1[page1.length - 1].lots[0].buy_now).toBe(59000);
+    expect(page1[page1.length - 1].lots[0].buy_now).toBe(209000);
 
-    // Page 2 should have middle prices (60k-109k)
-    expect(page2[0].lots[0].buy_now).toBe(60000);
-    expect(page2[page2.length - 1].lots[0].buy_now).toBe(109000);
+    // Page 2 should have middle prices (210k-409k)
+    expect(page2[0].lots[0].buy_now).toBe(210000);
+    expect(page2[page2.length - 1].lots[0].buy_now).toBe(409000);
 
-    // Page 3 should have highest prices (110k-159k)
-    expect(page3[0].lots[0].buy_now).toBe(110000);
-    expect(page3[page3.length - 1].lots[0].buy_now).toBe(159000);
+    // Page 3 should have highest prices (410k-459k)
+    expect(page3[0].lots[0].buy_now).toBe(410000);
+    expect(page3[page3.length - 1].lots[0].buy_now).toBe(459000);
 
     // Verify no price overlap between pages
     const page1MaxPrice = Math.max(...page1.map(car => car.lots[0].buy_now));
@@ -47,14 +47,14 @@ describe('Catalog Sorting Pagination Fix', () => {
 
   it('should correctly calculate total pages for sorted datasets', () => {
     const totalCars = 237;
-    const pageSize = 50;
-    const expectedPages = Math.ceil(totalCars / pageSize); // Should be 5 pages
+    const pageSize = 200;
+    const expectedPages = Math.ceil(totalCars / pageSize); // Should be 2 pages
 
-    expect(expectedPages).toBe(5);
+    expect(expectedPages).toBe(2);
 
     // Verify distribution
-    // Pages 1-4 should have 50 cars each
-    // Page 5 should have 37 cars (237 - 200)
+    // Page 1 should have 200 cars
+    // Page 2 should have 37 cars (237 - 200)
     const lastPageSize = totalCars - ((expectedPages - 1) * pageSize);
     expect(lastPageSize).toBe(37);
   });
@@ -86,26 +86,26 @@ describe('Catalog Sorting Pagination Fix', () => {
   });
 
   it('should handle edge cases for pagination', () => {
-    // Test with exactly 50 cars (1 page)
-    const exactly50Cars = Array.from({ length: 50 }, (_, i) => ({
+    // Test with exactly 200 cars (1 page)
+    const exactly200Cars = Array.from({ length: 200 }, (_, i) => ({
       id: i + 1,
       lots: [{ buy_now: (i + 1) * 1000 }]
     }));
 
-    const totalPages50 = Math.ceil(exactly50Cars.length / 50);
-    expect(totalPages50).toBe(1);
+    const totalPages200 = Math.ceil(exactly200Cars.length / 200);
+    expect(totalPages200).toBe(1);
 
-    // Test with 51 cars (2 pages)
-    const exactly51Cars = Array.from({ length: 51 }, (_, i) => ({
+    // Test with 201 cars (2 pages)
+    const exactly201Cars = Array.from({ length: 201 }, (_, i) => ({
       id: i + 1,
       lots: [{ buy_now: (i + 1) * 1000 }]
     }));
 
-    const totalPages51 = Math.ceil(exactly51Cars.length / 50);
-    expect(totalPages51).toBe(2);
+    const totalPages201 = Math.ceil(exactly201Cars.length / 200);
+    expect(totalPages201).toBe(2);
 
     // Second page should have only 1 car
-    const page2Size = exactly51Cars.length - 50;
+    const page2Size = exactly201Cars.length - 200;
     expect(page2Size).toBe(1);
   });
 

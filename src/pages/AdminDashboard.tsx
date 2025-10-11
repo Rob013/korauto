@@ -32,16 +32,13 @@ import {
   Cookie,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useNavigate } from "react-router-dom";
 import AuthLogin from "@/components/AuthLogin";
 import { CarsSyncButton } from "@/components/CarsSyncButton";
 import AdminCarSearch from "@/components/AdminCarSearch";
 import { CookieManagementDashboard } from "@/components/CookieManagementDashboard";
 import PerformanceAuditWidget from "@/components/PerformanceAuditWidget";
-import { FullCarsSyncTrigger } from "@/components/FullCarsSyncTrigger";
-import { AutoResumeScheduler } from "@/components/AutoResumeScheduler";
-import { AISyncCoordinator } from "@/components/AISyncCoordinator";
+import ApiInfoDashboard from "@/components/ApiInfoDashboard";
 
 // Lazy load heavy admin components
 const AdminSyncDashboard = lazy(() => 
@@ -142,7 +139,6 @@ const AdminDashboard = () => {
   const [authLoading, setAuthLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
-  const { convertUSDtoEUR } = useCurrencyAPI();
   const navigate = useNavigate();
 
   // Check authentication and admin status
@@ -193,7 +189,7 @@ const AdminDashboard = () => {
 
   const handleLoginSuccess = () => {
     setAuthLoading(true);
-    // Re-check auth status after login (simplified to avoid redundant checks)
+    // Re-check auth status after login
     const recheckAuth = async () => {
       const {
         data: { user },
@@ -201,14 +197,8 @@ const AdminDashboard = () => {
       setUser(user);
 
       if (user) {
-        try {
-          const { data: adminCheck, error } = await supabase.rpc("is_admin");
-          if (error) throw error;
-          setIsAdmin(adminCheck || false);
-        } catch (error) {
-          console.error("Admin recheck failed:", error);
-          setIsAdmin(false);
-        }
+        const { data: adminCheck } = await supabase.rpc("is_admin");
+        setIsAdmin(adminCheck || false);
       }
 
       setAuthLoading(false);
@@ -242,7 +232,7 @@ const AdminDashboard = () => {
           make: car.make,
           model: car.model,
           year: car.year,
-          price: lot?.buy_now ? convertUSDtoEUR(Math.round(lot.buy_now + 2200)) : undefined,
+          price: lot?.buy_now ? Math.round(lot.buy_now) : undefined,
           image: lot?.images?.normal?.[0] || lot?.images?.big?.[0],
           vin: car.vin,
           mileage: lot?.odometer?.km
@@ -297,66 +287,47 @@ const AdminDashboard = () => {
         requestsData?.filter((r) => new Date(r.created_at) > oneMonthAgo)
           .length || 0;
 
-      // Fetch real user stats in parallel for better performance
-      const [
-        { count: totalUsers },
-        { count: totalFavorites },
-        { count: recentSignups },
-        { count: carsInCacheTable },
-        { count: carsInMainTable },
-        { count: recentCarSyncs },
-        { data: syncStatusData }
-      ] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("*", { count: "exact", head: true }),
-        supabase
-          .from("favorite_cars")
-          .select("*", { count: "exact", head: true }),
-        supabase
-          .from("profiles")
-          .select("*", { count: "exact", head: true })
-          .gte("created_at", oneWeekAgo.toISOString()),
-        supabase
-          .from("cars_cache")
-          .select("*", { count: "exact", head: true }),
-        supabase
-          .from("cars")
-          .select("*", { count: "exact", head: true }),
-        supabase
-          .from("cars_cache")
-          .select("*", { count: "exact", head: true })
-          .gte("last_api_sync", oneWeekAgo.toISOString()),
-        supabase
-          .from("sync_status")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(1)
-      ]);
+      // Fetch real user stats
+      const { count: totalUsers } = await supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true });
 
-      // Use the maximum count from both sources as authoritative (prevents double counting)
-      const totalCachedCars = Math.max((carsInCacheTable || 0), (carsInMainTable || 0));
-      
-      console.log('📊 Car count calculation:', {
-        carsInCacheTable: carsInCacheTable || 0,
-        carsInMainTable: carsInMainTable || 0,
-        totalCachedCars: totalCachedCars,
-        method: 'max_count'
-      });
+      const { count: totalFavorites } = await supabase
+        .from("favorite_cars")
+        .select("*", { count: "exact", head: true });
 
-      // Fetch limited analytics data with date range for better performance
-      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const { count: recentSignups } = await supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+        .gte("created_at", oneWeekAgo.toISOString());
+
+      // Fetch real cars cache data for analytics
+      const { count: totalCachedCars } = await supabase
+        .from("cars_cache")
+        .select("*", { count: "exact", head: true });
+
+      const { count: recentCarSyncs } = await supabase
+        .from("cars_cache")
+        .select("*", { count: "exact", head: true })
+        .gte("last_api_sync", oneWeekAgo.toISOString());
+
+      // Get latest sync status for real-time data
+      const { data: syncStatusData } = await supabase
+        .from("sync_status")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      // Fetch ALL real analytics data from website_analytics table
       const { data: analyticsData } = await supabase
         .from("website_analytics")
         .select("*")
-        .gte("created_at", thirtyDaysAgo.toISOString())
-        .order("created_at", { ascending: false })
-        .limit(10000); // Limit to prevent excessive data fetching
+        .order("created_at", { ascending: false });
 
       console.log(
         "📊 Analytics data found:",
         analyticsData?.length || 0,
-        "records (last 30 days)"
+        "records"
       );
 
       // Process real analytics data
@@ -743,10 +714,6 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Enhanced Auto-Resume and AI Coordination Background Services */}
-      <AutoResumeScheduler enabled={true} checkIntervalMinutes={1} />
-      <AISyncCoordinator enabled={true} maxRetries={5} retryDelayMs={2000} />
-      
       <div className="container max-w-7xl mx-auto p-3 sm:p-4 lg:p-6">
         {/* Compact Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
@@ -785,12 +752,13 @@ const AdminDashboard = () => {
           onValueChange={setActiveTab}
           className="space-y-3 sm:space-y-4"
         >
-          <TabsList className="grid w-full grid-cols-5 h-auto">
+          <TabsList className="grid w-full grid-cols-6 h-auto">
             <TabsTrigger value="overview" className="text-xs sm:text-sm p-2 sm:p-3">Overview</TabsTrigger>
             <TabsTrigger value="inspections" className="text-xs sm:text-sm p-2 sm:p-3">Inspections</TabsTrigger>
             <TabsTrigger value="analytics" className="text-xs sm:text-sm p-2 sm:p-3">Analytics</TabsTrigger>
             <TabsTrigger value="performance" className="text-xs sm:text-sm p-2 sm:p-3">Performance</TabsTrigger>
             <TabsTrigger value="cookies" className="text-xs sm:text-sm p-2 sm:p-3">Cookies</TabsTrigger>
+            <TabsTrigger value="api-info" className="text-xs sm:text-sm p-2 sm:p-3">API Info</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-3 sm:space-y-4">
@@ -1139,9 +1107,6 @@ const AdminDashboard = () => {
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Full Cars Sync Component */}
-              <FullCarsSyncTrigger />
             </div>
           </TabsContent>
 
@@ -1800,6 +1765,11 @@ const AdminDashboard = () => {
                 <CookieManagementDashboard />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="api-info" className="space-y-3 sm:space-y-4">
+            {/* API Information Dashboard */}
+            <ApiInfoDashboard />
           </TabsContent>
         </Tabs>
       </div>

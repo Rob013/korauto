@@ -1,7 +1,10 @@
-// Service Worker for caching API responses and static assets
-const CACHE_NAME = 'korauto-v1';
-const STATIC_CACHE_NAME = 'korauto-static-v1';
-const ASSETS_CACHE_NAME = 'korauto-assets-v1';
+// Service Worker for caching API responses and static assets with 120fps performance optimization
+// CRITICAL: Update this version number to force cache refresh for all users
+const VERSION = '2025.06.01.001'; // YYYY.MM.DD.BUILD format
+const CACHE_NAME = `korauto-v${VERSION}`;
+const STATIC_CACHE_NAME = `korauto-static-v${VERSION}`;
+const ASSETS_CACHE_NAME = `korauto-assets-v${VERSION}`;
+const HIGH_PERFORMANCE_CACHE = `korauto-high-perf-v${VERSION}`;
 
 // Static assets to cache
 const STATIC_ASSETS = [
@@ -9,6 +12,16 @@ const STATIC_ASSETS = [
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png'
+];
+
+// High-priority assets for 120fps performance
+const HIGH_PERFORMANCE_ASSETS = [
+  // Critical JS chunks for frame rate optimization
+  '/assets/frameRateOptimizer-*.js',
+  '/assets/vendor-*.js',
+  '/assets/index-*.js',
+  // Critical CSS for layout stability
+  '/assets/index-*.css'
 ];
 
 // API endpoints to cache
@@ -19,38 +32,79 @@ const API_CACHE_PATTERNS = [
   /\/api\/cars\?/
 ];
 
-// Cache duration in milliseconds
+// Cache duration in milliseconds (shorter for fresher content)
 const CACHE_DURATION = {
-  API: 5 * 60 * 1000, // 5 minutes for API responses
-  STATIC: 24 * 60 * 60 * 1000, // 24 hours for static assets
-  IMAGES: 60 * 60 * 1000, // 1 hour for images
-  ASSETS: 7 * 24 * 60 * 60 * 1000, // 7 days for versioned assets (JS/CSS)
-  FONTS: 30 * 24 * 60 * 60 * 1000 // 30 days for fonts
+  API: 2 * 60 * 1000, // 2 minutes for API responses (reduced for fresher data)
+  STATIC: 12 * 60 * 60 * 1000, // 12 hours for static assets
+  IMAGES: 30 * 60 * 1000, // 30 minutes for images
+  ASSETS: 24 * 60 * 60 * 1000, // 24 hours for versioned assets (JS/CSS)
+  FONTS: 7 * 24 * 60 * 60 * 1000, // 7 days for fonts
+  HIGH_PERFORMANCE: 30 * 60 * 1000 // 30 minutes for performance-critical assets
 };
 
-// Install event - cache static assets
+// Install event - cache static assets and prioritize performance-critical resources
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(STATIC_CACHE_NAME)
-      .then((cache) => cache.addAll(STATIC_ASSETS))
-      .then(() => self.skipWaiting())
+    Promise.all([
+      // Cache static assets
+      caches.open(STATIC_CACHE_NAME)
+        .then((cache) => cache.addAll(STATIC_ASSETS)),
+      
+      // Preload high-performance assets for 120fps optimization
+      caches.open(HIGH_PERFORMANCE_CACHE)
+        .then((cache) => {
+          // Preload critical assets for frame rate optimization
+          return Promise.all(
+            HIGH_PERFORMANCE_ASSETS.map(async (asset) => {
+              try {
+                const response = await fetch(asset);
+                if (response.ok) {
+                  return cache.put(asset, response);
+                }
+              } catch (error) {
+                // Silently fail for asset preloading
+                console.log('Failed to preload asset:', asset);
+              }
+            })
+          );
+        })
+    ]).then(() => self.skipWaiting())
   );
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up old caches and notify clients
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
       .then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
-            if (cacheName !== CACHE_NAME && cacheName !== STATIC_CACHE_NAME && cacheName !== ASSETS_CACHE_NAME) {
+            // Delete ALL old caches to force fresh content
+            if (cacheName !== CACHE_NAME && 
+                cacheName !== STATIC_CACHE_NAME && 
+                cacheName !== ASSETS_CACHE_NAME && 
+                cacheName !== HIGH_PERFORMANCE_CACHE) {
+              console.log('Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
           })
         );
       })
-      .then(() => self.clients.claim())
+      .then(() => {
+        // Claim all clients immediately to ensure they use new cache
+        return self.clients.claim();
+      })
+      .then(() => {
+        // Notify all clients about the update
+        return self.clients.matchAll().then(clients => {
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'CACHE_UPDATED',
+              version: VERSION
+            });
+          });
+        });
+      })
   );
 });
 
@@ -105,6 +159,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Handle HTML documents with network-first strategy
+  if (request.mode === 'navigate' || (request.method === 'GET' && request.headers.get('accept')?.includes('text/html'))) {
+    event.respondWith(handleHTMLRequest(request));
+    return;
+  }
+
+  // Handle performance-critical assets (frame rate optimizer, etc.)
+  if (HIGH_PERFORMANCE_ASSETS.some(pattern => url.pathname.includes(pattern.replace('*', '')))) {
+    event.respondWith(handleHighPerformanceAsset(request));
+    return;
+  }
+
   // Default: network first, cache fallback
   event.respondWith(
     fetch(request)
@@ -112,23 +178,43 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Handle API requests with cache-first strategy for GET requests
-async function handleAPIRequest(request) {
-  const cache = await caches.open(CACHE_NAME);
+// Handle high-performance assets with immediate cache response
+async function handleHighPerformanceAsset(request) {
+  const cache = await caches.open(HIGH_PERFORMANCE_CACHE);
   const cachedResponse = await cache.match(request);
 
-  // Check if cached response is still fresh
+  // Return cached version immediately for performance-critical assets
   if (cachedResponse) {
-    const cacheDate = new Date(cachedResponse.headers.get('sw-cache-date'));
-    const now = new Date();
+    // Update cache in background for next time
+    fetch(request).then(response => {
+      if (response.ok) {
+        cache.put(request, response.clone());
+      }
+    }).catch(() => {
+      // Silently fail background update
+    });
     
-    if (now - cacheDate < CACHE_DURATION.API) {
-      return cachedResponse;
-    }
+    return cachedResponse;
   }
 
+  // If not cached, fetch and cache
   try {
-    // Fetch fresh data
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch (error) {
+    throw error;
+  }
+}
+
+// Handle API requests with network-first strategy for fresh data
+async function handleAPIRequest(request) {
+  const cache = await caches.open(CACHE_NAME);
+  
+  try {
+    // Always try network first for fresh data
     const networkResponse = await fetch(request);
     
     if (networkResponse.ok) {
@@ -136,6 +222,7 @@ async function handleAPIRequest(request) {
       const responseToCache = networkResponse.clone();
       const headers = new Headers(responseToCache.headers);
       headers.set('sw-cache-date', new Date().toISOString());
+      headers.set('sw-version', VERSION);
       
       const cachedResponse = new Response(responseToCache.body, {
         status: responseToCache.status,
@@ -148,10 +235,19 @@ async function handleAPIRequest(request) {
     
     return networkResponse;
   } catch (error) {
-    // Return stale cache if network fails
+    // Only use cache as fallback when network fails
+    const cachedResponse = await cache.match(request);
+    
     if (cachedResponse) {
-      return cachedResponse;
+      // Check if cache is too old
+      const cacheDate = new Date(cachedResponse.headers.get('sw-cache-date'));
+      const now = new Date();
+      
+      if (now - cacheDate < CACHE_DURATION.API) {
+        return cachedResponse;
+      }
     }
+    
     throw error;
   }
 }
@@ -256,6 +352,27 @@ async function handleFontRequest(request) {
     }
     return networkResponse;
   } catch (error) {
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    throw error;
+  }
+}
+
+// Handle HTML documents with network-first strategy
+async function handleHTMLRequest(request) {
+  try {
+    // Always try network first for HTML to ensure latest version
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch (error) {
+    // Fallback to cache if network fails
+    const cache = await caches.open(CACHE_NAME);
+    const cachedResponse = await cache.match(request);
     if (cachedResponse) {
       return cachedResponse;
     }

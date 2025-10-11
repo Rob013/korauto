@@ -136,15 +136,8 @@ const EncarCarCard = ({
     // Save current page and any filter state before navigating
     setPreviousPage(window.location.pathname + window.location.search);
     
-    // On mobile, open in new tab to preserve the current catalog state
-    // On desktop, navigate in the same tab for better user experience
-    if (isMobile) {
-      // Open in new tab on mobile to preserve filter state and scroll position
-      window.open(`/car/${id}`, '_blank');
-    } else {
-      // Navigate in same tab on desktop
-      navigate(`/car/${id}`);
-    }
+    // Open in new tab to preserve catalog state and scroll position
+    window.open(`/car/${id}`, '_blank');
   };
 
   const handleLikeClick = (e: React.MouseEvent) => {
@@ -169,16 +162,16 @@ const EncarCarCard = ({
 
   return (
     <Card 
-      className="group cursor-pointer bg-white border border-gray-200 hover:border-primary/50 hover:shadow-xl transition-all duration-300 overflow-hidden rounded-xl"
+      className="group cursor-pointer bg-white border border-gray-200 hover:border-primary/50 hover:shadow-lg transition-all duration-300 overflow-hidden rounded-xl compact-card"
       onClick={handleCardClick}
     >
-      {/* Large Image Section - 60-70% of card height */}
-      <div className="relative h-56 bg-gray-100 overflow-hidden">
+      {/* Large Image Section - Enhanced for mobile with bigger thumbnail */}
+      <div className="relative h-48 sm:h-56 bg-gray-100 overflow-hidden">
         {image ? (
           <img
             src={image}
             alt={`${year} ${make} ${model}`}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
             onError={(e) => {
               e.currentTarget.src = "https://via.placeholder.com/400x300/f5f5f5/999999?text=No+Image";
             }}
@@ -243,54 +236,54 @@ const EncarCarCard = ({
         )}
       </div>
 
-      <CardContent className="p-4">
-        {/* Car Title - More prominent */}
-        <div className="mb-3">
-          <h3 className="font-bold text-gray-900 text-lg leading-tight mb-1">
+      <CardContent className="p-3 sm:p-4">
+        {/* Car Title - More compact */}
+        <div className="mb-2">
+          <h3 className="font-bold text-gray-900 text-base sm:text-lg leading-tight mb-1 line-clamp-1">
             {year} {typeof make === 'object' ? (make as any)?.name || '' : make || ''} {typeof model === 'object' ? (model as any)?.name || '' : model || ''}
           </h3>
           {location && (
-            <div className="flex items-center text-sm text-gray-500">
-              <MapPin className="h-3 w-3 mr-1" />
-              {location}
+            <div className="flex items-center text-xs sm:text-sm text-gray-500">
+              <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
+              <span className="truncate">{location}</span>
             </div>
           )}
         </div>
 
-        {/* Compact Specs Grid */}
-        <div className="grid grid-cols-2 gap-3 text-sm text-gray-600 mb-4">
+        {/* Compact Specs Grid - More organized */}
+        <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm text-gray-600 mb-3">
           {mileage && (
-            <div className="flex items-center gap-2">
-              <Gauge className="h-4 w-4 text-primary" />
-              <span className="font-medium">{mileage}</span>
+            <div className="flex items-center gap-1.5 truncate">
+              <Gauge className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+              <span className="font-medium truncate">{mileage}</span>
             </div>
           )}
           {fuel && (
-            <div className="flex items-center gap-2">
-              <Fuel className="h-4 w-4 text-primary" />
-              <span className="font-medium capitalize">{typeof fuel === 'object' ? (fuel as any)?.name || '' : fuel || ''}</span>
+            <div className="flex items-center gap-1.5 truncate">
+              <Fuel className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+              <span className="font-medium capitalize truncate">{typeof fuel === 'object' ? (fuel as any)?.name || '' : fuel || ''}</span>
             </div>
           )}
           {transmission && (
-            <div className="flex items-center gap-2">
-              <Settings className="h-4 w-4 text-primary" />
-              <span className="font-medium capitalize">{typeof transmission === 'object' ? (transmission as any)?.name || '' : transmission || ''}</span>
+            <div className="flex items-center gap-1.5 truncate">
+              <Settings className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+              <span className="font-medium capitalize truncate">{typeof transmission === 'object' ? (transmission as any)?.name || '' : transmission || ''}</span>
             </div>
           )}
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-primary" />
+          <div className="flex items-center gap-1.5">
+            <Calendar className="h-3.5 w-3.5 text-primary flex-shrink-0" />
             <span className="font-medium">{year}</span>
           </div>
         </div>
 
-        {/* Price - More prominent */}
-        <div className="flex items-center justify-between mb-4">
+        {/* Price - More compact but still prominent */}
+        <div className="flex items-center justify-between mb-3">
           <div>
-            <div className="text-2xl font-bold text-primary">
+            <div className="text-xl sm:text-2xl font-bold text-primary">
               {price ? (
                 <>€{price.toLocaleString()}</>
               ) : (
-                <span className="text-muted-foreground text-lg">Çmimi në kërkesë</span>
+                <span className="text-muted-foreground text-base sm:text-lg">Çmimi në kërkesë</span>
               )}
             </div>
             <div className="text-xs text-gray-500 font-medium">
@@ -299,18 +292,18 @@ const EncarCarCard = ({
           </div>
         </div>
 
-        {/* Modern Action buttons */}
-        <div className="flex gap-3">
+        {/* Compact Action buttons */}
+        <div className="flex gap-2">
           <InspectionRequestForm
             trigger={
               <Button 
                 size="sm"
-                className="flex-1 bg-primary hover:bg-primary/90 text-white font-semibold h-10 shadow-md hover:shadow-lg transition-all"
+                className="flex-1 bg-primary hover:bg-primary/90 text-white font-semibold h-9 text-xs sm:text-sm shadow-md hover:shadow-lg transition-all"
                 onClick={(e) => e.stopPropagation()}
                 aria-label={`Kërkoni inspektim për ${year} ${make} ${model}`}
               >
-                <FileText className="h-4 w-4 mr-2" />
-                Inspektim €50
+                <FileText className="h-3.5 w-3.5 mr-1.5" />
+                <span className="hidden sm:inline">Inspektim </span>€50
               </Button>
             }
             carId={id}
@@ -321,11 +314,11 @@ const EncarCarCard = ({
           <Button
             variant="outline"
             size="sm"
-            className="flex-1 border-2 border-primary text-primary hover:bg-primary hover:text-white font-semibold h-10 transition-all"
+            className="flex-1 border-2 border-primary text-primary hover:bg-primary hover:text-white font-semibold h-9 text-xs sm:text-sm transition-all"
             onClick={handleContactWhatsApp}
             aria-label={`Kontaktoni për më shumë informacion rreth ${year} ${make} ${model}`}
           >
-            <MessageCircle className="h-4 w-4 mr-2" />
+            <MessageCircle className="h-3.5 w-3.5 mr-1.5" />
             Kontakt
           </Button>
         </div>

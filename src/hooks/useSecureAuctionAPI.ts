@@ -1,5 +1,5 @@
 //@ts-nocheck
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { findGenerationYears } from "@/data/generationYears";
 import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from '../utils/grade-categorization';
@@ -47,6 +47,26 @@ export const createFallbackCars = (filters: any = {}): any[] => {
     const brandModels = models[brand] || ['Model'];
     const model = brandModels[(i + 1) % brandModels.length];
     
+    // Add some test cars with different statuses for badge testing
+    let status = 1; // default active
+    let sale_status = 'active'; // default active
+    
+    // Make specific cars have different statuses for testing
+    if (i === 1) {
+      status = 3;
+      sale_status = 'sold';
+    } else if (i === 2) {
+      status = 1;
+      sale_status = 'reserved';
+    } else if (i === 3) {
+      status = 2;
+      sale_status = 'pending';
+    } else if (i === 4) {
+      status = 2; // pending status without sale_status
+    } else if (i === 5) {
+      status = 3; // sold status without sale_status
+    }
+    
     mockCars.push({
       id: i,
       title: `${2015 + (i % 10)} ${brand} ${model}`,
@@ -55,12 +75,15 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       model: { name: model },
       vin: `KMHJ381${String(i).padStart(7, '0')}ABC`, // Valid VIN format (17 characters)
       lot_number: `LOT${String(i).padStart(6, '0')}`, // Valid lot number
+      status: status,
+      sale_status: sale_status,
       lots: [{
         buy_now: 20000 + (i * 100),
         images: {
           normal: [`https://picsum.photos/400/300?random=${i}`]
         },
-        odometer: { km: 50000 + (i * 1000) }
+        odometer: { km: 50000 + (i * 1000) },
+        status: status
       }],
       fuel: { name: i % 3 === 0 ? 'Petrol' : i % 3 === 1 ? 'Diesel' : 'Hybrid' },
       transmission: { name: i % 2 === 0 ? 'Automatic' : 'Manual' },
@@ -714,7 +737,7 @@ export const useSecureAuctionAPI = () => {
     }
   };
 
-  const fetchCars = useCallback(async (
+  const fetchCars = async (
     page: number = 1,
     newFilters: APIFilters = filters,
     resetList: boolean = true
@@ -734,7 +757,7 @@ export const useSecureAuctionAPI = () => {
       const apiFilters = {
         ...newFilters,
         page: page.toString(),
-        per_page: newFilters.per_page || "50", // Show 50 cars per page
+        per_page: newFilters.per_page || "200", // Show 200 cars per page
         simple_paginate: "0",
       };
       
@@ -882,7 +905,7 @@ export const useSecureAuctionAPI = () => {
       }
       
       // Simulate pagination with fallback data
-      const pageSize = parseInt(newFilters.per_page || "50");
+      const pageSize = parseInt(newFilters.per_page || "200");
       const startIndex = (page - 1) * pageSize;
       const endIndex = startIndex + pageSize;
       const paginatedCars = fallbackCars.slice(startIndex, endIndex);
@@ -918,7 +941,7 @@ export const useSecureAuctionAPI = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  };
 
   const fetchManufacturers = async (): Promise<Manufacturer[]> => {
     try {
@@ -1488,7 +1511,7 @@ export const useSecureAuctionAPI = () => {
       const key = cacheKey || `${manufacturerId || ''}-${modelId || ''}-${generationId || ''}`;
       
       // Build filters - only include valid values
-      const filters: any = { per_page: '50' }; // Increased for better grade coverage
+      const filters: any = { per_page: '200' }; // Increased for better grade coverage
       if (manufacturerId) filters.manufacturer_id = manufacturerId;
       if (modelId) filters.model_id = modelId;
       if (generationId) filters.generation_id = generationId;
@@ -1918,7 +1941,7 @@ export const useSecureAuctionAPI = () => {
         ...newFilters,
         // Remove pagination parameters to get all cars
         page: undefined,
-        per_page: "9999", // Set a high limit to ensure we get all cars
+        per_page: "1000", // Increase limit to ensure we get all cars
         simple_paginate: "0",
       };
       
@@ -2010,9 +2033,11 @@ export const useSecureAuctionAPI = () => {
         return [];
       }
       
-      // No fallback cars for global sorting - return empty array
-      console.log("❌ API failed for global sorting, returning empty array instead of fallback cars");
-      return [];
+      // Use fallback cars for global sorting when API fails
+      console.log("❌ API failed for global sorting, using fallback cars");
+      const fallbackCars = createFallbackCars(newFilters);
+      console.log(`✅ Fallback Success - Created ${fallbackCars.length} fallback cars for global sorting`);
+      return fallbackCars;
     }
   };
 

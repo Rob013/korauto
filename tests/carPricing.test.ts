@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { hasRealPricing, filterCarsWithRealPricing, isDefaultPrice } from '../src/utils/carPricing';
+import { hasRealPricing, filterCarsWithRealPricing, isDefaultPrice, calculateFinalPriceEUR } from '../src/utils/carPricing';
 
 describe('Car Pricing Utilities', () => {
   describe('hasRealPricing', () => {
@@ -75,17 +75,35 @@ describe('Car Pricing Utilities', () => {
     });
   });
 
+  describe('calculateFinalPriceEUR', () => {
+    it('should convert USD to EUR with 2200 EUR markup', () => {
+      // 15000 USD * 0.92 + 2200 = 13800 + 2200 = 16000 EUR
+      expect(calculateFinalPriceEUR(15000, 0.92)).toBe(16000);
+    });
+
+    it('should handle different exchange rates', () => {
+      // 20000 USD * 0.85 + 2200 = 17000 + 2200 = 19200 EUR
+      expect(calculateFinalPriceEUR(20000, 0.85)).toBe(19200);
+    });
+
+    it('should work with default fallback price', () => {
+      // 25000 USD * 0.85 + 2200 = 21250 + 2200 = 23450 EUR
+      expect(calculateFinalPriceEUR(25000, 0.85)).toBe(23450);
+    });
+  });
+
   describe('isDefaultPrice', () => {
     it('should return true for the default calculated EUR price', () => {
-      // 25000 USD + 2200 markup = 27200 USD
-      // 27200 USD * 0.92 EUR rate = 25024 EUR
-      expect(isDefaultPrice(25024)).toBe(true);
+      // 25000 USD * 0.85 + 2200 = 21250 + 2200 = 23450 EUR
+      expect(isDefaultPrice(23450)).toBe(true);
     });
 
     it('should return false for other prices', () => {
       expect(isDefaultPrice(15000)).toBe(false);
       expect(isDefaultPrice(30000)).toBe(false);
       expect(isDefaultPrice(25000)).toBe(false);
+      expect(isDefaultPrice(25200)).toBe(false); // Old price with old rate
+      expect(isDefaultPrice(21250)).toBe(false); // Price without markup
     });
   });
 });

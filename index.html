@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>KORAUTO - Premium Cars from South Korea</title>
-    <meta name="description" content="Find your perfect car from South Korea with best price and quality. Professional car inspection services and premium vehicle imports." />
+    <meta name="description" content="Find your perfect car from South Korea with best price and quality. Professional car inspection services and premium vehicle imports.">
     <meta name="author" content="KORAUTO" />
     
     <!-- Performance Optimization -->
@@ -13,10 +13,18 @@
     <link rel="dns-prefetch" href="https://iyezkczshcgbcgpswpyg.supabase.co">
     <link rel="dns-prefetch" href="https://korautoks.com">
     
-    <!-- Critical CSS will be inlined by Vite -->
+    <!-- Preload critical resources -->
+    <link rel="modulepreload" href="/src/main.tsx">
+    <style>
+      /* Critical CSS - Prevent FOUC */
+      html { font-family: system-ui, sans-serif; }
+      body { margin: 0; background: #ffffff; }
+      #root { min-height: 100vh; }
+      .dark body { background: #0a0a0a; }
+    </style>
     
     <!-- Favicon and Icons -->
-    <link rel="icon" href="/lovable-uploads/7a3e2aa4-2a3b-4320-b33c-72d3d7721cfd.png" type="image/png">
+    <link rel="icon" type="image/x-icon" href="https://storage.googleapis.com/gpt-engineer-file-uploads/YQL55BAx4ad4To5BuJ6CPGn22603/uploads/1757847506537-f5e4fe22-b482-4333-91fd-12132af7d102.jpeg">
     <link rel="apple-touch-icon" href="/lovable-uploads/7a3e2aa4-2a3b-4320-b33c-72d3d7721cfd.png">
     <link rel="shortcut icon" href="/lovable-uploads/7a3e2aa4-2a3b-4320-b33c-72d3d7721cfd.png">
     <meta name="theme-color" content="#1f2937">
@@ -37,7 +45,7 @@
     <meta property="og:description" content="Find your perfect car from South Korea with best price and quality. Professional car inspection services and premium vehicle imports." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://korautoks.com" />
-    <meta property="og:image" content="https://korautoks.com/lovable-uploads/3657dff4-7afd-45bb-9f8a-8d3f4ba8d7b4.png" />
+    <meta property="og:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/YQL55BAx4ad4To5BuJ6CPGn22603/social-images/social-1757832941689-Image.png">
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
 
@@ -46,7 +54,7 @@
     <meta name="twitter:site" content="@korauto" />
     <meta name="twitter:title" content="KORAUTO - Premium Cars from South Korea" />
     <meta name="twitter:description" content="Find your perfect car from South Korea with best price and quality. Professional car inspection services and premium vehicle imports." />
-    <meta name="twitter:image" content="https://korautoks.com/lovable-uploads/3657dff4-7afd-45bb-9f8a-8d3f4ba8d7b4.png" />
+    <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/YQL55BAx4ad4To5BuJ6CPGn22603/social-images/social-1757832941689-Image.png">
 
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-EK3E1KLL6V"></script>
@@ -56,6 +64,48 @@
       gtag('js', new Date());
 
       gtag('config', 'G-EK3E1KLL6V');
+    </script>
+
+    <!-- ES Module compatibility check and fallback -->
+    <script>
+      // Check for ES module support and provide better error handling
+      (function() {
+        try {
+          // Basic ES6 feature check
+          new Function('import("")');
+        } catch (e) {
+          // Browser doesn't support dynamic imports, show error
+          document.addEventListener('DOMContentLoaded', function() {
+            document.body.innerHTML = '<div style="padding: 20px; font-family: Arial, sans-serif; text-align: center;"><h2>Browser Not Supported</h2><p>This application requires a modern browser that supports ES modules. Please update your browser to the latest version.</p><p>Supported browsers: Chrome 63+, Firefox 60+, Safari 11.1+, Edge 79+</p></div>';
+          });
+          return;
+        }
+
+        // Handle module loading errors
+        window.addEventListener('error', function(e) {
+          if (e.message && e.message.includes('module')) {
+            console.error('Module loading error:', e);
+            // Don't replace content immediately, wait a bit to see if it recovers
+            setTimeout(function() {
+              if (!document.querySelector('#root > *')) {
+                document.body.innerHTML = '<div style="padding: 20px; font-family: Arial, sans-serif; text-align: center;"><h2>Loading Error</h2><p>There was an error loading the application. Please refresh the page.</p><button onclick="location.reload()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Refresh Page</button></div>';
+              }
+            }, 5000);
+          }
+        });
+      })();
+    </script>
+
+    <!-- Smartsupp Live Chat script -->
+    <script type="text/javascript">
+    var _smartsupp = _smartsupp || {};
+    _smartsupp.key = 'b946031b416bd52d6cebdf0f507bfa4dd021e21f';
+    window.smartsupp||(function(d) {
+      var s,c,o=smartsupp=function(){ o._.push(arguments)};o._=[];
+      s=d.getElementsByTagName('script')[0];c=d.createElement('script');
+      c.type='text/javascript';c.charset='utf-8';c.async=true;
+      c.src='https://www.smartsuppchat.com/loader.js?';s.parentNode.insertBefore(c,s);
+    })(document);
     </script>
   </head>
 

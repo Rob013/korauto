@@ -115,7 +115,7 @@ describe('Pagination Bug Fix Validation', () => {
       // The addPaginationToFilters function should preserve all filters
       const filtersWithPagination = {
         ...inputFilters,
-        per_page: '50'
+        per_page: '200'
       };
       
       // Check that all original filters are preserved

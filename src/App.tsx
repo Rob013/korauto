@@ -8,12 +8,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { InstallPrompt } from "./components/InstallPrompt";
 import { useResourcePreloader } from "./hooks/useResourcePreloader";
 import { AccessibilityEnhancer } from "./utils/accessibilityEnhancer";
+import { StatusRefreshProvider } from "./components/StatusRefreshProvider";
+import { useFrameRate } from "./hooks/useFrameRate";
+import { PerformanceMonitor } from "./components/PerformanceMonitor";
+import { useAdminCheck } from "./hooks/useAdminCheck";
+import { CacheUpdateNotification } from "./components/CacheUpdateNotification";
+import { useIsMobile } from "./hooks/use-mobile";
+import { IOSEnhancer } from "./components/IOSEnhancer";
 
 // Lazy load all pages for better code splitting
 const Index = lazy(() => import("./pages/Index"));
 const Catalog = lazy(() => import("./pages/Catalog"));
-const NewCatalog = lazy(() => import("./pages/NewCatalog"));
 const CarDetails = lazy(() => import("./pages/CarDetails"));
+const CarGallery = lazy(() => import("./pages/CarGallery"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AuthPage = lazy(() => import("./pages/AuthPage"));
 const EmailConfirmationPage = lazy(() => import("./pages/EmailConfirmationPage"));
@@ -22,13 +29,11 @@ const InspectionServices = lazy(() => import("./pages/InspectionServices"));
 const MyAccount = lazy(() => import("./pages/MyAccount"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Contacts = lazy(() => import("./pages/Contacts"));
-const ComponentDemo = lazy(() => import("./pages/ComponentDemo"));
-const DiagramDemo = lazy(() => import("./pages/DiagramDemo"));
-// Removed demo import - was only for testing layout improvements
-const AdminCarSearchDemo = lazy(() => import("./pages/AdminCarSearchDemo"));
+const ShipmentTracking = lazy(() => import("./pages/ShipmentTracking"));
+// Demo imports removed - no longer needed
 const PerformanceDashboard = lazy(() => import("./components/PerformanceDashboard"));
 const AuditTestPage = lazy(() => import("./pages/AuditTestPage"));
-const SyncDemo = lazy(() => import("./pages/SyncDemo"));
+const ApiInfoDemo = lazy(() => import("./components/ApiInfoDemo"));
 
 // Lazy load admin components for better code splitting
 const AdminSyncDashboard = lazy(() => import("./components/AdminSyncDashboard"));
@@ -81,16 +86,16 @@ const AdminSyncSkeleton = () => (
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Cache for 10 minutes by default (increased from 5)
-      staleTime: 10 * 60 * 1000,
-      // Keep data for 30 minutes (increased from 10)
-      gcTime: 30 * 60 * 1000,
-      // Refetch on window focus for critical data only
-      refetchOnWindowFocus: false,
+      // Cache for 5 minutes (reduced for fresher data)
+      staleTime: 5 * 60 * 1000,
+      // Keep data for 15 minutes (reduced for fresher data)
+      gcTime: 15 * 60 * 1000,
+      // Refetch on window focus to get fresh data
+      refetchOnWindowFocus: true,
       // Retry failed requests up to 2 times
       retry: 2,
-      // Only refetch if data is stale (improved from 'always')
-      refetchOnMount: false,
+      // Refetch on mount if data is stale
+      refetchOnMount: 'always',
       // Enable background refetching for better UX
       refetchInterval: false,
       // Network mode optimizations
@@ -109,6 +114,15 @@ const App = () => {
   // Initialize resource preloading for better performance
   const { preloadRouteResources } = useResourcePreloader();
 
+  // Initialize frame rate optimization for 120fps support
+  const { supportsHighRefreshRate, targetFPS, currentFPS } = useFrameRate();
+
+  // Check admin status for performance monitoring
+  const { isAdmin } = useAdminCheck();
+  
+  // Check if mobile to hide performance widget
+  const isMobile = useIsMobile();
+
   // Initialize accessibility enhancements
   useEffect(() => {
     const enhancer = AccessibilityEnhancer.getInstance();
@@ -120,12 +134,26 @@ const App = () => {
     };
   }, []);
 
+  // Log performance information for development
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🚀 KORAUTO Performance Info:', {
+        supportsHighRefreshRate,
+        targetFPS,
+        currentFPS,
+        userAgent: navigator.userAgent,
+        devicePixelRatio: window.devicePixelRatio
+      });
+    }
+  }, [supportsHighRefreshRate, targetFPS, currentFPS]);
+
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+      <StatusRefreshProvider intervalHours={6} enabled={true}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
           <Routes>
             <Route path="/" element={
               <Suspense fallback={<PageSkeleton />}>
@@ -137,14 +165,14 @@ const App = () => {
                 <Catalog />
               </Suspense>
             } />
-            <Route path="/catalog-new" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <NewCatalog />
-              </Suspense>
-            } />
             <Route path="/car/:id" element={
               <Suspense fallback={<PageSkeleton />}>
                 <CarDetails />
+              </Suspense>
+            } />
+            <Route path="/car/:id/gallery" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <CarGallery />
               </Suspense>
             } />
             <Route path="/admin" element={
@@ -187,22 +215,12 @@ const App = () => {
                 <Contacts />
               </Suspense>
             } />
-            <Route path="/demo" element={
+            <Route path="/tracking" element={
               <Suspense fallback={<PageSkeleton />}>
-                <ComponentDemo />
+                <ShipmentTracking />
               </Suspense>
             } />
-            <Route path="/diagram-demo" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <DiagramDemo />
-              </Suspense>
-            } />
-// Remove the demo route since it was just for testing
-            <Route path="/admin-search-demo" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <AdminCarSearchDemo />
-              </Suspense>
-            } />
+            {/* Demo routes removed - no longer needed */}
             <Route path="/performance" element={
               <Suspense fallback={<PageSkeleton />}>
                 <PerformanceDashboard />
@@ -218,9 +236,9 @@ const App = () => {
                 <AuditTestPage />
               </Suspense>
             } />
-            <Route path="/sync-demo" element={
+            <Route path="/api-info-demo" element={
               <Suspense fallback={<PageSkeleton />}>
-                <SyncDemo />
+                <ApiInfoDemo />
               </Suspense>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
@@ -232,7 +250,14 @@ const App = () => {
           </Routes>
         </BrowserRouter>
         <InstallPrompt />
+        <CacheUpdateNotification />
+        <IOSEnhancer />
+        {/* Performance Monitor for admin users only, hidden on mobile */}
+        {isAdmin && !isMobile && (
+          <PerformanceMonitor showDetails={false} />
+        )}
       </TooltipProvider>
+      </StatusRefreshProvider>
     </QueryClientProvider>
   );
 };

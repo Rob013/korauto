@@ -15,23 +15,74 @@ export const fallbackCars = [
     grade: "4.5",
     vin: "1HGBH41JXMN109188",
     lot_number: "FB001",
-    lots: [{
-      buy_now: 32000,
-      odometer: { km: 25000 },
-      images: {
-        normal: ["/images/placeholder-car.jpg"],
-        big: ["/images/placeholder-car.jpg"]
-      },
-      lot: "FB001",
-      status: 1
-    }],
     location: "Prishtinë, Kosovo",
     features: ["Hybrid Engine", "Automatic Transmission", "Low Mileage"],
+    equipment_options: {
+      standard: [
+        "Air Conditioning",
+        "Power Steering", 
+        "ABS Brakes",
+        "Airbags (Front & Side)",
+        "Electric Windows",
+        "Radio/Audio System",
+        "Bluetooth Connectivity",
+        "Cruise Control",
+        "Power Seats",
+        "LED Lights"
+      ],
+      choice: [
+        "Sunroof",
+        "Navigation System", 
+        "Heated Seats",
+        "Parking Sensors",
+        "Backup Camera"
+      ]
+    },
     is_premium: false,
     seats_count: 5,
     accidents_count: 0,
     inspection_available: true,
-    status: "1"
+    status: "1",
+    lots: [{
+      buy_now: 32000,
+      odometer: { km: 25000 },
+      images: {
+        normal: [
+          "/images/placeholder-car.jpg",
+          "https://picsum.photos/800/600?random=1",
+          "https://picsum.photos/800/600?random=2",
+          "https://picsum.photos/800/600?random=3",
+          "https://picsum.photos/800/600?random=4",
+          "https://picsum.photos/800/600?random=5"
+        ],
+        big: [
+          "/images/placeholder-car.jpg",
+          "https://picsum.photos/1200/900?random=1",
+          "https://picsum.photos/1200/900?random=2",
+          "https://picsum.photos/1200/900?random=3",
+          "https://picsum.photos/1200/900?random=4",
+          "https://picsum.photos/1200/900?random=5"
+        ]
+      },
+      lot: "FB001",
+      status: 1,
+      details: {
+        options: {
+          standard: ["001", "002", "003", "004", "005", "010", "011", "014", "037", "046"],
+          choice: ["009", "015", "028", "042", "043"],
+          tuning: ["034", "035"]
+        }
+      },
+      lots: [{
+        details: {
+          options: {
+            standard: ["001", "002", "003", "004", "005", "010", "011", "014", "037", "046"],
+            choice: ["009", "015", "028", "042", "043"],
+            tuning: ["034", "035"]
+          }
+        }
+      }]
+    }]
   },
   {
     id: "fb-car-2", 
@@ -56,10 +107,36 @@ export const fallbackCars = [
         big: ["/images/placeholder-car.jpg"]
       },
       lot: "FB002",
-      status: 1
+      status: 1,
+      details: {
+        options: {
+          standard: ["001", "002", "003", "004", "005", "006", "014", "016", "017", "020"],
+          choice: ["009", "010", "011", "037", "041"],
+          tuning: []
+        }
+      }
     }],
     location: "Prishtinë, Kosovo",
     features: ["All-Wheel Drive", "CVT Transmission", "Excellent Condition"],
+    equipment_options: {
+      standard: [
+        "Air Conditioning",
+        "Power Windows", 
+        "Anti-lock Brakes (ABS)",
+        "Multiple Airbags",
+        "Power Steering",
+        "Audio System",
+        "Keyless Entry",
+        "AWD System"
+      ],
+      choice: [
+        "Premium Sound System",
+        "Leather Seats", 
+        "Sunroof",
+        "Navigation",
+        "Heated Steering Wheel"
+      ]
+    },
     is_premium: true,
     seats_count: 5,
     accidents_count: 0,
@@ -99,38 +176,108 @@ export const fallbackCars = [
     inspection_available: true,
     status: "1"
   },
+  // Test cars for status badge verification
   {
-    id: "40359239",
-    title: "2019 BMW X5 xDrive40i",
-    manufacturer: { name: "BMW" },
-    model: { name: "X5" },
-    year: 2019,
+    id: "test-sold-car",
+    title: "2023 Tesla Model 3 - SOLD",
+    manufacturer: { name: "Tesla" },
+    model: { name: "Model 3" },
+    year: 2023,
     price: 45000,
     currency: "USD",
-    odometer: 52000,
-    fuel: { name: "Gasoline" },
+    odometer: 15000,
+    fuel: { name: "Electric" },
     transmission: { name: "Automatic" },
-    color: { name: "Black" },
-    grade: "4.6",
-    vin: "5UXKR0C56K0H12345",
-    lot_number: "40359239",
+    color: { name: "Red" },
+    grade: "5.0",
+    vin: "5YJ3E1EA7JF123456",
+    lot_number: "SOLD001",
     lots: [{
       buy_now: 45000,
-      odometer: { km: 52000 },
+      odometer: { km: 15000 },
       images: {
         normal: ["/images/placeholder-car.jpg"],
         big: ["/images/placeholder-car.jpg"]
       },
-      lot: "40359239",
+      lot: "SOLD001",
+      status: 3
+    }],
+    location: "Prishtinë, Kosovo",
+    features: ["Electric", "Autopilot", "Premium Interior"],
+    is_premium: true,
+    seats_count: 5,
+    accidents_count: 0,
+    inspection_available: false,
+    status: "3",
+    sale_status: "sold"
+  },
+  {
+    id: "test-reserved-car",
+    title: "2022 BMW X5 - RESERVED",
+    manufacturer: { name: "BMW" },
+    model: { name: "X5" },
+    year: 2022,
+    price: 55000,
+    currency: "USD", 
+    odometer: 20000,
+    fuel: { name: "Gasoline" },
+    transmission: { name: "Automatic" },
+    color: { name: "Blue" },
+    grade: "4.8",
+    vin: "5UXCR6C0XN9123456",
+    lot_number: "RSV001",
+    lots: [{
+      buy_now: 55000,
+      odometer: { km: 20000 },
+      images: {
+        normal: ["/images/placeholder-car.jpg"],
+        big: ["/images/placeholder-car.jpg"]
+      },
+      lot: "RSV001",
       status: 1
     }],
     location: "Prishtinë, Kosovo",
-    features: ["AWD", "Leather Seats", "Navigation System", "Panoramic Sunroof"],
+    features: ["All-Wheel Drive", "Premium Package", "Navigation"],
     is_premium: true,
     seats_count: 7,
     accidents_count: 0,
     inspection_available: true,
-    status: "1"
+    status: "1",
+    sale_status: "reserved"
+  },
+  {
+    id: "test-pending-car",
+    title: "2021 Mercedes C-Class - PENDING",
+    manufacturer: { name: "Mercedes-Benz" },
+    model: { name: "C-Class" },
+    year: 2021,
+    price: 42000,
+    currency: "USD",
+    odometer: 30000,
+    fuel: { name: "Gasoline" },
+    transmission: { name: "Automatic" },
+    color: { name: "Silver" },
+    grade: "4.6",
+    vin: "55SWF8DB9JU123456",
+    lot_number: "PND001",
+    lots: [{
+      buy_now: 42000,
+      odometer: { km: 30000 },
+      images: {
+        normal: ["/images/placeholder-car.jpg"],
+        big: ["/images/placeholder-car.jpg"]
+      },
+      lot: "PND001",
+      status: 2
+    }],
+    location: "Prishtinë, Kosovo",
+    features: ["Luxury Interior", "Sport Package", "Premium Sound"],
+    is_premium: true,
+    seats_count: 5,
+    accidents_count: 0,
+    inspection_available: true,
+    status: "2",
+    sale_status: "pending"
   }
 ];
 

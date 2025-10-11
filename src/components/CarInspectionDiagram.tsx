@@ -228,7 +228,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
               width="100%" 
               height="500" 
               viewBox="0 0 600 500" 
-              className="border border-border rounded-xl bg-gradient-to-b from-blue-50 to-blue-100 dark:from-gray-800 dark:to-gray-900 shadow-lg"
+              className="rounded-2xl bg-card/50 backdrop-blur-sm border border-border/30 shadow-2xl"
               preserveAspectRatio="xMidYMid meet"
             >
               {/* Background pattern */}

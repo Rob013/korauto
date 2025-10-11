@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Session } from "@supabase/supabase-js";
+import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,45 +12,10 @@ import { useNavigate } from "react-router-dom";
 const AuthLogin = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
-  const [session, setSession] = useState<Session | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    // Load saved admin email if remember me was checked
-    const savedEmail = localStorage.getItem('adminRememberedEmail');
-    const savedRememberMe = localStorage.getItem('adminRememberMe') === 'true';
-    if (savedEmail && savedRememberMe) {
-      setEmail(savedEmail);
-      setRememberMe(true);
-    }
-
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        
-        // Auto redirect if admin is authenticated
-        if (session?.user) {
-          onLoginSuccess();
-        }
-      }
-    );
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      
-      // Auto redirect if admin is authenticated  
-      if (session?.user) {
-        onLoginSuccess();
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [onLoginSuccess]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,21 +44,22 @@ const AuthLogin = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
         throw new Error('Access denied: Admin privileges required');
       }
 
-      // Handle admin remember me functionality
+      // Store remember me preference
       if (rememberMe) {
-        localStorage.setItem('adminRememberedEmail', email);
-        localStorage.setItem('adminRememberMe', 'true');
+        localStorage.setItem('rememberMe', 'true');
       } else {
-        localStorage.removeItem('adminRememberedEmail');
-        localStorage.removeItem('adminRememberMe');
+        localStorage.removeItem('rememberMe');
+        // For sessions that should not be remembered, we'll use sessionStorage
+        sessionStorage.setItem('tempSession', 'true');
       }
 
       toast({
         title: "Welcome Admin!",
-        description: "Successfully logged in to admin dashboard",
+        description: rememberMe ? "Successfully logged in. You will stay logged in." : "Successfully logged in to admin dashboard",
       });
 
-      // Navigation will be handled by the auth state change listener
+      // Redirect admin users to dashboard
+      navigate('/admin');
     } catch (error: any) {
       toast({
         title: "Login Failed",
@@ -139,21 +105,19 @@ const AuthLogin = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
                 required
               />
             </div>
-            
-            <div className="flex items-center space-x-2 mb-4">
+            <div className="flex items-center space-x-2">
               <Checkbox 
-                id="adminRememberMe" 
+                id="admin-remember-me" 
                 checked={rememberMe}
-                onCheckedChange={(checked) => setRememberMe(checked === true)}
+                onCheckedChange={(checked) => setRememberMe(checked as boolean)}
               />
               <label 
-                htmlFor="adminRememberMe" 
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                htmlFor="admin-remember-me" 
+                className="text-sm text-muted-foreground cursor-pointer select-none"
               >
-                Remember admin credentials
+                Remember me (Stay logged in)
               </label>
             </div>
-            
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Logging in..." : "Login"}
             </Button>

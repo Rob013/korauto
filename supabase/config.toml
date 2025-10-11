@@ -38,8 +38,5 @@ verify_jwt = false
 [functions.api-test]
 verify_jwt = false
 
-[functions.cars-sync]
-verify_jwt = false
-
 [functions.send-confirmation-email]
 verify_jwt = false

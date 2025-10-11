@@ -29,8 +29,6 @@ export interface APIFilters {
   seats_count?: string;
   max_accidents?: string;
   per_page?: string;
-  sort_by?: string;
-  sort_direction?: string;
 }
 
 export interface Car {
@@ -228,7 +226,7 @@ export const isYearRangeChange = (newFilters: APIFilters, currentFilters: APIFil
 /**
  * Creates filters with pagination
  */
-export const addPaginationToFilters = (filters: APIFilters, perPage: number = 50, page: number = 1): APIFilters => {
+export const addPaginationToFilters = (filters: APIFilters, perPage: number = 200, page: number = 1): APIFilters => {
   return {
     ...filters,
     per_page: perPage.toString(),
@@ -322,37 +320,37 @@ export const sortManufacturers = (manufacturers: Array<{
   cars_qty?: number; 
   car_count?: number 
 }>): Array<{ id: number; name: string; cars_qty?: number; car_count?: number }> => {
+  // Brands to exclude from the dropdown
+  const excludedBrands = [
+    'Daewoo', 'Daihatsu', 'Saab', 'Isuzu', 'BAIC', 
+    'Jeis Mobility', 'Ineos', 'IVECO', 'Mitsuoka', 
+    'Buick', 'International', 'Mercury'
+  ];
+  
   return manufacturers
     .filter(m => {
       // Ensure manufacturer has valid data from API
-      return m.id && 
+      const isValid = m.id && 
              m.name && 
              typeof m.name === 'string' && 
              m.name.trim().length > 0 &&
              (m.cars_qty && m.cars_qty > 0);
+      
+      // Exclude specific brands
+      const isNotExcluded = !excludedBrands.includes(m.name.trim());
+      
+      return isValid && isNotExcluded;
     })
     .sort((a, b) => {
-      const aName = a.name.trim();
-      const bName = b.name.trim();
-      
-      // Find category for each manufacturer
-      const aCategoryInfo = getManufacturerCategory(aName);
-      const bCategoryInfo = getManufacturerCategory(bName);
-      
-      // Sort by category priority first
-      if (aCategoryInfo.priority !== bCategoryInfo.priority) {
-        return aCategoryInfo.priority - bCategoryInfo.priority;
-      }
-      
-      // Within same category, sort by car count (descending)
+      // Sort by car count (descending) - brands with most cars on top
       const aCount = a.cars_qty || 0;
       const bCount = b.cars_qty || 0;
       if (aCount !== bCount) {
         return bCount - aCount;
       }
       
-      // Finally, alphabetical
-      return aName.localeCompare(bName);
+      // If same count, sort alphabetically
+      return a.name.trim().localeCompare(b.name.trim());
     });
 };
 

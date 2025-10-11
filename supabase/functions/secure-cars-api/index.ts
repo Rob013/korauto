@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -6,6 +7,99 @@ const corsHeaders = {
 };
 
 const API_BASE_URL = 'https://auctionsapi.com/api';
+
+// Rate limiting configuration matching integration guide
+const RATE_LIMIT_DELAY = 15000; // 15 seconds between requests
+const MAX_RETRIES = 3;
+const BACKOFF_MULTIPLIER = 3; // 15s, 45s, 135s
+const REQUEST_TIMEOUT = 45000; // 45 seconds
+
+// Helper function to make API requests with rate limiting and retry logic
+async function makeApiRequest(url: string, apiKey: string, retryCount = 0): Promise<any> {
+  console.log(`📡 API Request: ${url} (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`);
+  
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+    
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'KORAUTO-WebApp/1.0',
+        'X-API-Key': apiKey
+      },
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+    
+    // Handle rate limiting with exponential backoff
+    if (response.status === 429) {
+      if (retryCount < MAX_RETRIES) {
+        const waitTime = RATE_LIMIT_DELAY * Math.pow(BACKOFF_MULTIPLIER, retryCount);
+        console.log(`⏰ Rate limited. Waiting ${waitTime}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        return makeApiRequest(url, apiKey, retryCount + 1);
+      }
+      throw new Error(`Rate limit exceeded after ${MAX_RETRIES} retries`);
+    }
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ API Error: ${response.status} - ${errorText}`);
+      throw new Error(`API request failed: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error: any) {
+    if (error.name === 'AbortError') {
+      console.error(`❌ Request timeout after ${REQUEST_TIMEOUT}ms`);
+      throw new Error('Request timeout');
+    }
+    
+    // Retry on network errors
+    if (retryCount < MAX_RETRIES && error.message !== 'Rate limit exceeded after 3 retries') {
+      const waitTime = RATE_LIMIT_DELAY * Math.pow(BACKOFF_MULTIPLIER, retryCount);
+      console.log(`⚠️ Request failed, retrying in ${waitTime}ms...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+      return makeApiRequest(url, apiKey, retryCount + 1);
+    }
+    
+    throw error;
+  }
+}
+
+// Validation schema for car filters
+const carFiltersSchema = z.object({
+  manufacturer_id: z.string().max(50).optional(),
+  model_id: z.string().max(50).optional(),
+  generation_id: z.string().max(50).optional(),
+  grade_iaai: z.string().max(100).optional(),
+  color: z.string().max(50).optional(),
+  fuel_type: z.string().max(30).optional(),
+  transmission: z.string().max(30).optional(),
+  odometer_from_km: z.string().regex(/^\d+$/).optional(),
+  odometer_to_km: z.string().regex(/^\d+$/).optional(),
+  from_year: z.string().regex(/^\d{4}$/).optional(),
+  to_year: z.string().regex(/^\d{4}$/).optional(),
+  buy_now_price_from: z.string().regex(/^\d+$/).optional(),
+  buy_now_price_to: z.string().regex(/^\d+$/).optional(),
+  seats_count: z.string().regex(/^\d+$/).optional(),
+  search: z.string().max(200).optional(),
+  page: z.string().regex(/^\d+$/).optional(),
+  per_page: z.string().regex(/^\d+$/).optional(),
+  simple_paginate: z.string().optional(),
+  minutes: z.string().regex(/^\d+$/).optional(), // For incremental updates
+  sort_by: z.string().optional(),
+  endpoint: z.string().optional()
+});
+
+const requestSchema = z.object({
+  endpoint: z.string().min(1, "Endpoint is required"),
+  filters: carFiltersSchema.optional(),
+  carId: z.string().max(100).optional(),
+  lotNumber: z.string().max(50).optional()
+});
 
 interface CarFilters {
   manufacturer_id?: string;
@@ -26,6 +120,8 @@ interface CarFilters {
   page?: string;
   per_page?: string;
   simple_paginate?: string;
+  minutes?: string;
+  sort_by?: string;
   endpoint?: string;
 }
 
@@ -48,13 +144,23 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { endpoint, filters = {}, carId, lotNumber } = await req.json();
-    if (!endpoint) {
+    const requestBody = await req.json();
+    
+    // Validate request with zod
+    const validationResult = requestSchema.safeParse(requestBody);
+    
+    if (!validationResult.success) {
+      console.error('❌ Validation error:', validationResult.error.issues);
       return new Response(
-        JSON.stringify({ error: 'Missing endpoint parameter' }),
+        JSON.stringify({ 
+          error: 'Invalid request',
+          details: validationResult.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', ')
+        }),
         { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
     }
+
+    const { endpoint, filters = {}, carId, lotNumber } = validationResult.data;
     
     console.log('📋 Request params:', { endpoint, filters, carId, lotNumber });
     
@@ -106,32 +212,15 @@ const handler = async (req: Request): Promise<Response> => {
       // Regular endpoints with filters
       const params = new URLSearchParams();
       
-      // Add filters to params with validation
+      // Set default per_page to 250 as per integration guide
+      if (!filters.per_page) {
+        params.append('per_page', '250');
+      }
+      
+      // Add validated filters to params
       Object.entries(filters).forEach(([key, value]) => {
         if (value && typeof value === 'string' && value.trim()) {
-          const originalValue = value.trim();
-          let sanitizedValue = originalValue;
-          
-          // Special handling for grade_iaai to preserve spaces and special characters common in car grades
-          if (key === 'grade_iaai' || key === 'trim_level') {
-            // Allow spaces, dots, parentheses, plus signs, and common grade characters
-            // This preserves values like "M4(+)", "35 TDI", "AMG 63S+", "2.0 TDI", etc.
-            sanitizedValue = originalValue.replace(/[^\w\-_.@\s()+]/g, '');
-          } else {
-            // Sanitize other parameter values more restrictively
-            sanitizedValue = originalValue.replace(/[^\w\-_.@]/g, '');
-          }
-          
-          // Log if value was changed during sanitization
-          if (sanitizedValue !== originalValue) {
-            console.log(`🔍 Sanitized ${key}: "${originalValue}" -> "${sanitizedValue}"`);
-          }
-          
-          if (sanitizedValue) {
-            params.append(key, sanitizedValue);
-          } else {
-            console.warn(`⚠️ Parameter ${key} was completely removed during sanitization: "${originalValue}"`);
-          }
+          params.append(key, value.trim());
         }
       });
 
@@ -139,70 +228,16 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log('🌐 Making API request to:', url);
+
+    // Use the helper function with built-in rate limiting and retry logic
+    const data = await makeApiRequest(url, apiKey);
     
-    // Log the constructed URL parameters for debugging
-    if (filters.grade_iaai) {
-      console.log('🔍 URL parameters for grade filter:', params.toString());
+    console.log('✅ API response received successfully');
+    
+    // Log pagination metadata if available
+    if (data.meta) {
+      console.log(`📊 Pagination: Page ${data.meta.current_page || 1} of ${data.meta.last_page || '?'}, Total: ${data.meta.total || 0}`);
     }
-
-    // Make the API request with rate limiting
-    const response = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'KORAUTO-WebApp/1.0',
-        'X-API-Key': apiKey
-      },
-      signal: AbortSignal.timeout(30000) // 30 second timeout
-    });
-
-    if (response.status === 429) {
-      console.log('⏳ Rate limited, returning appropriate error');
-      return new Response(
-        JSON.stringify({ 
-          error: 'Rate limited',
-          retryAfter: 2000 
-        }), 
-        {
-          status: 429,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders }
-        }
-      );
-    }
-
-    if (!response.ok) {
-      console.error('❌ API error:', response.status, response.statusText, 'URL:', url);
-      
-      // Provide more specific error messages based on status codes
-      let errorMessage = `API request failed`;
-      if (response.status === 400) {
-        errorMessage = `Invalid request parameters. Please check your filter values.`;
-      } else if (response.status === 401) {
-        errorMessage = `Authentication failed. API key may be invalid.`;
-      } else if (response.status === 404) {
-        errorMessage = `No cars found matching your criteria.`;
-      } else if (response.status === 429) {
-        errorMessage = `Too many requests. Please wait a moment and try again.`;
-      } else if (response.status >= 500) {
-        errorMessage = `Server error. Please try again later.`;
-      }
-      
-      return new Response(
-        JSON.stringify({ 
-          error: errorMessage,
-          details: `${response.status}: ${response.statusText}`,
-          endpoint,
-          url: url.replace(/X-API-Key=[^&]+/, 'X-API-Key=***'), // Hide API key in logs
-          filters
-        }), 
-        {
-          status: 502,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders }
-        }
-      );
-    }
-
-    const data = await response.json();
-    console.log('✅ API response received, data length:', JSON.stringify(data).length);
 
     return new Response(JSON.stringify(data), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders }

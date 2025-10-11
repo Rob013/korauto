@@ -25,7 +25,7 @@ export interface PaginationInfo {
 export function calculatePaginationInfo(
   currentPage: number,
   totalItems: number,
-  itemsPerPage: number = 50
+  itemsPerPage: number = 200
 ): PaginationInfo {
   const totalPages = totalItems > 0 ? Math.ceil(totalItems / itemsPerPage) : 0;
   const clampedCurrentPage = Math.max(1, Math.min(currentPage, totalPages));
@@ -131,7 +131,7 @@ export function isValidPageNumber(
 export function getPaginationStats(
   currentPage: number,
   totalItems: number,
-  itemsPerPage: number = 50
+  itemsPerPage: number = 200
 ): {
   displayText: string;
   shortText: string;
@@ -165,7 +165,7 @@ export function getPaginationStats(
  */
 export function generateApiPaginationParams(
   page: number,
-  itemsPerPage: number = 50
+  itemsPerPage: number = 200
 ): {
   page: string;
   per_page: string;
@@ -189,7 +189,7 @@ export function generateApiPaginationParams(
 export function sliceDataForPage<T>(
   data: T[],
   currentPage: number,
-  itemsPerPage: number = 50
+  itemsPerPage: number = 200
 ): T[] {
   const info = calculatePaginationInfo(currentPage, data.length, itemsPerPage);
   return data.slice(info.startIndex, info.endIndex);

@@ -36,47 +36,73 @@ export const normalizeGrade = (grade: string): string => {
 
 /**
  * Categorizes a grade based on its characteristics
+ * Priority: TDI first, TFSI second, other diesel third, other petrol fourth
  */
 export const categorizeGrade = (grade: string): { category: string; priority: number } => {
   const normalized = normalizeGrade(grade);
   
-  // Electric/Hybrid variants (highest priority for modern relevance)
-  if (/\b(electric|hybrid|e-tron|phev|ev|e-power|e-quattro)\b/.test(normalized)) {
-    return { category: 'Electric & Hybrid', priority: 1 };
+  // TDI variants (highest priority - Volkswagen/Audi diesel)
+  if (/\b\d*\s*tdi\b/.test(normalized)) {
+    return { category: 'TDI Diesel', priority: 1 };
   }
   
-  // Performance variants (high priority)
+  // TFSI variants (second priority - Volkswagen/Audi petrol)
+  if (/\b\d*\s*tfsi\b/.test(normalized)) {
+    return { category: 'TFSI Petrol', priority: 2 };
+  }
+  
+  // TSI variants (Volkswagen/Audi petrol turbo)
+  if (/\b\d*\s*tsi\b/.test(normalized)) {
+    return { category: 'TSI Petrol', priority: 3 };
+  }
+  
+  // CDI variants (Mercedes diesel)
+  if (/\b\d*\s*cdi\b/.test(normalized)) {
+    return { category: 'CDI Diesel', priority: 4 };
+  }
+  
+  // CGI variants (Mercedes petrol)
+  if (/\b\d*\s*cgi\b/.test(normalized)) {
+    return { category: 'CGI Petrol', priority: 5 };
+  }
+  
+  // Other diesel variants
+  if (/\b(diesel|d\b|dci|turbodiesel)\b/.test(normalized)) {
+    return { category: 'Other Diesel', priority: 6 };
+  }
+  
+  // Other petrol variants
+  if (/\b(fsi|petrol|gasoline|turbo|vtec|vvt|i\b|gdi|mpi)\b/.test(normalized)) {
+    return { category: 'Other Petrol', priority: 7 };
+  }
+  
+  // Hybrid/Electric variants
+  if (/\b(hybrid|electric|e-tron|phev|ev|e-power|e-quattro|plug-in)\b/.test(normalized)) {
+    return { category: 'Hybrid & Electric', priority: 8 };
+  }
+  
+  // Performance variants
   if (/\b(amg|m\d*|rs\d*|s\d*|gt[s]?|gti|r\d*|n\d*|st|type-r|nismo|sti|wrx)\b/.test(normalized)) {
-    return { category: 'Performance', priority: 2 };
-  }
-  
-  // Engine specifications with technology (most common, high priority)
-  if (/\b\d+\.?\d*\s*(tdi|tfsi|tsi|fsi|cdi|cgi|turbo|vtec|vvt|dohc)\b/.test(normalized)) {
-    return { category: 'Engine Technology', priority: 3 };
-  }
-  
-  // Basic engine specifications
-  if (/\b\d+\.?\d*\s*(diesel|petrol|liter|l)\b/.test(normalized)) {
-    return { category: 'Engine Displacement', priority: 4 };
+    return { category: 'Performance', priority: 9 };
   }
   
   // Luxury/Premium trim levels
   if (/\b(luxury|premium|prestige|executive|business|signature|platinum|diamond|exclusive|elite)\b/.test(normalized)) {
-    return { category: 'Luxury Trims', priority: 5 };
+    return { category: 'Luxury Trims', priority: 10 };
   }
   
   // Sport/Style trim levels
   if (/\b(sport|dynamic|design|style|elegance|advance|progressive|comfort|deluxe)\b/.test(normalized)) {
-    return { category: 'Style Trims', priority: 6 };
+    return { category: 'Style Trims', priority: 11 };
   }
   
   // Basic trim levels
   if (/\b(base|standard|limited|special|edition)\b/.test(normalized)) {
-    return { category: 'Standard Trims', priority: 7 };
+    return { category: 'Standard Trims', priority: 12 };
   }
   
   // Default category for unclassified
-  return { category: 'Other', priority: 8 };
+  return { category: 'Other', priority: 13 };
 };
 
 /**
@@ -160,19 +186,33 @@ export const deduplicateGrades = (grades: GradeOption[]): GradeOption[] => {
 
 /**
  * Sorts grades within a category using intelligent logic
+ * For TDI/TFSI/diesel/petrol: sort numerically (30, 35, 40, 45)
  */
 export const sortGradesInCategory = (grades: GradeOption[], category: string): GradeOption[] => {
   return [...grades].sort((a, b) => {
-    // First sort by count (popularity) in descending order
-    const countDiff = (b.count || 0) - (a.count || 0);
-    if (countDiff !== 0) return countDiff;
+    // For all engine categories: sort numerically by displacement/power number
+    const isEngineCategory = [
+      'TDI Diesel', 'TFSI Petrol', 'TSI Petrol', 'CDI Diesel', 'CGI Petrol',
+      'Other Diesel', 'Other Petrol', 'Hybrid & Electric'
+    ].includes(category);
     
-    // For engine categories, sort by displacement/power numerically
-    if (category === 'Engine Technology' || category === 'Engine Displacement') {
+    if (isEngineCategory) {
       const aNum = extractEngineSize(a.value);
       const bNum = extractEngineSize(b.value);
-      if (aNum !== bNum) return bNum - aNum; // Larger engines first
+      
+      // If both have numbers, sort by number (ascending: 30, 35, 40, 45, etc.)
+      if (aNum !== bNum && aNum > 0 && bNum > 0) {
+        return aNum - bNum; // Smaller numbers first (30 before 35 before 40)
+      }
+      
+      // If only one has a number, put the numbered one first
+      if (aNum > 0 && bNum === 0) return -1;
+      if (bNum > 0 && aNum === 0) return 1;
     }
+    
+    // Then sort by count (popularity) in descending order
+    const countDiff = (b.count || 0) - (a.count || 0);
+    if (countDiff !== 0) return countDiff;
     
     // For performance variants, custom order
     if (category === 'Performance') {
@@ -193,11 +233,29 @@ export const sortGradesInCategory = (grades: GradeOption[], category: string): G
 };
 
 /**
- * Extracts numeric engine size for sorting
+ * Extracts numeric engine size/power for sorting
+ * Handles various formats: "30 TDI", "2.0 TDI", "45 TFSI", etc.
  */
 const extractEngineSize = (grade: string): number => {
-  const match = grade.match(/(\d+\.?\d*)/);
-  return match ? parseFloat(match[1]) : 0;
+  // First try to match power numbers (30, 35, 40, 45, etc. - common in Audi, VW)
+  const powerMatch = grade.match(/\b(\d{2,3})\s*(?:TDI|TFSI|TSI|FSI|CDI|CGI|d|i|e|hybrid)/i);
+  if (powerMatch) {
+    return parseFloat(powerMatch[1]);
+  }
+  
+  // Then try displacement numbers (1.4, 2.0, 3.0, etc.)
+  const displacementMatch = grade.match(/(\d+\.?\d*)\s*(?:L|liter|litre)?/i);
+  if (displacementMatch) {
+    const displacement = parseFloat(displacementMatch[1]);
+    // Convert displacement to comparable scale with power numbers
+    // 1.4L -> 14, 2.0L -> 20, 3.0L -> 30, etc.
+    if (displacement < 10) {
+      return displacement * 10;
+    }
+    return displacement;
+  }
+  
+  return 0;
 };
 
 /**

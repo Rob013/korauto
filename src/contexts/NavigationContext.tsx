@@ -101,11 +101,14 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({ children
           console.log('🔄 Restored filter state:', pageState.filterState);
         }
         
-        // Restore scroll position
+        // Restore scroll position with optimized timing for smoother experience
         if (pageState.scrollPosition > 0) {
-          setTimeout(() => {
-            window.scrollTo({ top: pageState.scrollPosition, behavior: 'auto' });
-          }, 100);
+          // Use requestAnimationFrame for smoother scroll restoration
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              window.scrollTo({ top: pageState.scrollPosition, behavior: 'instant' });
+            }, 50);
+          });
         }
         
         // Always keep filter panel closed when restoring state
@@ -131,11 +134,14 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({ children
               console.log('🔄 Restored filter state from sessionStorage:', parsedState.filterState);
             }
             
-            // Restore scroll position
+            // Restore scroll position with optimized timing for smoother experience
             if (parsedState.scrollPosition > 0) {
-              setTimeout(() => {
-                window.scrollTo({ top: parsedState.scrollPosition, behavior: 'auto' });
-              }, 100);
+              // Use requestAnimationFrame for smoother scroll restoration
+              requestAnimationFrame(() => {
+                setTimeout(() => {
+                  window.scrollTo({ top: parsedState.scrollPosition, behavior: 'instant' });
+                }, 50);
+              });
             }
             
             // Always keep filter panel closed when restoring state from sessionStorage

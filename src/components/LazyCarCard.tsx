@@ -3,10 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
-import { Car, Gauge, Settings, Fuel, Palette, Shield, Heart, Camera } from "lucide-react";
+import { Car, Gauge, Settings, Fuel, Palette, Shield, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ImageCarousel } from "@/components/ImageCarousel";
+import { getStatusBadgeConfig } from "@/utils/statusBadgeUtils";
 
 interface LazyCarCardProps {
   id: string;
@@ -55,6 +55,7 @@ const LazyCarCard = memo(({
   title,
   status,
   sale_status,
+  final_price,
   insurance_v2,
   details,
   is_archived,
@@ -66,6 +67,7 @@ const LazyCarCard = memo(({
   const { toast } = useToast();
   const [isFavorite, setIsFavorite] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [isIntersecting, setIsIntersecting] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -229,8 +231,9 @@ const LazyCarCard = memo(({
     // Close filter panel when navigating to car details (if it's open)
     sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
     
-    navigate(`/car/${lot}`);
-  }, [setCompletePageState, lot, navigate]);
+    // Open in new tab
+    window.open(`/car/${lot}`, '_blank');
+  }, [setCompletePageState, lot]);
 
   const handleDetailsClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -248,8 +251,9 @@ const LazyCarCard = memo(({
     // Close filter panel when navigating to car details (if it's open)
     sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
     
-    navigate(`/car/${lot}`);
-  }, [setCompletePageState, lot, navigate]);
+    // Open in new tab
+    window.open(`/car/${lot}`, '_blank');
+  }, [setCompletePageState, lot]);
 
   // Don't render content until intersection
   if (!isIntersecting) {
@@ -257,13 +261,17 @@ const LazyCarCard = memo(({
       <div 
         ref={cardRef}
         className="glass-card rounded-lg overflow-hidden h-96"
+        style={{
+          willChange: 'contents',
+          containIntrinsicSize: '280px 360px'
+        }}
       >
           <div className="animate-pulse">
-            <div className="h-52 bg-muted" />
-            <div className="p-3 space-y-2">
-              <div className="h-5 bg-muted rounded w-3/4" />
+            <div className="h-72 bg-muted" />
+            <div className="p-2 space-y-1">
+              <div className="h-4 bg-muted rounded w-3/4" />
               <div className="h-3 bg-muted rounded w-1/2" />
-              <div className="h-6 bg-muted rounded w-2/3" />
+              <div className="h-5 bg-muted rounded w-2/3" />
             </div>
           </div>
       </div>
@@ -278,125 +286,126 @@ const LazyCarCard = memo(({
   return (
     <div 
       ref={cardRef}
-      className="glass-card overflow-hidden cursor-pointer group touch-manipulation mobile-card-compact rounded-lg card-touch-effect"
+      className="glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-xl hover:shadow-2xl transition-all duration-500 mobile-card-compact compact-modern-card animate-slide-in-up"
       onClick={handleCardClick}
+      style={{
+        willChange: 'transform, opacity',
+        transform: 'translate3d(0, 0, 0)',
+        backfaceVisibility: 'hidden',
+        perspective: 1000,
+        WebkitTapHighlightColor: 'transparent'
+      }}
     >
-      <div className="relative h-40 sm:h-52 lg:h-56 bg-muted overflow-hidden">
-        {/* Show all available images using ImageCarousel */}
+      {/* Image Section - Standard 4:3 aspect ratio like encar.com */}
+      <div className="relative bg-muted overflow-hidden flex-shrink-0 rounded-lg aspect-[4/3] w-full">
+        {/* Always show single image - swipe functionality removed from car cards */}
         {(image || (images && images.length > 0)) ? (
-          <>
-            <ImageCarousel 
-              images={images && images.length > 0 ? images : (image ? [image] : [])}
-              alt={`${year} ${make} ${model}`}
-              className="w-full h-full"
-              showArrows={true}
-              showDots={images && images.length > 1}
-              onImageChange={(index) => {
-                // Optional: track image views for analytics
-                console.log(`Viewing image ${index + 1} of ${images?.length || 1} for car ${id}`);
-              }}
-            />
-            {/* Image count indicator */}
-            {images && images.length > 1 && (
-              <div className="absolute top-1 sm:top-2 left-1 sm:left-2 bg-black/70 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs font-medium flex items-center gap-1">
-                <Camera className="h-3 w-3" />
-                <span>{images.length}</span>
-              </div>
-            )}
-          </>
+          <img 
+            src={image || images?.[0]} 
+            alt={`${year} ${make} ${model}`} 
+            className={`w-full h-full object-cover group-hover:scale-110 transition-all duration-700 ease-out ${
+              imageLoaded ? 'opacity-100 animate-image-reveal' : 'opacity-0'
+            }`}
+            onLoad={() => setImageLoaded(true)}
+            onError={(e) => {
+              e.currentTarget.src = "/placeholder.svg";
+              setImageLoaded(true);
+            }}
+            loading="lazy"
+            style={{
+              willChange: 'transform, opacity',
+              transform: 'translate3d(0, 0, 0)',
+              backfaceVisibility: 'hidden'
+            }}
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-muted">
             <Car className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
           </div>
         )}
         
-        
-        {/* Status Badge - More compact on mobile */}
-        {(status === 3 || sale_status === 'sold') ? (
-          <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-red-600 text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded text-xs font-bold shadow-lg z-10">
-            SOLD OUT
+        {/* Lot Number Badge */}
+        {lot && (
+          <div className="absolute top-1 right-1 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-2 py-0.5 rounded-md text-xs font-bold shadow-md backdrop-blur-sm">
+            {lot}
           </div>
-        ) : (
-          lot && (
-            <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-primary text-primary-foreground px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs font-semibold">
-              #{lot}
-            </div>
-          )
         )}
 
         {/* Favorite Button */}
         {user && (
           <button
             onClick={handleFavoriteToggle}
-            className="absolute top-1 sm:top-2 left-1 sm:left-2 p-1.5 sm:p-2 bg-black/50 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+            className="absolute top-1 left-1 p-1.5 bg-black/60 backdrop-blur-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 z-10 hover:bg-black/80"
           >
-            <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+            <Heart className={`h-3.5 w-3.5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
           </button>
         )}
       </div>
       
-      <div className="p-2 sm:p-3 lg:p-4">
-        <div className="mb-1.5 sm:mb-2">
-          <h3 className="card-title text-sm sm:text-base lg:text-lg font-semibold text-foreground line-clamp-2">
+      {/* Content Section - 30% of card height, more compact */}
+      <div className="p-3 flex-1 flex flex-col">
+        <div className="mb-2">
+          <h3 className="card-title text-sm font-bold text-foreground line-clamp-1 leading-tight">
             {year} {make} {model}
           </h3>
           {title && title !== `${make} ${model}` && (
-            <p className="text-xs text-muted-foreground mb-1 line-clamp-1">{title}</p>
+            <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{title}</p>
           )}
         </div>
 
-        {/* Vehicle Info - More compact */}
-        <div className="space-y-0.5 sm:space-y-1 mb-2 sm:mb-3 card-details text-xs">
+        {/* Vehicle Info - More compact layout */}
+        <div className="mb-2 text-xs grid grid-cols-2 gap-x-2 gap-y-1">
           {mileage && (
-            <div className="flex items-center gap-1">
-              <Gauge className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
-              <span className="truncate">{mileage}</span>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Gauge className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="truncate font-medium text-foreground">{mileage}</span>
             </div>
           )}
           {transmission && (
-            <div className="flex items-center gap-1">
-              <Settings className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate">{transmission}</span>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Settings className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="capitalize truncate text-foreground">{transmission}</span>
             </div>
           )}
           {fuel && (
-            <div className="flex items-center gap-1">
-              <Fuel className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate">{fuel}</span>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Fuel className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="capitalize truncate text-foreground">{fuel}</span>
             </div>
           )}
           {color && (
-            <div className="flex items-center gap-1">
-              <Palette className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate">{color}</span>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Palette className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="capitalize truncate text-foreground">{color}</span>
             </div>
           )}
         </div>
 
         {/* Status Indicators - More compact */}
         {insurance_v2?.accidentCnt === 0 && (
-          <div className="mb-1.5 sm:mb-2">
-            <Badge variant="secondary" className="text-xs px-1.5 sm:px-2 py-0">
-              <Shield className="h-2 w-2 mr-1" />
-              Clean Record
+          <div className="mb-2">
+            <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-green-50 text-green-700 border-green-200">
+              <Shield className="h-2.5 w-2.5 mr-1" />
+              Clean
             </Badge>
           </div>
         )}
 
-        {/* Pricing - More compact */}
-        <div className="flex flex-col gap-0.5 sm:gap-1 mb-1.5 sm:mb-2">
-          <span className="card-price text-base sm:text-lg lg:text-xl font-bold text-primary">
-            €{price.toLocaleString()}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            Deri ne portin e Durresit
-          </span>
-        </div>
-
-        <div className="text-center">
-          <p className="text-xs text-muted-foreground">
-            KORAUTO
-          </p>
+        {/* Pricing Section - Better aligned */}
+        <div className="mt-auto">
+          <div className="space-y-1">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="card-price text-lg font-bold text-primary">
+                €{price.toLocaleString()}
+              </span>
+              <span className="text-xs text-muted-foreground text-right flex-shrink-0">
+                KORAUTO
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground leading-tight">
+              deri ne portin e Durrësit
+            </p>
+          </div>
         </div>
       </div>
     </div>

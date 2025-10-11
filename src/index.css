@@ -2,6 +2,170 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Performance optimizations - Enhanced for 120fps */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* GPU acceleration for animations - Optimized for high refresh rates */
+@media (prefers-reduced-motion: no-preference) {
+  .animate-spin,
+  .animate-pulse,
+  .animate-fade-in,
+  .group-hover\:scale-110,
+  .group-hover\:scale-105,
+  [class*="hover:scale"],
+  [class*="transition"] {
+    will-change: transform, opacity;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+}
+
+/* Smooth touch interactions for mobile */
+@media (hover: none) and (pointer: coarse) {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  button, a, [role="button"] {
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+/* Spinning animation for loading indicators */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Smooth page transitions - Enhanced */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Slide in from bottom - for cards and content */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-slide-in-up {
+  animation: slideInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Scale in animation for badges - Enhanced with bounce */
+@keyframes scaleIn {
+  0% {
+    opacity: 0;
+    transform: scale3d(0.8, 0.8, 1);
+  }
+  60% {
+    opacity: 1;
+    transform: scale3d(1.05, 1.05, 1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale3d(1, 1, 1);
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Smooth image reveal */
+@keyframes imageReveal {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+    transform: scale3d(1.1, 1.1, 1);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale3d(1, 1, 1);
+  }
+}
+
+.animate-image-reveal {
+  animation: imageReveal 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Smooth skeleton pulse */
+@keyframes smoothPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: smoothPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Optimize images */
+img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Prevent layout shifts */
+.filter-select {
+  min-height: 40px;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* iOS Safe Area Support */
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom);
+  --safe-area-inset-left: env(safe-area-inset-left);
+  --safe-area-inset-right: env(safe-area-inset-right);
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
@@ -54,9 +218,16 @@ All colors MUST be HSL.
       hsl(var(--accent)),
       hsl(220 100% 65%)
     );
+    --gradient-filter: linear-gradient(
+      135deg,
+      hsl(0 0% 98%),
+      hsl(220 100% 98%)
+    );
     --shadow-elegant: 0 10px 30px -10px hsl(0 0% 0% / 0.3);
     --shadow-card: 0 4px 20px -4px hsl(0 0% 0% / 0.1);
+    --shadow-filter: 0 8px 24px -6px hsl(0 0% 0% / 0.15);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 
     --radius: 0.5rem;
 
@@ -81,11 +252,11 @@ All colors MUST be HSL.
     --background: 0 0% 8%;
     --foreground: 0 0% 95%;
 
-    --card: 0 0% 10%;
-    --card-foreground: 0 0% 95%;
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 10%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 98%;
 
     --primary: 0 0% 95%;
     --primary-foreground: 0 0% 8%;
@@ -104,8 +275,8 @@ All colors MUST be HSL.
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 95%;
 
-    --border: 0 0% 20%;
-    --input: 0 0% 15%;
+    --border: 0 0% 18%;
+    --input: 0 0% 16%;
     --ring: 0 0% 80%;
 
     --inspection: 45 100% 50%;
@@ -124,7 +295,15 @@ All colors MUST be HSL.
       hsl(var(--accent)),
       hsl(220 100% 65%)
     );
+    --gradient-filter: linear-gradient(
+      135deg,
+      hsl(0 0% 10%),
+      hsl(220 80% 15%)
+    );
     --shadow-elegant: 0 10px 30px -10px hsl(0 0% 0% / 0.3);
+    --shadow-filter: 0 8px 24px -6px hsl(0 0% 0% / 0.4);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -141,15 +320,54 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+    width: 100%;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-family: "Inter", system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+    /* Hardware acceleration for smooth rendering */
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+    /* Smooth scrolling for mobile */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: none;
   }
 
-  html {
-    scroll-behavior: smooth;
+  #root {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Smooth transitions globally - Optimized timing */
+  * {
+    transition: background-color 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+                border-color 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+                color 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Hardware acceleration for animations - 120fps ready */
+  *[class*="animate-"],
+  *[class*="transition-"] {
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+  }
+  
+  /* Prevent flickering on transform */
+  img, video {
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
   }
 }
 
@@ -248,6 +466,36 @@ All colors MUST be HSL.
     }
   }
 
+  /* Touch ripple effect element */
+  .touch-ripple-effect {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    animation: rippleEffect 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  .dark .touch-ripple-effect {
+    background: radial-gradient(circle, rgba(0, 0, 0, 0.4) 0%, transparent 70%);
+  }
+
+  @keyframes rippleEffect {
+    0% {
+      width: 0;
+      height: 0;
+      opacity: 1;
+    }
+    100% {
+      width: 300px;
+      height: 300px;
+      opacity: 0;
+    }
+  }
+
   /* Pulse animation for loading states */
   .pulse-enhanced {
     animation: pulseEnhanced 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -264,7 +512,7 @@ All colors MUST be HSL.
 
   /* Mobile-first responsive utilities */
   .container-responsive {
-    @apply w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8;
+    @apply w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8;
   }
 
   /* Text responsive classes */
@@ -380,6 +628,55 @@ All colors MUST be HSL.
   }
 
   /* Gradient text */
+  .text-gradient {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(220 100% 50%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Ripple effect for touch feedback */
+  .ripple-effect {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.6);
+    transform: scale(0) translate3d(0, 0, 0);
+    animation: ripple 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+    backface-visibility: hidden;
+  }
+
+  @keyframes ripple {
+    to {
+      transform: scale(4) translate3d(0, 0, 0);
+      opacity: 0;
+    }
+  }
+
+  .dark .ripple-effect {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  /* Smooth content container */
+  .smooth-container {
+    will-change: contents;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+  }
+
+  /* Optimized card grid for smooth scrolling */
+  .optimized-grid {
+    display: grid;
+    will-change: contents;
+    contain: layout style paint;
+  }
+
+  /* Prevent layout shift during load */
+  .skeleton-loader {
+    min-height: 400px;
+    will-change: contents;
+    contain-intrinsic-size: 280px 360px;
+  }
   .gradient-text {
     background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
     -webkit-background-clip: text;
@@ -498,13 +795,13 @@ All colors MUST be HSL.
     }
   }
 
-  /* Fix for Albanian inspection texts in dark mode - should be black */
+  /* Fix for Albanian inspection texts in dark mode - ensure good contrast */
   .dark .inspection-text-black {
-    color: #000000 !important;
+    color: var(--background) !important;
   }
 
   .dark .inspection-subtext-black {
-    color: #000000 !important;
+    color: var(--background) !important;
   }
 
   /* Ensure normal colors in light mode */
@@ -535,84 +832,234 @@ All colors MUST be HSL.
     transform: scale(1.02);
   }
 
-  /* Enhanced Glass morphism effect with modern 3D shadows */
+  /* Enhanced Glass morphism effect with gradient background */
   .glass-card {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: linear-gradient(135deg, 
+      hsl(var(--background)) 0%, 
+      hsl(var(--muted)) 100%
+    );
+    border: 1px solid hsl(var(--border));
     box-shadow: 
-      /* Deep black shadow for 3D depth in light mode */
-      0 8px 32px -8px rgba(0, 0, 0, 0.25),
-      0 4px 20px -4px rgba(0, 0, 0, 0.15),
-      0 2px 8px -2px rgba(0, 0, 0, 0.1),
-      /* Subtle inner highlight */
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      0 8px 32px -8px rgba(0, 0, 0, 0.15),
+      0 4px 20px -4px rgba(0, 0, 0, 0.1),
+      0 2px 8px -2px rgba(0, 0, 0, 0.05);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
   }
 
   .dark .glass-card {
-    background: rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(135deg, 
+      hsl(var(--background)) 0%, 
+      hsl(var(--card)) 50%,
+      hsl(var(--muted)) 100%
+    );
+    border: 1px solid hsl(var(--border));
     box-shadow: 
-      /* White glow shadow for 3D depth in dark mode */
-      0 8px 32px -8px rgba(255, 255, 255, 0.12),
-      0 4px 20px -4px rgba(255, 255, 255, 0.08), 
-      0 2px 8px -2px rgba(255, 255, 255, 0.04),
-      /* Enhanced dark base shadow */
-      0 12px 40px -8px rgba(0, 0, 0, 0.4),
-      /* Subtle inner highlight */
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      0 8px 32px -8px rgba(255, 255, 255, 0.08),
+      0 4px 20px -4px rgba(255, 255, 255, 0.05),
+      0 12px 40px -8px rgba(0, 0, 0, 0.3);
   }
 
-  .glass-card:hover {
-    transform: translateY(-6px) scale(1.02);
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 
-      /* Enhanced black shadow on hover for light mode */
-      0 20px 60px -12px rgba(0, 0, 0, 0.3),
-      0 12px 32px -8px rgba(0, 0, 0, 0.2),
-      0 6px 16px -4px rgba(0, 0, 0, 0.15),
-      /* Enhanced inner highlight */
-      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  /* Touch/hover interaction with bright light animation */
+  .glass-card::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+    z-index: 1;
   }
 
-  .dark .glass-card:hover {
-    background: rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 
-      /* Enhanced white glow on hover for dark mode */
-      0 20px 60px -12px rgba(255, 255, 255, 0.18),
-      0 12px 32px -8px rgba(255, 255, 255, 0.12),
-      0 6px 16px -4px rgba(255, 255, 255, 0.08),
-      /* Enhanced darker base shadow */
-      0 16px 50px -8px rgba(0, 0, 0, 0.5),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  .dark .glass-card::before {
+    background: radial-gradient(circle, rgba(0, 0, 0, 0.4) 0%, transparent 70%);
   }
 
-  /* Glass panel for filter and details sections */
+  .glass-card:hover::before {
+    width: 500px;
+    height: 500px;
+    opacity: 1;
+    transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Active/touch state with instant bright pulse */
+  .glass-card:active::before {
+    width: 300px;
+    height: 300px;
+    opacity: 1;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Mobile touch interaction */
+  @media (hover: none) and (pointer: coarse) {
+    .glass-card::before {
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, transparent 70%);
+    }
+    
+    .dark .glass-card::before {
+      background: radial-gradient(circle, rgba(0, 0, 0, 0.5) 0%, transparent 70%);
+    }
+  }
+
+  /* Glass panel for filter and details sections with gradient */
   .glass-panel {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: linear-gradient(135deg,
+      hsl(var(--card)) 0%,
+      hsl(var(--muted)/0.5) 100%
+    );
+    border: 1px solid hsl(var(--border));
     box-shadow: 
       0 12px 40px -8px rgba(0, 0, 0, 0.08),
-      0 6px 20px -4px rgba(0, 0, 0, 0.05),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      0 6px 20px -4px rgba(0, 0, 0, 0.05);
   }
 
   .dark .glass-panel {
-    background: rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: linear-gradient(135deg,
+      hsl(var(--card)) 0%,
+      hsl(var(--background)) 100%
+    );
+    border: 1px solid hsl(var(--border));
     box-shadow: 
       0 12px 40px -8px rgba(0, 0, 0, 0.2),
-      0 6px 20px -4px rgba(0, 0, 0, 0.12),
-      inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      0 6px 20px -4px rgba(0, 0, 0, 0.12);
   }
 
-  /* Stagger animation for lists */
+  /* Filter controls interaction animation */
+  .filter-control, .filter-section {
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .filter-control:focus,
+  .filter-control:active {
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.2);
+    transform: scale(1.02);
+  }
+
+  /* Touch ripple for filter sections */
+  .filter-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+  }
+
+  .dark .filter-section::before {
+    background: radial-gradient(circle at center, rgba(0, 0, 0, 0.2) 0%, transparent 70%);
+  }
+
+  .filter-section:active::before {
+    opacity: 1;
+  }
+
+  /* Add bright pulse animation to filter panel on interaction */
+  [data-filter-panel]::after {
+    content: '';
+    position: absolute;
+    top: var(--touch-y, 50%);
+    left: var(--touch-x, 50%);
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .dark [data-filter-panel]::after {
+    background: radial-gradient(circle, rgba(0, 0, 0, 0.25) 0%, transparent 70%);
+  }
+
+  [data-filter-panel]:active::after {
+    width: 400px;
+    height: 400px;
+    opacity: 1;
+    transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Add touch interaction animations for buttons and interactive elements */
+  button, a[role="button"], .interactive-element, [data-filter-panel] {
+    position: relative;
+    overflow: hidden;
+  }
+
+  button::after, 
+  a[role="button"]::after, 
+  .interactive-element::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+  }
+
+  .dark button::after,
+  .dark a[role="button"]::after,
+  .dark .interactive-element::after {
+    background: radial-gradient(circle, rgba(0, 0, 0, 0.3) 0%, transparent 70%);
+  }
+
+  button:hover::after,
+  a[role="button"]:hover::after,
+  .interactive-element:hover::after {
+    width: 200px;
+    height: 200px;
+    opacity: 1;
+  }
+
+  button:active::after,
+  a[role="button"]:active::after,
+  .interactive-element:active::after {
+    width: 100px;
+    height: 100px;
+    opacity: 1;
+    transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Enhanced mobile touch feedback */
+  @media (hover: none) and (pointer: coarse) {
+    button::after,
+    a[role="button"]::after,
+    .interactive-element::after {
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.7) 0%, transparent 70%);
+    }
+    
+    .dark button::after,
+    .dark a[role="button"]::after,
+    .dark .interactive-element::after {
+      background: radial-gradient(circle, rgba(0, 0, 0, 0.5) 0%, transparent 70%);
+    }
+
+    button:active::after,
+    a[role="button"]:active::after,
+    .interactive-element:active::after {
+      width: 150px;
+      height: 150px;
+      opacity: 1;
+      transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+  }
   .stagger-animation > * {
     opacity: 0;
     animation: staggerChild 0.6s ease-out forwards;
@@ -773,12 +1220,14 @@ All colors MUST be HSL.
   .smooth-scroll {
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
   /* GPU acceleration for animations */
   .gpu-accelerated {
     transform: translateZ(0);
     will-change: transform;
+    backface-visibility: hidden;
   }
 
   /* Layout stability utilities */
@@ -791,10 +1240,11 @@ All colors MUST be HSL.
     min-width: 0;
   }
 
-  /* Image optimization */
+  /* Image optimization with content visibility */
   .optimized-image {
     content-visibility: auto;
     contain-intrinsic-size: 280px 160px;
+    contain: size layout style paint;
   }
 
   /* Prevent layout shifts in card grids */
@@ -803,6 +1253,29 @@ All colors MUST be HSL.
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1.5rem;
     align-items: start;
+    contain: layout style;
+  }
+
+  /* Performance-optimized card container */
+  .performance-card {
+    contain: layout style paint;
+    will-change: transform, opacity;
+    transform: translateZ(0);
+  }
+
+  /* Optimized animations for 120fps displays */
+  .animation-120fps {
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform, opacity;
+    transform: translateZ(0);
+  }
+
+  /* Enhanced touch targets for high-DPI displays */
+  .touch-target-120fps {
+    min-height: 48px;
+    min-width: 48px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
 
   /* Better focus management */
@@ -850,14 +1323,238 @@ All colors MUST be HSL.
     min-width: 44px;
     min-height: 44px;
   }
+}
 
 /* Mobile Layout Optimizations */
 @media (max-width: 768px) {
+  /* Prevent horizontal scrolling on mobile */
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw;
+    width: 100%;
+  }
+
+  /* Compact card grid for mobile */
+  .mobile-card-container {
+    gap: 8px !important;
+  }
+
+  .mobile-card-container .glass-card {
+    min-height: 280px;
+  }
+
+  /* Modern compact cards on mobile */
+  .compact-modern-card {
+    padding: 8px !important;
+    min-height: 270px;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  }
+
+  .dark .compact-modern-card {
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.05), 0 1px 3px rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  }
+
+  /* Mobile car details optimizations */
+  .mobile-specs-card {
+    margin-bottom: 16px !important;
+  }
+
+  .mobile-specs-card .card-content {
+    padding: 12px !important;
+  }
+
+  .mobile-spec-item {
+    min-height: 36px;
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+  }
+
+  .mobile-detailed-info-card {
+    margin-bottom: 16px !important;
+  }
+
+  .mobile-info-section {
+    padding: 12px !important;
+    border-radius: 12px !important;
+  }
+
+  .mobile-detail-item {
+    min-height: 32px;
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    font-size: 12px !important;
+  }
+
+  /* Mobile inspection sections */
+  .mobile-inspection-section {
+    border-radius: 12px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .mobile-inspection-section .inspection-text-black {
+    line-height: 1.2 !important;
+  }
+
+  .mobile-inspection-section .inspection-subtext-black {
+    line-height: 1.1 !important;
+    font-size: 10px !important;
+  }
+
+  /* Car Details Mobile Layout */
+  .car-details-hero {
+    width: 90vw !important;
+    height: 50vh !important;
+    margin: 0 auto;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .car-details-title {
+    font-size: 24px !important;
+    font-weight: bold !important;
+    color: var(--foreground) !important;
+    margin: 16px 0 8px 0;
+    text-align: left;
+  }
+
+  .car-details-row {
+    font-size: 16px !important;
+    color: var(--muted-foreground) !important;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .detail-link {
+    color: hsl(var(--primary)) !important;
+    text-decoration: underline;
+    cursor: pointer;
+    font-weight: 500;
+  }
+
+  .detail-link:hover {
+    color: hsl(var(--primary) / 0.8) !important;
+  }
+
+  /* Hide thumbnail grid on mobile - gallery opens in new tabs */
+  .car-details-thumbnails {
+    display: none !important;
+  }
+
+  /* Mobile gallery counter - positioned bottom-right of hero */
+  .mobile-gallery-counter {
+    position: absolute !important;
+    bottom: 8px !important;
+    right: 8px !important;
+    background: rgba(0, 0, 0, 0.8) !important;
+    color: white !important;
+    padding: 6px 10px !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    backdrop-filter: blur(6px) !important;
+    z-index: 20 !important;
+    transition: all 0.3s ease !important;
+    transform: scale(1) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .mobile-gallery-counter:hover {
+    background: rgba(0, 0, 0, 0.9) !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+  }
+
+  .mobile-gallery-preview {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 6px !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    transition: all 0.3s ease !important;
+  }
+
+  .mobile-gallery-counter:hover .mobile-gallery-preview {
+    border-color: rgba(255, 255, 255, 0.4) !important;
+    transform: scale(1.1) !important;
+  }
+
+  .mobile-gallery-preview img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    transition: transform 0.3s ease !important;
+  }
+
+  .mobile-gallery-counter:hover .mobile-gallery-preview img {
+    transform: scale(1.05) !important;
+  }
+
+  /* Ensure all content fits within viewport */
+  * {
+    max-width: 100vw !important;
+    box-sizing: border-box;
+  }
+
+  /* Force all containers to respect viewport width */
+  div, section, main, article, aside, header, footer, nav {
+    max-width: 100vw !important;
+    overflow-x: hidden;
+  }
+
+  /* Prevent images from overflowing */
+  img {
+    max-width: 100% !important;
+    height: auto;
+  }
+
+  /* Force tables to be responsive */
+  table {
+    max-width: 100% !important;
+    table-layout: fixed;
+    word-wrap: break-word;
+  }
+
+  /* Prevent pre and code blocks from overflowing */
+  pre, code {
+    max-width: 100% !important;
+    overflow-x: auto;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+  }
+
   /* Safe area inset for notched devices */
   .safe-area-inset {
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .safe-area-inset-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-inset-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-area-inset-right {
     padding-right: env(safe-area-inset-right);
   }
 
@@ -875,12 +1572,23 @@ All colors MUST be HSL.
     min-height: -webkit-fill-available; /* iOS Safari */
     max-height: 100vh; /* Prevent overflow on some devices */
     max-height: 100dvh;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background-color: rgba(255, 255, 255, 0.95);
+  }
+  
+  /* Dark mode filter panel */
+  .dark .mobile-filter-panel {
+    background-color: rgba(0, 0, 0, 0.95);
   }
 
   /* Optimized container spacing for mobile - More compact */
   .container-responsive {
-    padding-left: max(12px, env(safe-area-inset-left));
-    padding-right: max(12px, env(safe-area-inset-right));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   /* Better touch targets - More compact */
@@ -911,16 +1619,25 @@ All colors MUST be HSL.
     line-height: 1.4;
   }
 
-  /* Improved car grid layout - More compact for mobile */
+  /* Improved car grid layout - More responsive and consistent */
   .mobile-car-grid {
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 6px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 8px;
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
   }
   
   /* Extra compact layout for very small screens */
   .mobile-car-grid-compact {
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 4px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(150px, 48vw), 1fr));
+    gap: 6px;
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+    padding: 0 4px;
   }
 
   /* Better loading states */
@@ -933,7 +1650,7 @@ All colors MUST be HSL.
 
   /* Ensure filter content is properly scrollable - More compact */
   .mobile-filter-content {
-    height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    height: calc(100dvh - 60px); /* Account for header height instead of safe areas */
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
@@ -977,20 +1694,48 @@ All colors MUST be HSL.
 
 /* Small mobile devices - Even more compact */
 @media (max-width: 375px) {
+  /* Prevent horizontal scrolling on small devices */
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw;
+    width: 100%;
+  }
+
+  /* Force all elements to respect small viewport */
+  * {
+    max-width: 100vw !important;
+    box-sizing: border-box;
+  }
+
+  /* Extra restrictive container rules for small screens */
+  div, section, main, article, aside, header, footer, nav {
+    max-width: 100vw !important;
+    overflow-x: hidden;
+  }
+
   .container-responsive {
-    padding-left: 6px;
-    padding-right: 6px;
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   .mobile-car-grid {
-    grid-template-columns: 1fr;
-    gap: 4px;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
   }
   
   /* Ultra compact for smallest devices */
   .mobile-car-grid-compact {
-    grid-template-columns: 1fr;
-    gap: 3px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
   }
 
   .mobile-text-optimize {
@@ -1015,6 +1760,17 @@ All colors MUST be HSL.
   .mobile-card-compact .card-details {
     font-size: 10px;
     line-height: 1.1;
+  }
+
+  /* Compact modern card styling */
+  .compact-modern-card {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.98);
+  }
+
+  .dark .compact-modern-card {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.98);
   }
 
   /* Ultra compact filter styles for smallest screens */
@@ -1072,6 +1828,130 @@ All colors MUST be HSL.
   }
 }
 
+/* Utility class to prevent horizontal overflow anywhere */
+.no-horizontal-scroll {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+  width: 100%;
+}
+
+/* Apply to commonly problematic elements on mobile */
+@media (max-width: 768px) {
+  .container, .grid, .flex, [class*="grid"], [class*="flex"] {
+    max-width: 100vw !important;
+    overflow-x: hidden;
+  }
+  
+  /* Handle any remaining fixed-width elements */
+  [style*="width"] {
+    max-width: 100vw !important;
+  }
+
+  /* Mobile-first car details hero image */
+  .car-details-hero {
+    width: 90vw !important;
+    height: 50vh !important;
+    margin: 0 auto !important;
+    border: none !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    position: relative !important;
+  }
+
+  .car-details-hero img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
+
+  /* Hide thumbnail gallery on mobile */
+  .car-details-thumbnails {
+    display: none !important;
+  }
+
+  /* Mobile gallery counter - small thumbnail preview */
+  .mobile-gallery-counter {
+    position: absolute !important;
+    bottom: 8px !important;
+    right: 8px !important;
+    background: rgba(0, 0, 0, 0.8) !important;
+    color: white !important;
+    padding: 6px 10px !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    backdrop-filter: blur(6px) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    z-index: 20 !important;
+    transition: all 0.3s ease !important;
+    transform: scale(1) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .mobile-gallery-counter:hover {
+    background: rgba(0, 0, 0, 0.9) !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+  }
+
+  .mobile-gallery-preview {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 6px !important;
+    overflow: hidden !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    transition: all 0.3s ease !important;
+  }
+
+  .mobile-gallery-counter:hover .mobile-gallery-preview {
+    border-color: rgba(255, 255, 255, 0.4) !important;
+    transform: scale(1.1) !important;
+  }
+
+  .mobile-gallery-preview img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    transition: transform 0.3s ease !important;
+  }
+
+  .mobile-gallery-counter:hover .mobile-gallery-preview img {
+    transform: scale(1.05) !important;
+  }
+
+  /* Car title styling */
+  .car-details-title {
+    font-size: 24px !important;
+    font-weight: bold !important;
+    color: var(--foreground) !important;
+    margin: 16px 0 8px 0 !important;
+    line-height: 1.3 !important;
+  }
+
+  /* Detail row styling */
+  .car-details-row {
+    font-size: 16px !important;
+    color: var(--muted-foreground) !important;
+    margin-bottom: 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+  }
+
+  .car-details-row .detail-link {
+    color: hsl(var(--primary)) !important;
+    text-decoration: none !important;
+    font-weight: 500 !important;
+    margin-left: auto !important;
+  }
+
+  .car-details-row .detail-link:hover {
+    text-decoration: underline !important;
+  }
+}
+
 .filter-enter {
   animation: slideInFromLeft 300ms ease-out;
 }
@@ -1093,51 +1973,292 @@ All colors MUST be HSL.
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* Black background sections for inspection reports */
+/* Dark/Light mode compatible background sections for inspection reports */
 .inspection-section-black {
-  background: #000000 !important;
+  background: var(--card) !important;
   background-image: none !important;
-  color: #ffffff !important;
-  border-color: #333333 !important;
+  color: var(--card-foreground) !important;
+  border: 1px solid var(--border) !important;
+}
+
+/* Mobile-optimized tracking page styles */
+@media (max-width: 768px) {
+  /* Compact tracking header */
+  .tracking-page-header {
+    padding: 8px 0;
+    margin-bottom: 12px;
+  }
+  
+  /* Compact tracking form */
+  .tracking-form-compact {
+    padding: 12px;
+  }
+  
+  .tracking-form-compact .card-header {
+    padding-bottom: 8px;
+  }
+  
+  .tracking-form-compact .card-content {
+    padding-top: 0;
+  }
+  
+  /* Compact tracking results */
+  .tracking-results-compact .card {
+    margin-bottom: 12px;
+  }
+  
+  .tracking-results-compact .card-header {
+    padding: 12px 16px 8px;
+  }
+  
+  .tracking-results-compact .card-content {
+    padding: 0 16px 12px;
+  }
+  
+  /* Compact metadata fields */
+  .tracking-metadata-compact {
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    line-height: 1.3;
+  }
+  
+  /* Compact status steps */
+  .tracking-status-step-compact {
+    padding: 6px 12px;
+    gap: 8px;
+    font-size: 13px;
+  }
+  
+  .tracking-status-step-compact .step-indicator {
+    width: 12px;
+    height: 12px;
+  }
+  
+  /* Compact event details grid */
+  .tracking-event-grid-compact {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .tracking-event-grid-compact > div {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  
+  /* Optimize tracking page text for mobile */
+  .tracking-mobile-text {
+    font-size: clamp(12px, 3.5vw, 14px);
+    line-height: 1.3;
+  }
+  
+  /* Compact button styles for tracking */
+  .tracking-button-compact {
+    padding: 8px 16px;
+    font-size: 13px;
+    min-height: 36px;
+  }
+  
+  /* Compact input styles for tracking */
+  .tracking-input-compact {
+    padding: 8px 12px;
+    font-size: 14px;
+    height: auto;
+    min-height: 36px;
+  }
+
+  /* Ultra-compact metadata fields for horizontal layouts */
+  .tracking-metadata-horizontal {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    margin-bottom: 4px;
+    font-size: 12px;
+    line-height: 1.2;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 6px;
+    border-left: 2px solid currentColor;
+  }
+
+  .tracking-metadata-horizontal strong {
+    flex-shrink: 0;
+    min-width: fit-content;
+    font-size: 11px;
+    opacity: 0.8;
+  }
+
+  .tracking-metadata-horizontal span {
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+  }
+
+  /* Compact card layouts */
+  .tracking-card-ultra-compact {
+    margin-bottom: 8px;
+  }
+
+  .tracking-card-ultra-compact .card-header {
+    padding: 8px 12px 4px;
+  }
+
+  .tracking-card-ultra-compact .card-content {
+    padding: 0 12px 8px;
+  }
+
+  /* Horizontal grid for tracking events */
+  .tracking-event-horizontal {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 6px;
+  }
+
+  .tracking-event-horizontal > div {
+    padding: 4px 8px;
+    font-size: 11px;
+    line-height: 1.2;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 4px;
+  }
+
+  /* Two-column metadata layout */
+  .tracking-metadata-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+}
+
+/* Extra compact styles for very small screens */
+@media (max-width: 375px) {
+  .tracking-page-header {
+    padding: 6px 0;
+    margin-bottom: 8px;
+  }
+  
+  .tracking-form-compact {
+    padding: 8px;
+  }
+  
+  .tracking-results-compact .card {
+    margin-bottom: 8px;
+  }
+  
+  .tracking-results-compact .card-header {
+    padding: 8px 12px 6px;
+  }
+  
+  .tracking-results-compact .card-content {
+    padding: 0 12px 8px;
+  }
+  
+  .tracking-metadata-compact {
+    padding: 6px 10px;
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+  
+  .tracking-status-step-compact {
+    padding: 4px 8px;
+    gap: 6px;
+    font-size: 12px;
+  }
+  
+  .tracking-status-step-compact .step-indicator {
+    width: 10px;
+    height: 10px;
+  }
+  
+  .tracking-event-grid-compact > div {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  
+  .tracking-mobile-text {
+    font-size: clamp(11px, 3.5vw, 13px);
+    line-height: 1.25;
+  }
+  
+  .tracking-button-compact {
+    padding: 6px 12px;
+    font-size: 12px;
+    min-height: 32px;
+  }
+  
+  .tracking-input-compact {
+    padding: 6px 10px;
+    font-size: 13px;
+    min-height: 32px;
+  }
+
+  /* Ultra-compact styles for very small screens */
+  .tracking-metadata-horizontal {
+    padding: 4px 8px;
+    margin-bottom: 3px;
+    font-size: 11px;
+    gap: 6px;
+  }
+
+  .tracking-metadata-horizontal strong {
+    font-size: 10px;
+  }
+
+  .tracking-card-ultra-compact .card-header {
+    padding: 6px 10px 3px;
+  }
+
+  .tracking-card-ultra-compact .card-content {
+    padding: 0 10px 6px;
+  }
+
+  .tracking-event-horizontal > div {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+
+  .tracking-metadata-two-col {
+    gap: 4px;
+  }
 }
 
 .inspection-section-black h5,
 .inspection-section-black h4,
 .inspection-section-black h3,
 .inspection-section-black .text-foreground {
-  color: #ffffff !important;
+  color: var(--foreground) !important;
 }
 
 .inspection-section-black .text-muted-foreground {
-  color: #cccccc !important;
+  color: var(--muted-foreground) !important;
 }
 
 .inspection-section-black .bg-card {
-  background-color: #1a1a1a !important;
-  border-color: #333333 !important;
+  background-color: var(--card) !important;
+  border-color: var(--border) !important;
 }
 
 .inspection-section-black .border-border {
-  border-color: #333333 !important;
+  border-color: var(--border) !important;
 }
 
-/* Ensure button styling remains readable in black sections */
+/* Ensure button styling remains readable in inspection sections */
 .inspection-section-black .bg-primary {
-  background-color: #ffffff !important;
-  color: #000000 !important;
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
 }
 
 .inspection-section-black .text-primary {
-  color: #ffffff !important;
+  color: var(--primary) !important;
 }
 
-/* Icon containers in black sections */
+/* Icon containers in inspection sections */
 .inspection-section-black .bg-blue-600,
 .inspection-section-black .bg-green-600,
 .inspection-section-black .bg-orange-600,
 .inspection-section-black .bg-purple-600,
 .inspection-section-black .bg-yellow-600 {
-  background-color: #ffffff !important;
+  background-color: var(--muted) !important;
 }
 
 .inspection-section-black .bg-blue-600 svg,
@@ -1145,17 +2266,271 @@ All colors MUST be HSL.
 .inspection-section-black .bg-orange-600 svg,
 .inspection-section-black .bg-purple-600 svg,
 .inspection-section-black .bg-yellow-600 svg {
-  color: #000000 !important;
+  color: var(--muted-foreground) !important;
 }
 
-/* Progress bar animations */
-@keyframes slide {
+/* Mobile-safe utility classes to prevent horizontal overflow */
+.mobile-safe {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.mobile-safe-text {
+  word-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+
+.mobile-no-scroll {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* Better button alignment for mobile */
+.mobile-button-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 0 4px;
+}
+
+.mobile-button-compact {
+  min-height: 40px;
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+/* Improved mobile card spacing */
+.mobile-card-container {
+  padding: 2px;
+  width: 100%;
+}
+
+/* Enhanced mobile text readability */
+.mobile-text-enhanced {
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+}
+
+/* Mobile-specific color improvements for better contrast */
+@media (max-width: 768px) {
+  .dark .text-muted-foreground {
+    color: hsl(0 0% 85%) !important;
+  }
+  
+  .dark .border {
+    border-color: hsl(0 0% 25%) !important;
+  }
+  
+  .card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .dark .card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border-color: hsl(0 0% 22%) !important;
+  }
+}
+
+/* Responsive design fixes for audit compliance */
+.responsive-width {
+  width: 100% !important;
+  max-width: 100vw !important;
+}
+
+/* Ensure no fixed widths cause responsive issues */
+.min-h-screen {
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+}
+
+/* Fix for dark mode containers */
+.dark {
+  width: 100% !important;
+  max-width: 100vw !important;
+}
+
+/* Fix for body and root elements */
+body {
+  width: 100% !important;
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
+}
+
+#root {
+  width: 100% !important;
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
+}
+
+/* Fix for fixed class elements */
+.fixed {
+  max-width: 100vw !important;
+}
+
+/* Smooth loading animations for better UX */
+@keyframes smooth-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes smooth-pulse {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes smooth-ping {
   0% {
-    transform: translateX(-100%);
+    transform: scale(1);
+    opacity: 1;
   }
-  100% {
-    transform: translateX(100%);
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
   }
 }
 
+/* Apply smooth animations */
+.animate-smooth-spin {
+  animation: smooth-spin 2s linear infinite;
+}
+
+.animate-smooth-pulse {
+  animation: smooth-pulse 2s ease-in-out infinite alternate;
+}
+
+.animate-smooth-ping {
+  animation: smooth-ping 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Compact card styling for mobile catalog */
+@media (max-width: 768px) {
+  .compact-card {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08) !important;
+    border-radius: 12px !important;
+  }
+  
+  .compact-card:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12) !important;
+    transform: translateY(-1px);
+  }
+  
+  /* Ensure text doesn't overflow */
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  /* Fix car details layout misalignments */
+  .car-details-hero {
+    width: 100% !important;
+    max-width: 100vw !important;
+    height: 50vh !important;
+    margin: 0 auto !important;
+    border: none !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+  }
+  
+  /* Fix mobile card alignment */
+  .mobile-specs-card .card-content {
+    padding: 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  
+  .mobile-spec-item {
+    min-height: 36px !important;
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+  
+  /* Fix inspection section alignment */
+  .mobile-inspection-section {
+    border-radius: 12px !important;
+    margin-bottom: 12px !important;
+    overflow: hidden !important;
+  }
+  
+  /* Fix button alignment */
+  .mobile-button-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    width: 100% !important;
+    padding: 0 4px !important;
+  }
+}
+
+/* Smartsupp Chat Widget - Top floating bubble */
+#chat-application {
+  position: fixed !important;
+  top: 24px !important;
+  right: 24px !important;
+  z-index: 999999 !important;
+  width: auto !important;
+  height: auto !important;
+  max-width: none !important;
+  max-height: none !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure widget stays compact and doesn't block content */
+#chat-application > * {
+  pointer-events: auto !important;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  #chat-application {
+    top: 20px !important;
+    right: 20px !important;
+  }
+}
+
+/* Equipment grid text alignment improvements */
+.equipment-item-text {
+  word-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+  text-align: center;
+  line-height: 1.2;
+  max-width: 100%;
+}
+
+/* Better text wrapping for equipment names */
+.break-words {
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+.hyphens-auto {
+  hyphens: auto;
 }

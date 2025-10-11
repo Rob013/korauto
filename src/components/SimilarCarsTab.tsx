@@ -4,7 +4,7 @@ import { ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSecureAuctionAPI } from '@/hooks/useSecureAuctionAPI';
 import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
-import { hasRealPricing } from '@/utils/carPricing';
+import { hasRealPricing, calculateFinalPriceEUR, filterCarsWithBuyNowPricing } from '@/utils/carPricing';
 import CarCard from './CarCard';
 
 interface SimilarCarsTabProps {
@@ -16,7 +16,7 @@ interface SimilarCarsTabProps {
 const SimilarCarsTab = ({ carMake, carModel, currentCarId }: SimilarCarsTabProps) => {
   const navigate = useNavigate();
   const { cars, fetchCars, fetchManufacturers } = useSecureAuctionAPI();
-  const { convertUSDtoEUR } = useCurrencyAPI();
+  const { convertUSDtoEUR, exchangeRate } = useCurrencyAPI();
   const [similarCars, setSimilarCars] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -45,12 +45,12 @@ const SimilarCarsTab = ({ carMake, carModel, currentCarId }: SimilarCarsTabProps
   }, [carMake, carModel, fetchCars, fetchManufacturers]);
 
   useEffect(() => {
-    // Filter cars to show same brand, exclude current car, and only include cars with real pricing
+    // Filter cars to show same brand, exclude current car, and only include cars with buy_now pricing
     const filtered = cars
       .filter(car => 
         car.manufacturer?.name?.toLowerCase() === carMake.toLowerCase() &&
         car.id !== currentCarId &&
-        hasRealPricing(car)
+        car.lots?.[0]?.buy_now && car.lots[0].buy_now > 0
       )
       .slice(0, 4); // Show max 4 similar cars
 
@@ -89,8 +89,9 @@ const SimilarCarsTab = ({ carMake, carModel, currentCarId }: SimilarCarsTabProps
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {similarCars.map((car) => {
               const lot = car.lots?.[0];
-              const usdPrice = lot?.buy_now || 25000;
-              const price = convertUSDtoEUR(Math.round(usdPrice + 2200));
+              // Only use buy_now price, no fallbacks  
+              const usdPrice = lot?.buy_now;
+              const price = calculateFinalPriceEUR(usdPrice, exchangeRate.rate);
               
               return (
                 <div 
@@ -99,7 +100,7 @@ const SimilarCarsTab = ({ carMake, carModel, currentCarId }: SimilarCarsTabProps
                   onClick={() => navigate(`/car/${lot?.lot || car.id}`)}
                 >
                   <div className="font-medium text-foreground">
-                    {car.year} {car.manufacturer?.name || car.manufacturer} {car.model?.name || car.model}
+                    {car.year} {typeof car.manufacturer === 'object' ? car.manufacturer?.name || '' : car.manufacturer || ''} {typeof car.model === 'object' ? car.model?.name || '' : car.model || ''}
                   </div>
                   <div className="text-primary font-semibold">€{price.toLocaleString()}</div>
                   <div className="text-xs text-muted-foreground">
