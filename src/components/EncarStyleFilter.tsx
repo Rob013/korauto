@@ -1,4 +1,4 @@
-import React, { useState, memo, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, memo, useCallback, useMemo, useEffect, useRef } from 'react';
 import { 
   Select,
   SelectContent,
@@ -104,6 +104,26 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   const [grades, setGrades] = useState<{ value: string; label: string; count?: number }[]>([]);
   const [trimLevels, setTrimLevels] = useState<{ value: string; label: string; count?: number }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const loadingTimerRef = useRef<number | null>(null);
+
+  // Show loading only if the update actually takes longer than a threshold to avoid flicker.
+  const startLoadingWithDelay = useCallback((delayMs: number = 180) => {
+    if (loadingTimerRef.current) {
+      window.clearTimeout(loadingTimerRef.current);
+      loadingTimerRef.current = null;
+    }
+    loadingTimerRef.current = window.setTimeout(() => {
+      setIsLoading(true);
+    }, delayMs);
+  }, []);
+
+  const stopLoading = useCallback(() => {
+    if (loadingTimerRef.current) {
+      window.clearTimeout(loadingTimerRef.current);
+      loadingTimerRef.current = null;
+    }
+    setIsLoading(false);
+  }, []);
   const [isLoadingGrades, setIsLoadingGrades] = useState(false);
   const [expandedSections, setExpandedSections] = useState<string[]>(compact ? ['basic'] : ['basic', 'advanced']);
 
@@ -112,9 +132,12 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
   const updateFilter = useCallback((key: string, value: string) => {
     const actualValue = value === 'all' || value === 'any' ? undefined : value;
-    
-    setIsLoading(true);
-    
+
+    // Avoid flicker: only show loading if it would take longer; year changes usually instant
+    if (key !== 'from_year' && key !== 'to_year') {
+      startLoadingWithDelay(180);
+    }
+
     if (key === 'manufacturer_id') {
       onManufacturerChange?.(actualValue || '');
     } else if (key === 'model_id') {
@@ -123,10 +146,10 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
       const updatedFilters = { ...filters, [key]: actualValue };
       onFiltersChange(updatedFilters);
     }
-    
-    const timeout = (key === 'from_year' || key === 'to_year') ? 25 : 100;
-    setTimeout(() => setIsLoading(false), timeout);
-  }, [filters, onFiltersChange, onManufacturerChange, onModelChange]);
+
+    // Stop loading on next frames to ensure UI stays responsive without flicker
+    requestAnimationFrame(() => requestAnimationFrame(() => stopLoading()));
+  }, [filters, onFiltersChange, onManufacturerChange, onModelChange, startLoadingWithDelay, stopLoading]);
 
   const handleSearchClick = useCallback(() => {
     if (onSearchCars) {

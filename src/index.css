@@ -931,6 +931,41 @@ All colors MUST be HSL.
       0 6px 20px -4px rgba(0, 0, 0, 0.12);
   }
 
+  /* Filter panel container - desktop and mobile: composited, flicker-free */
+  [data-filter-panel] {
+    will-change: transform, opacity;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    contain: layout style paint;
+    transition-property: transform, opacity, background-color, box-shadow, border-color;
+    transition-duration: var(--ios-duration, 220ms);
+    transition-timing-function: var(--ios-ease, cubic-bezier(0.25, 0.1, 0.25, 1));
+  }
+
+  /* Keep panel content smooth and independently scrollable */
+  [data-filter-panel] .mobile-filter-content,
+  [data-filter-panel] .filter-content {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    contain: content;
+  }
+
+  /* Instant-feel filter controls: constrain transitions to composited props */
+  [data-filter-panel] .filter-control,
+  [data-filter-panel] .year-buttons button,
+  [data-filter-panel] button,
+  [data-filter-panel] [role="button"] {
+    transition-property: transform, opacity, background-color, color, border-color, box-shadow !important;
+    transition-duration: var(--ios-duration-fast, 160ms) !important;
+    transition-timing-function: var(--ios-ease, cubic-bezier(0.25, 0.1, 0.25, 1)) !important;
+  }
+
+  /* While interacting, slightly damp expensive visuals to avoid flicker */
+  [data-touching="true"] [data-filter-panel],
+  [data-scrolling="true"] [data-filter-panel] {
+    box-shadow: 0 6px 18px -8px rgba(0, 0, 0, 0.16) !important;
+  }
+
   /* Filter controls interaction animation */
   .filter-control, .filter-section {
     position: relative;
