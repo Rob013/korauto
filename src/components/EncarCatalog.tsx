@@ -511,7 +511,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     setModels([]);
     setGenerations([]);
     setHasUserSelectedSort(false); // Reset sort preference
-    setSortBy(""); // Reset to no sorting
+    setSortBy("recently_added"); // Reset to recently_added default
     fetchCars(1, {}, true);
     setSearchParams({});
   }, [fetchCars, setSearchParams]);
@@ -799,16 +799,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
 
   // Adjust sort depending on filter presence
   useEffect(() => {
-    if (anyFilterApplied) {
-      // User is filtering: clear to API/default order unless user explicitly picked a sort
-      if (!hasUserSelectedSort) {
-        setSortBy(''); // No client-side sort; API order
-      }
-    } else {
-      // No filters: default to recently added
-      if (!hasUserSelectedSort) {
-        setSortBy('recently_added');
-      }
+    // Always default to recently_added unless user explicitly picked a sort
+    if (!hasUserSelectedSort) {
+      setSortBy('recently_added');
     }
   }, [anyFilterApplied, hasUserSelectedSort]);
 
@@ -1002,9 +995,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Initialize global sorting when sortBy changes or totalCount becomes available
   useEffect(() => {
     if (totalCount > 0) {
-      // Skip global sorting in default state - let server-side sorting handle it
-      if (isDefaultState && !hasUserSelectedSort) {
-        console.log(`📝 Default state - using server-side sorting (${totalCount} cars)`);
+      // Skip global sorting for recently_added - always use server-side sorting for this option
+      if (sortBy === 'recently_added' || (isDefaultState && !hasUserSelectedSort)) {
+        console.log(`📝 Using server-side sorting for recently_added (${totalCount} cars)`);
         clearGlobalSorting();
         return;
       }
