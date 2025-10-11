@@ -235,13 +235,14 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
               alt={alt}
               className="max-w-full max-h-full object-contain transition-transform duration-300 select-none"
               style={{
-                transform: `scale(${zoom}) rotate(${rotation}deg)`,
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: `translate(-50%, -50%) scale(${zoom}) rotate(${rotation}deg)`,
                 touchAction: zoom > 1 ? 'pan-x pan-y' : 'none',
                 transformOrigin: 'center center',
-                display: 'block',
-                margin: 'auto',
-                maxWidth: '100%',
-                maxHeight: '100%',
+                maxWidth: '95vw',
+                maxHeight: '95vh',
                 width: 'auto',
                 height: 'auto'
               }}
