@@ -123,8 +123,12 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: '100%',
-            minWidth: '100%'
+            minHeight: '100vh',
+            minWidth: '100vw',
+            width: '100%',
+            height: '100%',
+            position: 'relative',
+            overflow: 'hidden'
           }}
         >
           {/* Close Button */}
@@ -200,16 +204,23 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
             </Button>
           </div>
 
-          {/* Image Container - Improved centering */}
+          {/* Image Container - Universal centering for all devices */}
           <div 
             className="image-zoom-container w-full h-full flex items-center justify-center overflow-hidden"
             style={{
-              position: 'relative',
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              minHeight: '100%',
-              minWidth: '100%'
+              minHeight: '100vh',
+              minWidth: '100vw',
+              width: '100%',
+              height: '100%',
+              maxWidth: '100vw',
+              maxHeight: '100vh'
             }}
           >
             <img
@@ -218,21 +229,28 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
               alt={alt}
               className="max-w-full max-h-full object-contain transition-transform duration-300 select-none"
               style={{
-                transform: `translate(-50%, -50%) scale(${zoom}) rotate(${rotation}deg)`,
+                transform: `scale(${zoom}) rotate(${rotation}deg)`,
                 touchAction: zoom > 1 ? 'pan-x pan-y' : 'none',
                 transformOrigin: 'center center',
                 display: 'block',
                 margin: 'auto',
                 position: 'relative',
-                left: '50%',
-                top: '50%'
+                maxWidth: '100vw',
+                maxHeight: '100vh',
+                width: 'auto',
+                height: 'auto'
               }}
               draggable={false}
               onLoad={() => {
-                // Ensure image is centered after loading
+                // Ensure image is perfectly centered after loading
                 if (imageRef.current) {
-                  imageRef.current.style.left = '50%';
-                  imageRef.current.style.top = '50%';
+                  const img = imageRef.current;
+                  img.style.display = 'block';
+                  img.style.margin = 'auto';
+                  img.style.maxWidth = '100vw';
+                  img.style.maxHeight = '100vh';
+                  img.style.width = 'auto';
+                  img.style.height = 'auto';
                 }
               }}
             />
