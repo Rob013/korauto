@@ -580,6 +580,17 @@ const CarDetails = memo(() => {
   useEffect(() => {
     console.log('🖼️ ImageZoom state changed:', isImageZoomOpen);
   }, [isImageZoomOpen]);
+
+  // Debug car data loading
+  useEffect(() => {
+    console.log('🚗 Car data changed:', {
+      car: !!car,
+      loading,
+      error,
+      images: car?.images?.length || 0,
+      singleImage: car?.image ? 'present' : 'missing'
+    });
+  }, [car, loading, error]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showDetailedInfo, setShowDetailedInfo] = useState(false);
   const [showInspectionReport, setShowInspectionReport] = useState(false);
@@ -1038,12 +1049,22 @@ const CarDetails = memo(() => {
 
   // Memoize images array for performance - compute before early returns (limit to 20 for gallery)
   const images = useMemo(() => {
+    console.log('🖼️ Computing images array:', {
+      carImages: car?.images?.length || 0,
+      carImage: car?.image ? 'present' : 'missing',
+      carLoaded: !!car
+    });
+    
     if (car?.images?.length) {
-      return car.images.slice(0, 20); // Limit to 20 images as per API specification
+      const result = car.images.slice(0, 20); // Limit to 20 images as per API specification
+      console.log('🖼️ Using car.images:', result.length, 'images');
+      return result;
     }
     if (car?.image) {
+      console.log('🖼️ Using car.image:', car.image);
       return [car.image];
     }
+    console.log('🖼️ No images available');
     return [];
   }, [car?.images, car?.image]);
 
@@ -1203,14 +1224,11 @@ const CarDetails = memo(() => {
                     e.preventDefault();
                     console.log('🖼️ Image clicked, opening zoom modal, current state:', isImageZoomOpen);
                     console.log('🖼️ Images available:', images.length, 'Selected index:', selectedImageIndex);
-                    setIsImageZoomOpen(true);
-                  }}
-                  onTouchEnd={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    console.log('📱 Image touched on mobile, opening zoom modal, current state:', isImageZoomOpen);
-                    console.log('📱 Images available:', images.length, 'Selected index:', selectedImageIndex);
-                    setIsImageZoomOpen(true);
+                    if (images.length > 0) {
+                      setIsImageZoomOpen(true);
+                    } else {
+                      console.warn('⚠️ No images available to open in zoom modal');
+                    }
                   }}
                   data-fancybox="gallery"
                 >
@@ -1218,22 +1236,31 @@ const CarDetails = memo(() => {
                   {images.length > 0 ? (
                     <img 
                       src={images[selectedImageIndex]} 
-                      alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`} 
+                      alt={`${car?.year} ${car?.make} ${car?.model} - Image ${selectedImageIndex + 1}`} 
                       className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105" 
                       onError={e => {
+                        console.error('❌ Image failed to load:', images[selectedImageIndex]);
                         e.currentTarget.src = "/placeholder.svg";
                         setIsPlaceholderImage(true);
                       }} 
                       onLoad={e => {
+                        console.log('✅ Image loaded successfully:', images[selectedImageIndex]);
                         if (!e.currentTarget.src.includes("/placeholder.svg")) {
                           setIsPlaceholderImage(false);
                         }
+                      }}
+                      onLoadStart={() => {
+                        console.log('🔄 Image loading started:', images[selectedImageIndex]);
                       }}
                       loading="lazy"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <Car className="h-16 w-16 text-muted-foreground" />
+                      <div className="text-center ml-4">
+                        <p className="text-sm text-muted-foreground">No images available</p>
+                        <p className="text-xs text-muted-foreground mt-1">Car data: {car ? 'loaded' : 'loading...'}</p>
+                      </div>
                     </div>
                   )}
                   

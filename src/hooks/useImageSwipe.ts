@@ -32,7 +32,7 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container || images.length <= 1) return;
 
     const handleTouchStart = (e: TouchEvent) => {
       touchStartX.current = e.touches[0].clientX;
@@ -72,7 +72,7 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
       container.removeEventListener('touchmove', handleTouchMove);
       container.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [currentIndex, images.length]);
+  }, [images.length, goToNext, goToPrevious]);
 
   return {
     currentIndex,
