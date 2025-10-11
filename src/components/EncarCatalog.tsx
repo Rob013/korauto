@@ -107,7 +107,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     validationEnabled: false
   });
   
-  const [sortBy, setSortBy] = useState<SortOption>("");
+  const [sortBy, setSortBy] = useState<SortOption>("recently_added");
   const [hasUserSelectedSort, setHasUserSelectedSort] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentPage, setCurrentPage] = useState(1);

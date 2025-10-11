@@ -147,6 +147,7 @@ export const useSortedCars = (cars: FlexibleCar[], sortBy: SortOption) => {
 
 // EncarCatalog-specific sort options
 export const getEncarSortOptions = () => [
+  { value: '', label: 'No Sorting' },
   { value: 'recently_added', label: 'Recently Added' },
   { value: 'oldest_first', label: 'Oldest First' },
   { value: 'price_low', label: 'Price: Low to High' },
