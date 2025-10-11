@@ -239,28 +239,17 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   const logoUrl = manufacturer.image || `https://auctionsapi.com/images/brands/${manufacturer.name}.svg`;
                   return (
                     <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
-                      <div className="flex items-center gap-3 py-1.5">
-                        <div className="w-10 h-10 flex items-center justify-center bg-white rounded-lg p-2 flex-shrink-0 border border-border/30 shadow-sm">
-                          <img 
-                            src={logoUrl} 
-                            alt={`${manufacturer.name} logo`} 
-                            className="w-full h-full object-contain" 
-                            style={{ filter: 'contrast(1.1) brightness(1.05)' }}
-                            loading="eager"
-                            onError={(e) => {
-                              const target = e.currentTarget;
-                              const wrapper = target.parentElement;
-                              if (wrapper) {
-                                wrapper.className = 'w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/5 rounded-md flex items-center justify-center flex-shrink-0';
-                                wrapper.innerHTML = `<span class="text-sm font-bold text-primary">${manufacturer.name.charAt(0)}</span>`;
-                              }
-                            }}
-                          />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-medium text-sm">{manufacturer.name}</span>
-                          <span className="text-xs text-muted-foreground">{manufacturer.cars_qty || manufacturer.car_count || 0} cars</span>
-                        </div>
+                      <div className="flex items-center gap-2 py-1">
+                        <img 
+                          src={logoUrl} 
+                          alt={manufacturer.name}
+                          className="w-6 h-6 object-contain flex-shrink-0"
+                          loading="eager"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                        <span className="font-medium text-sm">{manufacturer.name} ({manufacturer.cars_qty || manufacturer.car_count || 0})</span>
                       </div>
                     </SelectItem>
                   );
@@ -636,28 +625,17 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     const logoUrl = manufacturer.image || `https://auctionsapi.com/images/brands/${manufacturer.name}.svg`;
                     return (
                       <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
-                        <div className="flex items-center gap-3 py-1.5">
-                          <div className="w-10 h-10 flex items-center justify-center bg-white rounded-lg p-2 flex-shrink-0 border border-border/30 shadow-sm">
-                            <img 
-                              src={logoUrl} 
-                              alt={`${manufacturer.name} logo`} 
-                              className="w-full h-full object-contain" 
-                              style={{ filter: 'contrast(1.1) brightness(1.05)' }}
-                              loading="eager"
-                              onError={(e) => {
-                                const target = e.currentTarget;
-                                const wrapper = target.parentElement;
-                                if (wrapper) {
-                                  wrapper.className = 'w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/5 rounded-md flex items-center justify-center flex-shrink-0';
-                                  wrapper.innerHTML = `<span class="text-sm font-bold text-primary">${manufacturer.name.charAt(0)}</span>`;
-                                }
-                              }}
-                            />
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="font-medium text-sm">{manufacturer.name}</span>
-                            <span className="text-xs text-muted-foreground">{manufacturer.cars_qty || manufacturer.car_count || 0} cars</span>
-                          </div>
+                        <div className="flex items-center gap-2 py-1">
+                          <img 
+                            src={logoUrl} 
+                            alt={manufacturer.name}
+                            className="w-6 h-6 object-contain flex-shrink-0"
+                            loading="eager"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                          <span className="font-medium text-sm">{manufacturer.name} ({manufacturer.cars_qty || manufacturer.car_count || 0})</span>
                         </div>
                       </SelectItem>
                     );

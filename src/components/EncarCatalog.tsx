@@ -118,17 +118,16 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [allCarsData, setAllCarsData] = useState<any[]>([]); // Store all cars when fetched
   const isMobile = useIsMobile();
   
-  // Initialize showFilters - always start closed, only open when user explicitly clicks filter button
+  // Initialize showFilters - always open on desktop, closed on mobile
   const [showFilters, setShowFilters] = useState(() => {
-    // Always start with filters closed when navigating to catalog
-    // This ensures filter panel is hidden after "Kthehu te Makinat" or any external navigation
-    return false;
+    // On desktop (lg breakpoint), filters should always be open
+    return !isMobile;
   });
   
-  // Track if user has explicitly closed the filter panel to prevent auto-reopening
+  // Track if user has explicitly closed the filter panel (mobile only)
   const [hasExplicitlyClosed, setHasExplicitlyClosed] = useState(() => {
-    // Start as explicitly closed since we always begin with filters hidden
-    return true;
+    // Only relevant for mobile
+    return isMobile;
   });
 
   // View mode state - toggle between grid and list view
@@ -146,6 +145,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Use ref for tracking fetch progress to avoid triggering re-renders
   const fetchingSortRef = useRef(false);
   const lastSortParamsRef = useRef('');
+
+  // Ensure filters are always open on desktop
+  useEffect(() => {
+    if (!isMobile) {
+      setShowFilters(true);
+    }
+  }, [isMobile]);
 
   // Memoized helper function to extract grades from title - now using utility
   const extractGradesFromTitleCallback = useCallback(extractGradesFromTitle, []);
@@ -1233,12 +1239,12 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   <span className="text-xs sm:text-sm whitespace-nowrap">Back</span>
                 </Button>
                 
-                {/* Filter Toggle Button - Enhanced mobile reliability */}
+                {/* Filter Toggle Button - Mobile only */}
                 <Button
                   variant="default"
                   size="sm"
                   onClick={handleFilterToggle}
-                  className="flex items-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3 font-semibold text-xs sm:text-sm bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 transition-transform"
+                  className="lg:hidden flex items-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3 font-semibold text-xs sm:text-sm bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 transition-transform"
                 >
                   {showFilters ? <PanelLeftClose className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <PanelLeftOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
                   <span className="whitespace-nowrap">{showFilters ? 'Fshih' : 'Filtrat'}</span>
