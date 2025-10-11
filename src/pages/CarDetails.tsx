@@ -1131,7 +1131,8 @@ const CarDetails = memo(() => {
         </div>
       </div>;
   }
-  return <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background animate-fade-in">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background animate-fade-in">
       <div className="container-responsive py-6 max-w-[1600px]">
         {/* Header with Actions - Modern Layout with animations */}
         <div className="flex flex-col gap-3 mb-6">
