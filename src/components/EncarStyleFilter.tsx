@@ -243,7 +243,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                         <img 
                           src={logoUrl} 
                           alt={manufacturer.name}
-                          className="w-6 h-6 object-contain flex-shrink-0 rounded bg-white dark:bg-muted p-0.5 ring-1 ring-border"
+                          className="w-6 h-6 object-contain flex-shrink-0 rounded bg-white dark:bg-white p-0.5 ring-1 ring-border"
                           loading="eager"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
@@ -629,7 +629,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                           <img 
                             src={logoUrl} 
                             alt={manufacturer.name}
-                            className="w-6 h-6 object-contain flex-shrink-0"
+                            className="w-6 h-6 object-contain flex-shrink-0 rounded bg-white dark:bg-white p-0.5 ring-1 ring-border"
                             loading="eager"
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
