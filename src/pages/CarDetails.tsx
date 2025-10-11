@@ -1191,18 +1191,7 @@ const CarDetails = memo(() => {
                 <div 
                   ref={imageContainerRef} 
                   className="relative w-full aspect-[4/3] sm:aspect-[16/10] lg:aspect-[16/9] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer" 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    console.log('🖼️ Image clicked, opening zoom modal');
-                    setIsImageZoomOpen(true);
-                  }}
-                  onTouchEnd={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    console.log('📱 Image touched on mobile, opening zoom modal');
-                    setIsImageZoomOpen(true);
-                  }}
+                  onClick={(e) => handleGalleryClick(e)} 
                   data-fancybox="gallery"
                 >
                   {/* Main Image with improved loading states */}
@@ -1915,16 +1904,7 @@ const CarDetails = memo(() => {
           </div>
         </div>
 
-        {/* Image Zoom Modal */}
-        <ImageZoom
-          src={images[selectedImageIndex] || ''}
-          alt={`${car?.year} ${car?.make} ${car?.model} - Image ${selectedImageIndex + 1}`}
-          isOpen={isImageZoomOpen}
-          onClose={() => setIsImageZoomOpen(false)}
-          images={images}
-          currentIndex={selectedImageIndex}
-          onImageChange={setSelectedImageIndex}
-        />
+        {/* Image Zoom Modal - Removed, now using gallery page for all image viewing */}
       </div>
     </div>
   );

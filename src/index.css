@@ -2399,123 +2399,36 @@ body {
   }
 }
 
-/* Smartsupp enforced bottom-right fixed bubble - Device viewport positioning */
+/* Smartsupp enforced bottom-right fixed bubble */
 #chat-application, 
-#chat-application:not([style*="position: fixed"]),
-[data-smartsupp-widget],
-[data-smartsupp-widget] > div,
-.smartsupp-widget,
-.smartsupp-widget > div,
-iframe[src*="smartsupp"],
-iframe[src*="smartsuppchat"],
-div[class*="smartsupp"],
-div[id*="smartsupp"],
-body > div:last-child,
-html > body > div:last-child {
+#chat-application:not([style*="position: fixed"]) {
   position: fixed !important;
   bottom: 20px !important;
   right: 20px !important;
   top: auto !important;
   left: auto !important;
   transform: none !important;
-  z-index: 2147483647 !important; /* max safe z-index */
+  z-index: 2147483647 !important; /* max safe */
   pointer-events: auto !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  width: auto !important;
-  height: auto !important;
-  max-width: none !important;
-  max-height: none !important;
-  inset: auto !important;
 }
 
 /* Guard against internal wrappers changing layout */
 #chat-application *,
-#chat-application > div,
-[data-smartsupp-widget] *,
-[data-smartsupp-widget] > div *,
-.smartsupp-widget *,
-.smartsupp-widget > div * {
+#chat-application > div {
   inset: auto !important;
-  position: relative !important;
-  top: auto !important;
-  left: auto !important;
-  right: auto !important;
-  bottom: auto !important;
-  transform: none !important;
 }
 
-/* Ensure viewport positioning on all screen sizes */
 @media (min-width: 1025px) {
-  #chat-application,
-  [data-smartsupp-widget],
-  .smartsupp-widget {
+  #chat-application {
     bottom: 28px !important;
     right: 28px !important;
   }
 }
 
 @media (max-width: 768px) {
-  #chat-application,
-  [data-smartsupp-widget],
-  .smartsupp-widget {
+  #chat-application {
     bottom: 16px !important;
     right: 16px !important;
   }
-}
-
-/* Additional selectors for Smartsupp widget variations */
-iframe[src*="smartsupp"],
-iframe[src*="smartsuppchat"],
-div[class*="smartsupp"],
-div[id*="smartsupp"] {
-  position: fixed !important;
-  bottom: 20px !important;
-  right: 20px !important;
-  top: auto !important;
-  left: auto !important;
-  z-index: 2147483647 !important;
-}
-
-/* Force viewport positioning for all possible Smartsupp elements */
-body > div[style*="position"],
-body > div[style*="fixed"],
-html > body > div:last-child {
-  position: fixed !important;
-  bottom: 20px !important;
-  right: 20px !important;
-  top: auto !important;
-  left: auto !important;
-  z-index: 2147483647 !important;
-}
-
-/* Override any parent container positioning */
-* {
-  /* Ensure no parent container affects Smartsupp positioning */
-}
-
-/* Specific override for any container that might affect the chat widget */
-.container,
-.container-fluid,
-main,
-#root,
-#app {
-  position: relative !important;
-}
-
-/* Ensure Smartsupp is always on top and positioned relative to viewport */
-#chat-application,
-[data-smartsupp-widget],
-.smartsupp-widget,
-iframe[src*="smartsupp"] {
-  position: fixed !important;
-  bottom: 20px !important;
-  right: 20px !important;
-  top: auto !important;
-  left: auto !important;
-  z-index: 2147483647 !important;
-  transform: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
 }
 

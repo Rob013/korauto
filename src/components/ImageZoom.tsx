@@ -19,11 +19,6 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
-  // Debug logging
-  useEffect(() => {
-    console.log('🖼️ ImageZoom component - isOpen:', isOpen, 'src:', src);
-  }, [isOpen, src]);
-
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.2, 3));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.2, 0.5));
   const handleRotate = () => setRotation(prev => prev + 90);
@@ -117,145 +112,6 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
     }
   }, [isOpen]);
 
-  // Check if mobile
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-  // Render image content function
-  const renderImageContent = () => (
-    <>
-      {/* Close button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        className="absolute top-4 right-4 z-10 text-white hover:bg-white/20"
-        onClick={onClose}
-        aria-label="Close image"
-      >
-        <X className="h-6 w-6" />
-      </Button>
-
-      {/* Navigation buttons */}
-      {images.length > 1 && (
-        <>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute left-1/2 top-1/2 transform -translate-x-16 -translate-y-1/2 z-10 text-white hover:bg-white/20"
-            onClick={handlePrevImage}
-            disabled={currentIndex === 0}
-            aria-label="Previous image"
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute left-1/2 top-1/2 transform translate-x-4 -translate-y-1/2 z-10 text-white hover:bg-white/20"
-            onClick={handleNextImage}
-            disabled={currentIndex === images.length - 1}
-            aria-label="Next image"
-          >
-            <ChevronRight className="h-6 w-6" />
-          </Button>
-        </>
-      )}
-
-      {/* Image counter */}
-      {images.length > 1 && (
-        <div className="absolute top-4 left-4 z-10 text-white bg-black/50 px-3 py-1 rounded-full text-sm">
-          {currentIndex + 1} / {images.length}
-        </div>
-      )}
-
-      {/* Main image */}
-      <img
-        ref={imageRef}
-        src={src}
-        alt={alt}
-        className="max-w-[95vw] max-h-[95vh] object-contain"
-        style={{
-          transform: `scale(${zoom}) rotate(${rotation}deg)`,
-          touchAction: zoom > 1 ? 'pan-x pan-y' : 'none',
-          transformOrigin: 'center center',
-          position: 'relative',
-          margin: 'auto'
-        }}
-        draggable={false}
-      />
-
-      {/* Zoom controls */}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10 flex gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-white hover:bg-white/20"
-          onClick={handleZoomOut}
-          aria-label="Zoom out"
-        >
-          <ZoomOut className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-white hover:bg-white/20"
-          onClick={handleReset}
-          aria-label="Reset zoom"
-        >
-          {Math.round(zoom * 100)}%
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-white hover:bg-white/20"
-          onClick={handleZoomIn}
-          aria-label="Zoom in"
-        >
-          <ZoomIn className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-white hover:bg-white/20"
-          onClick={handleRotate}
-          aria-label="Rotate image"
-        >
-          <RotateCw className="h-4 w-4" />
-        </Button>
-      </div>
-    </>
-  );
-
-  if (!isOpen) return null;
-
-  // Mobile fallback - render directly without Dialog
-  if (isMobile) {
-    return (
-      <div 
-        className="fixed inset-0 z-[9999] bg-black flex items-center justify-center"
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: '100vw',
-          height: '100vh',
-          zIndex: 9999
-        }}
-        onClick={onClose}
-      >
-        <div 
-          className="relative w-full h-full flex items-center justify-center"
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {renderImageContent()}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
@@ -276,14 +132,6 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
           transform: 'none',
           inset: 0
         }}
-        onPointerDownOutside={(e) => {
-          e.preventDefault();
-          onClose();
-        }}
-        onEscapeKeyDown={(e) => {
-          e.preventDefault();
-          onClose();
-        }}
       >
         <div 
           className="relative w-full h-full flex items-center justify-center"
@@ -303,7 +151,127 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
             padding: 0
           }}
         >
-          {renderImageContent()}
+          {/* Close Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="absolute top-4 right-4 z-50 bg-black/70 hover:bg-black/90 text-white border border-white/20 touch-manipulation"
+          >
+            <X className="h-6 w-6" />
+          </Button>
+
+          {/* Navigation Arrows */}
+          {images.length > 1 && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handlePrevImage}
+                disabled={currentIndex === 0}
+                className="absolute left-1/2 top-1/2 transform -translate-x-16 -translate-y-1/2 z-50 bg-black/70 hover:bg-black/90 text-white disabled:opacity-20 disabled:cursor-not-allowed border border-white/20 h-12 w-12 touch-manipulation"
+              >
+                <ChevronLeft className="h-8 w-8" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleNextImage}
+                disabled={currentIndex === images.length - 1}
+                className="absolute left-1/2 top-1/2 transform translate-x-4 -translate-y-1/2 z-50 bg-black/70 hover:bg-black/90 text-white disabled:opacity-20 disabled:cursor-not-allowed border border-white/20 h-12 w-12 touch-manipulation"
+              >
+                <ChevronRight className="h-8 w-8" />
+              </Button>
+            </>
+          )}
+
+          {/* Controls - Improved design and accessibility */}
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50 flex gap-1 bg-black/80 rounded-xl p-2 border border-white/30 backdrop-blur-md shadow-2xl">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleZoomOut}
+              className="text-white hover:bg-white/20 touch-manipulation h-10 w-10"
+              aria-label="Zoom out"
+            >
+              <ZoomOut className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleZoomIn}
+              className="text-white hover:bg-white/20 touch-manipulation h-10 w-10"
+              aria-label="Zoom in"
+            >
+              <ZoomIn className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleRotate}
+              className="text-white hover:bg-white/20 touch-manipulation h-10 w-10"
+              aria-label="Rotate image"
+            >
+              <RotateCw className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={handleReset}
+              className="text-white hover:bg-white/20 px-4 touch-manipulation h-10 text-sm font-medium"
+              aria-label="Reset zoom and rotation"
+            >
+              Reset
+            </Button>
+          </div>
+
+          {/* Image Container - Centered image */}
+          <div 
+            className="w-full h-full flex items-center justify-center overflow-hidden"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '100vw',
+              height: '100vh',
+              position: 'fixed',
+              top: 0,
+              left: 0
+            }}
+          >
+            <img
+              ref={imageRef}
+              src={src}
+              alt={alt}
+              className="max-w-full max-h-full object-contain transition-transform duration-300 select-none"
+              style={{
+                transform: `scale(${zoom}) rotate(${rotation}deg)`,
+                touchAction: zoom > 1 ? 'pan-x pan-y' : 'none',
+                transformOrigin: 'center center',
+                maxWidth: '95vw',
+                maxHeight: '95vh',
+                width: 'auto',
+                height: 'auto',
+                position: 'relative',
+                margin: 'auto'
+              }}
+              draggable={false}
+            />
+          </div>
+
+          {/* Image counter and zoom indicator - Improved design */}
+          <div className="absolute top-4 left-4 bg-black/80 text-white px-4 py-3 rounded-xl flex flex-col gap-1 text-sm border border-white/30 backdrop-blur-md shadow-xl">
+            <div className="font-bold text-base">{Math.round(zoom * 100)}%</div>
+            {images.length > 1 && (
+              <div className="text-xs opacity-90 font-medium">{currentIndex + 1} / {images.length}</div>
+            )}
+          </div>
+
+          {/* Swipe hint for mobile */}
+          {images.length > 1 && (
+            <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-black/50 text-white text-xs px-3 py-1.5 rounded-full sm:hidden animate-fade-in">
+              Swipe to navigate
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

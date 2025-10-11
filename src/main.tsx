@@ -40,7 +40,6 @@ if ('serviceWorker' in navigator) {
       })
       .catch((error) => {
         console.error('❌ Service Worker registration failed:', error);
-        // Don't let service worker errors break the app
       });
 
     // Listen for messages from service worker
@@ -52,37 +51,13 @@ if ('serviceWorker' in navigator) {
   });
 
   // Setup periodic cache refresh check (every 30 minutes)
-  try {
-    cacheManager.setupPeriodicRefresh(30);
-  } catch (error) {
-    console.error('❌ Cache manager setup failed:', error);
-  }
-} else {
-  console.log('⚠️ Service Worker not supported');
+  cacheManager.setupPeriodicRefresh(30);
 }
 
-// Add mobile debugging
-console.log('🚀 App starting...', {
-  userAgent: navigator.userAgent,
-  isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
-  viewport: {
-    width: window.innerWidth,
-    height: window.innerHeight
-  }
-});
-
-// Check if root element exists
-const rootElement = document.getElementById("root");
-if (!rootElement) {
-  console.error('❌ Root element not found!');
-  document.body.innerHTML = '<div style="padding: 20px; font-family: Arial, sans-serif; text-align: center;"><h2>Error</h2><p>Root element not found. Please refresh the page.</p></div>';
-} else {
-  console.log('✅ Root element found');
-  createRoot(rootElement).render(
-    <ThemeProvider defaultTheme="system" storageKey="korauto-ui-theme">
-      <NavigationProvider>
-        <App />
-      </NavigationProvider>
-    </ThemeProvider>
-  );
-}
+createRoot(document.getElementById("root")!).render(
+  <ThemeProvider defaultTheme="system" storageKey="korauto-ui-theme">
+    <NavigationProvider>
+      <App />
+    </NavigationProvider>
+  </ThemeProvider>
+);
