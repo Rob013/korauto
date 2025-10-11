@@ -1206,18 +1206,22 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             }}
             onCloseFilter={() => {
               console.log("Close filter called, isMobile:", isMobile);
-              // Force close the filter panel regardless of mobile detection
-              setShowFilters(false);
-              setHasExplicitlyClosed(true);
+              // Close the filter panel on mobile only; keep open on desktop
+              if (isMobile) {
+                setShowFilters(false);
+                setHasExplicitlyClosed(true);
+              }
               
               // Additional CSS force close as backup
-              setTimeout(() => {
-                const filterPanel = document.querySelector('[data-filter-panel]');
-                if (filterPanel) {
-                  (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
-                  (filterPanel as HTMLElement).style.visibility = 'hidden';
-                }
-              }, 100);
+              if (isMobile) {
+                setTimeout(() => {
+                  const filterPanel = document.querySelector('[data-filter-panel]');
+                  if (filterPanel) {
+                    (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
+                    (filterPanel as HTMLElement).style.visibility = 'hidden';
+                  }
+                }, 100);
+              }
             }}
           />
           
@@ -1248,7 +1252,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       )}
 
       {/* Main Content */}
-      <div ref={mainContentRef} className={`flex-1 min-w-0 transition-all duration-300 ${showFilters ? 'lg:ml-6' : ''}`}>
+      <div ref={mainContentRef} className={`flex-1 min-w-0 transition-all duration-300 lg:ml-6`}>
         <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-6 mobile-text-optimize max-w-[1600px]">
           {/* Header Section - Mobile optimized */}
           <div className="flex flex-col gap-3 mb-4">
