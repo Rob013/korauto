@@ -97,12 +97,20 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
     }
   }, [isOpen, handleKeyDown]);
 
-  // Reset zoom and rotation when image changes
+  // Reset zoom and rotation when image changes or modal opens
   useEffect(() => {
     if (isOpen) {
       handleReset();
     }
   }, [currentIndex, isOpen]);
+
+  // Reset zoom and rotation when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setZoom(1);
+      setRotation(0);
+    }
+  }, [isOpen]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -210,13 +218,23 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
               alt={alt}
               className="max-w-full max-h-full object-contain transition-transform duration-300 select-none"
               style={{
-                transform: `scale(${zoom}) rotate(${rotation}deg)`,
+                transform: `translate(-50%, -50%) scale(${zoom}) rotate(${rotation}deg)`,
                 touchAction: zoom > 1 ? 'pan-x pan-y' : 'none',
                 transformOrigin: 'center center',
                 display: 'block',
-                margin: 'auto'
+                margin: 'auto',
+                position: 'relative',
+                left: '50%',
+                top: '50%'
               }}
               draggable={false}
+              onLoad={() => {
+                // Ensure image is centered after loading
+                if (imageRef.current) {
+                  imageRef.current.style.left = '50%';
+                  imageRef.current.style.top = '50%';
+                }
+              }}
             />
           </div>
 

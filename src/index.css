@@ -2359,6 +2359,10 @@ body {
     transform-origin: center center !important;
     display: block !important;
     margin: auto !important;
+    position: relative !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
   }
   
   /* Fix mobile card alignment */
