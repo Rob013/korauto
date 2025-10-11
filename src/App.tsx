@@ -134,6 +134,80 @@ const App = () => {
     };
   }, []);
 
+  // Ensure Smartsupp chat widget is positioned relative to viewport
+  useEffect(() => {
+    const ensureSmartsuppPositioning = () => {
+      // Find all possible Smartsupp elements
+      const smartsuppSelectors = [
+        '#chat-application',
+        '[data-smartsupp-widget]',
+        '.smartsupp-widget',
+        'iframe[src*="smartsupp"]',
+        'iframe[src*="smartsuppchat"]',
+        'div[class*="smartsupp"]',
+        'div[id*="smartsupp"]'
+      ];
+
+      smartsuppSelectors.forEach(selector => {
+        const elements = document.querySelectorAll(selector);
+        elements.forEach(element => {
+          const htmlElement = element as HTMLElement;
+          if (htmlElement) {
+            htmlElement.style.position = 'fixed';
+            htmlElement.style.bottom = '20px';
+            htmlElement.style.right = '20px';
+            htmlElement.style.top = 'auto';
+            htmlElement.style.left = 'auto';
+            htmlElement.style.zIndex = '2147483647';
+            htmlElement.style.transform = 'none';
+            htmlElement.style.margin = '0';
+            htmlElement.style.padding = '0';
+          }
+        });
+      });
+    };
+
+    // Run immediately
+    ensureSmartsuppPositioning();
+
+    // Set up observer to watch for dynamically added Smartsupp elements
+    const observer = new MutationObserver((mutations) => {
+      let shouldCheck = false;
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList') {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              const element = node as Element;
+              if (element.id?.includes('smartsupp') || 
+                  element.className?.includes('smartsupp') ||
+                  element.tagName === 'IFRAME' && (element as HTMLIFrameElement).src?.includes('smartsupp')) {
+                shouldCheck = true;
+              }
+            }
+          });
+        }
+      });
+      
+      if (shouldCheck) {
+        setTimeout(ensureSmartsuppPositioning, 100);
+      }
+    });
+
+    // Start observing
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+
+    // Also check periodically in case the widget loads after our observer
+    const interval = setInterval(ensureSmartsuppPositioning, 2000);
+
+    return () => {
+      observer.disconnect();
+      clearInterval(interval);
+    };
+  }, []);
+
   // Log performance information for development
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
