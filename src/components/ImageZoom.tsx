@@ -123,8 +123,6 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: '100vh',
-            minWidth: '100vw',
             width: '100%',
             height: '100%',
             position: 'relative',
@@ -204,23 +202,16 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
             </Button>
           </div>
 
-          {/* Image Container - Universal centering for all devices */}
+          {/* Image Container - Simple and reliable centering */}
           <div 
-            className="image-zoom-container w-full h-full flex items-center justify-center overflow-hidden"
+            className="w-full h-full flex items-center justify-center overflow-hidden"
             style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              minHeight: '100vh',
-              minWidth: '100vw',
               width: '100%',
               height: '100%',
-              maxWidth: '100vw',
-              maxHeight: '100vh'
+              position: 'relative'
             }}
           >
             <img
@@ -234,25 +225,12 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
                 transformOrigin: 'center center',
                 display: 'block',
                 margin: 'auto',
-                position: 'relative',
-                maxWidth: '100vw',
-                maxHeight: '100vh',
+                maxWidth: '100%',
+                maxHeight: '100%',
                 width: 'auto',
                 height: 'auto'
               }}
               draggable={false}
-              onLoad={() => {
-                // Ensure image is perfectly centered after loading
-                if (imageRef.current) {
-                  const img = imageRef.current;
-                  img.style.display = 'block';
-                  img.style.margin = 'auto';
-                  img.style.maxWidth = '100vw';
-                  img.style.maxHeight = '100vh';
-                  img.style.width = 'auto';
-                  img.style.height = 'auto';
-                }
-              }}
             />
           </div>
 
