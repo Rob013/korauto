@@ -118,16 +118,19 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
         className="max-w-[100vw] max-h-[100vh] w-full h-full p-0 bg-black border-0 z-50"
         style={{
           position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
           width: '100vw',
           height: '100vh',
           maxWidth: '100vw',
           maxHeight: '100vh',
           margin: 0,
           padding: 0,
-          zIndex: 9999
+          zIndex: 9999,
+          transform: 'none',
+          inset: 0
         }}
       >
         <div 
@@ -140,7 +143,9 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
             justifyContent: 'center',
             width: '100vw',
             height: '100vh',
-            position: 'relative',
+            position: 'fixed',
+            top: 0,
+            left: 0,
             overflow: 'hidden',
             margin: 0,
             padding: 0
@@ -228,7 +233,9 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
               justifyContent: 'center',
               width: '100vw',
               height: '100vh',
-              position: 'relative'
+              position: 'fixed',
+              top: 0,
+              left: 0
             }}
           >
             <img
@@ -243,7 +250,9 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
                 maxWidth: '95vw',
                 maxHeight: '95vh',
                 width: 'auto',
-                height: 'auto'
+                height: 'auto',
+                position: 'relative',
+                margin: 'auto'
               }}
               draggable={false}
             />
