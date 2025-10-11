@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,6 +22,8 @@ import {
 import { FilterState } from '@/hooks/useFiltersFromUrl';
 import { validateFilters } from '@/utils/buildQueryParams';
 import { cn } from '@/lib/utils';
+import { useSmoothAnimations } from '@/hooks/useSmoothAnimations';
+import { usePreventFlicker } from '@/hooks/usePreventFlicker';
 
 interface FiltersData {
   brands: Array<{ id: string; name: string; count?: number; image?: string }>;
@@ -62,7 +64,7 @@ const useDebounce = <T,>(value: T, delay: number): T => {
   return debouncedValue;
 };
 
-const FiltersPanel: React.FC<FiltersPanelProps> = ({
+const FiltersPanel: React.FC<FiltersPanelProps> = memo(({
   filters,
   data,
   isLoading,
@@ -76,6 +78,10 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   const [priceRange, setPriceRange] = useState([filters.priceMin || data.priceRange.min, filters.priceMax || data.priceRange.max]);
   const [mileageRange, setMileageRange] = useState([filters.mileageMin || data.mileageRange.min, filters.mileageMax || data.mileageRange.max]);
   const [expandedSections, setExpandedSections] = useState<string[]>(['basic']);
+  
+  // Performance optimizations
+  const { isReducedMotion } = useSmoothAnimations();
+  const { shouldShow, isTransitioning } = usePreventFlicker(isLoading, 200);
 
   // Debounce search term with 250ms delay as specified
   const debouncedSearchTerm = useDebounce(searchTerm, 250);
@@ -288,7 +294,13 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
             placeholder="Kërko makinat..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-background/60 backdrop-blur-sm border-border/50 focus:border-primary transition-all duration-200"
+            className={cn(
+              "pl-10 bg-background/60 backdrop-blur-sm border-border/50 focus:border-primary filter-input",
+              isTransitioning && "opacity-50"
+            )}
+            style={{
+              transition: isReducedMotion ? 'none' : 'all var(--transition-fast, 0.15s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1))'
+            }}
           />
         </div>
       </div>
@@ -606,6 +618,8 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       )}
     </div>
   );
-};
+});
+
+FiltersPanel.displayName = 'FiltersPanel';
 
 export default FiltersPanel;

@@ -286,14 +286,15 @@ const LazyCarCard = memo(({
   return (
     <div 
       ref={cardRef}
-      className="glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-xl hover:shadow-2xl transition-all duration-500 mobile-card-compact compact-modern-card animate-slide-in-up"
+      className="glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-xl hover:shadow-2xl transition-all duration-500 mobile-card-compact compact-modern-card animate-slide-in-up car-card performance-optimized"
       onClick={handleCardClick}
       style={{
-        willChange: 'transform, opacity',
+        willChange: 'transform, opacity, box-shadow',
         transform: 'translate3d(0, 0, 0)',
         backfaceVisibility: 'hidden',
         perspective: 1000,
-        WebkitTapHighlightColor: 'transparent'
+        WebkitTapHighlightColor: 'transparent',
+        contain: 'layout style paint'
       }}
     >
       {/* Image Section - Standard 4:3 aspect ratio like encar.com */}

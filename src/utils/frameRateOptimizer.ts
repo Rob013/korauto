@@ -181,6 +181,40 @@ export class FrameRateOptimizer {
     if (this.config.reducedMotion) {
       document.documentElement.setAttribute('data-reduced-motion', 'true');
     }
+
+    // Enhanced adaptive animations based on device capabilities
+    this.applyAdaptiveAnimations();
+  }
+
+  private applyAdaptiveAnimations(): void {
+    const root = document.documentElement;
+    
+    // Adaptive transition durations based on refresh rate and performance
+    const baseDuration = this.config.targetFPS >= 120 ? 0.15 : 0.25;
+    const fastDuration = this.config.targetFPS >= 120 ? 0.1 : 0.15;
+    const slowDuration = this.config.targetFPS >= 120 ? 0.3 : 0.4;
+    
+    root.style.setProperty('--transition-fast', `${fastDuration}s`);
+    root.style.setProperty('--transition-base', `${baseDuration}s`);
+    root.style.setProperty('--transition-slow', `${slowDuration}s`);
+    
+    // Adaptive easing functions
+    if (this.config.targetFPS >= 120) {
+      root.style.setProperty('--ease-smooth', 'cubic-bezier(0.25, 0.46, 0.45, 0.94)');
+      root.style.setProperty('--ease-bounce', 'cubic-bezier(0.68, -0.55, 0.265, 1.55)');
+    } else {
+      root.style.setProperty('--ease-smooth', 'cubic-bezier(0.4, 0, 0.2, 1)');
+      root.style.setProperty('--ease-bounce', 'cubic-bezier(0.68, -0.55, 0.265, 1.55)');
+    }
+    
+    // Performance-based animation complexity
+    if (this.config.performanceMode === 'high') {
+      root.style.setProperty('--animation-complexity', '1');
+    } else if (this.config.performanceMode === 'power-saver') {
+      root.style.setProperty('--animation-complexity', '0.5');
+    } else {
+      root.style.setProperty('--animation-complexity', '0.75');
+    }
   }
 
   private startFrameRateMonitoring(): void {

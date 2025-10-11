@@ -5,6 +5,7 @@ import './utils/iosOptimizations.css'
 import { ThemeProvider } from "@/components/ThemeProvider"
 import { NavigationProvider } from './contexts/NavigationContext.tsx'
 import cacheManager from '@/utils/cacheManager'
+import { FrameRateOptimizer, inject120FPSStyles } from '@/utils/frameRateOptimizer'
 
 // Initialize cache manager and check for updates
 cacheManager.initialize().then((cacheCleared) => {
@@ -61,6 +62,10 @@ if ('serviceWorker' in navigator) {
   console.log('⚠️ Service Worker not supported');
 }
 
+// Initialize performance optimizations
+const frameRateOptimizer = FrameRateOptimizer.getInstance();
+inject120FPSStyles();
+
 // Add mobile debugging
 console.log('🚀 App starting...', {
   userAgent: navigator.userAgent,
@@ -68,6 +73,11 @@ console.log('🚀 App starting...', {
   viewport: {
     width: window.innerWidth,
     height: window.innerHeight
+  },
+  performance: {
+    fps: frameRateOptimizer.getCurrentFPS(),
+    capabilities: frameRateOptimizer.getCapabilities(),
+    config: frameRateOptimizer.getConfig()
   }
 });
 

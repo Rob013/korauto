@@ -347,12 +347,14 @@ All colors MUST be HSL.
     overflow-x: hidden;
   }
 
-  /* Smooth transitions globally - Optimized timing */
+  /* Smooth transitions globally - Adaptive timing based on device capabilities */
   * {
-    transition: background-color 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-                border-color 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-                color 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-                box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: background-color var(--transition-base, 0.25s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)),
+                border-color var(--transition-base, 0.25s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)),
+                color var(--transition-base, 0.25s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)),
+                box-shadow var(--transition-slow, 0.3s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)),
+                transform var(--transition-fast, 0.15s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)),
+                opacity var(--transition-fast, 0.15s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1));
   }
 
   /* Hardware acceleration for animations - 120fps ready */
@@ -931,16 +933,48 @@ All colors MUST be HSL.
       0 6px 20px -4px rgba(0, 0, 0, 0.12);
   }
 
-  /* Filter controls interaction animation */
+  /* Enhanced filter controls interaction animation */
   .filter-control, .filter-section {
     position: relative;
-    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: all var(--transition-base, 0.25s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1));
+    will-change: transform, box-shadow, background-color;
+    transform: translateZ(0);
   }
 
   .filter-control:focus,
   .filter-control:active {
     box-shadow: 0 0 0 3px hsl(var(--primary) / 0.2);
-    transform: scale(1.02);
+    transform: scale(1.02) translateZ(0);
+  }
+
+  /* Smooth filter panel slide animations */
+  [data-filter-panel] {
+    transition: transform var(--transition-slow, 0.4s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)),
+                opacity var(--transition-base, 0.25s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)),
+                visibility var(--transition-fast, 0.15s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1));
+    will-change: transform, opacity, visibility;
+    transform: translateZ(0);
+  }
+
+  /* Enhanced filter panel backdrop */
+  [data-filter-panel]::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-base, 0.25s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)),
+                visibility var(--transition-base, 0.25s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1));
+    z-index: -1;
+  }
+
+  [data-filter-panel].mobile-filter-panel::before {
+    opacity: 1;
+    visibility: visible;
   }
 
   /* Touch ripple for filter sections */
@@ -1538,10 +1572,60 @@ All colors MUST be HSL.
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   }
 
-  /* Smooth filter panel transitions */
+  /* Enhanced filter panel transitions with performance optimizations */
   .filter-panel {
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
+    contain: layout style paint;
+    will-change: transform, opacity;
+  }
+
+  /* Staggered animation for filter sections */
+  .filter-section {
+    animation: filterSectionSlideIn var(--transition-slow, 0.4s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)) forwards;
+    opacity: 0;
+    transform: translateY(20px) translateZ(0);
+  }
+
+  .filter-section:nth-child(1) { animation-delay: calc(var(--transition-fast, 0.15s) * 0); }
+  .filter-section:nth-child(2) { animation-delay: calc(var(--transition-fast, 0.15s) * 1); }
+  .filter-section:nth-child(3) { animation-delay: calc(var(--transition-fast, 0.15s) * 2); }
+  .filter-section:nth-child(4) { animation-delay: calc(var(--transition-fast, 0.15s) * 3); }
+  .filter-section:nth-child(5) { animation-delay: calc(var(--transition-fast, 0.15s) * 4); }
+
+  @keyframes filterSectionSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px) translateZ(0);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) translateZ(0);
+    }
+  }
+
+  /* Smooth filter input animations */
+  .filter-input {
+    transition: all var(--transition-fast, 0.15s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1));
+    will-change: border-color, box-shadow, transform;
+  }
+
+  .filter-input:focus {
+    transform: scale(1.01) translateZ(0);
+    box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2);
+  }
+
+  /* Performance-optimized car card animations */
+  .car-card {
+    contain: layout style paint;
+    will-change: transform, opacity;
+    transition: transform var(--transition-fast, 0.15s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)),
+                box-shadow var(--transition-base, 0.25s) var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1));
+  }
+
+  .car-card:hover {
+    transform: translateY(-4px) translateZ(0);
+    box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.15);
   }
 
   /* Better text readability on mobile - More compact */
@@ -2517,5 +2601,72 @@ iframe[src*="smartsupp"] {
   transform: none !important;
   margin: 0 !important;
   padding: 0 !important;
+}
+
+/* Enhanced Performance Optimizations */
+
+/* Optimized filter panel animations */
+[data-filter-panel] {
+  contain: layout style paint;
+  will-change: transform, opacity, visibility;
+  transform: translateZ(0);
+}
+
+/* Smooth filter section animations */
+.filter-section {
+  contain: layout style;
+  will-change: transform, opacity;
+}
+
+/* Performance-optimized car card rendering */
+.car-card {
+  contain: layout style paint;
+  will-change: transform, opacity, box-shadow;
+}
+
+/* Performance-optimized images */
+.optimized-image {
+  content-visibility: auto;
+  contain-intrinsic-size: 280px 160px;
+  will-change: transform, opacity;
+}
+
+/* Enhanced smooth scrolling */
+.smooth-scroll-container {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  contain: layout style;
+}
+
+/* Optimized button interactions */
+.performance-button {
+  contain: layout style paint;
+  will-change: transform, background-color, box-shadow;
+  transform: translateZ(0);
+}
+
+/* Reduced motion optimizations */
+@media (prefers-reduced-motion: reduce) {
+  .performance-optimized,
+  .car-card,
+  .filter-section,
+  [data-filter-panel] {
+    will-change: auto;
+    transform: none;
+  }
+  
+  .smooth-scroll-container {
+    scroll-behavior: auto;
+  }
+}
+
+/* High refresh rate optimizations */
+@media (min-resolution: 2dppx) {
+  .performance-optimized,
+  .car-card,
+  .filter-section {
+    transition-duration: calc(var(--transition-fast, 0.15s) * 0.8);
+  }
 }
 

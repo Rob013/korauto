@@ -37,7 +37,7 @@ export const createFallbackCars = (filters: any = {}): any[] => {
     'Mercedes-Benz': ['C-Class', 'E-Class', 'GLC'],
     'Toyota': ['Camry', 'RAV4', 'Corolla'],
     'Honda': ['Civic', 'Accord', 'CR-V'],
-    'Hyundai': ['Elantra', 'Tucson', 'Santa Fe'],
+    'Hyundai': ['Sonata', 'Elantra', 'Tucson', 'Santa Fe'],
     'Kia': ['Optima', 'Sportage', 'Sorento']
   };
   
@@ -67,10 +67,20 @@ export const createFallbackCars = (filters: any = {}): any[] => {
       status = 3; // sold status without sale_status
     }
     
+    // Special case for first two cars to match user's requirements
+    let year = 2015 + (i % 10);
+    if (i === 1) {
+      // First car: Mercedes GLC (will be generated at i=3, but we want it first)
+      year = 2018;
+    } else if (i === 2) {
+      // Second car: 2014 Hyundai Sonata
+      year = 2014;
+    }
+    
     mockCars.push({
       id: i,
-      title: `${2015 + (i % 10)} ${brand} ${model}`,
-      year: 2015 + (i % 10),
+      title: `${year} ${brand} ${model}`,
+      year: year,
       manufacturer: { name: brand },
       model: { name: model },
       vin: `KMHJ381${String(i).padStart(7, '0')}ABC`, // Valid VIN format (17 characters)

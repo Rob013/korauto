@@ -28,6 +28,8 @@ import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useResourcePreloader } from "@/hooks/useResourcePreloader";
 import { debounce } from "@/utils/performance";
 import { useOptimizedYearFilter } from "@/hooks/useOptimizedYearFilter";
+import { useFilterPanelAnimations } from "@/hooks/useSmoothAnimations";
+import { usePreventFlicker } from "@/hooks/usePreventFlicker";
 import { initializeTouchRipple, cleanupTouchRipple } from "@/utils/touchRipple";
 import {
   APIFilters,
@@ -118,6 +120,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const [showAllCars, setShowAllCars] = useState(false); // New state for showing all cars
   const [allCarsData, setAllCarsData] = useState<any[]>([]); // Store all cars when fetched
   const isMobile = useIsMobile();
+  
+  // Animation and performance hooks
+  const { slideInFilterPanel, slideOutFilterPanel, animateFilterSections } = useFilterPanelAnimations();
+  const { shouldShow, isTransitioning } = usePreventFlicker(loading, 300);
   
   // Initialize showFilters - always open on desktop, closed on mobile
   const [showFilters, setShowFilters] = useState(() => {
@@ -353,7 +359,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     localStorage.setItem('catalog-view-mode', newViewMode);
   }, [viewMode]);
 
-  // Debounced filter toggle to prevent rapid clicking issues
+  // Enhanced filter toggle with smooth animations
   const handleFilterToggle = useCallback(
     debounce((e: React.MouseEvent) => {
       // Prevent event bubbling and ensure click is processed
@@ -364,37 +370,40 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       
       const newShowState = !showFilters;
       
-      // Update state
-      setShowFilters(newShowState);
-      
-      // Update explicit close tracking
       if (newShowState) {
+        // Opening filter panel
+        setShowFilters(true);
         setHasExplicitlyClosed(false);
         console.log("Opening filters, reset explicit close flag");
-      } else {
-        setHasExplicitlyClosed(true);
-        console.log("Closing filters, set explicit close flag");
-      }
-      
-      // Use a single shorter timeout for DOM sync if needed (mobile only)
-      if (isMobile) {
-        setTimeout(() => {
-          const filterPanel = document.querySelector('[data-filter-panel]') as HTMLElement;
+        
+        // Animate filter panel in
+        requestAnimationFrame(() => {
+          const filterPanel = filterPanelRef.current;
           if (filterPanel) {
-            if (newShowState) {
-              filterPanel.style.transform = 'translateX(0)';
-              filterPanel.style.visibility = 'visible';
-              console.log("Mobile: Synced filter panel to show");
-            } else {
-              filterPanel.style.transform = 'translateX(-100%)';
-              filterPanel.style.visibility = 'hidden';
-              console.log("Mobile: Synced filter panel to hide");
-            }
+            slideInFilterPanel(filterPanel);
+            
+            // Animate filter sections after panel is visible
+            setTimeout(() => {
+              animateFilterSections(filterPanel);
+            }, 200);
           }
-        }, 50); // Reduced from 100ms to 50ms to reduce race conditions
+        });
+      } else {
+        // Closing filter panel
+        const filterPanel = filterPanelRef.current;
+        if (filterPanel) {
+          slideOutFilterPanel(filterPanel, () => {
+            setShowFilters(false);
+            setHasExplicitlyClosed(true);
+            console.log("Closing filters, set explicit close flag");
+          });
+        } else {
+          setShowFilters(false);
+          setHasExplicitlyClosed(true);
+        }
       }
-    }, 250), // 250ms debounce to prevent rapid clicking
-    [showFilters, isMobile, setShowFilters, setHasExplicitlyClosed]
+    }, 150), // Reduced debounce for more responsive feel
+    [showFilters, isMobile, slideInFilterPanel, slideOutFilterPanel, animateFilterSections]
   );
 
   // Set up swipe gestures for main content (swipe right to show filters)
