@@ -334,7 +334,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                     <SelectItem key={brand.id} value={brand.id}>
                       <div className="flex items-center gap-2">
                         {brand.image && (
-                          <img src={brand.image} alt={brand.name} className="w-4 h-4 object-contain" />
+                          <img src={brand.image} alt={brand.name} className="w-4 h-4 object-contain dark:invert" />
                         )}
                         <span>{brand.name} {brand.count && `(${brand.count})`}</span>
                       </div>

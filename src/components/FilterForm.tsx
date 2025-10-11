@@ -268,7 +268,7 @@ const FilterForm = memo<FilterFormProps>(({
                 label: (
                   <div className="flex items-center gap-2">
                     {(manufacturer as any).image && (
-                      <img src={(manufacturer as any).image} alt={manufacturer.name} className="w-4 h-4 object-contain" />
+                      <img src={(manufacturer as any).image} alt={manufacturer.name} className="w-4 h-4 object-contain dark:invert" />
                     )}
                     <span className="truncate">{manufacturer.name} ({manufacturer.cars_qty})</span>
                   </div>
