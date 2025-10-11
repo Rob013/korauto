@@ -387,15 +387,13 @@ All colors MUST be HSL.
   }
 
   /* Enhanced card animations */
+  /* Disable hover lift animations for car cards */
   .card-hover {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: none;
   }
-
   .card-hover:hover {
-    transform: translateY(-6px);
-    box-shadow: 
-      0 10px 40px -12px rgba(0, 0, 0, 0.1),
-      0 4px 25px -5px rgba(0, 0, 0, 0.1);
+    transform: none;
+    box-shadow: none;
   }
 
   /* Dark mode card touch effect */
@@ -607,7 +605,7 @@ All colors MUST be HSL.
   }
 
   .interactive-element:hover {
-    transform: scale(1.02);
+    transform: none;
   }
 
   .interactive-element:active {
@@ -702,10 +700,8 @@ All colors MUST be HSL.
   }
 
   .modern-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 
-      0 20px 40px -12px rgba(0, 0, 0, 0.15),
-      0 8px 16px -8px rgba(0, 0, 0, 0.1);
+    transform: none;
+    box-shadow: none;
   }
 
   /* Loading animations */
@@ -882,11 +878,12 @@ All colors MUST be HSL.
     background: radial-gradient(circle, rgba(0, 0, 0, 0.4) 0%, transparent 70%);
   }
 
+  /* Disable bright pulse hover effect */
   .glass-card:hover::before {
-    width: 500px;
-    height: 500px;
-    opacity: 1;
-    transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    width: 0;
+    height: 0;
+    opacity: 0;
+    transition: none;
   }
 
   /* Active/touch state with instant bright pulse */

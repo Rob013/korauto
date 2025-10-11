@@ -286,7 +286,7 @@ const LazyCarCard = memo(({
   return (
     <div 
       ref={cardRef}
-      className="glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-xl hover:shadow-2xl transition-all duration-500 mobile-card-compact compact-modern-card animate-slide-in-up"
+      className="glass-card overflow-hidden cursor-pointer touch-manipulation rounded-xl mobile-card-compact compact-modern-card animate-slide-in-up"
       onClick={handleCardClick}
       style={{
         willChange: 'transform, opacity',
@@ -303,9 +303,7 @@ const LazyCarCard = memo(({
           <img 
             src={image || images?.[0]} 
             alt={`${year} ${make} ${model}`} 
-            className={`w-full h-full object-cover group-hover:scale-110 transition-all duration-700 ease-out ${
-              imageLoaded ? 'opacity-100 animate-image-reveal' : 'opacity-0'
-            }`}
+            className={`w-full h-full object-cover ${imageLoaded ? 'opacity-100 animate-image-reveal' : 'opacity-0'}`}
             onLoad={() => setImageLoaded(true)}
             onError={(e) => {
               e.currentTarget.src = "/placeholder.svg";
@@ -335,7 +333,7 @@ const LazyCarCard = memo(({
         {user && (
           <button
             onClick={handleFavoriteToggle}
-            className="absolute top-1 left-1 p-1.5 bg-black/60 backdrop-blur-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 z-10 hover:bg-black/80"
+            className="absolute top-1 left-1 p-1.5 bg-black/60 backdrop-blur-sm rounded-lg z-10"
           >
             <Heart className={`h-3.5 w-3.5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
           </button>

@@ -52,7 +52,7 @@ const CarCard = memo(({ car, onCarClick, priority = false }: CarCardProps) => {
 
   return (
     <Card 
-      className="h-full cursor-pointer hover:shadow-md transition-shadow duration-200 border-muted"
+      className="h-full cursor-pointer border-muted"
       onClick={handleClick}
     >
       <CardContent className="p-3 h-full flex flex-col">
