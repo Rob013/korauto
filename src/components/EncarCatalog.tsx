@@ -1340,26 +1340,27 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   <span className="text-xs sm:text-sm whitespace-nowrap">{viewMode === 'grid' ? 'List' : 'Grid'}</span>
                 </Button>
                 
-                {/* Sort Control */}
-                <div className="relative flex-shrink-0">
-                  <ArrowUpDown className="h-3 w-3 absolute left-2 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none" />
-                  <AdaptiveSelect
-                    value={sortBy}
-                    onValueChange={(value: SortOption) => {
-                      setSortBy(value);
-                      // Mark as user-selected when user picks a sort
-                      setHasUserSelectedSort(true);
-                      setCurrentPage(1);
-                      const currentParams = Object.fromEntries(searchParams.entries());
-                      currentParams.page = '1';
-                      setSearchParams(currentParams);
-                    }}
-                    placeholder="Sort"
-                    className="w-36 h-8 sm:h-9 text-xs sm:text-sm pl-6"
-                    options={restrictedSortOptions}
-                    disabled={!anyFilterApplied}
-                  />
-                </div>
+                {/* Sort Control - hidden until a filter is selected */}
+                {anyFilterApplied && (
+                  <div className="relative flex-shrink-0">
+                    <ArrowUpDown className="h-3 w-3 absolute left-2 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none" />
+                    <AdaptiveSelect
+                      value={sortBy}
+                      onValueChange={(value: SortOption) => {
+                        setSortBy(value);
+                        // Mark as user-selected when user picks a sort
+                        setHasUserSelectedSort(true);
+                        setCurrentPage(1);
+                        const currentParams = Object.fromEntries(searchParams.entries());
+                        currentParams.page = '1';
+                        setSearchParams(currentParams);
+                      }}
+                      placeholder="Sort"
+                      className="w-36 h-8 sm:h-9 text-xs sm:text-sm pl-6"
+                      options={restrictedSortOptions}
+                    />
+                  </div>
+                )}
               </div>
             </div>
             
