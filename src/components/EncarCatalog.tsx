@@ -467,7 +467,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       const filtersWithSort = (() => {
         const entries = Object.entries(filters || {});
         const hasFilters = entries.some(([key, value]) => !!value && value !== 'all');
-        const eff = hasFilters ? undefined : 'recently_added';
+        // If filters applied and user selected sort, use it. If no filters, use recently_added.
+        const eff = hasFilters ? (hasUserSelectedSort && sortBy ? sortBy : undefined) : 'recently_added';
         return eff ? { ...filters, page: '1', per_page: '50', sort_by: eff } : { ...filters, page: '1', per_page: '50' };
       })();
 
@@ -476,7 +477,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     } finally {
       setIsFilterLoading(false);
     }
-  }, 300), [filters, fetchCars, clearGlobalSorting]);
+  }, 300), [filters, fetchCars, clearGlobalSorting, hasUserSelectedSort, sortBy]);
 
   const handleFiltersChange = useCallback(async (newFilters: APIFilters) => {
     // Set filter loading state immediately for better UX
@@ -554,7 +555,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     const filtersWithSort = (() => {
       const entries = Object.entries(filters || {});
       const hasFilters = entries.some(([key, value]) => !!value && value !== 'all');
-      const eff = hasFilters ? undefined : 'recently_added';
+      const eff = hasFilters ? (hasUserSelectedSort && sortBy ? sortBy : undefined) : 'recently_added';
       return eff ? { ...filters, page: page.toString(), per_page: '50', sort_by: eff } : { ...filters, page: page.toString(), per_page: '50' };
     })();
 
@@ -569,7 +570,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
     console.log(`📄 Navigated to page ${page} of ${totalPages} with filters:`, filtersWithSort);
-  }, [filters, fetchCars, setSearchParams, addPaginationToFilters, totalPages]);
+  }, [filters, fetchCars, setSearchParams, addPaginationToFilters, totalPages, hasUserSelectedSort, sortBy]);
 
   // Function to fetch and display all cars
   const handleShowAllCars = useCallback(async () => {
@@ -824,7 +825,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   // Build restricted sort options per requirement
   const restrictedSortOptions = useMemo(() => {
     return anyFilterApplied 
-      ? [{ value: '' as SortOption, label: 'No Sorting' }]
+      ? getEncarSortOptions() as { value: SortOption; label: string }[]
       : [{ value: 'recently_added' as SortOption, label: 'Recently Added' }];
   }, [anyFilterApplied]);
 
@@ -911,7 +912,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           ...(() => {
             const entries = Object.entries(urlFilters || {});
             const hasFilters = entries.some(([key, value]) => !!value && value !== 'all');
-            const eff = hasFilters ? undefined : 'recently_added';
+            const eff = hasFilters ? (hasUserSelectedSort && sortBy ? sortBy : undefined) : 'recently_added';
             return eff ? { sort_by: eff } : {};
           })()
         };
@@ -1216,10 +1217,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             compact={true}
             onSearchCars={() => {
               console.log("Search button clicked, isMobile:", isMobile);
-              // Apply search/filters with effective sort (recently_added when no filters, none when filters applied)
+              // Apply search/filters with effective sort (recently_added when no filters; user-selected when filters applied)
               const entries = Object.entries(filters || {});
               const hasFilters = entries.some(([key, value]) => !!value && value !== 'all');
-              const eff = hasFilters ? undefined : 'recently_added';
+              const eff = hasFilters ? (hasUserSelectedSort && sortBy ? sortBy : undefined) : 'recently_added';
               const searchFilters = eff ? 
                 { ...filters, per_page: "200", sort_by: eff } : 
                 { ...filters, per_page: "200" };
@@ -1346,17 +1347,17 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     value={sortBy}
                     onValueChange={(value: SortOption) => {
                       setSortBy(value);
-                      // Only mark as user-selected when in no-filter mode (recently added)
-                      setHasUserSelectedSort(!anyFilterApplied);
+                      // Mark as user-selected when user picks a sort
+                      setHasUserSelectedSort(true);
                       setCurrentPage(1);
                       const currentParams = Object.fromEntries(searchParams.entries());
                       currentParams.page = '1';
                       setSearchParams(currentParams);
                     }}
                     placeholder="Sort"
-                    className="w-28 h-8 sm:h-9 text-xs sm:text-sm pl-6"
+                    className="w-36 h-8 sm:h-9 text-xs sm:text-sm pl-6"
                     options={restrictedSortOptions}
-                    disabled={restrictedSortOptions.length <= 1}
+                    disabled={!anyFilterApplied}
                   />
                 </div>
               </div>
