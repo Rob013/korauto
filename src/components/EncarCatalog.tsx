@@ -107,8 +107,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     validationEnabled: false
   });
   
-  // Default sort: do not client-sort; rely on API order
-  const [sortBy, setSortBy] = useState<SortOption>("");
+  // Default sort: recently_added when no filters selected
+  const [sortBy, setSortBy] = useState<SortOption>("recently_added");
   const [hasUserSelectedSort, setHasUserSelectedSort] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentPage, setCurrentPage] = useState(1);
@@ -455,23 +455,10 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   });
 
   // Debounced version for performance - Reduced debounce time for year filters - using catalog utility
-  const debouncedApplyFilters = useMemo(() => debounce(async () => {
-    try {
-      setIsFilterLoading(true);
-      clearGlobalSorting();
-
-      // Reset pagination and fetch first page with API recently_added
-      setCurrentPage(1);
-      setLoadedPages(new Set([1]));
-
-      const filtersWithSort = { ...filters, page: '1', per_page: '50', sort_by: 'recently_added' } as any;
-
-      await fetchCars(1, filtersWithSort, true);
-
-    } finally {
-      setIsFilterLoading(false);
-    }
-  }, 300), [filters, fetchCars, clearGlobalSorting]);
+  const debouncedApplyFilters = useCallback(
+    catalogDebounce(applyFiltersInternal, 150), // Reduced from 300ms for faster response
+    [applyFiltersInternal]
+  );
 
   const handleFiltersChange = useCallback(async (newFilters: APIFilters) => {
     // Set filter loading state immediately for better UX
@@ -513,7 +500,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       setCars([]);
       
       // Apply other filters with debouncing to reduce API calls
-      debouncedApplyFilters();
+      debouncedApplyFilters(newFilters);
     }
   }, [debouncedApplyFilters, handleOptimizedYearFilter, filters, setCars, setFilters, setTotalCount, clearGlobalSorting]);
 
@@ -537,7 +524,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     handleFiltersChange(newFilters);
   }, [filters, searchTerm, handleFiltersChange]);
 
-  const handlePageChange = useCallback(async (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     // Validate page number
     if (page < 1 || page > totalPages) {
       console.log(`⚠️ Invalid page number: ${page}. Must be between 1 and ${totalPages}`);
@@ -546,8 +533,12 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     
     setCurrentPage(page);
     
-    const filtersWithSort = { ...filters, page: page.toString(), per_page: '50', sort_by: 'recently_added' } as any;
-
+    // Fetch cars for the specific page with proper API pagination
+    const filtersWithPagination = addPaginationToFilters(filters, 200, page);
+    const filtersWithSort = hasUserSelectedSort && sortBy ? {
+      ...filtersWithPagination,
+      sort_by: sortBy
+    } : filtersWithPagination;
     fetchCars(page, filtersWithSort, true); // Reset list for new page
     
     // Update URL with new page
@@ -558,8 +549,8 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Scroll to top when changing pages
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
-    console.log(`📄 Navigated to page ${page} of ${totalPages} with filters:`, filtersWithSort);
-  }, [filters, fetchCars, setSearchParams, addPaginationToFilters, totalPages, hasUserSelectedSort, sortBy]);
+    console.log(`📄 Navigated to page ${page} of ${totalPages} with filters:`, filtersWithPagination);
+  }, [filters, fetchCars, setSearchParams, addPaginationToFilters, totalPages]);
 
   // Function to fetch and display all cars
   const handleShowAllCars = useCallback(async () => {
@@ -806,17 +797,20 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     return entries.some(([key, value]) => !!value && value !== 'all');
   }, [filters]);
 
-  // Build restricted sort options per requirement (not used - sorting hidden)
-  const restrictedSortOptions = useMemo(() => {
-    return [] as { value: SortOption; label: string }[];
-  }, []);
-
-  // Adjust sort depending on filter presence (no-op for client sorting; keep API order)
+  // Adjust sort depending on filter presence
   useEffect(() => {
-    // Always rely on API 'recently_added'; keep client sort empty
-    if (hasUserSelectedSort) setHasUserSelectedSort(false);
-    if (sortBy !== '') setSortBy('');
-  }, [anyFilterApplied]);
+    if (anyFilterApplied) {
+      // User is filtering: clear to API/default order unless user explicitly picked a sort
+      if (!hasUserSelectedSort) {
+        setSortBy(''); // No client-side sort; API order
+      }
+    } else {
+      // No filters: default to recently added
+      if (!hasUserSelectedSort) {
+        setSortBy('recently_added');
+      }
+    }
+  }, [anyFilterApplied, hasUserSelectedSort]);
 
   // Initialize filters from URL params on component mount - OPTIMIZED
   useEffect(() => {
@@ -883,7 +877,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
           ...urlFilters,
           per_page: "200",
           page: urlCurrentPage.toString(),
-          sort_by: 'recently_added'
+          ...(hasUserSelectedSort && sortBy ? { sort_by: sortBy } : {})
         };
         
         await fetchCars(urlCurrentPage, initialFilters, true);
@@ -1186,8 +1180,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
             compact={true}
             onSearchCars={() => {
               console.log("Search button clicked, isMobile:", isMobile);
-              // Always use API 'recently_added' for catalog
-              const searchFilters = { ...filters, per_page: "200", sort_by: 'recently_added' } as any;
+              // Apply search/filters with current sort preference
+              const effectiveSort = hasUserSelectedSort ? sortBy : (anyFilterApplied ? '' : 'recently_added');
+              const searchFilters = effectiveSort ? 
+                { ...filters, per_page: "200", sort_by: effectiveSort } : 
+                { ...filters, per_page: "200" };
               fetchCars(1, searchFilters, true);
               
               // Close filter panel on mobile only; keep open on desktop
@@ -1304,7 +1301,27 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   <span className="text-xs sm:text-sm whitespace-nowrap">{viewMode === 'grid' ? 'List' : 'Grid'}</span>
                 </Button>
                 
-                {/* Sort Control hidden permanently per requirement */}
+                {/* Sort Control */}
+                <div className="relative flex-shrink-0">
+                  <ArrowUpDown className="h-3 w-3 absolute left-2 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none" />
+                  <AdaptiveSelect
+                    value={sortBy}
+                    onValueChange={(value: SortOption) => {
+                      setSortBy(value);
+                      setHasUserSelectedSort(true);
+                      setCurrentPage(1);
+                      const currentParams = Object.fromEntries(searchParams.entries());
+                      currentParams.page = '1';
+                      setSearchParams(currentParams);
+                    }}
+                    placeholder="Sort"
+                    className="w-24 sm:w-28 h-8 sm:h-9 text-xs sm:text-sm pl-6"
+                    options={getEncarSortOptions().map((option) => ({
+                      value: option.value,
+                      label: option.label
+                    }))}
+                  />
+                </div>
               </div>
             </div>
             
