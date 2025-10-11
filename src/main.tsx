@@ -1,58 +1,21 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
+import './index.css'
+import './utils/iosOptimizations.css'
 import { ThemeProvider } from "@/components/ThemeProvider"
 import { NavigationProvider } from './contexts/NavigationContext.tsx'
+import cacheManager from '@/utils/cacheManager'
 
-// Load critical CSS immediately
-import './index.css'
-
-// Defer non-critical CSS
-const loadNonCriticalCSS = () => {
-  import('./utils/iosOptimizations.css')
-}
-
-// Defer cache manager initialization
-const initializeCacheManager = async () => {
-  const { default: cacheManager } = await import('@/utils/cacheManager')
-  return cacheManager
-}
-
-// Initialize app immediately for better LCP
-createRoot(document.getElementById("root")!).render(
-  <ThemeProvider defaultTheme="system" storageKey="korauto-ui-theme">
-    <NavigationProvider>
-      <App />
-    </NavigationProvider>
-  </ThemeProvider>
-);
-
-// Defer non-critical initialization after initial render
-const deferNonCritical = (callback: () => void) => {
-  if ('requestIdleCallback' in window) {
-    requestIdleCallback(callback);
-  } else {
-    setTimeout(callback, 1);
+// Initialize cache manager and check for updates
+cacheManager.initialize().then((cacheCleared) => {
+  if (cacheCleared) {
+    console.log('✅ Cache cleared due to version change');
   }
-};
+});
 
-deferNonCritical(() => {
-  // Load non-critical CSS
-  loadNonCriticalCSS();
-  
-  // Initialize cache manager
-  initializeCacheManager().then((cacheManager) => {
-    cacheManager.initialize().then((cacheCleared) => {
-      if (cacheCleared) {
-        console.log('✅ Cache cleared due to version change');
-      }
-    });
-    
-    // Setup periodic cache refresh check (every 30 minutes)
-    cacheManager.setupPeriodicRefresh(30);
-  });
-
-  // Register service worker for caching with update handling
-  if ('serviceWorker' in navigator) {
+// Register service worker for caching with update handling
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then((registration) => {
         console.log('✅ Service Worker registered:', registration);
@@ -85,5 +48,16 @@ deferNonCritical(() => {
         console.log('🔄 Cache updated to version:', event.data.version);
       }
     });
-  }
-});
+  });
+
+  // Setup periodic cache refresh check (every 30 minutes)
+  cacheManager.setupPeriodicRefresh(30);
+}
+
+createRoot(document.getElementById("root")!).render(
+  <ThemeProvider defaultTheme="system" storageKey="korauto-ui-theme">
+    <NavigationProvider>
+      <App />
+    </NavigationProvider>
+  </ThemeProvider>
+);
