@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import LoadingLogo from "@/components/LoadingLogo";
 import LazyCarCard from "@/components/LazyCarCard";
-import { useSecureAuctionAPI, createFallbackManufacturers } from "@/hooks/useSecureAuctionAPI";
+import { useSecureAuctionAPI, createFallbackManufacturers, createFallbackModels } from "@/hooks/useSecureAuctionAPI";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
@@ -87,10 +87,6 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     loadMore,
   } = useSecureAuctionAPI();
   const { convertUSDtoEUR, exchangeRate } = useCurrencyAPI();
-  // Optimistic models for instant mobile feedback
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-  import type { Model } from '@/hooks/useSecureAuctionAPI';
-  import { createFallbackModels } from '@/hooks/useSecureAuctionAPI';
   
   // Global sorting hook
   const {
