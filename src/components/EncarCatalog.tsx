@@ -797,6 +797,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     return entries.some(([key, value]) => !!value && value !== 'all');
   }, [filters]);
 
+  // Build restricted sort options per requirement
+  const restrictedSortOptions = useMemo(() => {
+    return anyFilterApplied 
+      ? [{ value: '' as SortOption, label: 'No Sorting' }]
+      : [{ value: 'recently_added' as SortOption, label: 'Recently Added' }];
+  }, [anyFilterApplied]);
+
   // Adjust sort depending on filter presence
   useEffect(() => {
     if (anyFilterApplied) {
@@ -1308,18 +1315,17 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                     value={sortBy}
                     onValueChange={(value: SortOption) => {
                       setSortBy(value);
-                      setHasUserSelectedSort(true);
+                      // Only mark as user-selected when in no-filter mode (recently added)
+                      setHasUserSelectedSort(!anyFilterApplied);
                       setCurrentPage(1);
                       const currentParams = Object.fromEntries(searchParams.entries());
                       currentParams.page = '1';
                       setSearchParams(currentParams);
                     }}
                     placeholder="Sort"
-                    className="w-24 sm:w-28 h-8 sm:h-9 text-xs sm:text-sm pl-6"
-                    options={getEncarSortOptions().map((option) => ({
-                      value: option.value,
-                      label: option.label
-                    }))}
+                    className="w-28 h-8 sm:h-9 text-xs sm:text-sm pl-6"
+                    options={restrictedSortOptions}
+                    disabled={restrictedSortOptions.length <= 1}
                   />
                 </div>
               </div>
