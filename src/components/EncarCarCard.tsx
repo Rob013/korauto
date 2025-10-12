@@ -162,7 +162,7 @@ const EncarCarCard = ({
 
   return (
     <Card 
-      className="group cursor-pointer bg-white border border-gray-200 hover:border-primary/50 hover:shadow-lg transition-all duration-300 overflow-hidden rounded-xl compact-card"
+      className="cursor-pointer bg-white border border-gray-200 overflow-hidden rounded-xl compact-card"
       onClick={handleCardClick}
     >
       {/* Large Image Section - Enhanced for mobile with bigger thumbnail */}
@@ -171,7 +171,7 @@ const EncarCarCard = ({
           <img
             src={image}
             alt={`${year} ${make} ${model}`}
-            className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover object-center"
             onError={(e) => {
               e.currentTarget.src = "https://via.placeholder.com/400x300/f5f5f5/999999?text=No+Image";
             }}
@@ -203,11 +203,11 @@ const EncarCarCard = ({
         </div>
 
         {/* Modern Action buttons */}
-        <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+        <div className="absolute top-3 right-3 flex gap-2">
           <Button
             size="sm"
             variant="secondary"
-            className="h-9 w-9 p-0 bg-white/95 hover:bg-white shadow-lg backdrop-blur-sm"
+            className="h-9 w-9 p-0 bg-white/95 shadow-lg backdrop-blur-sm"
             onClick={handleLikeClick}
           >
             <Heart className={`h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} />
@@ -215,7 +215,7 @@ const EncarCarCard = ({
           <Button
             size="sm"
             variant="secondary"
-            className="h-9 w-9 p-0 bg-white/95 hover:bg-white shadow-lg backdrop-blur-sm"
+            className="h-9 w-9 p-0 bg-white/95 shadow-lg backdrop-blur-sm"
             onClick={handleShareClick}
           >
             <Share2 className="h-4 w-4 text-gray-600" />

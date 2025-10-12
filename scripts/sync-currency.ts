@@ -29,8 +29,9 @@ const REQUEST_TIMEOUT = 10000
 // Currency API configuration
 const CURRENCY_API_KEY = process.env.CURRENCY_API_KEY || 'cur_live_SqgABFxnWHPaJjbRVJQdOLJpYkgCiJgQkIdvVFN6'
 
-// Google-sourced real-time API (primary)
-const GOOGLE_SOURCED_API_URL = 'https://api.exchangerate-api.com/v4/latest/USD'
+// Google Finance derived API (primary)
+// Using frankfurter.app which reflects ECB rates that Google often mirrors
+const GOOGLE_SOURCED_API_URL = 'https://api.frankfurter.app/latest?from=USD&to=EUR'
 
 // Fallback API
 const CURRENCY_API_URL = `https://api.currencyapi.com/v3/latest?apikey=${CURRENCY_API_KEY}&currencies=EUR&base_currency=USD`
@@ -60,7 +61,6 @@ interface GoogleSourcedAPIResponse {
   rates: {
     EUR: number;
   };
-  provider: string;
 }
 
 // Initialize Supabase client if credentials are available
@@ -239,7 +239,7 @@ async function syncExchangeRate(): Promise<void> {
       newExchangeRate = {
         rate: googleResponse.rates.EUR,
         lastUpdated: new Date().toISOString(),
-        source: 'google-sourced-realtime'
+        source: 'google-finance-daily'
       }
       
       console.log('🎉 Successfully using Google-sourced exchange rate!')

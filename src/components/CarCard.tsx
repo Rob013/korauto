@@ -412,7 +412,7 @@ const CarCard = ({
 
   return (
     <div
-      className="glass-card card-hover overflow-hidden cursor-pointer group touch-manipulation relative rounded-lg performance-card animation-120fps"
+      className="glass-card no-hover-animations overflow-hidden cursor-pointer touch-manipulation relative rounded-lg performance-card animation-120fps"
       onClick={handleCardClick}
       style={{
         // Prevent layout shifts by setting fixed dimensions
@@ -427,7 +427,7 @@ const CarCard = ({
           <OptimizedImage
             src={image}
             alt={`${year} ${make} ${model}`}
-            className="w-full h-full group-hover:scale-105 transition-transform duration-300 ease-out"
+            className="w-full h-full"
             width={280}
             priority={false}
             enableLazyLoad={true}
@@ -510,7 +510,7 @@ const CarCard = ({
               size="sm"
               variant="ghost"
               onClick={handleFavoriteToggle}
-              className="h-8 w-8 p-0 hover:bg-muted touch-target interactive-element hover:scale-110 transition-all duration-200"
+              className="h-8 w-8 p-0 hover:bg-muted touch-target interactive-element"
               style={{ minHeight: '44px', minWidth: '44px' }}
             >
               <Heart

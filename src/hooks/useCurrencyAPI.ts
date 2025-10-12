@@ -22,7 +22,7 @@ interface ExchangeRateAPIResponse {
 }
 
 const CACHE_KEY = "currency_cache_usd_eur";
-const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes for real-time updates
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours to align with daily sync
 
 export const useCurrencyAPI = () => {
   const [exchangeRate, setExchangeRate] = useState<ExchangeRate>({
@@ -98,10 +98,10 @@ export const useCurrencyAPI = () => {
         console.log('ℹ️ Daily rate file not available, fetching from real-time API');
       }
 
-      // Fetch from Google-sourced real-time API (exchangerate-api.com)
+      // Fetch from Google Finance derived API (frankfurter.app using ECB rates)
       try {
-        console.log('🌐 Fetching real-time exchange rate from Google-sourced API');
-        const response = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
+        console.log('🌐 Fetching daily exchange rate from Google/ECB source');
+        const response = await fetch("https://api.frankfurter.app/latest?from=USD&to=EUR");
 
         if (!response.ok) {
           throw new Error(`Google-sourced API Error: ${response.status}`);
@@ -110,21 +110,21 @@ export const useCurrencyAPI = () => {
         const data: ExchangeRateAPIResponse = await response.json();
 
         if (!data.rates?.EUR) {
-          throw new Error("Invalid Google-sourced API response format");
+          throw new Error("Invalid Google/ECB API response format");
         }
 
         const newRate: ExchangeRate = {
           rate: data.rates.EUR,
           lastUpdated: new Date().toISOString(),
-          source: 'google-sourced-realtime',
+          source: 'google-finance-daily',
         };
 
-        console.log('✅ Successfully fetched real-time rate from Google-sourced API:', newRate.rate);
+        console.log('✅ Successfully fetched daily rate from Google/ECB source:', newRate.rate);
         setExchangeRate(newRate);
         setCachedRate(newRate);
         return;
       } catch (googleSourcedError) {
-        console.log('⚠️ Google-sourced API failed, trying fallback:', googleSourcedError);
+        console.log('⚠️ Google/ECB source failed, trying fallback:', googleSourcedError);
       }
 
       // Fallback to currencyapi.com
