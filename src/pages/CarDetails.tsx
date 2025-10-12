@@ -1385,8 +1385,8 @@ const CarDetails = memo(() => {
                   </div>
                 </div>
 
-                {/* Specifications Grid - Modern Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 text-sm">
+                {/* Specifications Grid - Modern Cards - 2 Columns Compact */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 text-sm">
                   {/* Basic Info */}
                   <div className="group flex items-center justify-between p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item hover-scale">
                     <div className="flex items-center gap-3">
@@ -1857,8 +1857,8 @@ const CarDetails = memo(() => {
 
           {/* Right Column - Enhanced Contact Card */}
           <div className="space-y-4">
-            {/* Enhanced Contact & Inspection Card */}
-            <Card className="glass-panel border-0 shadow-2xl sticky top-4 rounded-xl">
+            {/* Enhanced Contact & Inspection Card - Fixed Floating */}
+            <Card className="glass-panel border-0 shadow-2xl fixed lg:sticky top-20 lg:top-4 right-4 lg:right-auto rounded-xl z-50 lg:z-auto w-[calc(100%-2rem)] lg:w-auto max-w-sm lg:max-w-none">
               <CardContent className="p-4">
                 <h3 className="text-lg font-bold mb-4 text-center text-foreground">
                   Kontakt & Inspektim

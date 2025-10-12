@@ -37,6 +37,7 @@ import {
   generateYearPresets,
   isStrictFilterMode
 } from '@/utils/catalog-filter';
+import { formatModelName } from '@/utils/modelNameFormatter';
 
 interface Manufacturer {
   id: number;
@@ -294,11 +295,15 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 {!(isStrictMode && filters.model_id) && (
                   <SelectItem value="all">Të gjithë modelet</SelectItem>
                 )}
-                {models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => (
-                  <SelectItem key={model.id} value={model.id.toString()}>
-                    {model.name} ({model.cars_qty})
-                  </SelectItem>
-                ))}
+                {models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => {
+                  const selectedManufacturer = manufacturers.find(m => m.id.toString() === filters.manufacturer_id);
+                  const formattedModelName = formatModelName(model.name, selectedManufacturer?.name);
+                  return (
+                    <SelectItem key={model.id} value={model.id.toString()}>
+                      {formattedModelName} ({model.cars_qty})
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
@@ -677,11 +682,15 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   {!(isStrictMode && filters.model_id) && (
                     <SelectItem value="all">Të gjithë Modelet</SelectItem>
                   )}
-                  {models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => (
-                    <SelectItem key={model.id} value={model.id.toString()}>
-                      {model.name} ({model.cars_qty})
-                    </SelectItem>
-                  ))}
+                  {models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => {
+                    const selectedManufacturer = manufacturers.find(m => m.id.toString() === filters.manufacturer_id);
+                    const formattedModelName = formatModelName(model.name, selectedManufacturer?.name);
+                    return (
+                      <SelectItem key={model.id} value={model.id.toString()}>
+                        {formattedModelName} ({model.cars_qty})
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>

@@ -708,7 +708,7 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
       const selectedManufacturer = manufacturers.find(m => m.id.toString() === manufacturerId);
       if (selectedManufacturer?.name) {
         try {
-          const optimisticModels: Model[] = createFallbackModels(selectedManufacturer.name);
+          const optimisticModels = createFallbackModels(selectedManufacturer.name);
           if (optimisticModels && optimisticModels.length > 0) {
             setModels(optimisticModels);
           }

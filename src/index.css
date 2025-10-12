@@ -8,6 +8,13 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Prevent content flickering during loads */
+.animate-fade-in,
+.animate-slide-in-up,
+[class*="animate-"] {
+  animation-fill-mode: both;
+}
+
 /* GPU acceleration for animations - Optimized for high refresh rates */
 @media (prefers-reduced-motion: no-preference) {
   .animate-spin,
@@ -47,7 +54,7 @@
   }
 }
 
-/* Smooth page transitions - Enhanced */
+/* Smooth page transitions - Enhanced for flicker-free experience */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -60,10 +67,13 @@
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  will-change: opacity, transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
 }
 
-/* Slide in from bottom - for cards and content */
+/* Slide in from bottom - for cards and content - Flicker-free */
 @keyframes slideInUp {
   from {
     opacity: 0;
@@ -76,18 +86,21 @@
 }
 
 .animate-slide-in-up {
-  animation: slideInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: slideInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  will-change: opacity, transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
 }
 
-/* Scale in animation for badges - Enhanced with bounce */
+/* Scale in animation for badges - Enhanced with bounce - Flicker-free */
 @keyframes scaleIn {
   0% {
     opacity: 0;
-    transform: scale3d(0.8, 0.8, 1);
+    transform: scale3d(0.9, 0.9, 1);
   }
   60% {
     opacity: 1;
-    transform: scale3d(1.05, 1.05, 1);
+    transform: scale3d(1.02, 1.02, 1);
   }
   100% {
     opacity: 1;
@@ -96,15 +109,18 @@
 }
 
 .animate-scale-in {
-  animation: scaleIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  will-change: opacity, transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
 }
 
-/* Smooth image reveal */
+/* Smooth image reveal - Flicker-free progressive load */
 @keyframes imageReveal {
   from {
     opacity: 0;
-    filter: blur(10px);
-    transform: scale3d(1.1, 1.1, 1);
+    filter: blur(8px);
+    transform: scale3d(1.05, 1.05, 1);
   }
   to {
     opacity: 1;
@@ -114,7 +130,10 @@
 }
 
 .animate-image-reveal {
-  animation: imageReveal 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: imageReveal 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  will-change: opacity, filter, transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
 }
 
 /* Smooth skeleton pulse */
@@ -140,6 +159,21 @@ img {
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;
+}
+
+/* Fixed floating widgets - Contact card and Smartsupp */
+#smartsupp-widget-container {
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  z-index: 9999 !important;
+}
+
+/* Ensure contact card is properly positioned on mobile */
+@media (max-width: 1023px) {
+  .glass-panel.fixed {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
 }
 
 /* Prevent layout shifts */

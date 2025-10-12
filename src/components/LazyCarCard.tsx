@@ -346,7 +346,7 @@ const LazyCarCard = memo(({
       <div className="p-3 flex-1 flex flex-col">
         <div className="mb-2">
           <h3 className="card-title text-sm font-bold text-foreground line-clamp-1 leading-tight">
-            {year} {make} {model}
+            {make} {model}
           </h3>
           {title && title !== `${make} ${model}` && (
             <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{title}</p>
@@ -373,10 +373,10 @@ const LazyCarCard = memo(({
               <span className="capitalize truncate text-foreground">{fuel}</span>
             </div>
           )}
-          {color && (
+          {year && (
             <div className="flex items-center gap-1.5 min-w-0">
-              <Palette className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate text-foreground">{color}</span>
+              <Car className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="truncate text-foreground">{year}</span>
             </div>
           )}
         </div>
