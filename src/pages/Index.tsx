@@ -1,7 +1,6 @@
 import { lazy, Suspense } from "react";
 import { useEffect } from "react";
 import { initializeAnalytics, trackPageView } from "@/utils/analytics";
-import Header from "@/components/Header";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Lazy load components for better initial load performance
@@ -9,7 +8,7 @@ const HomeSection = lazy(() => import("@/components/HomeSection"));
 const HomeCarsSection = lazy(() => import("@/components/HomeCarsSection"));
 const InspectionSection = lazy(() => import("@/components/InspectionSection"));
 const ContactSection = lazy(() => import("@/components/ContactSection"));
-const Footer = lazy(() => import("@/components/Footer"));
+// Footer is rendered by the persistent Layout
 
 // Loading fallback components
 const HomeSectionSkeleton = () => (
@@ -70,8 +69,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header loads immediately for navigation */}
-      <Header />
       
       {/* Main content with proper landmark */}
       <main id="main" className="animate-fade-in">
@@ -89,9 +86,7 @@ const Index = () => {
         </Suspense>
       </main>
       
-      <Suspense fallback={<div className="h-64 bg-muted/20 animate-pulse" />}>
-        <Footer />
-      </Suspense>
+      {/* Footer is provided by Layout */}
     </div>
   );
 };

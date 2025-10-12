@@ -106,7 +106,7 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({ children
           // Use requestAnimationFrame for smoother scroll restoration
           requestAnimationFrame(() => {
             setTimeout(() => {
-              window.scrollTo({ top: pageState.scrollPosition, behavior: 'instant' });
+              window.scrollTo({ top: pageState.scrollPosition, behavior: 'auto' });
             }, 50);
           });
         }
@@ -139,7 +139,7 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({ children
               // Use requestAnimationFrame for smoother scroll restoration
               requestAnimationFrame(() => {
                 setTimeout(() => {
-                  window.scrollTo({ top: parsedState.scrollPosition, behavior: 'instant' });
+                  window.scrollTo({ top: parsedState.scrollPosition, behavior: 'auto' });
                 }, 50);
               });
             }
