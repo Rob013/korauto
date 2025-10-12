@@ -13,6 +13,7 @@ import { ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, Fuel, Palette, Ha
 import { ImageZoom } from "@/components/ImageZoom";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
+import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
 import { useImageSwipe } from "@/hooks/useImageSwipe";
 import { fallbackCars } from "@/data/fallbackData";
@@ -1826,14 +1827,7 @@ const CarDetails = memo(() => {
                                     <p className="text-muted-foreground text-xs inspection-subtext-black">Gjendja vizuale e pjesëve të jashtme</p>
                                   </div>
                                 </div>
-                                <div className="mt-3 rounded-xl overflow-hidden border border-border">
-                                  <iframe 
-                                    src="http://jautoworld.com/car/carViewFrameUsedCarCheckAdv.html?no=458145" 
-                                    title="Raporti i Inspektimit" 
-                                    className="w-full h-[700px] bg-white"
-                                    loading="lazy"
-                                  />
-                                </div>
+                                <CarInspectionDiagram inspectionData={car.details.inspect_outer} className="mt-3" />
                               </div>}
 
                           {/* Maintenance History */}
