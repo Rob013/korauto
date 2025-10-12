@@ -581,6 +581,7 @@ const CarDetails = memo(() => {
   const [hasAutoExpanded, setHasAutoExpanded] = useState(false);
   const [showEngineSection, setShowEngineSection] = useState(false);
   const [isPlaceholderImage, setIsPlaceholderImage] = useState(false);
+  const [showVin, setShowVin] = useState(false);
 
   // Reset placeholder state when image selection changes
   useEffect(() => {
