@@ -1,10 +1,8 @@
 import AdminCarSearch from "@/components/AdminCarSearch";
-import Header from "@/components/Header";
 
 const AdminCarSearchDemo = () => {
   return (
     <div className="min-h-screen bg-background">
-      <Header />
       <div className="container max-w-4xl mx-auto p-6">
         <div className="space-y-6">
           <div>

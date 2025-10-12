@@ -1,29 +1,10 @@
 import { useEffect, lazy, Suspense } from "react";
 import { trackPageView, trackContact } from "@/utils/analytics";
-import Header from "@/components/Header";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const Footer = lazy(() => import("@/components/Footer"));
 const ContactSection = lazy(() => import("@/components/ContactSection"));
 
-const FooterSkeleton = () => (
-  <footer className="bg-card">
-    <div className="container-responsive py-8">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="space-y-3">
-            <Skeleton className="h-5 w-24" />
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  </footer>
-);
+// Footer is rendered by the persistent Layout
 
 const ContactSkeleton = () => (
   <div className="py-16">
@@ -59,15 +40,12 @@ const Contacts = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
       <div className="py-8">
         <Suspense fallback={<ContactSkeleton />}>
           <ContactSection />
         </Suspense>
       </div>
-      <Suspense fallback={<FooterSkeleton />}>
-        <Footer />
-      </Suspense>
+      {/* Footer is provided by Layout */}
     </div>
   );
 };

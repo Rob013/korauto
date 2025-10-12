@@ -4,6 +4,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { prefetchRoute } from "@/utils/routePrefetch";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ const Header = () => {
       <nav className="container-responsive" role="navigation" aria-label="Main navigation">
         <div className="flex h-14 sm:h-16 items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 group min-w-0 focus:outline-none focus:ring-2 focus:ring-primary rounded-lg" aria-label="KORAUTO kryefaqja">
+          <Link to="/" onMouseEnter={() => prefetchRoute('/')} onFocus={() => prefetchRoute('/')} className="flex items-center space-x-2 group min-w-0 focus:outline-none focus:ring-2 focus:ring-primary rounded-lg" aria-label="KORAUTO kryefaqja">
             <div 
               className="rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-300 flex-shrink-0 hover-lift-gentle"
               aria-label="KORAUTO company logo"
@@ -58,6 +59,8 @@ const Header = () => {
           <div className="hidden lg:flex items-center space-x-6">{/* Removed duplicate nav wrapper */}
             <Link 
               to="/" 
+              onMouseEnter={() => prefetchRoute('/')} 
+              onFocus={() => prefetchRoute('/')} 
               className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
               aria-label="Shkoni në kryefaqe"
             >
@@ -65,6 +68,8 @@ const Header = () => {
             </Link>
             <Link 
               to="/catalog" 
+              onMouseEnter={() => prefetchRoute('/catalog')} 
+              onFocus={() => prefetchRoute('/catalog')} 
               className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
               aria-label="Shikoni katalogun e makinave"
             >
@@ -72,6 +77,8 @@ const Header = () => {
             </Link>
             <Link 
               to="/inspections" 
+              onMouseEnter={() => prefetchRoute('/inspections')} 
+              onFocus={() => prefetchRoute('/inspections')} 
               className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
               aria-label="Mësoni më shumë për inspektimet"
             >
@@ -79,6 +86,8 @@ const Header = () => {
             </Link>
             <Link 
               to="/contacts" 
+              onMouseEnter={() => prefetchRoute('/contacts')} 
+              onFocus={() => prefetchRoute('/contacts')} 
               className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
               aria-label="Na kontaktoni"
             >
@@ -87,6 +96,8 @@ const Header = () => {
             {user && (
               <Link 
                 to="/tracking" 
+                onMouseEnter={() => prefetchRoute('/tracking')} 
+                onFocus={() => prefetchRoute('/tracking')} 
                 className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
                 aria-label="Gjurmoni ngarkesën tuaj"
               >
@@ -96,6 +107,8 @@ const Header = () => {
             )}
             <Link 
               to="/favorites" 
+              onMouseEnter={() => prefetchRoute('/favorites')} 
+              onFocus={() => prefetchRoute('/favorites')} 
               className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
               aria-label="Shikoni makinat tuaja të preferuara"
             >
@@ -150,6 +163,8 @@ const Header = () => {
             <nav className="flex flex-col space-y-4 stagger-animation">
               <Link 
                 to="/" 
+                onMouseEnter={() => prefetchRoute('/')} 
+                onFocus={() => prefetchRoute('/')} 
                 className="text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"
                 onClick={() => setIsMobileMenuOpen(false)}
                 aria-label="Shkoni në kryefaqe"
@@ -158,6 +173,8 @@ const Header = () => {
               </Link>
               <Link 
                 to="/catalog" 
+                onMouseEnter={() => prefetchRoute('/catalog')} 
+                onFocus={() => prefetchRoute('/catalog')} 
                 className="text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"
                 onClick={() => setIsMobileMenuOpen(false)}
                 aria-label="Shikoni katalogun e makinave"
@@ -166,6 +183,8 @@ const Header = () => {
               </Link>
               <Link 
                 to="/inspections" 
+                onMouseEnter={() => prefetchRoute('/inspections')} 
+                onFocus={() => prefetchRoute('/inspections')} 
                 className="text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"
                 onClick={() => setIsMobileMenuOpen(false)}
                 aria-label="Mësoni më shumë për inspektimet"
@@ -174,6 +193,8 @@ const Header = () => {
               </Link>
               <Link 
                 to="/contacts" 
+                onMouseEnter={() => prefetchRoute('/contacts')} 
+                onFocus={() => prefetchRoute('/contacts')} 
                 className="text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"
                 onClick={() => setIsMobileMenuOpen(false)}
                 aria-label="Na kontaktoni"
@@ -184,6 +205,8 @@ const Header = () => {
               {user && (
                 <Link 
                   to="/tracking" 
+                  onMouseEnter={() => prefetchRoute('/tracking')} 
+                  onFocus={() => prefetchRoute('/tracking')} 
                   className="flex items-center gap-2 text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"
                   onClick={() => setIsMobileMenuOpen(false)}
                   aria-label="Gjurmoni ngarkesën tuaj"
@@ -195,6 +218,8 @@ const Header = () => {
 
               <Link 
                 to="/favorites" 
+                onMouseEnter={() => prefetchRoute('/favorites')} 
+                onFocus={() => prefetchRoute('/favorites')} 
                 className="flex items-center gap-2 text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"
                 onClick={() => setIsMobileMenuOpen(false)}
                 aria-label="Shikoni makinat tuaja të preferuara"
