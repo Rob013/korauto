@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
-import { ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, Fuel, Palette, Hash, Calendar, Shield, FileText, Search, Info, Eye, CheckCircle, AlertTriangle, Star, Clock, Users, MessageCircle, Share2, Heart, ChevronLeft, ChevronRight, Expand, Copy, ChevronDown, ChevronUp, DollarSign, Cog, Lightbulb, Camera, Thermometer, Wind, Radar } from "lucide-react";
+import { ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, Fuel, Palette, Hash, Calendar, Shield, FileText, Search, Info, Eye, CheckCircle, AlertTriangle, Star, Clock, Users, MessageCircle, Share2, Heart, ChevronLeft, ChevronRight, Expand, Copy, ChevronDown, ChevronUp, DollarSign, Cog, Lightbulb, Camera, Thermometer, Wind, Radar, Tag } from "lucide-react";
 import { ImageZoom } from "@/components/ImageZoom";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
@@ -426,9 +426,23 @@ const EquipmentOptionsSection = memo(({
                   <h5 className="text-sm font-medium text-foreground">Pajisje Standarde</h5>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                  {(showAllStandard ? options.standard : options.standard.slice(0, INITIAL_SHOW_COUNT)).map((option, index) => <Badge key={index} variant="secondary" className="justify-center py-1.5 px-3 text-xs font-medium bg-primary/10 text-primary border-0 hover:bg-primary/20 transition-colors">
-                      {option}
-                    </Badge>)}
+                  {(showAllStandard ? options.standard : options.standard.slice(0, INITIAL_SHOW_COUNT)).map((option, index) => {
+                    const itemLower = option.toString().toLowerCase();
+                    let OptionIcon = CheckCircle;
+                    if (itemLower.includes('klime') || itemLower.includes('clima') || itemLower.includes('ac') || itemLower.includes('air conditioning')) OptionIcon = Wind;
+                    else if (itemLower.includes('ngroh') || itemLower.includes('heated')) OptionIcon = Thermometer;
+                    else if (itemLower.includes('kamera') || itemLower.includes('camera')) OptionIcon = Camera;
+                    else if (itemLower.includes('drita') || itemLower.includes('light')) OptionIcon = Lightbulb;
+                    else if (itemLower.includes('sensor') || itemLower.includes('radar') || itemLower.includes('park')) OptionIcon = Radar;
+                    else if (itemLower.includes('audio') || itemLower.includes('multimedia')) OptionIcon = Settings;
+                    else if (itemLower.includes('leather') || itemLower.includes('lëkur')) OptionIcon = Users;
+                    return (
+                      <Badge key={index} variant="secondary" className="flex items-center gap-1.5 justify-center py-1.5 px-3 text-xs font-medium bg-primary/10 text-primary border-0 hover:bg-primary/20 transition-colors">
+                        <OptionIcon className="h-3.5 w-3.5" />
+                        <span>{option}</span>
+                      </Badge>
+                    );
+                  })}
                 </div>
                 {options.standard.length > INITIAL_SHOW_COUNT && <Button variant="ghost" size="sm" onClick={() => setShowAllStandard(!showAllStandard)} className="h-8 px-3 text-xs text-primary hover:bg-primary/10 font-medium">
                     {showAllStandard ? `Më pak` : `Shiko të gjitha (${options.standard.length - INITIAL_SHOW_COUNT} më shumë)`}
@@ -442,9 +456,23 @@ const EquipmentOptionsSection = memo(({
                   <h5 className="text-sm font-medium text-foreground">Pajisje Opsionale</h5>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                  {(showAllChoice ? options.choice : options.choice.slice(0, INITIAL_SHOW_COUNT)).map((option, index) => <Badge key={index} variant="outline" className="justify-center py-1.5 px-3 text-xs font-medium bg-accent/10 text-accent-foreground border-accent/30 hover:bg-accent/20 transition-colors">
-                      {option}
-                    </Badge>)}
+                  {(showAllChoice ? options.choice : options.choice.slice(0, INITIAL_SHOW_COUNT)).map((option, index) => {
+                    const itemLower = option.toString().toLowerCase();
+                    let OptionIcon = CheckCircle;
+                    if (itemLower.includes('klime') || itemLower.includes('clima') || itemLower.includes('ac') || itemLower.includes('air conditioning')) OptionIcon = Wind;
+                    else if (itemLower.includes('ngroh') || itemLower.includes('heated')) OptionIcon = Thermometer;
+                    else if (itemLower.includes('kamera') || itemLower.includes('camera')) OptionIcon = Camera;
+                    else if (itemLower.includes('drita') || itemLower.includes('light')) OptionIcon = Lightbulb;
+                    else if (itemLower.includes('sensor') || itemLower.includes('radar') || itemLower.includes('park')) OptionIcon = Radar;
+                    else if (itemLower.includes('audio') || itemLower.includes('multimedia')) OptionIcon = Settings;
+                    else if (itemLower.includes('leather') || itemLower.includes('lëkur')) OptionIcon = Users;
+                    return (
+                      <Badge key={index} variant="outline" className="flex items-center gap-1.5 justify-center py-1.5 px-3 text-xs font-medium bg-accent/10 text-accent-foreground border-accent/30 hover:bg-accent/20 transition-colors">
+                        <OptionIcon className="h-3.5 w-3.5" />
+                        <span>{option}</span>
+                      </Badge>
+                    );
+                  })}
                 </div>
                 {options.choice.length > INITIAL_SHOW_COUNT && <Button variant="ghost" size="sm" onClick={() => setShowAllChoice(!showAllChoice)} className="h-8 px-3 text-xs text-primary hover:bg-primary/10 font-medium">
                     {showAllChoice ? `Më pak` : `Shiko të gjitha (${options.choice.length - INITIAL_SHOW_COUNT} më shumë)`}
@@ -458,9 +486,18 @@ const EquipmentOptionsSection = memo(({
                   <h5 className="text-sm font-medium text-foreground">Modifikimet</h5>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                  {options.tuning.map((option, index) => <Badge key={index} variant="destructive" className="justify-center py-1.5 px-3 text-xs font-medium bg-destructive/10 text-destructive border-0 hover:bg-destructive/20 transition-colors">
-                      {option}
-                    </Badge>)}
+                  {options.tuning.map((option, index) => {
+                    const itemLower = option.toString().toLowerCase();
+                    let OptionIcon = Settings;
+                    if (itemLower.includes('sport') || itemLower.includes('performance')) OptionIcon = Gauge;
+                    else if (itemLower.includes('exhaust') || itemLower.includes('marmit')) OptionIcon = Cog;
+                    return (
+                      <Badge key={index} variant="destructive" className="flex items-center gap-1.5 justify-center py-1.5 px-3 text-xs font-medium bg-destructive/10 text-destructive border-0 hover:bg-destructive/20 transition-colors">
+                        <OptionIcon className="h-3.5 w-3.5" />
+                        <span>{option}</span>
+                      </Badge>
+                    );
+                  })}
                 </div>
               </div>}
 
@@ -1403,7 +1440,7 @@ const CarDetails = memo(() => {
                    {car.details?.badge && <div className="group grid grid-cols-[auto,1fr] items-start gap-x-3 sm:gap-x-4 p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                      <div className="flex items-center gap-2 sm:gap-3">
                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <Star className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                          <Tag className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                         </div>
                       </div>
                      <span className="text-muted-foreground font-medium text-left sm:text-right leading-tight whitespace-normal break-words min-w-0">
