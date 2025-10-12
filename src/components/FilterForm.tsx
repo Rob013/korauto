@@ -12,7 +12,6 @@ import {
   sortManufacturers,
   generateYearRange,
   generateYearPresets,
-  getFallbackGrades,
   debounce as catalogDebounce
 } from '@/utils/catalog-filter';
 
@@ -137,22 +136,16 @@ const FilterForm = memo<FilterFormProps>(({
   // Memoized sorted manufacturers using utility
   const sortedManufacturers = useMemo(() => sortManufacturers(manufacturers), [manufacturers]);
 
-  // Using utility for fallback grades
-  const getFallbackGradesForManufacturer = useCallback((manufacturerId: string) => {
-    return getFallbackGrades(manufacturerId);
-  }, []);
+  // Removed manufacturer-only fallback for grades to ensure model-specific matching
 
-  // Debounced fetch grades when manufacturer or model changes
+  // Debounced fetch grades when manufacturer AND model change
   useEffect(() => {
     let cancelled = false;
     let timeoutId: NodeJS.Timeout;
     
     // Debounce to avoid excessive API calls
     timeoutId = setTimeout(() => {
-      if (filters.manufacturer_id && onFetchGrades && !cancelled) {
-        // Set fallback immediately for instant response
-        const fallback = getFallbackGradesForManufacturer(filters.manufacturer_id);
-        setGrades(fallback);
+      if (filters.manufacturer_id && filters.model_id && onFetchGrades && !cancelled) {
         setIsLoadingGrades(true);
         
         const requestId = Date.now();
@@ -160,21 +153,16 @@ const FilterForm = memo<FilterFormProps>(({
         
         onFetchGrades(filters.manufacturer_id, filters.model_id)
           .then(gradesData => {
-            // Only update if this is the latest request and we have better data
+            // Only update if this is the latest request and data is valid
             if (!cancelled && latestGradeRequest.current === requestId && Array.isArray(gradesData)) {
-              // If we got real data with more variety than fallback, use it
-              if (gradesData.length > fallback.length || 
-                  (gradesData.length > 0 && gradesData.some(g => g.count && g.count > 0))) {
-                setGrades(gradesData);
-              }
-              // If gradesData is empty or worse than fallback, keep fallback
+              setGrades(gradesData);
             }
             setIsLoadingGrades(false);
           })
           .catch((err) => {
             console.error('Grade fetch error:', err);
             setIsLoadingGrades(false);
-            // Keep fallback on error
+            setGrades([]);
           });
       } else {
         setGrades([]);
@@ -402,14 +390,14 @@ const FilterForm = memo<FilterFormProps>(({
               <AdaptiveSelect 
                 value={filters.grade_iaai || 'all'} 
                 onValueChange={(value) => updateFilter('grade_iaai', value)}
-                disabled={!filters.manufacturer_id || isLoading}
-                placeholder={filters.manufacturer_id ? "Të gjitha Gradat" : "Zgjidhni markën së pari"}
+                disabled={!filters.manufacturer_id || !filters.model_id || isLoading}
+                placeholder={filters.manufacturer_id && filters.model_id ? "Të gjitha Gradat" : "Zgjidhni markën dhe modelin së pari"}
                 className="h-8 text-xs sm:text-sm"
                 options={[
                   { value: 'all', label: 'Të gjitha Gradat' },
                   ...(grades.length === 0 && isLoadingGrades ? 
                     [{ value: 'loading', label: 'Po ngarkon gradat...', disabled: true }] :
-                    grades.length === 0 && filters.manufacturer_id ? 
+                    grades.length === 0 && (filters.manufacturer_id && filters.model_id) ? 
                     [{ value: 'no-grades', label: 'Nuk u gjetën grada', disabled: true }] :
                     grades.map((grade) => ({
                       value: grade.value,
