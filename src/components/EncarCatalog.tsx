@@ -123,6 +123,13 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
   const INSPECTED_LOTS = useMemo(() => new Set([
     '39637155','40208600','40299696','40244048','38468556','40322362','40341845','39834715','40604533','40622934','39723201'
   ]), []);
+
+  // Ensure global dataset is loaded when showing inspected-only
+  useEffect(() => {
+    if (showInspectedOnly && !isGlobalSortingReady()) {
+      initializeGlobalSorting();
+    }
+  }, [showInspectedOnly, isGlobalSortingReady, initializeGlobalSorting]);
   
   // Initialize showFilters - always open on desktop, closed on mobile
   const [showFilters, setShowFilters] = useState(() => {
@@ -241,6 +248,15 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     // Priority 3: Regular sorted cars (recently added by default)
     // For server-side pagination, use all sorted results without client-side slicing
     // Server already provides the correct page data with 'recently_added' sort by default
+    // Priority 3.1: If inspected-only is on, filter the full list by inspected lots
+    if (showInspectedOnly) {
+      const base = isGlobalSortingReady() ? sortedAllCarsResults : sortedResults;
+      return base.filter((car: any) => {
+        const lot = String(car.lot_number || car.lots?.[0]?.lot || '');
+        return INSPECTED_LOTS.has(lot);
+      });
+    }
+
     console.log(`📄 Using sorted cars for page ${currentPage}: ${sortedResults.length} cars (sort: ${sortBy || 'recently_added'}, default shows recently added from API)`);
     return sortedResults;
   }, [
@@ -255,7 +271,9 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
     globalSortingState.currentSortBy,
     isDefaultState,
     hasUserSelectedSort,
-    sortedResults
+    sortedResults,
+    showInspectedOnly,
+    INSPECTED_LOTS
   ]);
 
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
