@@ -1386,9 +1386,9 @@ const CarDetails = memo(() => {
                 </div>
 
                 {/* Specifications Grid - Modern Cards - 2 Columns Compact */}
-                <div className="grid grid-cols-2 md:grid-cols-2 gap-2 sm:gap-3 md:gap-4 text-sm">
+                <div className="grid grid-cols-2 md:grid-cols-2 gap-2 sm:gap-3 md:gap-4 text-sm items-stretch auto-rows-fr isolate relative z-0">
                   {/* Basic Info */}
-                  <div className="group flex items-center justify-between p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item hover-scale">
+                  <div className="group flex items-center justify-between p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0">
                     <div className="flex items-center gap-2 sm:gap-3">
                       <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
                         <Car className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
@@ -1400,7 +1400,7 @@ const CarDetails = memo(() => {
                     </span>
                    </div>
                    
-                   {car.details?.badge && <div className="group flex items-center justify-between p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item hover-scale">
+                   {car.details?.badge && <div className="group flex items-center justify-between p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0">
                      <div className="flex items-center gap-2 sm:gap-3">
                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
                          <Star className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
@@ -1412,7 +1412,7 @@ const CarDetails = memo(() => {
                      </span>
                    </div>}
                    
-                   {car.details?.seats_count && <div className="group flex items-center justify-between p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item hover-scale">
+                   {car.details?.seats_count && <div className="group flex items-center justify-between p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0">
                      <div className="flex items-center gap-2 sm:gap-3">
                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
                          <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
@@ -1424,7 +1424,7 @@ const CarDetails = memo(() => {
                      </span>
                    </div>}
                    
-                   {car.transmission && <div className="group flex items-center justify-between p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item hover-scale">
+                   {car.transmission && <div className="group flex items-center justify-between p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0">
                      <div className="flex items-center gap-2 sm:gap-3">
                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
                          <Settings className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
@@ -1436,7 +1436,7 @@ const CarDetails = memo(() => {
                       </span>
                     </div>}
 
-                  {car.details?.engine_volume && <div className="group flex items-center justify-between p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item hover-scale">
+                  {car.details?.engine_volume && <div className="group flex items-center justify-between p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0">
                       <div className="flex items-center gap-2 sm:gap-3">
                         <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
                           <Cog className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
@@ -1448,7 +1448,7 @@ const CarDetails = memo(() => {
                       </span>
                     </div>}
 
-                  {car.fuel && <div className="group flex items-center justify-between p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item hover-scale">
+                  {car.fuel && <div className="group flex items-center justify-between p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0">
                       <div className="flex items-center gap-2 sm:gap-3">
                         <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
                           <Fuel className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
@@ -1460,7 +1460,7 @@ const CarDetails = memo(() => {
                       </span>
                     </div>}
 
-                  {car.color && <div className="group flex items-center justify-between p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item hover-scale">
+                  {car.color && <div className="group flex items-center justify-between p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0">
                       <div className="flex items-center gap-2 sm:gap-3">
                         <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
                           <Palette className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
@@ -1472,7 +1472,7 @@ const CarDetails = memo(() => {
                       </span>
                     </div>}
 
-                  {car.vin && <div className="group flex items-center justify-between p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item hover-scale">
+                  {car.vin && <div className="group flex items-center justify-between p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0">
                       <div className="flex items-center gap-2 sm:gap-3">
                         <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
                           <Hash className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
