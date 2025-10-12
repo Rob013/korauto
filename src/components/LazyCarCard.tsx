@@ -362,10 +362,10 @@ const LazyCarCard = memo(({
               <span className="truncate font-medium text-foreground">{mileage}</span>
             </div>
           )}
-          {transmission && (
+          {year && (
             <div className="flex items-center gap-1.5 min-w-0">
-              <Settings className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate text-foreground">{transmission}</span>
+              <Car className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="truncate text-foreground">{year}</span>
             </div>
           )}
           {fuel && (
@@ -374,10 +374,10 @@ const LazyCarCard = memo(({
               <span className="capitalize truncate text-foreground">{fuel}</span>
             </div>
           )}
-          {year && (
+          {transmission && (
             <div className="flex items-center gap-1.5 min-w-0">
-              <Car className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="truncate text-foreground">{year}</span>
+              <Settings className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="capitalize truncate text-foreground">{transmission}</span>
             </div>
           )}
         </div>
