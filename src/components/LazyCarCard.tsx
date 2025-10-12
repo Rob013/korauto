@@ -7,6 +7,7 @@ import { Car, Gauge, Settings, Fuel, Palette, Shield, Heart } from "lucide-react
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getStatusBadgeConfig } from "@/utils/statusBadgeUtils";
+import { formatModelName } from "@/utils/modelNameFormatter";
 
 interface LazyCarCardProps {
   id: string;
@@ -346,7 +347,7 @@ const LazyCarCard = memo(({
       <div className="p-3 flex-1 flex flex-col">
         <div className="mb-2">
           <h3 className="card-title text-sm font-bold text-foreground line-clamp-1 leading-tight">
-            {make} {model}
+            {make} {formatModelName(model, make)}
           </h3>
           {title && title !== `${make} ${model}` && (
             <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{title}</p>
