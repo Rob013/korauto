@@ -1391,100 +1391,100 @@ const CarDetails = memo(() => {
                   {/* Basic Info */}
                   <div className="group grid grid-cols-[auto,1fr] items-start gap-x-3 sm:gap-x-4 p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                     <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
+                      <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                         <Car className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                       </div>
-                      <span className="font-semibold text-foreground">Marka</span>
+                      <span className="font-semibold text-foreground leading-tight whitespace-normal break-words">Marka</span>
                     </div>
-                    <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0">
+                    <span className="text-muted-foreground font-medium text-left sm:text-right leading-tight whitespace-normal break-words min-w-0">
                       {car.make} {car.model}
                     </span>
                    </div>
                    
                    {car.details?.badge && <div className="group grid grid-cols-[auto,1fr] items-start gap-x-3 sm:gap-x-4 p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                      <div className="flex items-center gap-2 sm:gap-3">
-                       <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
+                       <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                          <Star className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                        </div>
-                       <span className="font-semibold text-foreground">Versioni</span>
+                       <span className="font-semibold text-foreground leading-tight whitespace-normal break-words">Versioni</span>
                      </div>
-                     <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0">
+                     <span className="text-muted-foreground font-medium text-left sm:text-right leading-tight whitespace-normal break-words min-w-0">
                        {car.details.badge}
                      </span>
                    </div>}
                    
                    {car.details?.seats_count && <div className="group grid grid-cols-[auto,1fr] items-start gap-x-3 sm:gap-x-4 p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                      <div className="flex items-center gap-2 sm:gap-3">
-                       <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
+                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                          <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                        </div>
-                       <span className="font-semibold text-foreground">Numri i Vendeve</span>
+                        <span className="font-semibold text-foreground leading-tight whitespace-normal break-words">Numri i Vendeve</span>
                      </div>
-                     <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0">
+                     <span className="text-muted-foreground font-medium text-left sm:text-right leading-tight whitespace-normal break-words min-w-0">
                        {car.details.seats_count} vende
                      </span>
                    </div>}
                    
                    {car.transmission && <div className="group grid grid-cols-[auto,1fr] items-start gap-x-3 sm:gap-x-4 p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                      <div className="flex items-center gap-2 sm:gap-3">
-                       <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
+                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                          <Settings className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                         </div>
-                        <span className="font-semibold text-foreground">Transmisioni</span>
+                        <span className="font-semibold text-foreground leading-tight whitespace-normal break-words">Transmisioni</span>
                       </div>
-                     <span className="text-muted-foreground font-medium capitalize text-right leading-tight whitespace-normal break-words min-w-0">
+                     <span className="text-muted-foreground font-medium capitalize text-left sm:text-right leading-tight whitespace-normal break-words min-w-0">
                         {translateTransmission(car.transmission)}
                       </span>
                     </div>}
 
                   {car.details?.engine_volume && <div className="group grid grid-cols-[auto,1fr] items-start gap-x-3 sm:gap-x-4 p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
+                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                           <Cog className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                         </div>
-                        <span className="font-semibold text-foreground">Vëllimi i Motorit</span>
+                        <span className="font-semibold text-foreground leading-tight whitespace-normal break-words">Vëllimi i Motorit</span>
                       </div>
-                      <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0">
+                      <span className="text-muted-foreground font-medium text-left sm:text-right leading-tight whitespace-normal break-words min-w-0">
                         {car.details.engine_volume}cc
                       </span>
                     </div>}
 
                   {car.fuel && <div className="group grid grid-cols-[auto,1fr] items-start gap-x-3 sm:gap-x-4 p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
+                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                           <Fuel className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                         </div>
-                        <span className="font-semibold text-foreground">Karburanti</span>
+                        <span className="font-semibold text-foreground leading-tight whitespace-normal break-words">Karburanti</span>
                       </div>
-                      <span className="text-muted-foreground font-medium capitalize text-right leading-tight whitespace-normal break-words min-w-0">
+                      <span className="text-muted-foreground font-medium capitalize text-left sm:text-right leading-tight whitespace-normal break-words min-w-0">
                         {car.fuel}
                       </span>
                     </div>}
 
                   {car.color && <div className="group grid grid-cols-[auto,1fr] items-start gap-x-3 sm:gap-x-4 p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
+                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                           <Palette className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                         </div>
-                        <span className="font-semibold text-foreground">Ngjyra</span>
+                        <span className="font-semibold text-foreground leading-tight whitespace-normal break-words">Ngjyra</span>
                       </div>
-                      <span className="text-muted-foreground font-medium capitalize text-right leading-tight whitespace-normal break-words min-w-0">
+                      <span className="text-muted-foreground font-medium capitalize text-left sm:text-right leading-tight whitespace-normal break-words min-w-0">
                         {translateColor(car.color)}
                       </span>
                     </div>}
 
                   {car.vin && <div className="group grid grid-cols-[auto,1fr] items-start gap-x-3 sm:gap-x-4 p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
+                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                           <Hash className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                         </div>
-                        <span className="font-semibold text-foreground">Numri i shasisë</span>
+                        <span className="font-semibold text-foreground leading-tight whitespace-normal break-words">Numri i shasisë</span>
                       </div>
-                      <div className="flex items-center justify-end gap-2 min-w-0">
+                      <div className="flex items-center justify-between sm:justify-end gap-2 min-w-0">
                         {!showVin && <Button size="sm" variant="outline" className="h-8 px-2 text-xs border-primary text-primary hover:bg-primary hover:text-primary-foreground" onClick={() => setShowVin(true)}>
                           Shfaq VIN
                         </Button>}
-                        {showVin && <span className="text-muted-foreground font-medium font-mono text-sm text-right leading-tight whitespace-normal break-words min-w-0">
+                        {showVin && <span className="text-muted-foreground font-medium font-mono text-sm text-left sm:text-right leading-tight whitespace-normal break-words min-w-0">
                           {car.vin}
                         </span>}
                       </div>
