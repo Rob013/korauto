@@ -1827,7 +1827,11 @@ const CarDetails = memo(() => {
                                     <p className="text-muted-foreground text-xs inspection-subtext-black">Gjendja vizuale e pjesëve të jashtme</p>
                                   </div>
                                 </div>
-                                <CarInspectionDiagram inspectionData={car.details.inspect_outer} className="mt-3" />
+                                <CarInspectionDiagram 
+                                  inspectionData={car.details.inspect_outer} 
+                                  className="mt-3" 
+                                  backgroundImageUrl="http://jautoworld.com/car/carViewFrameUsedCarCheckAdv.html?no=458145"
+                                />
                               </div>}
 
                           {/* Maintenance History */}
