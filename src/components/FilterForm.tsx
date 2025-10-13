@@ -142,17 +142,14 @@ const FilterForm = memo<FilterFormProps>(({
     return getFallbackGrades(manufacturerId);
   }, []);
 
-  // Debounced fetch grades when manufacturer or model changes
+  // Debounced fetch grades when manufacturer AND model changes - require both
   useEffect(() => {
     let cancelled = false;
     let timeoutId: NodeJS.Timeout;
     
-    // Debounce to avoid excessive API calls
+    // Debounce to avoid excessive API calls - require BOTH manufacturer AND model
     timeoutId = setTimeout(() => {
-      if (filters.manufacturer_id && onFetchGrades && !cancelled) {
-        // Set fallback immediately for instant response
-        const fallback = getFallbackGradesForManufacturer(filters.manufacturer_id);
-        setGrades(fallback);
+      if (filters.manufacturer_id && filters.model_id && onFetchGrades && !cancelled) {
         setIsLoadingGrades(true);
         
         const requestId = Date.now();
@@ -160,21 +157,16 @@ const FilterForm = memo<FilterFormProps>(({
         
         onFetchGrades(filters.manufacturer_id, filters.model_id)
           .then(gradesData => {
-            // Only update if this is the latest request and we have better data
+            // Only update if this is the latest request
             if (!cancelled && latestGradeRequest.current === requestId && Array.isArray(gradesData)) {
-              // If we got real data with more variety than fallback, use it
-              if (gradesData.length > fallback.length || 
-                  (gradesData.length > 0 && gradesData.some(g => g.count && g.count > 0))) {
-                setGrades(gradesData);
-              }
-              // If gradesData is empty or worse than fallback, keep fallback
+              setGrades(gradesData);
             }
             setIsLoadingGrades(false);
           })
           .catch((err) => {
             console.error('Grade fetch error:', err);
             setIsLoadingGrades(false);
-            // Keep fallback on error
+            setGrades([]);
           });
       } else {
         setGrades([]);
@@ -402,14 +394,14 @@ const FilterForm = memo<FilterFormProps>(({
               <AdaptiveSelect 
                 value={filters.grade_iaai || 'all'} 
                 onValueChange={(value) => updateFilter('grade_iaai', value)}
-                disabled={!filters.manufacturer_id || isLoading}
-                placeholder={filters.manufacturer_id ? "Të gjitha Gradat" : "Zgjidhni markën së pari"}
+                disabled={!filters.model_id || isLoading}
+                placeholder={!filters.manufacturer_id ? "Zgjidhni markën së pari" : !filters.model_id ? "Zgjidhni modelin së pari" : "Të gjitha Gradat"}
                 className="h-8 text-xs sm:text-sm"
                 options={[
                   { value: 'all', label: 'Të gjitha Gradat' },
                   ...(grades.length === 0 && isLoadingGrades ? 
                     [{ value: 'loading', label: 'Po ngarkon gradat...', disabled: true }] :
-                    grades.length === 0 && filters.manufacturer_id ? 
+                    grades.length === 0 && filters.model_id ? 
                     [{ value: 'no-grades', label: 'Nuk u gjetën grada', disabled: true }] :
                     grades.map((grade) => ({
                       value: grade.value,
@@ -426,12 +418,12 @@ const FilterForm = memo<FilterFormProps>(({
               <AdaptiveSelect 
                 value={filters.trim_level || 'all'} 
                 onValueChange={(value) => updateFilter('trim_level', value)}
-                disabled={!filters.manufacturer_id || isLoading}
-                placeholder={filters.manufacturer_id ? "Të gjithë Nivelet e Pajisjes" : "Zgjidhni markën së pari"}
+                disabled={!filters.model_id || isLoading}
+                placeholder={!filters.manufacturer_id ? "Zgjidhni markën së pari" : !filters.model_id ? "Zgjidhni modelin së pari" : "Të gjithë Nivelet e Pajisjes"}
                 className="h-8 text-xs sm:text-sm"
                 options={[
                   { value: 'all', label: 'Të gjithë Nivelet e Pajisjes' },
-                  ...(trimLevels.length === 0 && filters.manufacturer_id ? 
+                  ...(trimLevels.length === 0 && filters.model_id ? 
                     [{ value: 'no-trims', label: 'Nuk u gjetën nivele pajisje', disabled: true }] :
                     trimLevels.map((trim) => ({
                       value: trim.value,

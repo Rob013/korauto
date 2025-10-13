@@ -196,7 +196,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   }, [manufacturers]);
 
   useEffect(() => {
-    if (filters.manufacturer_id && onFetchGrades) {
+    if (filters.manufacturer_id && filters.model_id && onFetchGrades) {
       const timeoutId = setTimeout(() => {
         setIsLoadingGrades(true);
         onFetchGrades(filters.manufacturer_id, filters.model_id)
@@ -435,9 +435,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     <Cog className="h-2.5 w-2.5" />
                     Grada/Motori
                   </Label>
-                  <Select value={filters.grade_iaai || 'all'} onValueChange={(value) => updateFilter('grade_iaai', value)} disabled={!filters.manufacturer_id || isLoadingGrades}>
+                  <Select value={filters.grade_iaai || 'all'} onValueChange={(value) => updateFilter('grade_iaai', value)} disabled={!filters.model_id || isLoadingGrades}>
                     <SelectTrigger className="filter-control h-8 text-xs">
-                      <SelectValue placeholder={isLoadingGrades ? "Po ngarkon..." : "Zgjidhni gradën"} />
+                      <SelectValue placeholder={!filters.manufacturer_id ? "Zgjidhni markën" : !filters.model_id ? "Zgjidhni modelin" : isLoadingGrades ? "Po ngarkon..." : "Zgjidhni gradën"} />
                     </SelectTrigger>
                     <SelectContent>
                       {!(isStrictMode && filters.grade_iaai) && (
@@ -820,15 +820,15 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 </div>
               </div>
 
-               <div className="space-y-2">
-                 <Label className="text-sm font-medium flex items-center gap-2">
-                   <Cog className="h-3 w-3" />
-                   Grada/Motori
-                 </Label>
-                 <Select value={filters.grade_iaai || 'all'} onValueChange={(value) => updateFilter('grade_iaai', value)} disabled={!filters.manufacturer_id || isLoadingGrades}>
-                   <SelectTrigger>
-                     <SelectValue placeholder={isLoadingGrades ? "Po ngarkon..." : "Zgjidhni gradën"} />
-                   </SelectTrigger>
+                 <div className="space-y-2">
+                   <Label className="text-sm font-medium flex items-center gap-2">
+                     <Cog className="h-3 w-3" />
+                     Grada/Motori
+                   </Label>
+                   <Select value={filters.grade_iaai || 'all'} onValueChange={(value) => updateFilter('grade_iaai', value)} disabled={!filters.model_id || isLoadingGrades}>
+                     <SelectTrigger>
+                       <SelectValue placeholder={!filters.manufacturer_id ? "Zgjidhni markën" : !filters.model_id ? "Zgjidhni modelin" : isLoadingGrades ? "Po ngarkon..." : "Zgjidhni gradën"} />
+                     </SelectTrigger>
                    <SelectContent>
                      {!(isStrictMode && filters.grade_iaai) && (
                        <SelectItem value="all">Të gjitha gradat</SelectItem>
