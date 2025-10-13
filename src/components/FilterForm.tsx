@@ -142,14 +142,14 @@ const FilterForm = memo<FilterFormProps>(({
     return getFallbackGrades(manufacturerId);
   }, []);
 
-  // Debounced fetch grades when manufacturer AND model changes - require both
+  // Fetch grades when model changes - manufacturer helps with better fallbacks
   useEffect(() => {
     let cancelled = false;
     let timeoutId: NodeJS.Timeout;
     
-    // Debounce to avoid excessive API calls - require BOTH manufacturer AND model
+    // Debounce to avoid excessive API calls - require model_id, manufacturer helps
     timeoutId = setTimeout(() => {
-      if (filters.manufacturer_id && filters.model_id && onFetchGrades && !cancelled) {
+      if (filters.model_id && onFetchGrades && !cancelled) {
         setIsLoadingGrades(true);
         
         const requestId = Date.now();
@@ -159,6 +159,7 @@ const FilterForm = memo<FilterFormProps>(({
           .then(gradesData => {
             // Only update if this is the latest request
             if (!cancelled && latestGradeRequest.current === requestId && Array.isArray(gradesData)) {
+              console.log('✅ Loaded grades:', gradesData.length, 'for model', filters.model_id);
               setGrades(gradesData);
             }
             setIsLoadingGrades(false);

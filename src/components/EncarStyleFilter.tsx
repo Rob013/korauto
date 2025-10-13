@@ -196,12 +196,13 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   }, [manufacturers]);
 
   useEffect(() => {
-    if (filters.manufacturer_id && filters.model_id && onFetchGrades) {
+    if (filters.model_id && onFetchGrades) {
       const timeoutId = setTimeout(() => {
         setIsLoadingGrades(true);
         onFetchGrades(filters.manufacturer_id, filters.model_id)
           .then(gradesData => {
             if (Array.isArray(gradesData)) {
+              console.log('✅ Loaded grades:', gradesData.length, 'for model', filters.model_id);
               setGrades(gradesData);
             }
           })
