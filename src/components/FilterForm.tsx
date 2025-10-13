@@ -91,10 +91,14 @@ const FilterForm = memo<FilterFormProps>(({
     
     // Handle cascading filters - avoid duplicate API calls
     if (key === 'manufacturer_id') {
-      // Only call the specialized handler, not onFiltersChange to avoid duplicate calls
+      // Reset model and grade when manufacturer changes
+      setGrades([]);
+      onFiltersChange({ ...filters, manufacturer_id: actualValue, model_id: undefined, grade_iaai: undefined });
       onManufacturerChange?.(actualValue || '');
     } else if (key === 'model_id') {
-      // Only call the specialized handler, not onFiltersChange to avoid duplicate calls
+      // Reset grade when model changes
+      setGrades([]);
+      onFiltersChange({ ...filters, model_id: actualValue, grade_iaai: undefined });
       onModelChange?.(actualValue || '');
     } else {
       // For other filters, use the standard filter change handler

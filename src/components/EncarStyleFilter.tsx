@@ -140,8 +140,14 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     }
 
     if (key === 'manufacturer_id') {
+      // Reset model and grade when manufacturer changes
+      setGrades([]);
+      onFiltersChange({ ...filters, manufacturer_id: actualValue, model_id: undefined, grade_iaai: undefined });
       onManufacturerChange?.(actualValue || '');
     } else if (key === 'model_id') {
+      // Reset grade when model changes
+      setGrades([]);
+      onFiltersChange({ ...filters, model_id: actualValue, grade_iaai: undefined });
       onModelChange?.(actualValue || '');
     } else {
       const updatedFilters = { ...filters, [key]: actualValue };

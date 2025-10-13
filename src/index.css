@@ -8,6 +8,18 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Smooth theme transitions - Flicker-free dark/light mode */
+html {
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html.theme-transitioning * {
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important,
+              color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important,
+              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
 /* Prevent content flickering during loads */
 .animate-fade-in,
 .animate-slide-in-up,
@@ -176,9 +188,35 @@ html {
   }
 }
 
-/* Prevent layout shifts */
+/* Prevent layout shifts and flicker */
 .filter-select {
   min-height: 40px;
+}
+
+/* Prevent content shift during transitions */
+body {
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+/* Smooth filter transitions */
+[data-filter-panel] {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+/* Prevent flicker on card hover */
+.group:hover [class*="scale"] {
+  transform: translate3d(0, 0, 0) scale(1.05);
+}
+
+/* Smooth loading states */
+[data-loading="true"] {
+  pointer-events: none;
+  opacity: 0.7;
+  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Reduce motion for accessibility */
@@ -374,6 +412,18 @@ All colors MUST be HSL.
     /* Smooth scrolling for mobile */
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: none;
+    /* Smooth transitions for theme changes */
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Apply smooth transitions to all elements during theme change */
+  html.theme-transitioning * {
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                fill 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                stroke 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   #root {
