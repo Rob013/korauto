@@ -40,3 +40,9 @@ verify_jwt = false
 
 [functions.send-confirmation-email]
 verify_jwt = false
+
+[functions.filters-sync]
+verify_jwt = false
+
+[functions.ai-car-search]
+verify_jwt = false

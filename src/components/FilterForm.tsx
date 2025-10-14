@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Filter, X, Loader2, Search } from "lucide-react";
+import { AISearchBar } from "./AISearchBar";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS, BODY_TYPE_OPTIONS } from '@/constants/carOptions';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -219,8 +220,27 @@ const FilterForm = memo<FilterFormProps>(({
     console.log(`[FilterForm] Rendering model dropdown. Models available: ${models.length}, disabled: ${!filters.manufacturer_id || isLoading}`);
   }, [models, filters.manufacturer_id, isLoading]);
 
+  const handleAISearch = useCallback((aiFilters: any) => {
+    console.log('AI Search filters:', aiFilters);
+    const updatedFilters = { ...filters };
+    
+    if (aiFilters.manufacturer_id) updatedFilters.manufacturer_id = aiFilters.manufacturer_id;
+    if (aiFilters.model_id) updatedFilters.model_id = aiFilters.model_id;
+    if (aiFilters.from_year || aiFilters.yearMin) updatedFilters.from_year = (aiFilters.from_year || aiFilters.yearMin)?.toString();
+    if (aiFilters.to_year || aiFilters.yearMax) updatedFilters.to_year = (aiFilters.to_year || aiFilters.yearMax)?.toString();
+    if (aiFilters.priceMin) updatedFilters.buy_now_price_from = aiFilters.priceMin?.toString();
+    if (aiFilters.priceMax) updatedFilters.buy_now_price_to = aiFilters.priceMax?.toString();
+    if (aiFilters.fuel) updatedFilters.fuel_type = aiFilters.fuel;
+    if (aiFilters.transmission) updatedFilters.transmission = aiFilters.transmission;
+    if (aiFilters.mileageMax) updatedFilters.odometer_to_km = aiFilters.mileageMax?.toString();
+    if (aiFilters.search) updatedFilters.search = aiFilters.search;
+    
+    onFiltersChange(updatedFilters);
+  }, [filters, onFiltersChange]);
+
   return (
     <div className="bg-card border border-border rounded-lg p-3 space-y-3">
+      <AISearchBar onSearch={handleAISearch} />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-primary" />
