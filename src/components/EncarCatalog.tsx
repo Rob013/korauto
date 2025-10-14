@@ -23,6 +23,7 @@ import LoadingLogo from "@/components/LoadingLogo";
 import LazyCarCard from "@/components/LazyCarCard";
 import { useSecureAuctionAPI, createFallbackManufacturers, createFallbackModels } from "@/hooks/useSecureAuctionAPI";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
+import { AISearchBar } from "@/components/AISearchBar";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useResourcePreloader } from "@/hooks/useResourcePreloader";
@@ -1327,6 +1328,11 @@ const EncarCatalog = ({ highlightCarId }: EncarCatalogProps = {}) => {
                   />
                 </div>
               </div>
+            </div>
+            
+            {/* AI Search Bar */}
+            <div className="mt-4">
+              <AISearchBar onSearch={handleFiltersChange} />
             </div>
             
             {/* Title and count from API */}
