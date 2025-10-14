@@ -14,6 +14,140 @@ export type Database = {
   }
   public: {
     Tables: {
+      car_grades: {
+        Row: {
+          car_count: number | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          manufacturer_id: string
+          model_id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          car_count?: number | null
+          created_at?: string | null
+          id: string
+          is_active?: boolean | null
+          manufacturer_id: string
+          model_id: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          car_count?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          manufacturer_id?: string
+          model_id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "car_grades_manufacturer_id_fkey"
+            columns: ["manufacturer_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "car_grades_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "car_models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      car_models: {
+        Row: {
+          car_count: number | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          manufacturer_id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          car_count?: number | null
+          created_at?: string | null
+          id: string
+          is_active?: boolean | null
+          manufacturer_id: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          car_count?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          manufacturer_id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "car_models_manufacturer_id_fkey"
+            columns: ["manufacturer_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      car_trims: {
+        Row: {
+          car_count: number | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          manufacturer_id: string
+          model_id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          car_count?: number | null
+          created_at?: string | null
+          id: string
+          is_active?: boolean | null
+          manufacturer_id: string
+          model_id: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          car_count?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          manufacturer_id?: string
+          model_id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "car_trims_manufacturer_id_fkey"
+            columns: ["manufacturer_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "car_trims_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "car_models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cars: {
         Row: {
           buy_now_price: number | null
@@ -589,6 +723,36 @@ export type Database = {
         }
         Relationships: []
       }
+      manufacturers: {
+        Row: {
+          car_count: number | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          car_count?: number | null
+          created_at?: string | null
+          id: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          car_count?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -1088,6 +1252,22 @@ export type Database = {
           sync_status_records: number
         }[]
       }
+      get_grades_by_model: {
+        Args: { p_model_id: string }
+        Returns: {
+          car_count: number
+          id: string
+          name: string
+        }[]
+      }
+      get_models_by_manufacturer: {
+        Args: { p_manufacturer_id: string }
+        Returns: {
+          car_count: number
+          id: string
+          name: string
+        }[]
+      }
       get_precise_resume_position: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -1107,6 +1287,14 @@ export type Database = {
       get_sync_progress: {
         Args: Record<PropertyKey, never>
         Returns: Json
+      }
+      get_trims_by_model: {
+        Args: { p_model_id: string }
+        Returns: {
+          car_count: number
+          id: string
+          name: string
+        }[]
       }
       has_role: {
         Args: {
