@@ -183,9 +183,8 @@ const handler = async (req: Request): Promise<Response> => {
     
     const isValidEndpoint = allowedEndpoints.some(allowed => 
       endpoint === allowed || 
-      endpoint.startsWith('models/') && endpoint.endsWith('/cars') ||
-      endpoint.startsWith('models/') && endpoint.endsWith('/generations') ||
-      endpoint.startsWith('generations/') && endpoint.endsWith('/cars') ||
+      endpoint.startsWith('models/') ||
+      endpoint.startsWith('generations/') ||
       endpoint.startsWith('cars/')
     );
 

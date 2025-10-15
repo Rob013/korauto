@@ -43,13 +43,22 @@ export const useGrades = (modelId?: string) => {
     queryFn: async () => {
       if (!modelId) return [];
       
-      const { data, error } = await supabase
-        .rpc('get_grades_by_model', {
-          p_model_id: modelId
-        });
+      const { data, error } = await supabase.functions.invoke('secure-cars-api', {
+        body: {
+          endpoint: `generations/${modelId}`,
+          filters: {}
+        }
+      });
       
       if (error) throw error;
-      return data;
+      
+      // Map API response to expected format
+      const generations = data?.data || [];
+      return generations.map((g: any) => ({
+        id: String(g.id),
+        name: g.name,
+        car_count: g.cars_qty || 0
+      }));
     },
     enabled: !!modelId,
     staleTime: 1000 * 60 * 10,
