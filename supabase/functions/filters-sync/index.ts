@@ -21,7 +21,7 @@ serve(async (req) => {
     console.log('🔄 Starting filter data sync...');
 
     // Fetch manufacturers from API
-    const manufacturersRes = await fetch('https://auctionsapi.com/api/manufacturers/cars', {
+    const manufacturersRes = await fetch('https://auctionsapi.com/api/manufacturers/', {
       headers: { 'Authorization': `Bearer ${apiKey}` }
     });
     
@@ -56,7 +56,7 @@ serve(async (req) => {
       
       // Fetch models
       const modelsRes = await fetch(
-        `https://auctionsapi.com/api/manufacturers/${manufacturer.id}/models`,
+        `https://auctionsapi.com/api/models/${manufacturer.id}`,
         { headers: { 'Authorization': `Bearer ${apiKey}` } }
       );
 
@@ -77,10 +77,10 @@ serve(async (req) => {
             { onConflict: 'id' }
           );
 
-          // Process grades for each model (sample first 5 models)
+          // Process grades/generations for each model (sample first 5 models)
           for (const model of models.slice(0, 5)) {
             const gradesRes = await fetch(
-              `https://auctionsapi.com/api/manufacturers/${manufacturer.id}/models/${model.id}/grades`,
+              `https://auctionsapi.com/api/generations/${model.id}`,
               { headers: { 'Authorization': `Bearer ${apiKey}` } }
             );
 
