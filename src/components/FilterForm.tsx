@@ -192,29 +192,56 @@ const FilterForm = memo<FilterFormProps>(({
   }, [models, filters.manufacturer_id, isLoading]);
 
   const handleAISearch = useCallback((aiFilters: any) => {
-    console.log('AI Search filters:', aiFilters);
+    console.log('🔍 AI Search filters received:', aiFilters);
     const updatedFilters = { ...filters };
     
-    // Map manufacturer name to ID
+    // Map manufacturer name to ID with better matching
     if (aiFilters.manufacturer_name) {
       const manufacturer = manufacturers.find(m => 
-        m.name.toLowerCase() === aiFilters.manufacturer_name.toLowerCase()
+        m.name.toLowerCase() === aiFilters.manufacturer_name.toLowerCase() ||
+        m.name.toLowerCase().includes(aiFilters.manufacturer_name.toLowerCase()) ||
+        aiFilters.manufacturer_name.toLowerCase().includes(m.name.toLowerCase())
       );
       if (manufacturer) {
+        console.log('✅ Found manufacturer:', manufacturer.name, 'ID:', manufacturer.id);
         updatedFilters.manufacturer_id = manufacturer.id.toString();
+      } else {
+        console.warn('⚠️ Manufacturer not found:', aiFilters.manufacturer_name);
       }
     }
     
-    // Map model name to ID (only if manufacturer is set)
+    // Map model name to ID (only if manufacturer is set) with fuzzy matching
     if (aiFilters.model_name && updatedFilters.manufacturer_id) {
-      const model = models.find(m => 
-        m.name.toLowerCase().includes(aiFilters.model_name.toLowerCase())
-      );
+      const model = models.find(m => {
+        const modelNameLower = m.name.toLowerCase();
+        const searchNameLower = aiFilters.model_name.toLowerCase();
+        
+        // Exact match
+        if (modelNameLower === searchNameLower) return true;
+        
+        // Contains match (e.g., "A4" matches "A4 Allroad")
+        if (modelNameLower.includes(searchNameLower)) return true;
+        
+        // Reverse contains (e.g., "5 Series" matches "5")
+        if (searchNameLower.includes(modelNameLower)) return true;
+        
+        // Remove common separators for matching (e.g., "C-Class" matches "C Class")
+        const normalizedModel = modelNameLower.replace(/[-\s]/g, '');
+        const normalizedSearch = searchNameLower.replace(/[-\s]/g, '');
+        if (normalizedModel === normalizedSearch) return true;
+        
+        return false;
+      });
+      
       if (model) {
+        console.log('✅ Found model:', model.name, 'ID:', model.id);
         updatedFilters.model_id = model.id.toString();
+      } else {
+        console.warn('⚠️ Model not found:', aiFilters.model_name, 'Available models:', models.map(m => m.name));
       }
     }
     
+    // Apply other filters
     if (aiFilters.yearMin) updatedFilters.from_year = aiFilters.yearMin.toString();
     if (aiFilters.yearMax) updatedFilters.to_year = aiFilters.yearMax.toString();
     if (aiFilters.priceMin) updatedFilters.buy_now_price_from = aiFilters.priceMin.toString();
@@ -224,6 +251,12 @@ const FilterForm = memo<FilterFormProps>(({
     if (aiFilters.mileageMax) updatedFilters.odometer_to_km = aiFilters.mileageMax.toString();
     if (aiFilters.color) updatedFilters.color = aiFilters.color;
     
+    // Add search term for trim levels and specific variants
+    if (aiFilters.search) {
+      updatedFilters.search = aiFilters.search;
+    }
+    
+    console.log('🎯 Final applied filters:', updatedFilters);
     onFiltersChange(updatedFilters);
   }, [filters, manufacturers, models, onFiltersChange]);
 

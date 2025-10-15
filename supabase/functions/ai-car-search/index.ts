@@ -20,7 +20,7 @@ serve(async (req) => {
 
     console.log('🔍 AI Search Query:', query);
 
-    // Call Lovable AI to interpret the search query
+    // Call Lovable AI to interpret the search query using tool calling
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -32,31 +32,91 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a car search assistant. Extract filter parameters from user queries.
-Return ONLY a JSON object with these fields (use null if not mentioned):
-{
-  "manufacturer_id": string or null,
-  "model_id": string or null,
-  "yearMin": number or null,
-  "yearMax": number or null,
-  "priceMin": number or null,
-  "priceMax": number or null,
-  "fuel": string or null,
-  "transmission": string or null,
-  "mileageMax": number or null,
-  "search": string or null
-}
+            content: `You are a Korean car auction search assistant specializing in exact vehicle matching.
+
+CRITICAL RULES:
+1. Extract EXACT manufacturer and model names from user queries
+2. For specific trims/grades (like "A4 35", "5 Series", "Golf GTI"), include the FULL designation in model_name
+3. If user mentions a year, set both yearMin and yearMax to that year for precise matching
+4. Always preserve specific model identifiers (numbers, letters) in the search field
+5. For price ranges, convert to euros if needed
+
+Common Korean auction brands: Hyundai, Kia, Genesis, BMW, Mercedes-Benz, Audi, Volkswagen, Toyota, Honda, Lexus
 
 Examples:
-"BMW from 2020" -> {"manufacturer_id": "BMW", "yearMin": 2020, "search": "BMW"}
-"red sedan under 30000 euros" -> {"priceMax": 30000, "search": "sedan red"}
-"automatic transmission hybrid" -> {"transmission": "Automatic", "fuel": "Hybrid"}`
+- "Audi A4 35" → manufacturer: "Audi", model: "A4", search: "35"
+- "BMW 5 series from 2020" → manufacturer: "BMW", model: "5 Series", yearMin: 2020, yearMax: 2020
+- "Mercedes C class 2019" → manufacturer: "Mercedes-Benz", model: "C-Class", yearMin: 2019, yearMax: 2019
+- "Golf GTI" → manufacturer: "Volkswagen", model: "Golf", search: "GTI"
+- "Hyundai Sonata under 20000" → manufacturer: "Hyundai", model: "Sonata", priceMax: 20000`
           },
           {
             role: 'user',
             content: query
           }
-        ]
+        ],
+        tools: [
+          {
+            type: 'function',
+            function: {
+              name: 'extract_car_filters',
+              description: 'Extract car search filters from natural language query',
+              parameters: {
+                type: 'object',
+                properties: {
+                  manufacturer_name: {
+                    type: 'string',
+                    description: 'Exact manufacturer/brand name (e.g., "BMW", "Audi", "Mercedes-Benz")'
+                  },
+                  model_name: {
+                    type: 'string',
+                    description: 'Exact model name without trim (e.g., "A4", "5 Series", "Golf")'
+                  },
+                  yearMin: {
+                    type: 'number',
+                    description: 'Minimum year for search'
+                  },
+                  yearMax: {
+                    type: 'number',
+                    description: 'Maximum year for search'
+                  },
+                  priceMin: {
+                    type: 'number',
+                    description: 'Minimum price in euros'
+                  },
+                  priceMax: {
+                    type: 'number',
+                    description: 'Maximum price in euros'
+                  },
+                  fuel: {
+                    type: 'string',
+                    enum: ['Gasoline', 'Diesel', 'Hybrid', 'Electric', 'LPG'],
+                    description: 'Fuel type'
+                  },
+                  transmission: {
+                    type: 'string',
+                    enum: ['Automatic', 'Manual', 'Semi-Automatic'],
+                    description: 'Transmission type'
+                  },
+                  mileageMax: {
+                    type: 'number',
+                    description: 'Maximum mileage in kilometers'
+                  },
+                  color: {
+                    type: 'string',
+                    description: 'Car color'
+                  },
+                  search: {
+                    type: 'string',
+                    description: 'Additional search keywords for trim levels, special editions (e.g., "35", "GTI", "M Sport")'
+                  }
+                },
+                required: []
+              }
+            }
+          }
+        ],
+        tool_choice: { type: 'function', function: { name: 'extract_car_filters' } }
       })
     });
 
@@ -67,22 +127,21 @@ Examples:
     }
 
     const data = await response.json();
-    const aiResponse = data.choices?.[0]?.message?.content;
+    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+    
+    console.log('🤖 AI Tool Call:', JSON.stringify(toolCall, null, 2));
 
-    console.log('🤖 AI Response:', aiResponse);
-
-    // Parse AI response to extract filters
+    // Extract filters from tool call
     let filters = {};
-    try {
-      // Remove markdown code blocks if present
-      const cleanResponse = aiResponse
-        .replace(/```json\n?/g, '')
-        .replace(/```\n?/g, '')
-        .trim();
-      filters = JSON.parse(cleanResponse);
-    } catch (e) {
-      console.error('Failed to parse AI response:', e);
-      // Fallback: use query as search term
+    if (toolCall?.function?.arguments) {
+      try {
+        filters = JSON.parse(toolCall.function.arguments);
+      } catch (e) {
+        console.error('Failed to parse tool call arguments:', e);
+        filters = { search: query };
+      }
+    } else {
+      // Fallback to using the query as search term
       filters = { search: query };
     }
 
