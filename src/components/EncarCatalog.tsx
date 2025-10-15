@@ -1190,9 +1190,8 @@ const EncarCatalog = ({
             
             {/* Title and count from API */}
             <div className="space-y-1">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                Car Catalog
-              </h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">Katalogu i makinave
+            </h1>
               <p className="text-muted-foreground text-xs sm:text-sm">
                 {loading ? <span className="inline-flex items-center gap-2">
                     <Loader2 className="h-3 w-3 animate-spin" />
