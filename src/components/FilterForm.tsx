@@ -8,6 +8,7 @@ import { AISearchBar } from "./AISearchBar";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS, BODY_TYPE_OPTIONS } from '@/constants/carOptions';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useGrades } from "@/hooks/useFiltersData";
 import {
   APIFilters,
   sortManufacturers,
@@ -73,14 +74,23 @@ const FilterForm = memo<FilterFormProps>(({
   onFetchGrades,
   onFetchTrimLevels
 }) => {
-  const [grades, setGrades] = useState<{ value: string; label: string; count?: number }[]>([]);
   const [trimLevels, setTrimLevels] = useState<{ value: string; label: string; count?: number }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [modelLoading, setModelLoading] = useState(false);
   const [modelError, setModelError] = useState<string | null>(null);
-  const [gradeLoading, setGradeLoading] = useState(false);
-  const [isLoadingGrades, setIsLoadingGrades] = useState(false);
-  const latestGradeRequest = useRef(0);
+  
+  // Use the grades hook for fetching grades
+  const { data: gradesData, isLoading: isLoadingGrades } = useGrades(filters.model_id);
+  
+  // Map grades data to the format expected by the select
+  const grades = useMemo(() => {
+    if (!gradesData || !Array.isArray(gradesData)) return [];
+    return gradesData.map((grade: any) => ({
+      value: grade.id,
+      label: grade.name,
+      count: grade.car_count
+    }));
+  }, [gradesData]);
 
 
   const updateFilter = useCallback((key: string, value: string) => {
@@ -93,12 +103,10 @@ const FilterForm = memo<FilterFormProps>(({
     // Handle cascading filters - avoid duplicate API calls
     if (key === 'manufacturer_id') {
       // Reset model and grade when manufacturer changes
-      setGrades([]);
       onFiltersChange({ ...filters, manufacturer_id: actualValue, model_id: undefined, grade_iaai: undefined });
       onManufacturerChange?.(actualValue || '');
     } else if (key === 'model_id') {
       // Reset grade when model changes
-      setGrades([]);
       onFiltersChange({ ...filters, model_id: actualValue, grade_iaai: undefined });
       onModelChange?.(actualValue || '');
     } else {
@@ -147,44 +155,7 @@ const FilterForm = memo<FilterFormProps>(({
     return getFallbackGrades(manufacturerId);
   }, []);
 
-  // Fetch grades when model changes - manufacturer helps with better fallbacks
-  useEffect(() => {
-    let cancelled = false;
-    let timeoutId: NodeJS.Timeout;
-    
-    // Debounce to avoid excessive API calls - require model_id, manufacturer helps
-    timeoutId = setTimeout(() => {
-      if (filters.model_id && onFetchGrades && !cancelled) {
-        setIsLoadingGrades(true);
-        
-        const requestId = Date.now();
-        latestGradeRequest.current = requestId;
-        
-        onFetchGrades(filters.manufacturer_id, filters.model_id)
-          .then(gradesData => {
-            // Only update if this is the latest request
-            if (!cancelled && latestGradeRequest.current === requestId && Array.isArray(gradesData)) {
-              console.log('✅ Loaded grades:', gradesData.length, 'for model', filters.model_id);
-              setGrades(gradesData);
-            }
-            setIsLoadingGrades(false);
-          })
-          .catch((err) => {
-            console.error('Grade fetch error:', err);
-            setIsLoadingGrades(false);
-            setGrades([]);
-          });
-      } else {
-        setGrades([]);
-        setIsLoadingGrades(false);
-      }
-    }, 300); // 300ms debounce
-    
-    return () => { 
-      cancelled = true; 
-      clearTimeout(timeoutId);
-    };
-  }, [filters.manufacturer_id, filters.model_id, onFetchGrades]);
+  // Grades are now fetched automatically via useGrades hook
 
   // Debounced fetch trim levels when manufacturer or model changes
   useEffect(() => {
@@ -224,19 +195,37 @@ const FilterForm = memo<FilterFormProps>(({
     console.log('AI Search filters:', aiFilters);
     const updatedFilters = { ...filters };
     
-    if (aiFilters.manufacturer_id) updatedFilters.manufacturer_id = aiFilters.manufacturer_id;
-    if (aiFilters.model_id) updatedFilters.model_id = aiFilters.model_id;
-    if (aiFilters.from_year || aiFilters.yearMin) updatedFilters.from_year = (aiFilters.from_year || aiFilters.yearMin)?.toString();
-    if (aiFilters.to_year || aiFilters.yearMax) updatedFilters.to_year = (aiFilters.to_year || aiFilters.yearMax)?.toString();
-    if (aiFilters.priceMin) updatedFilters.buy_now_price_from = aiFilters.priceMin?.toString();
-    if (aiFilters.priceMax) updatedFilters.buy_now_price_to = aiFilters.priceMax?.toString();
+    // Map manufacturer name to ID
+    if (aiFilters.manufacturer_name) {
+      const manufacturer = manufacturers.find(m => 
+        m.name.toLowerCase() === aiFilters.manufacturer_name.toLowerCase()
+      );
+      if (manufacturer) {
+        updatedFilters.manufacturer_id = manufacturer.id.toString();
+      }
+    }
+    
+    // Map model name to ID (only if manufacturer is set)
+    if (aiFilters.model_name && updatedFilters.manufacturer_id) {
+      const model = models.find(m => 
+        m.name.toLowerCase().includes(aiFilters.model_name.toLowerCase())
+      );
+      if (model) {
+        updatedFilters.model_id = model.id.toString();
+      }
+    }
+    
+    if (aiFilters.yearMin) updatedFilters.from_year = aiFilters.yearMin.toString();
+    if (aiFilters.yearMax) updatedFilters.to_year = aiFilters.yearMax.toString();
+    if (aiFilters.priceMin) updatedFilters.buy_now_price_from = aiFilters.priceMin.toString();
+    if (aiFilters.priceMax) updatedFilters.buy_now_price_to = aiFilters.priceMax.toString();
     if (aiFilters.fuel) updatedFilters.fuel_type = aiFilters.fuel;
     if (aiFilters.transmission) updatedFilters.transmission = aiFilters.transmission;
-    if (aiFilters.mileageMax) updatedFilters.odometer_to_km = aiFilters.mileageMax?.toString();
-    if (aiFilters.search) updatedFilters.search = aiFilters.search;
+    if (aiFilters.mileageMax) updatedFilters.odometer_to_km = aiFilters.mileageMax.toString();
+    if (aiFilters.color) updatedFilters.color = aiFilters.color;
     
     onFiltersChange(updatedFilters);
-  }, [filters, onFiltersChange]);
+  }, [filters, manufacturers, models, onFiltersChange]);
 
   return (
     <div className="bg-card border border-border rounded-lg p-3 space-y-3">

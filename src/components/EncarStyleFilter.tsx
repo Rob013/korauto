@@ -30,6 +30,7 @@ import {
   Users
 } from "lucide-react";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS, BODY_TYPE_OPTIONS } from '@/constants/carOptions';
+import { useGrades } from "@/hooks/useFiltersData";
 import {
   APIFilters,
   sortManufacturers,
@@ -102,10 +103,22 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   onSearchCars,
   onCloseFilter
 }) => {
-  const [grades, setGrades] = useState<{ value: string; label: string; count?: number }[]>([]);
   const [trimLevels, setTrimLevels] = useState<{ value: string; label: string; count?: number }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const loadingTimerRef = useRef<number | null>(null);
+  
+  // Use the grades hook for fetching grades
+  const { data: gradesData, isLoading: isLoadingGrades } = useGrades(filters.model_id);
+  
+  // Map grades data to the format expected by the select
+  const grades = useMemo(() => {
+    if (!gradesData || !Array.isArray(gradesData)) return [];
+    return gradesData.map((grade: any) => ({
+      value: grade.id,
+      label: grade.name,
+      count: grade.car_count
+    }));
+  }, [gradesData]);
 
   // Show loading only if the update actually takes longer than a threshold to avoid flicker.
   const startLoadingWithDelay = useCallback((delayMs: number = 180) => {
@@ -125,7 +138,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     }
     setIsLoading(false);
   }, []);
-  const [isLoadingGrades, setIsLoadingGrades] = useState(false);
+  
   const [expandedSections, setExpandedSections] = useState<string[]>(compact ? ['basic'] : ['basic', 'advanced']);
 
   // Track if strict filtering mode is enabled - using utility
@@ -141,12 +154,10 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
     if (key === 'manufacturer_id') {
       // Reset model and grade when manufacturer changes
-      setGrades([]);
       onFiltersChange({ ...filters, manufacturer_id: actualValue, model_id: undefined, grade_iaai: undefined });
       onManufacturerChange?.(actualValue || '');
     } else if (key === 'model_id') {
       // Reset grade when model changes
-      setGrades([]);
       onFiltersChange({ ...filters, model_id: actualValue, grade_iaai: undefined });
       onModelChange?.(actualValue || '');
     } else {
@@ -201,27 +212,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     );
   }, [manufacturers]);
 
-  useEffect(() => {
-    if (filters.model_id && onFetchGrades) {
-      const timeoutId = setTimeout(() => {
-        setIsLoadingGrades(true);
-        onFetchGrades(filters.manufacturer_id, filters.model_id)
-          .then(gradesData => {
-            if (Array.isArray(gradesData)) {
-              console.log('✅ Loaded grades:', gradesData.length, 'for model', filters.model_id);
-              setGrades(gradesData);
-            }
-          })
-          .finally(() => {
-            setIsLoadingGrades(false);
-          });
-      }, 300);
-
-      return () => clearTimeout(timeoutId);
-    } else {
-      setGrades([]);
-    }
-  }, [filters.manufacturer_id, filters.model_id, onFetchGrades]);
+  // Grades are now fetched automatically via useGrades hook
 
   useEffect(() => {
     if (filters.manufacturer_id && filters.model_id && onFetchTrimLevels) {
