@@ -6,6 +6,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -304,6 +310,62 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 })}
               </SelectContent>
             </Select>
+            
+            {/* Grade dropdown - only show when model is selected */}
+            {filters.model_id && grades.length > 0 && (
+              <div className="space-y-1 mt-2">
+                <Label className="filter-label text-xs font-medium flex items-center gap-1.5 text-muted-foreground">
+                  <Cog className="h-2.5 w-2.5" />
+                  Grada
+                </Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="h-7 text-xs w-full justify-between bg-background/50"
+                      disabled={isLoadingGrades}
+                    >
+                      {isLoadingGrades ? (
+                        "Po ngarkon gradat..."
+                      ) : (
+                        <>
+                          {filters.grade_iaai ? 
+                            `${grades.find(g => g.value === filters.grade_iaai)?.label || 'Grada e zgjedhur'}` : 
+                            'Zgjidhni gradën'
+                          }
+                          <ChevronDown className="h-3 w-3 opacity-50" />
+                        </>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56 max-h-60 overflow-y-auto">
+                    <DropdownMenuCheckboxItem
+                      checked={!filters.grade_iaai}
+                      onCheckedChange={() => updateFilter('grade_iaai', 'all')}
+                    >
+                      Të gjitha gradat
+                    </DropdownMenuCheckboxItem>
+                    {grades.map((grade) => (
+                      <DropdownMenuCheckboxItem
+                        key={grade.value}
+                        checked={filters.grade_iaai === grade.value}
+                        onCheckedChange={() => updateFilter('grade_iaai', grade.value)}
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <span className="text-xs">{grade.label}</span>
+                          {grade.count && (
+                            <span className="text-xs text-muted-foreground ml-2">
+                              ({grade.count})
+                            </span>
+                          )}
+                        </div>
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
           </div>
 
           {/* Year presets */}
@@ -953,6 +1015,108 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
             </div>
           </div>
         )}
+
+        {/* Selected Filters Display */}
+        {compact && (() => {
+          const selectedFilters = [];
+          
+          if (filters.manufacturer_id) {
+            const manufacturer = manufacturers.find(m => m.id.toString() === filters.manufacturer_id);
+            selectedFilters.push({ key: 'manufacturer_id', label: 'Marka', value: manufacturer?.name || 'Unknown' });
+          }
+          
+          if (filters.model_id) {
+            const model = models.find(m => m.id.toString() === filters.model_id);
+            selectedFilters.push({ key: 'model_id', label: 'Modeli', value: model?.name || 'Unknown' });
+          }
+          
+          if (filters.grade_iaai && filters.grade_iaai !== 'all') {
+            const grade = grades.find(g => g.value === filters.grade_iaai);
+            selectedFilters.push({ key: 'grade_iaai', label: 'Grada', value: grade?.label || 'Unknown' });
+          }
+          
+          if (filters.from_year || filters.to_year) {
+            const fromYear = filters.from_year || 'Çdo vit';
+            const toYear = filters.to_year || 'sot';
+            selectedFilters.push({ key: 'year', label: 'Viti', value: `${fromYear} - ${toYear}` });
+          }
+          
+          if (filters.color) {
+            const colorOption = Object.entries(COLOR_OPTIONS).find(([_, id]) => id.toString() === filters.color);
+            selectedFilters.push({ key: 'color', label: 'Ngjyra', value: colorOption?.[0] || 'Unknown' });
+          }
+          
+          if (filters.fuel_type) {
+            const fuelOption = Object.entries(FUEL_TYPE_OPTIONS).find(([_, id]) => id.toString() === filters.fuel_type);
+            selectedFilters.push({ key: 'fuel_type', label: 'Karburanti', value: fuelOption?.[0] || 'Unknown' });
+          }
+          
+          if (filters.transmission) {
+            const transmissionOption = Object.entries(TRANSMISSION_OPTIONS).find(([_, id]) => id.toString() === filters.transmission);
+            selectedFilters.push({ key: 'transmission', label: 'Transmisioni', value: transmissionOption?.[0] || 'Unknown' });
+          }
+          
+          if (filters.body_type) {
+            const bodyTypeOption = Object.entries(BODY_TYPE_OPTIONS).find(([_, id]) => id.toString() === filters.body_type);
+            selectedFilters.push({ key: 'body_type', label: 'Lloji i trupit', value: bodyTypeOption?.[0] || 'Unknown' });
+          }
+          
+          if (filters.odometer_from_km || filters.odometer_to_km) {
+            const fromKm = filters.odometer_from_km || '0';
+            const toKm = filters.odometer_to_km || '∞';
+            selectedFilters.push({ key: 'mileage', label: 'Kilometrazhi', value: `${fromKm} - ${toKm} km` });
+          }
+          
+          if (filters.buy_now_price_from || filters.buy_now_price_to) {
+            const fromPrice = filters.buy_now_price_from || '0';
+            const toPrice = filters.buy_now_price_to || '∞';
+            selectedFilters.push({ key: 'price', label: 'Çmimi', value: `€${fromPrice} - €${toPrice}` });
+          }
+          
+          if (filters.search) {
+            selectedFilters.push({ key: 'search', label: 'Kërkimi', value: filters.search });
+          }
+          
+          return selectedFilters.length > 0 ? (
+            <div className="border-t pt-3 mt-3">
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-xs font-medium text-muted-foreground">Filtrat e zgjedhur:</Label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onClearFilters}
+                  className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-3 w-3 mr-1" />
+                  Pastro
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {selectedFilters.map((filter) => (
+                  <Badge
+                    key={filter.key}
+                    variant="secondary"
+                    className="text-xs px-2 py-1 cursor-pointer hover:bg-secondary/80"
+                    onClick={() => {
+                      if (filter.key === 'year') {
+                        onFiltersChange({ ...filters, from_year: undefined, to_year: undefined });
+                      } else if (filter.key === 'mileage') {
+                        onFiltersChange({ ...filters, odometer_from_km: undefined, odometer_to_km: undefined });
+                      } else if (filter.key === 'price') {
+                        onFiltersChange({ ...filters, buy_now_price_from: undefined, buy_now_price_to: undefined });
+                      } else {
+                        onFiltersChange({ ...filters, [filter.key]: undefined });
+                      }
+                    }}
+                  >
+                    {filter.label}: {filter.value}
+                    <X className="h-3 w-3 ml-1" />
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          ) : null;
+        })()}
       </div>
     </Card>
   );
